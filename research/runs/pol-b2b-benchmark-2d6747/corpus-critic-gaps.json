@@ -1,0 +1,38 @@
+[
+  {
+    "id": "gap-1-1p-profitability-counterexample",
+    "type": "overturning",
+    "target_position": "No 1P B2B FMCG player in high-inflation emerging markets has achieved sustainable net profitability.",
+    "search_queries": [
+      "1P B2B FMCG emerging markets net profitable EBITDA",
+      "Wasoko MaxAB Udaan profitable 1P warehouse"
+    ],
+    "source_type": "financial-filings",
+    "priority": "critical",
+    "rationale": "If a profitable 1P player exists, POL asset-light thesis must be recalibrated."
+  },
+  {
+    "id": "gap-2-disintermediation-lethality",
+    "type": "strengthening",
+    "target_position": "GudangAda failed to prevent platform bypass because it lacked embedded credit and software lock-in.",
+    "search_queries": [
+      "GudangAda platform bypass commission decline",
+      "OmniRetail Mplify zero disintermediation rate"
+    ],
+    "source_type": "case-study",
+    "priority": "high",
+    "rationale": "Confirms that shallow directories fail while software-fintech middlewares survive."
+  },
+  {
+    "id": "gap-3-sayadi-cheque-default-rate-iran",
+    "type": "strengthening",
+    "target_position": "Central Bank of Iran Sayadi cheque system significantly lowered commercial cheque bounce rates in Iran.",
+    "search_queries": [
+      "آمار برگشت چک صیادی بانک مرکزی ایران 1403 1404",
+      "اعتبار سنجی چک صیادی بنکداران بازار تهران"
+    ],
+    "source_type": "regulatory-report",
+    "priority": "high",
+    "rationale": "Validates POL Sayadi integration as a viable credit risk filter."
+  }
+]

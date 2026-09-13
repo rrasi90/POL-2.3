@@ -1,0 +1,111 @@
+{
+  "manifest_version": 1,
+  "vault_tag": "pol-b2b-benchmark-2d6747",
+  "profile": "full",
+  "profile_steps": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16"
+  ],
+  "status": "done",
+  "started_at": "2026-09-03T17:03:45.922925+00:00",
+  "updated_at": "2026-09-03T17:28:48.415887+00:00",
+  "budget_usd": null,
+  "blocked_on": null,
+  "steps": {
+    "1": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:05:52.035656+00:00"
+    },
+    "2": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:22:08.615681+00:00"
+    },
+    "3": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:22:29.102811+00:00"
+    },
+    "4": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:22:44.117923+00:00"
+    },
+    "5": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:23:12.643317+00:00"
+    },
+    "6": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:23:28.398369+00:00"
+    },
+    "7": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:23:47.233847+00:00"
+    },
+    "8": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:23:59.177352+00:00"
+    },
+    "9": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:24:19.495833+00:00"
+    },
+    "10": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:24:35.200639+00:00"
+    },
+    "11": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:26:58.995809+00:00"
+    },
+    "12": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:27:10.130128+00:00"
+    },
+    "13": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:27:18.407037+00:00"
+    },
+    "14": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:27:27.675594+00:00"
+    },
+    "14.5": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:28:11.233973+00:00"
+    },
+    "15": {
+      "status": "done",
+      "finished_at": "2026-09-03T17:28:18.952927+00:00"
+    }
+  },
+  "chapters": {},
+  "spend": {
+    "estimated_usd": 0.0,
+    "sources_fetched": 0,
+    "notes_written": 0,
+    "agents_spawned": 0
+  },
+  "levers": {
+    "register": "analyze",
+    "inference_depth": "deep",
+    "domain_notes": "Rigorous B2B marketplace economics; distinguish GMV from net revenue; evaluate credit defaults and balance-sheet exposure; scrutinize disintermediation dynamics and field-force economics."
+  },
+  "verify": {
+    "passed": true,
+    "at": "2026-09-03T17:28:48.408017+00:00",
+    "failed_checks": []
+  }
+}

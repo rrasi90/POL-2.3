@@ -1,0 +1,19 @@
+{"at": "2026-09-03T17:05:49.249889+00:00", "type": "levers", "register": "analyze", "inference_depth": "deep"}
+{"at": "2026-09-03T17:05:52.036779+00:00", "type": "step", "step": "1", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:22:08.616861+00:00", "type": "step", "step": "2", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:22:29.104135+00:00", "type": "step", "step": "3", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:22:44.119462+00:00", "type": "step", "step": "4", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:23:12.644489+00:00", "type": "step", "step": "5", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:23:28.399496+00:00", "type": "step", "step": "6", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:23:47.235326+00:00", "type": "step", "step": "7", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:23:59.178801+00:00", "type": "step", "step": "8", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:24:19.497160+00:00", "type": "step", "step": "9", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:24:35.202180+00:00", "type": "step", "step": "10", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:26:58.997469+00:00", "type": "step", "step": "11", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:27:10.131658+00:00", "type": "step", "step": "12", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:27:18.408326+00:00", "type": "step", "step": "13", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:27:27.677112+00:00", "type": "step", "step": "14", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:28:11.235326+00:00", "type": "step", "step": "14.5", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:28:18.954949+00:00", "type": "step", "step": "15", "status": "done", "chapter": null}
+{"at": "2026-09-03T17:28:22.398249+00:00", "type": "finish", "passed": false, "failed_checks": ["required-headings", "citation-density"]}
+{"at": "2026-09-03T17:28:48.409589+00:00", "type": "finish", "passed": true, "failed_checks": []}

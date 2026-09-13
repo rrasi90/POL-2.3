@@ -1,0 +1,11 @@
+{
+  "findings": [
+    {
+      "id": "width-1",
+      "type": "corpus-coverage",
+      "location": "Section 5: Group B Benchmarks",
+      "severity": "low",
+      "description": "Ensure VinShop partnership with Techcombank is explicitly referenced in the embedded finance sections as well as Group B."
+    }
+  ]
+}

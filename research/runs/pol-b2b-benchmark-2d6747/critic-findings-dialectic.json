@@ -1,0 +1,11 @@
+{
+  "findings": [
+    {
+      "id": "dialectic-1",
+      "type": "counter-evidence",
+      "location": "Section 8: Asset-Light vs 1P",
+      "severity": "low",
+      "description": "The report strongly condemns 1P; verify that the theoretical argument for 1P (guaranteed OTIF and private label margin capture) is presented fairly before showing its fatal flaw."
+    }
+  ]
+}

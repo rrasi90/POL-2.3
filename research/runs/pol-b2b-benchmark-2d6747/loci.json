@@ -1,0 +1,70 @@
+{
+  "loci": [
+    {
+      "name": "asset-light-structural-defensibility",
+      "one_line": "Whether asset-light marketplace models possess a permanent structural advantage over 1P inventory distribution or merely substitute logistics losses for platform bypass risk.",
+      "flavor": "dialectical",
+      "importance": 10,
+      "uncertainty": 7,
+      "disagreement": 9,
+      "decision_impact": 10,
+      "composite_score": 36,
+      "source_budget": 12,
+      "rationale": "Core foundational architecture of POL. Determines whether POL should ever hold inventory or remain pure software/transaction infrastructure."
+    },
+    {
+      "name": "anti-disintermediation-mechanisms",
+      "one_line": "Evaluating the empirical validity of anti-bypass mechanisms: multi-vendor cart bundling, embedded bank credit, and wholesaler ERP lock-in.",
+      "flavor": "dialectical",
+      "importance": 10,
+      "uncertainty": 6,
+      "disagreement": 8,
+      "decision_impact": 10,
+      "composite_score": 34,
+      "source_budget": 10,
+      "rationale": "Existential survival question. If disintermediation cannot be prevented, asset-light platforms become unmonetizable directories."
+    },
+    {
+      "name": "embedded-credit-default-insulation",
+      "one_line": "How B2B platforms integrate working capital credit without balance-sheet lending or toxic default exposure in high-inflation emerging markets.",
+      "flavor": "synthesis",
+      "importance": 9,
+      "uncertainty": 6,
+      "disagreement": 6,
+      "decision_impact": 9,
+      "composite_score": 30,
+      "source_budget": 8,
+      "rationale": "Determines POL fintech architecture and partnerships with Iranian commercial banks."
+    },
+    {
+      "name": "cart-allocation-dynamic-clustering",
+      "one_line": "Algorithmic optimization of multi-vendor baskets to maximize price savings while capping physical delivery drops to stores.",
+      "flavor": "technical",
+      "importance": 8,
+      "uncertainty": 5,
+      "disagreement": 5,
+      "decision_impact": 8,
+      "composite_score": 26,
+      "source_budget": 6,
+      "rationale": "Critical product architecture for supermarket user experience and delivery economics in congested Tehran."
+    },
+    {
+      "name": "phygital-field-force-migration-velocity",
+      "one_line": "The operational mechanics and incentive structures that migrate traditional store owners from sales-rep dependence to autonomous night ordering.",
+      "flavor": "synthesis",
+      "importance": 8,
+      "uncertainty": 4,
+      "disagreement": 4,
+      "decision_impact": 8,
+      "composite_score": 24,
+      "source_budget": 4,
+      "rationale": "Controls POL operational expenditure and customer acquisition payback period."
+    }
+  ],
+  "skip_loci": [
+    {
+      "candidate": "b2b-consumer-hybrid-expansion",
+      "justification": "Premature. Global benchmarks show that attempting B2C quick commerce alongside B2B FMCG procurement dilutes focus and causes heavy burn (e.g. GudangAda, Ula)."
+    }
+  ]
+}

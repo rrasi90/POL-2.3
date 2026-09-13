@@ -1,0 +1,63 @@
+{
+  "dataset_metadata": {
+    "source_file": "Master SKU/backup_no_images.json",
+    "classification": "Imported Reference / Identity Dataset",
+    "not_operational_inventory": true,
+    "not_operational_price": true,
+    "not_pol_reputation": true,
+    "generated_at": "2026-09-11T21:15:00Z",
+    "generator_script": "scripts/catalog/generate_ground_truth.py"
+  },
+  "metrics": {
+    "total_records": 68707,
+    "unique_dkp_id": 68707,
+    "duplicate_dkp_id": 0,
+    "empty_barcode": 68707,
+    "empty_barcode_percentage": 100.0,
+    "non_empty_barcode": 0,
+    "missing_brand": 0,
+    "missing_category": 0,
+    "missing_subcategory": 0,
+    "missing_net_weight": 68707,
+    "missing_net_weight_percentage": 100.0,
+    "missing_packaging_unit": 68707,
+    "missing_packaging_unit_percentage": 100.0,
+    "missing_price": 0,
+    "missing_stock": 0,
+    "missing_rating": 0,
+    "missing_reviews_count": 0,
+    "raw_unique_titles": 66292,
+    "raw_duplicate_unique_titles": 1779,
+    "raw_duplicate_records": 4194,
+    "normalized_unique_titles": 65879,
+    "normalized_duplicate_unique_titles": 2051,
+    "normalized_duplicate_records": 4879,
+    "distinct_brands_count": 3558,
+    "distinct_categories_count": 5,
+    "distinct_subcategories_count": 35
+  },
+  "top_categories": {
+    "بهداشت و شوینده": 22975,
+    "تنقلات، خشکبار و شیرینی": 21037,
+    "کالاهای اساسی و خواربار": 17535,
+    "لبنیات و فرآورده‌های منجمد": 4584,
+    "مواد پروتئینی و تخم مرغ": 2576
+  },
+  "top_brands": {
+    "متفرقه": 26183,
+    "گیاه کالا": 897,
+    "اورال-بی": 524,
+    "آنید": 433,
+    "کاله": 423,
+    "شیرین عسل": 380,
+    "پگاه": 225,
+    "آیدین": 212,
+    "لیمون": 201,
+    "میهن": 187,
+    "مرهم یاب": 186,
+    "پپتینا": 178,
+    "عطاری مجذوبی": 175,
+    "نات لاین": 172,
+    "سرمد": 169
+  }
+}

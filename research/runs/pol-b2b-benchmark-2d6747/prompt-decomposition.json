@@ -1,0 +1,298 @@
+{
+  "sub_questions": [
+    "Why is digitizing traditional FMCG trade and distribution in emerging markets fundamentally hard?",
+    "Which companies actually solved this problem, which failed, and why?",
+    "What are the detailed trajectories, MVPs, cold-start mechanics, and 20 specific operational dimensions for Tier-1, Tier-2, and Cautionary benchmark companies?",
+    "What are the real unit economics (CAC, AOV, Order Frequency, Take Rate, Gross Margin, Logistics Cost, Fulfillment Cost, Contribution Margin, Payback)?",
+    "How does Asset-Light structurally compare to 1P (Inventory, Warehouse, Fleet, Working Capital, Gross Margin, Operating Cost, Failure Risk)? Is Asset-Light a structural advantage or conditional?",
+    "How does the Phygital / Field Force evolve from acquisition/order-taking to relationship management or digital self-serve?",
+    "How is Marketplace Liquidity achieved across Supply, Demand, Geographic Density, Category Density, and Local Network Effects?",
+    "How do Discovery, Ranking, and Recommendation engines operate without compromising vendor trust?",
+    "How should Cart Allocation (Single Vendor vs Split Cart, MOQ, Delivery Fee, Bundling) be designed for POL?",
+    "How is Trust and Reputation operationalized beyond superficial star ratings into behavioral enforcement?",
+    "How is Embedded Finance integrated (Credit, BNPL, Working Capital) without the platform becoming a bank or taking toxic balance sheet defaults?",
+    "How does the Data Network evolve from operational analytics into a self-reinforcing Network Effect and Monetizable Manufacturer Intelligence?",
+    "What are the detailed failure autopsies (timeline, root cause, counterfactuals) for Wasoko, MaxAB, Udaan, Capiter, MarketForce, Ula, Retailo?",
+    "What are the success autopsies and strategic pattern extractions across surviving and profitable players?",
+    "How do the benchmark countries (Egypt, Nigeria, Pakistan, India, Bangladesh, Philippines, Indonesia, Vietnam, Morocco, Kenya) compare to Iran across 12 specific structural parameters?",
+    "What is the comprehensive strategic thesis for POL in Iran (Diagnosis, Guiding Policy, Coherent Actions)?",
+    "What are the 5 distinct Flywheels (Commerce, Data, Financial, Manufacturer, Trust) and which is the Core Flywheel?",
+    "What are the 15 critical False Beliefs (What We Might Be Wrong About) in B2B FMCG digitization?",
+    "What are the definitive Strategic Choices and trade-offs for POL across 13 foundational architecture dimensions?"
+  ],
+  "entities": [
+    {
+      "name": "Cartona",
+      "country": "Egypt",
+      "tier": "Tier 1"
+    },
+    {
+      "name": "OmniRetail",
+      "country": "Nigeria",
+      "tier": "Tier 1"
+    },
+    {
+      "name": "Bazaar Technologies",
+      "country": "Pakistan",
+      "tier": "Tier 1"
+    },
+    {
+      "name": "GrowSari",
+      "country": "Philippines",
+      "tier": "Tier 1"
+    },
+    {
+      "name": "ShopUp / Mokam",
+      "country": "Bangladesh",
+      "tier": "Tier 1"
+    },
+    {
+      "name": "Chari",
+      "country": "Morocco",
+      "tier": "Tier 1"
+    },
+    {
+      "name": "Jumbotail",
+      "country": "India",
+      "tier": "Tier 1"
+    },
+    {
+      "name": "Tajir",
+      "country": "Pakistan",
+      "tier": "Tier 1"
+    },
+    {
+      "name": "Sary / SILQ",
+      "country": "Saudi Arabia",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "Telio",
+      "country": "Vietnam",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "VinShop",
+      "country": "Vietnam",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "Dastgyr",
+      "country": "Pakistan",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "PriyoShop",
+      "country": "Bangladesh",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "TradeLink Bangladesh",
+      "country": "Bangladesh",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "ShopKirana",
+      "country": "India",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "ElasticRun",
+      "country": "India",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "TradeDepot",
+      "country": "Nigeria",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "Sabi",
+      "country": "Nigeria",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "Ralali",
+      "country": "Indonesia",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "GudangAda",
+      "country": "Indonesia",
+      "tier": "Tier 2"
+    },
+    {
+      "name": "Wasoko",
+      "country": "Kenya",
+      "tier": "Cautionary"
+    },
+    {
+      "name": "MaxAB",
+      "country": "Egypt",
+      "tier": "Cautionary"
+    },
+    {
+      "name": "Udaan",
+      "country": "India",
+      "tier": "Cautionary"
+    },
+    {
+      "name": "Capiter",
+      "country": "Egypt",
+      "tier": "Cautionary"
+    },
+    {
+      "name": "MarketForce / RejaReja",
+      "country": "Kenya",
+      "tier": "Cautionary"
+    },
+    {
+      "name": "Ula",
+      "country": "Indonesia",
+      "tier": "Cautionary"
+    },
+    {
+      "name": "Retailo",
+      "country": "Saudi Arabia/Pakistan",
+      "tier": "Cautionary"
+    },
+    {
+      "name": "Chiper",
+      "country": "Colombia/Mexico",
+      "tier": "Discovery"
+    },
+    {
+      "name": "POL (پُل)",
+      "country": "Iran",
+      "tier": "Target Entity"
+    }
+  ],
+  "required_formats": [
+    "Comparative tables for Asset-Light vs 1P",
+    "Comprehensive 20-dimension analysis matrix for Tier-1 companies",
+    "Country comparability scoring table against Iran",
+    "POL strategic relevance scoring table",
+    "Multi-flywheel causal models (Commerce, Data, Financial, Manufacturer, Trust)",
+    "15 False Beliefs stress-test matrix (Evidence For, Evidence Against, Confidence, Experiment)",
+    "13 Strategic Choices decision table",
+    "10 Standalone Executive Deliverables"
+  ],
+  "required_sections": [
+    "Executive Summary",
+    "1. POL Context",
+    "2. Global Benchmark Landscape",
+    "3. Company Longlist",
+    "4. Tier-1 Deep Dives",
+    "5. Business Model Evolution",
+    "6. Asset-Light vs 1P",
+    "7. Phygital / Field Force",
+    "8. Cold Start / Liquidity",
+    "9. Discovery / Recommendation",
+    "10. Cart Allocation",
+    "11. Trust / Reputation",
+    "12. Payment / Finance",
+    "13. Data Network",
+    "14. Manufacturer Intelligence",
+    "15. Monetization",
+    "16. Failure Autopsies",
+    "17. Success Autopsies",
+    "18. Country Comparison",
+    "19. POL Comparability Scores",
+    "20. Strategic Patterns",
+    "21. Moats",
+    "22. Anti-Disintermediation",
+    "23. False Beliefs",
+    "24. Strategic Choices for POL",
+    "25. POL Flywheel",
+    "26. Strategic Thesis",
+    "27. Design Principles",
+    "28. Open Questions",
+    "29. Research Gaps",
+    "30. Complete Source Register",
+    "Special Deliverable 1: Top 10 Global Lessons for POL",
+    "Special Deliverable 2: Top 10 Things POL Must NOT Do",
+    "Special Deliverable 3: Top 10 Strategic Advantages POL Can Build",
+    "Special Deliverable 4: Top 10 Strategic Risks",
+    "Special Deliverable 5: Top 10 Unresolved Questions",
+    "Special Deliverable 6: Best 5 Global Benchmarks for POL",
+    "Special Deliverable 7: Best 5 Failure Cases for POL to Study",
+    "Special Deliverable 8: Most Defensible POL Moats",
+    "Special Deliverable 9: Recommended Strategic Thesis",
+    "Special Deliverable 10: What POL Should Become — and What POL Should Deliberately NOT Become"
+  ],
+  "required_section_headings": [
+    "## Executive Summary",
+    "## 1. POL Context",
+    "## 2. Global Benchmark Landscape",
+    "## 3. Company Longlist",
+    "## 4. Tier-1 Deep Dives",
+    "## 5. Business Model Evolution",
+    "## 6. Asset-Light vs 1P",
+    "## 7. Phygital / Field Force",
+    "## 8. Cold Start / Liquidity",
+    "## 9. Discovery / Recommendation",
+    "## 10. Cart Allocation",
+    "## 11. Trust / Reputation",
+    "## 12. Payment / Finance",
+    "## 13. Data Network",
+    "## 14. Manufacturer Intelligence",
+    "## 15. Monetization",
+    "## 16. Failure Autopsies",
+    "## 17. Success Autopsies",
+    "## 18. Country Comparison",
+    "## 19. POL Comparability Scores",
+    "## 20. Strategic Patterns",
+    "## 21. Moats",
+    "## 22. Anti-Disintermediation",
+    "## 23. False Beliefs",
+    "## 24. Strategic Choices for POL",
+    "## 25. POL Flywheel",
+    "## 26. Strategic Thesis",
+    "## 27. Design Principles",
+    "## 28. Open Questions",
+    "## 29. Research Gaps",
+    "## 30. Complete Source Register",
+    "## Special Deliverables (10 Standalone Strategic Outputs)"
+  ],
+  "time_horizons": [
+    "10-year horizon for POL vision",
+    "2018-2026 historical benchmark evolution",
+    "Current status as of 2026-09-03"
+  ],
+  "time_periods": [
+    {
+      "period": "2020-2021",
+      "type": "era",
+      "primary_source": "Global VC expansion peak in emerging market B2B e-commerce"
+    },
+    {
+      "period": "2022-2023",
+      "type": "era",
+      "primary_source": "Venture debt and capital contraction, margin collapses (Capiter, Retailo, Ula)"
+    },
+    {
+      "period": "2024-2026",
+      "type": "era",
+      "primary_source": "Mergers, asset-light pivots, restructuring, profitability focus (Wasoko-MaxAB, Sary-SILQ, OmniRetail profitability, Cartona Series B)"
+    }
+  ],
+  "scope_conditions": [
+    "Focus on FMCG B2B commerce and traditional distribution digitisation",
+    "Specific application to Iran traditional trade (بنکداران و سوپرمارکت‌ها)",
+    "Asset-light default architecture for POL (no platform-owned warehouses or trucks in base model)",
+    "Strict separation of facts, third-party reported figures, company claims, and researcher inferences"
+  ],
+  "pipeline_tier": "full",
+  "response_format": "argumentative",
+  "citation_style": "inline",
+  "levers": {
+    "register": "analyze",
+    "register_confidence": "high",
+    "domain_notes": "Rigorous B2B marketplace economics; distinguish GMV from net revenue; evaluate credit defaults and balance-sheet exposure; scrutinize disintermediation dynamics and field-force economics.",
+    "inference_depth": "deep",
+    "rationale": {
+      "register": "The prompt demands deep analytical evaluation, defensible strategic thesis, failure autopsies, and clear strategic choices.",
+      "inference_depth": "Requires deep analysis of private startup unit economics, distressed restructuring cases, and cross-market structural nuances."
+    }
+  }
+}

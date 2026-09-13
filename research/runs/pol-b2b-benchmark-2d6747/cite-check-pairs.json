@@ -1,0 +1,425 @@
+{
+  "report": "C:\\Star\\pol\\2.2\\research\\notes\\final_report_pol-b2b-benchmark-2d6747.md",
+  "summary": {
+    "total": 56,
+    "supported_mechanical": 0,
+    "dangling": 0,
+    "needs_llm": 56
+  },
+  "sampled_for_llm": [
+    {
+      "sentence": "کالبدشکافی ۲۸ بنچ‌مارک جهانی نشان می‌دهد که تصاحب انبار و ناوگان حمل (مدل 1P) در بازارهای نوظهور با تورم بالا، فرمول قطعی نابودی سرمایه است. پلتفرم‌هایی نظیر Wasoko، MaxAB، Udaan و Capiter که صدها میلیون دلار را صرف اجاره انبارهای بزرگ و خرید ناوگان کردند، با افت حاشیه سود ناخالص به زیر ۳ تا ۵ درصد و هزینه‌های عملیاتی ۸ تا ۱۲ درصدی مواجه شده و تا سال‌های ۲۰۲۴ تا ۲۰۲۶ ورشکست، ادغام اجباری، یا مشمول سقوط ۹۰ درصدی ارزش‌گذاری شدند ([[failure-autopsy-wasoko-maxab]], [[failure-autopsy-udaan-india]]). در نقطه مقابل، پلتفرم‌های صد در صد بدون دارایی نظیر OmniRetail در نیجریه و Cartona در مصر با سودآوری عملیاتی خالص (EBITDA مثبت) به رشد پایدار دست یافتند ([[benchmark-omniretail-nigeria]], [[benchmark-cartona-egypt]]).",
+      "note_id": "failure-autopsy-wasoko-maxab",
+      "numbers": [
+        "۲۸",
+        "1",
+        "۳",
+        "۵",
+        "۸",
+        "۱۲",
+        "۲۰۲۴",
+        "۲۰۲۶",
+        "۹۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "کالبدشکافی ۲۸ بنچ‌مارک جهانی نشان می‌دهد که تصاحب انبار و ناوگان حمل (مدل 1P) در بازارهای نوظهور با تورم بالا، فرمول قطعی نابودی سرمایه است. پلتفرم‌هایی نظیر Wasoko، MaxAB، Udaan و Capiter که صدها میلیون دلار را صرف اجاره انبارهای بزرگ و خرید ناوگان کردند، با افت حاشیه سود ناخالص به زیر ۳ تا ۵ درصد و هزینه‌های عملیاتی ۸ تا ۱۲ درصدی مواجه شده و تا سال‌های ۲۰۲۴ تا ۲۰۲۶ ورشکست، ادغام اجباری، یا مشمول سقوط ۹۰ درصدی ارزش‌گذاری شدند ([[failure-autopsy-wasoko-maxab]], [[failure-autopsy-udaan-india]]). در نقطه مقابل، پلتفرم‌های صد در صد بدون دارایی نظیر OmniRetail در نیجریه و Cartona در مصر با سودآوری عملیاتی خالص (EBITDA مثبت) به رشد پایدار دست یافتند ([[benchmark-omniretail-nigeria]], [[benchmark-cartona-egypt]]).",
+      "note_id": "failure-autopsy-udaan-india",
+      "numbers": [
+        "۲۸",
+        "1",
+        "۳",
+        "۵",
+        "۸",
+        "۱۲",
+        "۲۰۲۴",
+        "۲۰۲۶",
+        "۹۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "کالبدشکافی ۲۸ بنچ‌مارک جهانی نشان می‌دهد که تصاحب انبار و ناوگان حمل (مدل 1P) در بازارهای نوظهور با تورم بالا، فرمول قطعی نابودی سرمایه است. پلتفرم‌هایی نظیر Wasoko، MaxAB، Udaan و Capiter که صدها میلیون دلار را صرف اجاره انبارهای بزرگ و خرید ناوگان کردند، با افت حاشیه سود ناخالص به زیر ۳ تا ۵ درصد و هزینه‌های عملیاتی ۸ تا ۱۲ درصدی مواجه شده و تا سال‌های ۲۰۲۴ تا ۲۰۲۶ ورشکست، ادغام اجباری، یا مشمول سقوط ۹۰ درصدی ارزش‌گذاری شدند ([[failure-autopsy-wasoko-maxab]], [[failure-autopsy-udaan-india]]). در نقطه مقابل، پلتفرم‌های صد در صد بدون دارایی نظیر OmniRetail در نیجریه و Cartona در مصر با سودآوری عملیاتی خالص (EBITDA مثبت) به رشد پایدار دست یافتند ([[benchmark-omniretail-nigeria]], [[benchmark-cartona-egypt]]).",
+      "note_id": "benchmark-omniretail-nigeria",
+      "numbers": [
+        "۲۸",
+        "1",
+        "۳",
+        "۵",
+        "۸",
+        "۱۲",
+        "۲۰۲۴",
+        "۲۰۲۶",
+        "۹۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "کالبدشکافی ۲۸ بنچ‌مارک جهانی نشان می‌دهد که تصاحب انبار و ناوگان حمل (مدل 1P) در بازارهای نوظهور با تورم بالا، فرمول قطعی نابودی سرمایه است. پلتفرم‌هایی نظیر Wasoko، MaxAB، Udaan و Capiter که صدها میلیون دلار را صرف اجاره انبارهای بزرگ و خرید ناوگان کردند، با افت حاشیه سود ناخالص به زیر ۳ تا ۵ درصد و هزینه‌های عملیاتی ۸ تا ۱۲ درصدی مواجه شده و تا سال‌های ۲۰۲۴ تا ۲۰۲۶ ورشکست، ادغام اجباری، یا مشمول سقوط ۹۰ درصدی ارزش‌گذاری شدند ([[failure-autopsy-wasoko-maxab]], [[failure-autopsy-udaan-india]]). در نقطه مقابل، پلتفرم‌های صد در صد بدون دارایی نظیر OmniRetail در نیجریه و Cartona در مصر با سودآوری عملیاتی خالص (EBITDA مثبت) به رشد پایدار دست یافتند ([[benchmark-omniretail-nigeria]], [[benchmark-cartona-egypt]]).",
+      "note_id": "benchmark-cartona-egypt",
+      "numbers": [
+        "۲۸",
+        "1",
+        "۳",
+        "۵",
+        "۸",
+        "۱۲",
+        "۲۰۲۴",
+        "۲۰۲۶",
+        "۹۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "موتور رشد و پایداری POL بر پایه ۵ فلای‌ویل درهم‌تنیده طراحی شده است که هر یک انرژی فلای‌ویل بعدی را تأمین می‌کند ([[pol-5-flywheels-architecture]]):",
+      "note_id": "pol-5-flywheels-architecture",
+      "numbers": [
+        "۵",
+        "5"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این بخش، ۸ بازیگر کلیدی بازارهای نوظهور که ساختار تجارت سنتی را با موفقیت دیجیتالی کرده‌اند، از منظر ۲۰ سوال تحلیلی مورد ارزیابی قرار می‌گیرند ([[benchmark-omniretail-nigeria]], [[benchmark-cartona-egypt]], [[benchmark-bazaar-technologies-pakistan]], [[benchmark-growsari-philippines]], [[benchmark-chari-morocco]], [[benchmark-jumbotail-india]], [[benchmark-tajir-pakistan]]):",
+      "note_id": "benchmark-omniretail-nigeria",
+      "numbers": [
+        "۸",
+        "۲۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این بخش، ۸ بازیگر کلیدی بازارهای نوظهور که ساختار تجارت سنتی را با موفقیت دیجیتالی کرده‌اند، از منظر ۲۰ سوال تحلیلی مورد ارزیابی قرار می‌گیرند ([[benchmark-omniretail-nigeria]], [[benchmark-cartona-egypt]], [[benchmark-bazaar-technologies-pakistan]], [[benchmark-growsari-philippines]], [[benchmark-chari-morocco]], [[benchmark-jumbotail-india]], [[benchmark-tajir-pakistan]]):",
+      "note_id": "benchmark-cartona-egypt",
+      "numbers": [
+        "۸",
+        "۲۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این بخش، ۸ بازیگر کلیدی بازارهای نوظهور که ساختار تجارت سنتی را با موفقیت دیجیتالی کرده‌اند، از منظر ۲۰ سوال تحلیلی مورد ارزیابی قرار می‌گیرند ([[benchmark-omniretail-nigeria]], [[benchmark-cartona-egypt]], [[benchmark-bazaar-technologies-pakistan]], [[benchmark-growsari-philippines]], [[benchmark-chari-morocco]], [[benchmark-jumbotail-india]], [[benchmark-tajir-pakistan]]):",
+      "note_id": "benchmark-bazaar-technologies-pakistan",
+      "numbers": [
+        "۸",
+        "۲۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این بخش، ۸ بازیگر کلیدی بازارهای نوظهور که ساختار تجارت سنتی را با موفقیت دیجیتالی کرده‌اند، از منظر ۲۰ سوال تحلیلی مورد ارزیابی قرار می‌گیرند ([[benchmark-omniretail-nigeria]], [[benchmark-cartona-egypt]], [[benchmark-bazaar-technologies-pakistan]], [[benchmark-growsari-philippines]], [[benchmark-chari-morocco]], [[benchmark-jumbotail-india]], [[benchmark-tajir-pakistan]]):",
+      "note_id": "benchmark-growsari-philippines",
+      "numbers": [
+        "۸",
+        "۲۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این بخش، ۸ بازیگر کلیدی بازارهای نوظهور که ساختار تجارت سنتی را با موفقیت دیجیتالی کرده‌اند، از منظر ۲۰ سوال تحلیلی مورد ارزیابی قرار می‌گیرند ([[benchmark-omniretail-nigeria]], [[benchmark-cartona-egypt]], [[benchmark-bazaar-technologies-pakistan]], [[benchmark-growsari-philippines]], [[benchmark-chari-morocco]], [[benchmark-jumbotail-india]], [[benchmark-tajir-pakistan]]):",
+      "note_id": "benchmark-chari-morocco",
+      "numbers": [
+        "۸",
+        "۲۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این بخش، ۸ بازیگر کلیدی بازارهای نوظهور که ساختار تجارت سنتی را با موفقیت دیجیتالی کرده‌اند، از منظر ۲۰ سوال تحلیلی مورد ارزیابی قرار می‌گیرند ([[benchmark-omniretail-nigeria]], [[benchmark-cartona-egypt]], [[benchmark-bazaar-technologies-pakistan]], [[benchmark-growsari-philippines]], [[benchmark-chari-morocco]], [[benchmark-jumbotail-india]], [[benchmark-tajir-pakistan]]):",
+      "note_id": "benchmark-jumbotail-india",
+      "numbers": [
+        "۸",
+        "۲۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این بخش، ۸ بازیگر کلیدی بازارهای نوظهور که ساختار تجارت سنتی را با موفقیت دیجیتالی کرده‌اند، از منظر ۲۰ سوال تحلیلی مورد ارزیابی قرار می‌گیرند ([[benchmark-omniretail-nigeria]], [[benchmark-cartona-egypt]], [[benchmark-bazaar-technologies-pakistan]], [[benchmark-growsari-philippines]], [[benchmark-chari-morocco]], [[benchmark-jumbotail-india]], [[benchmark-tajir-pakistan]]):",
+      "note_id": "benchmark-tajir-pakistan",
+      "numbers": [
+        "۸",
+        "۲۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این گروه، پلتفرم‌هایی بررسی شده‌اند که در حوزه‌های تخصصی فین‌تک، لجستیک غیرمتمرکز، یا ادغام‌های بین‌المللی درس‌های مهمی دارند ([[benchmark-sary-silq-saudi]], [[benchmark-telio-vinshop-vietnam]], [[benchmark-tradedepot-sabi-nigeria]], [[benchmark-gudangada-ralali-indonesia]], [[benchmark-priyoshop-bangladesh]]):",
+      "note_id": "benchmark-sary-silq-saudi",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این گروه، پلتفرم‌هایی بررسی شده‌اند که در حوزه‌های تخصصی فین‌تک، لجستیک غیرمتمرکز، یا ادغام‌های بین‌المللی درس‌های مهمی دارند ([[benchmark-sary-silq-saudi]], [[benchmark-telio-vinshop-vietnam]], [[benchmark-tradedepot-sabi-nigeria]], [[benchmark-gudangada-ralali-indonesia]], [[benchmark-priyoshop-bangladesh]]):",
+      "note_id": "benchmark-tradedepot-sabi-nigeria",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این گروه، پلتفرم‌هایی بررسی شده‌اند که در حوزه‌های تخصصی فین‌تک، لجستیک غیرمتمرکز، یا ادغام‌های بین‌المللی درس‌های مهمی دارند ([[benchmark-sary-silq-saudi]], [[benchmark-telio-vinshop-vietnam]], [[benchmark-tradedepot-sabi-nigeria]], [[benchmark-gudangada-ralali-indonesia]], [[benchmark-priyoshop-bangladesh]]):",
+      "note_id": "benchmark-priyoshop-bangladesh",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "بررسی دقیق شرکت‌های شکست‌خورده مهم‌ترین بخش تحقیق برای تضمین بقای POL است. شش فاجعه بزرگ در این حوزه به دقت کالبدشکافی شدند ([[failure-autopsy-wasoko-maxab]], [[failure-autopsy-capiter-egypt]], [[failure-autopsy-udaan-india]], [[failure-autopsy-marketforce-rejareja]], [[failure-autopsy-ula-indonesia]], [[failure-autopsy-retailo-saudi-pakistan]]):",
+      "note_id": "failure-autopsy-capiter-egypt",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "بررسی دقیق شرکت‌های شکست‌خورده مهم‌ترین بخش تحقیق برای تضمین بقای POL است. شش فاجعه بزرگ در این حوزه به دقت کالبدشکافی شدند ([[failure-autopsy-wasoko-maxab]], [[failure-autopsy-capiter-egypt]], [[failure-autopsy-udaan-india]], [[failure-autopsy-marketforce-rejareja]], [[failure-autopsy-ula-indonesia]], [[failure-autopsy-retailo-saudi-pakistan]]):",
+      "note_id": "failure-autopsy-marketforce-rejareja",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "بررسی دقیق شرکت‌های شکست‌خورده مهم‌ترین بخش تحقیق برای تضمین بقای POL است. شش فاجعه بزرگ در این حوزه به دقت کالبدشکافی شدند ([[failure-autopsy-wasoko-maxab]], [[failure-autopsy-capiter-egypt]], [[failure-autopsy-udaan-india]], [[failure-autopsy-marketforce-rejareja]], [[failure-autopsy-ula-indonesia]], [[failure-autopsy-retailo-saudi-pakistan]]):",
+      "note_id": "failure-autopsy-retailo-saudi-pakistan",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این بخش، مدل‌های نوآورانه‌ای بررسی می‌شوند که در بازارهای خاص یا زنجیره‌های موازی شکل گرفته‌اند ([[benchmark-chiper-latam]], [[benchmark-frubana-latam]], [[benchmark-arogga-bangladesh]]):",
+      "note_id": "benchmark-frubana-latam",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "یکی از پایه‌ای‌ترین تفاوت‌های استراتژیک که سرنوشت پلتفرم‌های B2B را رقم می‌زند، انتخاب میان مدل بدون دارایی (Asset-Light / 3P) و مدل مبتنی بر تملک انبار و ناوگان (1P Inventory Distribution) است ([[analysis-asset-light-vs-1p]], [[analysis-unit-economics-breakdown]]).",
+      "note_id": "analysis-asset-light-vs-1p",
+      "numbers": [
+        "2",
+        "3",
+        "1",
+        "1"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "یکی از پایه‌ای‌ترین تفاوت‌های استراتژیک که سرنوشت پلتفرم‌های B2B را رقم می‌زند، انتخاب میان مدل بدون دارایی (Asset-Light / 3P) و مدل مبتنی بر تملک انبار و ناوگان (1P Inventory Distribution) است ([[analysis-asset-light-vs-1p]], [[analysis-unit-economics-breakdown]]).",
+      "note_id": "analysis-unit-economics-breakdown",
+      "numbers": [
+        "2",
+        "3",
+        "1",
+        "1"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "یکی از بزرگ‌ترین توهمات استارتاپی این است که سوپرمارکت‌داران سنتی به صرف دانلود یک اپلیکیشن، شروع به خرید میلیونی می‌کنند. تجربه جهانی ثابت کرده است که حضور فیزیکی انسان در مرحله جذب غیرقابل چشم‌پوشی است؛ اما حفظ نیروی ویزیتور به شکل سنتی توجیه اقتصادی ندارد ([[analysis-phygital-field-force-migration]], [[pol-phygital-roadmap-iran]]).",
+      "note_id": "analysis-phygital-field-force-migration",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "یکی از پیچیده‌ترین مسائل فنی در پلتفرم‌های مارکت‌پلیس B2B این است که وقتی یک سوپرمارکت ۴۰ قلم کالا انتخاب می‌کند، سفارش چگونه بین بنکداران مختلف خرد و ارسال شود؟ ([[analysis-cart-allocation-single-vs-split]], [[pol-cart-allocation-spec]])",
+      "note_id": "analysis-cart-allocation-single-vs-split",
+      "numbers": [
+        "2",
+        "۴۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "یکی از پیچیده‌ترین مسائل فنی در پلتفرم‌های مارکت‌پلیس B2B این است که وقتی یک سوپرمارکت ۴۰ قلم کالا انتخاب می‌کند، سفارش چگونه بین بنکداران مختلف خرد و ارسال شود؟ ([[analysis-cart-allocation-single-vs-split]], [[pol-cart-allocation-spec]])",
+      "note_id": "pol-cart-allocation-spec",
+      "numbers": [
+        "2",
+        "۴۰"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "کالبدشکافی OmniRetail و Cartona نشان می‌دهد که با ۷ خندق ساختاری، دور زدن پلتفرم از نظر اقتصادی غیرمنطقی می‌شود ([[analysis-anti-disintermediation-moats]]):",
+      "note_id": "analysis-anti-disintermediation-moats",
+      "numbers": [
+        "۷"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در بازار B2B، اعتماد نه با تبلیغات بیلبوردی، بلکه با ثبات عملیاتی ساخته می‌شود ([[analysis-trust-and-reputation-mechanisms]]).",
+      "note_id": "analysis-trust-and-reputation-mechanisms",
+      "numbers": [
+        "2"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "کالبدشکافی ورشکستگی Capiter و TradeDepot یک اصل ابدی را به ما آموخت: **«پلتفرم B2B هرگز نباید از ترازنامه و سرمایه در گردش خود به مغازه‌داران وام دهد.»** ([[analysis-embedded-finance-credit-underwriting]], [[pol-embedded-finance-blueprint]])",
+      "note_id": "analysis-embedded-finance-credit-underwriting",
+      "numbers": [
+        "2"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "کالبدشکافی ورشکستگی Capiter و TradeDepot یک اصل ابدی را به ما آموخت: **«پلتفرم B2B هرگز نباید از ترازنامه و سرمایه در گردش خود به مغازه‌داران وام دهد.»** ([[analysis-embedded-finance-credit-underwriting]], [[pol-embedded-finance-blueprint]])",
+      "note_id": "pol-embedded-finance-blueprint",
+      "numbers": [
+        "2"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "ارزش پایانی (Terminal Value) پلتفرم POL از کارمزد ۲ درصدی بنکداری به دست نمی‌آید، بلکه از تبدیل شدن به **نیلسن دیجیتال ایران (The Digital Nielsen of Iran)** ناشی می‌شود ([[analysis-data-network-manufacturer-monetization]], [[pol-system-of-record-roadmap]]).",
+      "note_id": "analysis-data-network-manufacturer-monetization",
+      "numbers": [
+        "۲"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "ارزش پایانی (Terminal Value) پلتفرم POL از کارمزد ۲ درصدی بنکداری به دست نمی‌آید، بلکه از تبدیل شدن به **نیلسن دیجیتال ایران (The Digital Nielsen of Iran)** ناشی می‌شود ([[analysis-data-network-manufacturer-monetization]], [[pol-system-of-record-roadmap]]).",
+      "note_id": "pol-system-of-record-roadmap",
+      "numbers": [
+        "۲"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "سیستم رتبه‌بندی POL باید تعادلی دقیق میان قیمت رقابتی، سودآوری پلتفرم و حفظ اعتماد بنکداران برقرار کند ([[analysis-discovery-ranking-recommendation]]):",
+      "note_id": "analysis-discovery-ranking-recommendation",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "یک پلتفرم پایدار B2B درآمد خود را به تدریج از لایه‌های با حاشیه سود کم به لایه‌های مبتنی بر نرم‌افزار و فین‌تک منتقل می‌کند ([[analysis-monetization-models-evolution]]):",
+      "note_id": "analysis-monetization-models-evolution",
+      "numbers": [
+        "2"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "بازار FMCG ایران از ویژگی‌های منحصر‌به‌فردی برخوردار است که استراتژی ورود به بازار POL را شکل می‌دهد ([[analysis-iran-fmcg-distribution-landscape]]):",
+      "note_id": "analysis-iran-fmcg-distribution-landscape",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "برای جلوگیری از مقایسه‌های سطحی، یک ماتریس ارزیابی با ۱۲ متغیر ساختاری طراحی شد تا میزان نزدیکی اکوسیستم کشورهای بنچ‌مارک به ایران سنجیده شود ([[analysis-iran-comparability-methodology]]):",
+      "note_id": "analysis-iran-comparability-methodology",
+      "numbers": [
+        "۱۲"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "POL نباید کار خود را در تمام تهران آغاز کند. پرتاب اولیه در **منطقه ۲ (غرب) و منطقه ۴ (شرق)** با استراتژی گام به گام اجرا می‌شود ([[analysis-cold-start-liquidity-playbook]]):",
+      "note_id": "analysis-cold-start-liquidity-playbook",
+      "numbers": [
+        "۲",
+        "۴"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "توسعه جغرافیایی POL در سه فاز زمان‌بندی‌شده تعریف شده است ([[pol-phygital-roadmap-iran]]):",
+      "note_id": "pol-phygital-roadmap-iran",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "طرح فنی اتصال به شبکه بانکی کشور در قالب **تأمین مالی زنجیره تأمین (SCF)** ([[pol-embedded-finance-blueprint]]):",
+      "note_id": "pol-embedded-finance-blueprint",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "در این بخش، ۱۵ فرض رایج استارتاپی که منجر به سوزاندن صدها میلیون دلار سرمایه شده‌اند، با شواهد عینی ابطال می‌شوند ([[analysis-false-beliefs-in-b2b-fmcg]]):",
+      "note_id": "analysis-false-beliefs-in-b2b-fmcg",
+      "numbers": [
+        "۱۵",
+        "2"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "تحلیل یکپارچه ۲۸ بنچ‌مارک، ۸ قانون تغییرناپذیر در تجارت B2B را به اثبات می‌رساند ([[analysis-strategic-patterns-cross-market]]):",
+      "note_id": "analysis-strategic-patterns-cross-market",
+      "numbers": [
+        "۲۸",
+        "۸",
+        "2"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "مواضع قطعی POL در برابر ۱۳ دوراهی سرنوشت‌ساز طراحی بیزینس‌مدل ([[pol-strategic-choices-matrix]]):",
+      "note_id": "pol-strategic-choices-matrix",
+      "numbers": [
+        "۱۳"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "بررسی دقیق نشان می‌دهد که صاحب‌نظران در ۵ موضوع با یکدیگر اختلاف نظر جدی دارند ([[analysis-strategic-patterns-cross-market]], [[analysis-competitive-moat-framework]]):",
+      "note_id": "analysis-strategic-patterns-cross-market",
+      "numbers": [
+        "۵"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "بررسی دقیق نشان می‌دهد که صاحب‌نظران در ۵ موضوع با یکدیگر اختلاف نظر جدی دارند ([[analysis-strategic-patterns-cross-market]], [[analysis-competitive-moat-framework]]):",
+      "note_id": "analysis-competitive-moat-framework",
+      "numbers": [
+        "۵"
+      ],
+      "strong": true,
+      "verdict": "needs-llm"
+    },
+    {
+      "sentence": "تمام ادعاها، ارقام و تحلیل‌های این گزارش بر پایه منابع دست‌اول و گزارش‌های رسمی تدوین شده است ([[pol-complete-source-register]]):",
+      "note_id": "pol-complete-source-register",
+      "numbers": [],
+      "strong": false,
+      "verdict": "needs-llm"
+    }
+  ],
+  "dangling": []
+}

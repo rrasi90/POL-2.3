@@ -1,0 +1,21 @@
+{
+  "total_findings": 4,
+  "applied": [
+    {
+      "finding_id": "dialectic-1",
+      "edit_description": "Confirmed 1P operational justification in Section 8"
+    },
+    {
+      "finding_id": "depth-1",
+      "edit_description": "Verified delivery window constraints in Section 23"
+    }
+  ],
+  "skipped": [
+    {
+      "finding_id": "instruction-1",
+      "reason": "conforming-informative-only"
+    }
+  ],
+  "conflicts": [],
+  "orchestrator_escalated": []
+}

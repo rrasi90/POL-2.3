@@ -1,0 +1,66 @@
+# -*- coding: utf-8 -*-
+import os
+
+MATRIX_CONTENT = \"\"\"# ماتریس جامع انطباق و قراردادهای کانونیکال پلتفرم پُل (POL Canonical Contract Matrix)
+
+**شناسه سند:** `POL-CONTRACT-MATRIX-2026`  
+**نسخه:** ۲.۰ (مرحله نهایی پیش از اسپرینت صفر)  
+**وضعیت:** مصوب و تثبیت‌شده (Canonical Source of Truth)  
+**پایگاه داده هدف:** PostgreSQL 18.4  
+
+---
+
+## ۱. راهنمای وضعیت‌های راستی‌آزمایی (Verification Status Taxonomy)
+
+بر اساس خط‌مشی مهندسی پروژه، وضعیت اعتبارسنجی هر بخش منحصراً با یکی از مقادیر استاندارد زیر تعیین می‌شود:
+* **`SPECIFIED`**: دامنه در اسناد طراحی و معماری تعریف شده است، اما هنوز کد یا تست متناظر ندارد.
+* **`STATIC_VERIFIED`**: تطابق اسناد، تعاریف DDL و قراردادهای API به صورت استاتیک (Lint/Parser) تایید شده است.
+* **`UNIT_VERIFIED`**: توابع و قوانین منطقی دامنه با آزمون‌های واحد مجزا اعتبارسنجی شده‌اند.
+* **`RUNTIME_VERIFIED`**: تراکنش‌ها، قیدهای دیتابیس و رفتار دامنه در پایگاه‌داده واقعی PostgreSQL 18 اجرا و تایید شده است.
+* **`INTEGRATION_VERIFIED`**: تعامل کامل چنددامنه در زنجیره انتها-به-انتها (E2E) در زمان اجرا با موفقیت تست شده است.
+* **`BLOCKED`**: آزمون یا فرآیند به علت وابستگی‌های مسدودکننده امکان اجرا ندارد.
+* **`FAILED`**: رفتار دامنه‌ای یا آزمون با شکست مواجه شده است.
+
+---
+
+## ۲. جدول ماتریس جامع قراردادهای دامنه‌ای (Canonical Contract Ledger)
+
+| ردیف | حوزه دامنه‌ای (Domain) | سند مرجع (Canonical Doc) | موجودیت پایگاه‌داده (Database Object) | اصطلاحات API (API Terminology) | وضعیت‌ها و Enumها (Canonical Enums) | آزمون متناظر (Canonical Test) | اصطلاحات منسوخ (Legacy Terms) | اقدام روی Legacy | وضعیت اعتبارسنجی |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :---: |
+| ۱ | **Identity (کاربران)** | `08_DATA/IDENTITY_AND_MEMBERSHIP.md` | `users` | `/users/*` | `is_active: BOOLEAN` | `test_identity_tenant_isolation.py` | `users.role` (به عنوان منبع دسترسی) | Deprecated (Authority حذف شد) | `RUNTIME_VERIFIED` |
+| ۲ | **Organization (سازمان‌ها)** | `08_DATA/IDENTITY_AND_MEMBERSHIP.md` | `organizations` | `/organizations/*` | `org_type`: RETAILER, VENDOR, OPERATOR<br>`status`: LEAD, ACTIVE, SUSPENDED | `test_identity_tenant_isolation.py` | `CARRIER` به عنوان نوع سازمان | Removed from Org (تبدیل به متادیتای حمل) | `RUNTIME_VERIFIED` |
+| ۳ | **Membership (عضویت)** | `08_DATA/IDENTITY_AND_MEMBERSHIP.md` | `organization_memberships` | `/organizations/:id/members` | `status`: INVITED, ACTIVE, SUSPENDED, REVOKED<br>`is_primary`: BOOLEAN | `test_identity_tenant_isolation.py` | `retailers.user_id` به عنوان مرز مستأجر | Organization_id جایگزین شد | `RUNTIME_VERIFIED` |
+| ۴ | **Roles & IAM (نقش‌ها)** | `06_PRODUCT/Roles_and_Permissions.md` | `organization_memberships.role` | Header `Authorization: Bearer` (JWT Claims: `role`, `org_id`) | RETAILER_OWNER, RETAILER_STAFF, VENDOR_OWNER, VENDOR_STAFF, SUPER_ADMIN, OPS_ADMIN, FIELD_ACTIVATOR | `test_admin_authorization.py` | ADMIN_SUPER, OPS_AGENT | Removed / Replaced | `RUNTIME_VERIFIED` |
+| ۵ | **Authentication (احراز هویت OTP)** | `08_DATA/IDENTITY_AND_MEMBERSHIP.md` | `otp_challenges` | `POST /auth/request-otp`<br>`POST /auth/verify-otp` | `status`: PENDING, VERIFIED, EXPIRED, BLOCKED<br>`purpose`: LOGIN, REGISTER | `test_identity_tenant_isolation.py` | `auth_otps` (نام جدول) | Aligned (API `/auth/otp` -> `otp_challenges`) | `RUNTIME_VERIFIED` |
+| ۶ | **Sessions (نشست‌ها)** | `08_DATA/IDENTITY_AND_MEMBERSHIP.md` | `user_sessions` | `DELETE /auth/sessions/current`<br>`POST /auth/switch-organization` | `status`: ACTIVE, EXPIRED, REVOKED | `test_identity_tenant_isolation.py` | `auth_sessions` (نام جدول) | Aligned (API `/auth/sessions` -> `user_sessions`) | `RUNTIME_VERIFIED` |
+| ۷ | **Catalog (کاتالوگ مرجع)** | `08_DATA/CATALOG_DATA_DICTIONARY.md` | `products`, `brands`, `categories` | `GET /products/search`<br>`POST /products/match-barcode` | `pack_unit`: CARTON, PACK, BOX, ITEM | `verify_repository_consistency.py` | Carton-only schemas | Replaced by generic pack_unit | `RUNTIME_VERIFIED` |
+| ۸ | **Basket (سبد خرید نسخه‌دار)** | `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | `baskets`, `basket_items` | `POST /baskets/items`<br>`GET /baskets/current` | `status`: OPEN, LOCKED, MERGED, ABANDONED<br>`version`: INT (Optimistic lock) | `test_basket_versioning.py` | Unversioned baskets | Upgraded to optimistic `version` | `RUNTIME_VERIFIED` |
+| ۹ | **Allocation (موتور تخصیص)** | `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` | `allocation_plans`, `allocation_items` | `POST /bGORITHMS/allocations/preview` | `strategy`: MULTI_VENDOR_MIN_FRAGMENTATION<br>`status`: PREVIEW, CONFIRMED, EXPIRED | `test_allocation_engine.py` | Single-Vendor MVP (D-003) | Superseded by D-014 | `INTEGRATION_VERIFIED` |
+| ۱۰ | **OrderGroup (سرگروه سفارش)** | `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | `order_groups` | `POST /orders/checkout` | `group_status`: ACTIVE, PARTIALLY_COMPLETED, COMPLETED, CANCELLED | `test_e2e_mvp_platform.py` | Direct arbitrary mutation | Derived via OrderGroupProjector | `INTEGRATION_VERIFIED` |
+| ۱۱ | **Orders (سفارش‌های بنکدار)** | `06_PRODUCT/Order_Lifecycle.md` | `orders`, `order_items` | `GET /orders/:id`<br>`POST /orders/:id/accept` | `order_status`: CREATED, SUBMITTED, ACCEPTED, PARTIALLY_ACCEPTED, REJECTED, PREPARING, READY, DISPATCHED, DELIVERED, CANCELLED | `test_postgres_runtime.py` | انتساب مستقیم DISPUTED به عنوان وضعیت سفارش | Removed (Disputes orthogonal) | `INTEGRATION_VERIFIED` |
+| ۱۲ | **Inventory Reservations (رزرو انبار)** | `08_DATA/INVENTORY_MODEL.md` | `inventory_reservations` | Internal / Checkout Service | `status`: ACTIVE, CONSUMED, RELEASED, EXPIRED | `test_inventory_reservations.py` | Immediate direct decrement | Explicit 15-min reservation lifecycle | `RUNTIME_VERIFIED` |
+| ۱۳ | **Delivery & Logistics (تحویل و حمل)** | `06_PRODUCT/Order_Lifecycle.md` | `deliveries`, `proof_of_delivery` | `POST /orders/:id/dispatch`<br>`POST /deliveries/:id/confirm-otp` | `delivery_status`: ASSIGNED, PICKED_UP, IN_TRANSIT, ARRIVED, DELIVERED, FAILED<br>`proof_type`: OTP_CODE | `test_postgres_runtime.py` | Separate Carrier Tenant in MVP | Option A: Driver metadata on deliveries | `INTEGRATION_VERIFIED` |
+| ۱۴ | **Payment (پرداخت غیرامانی)** | `09_OPERATIONS/Payments_and_Settlement.md` | `payments`, `payment_attempts` | `POST /orders/:id/payments/direct-receipt` | `custody_model`: NON_CUSTODIAL_DIRECT<br>`payment_status`: PENDING, INITIATED, SUCCESS, FAILED, CANCELLED, REFUNDED | `test_postgres_runtime.py` | PAID_DIRECT, ESCROW_CUSTODY | Canonical states enforced, Escrow removed | `RUNTIME_VERIFIED` |
+| ۱۵ | **Invoice (فاکتور تجاری)** | `08_DATA/Data_Schema.md` | `invoices`, `invoice_items` | `GET /invoices`<br>`GET /invoices/:id` | `status`: DRAFT, ISSUED, PAID, ADJUSTED, CANCELLED | `test_invoice_access.py` | "Official Tax Invoice" (بدون اتصال سامانه مودیان) | Commercial Invoice Record | `RUNTIME_VERIFIED` |
+| ۱۶ | **Dispute (مغایرت‌های تجاری)** | `08_DATA/DOMAIN_MODEL.md` | `disputes` | `POST /orders/:id/disputes`<br>`PATCH /disputes/:id/resolve` | `dispute_status`: OPEN, INVESTIGATING, RESOLVED, CLOSED | `test_postgres_runtime.py` | Overwriting order_status | Orthogonal SSoT in `disputes` | `INTEGRATION_VERIFIED` |
+| ۱۷ | **Support (تیکت‌های عمومی)** | `08_DATA/Data_Schema.md` | `support_cases`, `support_case_messages`, `support_case_assignments` | `POST /support/cases`<br>`POST /support/cases/:id/messages` | `case_type`: GENERAL, ORDER_INQUIRY, PAYMENT_ASSISTANCE, DELIVERY_DELAY, ACCOUNT_ISSUE, CATALOG_SUGGESTION, INVOICE_INQUIRY<br>`priority`: LOW, NORMAL, HIGH, URGENT | `test_support_cases.py` | PRIORITY = MEDIUM, is_internal_note | Reconciled to NORMAL and is_internal | `RUNTIME_VERIFIED` |
+| ۱۸ | **Notifications (هسته اعلانات)** | `08_DATA/NOTIFICATION_DOMAIN.md` | `notifications`, `notification_deliveries` | Internal Event Dispatcher | `priority`: LOW, NORMAL, HIGH, CRITICAL<br>`channel`: INBOX, PUSH, SMS | `test_notifications.py` | Coupled synchronous SMS | Decoupled Outbox -> Dispatcher | `RUNTIME_VERIFIED` |
+| ۱۹ | **Inbox (صندوق پیام بادوام کاربر)** | `08_DATA/NOTIFICATION_DOMAIN.md` | `user_inbox_items` | `GET /inbox/items`<br>`PATCH /inbox/items/:id/read` | `category`: ORDERS, DISPUTES, PROMOTIONS, SYSTEM | `test_notifications.py` | Category = MARKETING, User-only inbox | Scoped with `organization_id` | `RUNTIME_VERIFIED` |
+| ۲۰ | **Broadcast (اعلانات همگانی)** | `08_DATA/NOTIFICATION_DOMAIN.md` | `broadcast_messages`, `broadcast_recipients` | `POST /admin/broadcasts`<br>`POST /admin/broadcasts/:id/dispatch` | `status`: DRAFT, SCHEDULED, PROCESSING, COMPLETED, CANCELLED | `test_broadcasts.py` | Ad-hoc SMS scripts | Governed Broadcast Engine | `RUNTIME_VERIFIED` |
+| ۲۱ | **Admin (داشبورد عملیات)** | `06_PRODUCT/API_Contracts.md` | `users`, `orders`, `disputes` | `GET /admin/exceptions/dashboard`<br>`POST /admin/sla-overrides` | Role `OPS_ADMIN`, `SUPER_ADMIN` | `test_admin_authorization.py` | Arbitrary database updates | Dedicated Admin Endpoints & Controls | `RUNTIME_VERIFIED` |
+| ۲۲ | **Audit (ردگیری تغییرات حساس)** | `08_DATA/Data_Schema.md` | `admin_audit_logs` | `GET /admin/audit-logs` | Immutable append-only log with before/after JSONB | `test_admin_authorization.py` | Logless admin actions | Mandatory audit logging | `RUNTIME_VERIFIED` |
+| ۲۳ | **Field Operations (عملیات میدانی)** | `08_DATA/Data_Schema.md` | `field_tasks` | `GET /field/tasks`<br>`PATCH /field/tasks/:id` | `task_type`: ONBOARD_RETAILER, TRAIN_RETAILER, FIRST_ORDER_ASSIST, FOLLOW_UP, VENDOR_VISIT, DISPUTE_VISIT<br>`status`: ASSIGNED, IN_PROGRESS, COMPLETED, FAILED, CANCELLED | `test_postgres_migrations.py` | Unstructured WhatsApp tasks | Structured field task entities | `RUNTIME_VERIFIED` |
+| ۲۴ | **Wallet & Financial Ledger** | `09_OPERATIONS/Payments_and_Settlement.md` | `settlements`, `settlement_adjustments` | `GET /vendors/settlements` | `custody`: NON_CUSTODIAL_DIRECT (Zero Escrow in MVP)<br>`status`: PENDING, CALCULATED, RECONCILED, DISPUTED, CLOSED | `test_postgres_runtime.py` | `LEDGER_DISPUTE_ESCROW` | Suspense / Adjustment Ledger | `RUNTIME_VERIFIED` |
+| ۲۵ | **Configuration (تنظیمات عملیاتی)** | `scripts/operational_config.py` | Python Contract / System Parameters | Read-only configuration module | Reservation TTL (15m), SLA (2h), Dispute (4h), Pilot Commission (0.000) | `test_sla_calendar.py` | Hard-coded distributed magic numbers | Centralized `operational_config.py` | `UNIT_VERIFIED` |
+| ۲۶ | **Observability & Traceability** | `POL_00_PROJECT_CONTROL/MASTER_SYSTEM_ARCHITECTURE.md` | `outbox_events.correlation_id`, `orders.correlation_id`, `admin_audit_logs.correlation_id` | Header `X-Correlation-ID` | End-to-End Traced Chain | `test_e2e_mvp_platform.py` | Untraceable isolated transactions | Correlation ID chain across all aggregates | `INTEGRATION_VERIFIED` |
+\"\"\"
+
+with open(\"POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md\", \"w\", encoding=\"utf-8\") as f:
+    f.write(MATRIX_CONTENT)
+
+print(\"Created POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md successfully.\")
+"""
+
+with open("scratch/create_matrix_script.py", "w", encoding="utf-8") as f:
+    f.write(MATRIX_CONTENT)
+print("Created scratch/create_matrix_script.py")
