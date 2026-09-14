@@ -50,7 +50,7 @@ class VendorReferralService:
             SELECT 1
             FROM retailers r
             JOIN organization_memberships om ON om.organization_id = r.organization_id
-            JOIN organizations o ON o.id = om.organization_id
+            JOIN organizations o ON o.id = r.organization_id
             WHERE r.id = %s
               AND om.user_id = %s
               AND om.status = 'ACTIVE'
@@ -103,6 +103,7 @@ class VendorReferralService:
         if not cls._retailer_access(cur, actor_user_id, retailer_id):
             raise VendorReferralAccessError("Actor is not an active member of this retailer.")
 
+        # Request-level replay is checked before any state mutation.
         cur.execute(
             "SELECT * FROM vendor_referral_attributions WHERE request_idempotency_key = %s",
             (request_idempotency_key,),
@@ -125,17 +126,10 @@ class VendorReferralService:
             raise KeyError("Referral code not found.")
         if referral["status"] != "ACTIVE":
             raise VendorReferralStateError("Referral code is not active.")
-        if referral["expires_at"] is not None:
-            cur.execute("SELECT now() >= %s AS expired", (referral["expires_at"],))
-            if cur.fetchone()["expired"]:
-                cur.execute(
-                    "UPDATE vendor_referrals SET status='EXPIRED', updated_at=now() WHERE id=%s",
-                    (referral["id"],),
-                )
-                raise VendorReferralStateError("Referral code has expired.")
-        if referral["max_redemptions"] is not None and referral["redemption_count"] >= referral["max_redemptions"]:
-            raise VendorReferralStateError("Referral code redemption limit reached.")
 
+        # Retailer-level first-touch idempotency is checked before referral
+        # quota so a retailer who already has an attribution can safely replay
+        # with a different transport request key without consuming quota.
         cur.execute(
             """
             SELECT *
@@ -148,6 +142,17 @@ class VendorReferralService:
         prior = cur.fetchone()
         if prior:
             return prior
+
+        if referral["expires_at"] is not None:
+            cur.execute("SELECT now() >= %s AS expired", (referral["expires_at"],))
+            if cur.fetchone()["expired"]:
+                cur.execute(
+                    "UPDATE vendor_referrals SET status='EXPIRED', updated_at=now() WHERE id=%s",
+                    (referral["id"],),
+                )
+                raise VendorReferralStateError("Referral code has expired.")
+        if referral["max_redemptions"] is not None and referral["redemption_count"] >= referral["max_redemptions"]:
+            raise VendorReferralStateError("Referral code redemption limit reached.")
 
         attribution_id = str(uuid.uuid4())
         cur.execute(
@@ -174,7 +179,7 @@ class VendorReferralService:
         )
 
         # Analytics/domain event only: no recipient is attached because this is
-        # intentionally not a notification and vendor user_id is a legacy field.
+        # intentionally not a notification and vendor.user_id is a legacy field.
         cur.execute(
             """
             INSERT INTO outbox_events
