@@ -1,0 +1,75 @@
+# POL Canonical API / Application Boundary
+
+**Status:** CANONICAL PRE-UI ENGINEERING CONTRACT  
+**Scope:** MVP application boundary; transport implementation remains framework-neutral until the production API stack is selected.
+
+## 1. Boundary rule
+
+Client-facing transport code MUST NOT write directly to PostgreSQL domain tables and MUST NOT import legacy `domain_services` for business commands.
+
+Transport adapter:
+
+`HTTP / mobile client / web client -> request authentication -> ApplicationContext -> POLApplicationBoundary -> canonical domain service/gateway -> PostgreSQL transaction -> domain event/outbox -> async worker`
+
+The current framework-agnostic command facade is `scripts/application_boundary.py`.
+
+## 2. ApplicationContext
+
+Every request must carry:
+
+- `user_id`: authenticated principal.
+- `organization_id`: active tenant context selected from session/membership; never trusted from an arbitrary client body.
+- `correlation_id`: request trace ID propagated into audit/outbox metadata by the transport adapter.
+
+Authorization is evaluated from `organization_memberships` joined to active `organizations`. `users.role`, `vendors.user_id`, and `retailers.user_id` are legacy compatibility fields and are not authorization SSoT.
+
+## 3. Canonical client commands
+
+| Capability | Canonical command boundary |
+|---|---|
+| Checkout | `POLApplicationBoundary.checkout()` |
+| Feedback list | `feedback_list()` |
+| Feedback admin inbox | `feedback_admin_inbox()` |
+| Feedback reply | `feedback_reply()` |
+| Support create/read/message/assign/transition | `support_*()` |
+| Return/RMA request/transition | `return_request()`, `return_transition()` |
+| Payment reconciliation worker | `reconcile_payments()` |
+| External notification delivery worker | `deliver_external_notifications()` |
+
+## 4. Idempotency
+
+Commands that create externally meaningful state MUST expose an idempotency key where retries can otherwise duplicate state:
+
+- checkout: `idempotency_key`
+- return request: `idempotency_key`
+- payment evidence: `external_reference` uniqueness
+- notification provider attempt: deterministic `provider_attempt_key`
+
+## 5. Error contract
+
+Transport adapters map domain errors without bypassing domain state machines:
+
+- `PermissionError` / boundary access errors -> HTTP 403
+- missing entity / `KeyError` -> HTTP 404
+- invalid state / `ValueError` / state-machine errors -> HTTP 409 or 422 according to transport semantics
+- retryable provider error -> worker retry, not synchronous client retry
+- permanent provider/configuration error -> durable FAILED delivery + operational visibility
+
+## 6. Async ownership
+
+Synchronous application transactions only persist durable state and enqueue outbox events. Provider calls, notification sending and reconciliation polling are worker responsibilities.
+
+The provider boundary is deliberately provider-neutral until POL selects concrete SMS and push suppliers and provisions credentials. `scripts/provider_adapters.py` is the adapter contract; `scripts/provider_delivery_worker.py` is the execution/retry owner.
+
+## 7. Legacy access prohibition
+
+Before visual-design gate, repository/application integration must demonstrate that no HTTP/mobile/web adapter reaches:
+
+- legacy `NotificationService` recipient fallback;
+- legacy `FeedbackService.get_user_feedback` organization-OR query;
+- simplified legacy `PaymentService` success shortcut;
+- direct SQL writes to domain state from a transport handler.
+
+## 8. MVP simplicity invariant
+
+The API must not expose internal allocation mechanics, retry internals, reconciliation leases, or provider credentials to retailer/vendor clients. External contracts expose business intent and current business state; operational machinery remains internal.
