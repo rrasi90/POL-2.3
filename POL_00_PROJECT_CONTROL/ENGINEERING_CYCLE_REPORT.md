@@ -6,8 +6,10 @@
 **Database Target:** PostgreSQL 18.4 (x86_64-windows / Docker `postgres:18-alpine`)  
 **Python Runtime:** Python 3.11.15 | pytest 9.1.1 | psycopg2-binary 2.9.13  
 **Cycle Baseline Commit:** `826d8e58927f018d56bbdc36fefc9fe9f2b2d3e6`  
+**Verified Commit:** `f3a65a3060d2f09ca7bf9cbd1b270b13f539ca2f`  
+**GitHub Actions Run:** `#34818313995` (`completed / success`)  
 **Total Verified Tests:** 47 test cases (47 PASSED, 0 FAILED, 0 WARNINGS)  
-**Final Certified Status:** **`RUNTIME_VERIFIED`** (Pending GitHub Actions CI push)
+**Final Certified Status:** **`CI_VERIFIED`** & **`RUNTIME_VERIFIED`**
 
 ---
 
@@ -174,3 +176,4 @@ Machine-readable artifact written to: artifacts/pol-test-results.json
 | **Pre-Commit Stock Revalidation** | Stock shortage blocked under row-level `SELECT FOR UPDATE` | `test_revalidation_checkout_insufficient_stock_rejection` passed | **`RUNTIME_VERIFIED`** |
 | **Simplicity UX Invariants** | Programmatic verification of UX simplicity contracts | `test_simplicity_ux_invariants` passed | **`RUNTIME_VERIFIED`** |
 | **Full Master Verification Suite** | 47 tests collected, 0 warnings, 0 failures | `47 passed in 8.83s` against PostgreSQL 18.4 | **`RUNTIME_VERIFIED`** |
+| **Continuous Integration CI** | Automated GitHub Actions workflow on clean runner | Run `#34818313995` succeeded on `postgres:18-alpine` | **`CI_VERIFIED`** |
