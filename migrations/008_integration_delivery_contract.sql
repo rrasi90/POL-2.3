@@ -23,7 +23,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_outbox_dedupe_key
 CREATE INDEX IF NOT EXISTS idx_outbox_routing_target
     ON outbox_events(target_organization_id, target_user_id, status, created_at);
 
--- Existing daily reminder events get explicit recipient routing.
 UPDATE outbox_events oe
 SET target_user_id = v.user_id,
     target_organization_id = v.organization_id,
@@ -32,10 +31,9 @@ SET target_user_id = v.user_id,
 FROM vendors v
 WHERE oe.event_name = 'DAILY_INVENTORY_REMINDER'
   AND oe.aggregate_type = 'VENDOR_INVENTORY'
-  AND oe.aggregate_id = v.id
+  AND v.id::text = oe.aggregate_id
   AND oe.target_user_id IS NULL;
 
--- Future daily reminders are enriched before they leave the transaction.
 CREATE OR REPLACE FUNCTION pol_enrich_daily_inventory_outbox()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -50,7 +48,7 @@ BEGIN
         SELECT v.user_id, v.organization_id
         INTO vendor_user, vendor_org
         FROM vendors v
-        WHERE v.id = NEW.aggregate_id;
+        WHERE v.id::text = NEW.aggregate_id;
 
         IF vendor_user IS NULL OR vendor_org IS NULL THEN
             RAISE EXCEPTION 'Daily inventory reminder requires a routable vendor recipient: %', NEW.aggregate_id;
@@ -114,7 +112,6 @@ CREATE TABLE IF NOT EXISTS notification_templates (
 CREATE INDEX IF NOT EXISTS idx_notification_templates_active
     ON notification_templates(event_name, channel, enabled, effective_from DESC);
 
--- Every logical notification automatically enters the delivery pipeline.
 CREATE OR REPLACE FUNCTION pol_enqueue_notification_delivery()
 RETURNS trigger
 LANGUAGE plpgsql
