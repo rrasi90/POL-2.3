@@ -14,6 +14,7 @@ from scripts.canonical_support import CanonicalSupportService
 from scripts.payment_reconciliation_worker import PaymentReconciliationWorker
 from scripts.provider_delivery_worker import ProviderDeliveryWorker
 from scripts.returns_rma import CanonicalReturnService
+from scripts.vendor_referral import VendorReferralService
 
 
 @dataclass(frozen=True)
@@ -32,7 +33,7 @@ class POLApplicationBoundary:
 
     def checkout(self, *, basket_id, plan_id, retailer_id, idempotency_key, address_snapshot, vendor_allocations):
         self._verify_retailer_actor(retailer_id)
-        return CanonicalCheckoutGateway.checkout(
+        result = CanonicalCheckoutGateway.checkout(
             cur=self.cur,
             basket_id=basket_id,
             plan_id=plan_id,
@@ -41,6 +42,9 @@ class POLApplicationBoundary:
             address_snapshot=address_snapshot,
             vendor_allocations=vendor_allocations,
         )
+        for order in result.get("orders", []):
+            VendorReferralService.activate_on_first_order(self.cur, retailer_id, str(order["id"]))
+        return result
 
     def feedback_list(self):
         if not self.context.organization_id:
@@ -58,6 +62,8 @@ class POLApplicationBoundary:
         )
 
     def support_create(self, *, organization_id, case_type, subject, related_order_id=None, priority="NORMAL"):
+        if self.context.organization_id != str(organization_id):
+            raise PermissionError("Support target organization must match the active tenant context.")
         return CanonicalSupportService.create_case(
             self.cur, self.context.user_id, organization_id, case_type,
             subject, related_order_id=related_order_id, priority=priority
@@ -78,6 +84,21 @@ class POLApplicationBoundary:
         return CanonicalSupportService.transition(
             self.cur, self.context.user_id, case_id, target_status,
             resolution_code=resolution_code, resolution_note=resolution_note
+        )
+
+    def create_vendor_referral(self, *, vendor_id, max_redemptions=None, expires_at=None):
+        return VendorReferralService.create_referral(
+            self.cur, self.context.user_id, vendor_id,
+            max_redemptions=max_redemptions, expires_at=expires_at
+        )
+
+    def redeem_vendor_referral(self, *, retailer_id, referral_code, request_idempotency_key):
+        if self.context.organization_id is None:
+            raise PermissionError("Referral redemption requires an organization context.")
+        self._verify_retailer_actor(retailer_id)
+        return VendorReferralService.redeem_referral(
+            self.cur, self.context.user_id, retailer_id,
+            referral_code, request_idempotency_key
         )
 
     def return_request(self, *, order_id, order_items, reason, idempotency_key, claimed_refund_amount_toman):
@@ -103,30 +124,40 @@ class POLApplicationBoundary:
     def _verify_retailer_actor(self, retailer_id):
         self.cur.execute(
             """
-            SELECT 1 FROM retailers r
+            SELECT 1
+            FROM retailers r
             JOIN organization_memberships om ON om.organization_id = r.organization_id
-            WHERE r.id = %s AND om.user_id = %s AND om.status = 'ACTIVE'
+            JOIN organizations o ON o.id = r.organization_id
+            WHERE r.id = %s
+              AND om.user_id = %s
+              AND om.organization_id = %s
+              AND om.status = 'ACTIVE'
+              AND o.status = 'ACTIVE'
+              AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
             LIMIT 1
             """,
-            (retailer_id, self.context.user_id),
+            (retailer_id, self.context.user_id, self.context.organization_id),
         )
         if not self.cur.fetchone():
             raise PermissionError("Actor is not an active member of the retailer tenant.")
 
     def _require_ops_context(self):
+        if not self.context.organization_id:
+            raise PermissionError("Operational workers require an active organization context.")
         self.cur.execute(
             """
             SELECT 1
             FROM organization_memberships om
             JOIN organizations o ON o.id = om.organization_id
             WHERE om.user_id = %s
+              AND om.organization_id = %s
               AND om.status = 'ACTIVE'
               AND om.role IN ('ADMIN_SUPER','OPS_AGENT','SUPER_ADMIN','OPS_ADMIN')
               AND o.org_type = 'OPERATOR'
               AND o.status = 'ACTIVE'
             LIMIT 1;
             """,
-            (self.context.user_id,),
+            (self.context.user_id, self.context.organization_id),
         )
         if not self.cur.fetchone():
-            raise PermissionError("Only active operator admins may execute operational workers.")
+            raise PermissionError("Only active operator staff may execute operational workers.")
