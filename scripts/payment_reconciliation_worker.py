@@ -8,7 +8,6 @@ the expected payment amount.
 from __future__ import annotations
 
 import uuid
-from datetime import timedelta
 
 from psycopg2.extras import Json
 
@@ -89,7 +88,16 @@ class PaymentReconciliationWorker:
                 """,
                 (str(uuid.uuid4()), case_id, case["attempt_count"], len(evidence), Json({"trusted": len(trusted)})),
             )
-            cls._release(cur, case_id, lease_id, "now" if False else None)
+            cur.execute(
+                """
+                UPDATE payment_reconciliation_cases
+                SET worker_lease_id = NULL,
+                    worker_lease_until = NULL,
+                    next_retry_at = now() + interval '15 minutes'
+                WHERE id = %s AND worker_lease_id = %s;
+                """,
+                (case_id, lease_id),
+            )
             return "NO_EVIDENCE"
 
         observed_total = sum(int(v) for v in observed_values)
@@ -151,7 +159,6 @@ class PaymentReconciliationWorker:
             return outcome
 
         outcome = "PARTIAL" if observed_total < expected else "MISMATCH"
-        next_retry = None
         cur.execute(
             """
             INSERT INTO payment_reconciliation_attempts
