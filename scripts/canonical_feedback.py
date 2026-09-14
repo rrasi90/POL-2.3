@@ -8,6 +8,7 @@ replies are authorized through an ACTIVE OPERATOR membership.
 from __future__ import annotations
 
 import uuid
+from psycopg2.extras import Json
 
 
 class FeedbackAccessError(PermissionError):
@@ -26,7 +27,7 @@ class CanonicalFeedbackService:
               AND om.status = 'ACTIVE'
               AND o.org_type = 'OPERATOR'
               AND o.status = 'ACTIVE'
-              AND om.role IN ('SUPER_ADMIN', 'OPS_ADMIN')
+              AND om.role IN ('ADMIN_SUPER', 'OPS_AGENT', 'SUPER_ADMIN', 'OPS_ADMIN')
             LIMIT 1;
             """,
             (admin_user_id,),
@@ -113,7 +114,7 @@ class CanonicalFeedbackService:
                 str(uuid.uuid4()),
                 "feedback_replied:" + str(feedback_id),
                 str(feedback_id),
-                {"feedback_id": str(feedback_id), "body": reply_text},
+                Json({"feedback_id": str(feedback_id), "body": reply_text}),
                 str(feedback["user_id"]),
                 str(feedback["organization_id"]) if feedback["organization_id"] else None,
                 "feedback_replied:" + str(feedback_id),
