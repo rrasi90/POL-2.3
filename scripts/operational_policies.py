@@ -1,15 +1,128 @@
-"""POL operational policies derived from the hardening audit and B2B benchmarks."""
+"""POL operational policies for checkout integrity and operational realism."""
 
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 
 class AllocationIntegrityError(ValueError):
     pass
 
 
+def _vendor_allocated_totals(vendor_allocations: list) -> dict:
+    totals = {}
+    units = {}
+    for alloc in vendor_allocations:
+        vendor_id = str(alloc["vendor_id"])
+        totals[vendor_id] = totals.get(vendor_id, 0) + int(alloc["amount_toman"])
+        units[vendor_id] = units.get(vendor_id, 0) + int(alloc["quantity"])
+    return totals, units
+
+
+def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
+    """Apply optional vendor hours/capacity constraints only when configured.
+
+    Absence of a configured operational profile means "no additional restriction";
+    this keeps the Ahvaz pilot backwards-compatible while making configured
+    constraints authoritative for vendors that opt into them.
+    """
+    vendor_totals, vendor_units = _vendor_allocated_totals(vendor_allocations)
+    now_utc = datetime.now(timezone.utc)
+
+    for vendor_id, requested_units in vendor_units.items():
+        cur.execute(
+            """
+            SELECT timezone, max_orders_per_day, max_pick_units_per_hour
+            FROM vendor_capacity_profiles
+            WHERE vendor_id = %s
+              AND is_active = TRUE
+              AND effective_from <= now()
+              AND (effective_until IS NULL OR effective_until > now())
+            ORDER BY effective_from DESC
+            LIMIT 1;
+            """,
+            (vendor_id,),
+        )
+        capacity = cur.fetchone()
+
+        cur.execute(
+            """
+            SELECT timezone, opens_at, closes_at, order_cutoff_at
+            FROM vendor_operating_windows
+            WHERE vendor_id = %s
+              AND weekday = EXTRACT(DOW FROM CURRENT_DATE)
+              AND is_active = TRUE
+              AND effective_from <= now()
+              AND (effective_until IS NULL OR effective_until > now())
+            ORDER BY effective_from DESC
+            LIMIT 1;
+            """,
+            (vendor_id,),
+        )
+        window = cur.fetchone()
+
+        if capacity:
+            tz_name = capacity["timezone"] or "Asia/Tehran"
+            try:
+                local_now = now_utc.astimezone(ZoneInfo(tz_name))
+            except Exception as exc:
+                raise AllocationIntegrityError(f"Invalid vendor timezone for {vendor_id}: {tz_name}") from exc
+
+            if capacity["max_orders_per_day"] is not None:
+                cur.execute(
+                    """
+                    SELECT COUNT(*) AS order_count
+                    FROM orders
+                    WHERE vendor_id = %s
+                      AND created_at >= date_trunc('day', %s::timestamptz)
+                      AND created_at < date_trunc('day', %s::timestamptz) + interval '1 day'
+                      AND order_status NOT IN ('CANCELLED', 'REJECTED');
+                    """,
+                    (vendor_id, local_now, local_now),
+                )
+                current_orders = int(cur.fetchone()["order_count"])
+                if current_orders + 1 > int(capacity["max_orders_per_day"]):
+                    raise AllocationIntegrityError(
+                        f"Vendor {vendor_id} daily order capacity exhausted: "
+                        f"{current_orders + 1} > {capacity['max_orders_per_day']}"
+                    )
+
+            if capacity["max_pick_units_per_hour"] is not None:
+                cur.execute(
+                    """
+                    SELECT COALESCE(SUM(oi.quantity), 0) AS picked_units
+                    FROM order_items oi
+                    JOIN orders o ON o.id = oi.order_id
+                    WHERE o.vendor_id = %s
+                      AND o.created_at >= now() - interval '1 hour'
+                      AND o.order_status NOT IN ('CANCELLED', 'REJECTED');
+                    """,
+                    (vendor_id,),
+                )
+                recent_units = int(cur.fetchone()["picked_units"])
+                if recent_units + requested_units > int(capacity["max_pick_units_per_hour"]):
+                    raise AllocationIntegrityError(
+                        f"Vendor {vendor_id} hourly pick capacity exhausted: "
+                        f"{recent_units + requested_units} > {capacity['max_pick_units_per_hour']}"
+                    )
+
+        if window:
+            try:
+                local_now = now_utc.astimezone(ZoneInfo(window["timezone"] or "Asia/Tehran"))
+            except Exception as exc:
+                raise AllocationIntegrityError(
+                    f"Invalid vendor operating-window timezone for {vendor_id}: {window['timezone']}"
+                ) from exc
+
+            current_time = local_now.timetz().replace(tzinfo=None)
+            if not (window["opens_at"] <= current_time <= window["closes_at"]):
+                raise AllocationIntegrityError(f"Vendor {vendor_id} is outside its operating window.")
+            if window["order_cutoff_at"] and current_time > window["order_cutoff_at"]:
+                raise AllocationIntegrityError(f"Vendor {vendor_id} order cutoff has passed.")
+
+
 def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retailer_id: str,
                                        vendor_allocations: list) -> None:
-    """Reject forged/stale allocation input before revalidation checkout."""
+    """Reject forged/stale allocation input before transactional checkout."""
     cur.execute(
         """
         SELECT b.retailer_id, b.status, b.version,
@@ -77,8 +190,8 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
             raise AllocationIntegrityError(f"Vendor product {vp_id} is not active.")
         if row["vendor_status"] != "ACTIVE":
             raise AllocationIntegrityError(f"Vendor {row['vendor_id']} is not active.")
-        if not row["physical_quantity"]:
-            raise AllocationIntegrityError(f"Vendor product {vp_id} has no physical inventory record.")
+        if row["physical_quantity"] is None or row["reserved_quantity"] is None:
+            raise AllocationIntegrityError(f"Vendor product {vp_id} has incomplete inventory data.")
 
         product_id = str(row["product_id"])
         if product_id in seen or product_id not in expected:
@@ -92,6 +205,12 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
             )
         if qty < int(row["moq"]):
             raise AllocationIntegrityError(f"Requested quantity is below vendor MOQ for {vp_id}.")
+
+        available = int(row["physical_quantity"]) - int(row["reserved_quantity"])
+        if available < qty:
+            raise AllocationIntegrityError(
+                f"Available stock is insufficient for {vp_id}: {available} < requested {qty}."
+            )
 
         unit_price = int(alloc["unit_price_toman"])
         amount = int(alloc["amount_toman"])
@@ -123,6 +242,8 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
             raise AllocationIntegrityError(
                 f"Vendor minimum order value not met for {vendor_id}: {total} < {vendor['min_order_value_toman']}"
             )
+
+    validate_vendor_operational_capacity(cur, vendor_allocations)
 
 
 class NotificationRoutingPolicy:
