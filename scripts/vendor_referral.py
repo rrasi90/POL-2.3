@@ -14,8 +14,6 @@ import secrets
 import string
 import uuid
 
-from psycopg2.extras import Json
-
 
 class VendorReferralAccessError(PermissionError):
     pass
@@ -23,10 +21,6 @@ class VendorReferralAccessError(PermissionError):
 
 class VendorReferralStateError(ValueError):
     pass
-
-
-VENDOR_ROLES = {"VENDOR_OWNER", "VENDOR_STAFF"}
-RETAILER_ROLES = {"RETAILER_OWNER", "RETAILER_STAFF"}
 
 
 class VendorReferralService:
@@ -82,27 +76,24 @@ class VendorReferralService:
         if max_redemptions is not None and max_redemptions <= 0:
             raise ValueError("max_redemptions must be positive when provided.")
 
-        for _ in range(8):
-            code = cls._generate_code()
-            referral_id = str(uuid.uuid4())
-            try:
-                cur.execute(
-                    """
-                    INSERT INTO vendor_referrals
-                        (id, vendor_id, referral_code, status, max_redemptions,
-                         expires_at, created_by_user_id)
-                    VALUES (%s,%s,%s,'ACTIVE',%s,%s,%s)
-                    RETURNING *;
-                    """,
-                    (referral_id, vendor_id, code, max_redemptions, expires_at, actor_user_id),
-                )
-                return cur.fetchone()
-            except Exception as exc:
-                if getattr(exc, "pgcode", None) != "23505":
-                    raise
-                cur.connection.rollback()
-                raise VendorReferralStateError("Unable to generate a unique referral code; retry creation.")
-        raise VendorReferralStateError("Unable to generate a unique referral code.")
+        code = cls._generate_code()
+        referral_id = str(uuid.uuid4())
+        try:
+            cur.execute(
+                """
+                INSERT INTO vendor_referrals
+                    (id, vendor_id, referral_code, status, max_redemptions,
+                     expires_at, created_by_user_id)
+                VALUES (%s,%s,%s,'ACTIVE',%s,%s,%s)
+                RETURNING *;
+                """,
+                (referral_id, vendor_id, code, max_redemptions, expires_at, actor_user_id),
+            )
+        except Exception as exc:
+            if getattr(exc, "pgcode", None) == "23505":
+                raise VendorReferralStateError("Generated referral code collided; retry creation.") from exc
+            raise
+        return cur.fetchone()
 
     @classmethod
     def redeem_referral(cls, cur, actor_user_id: str, retailer_id: str,
