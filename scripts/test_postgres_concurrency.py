@@ -72,38 +72,70 @@ BRAND_1 = make_uuid(4, 1)
 CAT_1 = make_uuid(4, 10)
 SUBCAT_1 = make_uuid(4, 100)
 
+ORG_RET_1 = make_uuid(5, 10)
+ORG_VND_A = make_uuid(5, 100)
+ORG_VND_B = make_uuid(5, 200)
+
 def ensure_base_fixtures():
     """Ensure basic actor fixtures exist in public schema."""
     conn = get_conn()
     cur = conn.cursor()
+
+    # 1. Organizations
+    cur.execute("""
+        INSERT INTO organizations (id, name, org_type, status) VALUES
+        (%s, 'Org Retailer Race', 'RETAILER', 'ACTIVE'),
+        (%s, 'Org Vendor A Race', 'VENDOR', 'ACTIVE'),
+        (%s, 'Org Vendor B Race', 'VENDOR', 'ACTIVE')
+        ON CONFLICT (id) DO NOTHING;
+    """, (ORG_RET_1, ORG_VND_A, ORG_VND_B))
+
+    # 2. Users
     cur.execute("""
         INSERT INTO users (id, phone_number, role, full_name) VALUES
-        (%s, '+989160000001', 'SUPER_ADMIN', 'Platform Administrator'),
+        (%s, '+989160000001', 'ADMIN_SUPER', 'Platform Administrator'),
         (%s, '+989161111119', 'RETAILER_OWNER', 'Retailer Owner Concurrency'),
         (%s, '+989162222228', 'VENDOR_OWNER', 'Vendor Owner A Concurrency'),
         (%s, '+989162222229', 'VENDOR_OWNER', 'Vendor Owner B Concurrency')
         ON CONFLICT (id) DO NOTHING;
     """, (U_ADMIN, U_RET_1, U_VND_A, U_VND_B))
 
+    # 3. Memberships
     cur.execute("""
-        INSERT INTO retailers (id, user_id, store_name, city, neighborhood, address) VALUES
-        (%s, %s, 'Supermarket Race', 'Ahvaz', 'Naderi', 'Main St, Ahvaz')
+        INSERT INTO organization_memberships (organization_id, user_id, role, status) VALUES
+        (%s, %s, 'RETAILER_OWNER', 'ACTIVE'),
+        (%s, %s, 'VENDOR_OWNER', 'ACTIVE'),
+        (%s, %s, 'VENDOR_OWNER', 'ACTIVE')
+        ON CONFLICT (organization_id, user_id) DO NOTHING;
+    """, (ORG_RET_1, U_RET_1, ORG_VND_A, U_VND_A, ORG_VND_B, U_VND_B))
+
+    # 4. Retailers & Vendors
+    cur.execute("""
+        INSERT INTO retailers (id, user_id, organization_id, store_name, city, neighborhood, address) VALUES
+        (%s, %s, %s, 'Supermarket Race', 'Ahvaz', 'Naderi', 'Main St, Ahvaz')
         ON CONFLICT (id) DO NOTHING;
-    """, (RET_1, U_RET_1))
+    """, (RET_1, U_RET_1, ORG_RET_1))
 
     cur.execute("""
-        INSERT INTO vendors (id, user_id, business_name, warehouse_address, min_order_value_toman) VALUES
-        (%s, %s, 'Wholesaler A Race', 'Bonakdaran Phase 1', 5000000),
-        (%s, %s, 'Wholesaler B Race', 'Bonakdaran Phase 2', 4000000)
+        INSERT INTO vendors (id, user_id, organization_id, business_name, warehouse_address, min_order_value_toman) VALUES
+        (%s, %s, %s, 'Wholesaler A Race', 'Bonakdaran Phase 1', 5000000),
+        (%s, %s, %s, 'Wholesaler B Race', 'Bonakdaran Phase 2', 4000000)
         ON CONFLICT (id) DO NOTHING;
-    """, (VND_A, U_VND_A, VND_B, U_VND_B))
+    """, (VND_A, U_VND_A, ORG_VND_A, VND_B, U_VND_B, ORG_VND_B))
 
+    # 5. Catalog Entities
     cur.execute("INSERT INTO brands (id, name_fa, slug) VALUES (%s, 'تبرک', 'tabarrok_race') ON CONFLICT (id) DO NOTHING;", (BRAND_1,))
     cur.execute("INSERT INTO categories (id, name_fa, slug) VALUES (%s, 'مواد غذایی', 'food_race') ON CONFLICT (id) DO NOTHING;", (CAT_1,))
     cur.execute("INSERT INTO subcategories (id, category_id, name_fa, slug) VALUES (%s, %s, 'کالاهای اساسی', 'staples_race') ON CONFLICT (id) DO NOTHING;", (SUBCAT_1, CAT_1))
 
     conn.commit()
     conn.close()
+
+import pytest
+
+@pytest.fixture(autouse=True)
+def setup_concurrency_fixtures():
+    ensure_base_fixtures()
 
 def test_concurrency_1_inventory_race():
     print("\n[CONCURRENCY 1] Inventory Reservation Race (Stock=5, 2 concurrent 5-unit requests)...")
@@ -172,7 +204,6 @@ def test_concurrency_1_inventory_race():
     assert len(failures) == 1, f"Expected 1 failure, got {len(failures)}: {results}"
     assert res == 5, f"Expected reserved_quantity=5, got {res}"
     print(f"  [PASS] Concurrency 1 passed: Exactly 1 reservation succeeded, 1 rejected. Final reserved={res}/5.")
-    return True
 
 def test_concurrency_2_duplicate_checkout_same_key():
     print("\n[CONCURRENCY 2] Duplicate Checkout Idempotency Race (Same Idempotency Key)...")
@@ -222,7 +253,6 @@ def test_concurrency_2_duplicate_checkout_same_key():
     assert cnt == 1, f"Expected 1 persisted order group, got {cnt}"
 
     print(f"  [PASS] Concurrency 2 passed: PostgreSQL UNIQUE constraint caught race condition ({committed[0][0]} committed, {violations[0][0]} rejected).")
-    return True
 
 def test_concurrency_3_checkout_different_keys_scarce_stock():
     print("\n[CONCURRENCY 3] Checkout Race with Different Idempotency Keys (Scarce Stock Contention)...")
@@ -236,12 +266,12 @@ def test_concurrency_3_checkout_different_keys_scarce_stock():
     # Only 1 unit of scarce stock
     cur.execute("""
         INSERT INTO products (id, master_sku, canonical_name_fa, brand_id, category_id, subcategory_id)
-        VALUES (%s, %s, 'Scarce Saffron 10g', %s, %s, %s)
-    """, (p_id, f"POL-RACE-SAF-{tag}", BRAND_1, CAT_1, SUBCAT_1))
+        VALUES (%s, %s, 'Scarce Rice 10kg', %s, %s, %s)
+    """, (p_id, f"POL-SCARCE-{tag}", BRAND_1, CAT_1, SUBCAT_1))
     cur.execute("""
         INSERT INTO vendor_products (id, vendor_id, product_id, vendor_sku, packaging_unit, pack_quantity)
         VALUES (%s, %s, %s, %s, 'CARTON', 1)
-    """, (vp_id, VND_A, p_id, f"SKU-SAF-{tag}"))
+    """, (vp_id, VND_A, p_id, f"SKU-SCARCE-{tag}"))
     cur.execute("""
         INSERT INTO vendor_inventory (id, vendor_product_id, physical_quantity, reserved_quantity)
         VALUES (%s, %s, 1, 0)
@@ -252,26 +282,29 @@ def test_concurrency_3_checkout_different_keys_scarce_stock():
     barrier = threading.Barrier(2)
     results = []
 
-    def checkout_worker(worker_id):
+    def scarce_checkout_worker(worker_id):
         conn = get_conn()
         cur = conn.cursor()
         og_id = str(uuid.uuid4())
-        diff_key = f"idem_diff_{worker_id}_{tag}"
+        ord_id = str(uuid.uuid4())
+        idem = f"idem_scarce_{worker_id}_{tag}"
         barrier.wait()
         try:
-            # 1. Insert order group with unique key
-            cur.execute("""
-                INSERT INTO order_groups (id, retailer_id, group_status, total_amount_toman, checkout_idempotency_key)
-                VALUES (%s, %s, 'ACTIVE', 5000000, %s)
-            """, (og_id, RET_1, diff_key))
-            
-            # 2. Atomic reservation of the 1 unit
+            # Atomic conditional stock reservation
             cur.execute("""
                 UPDATE vendor_inventory
                 SET reserved_quantity = reserved_quantity + 1
                 WHERE vendor_product_id = %s AND (physical_quantity - reserved_quantity) >= 1
             """, (vp_id,))
             if cur.rowcount == 1:
+                cur.execute("""
+                    INSERT INTO order_groups (id, retailer_id, group_status, total_amount_toman, checkout_idempotency_key)
+                    VALUES (%s, %s, 'ACTIVE', 1000000, %s)
+                """, (og_id, RET_1, idem))
+                cur.execute("""
+                    INSERT INTO orders (id, order_number, order_group_id, retailer_id, vendor_id, order_status, total_amount_toman)
+                    VALUES (%s, %s, %s, %s, %s, 'SUBMITTED', 1000000)
+                """, (ord_id, f"POL-SCARCE-{worker_id}-{tag}", og_id, RET_1, VND_A))
                 conn.commit()
                 results.append((worker_id, "ORDER_PLACED"))
             else:
@@ -283,8 +316,8 @@ def test_concurrency_3_checkout_different_keys_scarce_stock():
         finally:
             conn.close()
 
-    t1 = threading.Thread(target=checkout_worker, args=("Buyer_1",))
-    t2 = threading.Thread(target=checkout_worker, args=("Buyer_2",))
+    t1 = threading.Thread(target=scarce_checkout_worker, args=("Buyer_1",))
+    t2 = threading.Thread(target=scarce_checkout_worker, args=("Buyer_2",))
     t1.start()
     t2.start()
     t1.join()
@@ -297,7 +330,6 @@ def test_concurrency_3_checkout_different_keys_scarce_stock():
     assert len(rejected) == 1, f"Expected exactly 1 rejected due to stock, got {len(rejected)}: {results}"
 
     print(f"  [PASS] Concurrency 3 passed: Semantic race between distinct keys correctly arbitrated by inventory atomicity ({placed[0][0]} won, {rejected[0][0]} rejected).")
-    return True
 
 def test_concurrency_4_vendor_accept_race():
     print("\n[CONCURRENCY 4] Vendor Accept Race (Two concurrent workers accepting SUBMITTED order)...")
@@ -352,7 +384,6 @@ def test_concurrency_4_vendor_accept_race():
     assert len(successes) == 1, f"Expected exactly 1 transition, got {len(successes)}: {results}"
     assert len(noops) == 1, f"Expected exactly 1 no-op, got {len(noops)}: {results}"
     print(f"  [PASS] Concurrency 4 passed: Exactly 1 worker transitioned order to ACCEPTED ({successes[0][0]}).")
-    return True
 
 def test_concurrency_5_dispatch_creation_race():
     print("\n[CONCURRENCY 5] Dispatch / Delivery Creation Race (deliveries.order_id UNIQUE)...")
@@ -413,7 +444,6 @@ def test_concurrency_5_dispatch_creation_race():
     assert len(created) == 1, f"Expected 1 delivery created, got {len(created)}: {results}"
     assert len(violations) == 1, f"Expected 1 UniqueViolation, got {len(violations)}: {results}"
     print(f"  [PASS] Concurrency 5 passed: deliveries.order_id UNIQUE constraint prevented duplicate delivery creation.")
-    return True
 
 def test_concurrency_6_refund_race():
     print("\n[CONCURRENCY 6] Refund Race (Two concurrent refund submissions for same dispute)...")
@@ -480,7 +510,6 @@ def test_concurrency_6_refund_race():
     assert len(violations) == 1, f"Expected exactly 1 UniqueViolation, got {len(violations)}: {results}"
 
     print(f"  [PASS] Concurrency 6 passed: uq_refund_per_dispute index prevented duplicate refund for the same dispute.")
-    return True
 
 def test_concurrency_7_dispute_creation_race():
     print("\n[CONCURRENCY 7] Dispute Creation Race (Two concurrent dispute creations for same order)...")
@@ -542,7 +571,6 @@ def test_concurrency_7_dispute_creation_race():
     assert len(violations) == 1, f"Expected exactly 1 UniqueViolation, got {len(violations)}: {results}"
 
     print(f"  [PASS] Concurrency 7 passed: uq_dispute_open_per_order index prevented concurrent open disputes on same order.")
-    return True
 
 def test_concurrency_8_multi_vendor_dispute_isolation():
     print("\n[CONCURRENCY 8] Multi-Vendor Settlement & Dispute Concurrency...")
@@ -641,7 +669,6 @@ def test_concurrency_8_multi_vendor_dispute_isolation():
     assert st_a == 'DISPUTED', f"Vendor A settlement was {st_a}, expected DISPUTED"
     assert st_b == 'CLOSED', f"Vendor B settlement was {st_b}, expected CLOSED"
     print(f"  [PASS] Concurrency 8 passed: Dispute on Vendor A did not block payout of Vendor B (Isolation verified).")
-    return True
 
 def test_concurrency_9_stale_state_price_change():
     print("\n[CONCURRENCY 9] Stale State Concurrency (Vendor price update during checkout)...")
@@ -697,7 +724,6 @@ def test_concurrency_9_stale_state_price_change():
 
     print(f"  [PASS] Concurrency 9 passed: Stale state detected: checkout rejected with price delta (preview: 1.0M, live: 1.2M).")
     buyer_conn.close()
-    return True
 
 def main():
     print("=" * 80)
@@ -718,16 +744,11 @@ def main():
         test_concurrency_9_stale_state_price_change,
     ]
 
-    passed = 0
     for test in tests:
-        if test():
-            passed += 1
-        else:
-            print(f"FAILED: {test.__name__}")
-            sys.exit(1)
+        test()
 
     print("\n" + "=" * 80)
-    print(f"SUCCESS: All {passed}/{len(tests)} PostgreSQL concurrency race tests PASSED!")
+    print(f"SUCCESS: All {len(tests)}/{len(tests)} PostgreSQL concurrency race tests PASSED!")
     print("=" * 80)
 
 if __name__ == "__main__":

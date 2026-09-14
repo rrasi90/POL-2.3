@@ -82,41 +82,45 @@ def get_connection():
             last_err = e
     raise last_err
 
+sys.path.insert(0, REPO_ROOT)
+from scripts.migration_runner import get_migration_chain, apply_migration_chain, reset_schema, get_connection as runner_get_connection
+
+def get_connection():
+    conn, _ = runner_get_connection("pol_test")
+    return conn
+
 def reset_and_migrate(conn):
-    dsn = conn.get_dsn_parameters()
-    actual_db = dsn.get("dbname", "")
-    if actual_db != "pol_test":
-        raise RuntimeError(f"Destructive reset BLOCKED: dbname '{actual_db}' is not 'pol_test'!")
-    print("Resetting public schema and executing migrations/001_initial_schema.sql...")
-    cur = conn.cursor()
-    cur.execute("DROP SCHEMA IF EXISTS public CASCADE;")
-    cur.execute("CREATE SCHEMA public;")
-    cur.execute("GRANT ALL ON SCHEMA public TO postgres;")
-    cur.execute("GRANT ALL ON SCHEMA public TO public;")
-    conn.commit()
+    print("Resetting public schema and executing canonical dynamic migration chain...")
+    reset_schema(conn, "pol_test")
+    chain = get_migration_chain()
+    applied, table_count = apply_migration_chain(conn, chain, verbose=True)
+    print(f"Dynamic migration chain ({len(applied)} migrations) executed successfully. Total tables: {table_count}")
+    return applied
 
-    with open(MIGRATION_FILE, "r", encoding="utf-8") as f:
-        sql_content = f.read()
+def run_upgrade_test(conn):
+    """
+    Section 9: Explicit Upgrade Test.
+    Simulates existing database with 001 + 002, then executes upgrade migration 003.
+    Verifies that schema evolution succeeds smoothly.
+    """
+    print("\n[UPGRADE TEST] Testing incremental schema upgrade path (001 -> 002 -> 003)...")
+    reset_schema(conn, "pol_test")
+    chain = get_migration_chain()
 
-    cur.execute(sql_content)
-    conn.commit()
-    print("Initial migration (001) executed successfully.")
+    # Step 1: Apply initial and core migrations
+    base_chain = [m for m in chain if "001" in m or "002" in m]
+    upgrade_migrations = [m for m in chain if m not in base_chain]
 
-    migration_file_2 = os.path.join(REPO_ROOT, "migrations", "002_platform_core_schema.sql")
-    if os.path.exists(migration_file_2):
-        with open(migration_file_2, "r", encoding="utf-8") as f:
-            sql_content_2 = f.read()
-        cur.execute(sql_content_2)
-        conn.commit()
-        print("Platform core migration (002) executed successfully.")
+    print(f"Applying base chain: {[os.path.basename(m) for m in base_chain]}...")
+    apply_migration_chain(conn, base_chain, verbose=False)
 
-    migration_file_3 = os.path.join(REPO_ROOT, "migrations", "003_contract_reconciliation.sql")
-    if os.path.exists(migration_file_3):
-        with open(migration_file_3, "r", encoding="utf-8") as f:
-            sql_content_3 = f.read()
-        cur.execute(sql_content_3)
-        conn.commit()
-        print("Contract reconciliation migration (003) executed successfully.")
+    # Step 2: Apply subsequent upgrade migrations (003, ...)
+    for up_mig in upgrade_migrations:
+        print(f"Upgrading with {os.path.basename(up_mig)}...")
+        apply_migration_chain(conn, [up_mig], verbose=True)
+
+    print("[PASS] Incremental upgrade path verified successfully.")
+
 
 EXPECTED_19_PLATFORM_TABLES = {
     "organizations",
@@ -338,24 +342,35 @@ def verify_foreign_keys_and_indexes(conn):
     assert cur.fetchone() is not None, "organization_id missing on vendors"
     print(" - retailers and vendors canonical organization_id verified")
 
+def test_postgres_migrations():
+    """Canonical test entry point for pytest."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT version();")
+    pg_ver = cur.fetchone()[0]
+    print(f"Connected to PostgreSQL: {pg_ver}")
+    assert "PostgreSQL 18" in pg_ver, f"Expected PostgreSQL 18, got: {pg_ver}"
+
+    # Path 1: Clean/Fresh install (001 -> 002 -> 003 -> ...)
+    reset_and_migrate(conn)
+    verify_tables(conn)
+    verify_constraints(conn)
+    verify_foreign_keys_and_indexes(conn)
+
+    # Path 2: Incremental upgrade (001+002, then 003)
+    run_upgrade_test(conn)
+    verify_tables(conn)
+    verify_constraints(conn)
+    verify_foreign_keys_and_indexes(conn)
+
+    conn.close()
+
 def main():
     print("================================================================")
     print("POL CANONICAL POSTGRESQL 18 MIGRATION VERIFICATION")
     print("================================================================")
     try:
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT version();")
-        pg_ver = cur.fetchone()[0]
-        print(f"Connected to PostgreSQL: {pg_ver}")
-        assert "PostgreSQL 18" in pg_ver, f"Expected PostgreSQL 18, got: {pg_ver}"
-
-        reset_and_migrate(conn)
-        verify_tables(conn)
-        verify_constraints(conn)
-        verify_foreign_keys_and_indexes(conn)
-
-        conn.close()
+        test_postgres_migrations()
         print("\n================================================================")
         print("ALL CANONICAL MIGRATION TESTS PASSED SUCCESSFULLY (56/56 TABLES)")
         print("================================================================")

@@ -160,7 +160,6 @@ def test_broadcasts():
         print("\n================================================================")
         print("ALL ADMIN BROADCAST TESTS PASSED SUCCESSFULLY!")
         print("================================================================")
-        return True
 
     except Exception as e:
         conn.rollback()
@@ -168,7 +167,7 @@ def test_broadcasts():
         print(f"\n[FAILED]: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
-        sys.exit(1)
+        raise
 
 if __name__ == "__main__":
     test_broadcasts()

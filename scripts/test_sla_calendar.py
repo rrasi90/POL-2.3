@@ -127,7 +127,6 @@ def test_sla_calendar():
     print("\n================================================================")
     print("ALL SLA WORKING CALENDAR TESTS PASSED SUCCESSFULLY!")
     print("================================================================")
-    return True
 
 if __name__ == "__main__":
     test_sla_calendar()

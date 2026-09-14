@@ -32,10 +32,8 @@ def test_mutation_1_wrong_dataset_count():
     # Simulate data length 68700
     mutated_count = 68700
     # Test logic
-    if mutated_count != 68707:
-        print("  [PASS] Mutation 1 correctly detected: count mismatch caught.")
-        return True
-    return False
+    assert mutated_count != 68707, "Mutation 1 failed: count mismatch not caught"
+    print("  [PASS] Mutation 1 correctly detected: count mismatch caught.")
 
 def test_mutation_2_duplicate_current_price():
     print("[MUTATION TEST 2] Testing detection of missing current price partial unique index...")
@@ -45,10 +43,8 @@ def test_mutation_2_duplicate_current_price():
     # Mutate: remove WHERE is_current = TRUE
     mutated_ddl = ddl.replace("WHERE is_current = TRUE", "")
     caught = ("WHERE is_current = TRUE" not in mutated_ddl)
-    if caught:
-        print("  [PASS] Mutation 2 correctly detected: missing is_current partial unique index caught.")
-        return True
-    return False
+    assert caught, "Mutation 2 failed: missing is_current partial unique index not caught"
+    print("  [PASS] Mutation 2 correctly detected: missing is_current partial unique index caught.")
 
 def test_mutation_3_duplicate_vendor_sku():
     print("[MUTATION TEST 3] Testing detection of missing vendor SKU uniqueness constraint...")
@@ -58,10 +54,8 @@ def test_mutation_3_duplicate_vendor_sku():
     # Mutate: remove uq_vendor_product_sku
     mutated_ddl = ddl.replace("uq_vendor_product_sku UNIQUE (vendor_id, vendor_sku)", "")
     caught = ("uq_vendor_product_sku UNIQUE (vendor_id, vendor_sku)" not in mutated_ddl)
-    if caught:
-        print("  [PASS] Mutation 3 correctly detected: missing vendor SKU uniqueness caught.")
-        return True
-    return False
+    assert caught, "Mutation 3 failed: missing vendor SKU uniqueness not caught"
+    print("  [PASS] Mutation 3 correctly detected: missing vendor SKU uniqueness caught.")
 
 def test_mutation_4_disputed_in_order_status():
     print("[MUTATION TEST 4] Testing detection of 'DISPUTED' in orders.order_status...")
@@ -76,10 +70,8 @@ def test_mutation_4_disputed_in_order_status():
     caught = False
     if status_match and "DISPUTED" in status_match.group(1).upper():
         caught = True
-    if caught:
-        print("  [PASS] Mutation 4 correctly detected: 'DISPUTED' in order_status caught.")
-        return True
-    return False
+    assert caught, "Mutation 4 failed: 'DISPUTED' in order_status not caught"
+    print("  [PASS] Mutation 4 correctly detected: 'DISPUTED' in order_status caught.")
 
 def test_mutation_5_carton_only_api():
     print("[MUTATION TEST 5] Testing detection of legacy carton-only API property...")
@@ -89,10 +81,8 @@ def test_mutation_5_carton_only_api():
     # Mutate: add "available_cartons": 50
     mutated_api = api_text + '\n"available_cartons": 50\n'
     caught = bool(re.search(r'"available_cartons"', mutated_api))
-    if caught:
-        print("  [PASS] Mutation 5 correctly detected: carton-only API payload caught.")
-        return True
-    return False
+    assert caught, "Mutation 5 failed: carton-only API payload not caught"
+    print("  [PASS] Mutation 5 correctly detected: carton-only API payload caught.")
 
 def test_mutation_6_multi_packaging_support():
     print("[VALIDATION TEST 6] Testing multi-packaging support per Master Product for Vendor Offers...")
@@ -113,33 +103,21 @@ def test_mutation_6_multi_packaging_support():
     has_oi_packaging_cols = ("packaging_unit_snapshot" in ddl) and ("pack_quantity_snapshot" in ddl)
     
     passed = has_sku_uniq and (not has_bad_uniq) and has_packaging_constraint and has_vp_packaging_cols and has_oi_packaging_cols
-    if passed:
-        print("  [PASS] Validation 6 passed: Vendor can offer multiple packagings (e.g. SKU-12 and SKU-24) for the same Master Product.")
-        return True
-    else:
-        print("  [FAIL] Validation 6 failed: Schema constrains one vendor product per master product or lacks packaging columns.")
-        return False
+    assert passed, "Validation 6 failed: Schema constrains one vendor product per master product or lacks packaging columns."
+    print("  [PASS] Validation 6 passed: Vendor can offer multiple packagings (e.g. SKU-12 and SKU-24) for the same Master Product.")
 
 def run_all_mutation_tests():
     print("=" * 80)
     print("POL VERIFICATION TOOLING MUTATION & ADVERSARIAL TEST SUITE")
     print("=" * 80)
-    m1 = test_mutation_1_wrong_dataset_count()
-    m2 = test_mutation_2_duplicate_current_price()
-    m3 = test_mutation_3_duplicate_vendor_sku()
-    m4 = test_mutation_4_disputed_in_order_status()
-    m5 = test_mutation_5_carton_only_api()
-    m6 = test_mutation_6_multi_packaging_support()
-
-    all_passed = all([m1, m2, m3, m4, m5, m6])
+    test_mutation_1_wrong_dataset_count()
+    test_mutation_2_duplicate_current_price()
+    test_mutation_3_duplicate_vendor_sku()
+    test_mutation_4_disputed_in_order_status()
+    test_mutation_5_carton_only_api()
+    test_mutation_6_multi_packaging_support()
     print("\n" + "=" * 80)
-    if all_passed:
-        print("MUTATION AUDIT VERDICT: ALL ADVERSARIAL MUTATION & PACKAGING TESTS PASSED! [PASS]")
-        return True
-    else:
-        print("MUTATION AUDIT VERDICT: VERIFICATION TOOLING TEST SUITE FAILED [FAIL]")
-        return False
+    print("MUTATION AUDIT VERDICT: ALL ADVERSARIAL MUTATION & PACKAGING TESTS PASSED! [PASS]")
 
 if __name__ == "__main__":
-    success = run_all_mutation_tests()
-    sys.exit(0 if success else 1)
+    run_all_mutation_tests()

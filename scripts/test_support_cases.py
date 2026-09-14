@@ -176,7 +176,6 @@ def test_support_cases():
         print("\n================================================================")
         print("ALL SUPPORT CASE TESTS PASSED SUCCESSFULLY!")
         print("================================================================")
-        return True
 
     except Exception as e:
         conn.rollback()
@@ -184,7 +183,7 @@ def test_support_cases():
         print(f"\n[FAILED]: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
-        sys.exit(1)
+        raise
 
 if __name__ == "__main__":
     test_support_cases()

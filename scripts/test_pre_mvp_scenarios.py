@@ -262,6 +262,10 @@ def run_all_scenario_tests():
         print("PRE-MVP STRESS TEST VERDICT: STATIC INVARIANT VERIFICATION FAILED [FAIL]")
         return False
 
-if __name__ == "__main__":
+def test_pre_mvp_scenarios():
+    """Canonical pytest entry point for Pre-MVP 100-scenario invariants."""
     success = run_all_scenario_tests()
-    sys.exit(0 if success else 1)
+    assert success is True, "Pre-MVP invariant verification failed!"
+
+if __name__ == "__main__":
+    test_pre_mvp_scenarios()

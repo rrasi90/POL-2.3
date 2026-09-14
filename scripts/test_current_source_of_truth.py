@@ -231,11 +231,8 @@ def check_technical_environment():
     print("  [PASS] Canonical Technical Environment verified: PostgreSQL 18 locked, psycopg2 declared.")
     return True
 
-def main():
-    print("=" * 78)
-    print("POL — CURRENT SOURCE OF TRUTH & ARCHITECTURE INTEGRITY TEST SUITE")
-    print("=" * 78)
-    
+def test_current_source_of_truth():
+    """Canonical pytest entry point for architecture integrity and SSoT checks."""
     checks = [
         check_single_decision_register,
         check_historical_banners,
@@ -245,17 +242,16 @@ def main():
         check_dispute_and_payment_invariants,
         check_technical_environment,
     ]
-    
-    passed = 0
     for check in checks:
-        if check():
-            passed += 1
-        else:
-            print(f"FAILED AT: {check.__name__}")
-            sys.exit(1)
-            
+        assert check() is True, f"SSoT check failed at: {check.__name__}"
+
+def main():
     print("=" * 78)
-    print(f"SUCCESS: All {passed}/{len(checks)} Source of Truth & Architecture checks PASSED!")
+    print("POL — CURRENT SOURCE OF TRUTH & ARCHITECTURE INTEGRITY TEST SUITE")
+    print("=" * 78)
+    test_current_source_of_truth()
+    print("=" * 78)
+    print("SUCCESS: All 7/7 Source of Truth & Architecture checks PASSED!")
     print("=" * 78)
 
 if __name__ == "__main__":

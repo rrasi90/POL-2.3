@@ -196,7 +196,6 @@ def test_basket_versioning():
         print("\n================================================================")
         print("ALL BASKET & ALLOCATION VERSIONING TESTS PASSED SUCCESSFULLY!")
         print("================================================================")
-        return True
 
     except Exception as e:
         conn.rollback()
@@ -204,7 +203,7 @@ def test_basket_versioning():
         print(f"\n[FAILED]: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
-        sys.exit(1)
+        raise
 
 if __name__ == "__main__":
     test_basket_versioning()

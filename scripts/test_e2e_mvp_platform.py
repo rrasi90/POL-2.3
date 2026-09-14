@@ -397,7 +397,6 @@ def run_master_e2e_test():
         print("\n================================================================================")
         print("MASTER END-TO-END INTEGRATION TEST COMPLETED SUCCESSFULLY ON POSTGRESQL 18! [PASS]")
         print("================================================================================")
-        return True
 
     except Exception as e:
         conn.rollback()
@@ -405,7 +404,11 @@ def run_master_e2e_test():
         print(f"\n[FAILED]: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
-        sys.exit(1)
+        raise
+
+def test_e2e_mvp_platform():
+    """Canonical pytest entry point for master E2E integration test."""
+    run_master_e2e_test()
 
 if __name__ == "__main__":
-    run_master_e2e_test()
+    test_e2e_mvp_platform()

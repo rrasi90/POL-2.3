@@ -94,31 +94,13 @@ VP_B_E = make_uuid(6, 25)
 VP_C_A = make_uuid(6, 31)
 VP_C_E = make_uuid(6, 35)
 
+from scripts.migration_runner import get_migration_chain, apply_migration_chain, reset_schema
+
 def reset_to_canonical_schema(conn):
-    """Executes the canonical migration to guarantee runtime tests run against actual schema."""
-    dsn = conn.get_dsn_parameters()
-    actual_db = dsn.get("dbname", "")
-    if actual_db != "pol_test":
-        raise RuntimeError(f"Destructive reset BLOCKED: dbname '{actual_db}' is not 'pol_test'!")
-    cur = conn.cursor()
-    cur.execute("DROP SCHEMA IF EXISTS public CASCADE;")
-    cur.execute("CREATE SCHEMA public;")
-    cur.execute("GRANT ALL ON SCHEMA public TO postgres;")
-    cur.execute("GRANT ALL ON SCHEMA public TO public;")
-    conn.commit()
-
-    with open(MIGRATION_FILE, "r", encoding="utf-8") as f:
-        sql_content = f.read()
-
-    cur.execute(sql_content)
-    conn.commit()
-
-    migration_file_2 = os.path.join(REPO_ROOT, "migrations", "002_platform_core_schema.sql")
-    if os.path.exists(migration_file_2):
-        with open(migration_file_2, "r", encoding="utf-8") as f:
-            sql_content_2 = f.read()
-        cur.execute(sql_content_2)
-        conn.commit()
+    """Executes the canonical dynamic migration chain to guarantee runtime tests run against actual schema."""
+    reset_schema(conn, "pol_test")
+    chain = get_migration_chain()
+    apply_migration_chain(conn, chain, verbose=False)
 
 def seed_base_catalog(conn):
     cur = conn.cursor()
@@ -1190,6 +1172,11 @@ def run_postgres_runtime_scenarios():
             print(f"  - {err}")
         conn.close()
         return False
+
+def test_postgres_runtime():
+    """Canonical pytest entry point for PostgreSQL 18 runtime scenarios."""
+    success = run_postgres_runtime_scenarios()
+    assert success is True, "One or more PostgreSQL runtime scenarios failed!"
 
 if __name__ == "__main__":
     success = run_postgres_runtime_scenarios()

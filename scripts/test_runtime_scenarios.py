@@ -1026,6 +1026,10 @@ def run_runtime_scenarios():
         return False
 
 
-if __name__ == "__main__":
+def test_runtime_scenarios():
+    """Canonical pytest entry point for transactional mock runtime scenarios."""
     success = run_runtime_scenarios()
-    sys.exit(0 if success else 1)
+    assert success is True, "Mock runtime scenarios failed!"
+
+if __name__ == "__main__":
+    test_runtime_scenarios()

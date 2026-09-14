@@ -351,7 +351,6 @@ def test_tenant_isolation():
         print("\n================================================================")
         print("ALL IDENTITY, MULTI-ORG & TENANT ISOLATION TESTS PASSED (13/13)!")
         print("================================================================")
-        return True
 
     except Exception as e:
         conn.rollback()
@@ -359,7 +358,293 @@ def test_tenant_isolation():
         print(f"\n[FAILED]: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
-        sys.exit(1)
+        raise
+
+def test_section_11_role_org_matrix():
+    """
+    Section 11: Role <-> Organization Invariants Matrix Test
+    Asserts valid combinations succeed and invalid combinations fail with DB trigger exceptions.
+    """
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    org_ret = str(uuid.uuid4())
+    org_vnd = str(uuid.uuid4())
+    org_ops = str(uuid.uuid4())
+
+    cur.execute("""
+        INSERT INTO organizations (id, name, org_type, status) VALUES
+        (%s, 'Matrix Retailer', 'RETAILER', 'ACTIVE'),
+        (%s, 'Matrix Vendor', 'VENDOR', 'ACTIVE'),
+        (%s, 'Matrix Operator', 'OPERATOR', 'ACTIVE');
+    """, (org_ret, org_vnd, org_ops))
+    conn.commit()
+
+    valid_cases = [
+        ("RETAILER_OWNER", org_ret),
+        ("RETAILER_STAFF", org_ret),
+        ("VENDOR_OWNER", org_vnd),
+        ("VENDOR_STAFF", org_vnd),
+        ("OPS_AGENT", org_ops),
+        ("ADMIN_SUPER", org_ops),
+        ("FIELD_ACTIVATOR", org_ops),
+    ]
+
+    for role, org_id in valid_cases:
+        u_id = str(uuid.uuid4())
+        phone = f"+98916{uuid.uuid4().int % 10000000:07d}"
+        cur.execute("INSERT INTO users (id, phone_number, full_name) VALUES (%s, %s, 'Matrix User')", (u_id, phone))
+        cur.execute("""
+            INSERT INTO organization_memberships (organization_id, user_id, role, status)
+            VALUES (%s, %s, %s, 'ACTIVE');
+        """, (org_id, u_id, role))
+        conn.commit()
+
+    invalid_cases = [
+        ("RETAILER_OWNER", org_vnd, "VENDOR"),
+        ("RETAILER_OWNER", org_ops, "OPERATOR"),
+        ("VENDOR_OWNER", org_ret, "RETAILER"),
+        ("VENDOR_OWNER", org_ops, "OPERATOR"),
+        ("OPS_AGENT", org_ret, "RETAILER"),
+        ("OPS_AGENT", org_vnd, "VENDOR"),
+        ("ADMIN_SUPER", org_ret, "RETAILER"),
+        ("ADMIN_SUPER", org_vnd, "VENDOR"),
+        ("FIELD_ACTIVATOR", org_ret, "RETAILER"),
+        ("FIELD_ACTIVATOR", org_vnd, "VENDOR"),
+    ]
+
+    for role, org_id, org_label in invalid_cases:
+        u_id = str(uuid.uuid4())
+        phone = f"+98916{uuid.uuid4().int % 10000000:07d}"
+        cur.execute("INSERT INTO users (id, phone_number, full_name) VALUES (%s, %s, 'Matrix Invalid User')", (u_id, phone))
+        conn.commit()
+        failed = False
+        try:
+            cur.execute("""
+                INSERT INTO organization_memberships (organization_id, user_id, role, status)
+                VALUES (%s, %s, %s, 'ACTIVE');
+            """, (org_id, u_id, role))
+            conn.commit()
+        except psycopg2.Error as e:
+            conn.rollback()
+            failed = True
+            assert "trg_enforce" in str(e) or "only permitted in" in str(e)
+        assert failed, f"Expected role {role} in {org_label} to fail trigger constraint!"
+
+    conn.close()
+
+def test_section_13_users_role_non_authoritative():
+    """
+    Section 13: users.role is Legacy, Deprecated and Non-Authoritative.
+    - Test A: Two memberships with different roles. Changing users.role does NOT alter membership privileges.
+    - Test B: Membership revoked. Privileged users.role still results in access DENIED.
+    - Test C: User in Org A has VENDOR_OWNER, in Org B has RETAILER_OWNER.
+              Authorization is strictly active_organization_id + membership.role.
+    """
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    org_a = str(uuid.uuid4())
+    org_b = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO organizations (id, name, org_type, status) VALUES
+        (%s, 'Org A Wholesaler', 'VENDOR', 'ACTIVE'),
+        (%s, 'Org B Retailer', 'RETAILER', 'ACTIVE');
+    """, (org_a, org_b))
+
+    u_id = str(uuid.uuid4())
+    phone = f"+98916{uuid.uuid4().int % 10000000:07d}"
+    cur.execute("INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, 'Hybrid Role User', 'RETAILER_STAFF')", (u_id, phone))
+
+    cur.execute("""
+        INSERT INTO organization_memberships (organization_id, user_id, role, status, is_primary) VALUES
+        (%s, %s, 'VENDOR_OWNER', 'ACTIVE', TRUE),
+        (%s, %s, 'RETAILER_OWNER', 'ACTIVE', FALSE);
+    """, (org_a, u_id, org_b, u_id))
+    conn.commit()
+
+    def get_effective_role(user_id, active_org_id):
+        cur.execute("""
+            SELECT m.role, m.status
+            FROM organization_memberships m
+            WHERE m.user_id = %s AND m.organization_id = %s;
+        """, (user_id, active_org_id))
+        row = cur.fetchone()
+        if not row or row["status"] != 'ACTIVE':
+            return None
+        return row["role"]
+
+    # Test A: Change users.role to different values; effective membership roles remain unchanged
+    cur.execute("UPDATE users SET role = 'ADMIN_SUPER' WHERE id = %s", (u_id,))
+    conn.commit()
+    assert get_effective_role(u_id, org_a) == 'VENDOR_OWNER'
+    assert get_effective_role(u_id, org_b) == 'RETAILER_OWNER'
+
+    cur.execute("UPDATE users SET role = NULL WHERE id = %s", (u_id,))
+    conn.commit()
+    assert get_effective_role(u_id, org_a) == 'VENDOR_OWNER'
+    assert get_effective_role(u_id, org_b) == 'RETAILER_OWNER'
+
+    # Test B: Membership revoked; even if users.role is privileged ADMIN_SUPER, access must be DENIED
+    u_admin_revoked = str(uuid.uuid4())
+    cur.execute("INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, 'Revoked Admin', 'ADMIN_SUPER')",
+                (u_admin_revoked, f"+98916{uuid.uuid4().int % 10000000:07d}"))
+    cur.execute("""
+        INSERT INTO organization_memberships (organization_id, user_id, role, status)
+        VALUES (%s, %s, 'VENDOR_STAFF', 'REVOKED');
+    """, (org_a, u_admin_revoked))
+    conn.commit()
+
+    assert get_effective_role(u_admin_revoked, org_a) is None, "Revoked membership must yield None/DENY even with privileged users.role!"
+
+    # Test C: Active org determines role strictly
+    assert get_effective_role(u_id, org_a) == 'VENDOR_OWNER'
+    assert get_effective_role(u_id, org_b) == 'RETAILER_OWNER'
+
+    conn.close()
+
+def test_section_14_multi_organization_runtime():
+    """
+    Section 14: Multi-Organization Runtime Isolation & Session Scoping.
+    User X:
+      - Retailer Org A
+      - Retailer Org B
+      - Vendor Org C
+    Active session Org A -> sees only A, not B or C.
+    Active session Org B -> sees only B, not A or C.
+    Membership revoked -> immediate session cutoff.
+    """
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    org_a = str(uuid.uuid4())
+    org_b = str(uuid.uuid4())
+    org_c = str(uuid.uuid4())
+
+    cur.execute("""
+        INSERT INTO organizations (id, name, org_type, status) VALUES
+        (%s, 'Retailer Chain North', 'RETAILER', 'ACTIVE'),
+        (%s, 'Retailer Chain South', 'RETAILER', 'ACTIVE'),
+        (%s, 'Vendor Apex Wholesale', 'VENDOR', 'ACTIVE');
+    """, (org_a, org_b, org_c))
+
+    u_x = str(uuid.uuid4())
+    cur.execute("INSERT INTO users (id, phone_number, full_name) VALUES (%s, %s, 'MultiOrg User X')",
+                (u_x, f"+98916{uuid.uuid4().int % 10000000:07d}"))
+
+    cur.execute("""
+        INSERT INTO organization_memberships (organization_id, user_id, role, status, is_primary) VALUES
+        (%s, %s, 'RETAILER_OWNER', 'ACTIVE', TRUE),
+        (%s, %s, 'RETAILER_STAFF', 'ACTIVE', FALSE),
+        (%s, %s, 'VENDOR_STAFF', 'ACTIVE', FALSE);
+    """, (org_a, u_x, org_b, u_x, org_c, u_x))
+
+    # Retailer and Vendor records for organizations
+    ret_a = str(uuid.uuid4())
+    ret_b = str(uuid.uuid4())
+    vnd_c = str(uuid.uuid4())
+
+    cur.execute("""
+        INSERT INTO retailers (id, user_id, organization_id, store_name, city, neighborhood, address) VALUES
+        (%s, %s, %s, 'Store North', 'Ahvaz', 'Kianpars', 'Main Ave'),
+        (%s, %s, %s, 'Store South', 'Ahvaz', 'Golestan', 'South St');
+    """, (ret_a, u_x, org_a, ret_b, u_x, org_b))
+
+    cur.execute("""
+        INSERT INTO vendors (id, user_id, organization_id, business_name, warehouse_address) VALUES
+        (%s, %s, %s, 'Apex Wholesale Hub', 'Wholesale Park');
+    """, (vnd_c, u_x, org_c))
+
+    # Baskets for Ret A and Ret B
+    b_a = str(uuid.uuid4())
+    b_b = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO baskets (id, retailer_id, version, status) VALUES
+        (%s, %s, 1, 'OPEN'),
+        (%s, %s, 1, 'OPEN');
+    """, (b_a, ret_a, b_b, ret_b))
+    conn.commit()
+
+    # Session 1: Scoped to Org A
+    cur.execute("""
+        SELECT b.id FROM baskets b
+        JOIN retailers r ON b.retailer_id = r.id
+        JOIN organization_memberships m ON r.organization_id = m.organization_id
+        WHERE m.user_id = %s AND m.organization_id = %s AND m.status = 'ACTIVE';
+    """, (u_x, org_a))
+    seen_in_a = [row["id"] for row in cur.fetchall()]
+    assert b_a in seen_in_a, "Session A must see Org A basket"
+    assert b_b not in seen_in_a, "Session A MUST NOT see Org B basket"
+
+    # Session 2: Scoped to Org B
+    cur.execute("""
+        SELECT b.id FROM baskets b
+        JOIN retailers r ON b.retailer_id = r.id
+        JOIN organization_memberships m ON r.organization_id = m.organization_id
+        WHERE m.user_id = %s AND m.organization_id = %s AND m.status = 'ACTIVE';
+    """, (u_x, org_b))
+    seen_in_b = [row["id"] for row in cur.fetchall()]
+    assert b_b in seen_in_b, "Session B must see Org B basket"
+    assert b_a not in seen_in_b, "Session B MUST NOT see Org A basket"
+
+    # Revoke Org A membership -> immediate cutoff
+    cur.execute("""
+        UPDATE organization_memberships SET status = 'REVOKED'
+        WHERE user_id = %s AND organization_id = %s;
+    """, (u_x, org_a))
+    conn.commit()
+
+    cur.execute("""
+        SELECT b.id FROM baskets b
+        JOIN retailers r ON b.retailer_id = r.id
+        JOIN organization_memberships m ON r.organization_id = m.organization_id
+        WHERE m.user_id = %s AND m.organization_id = %s AND m.status = 'ACTIVE';
+    """, (u_x, org_a))
+    seen_after_revoke = [row["id"] for row in cur.fetchall()]
+    assert len(seen_after_revoke) == 0, "Revoked membership must immediately yield 0 accessible baskets"
+
+    conn.close()
+
+def test_section_15_legacy_actor_links():
+    """
+    Section 15: Legacy Retailer/Vendor Links.
+    Ensures retailers.user_id and vendors.user_id are deprecated and non-authoritative.
+    Asserts that multiple retailers/vendors can have identical user_id without unique constraint collisions
+    (verifying migration 003 dropped retailers_user_id_key and vendors_user_id_key).
+    """
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    org1 = str(uuid.uuid4())
+    org2 = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO organizations (id, name, org_type, status) VALUES
+        (%s, 'Multi Retailer Corp 1', 'RETAILER', 'ACTIVE'),
+        (%s, 'Multi Retailer Corp 2', 'RETAILER', 'ACTIVE');
+    """, (org1, org2))
+
+    u_same = str(uuid.uuid4())
+    cur.execute("INSERT INTO users (id, phone_number, full_name) VALUES (%s, %s, 'Same Owner User')",
+                (u_same, f"+98916{uuid.uuid4().int % 10000000:07d}"))
+
+    # Two retailers with the same user_id must succeed because migration 003 dropped retailers_user_id_key
+    r1 = str(uuid.uuid4())
+    r2 = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO retailers (id, user_id, organization_id, store_name, city, neighborhood, address) VALUES
+        (%s, %s, %s, 'Retailer Branch 1', 'Ahvaz', 'Naderi', 'Addr 1'),
+        (%s, %s, %s, 'Retailer Branch 2', 'Ahvaz', 'Kianpars', 'Addr 2');
+    """, (r1, u_same, org1, r2, u_same, org2))
+    conn.commit()
+
+    cur.execute("SELECT COUNT(*) as cnt FROM retailers WHERE user_id = %s;", (u_same,))
+    assert cur.fetchone()["cnt"] == 2, "Expected 2 retailers with same legacy user_id to co-exist without collision!"
+
+    conn.close()
 
 if __name__ == "__main__":
     test_tenant_isolation()
+    test_section_11_role_org_matrix()
+    test_section_13_users_role_non_authoritative()
+    test_section_14_multi_organization_runtime()
+    test_section_15_legacy_actor_links()

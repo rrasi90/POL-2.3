@@ -67,30 +67,9 @@ def run_migrations_safely(reset=False):
         conn, port = get_connection("pol_test")
         cur = conn.cursor()
 
-    # Migration Chain Execution
-    migration_chain = [
-        os.path.join(REPO_ROOT, "migrations", "001_initial_schema.sql"),
-        os.path.join(REPO_ROOT, "migrations", "002_platform_core_schema.sql")
-    ]
-
-    for mig in migration_chain:
-        rel_mig = os.path.relpath(mig, REPO_ROOT)
-        if not os.path.exists(mig):
-            raise FileNotFoundError(f"Migration file missing: {mig}")
-        print(f"[BOOTSTRAP] Applying {rel_mig}...")
-        with open(mig, "r", encoding="utf-8") as f:
-            ddl = f.read()
-        cur.execute(ddl)
-        conn.commit()
-        print(f"  [OK] Applied {rel_mig}.")
-
-    cur.execute("""
-        SELECT count(*) 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-          AND table_type = 'BASE TABLE';
-    """)
-    table_count = cur.fetchone()[0]
+    # Canonical Ordered Migration Chain Execution (Dynamic Discovery)
+    from scripts.migration_runner import get_migration_chain, apply_migration_chain
+    applied, table_count = apply_migration_chain(conn, verbose=True)
     print(f"[BOOTSTRAP] Successfully migrated PostgreSQL 18. Total active tables: {table_count}")
     conn.close()
     return table_count

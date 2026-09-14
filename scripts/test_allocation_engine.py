@@ -444,6 +444,10 @@ def run_tests():
         return False
 
 
-if __name__ == "__main__":
+def test_allocation_engine():
+    """Canonical pytest entry point for allocation engine invariant tests."""
     success = run_tests()
-    sys.exit(0 if success else 1)
+    assert success is True, "One or more allocation engine tests failed!"
+
+if __name__ == "__main__":
+    test_allocation_engine()
