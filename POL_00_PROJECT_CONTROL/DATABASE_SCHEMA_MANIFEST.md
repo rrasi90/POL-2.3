@@ -116,7 +116,7 @@ FIELD_ACTIVATOR
 
 مایگریشن `003_contract_reconciliation.sql` این قواعد را به صورت قطعی در پایگاه داده تضمین می‌کند:
 
-1. **انطباق نقش و نوع سازمان (Trigger `trg_validate_membership_role_org_type`):**
+1. **انطباق نقش و نوع سازمان (Trigger `trg_enforce_org_membership_role_invariant`):**
    - نقش‌های `RETAILER_OWNER` و `RETAILER_STAFF` منحصراً در سازمان‌های `RETAILER` مجاز هستند.
    - نقش‌های `VENDOR_OWNER` و `VENDOR_STAFF` منحصراً در سازمان‌های `VENDOR` مجاز هستند.
    - نقش‌های `OPS_AGENT`, `ADMIN_SUPER` و `FIELD_ACTIVATOR` منحصراً در سازمان `OPERATOR` مجاز هستند.

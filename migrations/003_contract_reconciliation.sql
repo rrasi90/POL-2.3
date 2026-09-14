@@ -91,7 +91,7 @@ ON organization_memberships;
 DROP TRIGGER IF EXISTS trg_enforce_org_membership_role_invariant
 ON organization_memberships;
 
-CREATE TRIGGER trg_validate_membership_role_org_type
+CREATE TRIGGER trg_enforce_org_membership_role_invariant
 BEFORE INSERT OR UPDATE OF organization_id, role
 ON organization_memberships
 FOR EACH ROW
