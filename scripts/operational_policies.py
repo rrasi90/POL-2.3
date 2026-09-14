@@ -1,6 +1,6 @@
 """POL operational policies for checkout integrity and operational realism."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, time
 from zoneinfo import ZoneInfo
 
 
@@ -18,14 +18,24 @@ def _vendor_allocated_totals(vendor_allocations: list) -> dict:
     return totals, units
 
 
-def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
-    """Apply optional vendor hours/capacity constraints only when configured.
+def _local_day_bounds(now_utc: datetime, tz_name: str):
+    """Return vendor-local now, local weekday, and UTC instants for local day bounds."""
+    try:
+        tz = ZoneInfo(tz_name or "Asia/Tehran")
+    except Exception as exc:
+        raise AllocationIntegrityError(f"Invalid vendor timezone: {tz_name}") from exc
 
-    Absence of a configured operational profile means "no additional restriction";
-    this keeps the Ahvaz pilot backwards-compatible while making configured
-    constraints authoritative for vendors that opt into them.
-    """
-    vendor_totals, vendor_units = _vendor_allocated_totals(vendor_allocations)
+    local_now = now_utc.astimezone(tz)
+    local_midnight = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    next_midnight = local_midnight.replace(day=local_midnight.day) + __import__("datetime").timedelta(days=1)
+    # PostgreSQL weekday convention: Sunday=0 ... Saturday=6.
+    postgres_weekday = (local_now.weekday() + 1) % 7
+    return local_now, postgres_weekday, local_midnight.astimezone(timezone.utc), next_midnight.astimezone(timezone.utc)
+
+
+def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
+    """Apply configured vendor hours/capacity using the vendor's own timezone/day boundary."""
+    _, vendor_units = _vendor_allocated_totals(vendor_allocations)
     now_utc = datetime.now(timezone.utc)
 
     for vendor_id, requested_units in vendor_units.items():
@@ -43,41 +53,57 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
             (vendor_id,),
         )
         capacity = cur.fetchone()
+        tz_name = (capacity["timezone"] if capacity and capacity["timezone"] else "Asia/Tehran")
+        local_now, local_weekday, day_start_utc, next_day_start_utc = _local_day_bounds(now_utc, tz_name)
 
         cur.execute(
             """
             SELECT timezone, opens_at, closes_at, order_cutoff_at
             FROM vendor_operating_windows
             WHERE vendor_id = %s
-              AND weekday = EXTRACT(DOW FROM CURRENT_DATE)
+              AND weekday = %s
               AND is_active = TRUE
               AND effective_from <= now()
               AND (effective_until IS NULL OR effective_until > now())
             ORDER BY effective_from DESC
             LIMIT 1;
             """,
-            (vendor_id,),
+            (vendor_id, local_weekday),
         )
         window = cur.fetchone()
 
-        if capacity:
-            tz_name = capacity["timezone"] or "Asia/Tehran"
-            try:
-                local_now = now_utc.astimezone(ZoneInfo(tz_name))
-            except Exception as exc:
-                raise AllocationIntegrityError(f"Invalid vendor timezone for {vendor_id}: {tz_name}") from exc
+        if window and window["timezone"]:
+            if window["timezone"] != tz_name:
+                tz_name = window["timezone"]
+                local_now, local_weekday, day_start_utc, next_day_start_utc = _local_day_bounds(now_utc, tz_name)
+            cur.execute(
+                """
+                SELECT timezone, opens_at, closes_at, order_cutoff_at
+                FROM vendor_operating_windows
+                WHERE vendor_id = %s
+                  AND weekday = %s
+                  AND is_active = TRUE
+                  AND effective_from <= now()
+                  AND (effective_until IS NULL OR effective_until > now())
+                ORDER BY effective_from DESC
+                LIMIT 1;
+                """,
+                (vendor_id, local_weekday),
+            )
+            window = cur.fetchone()
 
+        if capacity:
             if capacity["max_orders_per_day"] is not None:
                 cur.execute(
                     """
                     SELECT COUNT(*) AS order_count
                     FROM orders
                     WHERE vendor_id = %s
-                      AND created_at >= date_trunc('day', %s::timestamptz)
-                      AND created_at < date_trunc('day', %s::timestamptz) + interval '1 day'
+                      AND created_at >= %s
+                      AND created_at < %s
                       AND order_status NOT IN ('CANCELLED', 'REJECTED');
                     """,
-                    (vendor_id, local_now, local_now),
+                    (vendor_id, day_start_utc, next_day_start_utc),
                 )
                 current_orders = int(cur.fetchone()["order_count"])
                 if current_orders + 1 > int(capacity["max_orders_per_day"]):
@@ -93,10 +119,10 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
                     FROM order_items oi
                     JOIN orders o ON o.id = oi.order_id
                     WHERE o.vendor_id = %s
-                      AND o.created_at >= now() - interval '1 hour'
+                      AND o.created_at >= %s - interval '1 hour'
                       AND o.order_status NOT IN ('CANCELLED', 'REJECTED');
                     """,
-                    (vendor_id,),
+                    (vendor_id, now_utc),
                 )
                 recent_units = int(cur.fetchone()["picked_units"])
                 if recent_units + requested_units > int(capacity["max_pick_units_per_hour"]):
@@ -106,17 +132,20 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
                     )
 
         if window:
-            try:
-                local_now = now_utc.astimezone(ZoneInfo(window["timezone"] or "Asia/Tehran"))
-            except Exception as exc:
-                raise AllocationIntegrityError(
-                    f"Invalid vendor operating-window timezone for {vendor_id}: {window['timezone']}"
-                ) from exc
-
             current_time = local_now.timetz().replace(tzinfo=None)
-            if not (window["opens_at"] <= current_time <= window["closes_at"]):
+            opens_at = window["opens_at"]
+            closes_at = window["closes_at"]
+            cutoff = window["order_cutoff_at"]
+
+            # Support a business day that crosses midnight (e.g. 22:00-02:00).
+            if opens_at <= closes_at:
+                in_window = opens_at <= current_time <= closes_at
+            else:
+                in_window = current_time >= opens_at or current_time <= closes_at
+
+            if not in_window:
                 raise AllocationIntegrityError(f"Vendor {vendor_id} is outside its operating window.")
-            if window["order_cutoff_at"] and current_time > window["order_cutoff_at"]:
+            if cutoff and current_time > cutoff:
                 raise AllocationIntegrityError(f"Vendor {vendor_id} order cutoff has passed.")
 
 
