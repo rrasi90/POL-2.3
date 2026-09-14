@@ -8,6 +8,7 @@ Validates:
 4. PostgreSQL 18.x connection & port availability
 5. Target database 'pol_test' readiness
 6. Baseline/core schema and required operational-hardening tables
+7. Canonical user profile / persona context schema
 """
 
 import os
@@ -21,18 +22,21 @@ if hasattr(sys.stdout, "reconfigure"):
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 EXPECTED_CORE_TABLES = [
-    "users", "organizations", "organization_memberships", "user_sessions", "user_devices",
-    "retailers", "vendors", "products", "vendor_products", "vendor_inventory", "vendor_prices",
-    "baskets", "basket_items", "allocation_plans", "allocation_items", "order_groups", "orders",
-    "order_items", "payments", "deliveries", "settlements", "disputes", "support_cases",
-    "invoices", "invoice_items", "notifications", "user_inbox_items", "outbox_events",
-    "daily_inventory_confirmations", "daily_inventory_confirmation_items", "feedback_submissions",
-    "vendor_reliability_events", "product_identity_lifecycle_logs", "returns",
-    "vendor_operating_windows", "vendor_capacity_profiles", "retailer_locations", "commercial_terms",
-    "payment_evidence", "payment_reconciliation_cases", "retailer_saved_lists", "retailer_saved_list_items",
-    "data_consents", "risk_events", "metric_definitions", "experiments", "experiment_assignments",
+    "users", "user_profiles", "organizations", "organization_memberships", "membership_profiles",
+    "retailer_membership_profiles", "vendor_membership_profiles", "operator_membership_profiles",
+    "field_activator_profiles", "user_sessions", "user_devices", "retailers", "vendors", "products",
+    "vendor_products", "vendor_inventory", "vendor_prices", "baskets", "basket_items", "allocation_plans",
+    "allocation_items", "order_groups", "orders", "order_items", "payments", "deliveries", "settlements",
+    "disputes", "support_cases", "invoices", "invoice_items", "notifications", "user_inbox_items",
+    "outbox_events", "daily_inventory_confirmations", "daily_inventory_confirmation_items", "feedback_submissions",
+    "vendor_reliability_events", "product_identity_lifecycle_logs", "returns", "vendor_operating_windows",
+    "vendor_capacity_profiles", "retailer_locations", "commercial_terms", "payment_evidence",
+    "payment_reconciliation_cases", "retailer_saved_lists", "retailer_saved_list_items", "data_consents",
+    "risk_events", "metric_definitions", "experiments", "experiment_assignments", "vendor_referrals",
+    "vendor_referral_attributions", "return_items", "return_events", "payment_reconciliation_attempts",
+    "notification_provider_attempts",
 ]
-MIN_EXPECTED_TABLE_COUNT = 62
+MIN_EXPECTED_TABLE_COUNT = 70
 
 
 def verify_python():
@@ -153,12 +157,35 @@ def verify_postgres():
             """
         )
         trigger_found = cur.fetchone() is not None
+
+        cur.execute(
+            """
+            SELECT COUNT(*) AS invalid_user_profiles
+            FROM users u
+            LEFT JOIN user_profiles p ON p.user_id = u.id
+            WHERE p.id IS NULL;
+            """
+        )
+        profile_gap_count = cur.fetchone()["invalid_user_profiles"]
+
+        cur.execute(
+            """
+            SELECT COUNT(*) AS invalid_membership_profiles
+            FROM organization_memberships m
+            LEFT JOIN membership_profiles p ON p.membership_id = m.id
+            WHERE p.membership_id IS NULL;
+            """
+        )
+        membership_profile_gap_count = cur.fetchone()["invalid_membership_profiles"]
+
         conn.close()
 
         schema_valid = (
             table_count >= MIN_EXPECTED_TABLE_COUNT
             and len(missing_tables) == 0
             and trigger_found
+            and profile_gap_count == 0
+            and membership_profile_gap_count == 0
         )
         return {
             "check": "postgres_runtime",
@@ -170,6 +197,8 @@ def verify_postgres():
             "minimum_expected_table_count": MIN_EXPECTED_TABLE_COUNT,
             "missing_core_tables": missing_tables,
             "trigger_verified": trigger_found,
+            "user_profile_gap_count": profile_gap_count,
+            "membership_profile_gap_count": membership_profile_gap_count,
         }
     except Exception as e:
         conn.close()
