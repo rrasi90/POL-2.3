@@ -8,7 +8,8 @@ RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF NEW.user_id IS NOT NULL AND NEW.organization_id IS NOT NULL THEN
+    IF NEW.user_id IS NOT NULL AND NEW.organization_id IS NOT NULL
+       AND COALESCE(NEW.status, 'ACTIVE') IN ('ACTIVE', 'PENDING_VERIFICATION', 'OFFLINE', 'SUSPENDED') THEN
         INSERT INTO vendor_inventory_responsibilities (
             vendor_id, user_id, responsibility_type, is_primary, source
         )
@@ -18,7 +19,6 @@ BEGIN
             FROM organizations o
             WHERE o.id = NEW.organization_id
               AND o.org_type = 'VENDOR'
-              AND o.status = 'ACTIVE'
         )
         ON CONFLICT (vendor_id, user_id, responsibility_type) DO UPDATE
         SET is_primary = TRUE,
@@ -35,8 +35,9 @@ AFTER INSERT ON vendors
 FOR EACH ROW
 EXECUTE FUNCTION pol_materialize_vendor_inventory_responsibility();
 
--- Repair any vendor rows created before this guard was installed when the
--- canonical source can be derived unambiguously from vendors.user_id.
+-- Repair vendor rows created before this guard when vendors.user_id is an
+-- unambiguous operational owner. Vendor status, not organization workflow
+-- status, controls whether the vendor row itself is operationally usable.
 INSERT INTO vendor_inventory_responsibilities (
     vendor_id, user_id, responsibility_type, is_primary, source
 )
@@ -45,7 +46,7 @@ FROM vendors v
 JOIN organizations o ON o.id = v.organization_id
 WHERE v.user_id IS NOT NULL
   AND o.org_type = 'VENDOR'
-  AND o.status = 'ACTIVE'
+  AND COALESCE(v.status, 'ACTIVE') IN ('ACTIVE', 'PENDING_VERIFICATION', 'OFFLINE', 'SUSPENDED')
   AND NOT EXISTS (
       SELECT 1
       FROM vendor_inventory_responsibilities r
