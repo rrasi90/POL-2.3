@@ -1,8 +1,9 @@
 """Canonical payment reconciliation worker for NON_CUSTODIAL_DIRECT.
 
 The worker never takes custody of funds. It reconciles evidence already recorded
-by POL and only marks a payment successful when trusted evidence totals exactly
-the expected payment amount.
+by POL and only marks a payment successful when a trusted observation matches the
+expected payment amount. Evidence rows are observations by default, not additive
+cash fragments, so independent confirmations cannot double-count one payment.
 """
 
 from __future__ import annotations
@@ -48,27 +49,14 @@ class PaymentReconciliationWorker:
         )
         return lease_id, cur.fetchall()
 
-    @staticmethod
-    def _release(cur, case_id: str, lease_id: str, next_retry_at=None):
-        cur.execute(
-            """
-            UPDATE payment_reconciliation_cases
-            SET worker_lease_id = NULL,
-                worker_lease_until = NULL,
-                next_retry_at = %s
-            WHERE id = %s AND worker_lease_id = %s;
-            """,
-            (next_retry_at, case_id, lease_id),
-        )
-
     @classmethod
     def reconcile_case(cls, cur, case: dict, lease_id: str):
         case_id = str(case["id"])
         expected = int(case["expected_amount_toman"])
         cur.execute(
             """
-            SELECT evidence_type, external_reference, claimed_amount_toman,
-                   observed_amount_toman, evidence_uri, metadata
+            SELECT id, evidence_type, external_reference, claimed_amount_toman,
+                   observed_amount_toman, evidence_uri, metadata, observation_scope
             FROM payment_evidence
             WHERE payment_id = %s
             ORDER BY captured_at ASC;
@@ -77,9 +65,9 @@ class PaymentReconciliationWorker:
         )
         evidence = cur.fetchall()
         trusted = [r for r in evidence if r["evidence_type"] in TRUSTED_EVIDENCE_TYPES]
-        observed_values = [r["observed_amount_toman"] for r in trusted if r["observed_amount_toman"] is not None]
+        observed = [r for r in trusted if r["observed_amount_toman"] is not None]
 
-        if not trusted or not observed_values:
+        if not trusted or not observed:
             cur.execute(
                 """
                 INSERT INTO payment_reconciliation_attempts
@@ -100,20 +88,37 @@ class PaymentReconciliationWorker:
             )
             return "NO_EVIDENCE"
 
-        observed_total = sum(int(v) for v in observed_values)
+        # SINGLE_PAYMENT evidence rows are independent observations of the same
+        # expected payment. Never sum them. SPLIT_PAYMENT is reserved for a
+        # separately approved future flow and is not activated in MVP.
+        single_observed = [r for r in observed if r.get("observation_scope", "SINGLE_PAYMENT") == "SINGLE_PAYMENT"]
+        observed_values = [int(r["observed_amount_toman"]) for r in single_observed]
+        max_observed = max(observed_values)
+        exact_match = any(value == expected for value in observed_values)
         references = [r["external_reference"] for r in trusted if r["external_reference"]]
-        details = {"evidence_count": len(evidence), "trusted_count": len(trusted), "references": references}
+        details = {
+            "evidence_count": len(evidence),
+            "trusted_count": len(trusted),
+            "observation_count": len(observed_values),
+            "max_observed_amount": max_observed,
+            "references": references,
+            "aggregation": "single_payment_observation_max",
+        }
 
-        if observed_total == expected:
+        if exact_match:
             outcome = "MATCHED"
+            matching_ref = next(
+                (r["external_reference"] for r in single_observed if int(r["observed_amount_toman"]) == expected),
+                references[0] if references else None,
+            )
             cur.execute(
                 """
                 INSERT INTO payment_reconciliation_attempts
                     (id,reconciliation_case_id,attempt_number,evidence_count,observed_amount_toman,outcome,provider_reference,details)
                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s);
                 """,
-                (str(uuid.uuid4()), case_id, case["attempt_count"], len(evidence), observed_total,
-                 outcome, references[0] if references else None, Json(details)),
+                (str(uuid.uuid4()), case_id, case["attempt_count"], len(evidence), expected,
+                 outcome, matching_ref, Json(details)),
             )
             cur.execute(
                 """
@@ -128,7 +133,7 @@ class PaymentReconciliationWorker:
                     next_retry_at = NULL
                 WHERE id = %s AND worker_lease_id = %s;
                 """,
-                (observed_total, references[0] if references else None, case_id, lease_id),
+                (expected, matching_ref, case_id, lease_id),
             )
             cur.execute(
                 """
@@ -138,7 +143,7 @@ class PaymentReconciliationWorker:
                     paid_at = COALESCE(paid_at, now())
                 WHERE id = %s AND payment_status IN ('PENDING','INITIATED');
                 """,
-                (references[0] if references else None, case["payment_id"]),
+                (matching_ref, case["payment_id"]),
             )
             cur.execute(
                 """
@@ -153,11 +158,12 @@ class PaymentReconciliationWorker:
                 ON CONFLICT (event_name, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING;
                 """,
                 ("payment_reconciled:" + str(case["payment_id"]), str(case["payment_id"]),
-                 str(case["payment_id"]), observed_total, references[0] if references else None,
+                 str(case["payment_id"]), expected, matching_ref,
                  "payment_reconciled:" + str(case["payment_id"]), str(case["payment_id"])),
             )
             return outcome
 
+        observed_total = max_observed
         outcome = "PARTIAL" if observed_total < expected else "MISMATCH"
         cur.execute(
             """
