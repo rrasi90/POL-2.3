@@ -65,16 +65,29 @@ class PaymentReconciliationWorker:
         )
         evidence = cur.fetchall()
         trusted = [r for r in evidence if r["evidence_type"] in TRUSTED_EVIDENCE_TYPES]
-        observed = [r for r in trusted if r["observed_amount_toman"] is not None]
+        observed_single = [
+            r for r in trusted
+            if r["observed_amount_toman"] is not None
+            and r.get("observation_scope", "SINGLE_PAYMENT") == "SINGLE_PAYMENT"
+        ]
+        unsupported_split = [
+            r for r in trusted
+            if r.get("observation_scope") == "SPLIT_PAYMENT"
+        ]
 
-        if not trusted or not observed:
+        if not trusted or not observed_single:
+            details = {
+                "trusted": len(trusted),
+                "single_payment_observations": len(observed_single),
+                "unsupported_split_observations": len(unsupported_split),
+            }
             cur.execute(
                 """
                 INSERT INTO payment_reconciliation_attempts
                     (id,reconciliation_case_id,attempt_number,evidence_count,outcome,details)
                 VALUES (%s,%s,%s,%s,'NO_EVIDENCE',%s);
                 """,
-                (str(uuid.uuid4()), case_id, case["attempt_count"], len(evidence), Json({"trusted": len(trusted)})),
+                (str(uuid.uuid4()), case_id, case["attempt_count"], len(evidence), Json(details)),
             )
             cur.execute(
                 """
@@ -90,16 +103,17 @@ class PaymentReconciliationWorker:
 
         # SINGLE_PAYMENT evidence rows are independent observations of the same
         # expected payment. Never sum them. SPLIT_PAYMENT is reserved for a
-        # separately approved future flow and is not activated in MVP.
-        single_observed = [r for r in observed if r.get("observation_scope", "SINGLE_PAYMENT") == "SINGLE_PAYMENT"]
-        observed_values = [int(r["observed_amount_toman"]) for r in single_observed]
+        # separately approved future flow and therefore never participates in
+        # MVP reconciliation.
+        observed_values = [int(r["observed_amount_toman"]) for r in observed_single]
         max_observed = max(observed_values)
         exact_match = any(value == expected for value in observed_values)
-        references = [r["external_reference"] for r in trusted if r["external_reference"]]
+        references = [r["external_reference"] for r in observed_single if r["external_reference"]]
         details = {
             "evidence_count": len(evidence),
             "trusted_count": len(trusted),
             "observation_count": len(observed_values),
+            "unsupported_split_count": len(unsupported_split),
             "max_observed_amount": max_observed,
             "references": references,
             "aggregation": "single_payment_observation_max",
@@ -108,7 +122,7 @@ class PaymentReconciliationWorker:
         if exact_match:
             outcome = "MATCHED"
             matching_ref = next(
-                (r["external_reference"] for r in single_observed if int(r["observed_amount_toman"]) == expected),
+                (r["external_reference"] for r in observed_single if int(r["observed_amount_toman"]) == expected),
                 references[0] if references else None,
             )
             cur.execute(
