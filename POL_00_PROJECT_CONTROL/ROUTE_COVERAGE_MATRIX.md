@@ -21,11 +21,12 @@
 | Dispute -> Adjustment | `disputes`, `refunds`, settlement projection | outbox | duplicate dispute/refund, wrong blast radius | runtime + concurrency | GREEN* |
 | Daily inventory -> reminder | `daily_inventory_confirmations`, `vendor_inventory_responsibilities` | outbox | wrong recipient, duplicate reminder, missing PENDING row | integration + operational tests | GREEN* |
 | Reminder -> logical notification | `outbox_events`, `notification_templates` | canonical integration worker | arbitrary recipient, missing template | integration worker tests | GREEN* |
+| Vendor -> Referral -> Retailer | `vendor_referrals`, `vendor_referral_attributions` | outbox passthrough for analytics | wrong tenant, duplicate attribution, over-redemption | `test_vendor_referral.py` | GREEN* |
 | Notification -> delivery | `notification_deliveries` | delivery worker | retry storm, duplicate channel, recursive outbox | delivery boundary tests | AMBER |
 | Feedback -> Admin | `feedback_submissions` | outbox | tenant leakage, missing context, no triage ownership | feedback tests | AMBER |
 | Feedback reply -> user | `feedback_submissions`, `notifications` | delivery worker | wrong user, missing delivery | integration tests | AMBER |
 | Support -> case lifecycle | `support_cases`, assignments/messages | N/A | reassignment race, unauthorized notes | support tests | AMBER |
-| Returns / RMA | `returns` | N/A | incomplete reverse logistics lifecycle | schema/runtime evidence | AMBER |
+| Returns / RMA | `returns`, `return_items` | N/A | reverse-logistics execution completeness, refund linkage | schema/runtime evidence | AMBER |
 | Analytics / KPI | event + metric lineage | async analytics | metric drift, wrong cohort/timezone | lineage tests | AMBER |
 | External provider delivery | provider adapter boundary | worker/provider | provider failure, retry/backoff, credential/config | not live tested | AMBER |
 
@@ -45,3 +46,4 @@ Required pre-UI gates:
 6. Route-level negative tests exist for tenant, state, price, stock, recipient and idempotency failures.
 7. The API/client contract is specified for every GREEN route.
 8. Simplicity invariants remain green after the API boundary is introduced.
+9. Vendor Referral is treated as an MVP acquisition route, not as a future monetization feature.
