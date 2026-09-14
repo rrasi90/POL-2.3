@@ -16,6 +16,7 @@ from scripts.provider_adapters import (
 
 class ProviderDeliveryWorker:
     RETRY_DELAYS_MINUTES = (1, 5, 15, 60)
+    MAX_ATTEMPTS = 8
 
     @staticmethod
     def claim_pending(cur, limit: int = 100, lease_minutes: int = 5):
@@ -27,6 +28,7 @@ class ProviderDeliveryWorker:
                 FROM notification_deliveries
                 WHERE channel IN ('PUSH','SMS')
                   AND status IN ('PENDING','FAILED')
+                  AND attempt_count < %s
                   AND scheduled_at <= now()
                   AND (next_retry_at IS NULL OR next_retry_at <= now())
                   AND (lease_until IS NULL OR lease_until <= now())
@@ -42,7 +44,7 @@ class ProviderDeliveryWorker:
             WHERE d.id = x.id
             RETURNING d.*;
             """,
-            (limit, lease_id, lease_minutes),
+            (ProviderDeliveryWorker.MAX_ATTEMPTS, limit, lease_id, lease_minutes),
         )
         return lease_id, cur.fetchall()
 
@@ -75,6 +77,23 @@ class ProviderDeliveryWorker:
         row = cur.fetchone()
         return row["push_token"] if row else None
 
+    @staticmethod
+    def _finish_attempt(cur, attempt_id, outcome, error_message=None, provider_message_id=None, provider_code=None, metadata=None):
+        cur.execute(
+            """
+            UPDATE notification_provider_attempts
+            SET outcome=%s,
+                error_message=%s,
+                provider_message_id=%s,
+                provider_code=%s,
+                response_metadata=%s,
+                completed_at=now()
+            WHERE id=%s;
+            """,
+            (outcome, error_message, provider_message_id, provider_code,
+             Json(metadata or {}), attempt_id),
+        )
+
     @classmethod
     def process_delivery(cls, cur, delivery, lease_id: str):
         delivery_id = str(delivery["id"])
@@ -84,6 +103,7 @@ class ProviderDeliveryWorker:
         if not identity:
             raise ValueError("Notification referenced by delivery does not exist.")
 
+        attempt_row = None
         try:
             adapter = build_adapter(delivery["channel"])
             cur.execute(
@@ -102,9 +122,7 @@ class ProviderDeliveryWorker:
 
             if delivery["channel"] == "SMS":
                 result = adapter.send(
-                    phone_number=identity["phone_number"],
-                    title=identity["title"],
-                    body=identity["body"],
+                    phone_number=identity["phone_number"], title=identity["title"], body=identity["body"],
                     idempotency_key=provider_attempt_key,
                 )
             else:
@@ -112,21 +130,15 @@ class ProviderDeliveryWorker:
                 if not token:
                     raise ProviderPermanentError("No active push token for notification recipient")
                 result = adapter.send(
-                    push_token=token,
-                    title=identity["title"],
-                    body=identity["body"],
-                    data=identity["data_payload"] or {},
-                    idempotency_key=provider_attempt_key,
+                    push_token=token, title=identity["title"], body=identity["body"],
+                    data=identity["data_payload"] or {}, idempotency_key=provider_attempt_key,
                 )
 
-            cur.execute(
-                """
-                UPDATE notification_provider_attempts
-                SET outcome='SENT', provider_message_id=%s, provider_code=%s,
-                    response_metadata=%s, completed_at=now()
-                WHERE id = %s;
-                """,
-                (result.provider_message_id, result.provider_code, Json(result.metadata), attempt_row["id"]),
+            cls._finish_attempt(
+                cur, attempt_row["id"], "SENT",
+                provider_message_id=result.provider_message_id,
+                provider_code=result.provider_code,
+                metadata=result.metadata,
             )
             cur.execute(
                 """
@@ -144,6 +156,19 @@ class ProviderDeliveryWorker:
             return "SENT"
 
         except ProviderTransientError as exc:
+            if attempt_row:
+                cls._finish_attempt(cur, attempt_row["id"], "RETRYABLE_FAILURE", error_message=str(exc))
+            if attempt_number >= cls.MAX_ATTEMPTS:
+                cur.execute(
+                    """
+                    UPDATE notification_deliveries
+                    SET status='FAILED', attempt_count=%s, last_error=%s,
+                        next_retry_at=NULL, lease_id=NULL, lease_until=NULL, updated_at=now()
+                    WHERE id=%s AND lease_id=%s;
+                    """,
+                    (attempt_number, f"max attempts exceeded: {exc}", delivery_id, lease_id),
+                )
+                return "MAX_RETRIES_EXCEEDED"
             delay = cls.RETRY_DELAYS_MINUTES[min(attempt_number - 1, len(cls.RETRY_DELAYS_MINUTES) - 1)]
             cur.execute(
                 """
@@ -158,6 +183,8 @@ class ProviderDeliveryWorker:
             return "RETRYABLE_FAILURE"
 
         except (ProviderPermanentError, ProviderConfigurationError) as exc:
+            if attempt_row:
+                cls._finish_attempt(cur, attempt_row["id"], "PERMANENT_FAILURE", error_message=str(exc))
             cur.execute(
                 """
                 UPDATE notification_deliveries
@@ -172,7 +199,4 @@ class ProviderDeliveryWorker:
     @classmethod
     def process_pending(cls, cur, limit: int = 100):
         lease_id, deliveries = cls.claim_pending(cur, limit=limit)
-        results = []
-        for delivery in deliveries:
-            results.append(cls.process_delivery(cur, delivery, lease_id))
-        return results
+        return [cls.process_delivery(cur, delivery, lease_id) for delivery in deliveries]
