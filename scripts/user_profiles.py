@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 
 class UserProfileAccessError(PermissionError):
@@ -12,23 +12,12 @@ class UserProfileAccessError(PermissionError):
 
 class UserProfileService:
     USER_ALLOWED_PROFILE_FIELDS = {
-        "display_name",
-        "email",
-        "preferred_language",
-        "timezone",
-        "bio",
-        "avatar_media_asset_id",
+        "display_name", "email", "preferred_language", "timezone", "bio", "avatar_media_asset_id"
     }
 
+    # RBAC-bearing fields are deliberately excluded. They are admin/system managed.
     MEMBERSHIP_ALLOWED_FIELDS = {
-        "display_name_override",
-        "title",
-        "job_function",
-        "preferred_dashboard",
-        "default_contact_channel",
-        "locale_override",
-        "preferences",
-        "onboarding_status",
+        "display_name_override", "title", "default_contact_channel", "locale_override", "preferences"
     }
 
     @staticmethod
@@ -71,13 +60,9 @@ class UserProfileService:
             return result
 
         membership = cls._active_membership(cur, user_id, organization_id)
-        cur.execute(
-            "SELECT * FROM membership_profiles WHERE membership_id = %s",
-            (membership["id"],),
-        )
-        membership_profile = cur.fetchone()
+        cur.execute("SELECT * FROM membership_profiles WHERE membership_id = %s", (membership["id"],))
         result["membership"] = membership
-        result["membership_profile"] = membership_profile
+        result["membership_profile"] = cur.fetchone()
 
         role = membership["role"]
         if role in ("RETAILER_OWNER", "RETAILER_STAFF"):
@@ -98,17 +83,38 @@ class UserProfileService:
         unknown = set(fields) - cls.USER_ALLOWED_PROFILE_FIELDS
         if unknown:
             raise ValueError(f"Unsupported user profile fields: {sorted(unknown)}")
+        fields = dict(fields)
         if not fields:
             return cls.get_my_profile(cur, user_id)
-
         if "display_name" in fields and not str(fields["display_name"]).strip():
             raise ValueError("display_name cannot be empty")
+
         if "email" in fields and fields["email"] is not None:
             email = str(fields["email"]).strip().lower()
             if "@" not in email or len(email) > 254:
                 raise ValueError("Invalid email address")
-            fields = dict(fields)
             fields["email"] = email
+
+        if "timezone" in fields:
+            try:
+                ZoneInfo(str(fields["timezone"]))
+            except Exception as exc:
+                raise ValueError("Invalid IANA timezone") from exc
+
+        if "avatar_media_asset_id" in fields and fields["avatar_media_asset_id"] is not None:
+            cur.execute(
+                """
+                SELECT 1
+                FROM media_assets
+                WHERE id = %s
+                  AND status = 'READY'
+                  AND mime_type LIKE 'image/%'
+                  AND uploaded_by_user_id = %s;
+                """,
+                (fields["avatar_media_asset_id"], user_id),
+            )
+            if not cur.fetchone():
+                raise UserProfileAccessError("Avatar must reference a READY image uploaded by the same user.")
 
         columns = []
         values = []
@@ -126,10 +132,7 @@ class UserProfileService:
             raise UserProfileAccessError("Canonical user profile does not exist.")
 
         if "display_name" in fields:
-            cur.execute(
-                "UPDATE users SET full_name = %s, updated_at = now() WHERE id = %s",
-                (fields["display_name"], user_id),
-            )
+            cur.execute("UPDATE users SET full_name = %s, updated_at = now() WHERE id = %s", (fields["display_name"], user_id))
         return profile
 
     @classmethod
@@ -142,10 +145,11 @@ class UserProfileService:
             cur.execute("SELECT * FROM membership_profiles WHERE membership_id = %s", (membership["id"],))
             return cur.fetchone()
 
-        if "onboarding_status" in fields and fields["onboarding_status"] not in {
-            "STARTED", "PROFILE_IN_PROGRESS", "READY", "SUSPENDED"
-        }:
-            raise ValueError("Invalid onboarding_status")
+        fields = dict(fields)
+        if fields.get("default_contact_channel") not in {None, "IN_APP", "PUSH", "SMS"}:
+            raise ValueError("Invalid default_contact_channel")
+        if fields.get("locale_override") not in {None, "fa-IR", "en-US"}:
+            raise ValueError("Invalid locale_override")
 
         columns = []
         values = []
@@ -153,8 +157,6 @@ class UserProfileService:
             if key in fields:
                 columns.append(f"{key} = %s")
                 values.append(fields[key])
-        if fields.get("onboarding_status") == "READY":
-            columns.append("onboarding_completed_at = COALESCE(onboarding_completed_at, now())")
         values.append(membership["id"])
         cur.execute(
             f"UPDATE membership_profiles SET {', '.join(columns)}, updated_at = now() WHERE membership_id = %s RETURNING *",
