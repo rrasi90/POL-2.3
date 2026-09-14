@@ -18,7 +18,7 @@ class SupportStateError(ValueError):
     pass
 
 
-OPS_ROLES = {"SUPER_ADMIN", "OPS_ADMIN"}
+OPS_ROLES = {"ADMIN_SUPER", "OPS_AGENT", "SUPER_ADMIN", "OPS_ADMIN"}
 USER_ROLES = {"RETAILER_OWNER", "RETAILER_STAFF", "VENDOR_OWNER", "VENDOR_STAFF"}
 
 
@@ -85,7 +85,7 @@ class CanonicalSupportService:
         case = cur.fetchone()
         if not case:
             raise KeyError("Support case not found")
-        allowed = case["user_id"] and str(case["user_id"]) == str(actor_user_id)
+        allowed = str(case["user_id"]) == str(actor_user_id)
         if not allowed:
             allowed = cls._is_ops_actor(cur, actor_user_id)
         cls._audit(cur, case_id, actor_user_id, "READ", bool(allowed), None if allowed else "tenant/ops authorization failed")
@@ -96,6 +96,8 @@ class CanonicalSupportService:
     @classmethod
     def add_message(cls, cur, actor_user_id: str, case_id: str, message_text: str,
                     internal: bool = False, sender_type: str | None = None):
+        if not message_text.strip():
+            raise ValueError("Support message cannot be empty.")
         case = cls.get_case(cur, actor_user_id, case_id)
         is_ops = cls._is_ops_actor(cur, actor_user_id)
         if internal and not is_ops:
@@ -124,9 +126,7 @@ class CanonicalSupportService:
             raise SupportAccessError("Only operator staff may assign cases.")
         if not cls._is_ops_actor(cur, assignee_user_id):
             raise SupportAccessError("Support cases can only be assigned to active operator staff.")
-        cur.execute(
-            "SELECT status FROM support_cases WHERE id = %s FOR UPDATE", (case_id,)
-        )
+        cur.execute("SELECT status FROM support_cases WHERE id = %s FOR UPDATE", (case_id,))
         case = cur.fetchone()
         if not case:
             raise KeyError("Support case not found")
@@ -143,12 +143,13 @@ class CanonicalSupportService:
             """,
             (str(uuid.uuid4()), case_id, assignee_user_id, actor_user_id),
         )
+        assignment = cur.fetchone()
         cur.execute(
             "UPDATE support_cases SET assigned_at = now(), updated_at = now(), status = CASE WHEN status = 'OPEN' THEN 'IN_PROGRESS' ELSE status END WHERE id = %s",
             (case_id,),
         )
         cls._audit(cur, case_id, actor_user_id, "ASSIGN", True)
-        return cur.fetchone()
+        return assignment
 
     @classmethod
     def transition(cls, cur, actor_user_id: str, case_id: str, target_status: str,
