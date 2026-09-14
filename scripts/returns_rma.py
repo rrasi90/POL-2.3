@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from psycopg2.extras import Json
 
 
 class ReturnAccessError(PermissionError):
@@ -80,6 +79,8 @@ class CanonicalReturnService:
                        reason: str, idempotency_key: str, claimed_refund_amount_toman: int):
         if not idempotency_key:
             raise ValueError("Return request requires an idempotency key.")
+        if claimed_refund_amount_toman < 0:
+            raise ValueError("Claimed refund amount cannot be negative.")
         cur.execute("SELECT * FROM returns WHERE request_idempotency_key = %s", (idempotency_key,))
         existing = cur.fetchone()
         if existing:
@@ -87,15 +88,14 @@ class CanonicalReturnService:
 
         cur.execute(
             """
-            SELECT o.id, o.retailer_id, o.order_status, oi.id AS order_item_id,
-                   oi.vendor_product_id, oi.ordered_quantity, oi.unit_price_toman,
-                   v.id AS vendor_id
+            SELECT o.id, o.retailer_id, o.vendor_id, o.order_status,
+                   oi.id AS order_item_id, oi.vendor_product_id, oi.ordered_quantity,
+                   oi.delivered_quantity, oi.unit_price_toman
             FROM orders o
             JOIN order_items oi ON oi.order_id = o.id
-            JOIN vendors v ON v.id = oi.vendor_id
             WHERE o.id = %s
               AND o.retailer_id IS NOT NULL
-              AND o.order_status NOT IN ('CANCELLED','DRAFT')
+              AND o.order_status NOT IN ('CANCELLED','CREATED','SUBMITTED')
             FOR SHARE;
             """,
             (order_id,),
@@ -104,21 +104,26 @@ class CanonicalReturnService:
         if not rows:
             raise KeyError("Order not found or not return-eligible")
         retailer_id = str(rows[0]["retailer_id"])
+        vendor_id = str(rows[0]["vendor_id"])
         if not cls._retailer_access(cur, actor_user_id, retailer_id):
             raise ReturnAccessError("Only an active retailer member may open an RMA for the order.")
+        if any(str(r["vendor_id"]) != vendor_id for r in rows):
+            raise ValueError("A child order must have one canonical vendor before an MVP RMA is opened.")
         order_item_map = {str(r["order_item_id"]): r for r in rows}
         if not order_items:
             raise ValueError("At least one return item is required.")
         for item in order_items:
-            if str(item["order_item_id"]) not in order_item_map:
+            item_key = str(item["order_item_id"])
+            if item_key not in order_item_map:
                 raise ValueError("Return item does not belong to the order.")
-            if int(item["quantity"]) <= 0 or int(item["quantity"]) > int(order_item_map[str(item["order_item_id"])] ["delivered_quantity"] or order_item_map[str(item["order_item_id"])] ["ordered_quantity"]):
+            quantity = int(item["quantity"])
+            max_returnable = int(order_item_map[item_key]["delivered_quantity"] or order_item_map[item_key]["ordered_quantity"])
+            if quantity <= 0 or quantity > max_returnable:
                 raise ValueError("Return quantity exceeds delivered/ordered quantity.")
+            reason_code = item.get("reason_code", "OTHER")
+            if reason_code not in {"DAMAGED", "SHORTAGE", "WRONG_ITEM", "QUALITY", "DELIVERY_ERROR", "OTHER"}:
+                raise ValueError("Unsupported RMA reason code.")
 
-        vendor_ids = {str(order_item_map[str(i["order_item_id"])] ["vendor_id"]) for i in order_items}
-        if len(vendor_ids) != 1:
-            raise ValueError("Each MVP RMA must target one vendor.")
-        vendor_id = vendor_ids.pop()
         return_id = str(uuid.uuid4())
         return_number = "RMA-" + return_id.replace("-", "")[:12].upper()
         cur.execute(
@@ -158,7 +163,7 @@ class CanonicalReturnService:
                    r.user_id, r.organization_id, %s
             FROM retailers r
             WHERE r.id = %s
-            ON CONFLICT (event_id) DO NOTHING;
+            ON CONFLICT (event_name, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING;
             """,
             ("return_requested:" + return_id, return_id, return_id, order_id,
              "return_requested:" + return_id, retailer_id),
@@ -168,6 +173,8 @@ class CanonicalReturnService:
     @classmethod
     def transition(cls, cur, actor_user_id: str, return_id: str, target_status: str,
                    reason: str | None = None, approved_refund_amount_toman: int | None = None):
+        if approved_refund_amount_toman is not None and approved_refund_amount_toman < 0:
+            raise ValueError("Approved refund amount cannot be negative.")
         cur.execute("SELECT * FROM returns WHERE id = %s FOR UPDATE", (return_id,))
         ret = cur.fetchone()
         if not ret:
@@ -178,7 +185,7 @@ class CanonicalReturnService:
 
         retailer_ok = cls._retailer_access(cur, actor_user_id, str(ret["retailer_id"]))
         vendor_ok = cls._vendor_access(cur, actor_user_id, str(ret["vendor_id"]))
-        if target_status in {"CANCELLED"}:
+        if target_status == "CANCELLED":
             allowed = retailer_ok and current in {"RETURN_REQUESTED", "APPROVED", "PICKUP_REQUIRED"}
         elif target_status in {"APPROVED", "PICKUP_REQUIRED", "RETURN_IN_TRANSIT", "RECEIVED", "VENDOR_INSPECTION", "ACCEPTED", "REJECTED"}:
             allowed = vendor_ok
