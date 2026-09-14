@@ -59,7 +59,6 @@ BEGIN
         NEW.channel_hint := COALESCE(NEW.channel_hint, 'PUSH');
         NEW.dedupe_key := COALESCE(NEW.dedupe_key, NEW.event_id);
     END IF;
-
     RETURN NEW;
 END;
 $$;
@@ -70,21 +69,23 @@ BEFORE INSERT ON outbox_events
 FOR EACH ROW
 EXECUTE FUNCTION pol_enrich_daily_inventory_outbox();
 
-CREATE TABLE IF NOT EXISTS notification_deliveries (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    notification_id UUID NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
-    channel VARCHAR(16) NOT NULL CHECK (channel IN ('INBOX', 'PUSH', 'SMS')),
-    status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
-        CHECK (status IN ('PENDING', 'SENT', 'FAILED', 'SUPPRESSED', 'EXPIRED')),
-    attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
-    provider_message_id VARCHAR(255),
-    last_error TEXT,
-    scheduled_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    sent_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT uq_notification_delivery_channel UNIQUE (notification_id, channel)
-);
+-- Reconcile the pre-existing delivery table from Migration 002 instead of
+-- redefining it. Existing semantics (DELIVERED/SKIPPED/device/provider) remain
+-- valid; the new scheduler/retry metadata is additive.
+ALTER TABLE notification_deliveries
+    ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    ADD COLUMN IF NOT EXISTS sent_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS last_error TEXT,
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+ALTER TABLE notification_deliveries
+    DROP CONSTRAINT IF EXISTS notification_deliveries_status_check;
+ALTER TABLE notification_deliveries
+    ADD CONSTRAINT notification_deliveries_status_check
+    CHECK (status IN ('PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SKIPPED', 'SUPPRESSED', 'EXPIRED'));
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_notification_delivery_channel
+    ON notification_deliveries(notification_id, channel);
 
 CREATE INDEX IF NOT EXISTS idx_notification_deliveries_pending
     ON notification_deliveries(status, scheduled_at);
@@ -125,7 +126,7 @@ BEGIN
         'notify_delivery_' || NEW.id::text,
         'NOTIFICATION_DELIVERY_REQUESTED',
         'NOTIFICATION',
-        NEW.id,
+        NEW.id::text,
         jsonb_build_object(
             'notification_id', NEW.id,
             'user_id', NEW.user_id,
