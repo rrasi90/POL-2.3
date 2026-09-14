@@ -3,9 +3,6 @@
 -- Daily inventory scheduler contract
 -- ============================================================================
 
--- Every queued reminder must have a durable daily confirmation row. This makes
--- the later MISSED/STALE transition deterministic even when a vendor has never
--- opened the inventory screen.
 CREATE OR REPLACE FUNCTION pol_ensure_daily_inventory_confirmation()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -17,13 +14,15 @@ BEGIN
        AND NEW.aggregate_type = 'VENDOR_INVENTORY'
        AND NEW.aggregate_id IS NOT NULL THEN
         reminder_date := NULLIF(NEW.payload ->> 'confirmation_date', '')::DATE;
-        IF reminder_date IS NULL THEN
-            RAISE EXCEPTION 'Daily inventory reminder requires confirmation_date in payload: %', NEW.event_id;
-        END IF;
 
-        INSERT INTO daily_inventory_confirmations(vendor_id, confirmation_date, status)
-        VALUES (NEW.aggregate_id::UUID, reminder_date, 'PENDING')
-        ON CONFLICT (vendor_id, confirmation_date) DO NOTHING;
+        -- Legacy/manual reminder records may predate the scheduler payload.
+        -- Do not block their routing; scheduler-generated reminders with a
+        -- confirmation_date create the durable PENDING confirmation row.
+        IF reminder_date IS NOT NULL THEN
+            INSERT INTO daily_inventory_confirmations(vendor_id, confirmation_date, status)
+            VALUES (NEW.aggregate_id::UUID, reminder_date, 'PENDING')
+            ON CONFLICT (vendor_id, confirmation_date) DO NOTHING;
+        END IF;
     END IF;
     RETURN NEW;
 END;
