@@ -17,3 +17,10 @@ build/
 .idea/
 .vscode/
 scratch/
+
+# Research runtime artifacts and local databases
+.hyperresearch/
+*.db
+*.sqlite
+*.sqlite3
+*.log

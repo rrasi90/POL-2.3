@@ -104,6 +104,37 @@ class AuthService:
             WHERE id = %s;
         """, (session_id,))
 
+    @staticmethod
+    def authorize_action(cur, user_id: str, active_org_id: str, allowed_roles: list) -> dict:
+        """
+        SSoT for authorization: derives active membership role from active organization context.
+        users.role is DEPRECATED and ignored.
+        Supports canonical roles (ADMIN_SUPER, OPS_AGENT) and legacy aliases (SUPER_ADMIN, OPS_ADMIN).
+        """
+        cur.execute("""
+            SELECT m.role, m.status, o.org_type, o.status as org_status
+            FROM organization_memberships m
+            JOIN organizations o ON m.organization_id = o.id
+            WHERE m.user_id = %s AND m.organization_id = %s;
+        """, (user_id, active_org_id))
+        mem = cur.fetchone()
+        if not mem or mem["status"] != "ACTIVE":
+            raise PermissionError("Access denied: No active organization membership found.")
+        if mem["org_status"] != "ACTIVE":
+            raise PermissionError(f"Access denied: Organization status is {mem['org_status']}.")
+
+        canonical_role_map = {
+            "SUPER_ADMIN": "ADMIN_SUPER",
+            "OPS_ADMIN": "OPS_AGENT"
+        }
+        resolved_user_role = canonical_role_map.get(mem["role"], mem["role"])
+        resolved_allowed = {canonical_role_map.get(r, r) for r in allowed_roles}
+
+        if resolved_user_role not in resolved_allowed:
+            raise PermissionError(f"Access denied: Role '{mem['role']}' is not authorized for this action.")
+
+        return mem
+
 
 class BasketService:
     @staticmethod

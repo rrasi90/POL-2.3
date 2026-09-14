@@ -17,15 +17,20 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 def get_connection():
-    ports = [5432, 5433]
+    import os
+    ports = [int(os.environ.get("POL_PG_PORT", 5432)), 5432, 5433]
+    tried = []
     for p in ports:
+        if p in tried:
+            continue
+        tried.append(p)
         try:
             conn = psycopg2.connect(dbname="pol_test", user="postgres", host="127.0.0.1", port=p)
             conn.autocommit = False
             return conn
         except Exception:
             continue
-    raise ConnectionError("Could not connect to PostgreSQL on ports 5432 or 5433")
+    raise ConnectionError(f"Could not connect to PostgreSQL on ports {tried}")
 
 def test_admin_authorization():
     conn = get_connection()
@@ -35,25 +40,51 @@ def test_admin_authorization():
     print("================================================================")
 
     try:
-        # Setup Admin User & Retailer Staff User
+        # Setup Operator Org, Retailer Org, Admin User & Retailer Staff User
+        op_org_id = str(uuid.uuid4())
+        ret_org_id = str(uuid.uuid4())
+        cur.execute("""
+            INSERT INTO organizations (id, name, org_type, status) VALUES
+            (%s, 'POL Central Ops', 'OPERATOR', 'ACTIVE'),
+            (%s, 'Karun Supermarket', 'RETAILER', 'ACTIVE');
+        """, (op_org_id, ret_org_id))
+
         admin_id = str(uuid.uuid4())
         staff_id = str(uuid.uuid4())
         cur.execute("""
             INSERT INTO users (id, phone_number, full_name, role) VALUES
-            (%s, %s, 'Reza Super Admin', 'SUPER_ADMIN'),
+            (%s, %s, 'Reza Super Admin', 'ADMIN_SUPER'),
             (%s, %s, 'Kaveh Store Clerk', 'RETAILER_STAFF');
         """, (admin_id, f"+98916{uuid.uuid4().int % 10000000:07d}", staff_id, f"+98916{uuid.uuid4().int % 10000000:07d}"))
 
-        # 1. Admin RBAC Guard: Staff blocked from sensitive admin actions
-        print("\n[TEST 1] Testing Admin Authorization Guard (Non-Admin Rejected)...")
-        # Middleware simulation
-        def check_admin_permission(user_role: str, action: str) -> bool:
-            allowed_roles = {"SUPER_ADMIN", "OPS_ADMIN"}
-            return user_role in allowed_roles
+        # Setup Canonical Memberships (SSoT for authorization)
+        cur.execute("""
+            INSERT INTO organization_memberships (organization_id, user_id, role, status) VALUES
+            (%s, %s, 'ADMIN_SUPER', 'ACTIVE'),
+            (%s, %s, 'RETAILER_STAFF', 'ACTIVE');
+        """, (op_org_id, admin_id, ret_org_id, staff_id))
 
-        assert check_admin_permission("SUPER_ADMIN", "SUSPEND_VENDOR") is True
-        assert check_admin_permission("RETAILER_STAFF", "SUSPEND_VENDOR") is False
-        print("  [PASS] Authorization policy verified: RETAILER_STAFF rejected from administrative actions.")
+        # 1. Admin RBAC Guard: Authoritative scoping via organization_memberships in OPERATOR org
+        print("\n[TEST 1] Testing Canonical Admin Authorization Guard (Non-Admin Rejected)...")
+        def check_admin_permission(cur, user_id: str, active_org_id: str, action: str) -> bool:
+            cur.execute("""
+                SELECT m.role, o.org_type, m.status
+                FROM organization_memberships m
+                JOIN organizations o ON m.organization_id = o.id
+                WHERE m.user_id = %s AND m.organization_id = %s;
+            """, (user_id, active_org_id))
+            mem = cur.fetchone()
+            if not mem or mem["status"] != "ACTIVE":
+                return False
+            if mem["org_type"] != "OPERATOR":
+                return False
+            allowed_roles = {"ADMIN_SUPER", "OPS_AGENT", "SUPER_ADMIN", "OPS_ADMIN"}
+            return mem["role"] in allowed_roles
+
+        assert check_admin_permission(cur, admin_id, op_org_id, "SUSPEND_VENDOR") is True
+        assert check_admin_permission(cur, staff_id, ret_org_id, "SUSPEND_VENDOR") is False
+        assert check_admin_permission(cur, admin_id, ret_org_id, "SUSPEND_VENDOR") is False
+        print("  [PASS] Authorization policy verified: Scoped to OPERATOR membership role (ADMIN_SUPER); non-operator rejected.")
 
         # 2. Sensitive Action Audit Logging (Vendor Suspension)
         print("\n[TEST 2] Recording Sensitive Admin Action in admin_audit_logs...")

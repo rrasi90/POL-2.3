@@ -26,21 +26,24 @@ def run_checks():
 
     migration_file_1 = os.path.join(REPO_ROOT, "migrations", "001_initial_schema.sql")
     migration_file_2 = os.path.join(REPO_ROOT, "migrations", "002_platform_core_schema.sql")
-    if not os.path.exists(migration_file_1) or not os.path.exists(migration_file_2):
+    migration_file_3 = os.path.join(REPO_ROOT, "migrations", "003_contract_reconciliation.sql")
+    if not os.path.exists(migration_file_1) or not os.path.exists(migration_file_2) or not os.path.exists(migration_file_3):
         errors.append(f"Missing migration files")
-        print(f"  [FAIL] Missing migration file: {migration_file_1} or {migration_file_2}")
+        print(f"  [FAIL] Missing migration file: {migration_file_1}, {migration_file_2}, or {migration_file_3}")
         return False
 
     with open(migration_file_1, "r", encoding="utf-8") as f:
         ddl_001 = f.read()
     with open(migration_file_2, "r", encoding="utf-8") as f:
         ddl_002 = f.read()
-    ddl_content = ddl_001 + "\n" + ddl_002
+    with open(migration_file_3, "r", encoding="utf-8") as f:
+        ddl_003 = f.read()
+    ddl_content = ddl_001 + "\n" + ddl_002 + "\n" + ddl_003
 
     # -------------------------------------------------------------
     # CHECK 1: Database Migration Schema Table Integrity (56 Tables)
     # -------------------------------------------------------------
-    print("\n[CHECK 1] Verifying Complete Database Migration Chain (001 + 002)...")
+    print("\n[CHECK 1] Verifying Complete Database Migration Chain (001 + 002 + 003)...")
     required_tables = [
         "users", "retailers", "vendors", "brands", "categories",
         "subcategories", "products", "product_reference_metadata",

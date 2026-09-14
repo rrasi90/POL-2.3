@@ -17,15 +17,20 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 def get_connection():
-    ports = [5432, 5433]
+    import os
+    ports = [int(os.environ.get("POL_PG_PORT", 5432)), 5432, 5433]
+    tried = []
     for p in ports:
+        if p in tried:
+            continue
+        tried.append(p)
         try:
             conn = psycopg2.connect(dbname="pol_test", user="postgres", host="127.0.0.1", port=p)
             conn.autocommit = False
             return conn
         except Exception:
             continue
-    raise ConnectionError("Could not connect to PostgreSQL on ports 5432 or 5433")
+    raise ConnectionError(f"Could not connect to PostgreSQL on ports {tried}")
 
 def test_basket_versioning():
     conn = get_connection()
@@ -70,11 +75,28 @@ def test_basket_versioning():
         """, (vendor_id, v_user_id))
 
         cur.execute("SELECT id FROM categories LIMIT 1;")
-        cat_id = cur.fetchone()["id"]
+        row_cat = cur.fetchone()
+        if not row_cat:
+            cat_id = str(uuid.uuid4())
+            cur.execute("INSERT INTO categories (id, name_fa, slug) VALUES (%s, 'مواد غذایی', %s) ON CONFLICT DO NOTHING;", (cat_id, f"cat-{uuid.uuid4().hex[:6]}"))
+        else:
+            cat_id = row_cat["id"]
+
         cur.execute("SELECT id FROM subcategories LIMIT 1;")
-        subcat_id = cur.fetchone()["id"]
+        row_sub = cur.fetchone()
+        if not row_sub:
+            subcat_id = str(uuid.uuid4())
+            cur.execute("INSERT INTO subcategories (id, category_id, name_fa, slug) VALUES (%s, %s, 'روغن', %s) ON CONFLICT DO NOTHING;", (subcat_id, cat_id, f"sub-{uuid.uuid4().hex[:6]}"))
+        else:
+            subcat_id = row_sub["id"]
+
         cur.execute("SELECT id FROM brands LIMIT 1;")
-        brand_id = cur.fetchone()["id"]
+        row_brand = cur.fetchone()
+        if not row_brand:
+            brand_id = str(uuid.uuid4())
+            cur.execute("INSERT INTO brands (id, name_fa, name_en, slug) VALUES (%s, 'لادن', 'Ladan', %s) ON CONFLICT DO NOTHING;", (brand_id, f"brand-{uuid.uuid4().hex[:6]}"))
+        else:
+            brand_id = row_brand["id"]
 
         prod_id = str(uuid.uuid4())
         cur.execute("""

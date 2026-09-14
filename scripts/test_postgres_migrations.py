@@ -110,6 +110,14 @@ def reset_and_migrate(conn):
         conn.commit()
         print("Platform core migration (002) executed successfully.")
 
+    migration_file_3 = os.path.join(REPO_ROOT, "migrations", "003_contract_reconciliation.sql")
+    if os.path.exists(migration_file_3):
+        with open(migration_file_3, "r", encoding="utf-8") as f:
+            sql_content_3 = f.read()
+        cur.execute(sql_content_3)
+        conn.commit()
+        print("Contract reconciliation migration (003) executed successfully.")
+
 EXPECTED_19_PLATFORM_TABLES = {
     "organizations",
     "organization_memberships",
@@ -205,6 +213,43 @@ def verify_constraints(conn):
         f"Expected strategy default MULTI_VENDOR_MIN_FRAGMENTATION, got: {row[1]}"
     )
     print(" - allocation_plans.strategy defaults to MULTI_VENDOR_MIN_FRAGMENTATION")
+
+    # 5. Check organization_memberships canonical roles (ADMIN_SUPER, OPS_AGENT)
+    cur.execute("""
+        SELECT conname, pg_get_constraintdef(oid)
+        FROM pg_constraint
+        WHERE conrelid = 'organization_memberships'::regclass AND contype = 'c';
+    """)
+    mem_constraints = cur.fetchall()
+    role_check = [c[1] for c in mem_constraints if "role" in c[1]]
+    assert len(role_check) > 0, "role CHECK constraint missing on organization_memberships"
+    assert "ADMIN_SUPER" in role_check[0] and "OPS_AGENT" in role_check[0], (
+        f"Canonical roles ADMIN_SUPER/OPS_AGENT missing in organization_memberships! Found: {role_check[0]}"
+    )
+    print(" - organization_memberships enforces canonical roles (ADMIN_SUPER, OPS_AGENT)")
+
+    # 6. Check role invariant trigger exists
+    cur.execute("""
+        SELECT tgname FROM pg_trigger
+        WHERE tgrelid = 'organization_memberships'::regclass
+          AND tgname = 'trg_enforce_org_membership_role_invariant';
+    """)
+    assert cur.fetchone() is not None, "trg_enforce_org_membership_role_invariant trigger missing on organization_memberships"
+    print(" - trg_enforce_org_membership_role_invariant trigger verified")
+
+    # 7. Check allocation_plans status accepts SUPERSEDED
+    cur.execute("""
+        SELECT conname, pg_get_constraintdef(oid)
+        FROM pg_constraint
+        WHERE conrelid = 'allocation_plans'::regclass AND contype = 'c';
+    """)
+    alloc_constraints = cur.fetchall()
+    status_check = [c[1] for c in alloc_constraints if "status" in c[1]]
+    assert len(status_check) > 0, "status CHECK constraint missing on allocation_plans"
+    assert "SUPERSEDED" in status_check[0], (
+        f"Status SUPERSEDED missing in allocation_plans! Found: {status_check[0]}"
+    )
+    print(" - allocation_plans.status supports 'SUPERSEDED'")
 
 def verify_foreign_keys_and_indexes(conn):
     print("\n[VERIFICATION 3] Verifying foreign keys and critical indexes...")
