@@ -2,11 +2,10 @@
 """Cross-domain worker tests for notification routing and delivery recursion."""
 
 import uuid
-from datetime import date
 from psycopg2.extras import RealDictCursor
 
 from scripts.migration_runner import get_connection
-from scripts.canonical_integration_worker import CanonicalIntegrationWorker, IntegrationWorkerError
+from scripts.canonical_integration_worker import CanonicalIntegrationWorker
 
 
 def _conn():
@@ -41,7 +40,9 @@ def test_notification_creates_delivery_record_without_recursive_outbox():
             "SELECT channel,status FROM notification_deliveries WHERE notification_id=%s",
             (notif,),
         )
-        assert cur.fetchone()["channel"] == "INBOX"
+        delivery = cur.fetchone()
+        assert delivery["channel"] == "INBOX"
+        assert delivery["status"] == "PENDING"
         cur.execute(
             "SELECT COUNT(*) AS c FROM outbox_events WHERE event_name='NOTIFICATION_DELIVERY_REQUESTED' AND aggregate_id=%s",
             (notif,),
@@ -52,7 +53,7 @@ def test_notification_creates_delivery_record_without_recursive_outbox():
         conn.close()
 
 
-def test_daily_inventory_requires_canonical_warehouse_responsibility():
+def test_daily_inventory_materializes_canonical_warehouse_responsibility():
     conn = _conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
@@ -66,10 +67,6 @@ def test_daily_inventory_requires_canonical_warehouse_responsibility():
         cur.execute(
             "INSERT INTO users (id,phone_number,full_name,role) VALUES (%s,%s,%s,'VENDOR_OWNER')",
             (owner, f"+98991{uuid.uuid4().int % 100000000:08d}", "Warehouse Owner"),
-        )
-        cur.execute(
-            "INSERT INTO organization_memberships (organization_id,user_id,role,status) VALUES (%s,%s,'VENDOR_OWNER','ACTIVE')",
-            (org, owner),
         )
         cur.execute(
             """
@@ -86,24 +83,27 @@ def test_daily_inventory_requires_canonical_warehouse_responsibility():
             """,
             (str(uuid.uuid4()), event_id, vendor),
         )
-        row = cur.fetchone() if False else None
-        conn.rollback()
+        cur.execute(
+            """
+            SELECT r.user_id, r.is_primary, r.responsibility_type
+            FROM vendor_inventory_responsibilities r
+            WHERE r.vendor_id=%s
+            """,
+            (vendor,),
+        )
+        responsibility = cur.fetchone()
+        assert str(responsibility["user_id"]) == owner
+        assert responsibility["is_primary"] is True
+        assert responsibility["responsibility_type"] == "WAREHOUSE_INVENTORY"
 
-        conn = _conn()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT COUNT(*) AS c FROM vendor_inventory_responsibilities WHERE vendor_id=%s", (vendor,))
-        assert cur.fetchone()["c"] == 0
-        try:
-            cur.execute(
-                """
-                INSERT INTO outbox_events (id,event_id,event_name,aggregate_type,aggregate_id,payload,status)
-                VALUES (%s,%s,'DAILY_INVENTORY_REMINDER','VENDOR_INVENTORY',%s,'{}'::jsonb,'PENDING')
-                """,
-                (str(uuid.uuid4()), f"missing_resp_{uuid.uuid4().hex}", vendor),
-            )
-            raise AssertionError("Expected reminder routing to require canonical responsibility")
-        except Exception as exc:
-            assert "warehouse-inventory responsibility" in str(exc)
+        cur.execute(
+            "SELECT target_user_id,target_organization_id,channel_hint FROM outbox_events WHERE event_id=%s",
+            (event_id,),
+        )
+        routed = cur.fetchone()
+        assert str(routed["target_user_id"]) == owner
+        assert str(routed["target_organization_id"]) == org
+        assert routed["channel_hint"] == "PUSH"
     finally:
         conn.rollback()
         conn.close()
