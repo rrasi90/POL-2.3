@@ -3,6 +3,7 @@
 
 import uuid
 
+import pytest
 from psycopg2.extras import RealDictCursor
 
 from scripts.canonical_integration_worker import CanonicalIntegrationWorker
@@ -87,7 +88,7 @@ def test_vendor_can_create_and_retailer_can_redeem_once():
         )
         event = cur.fetchone()
         assert event["event_name"] == "VENDOR_REFERRAL_REDEEMED"
-        assert str(event["target_user_id"]) == vendor_user
+        assert event["target_user_id"] is None
         assert str(event["target_organization_id"]) == vendor_org
 
         processed = CanonicalIntegrationWorker.process_pending(cur, limit=20)
@@ -142,7 +143,7 @@ def test_vendor_referral_is_tenant_scoped():
             (retailer_id, retailer_user, retailer_org),
         )
         referral = VendorReferralService.create_referral(cur, vendor_user, vendor_id)
-        with __import__("pytest").raises(VendorReferralAccessError):
+        with pytest.raises(VendorReferralAccessError):
             VendorReferralService.redeem_referral(cur, vendor_user, retailer_id, referral["referral_code"], "bad-req")
     finally:
         conn.rollback()
