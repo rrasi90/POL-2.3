@@ -33,11 +33,11 @@ def test_daily_inventory_reminder_requires_and_uses_primary_responsibility():
         )
         cur.execute(
             """
-            INSERT INTO vendor_inventory_responsibilities
-                (id,vendor_id,user_id,responsibility_type,is_primary,status)
-            VALUES (%s,%s,%s,'WAREHOUSE_INVENTORY',TRUE,'ACTIVE')
+            UPDATE vendor_inventory_responsibilities
+            SET is_primary = TRUE, effective_until = NULL
+            WHERE vendor_id = %s AND user_id = %s AND responsibility_type = 'WAREHOUSE_INVENTORY'
             """,
-            (str(uuid.uuid4()), vendor_id, user_id),
+            (vendor_id, user_id),
         )
         conn.commit()
 
