@@ -1,9 +1,4 @@
-"""Canonical support application boundary.
-
-Support is not Dispute and is not Feedback. User access is restricted to the
-user's own tenant/cases; operational agents must belong to an ACTIVE OPERATOR
-organization. Assignment and internal notes are operator-only actions.
-"""
+"""Canonical Support case service with tenant-safe access and lifecycle controls."""
 
 from __future__ import annotations
 
@@ -19,65 +14,52 @@ class SupportStateError(ValueError):
 
 
 OPS_ROLES = {"ADMIN_SUPER", "OPS_AGENT", "SUPER_ADMIN", "OPS_ADMIN"}
-USER_ROLES = {"RETAILER_OWNER", "RETAILER_STAFF", "VENDOR_OWNER", "VENDOR_STAFF"}
 
 
 class CanonicalSupportService:
     @staticmethod
-    def _actor(cur, user_id: str, organization_id: str | None = None):
-        sql = """
-            SELECT om.organization_id, om.role, o.org_type, om.status, o.status AS organization_status
+    def _is_ops_actor(cur, actor_user_id: str) -> bool:
+        cur.execute(
+            """
+            SELECT 1
             FROM organization_memberships om
             JOIN organizations o ON o.id = om.organization_id
             WHERE om.user_id = %s
               AND om.status = 'ACTIVE'
               AND o.status = 'ACTIVE'
-        """
-        params = [user_id]
-        if organization_id:
-            sql += " AND om.organization_id = %s"
-            params.append(organization_id)
-        sql += " ORDER BY om.is_primary DESC"
-        cur.execute(sql, tuple(params))
-        return cur.fetchall()
-
-    @classmethod
-    def _is_ops_actor(cls, cur, user_id: str) -> bool:
-        return any(r["org_type"] == "OPERATOR" and r["role"] in OPS_ROLES for r in cls._actor(cur, user_id))
+              AND o.org_type = 'OPERATOR'
+              AND om.role = ANY(%s)
+            LIMIT 1;
+            """,
+            (actor_user_id, list(OPS_ROLES)),
+        )
+        return cur.fetchone() is not None
 
     @staticmethod
-    def _audit(cur, case_id: str, actor_user_id: str, action: str, allowed: bool, reason: str = None):
+    def _audit(cur, case_id, actor_user_id, action, allowed, reason=None):
         cur.execute(
             """
             INSERT INTO support_case_access_audit
-                (id, support_case_id, actor_user_id, action, allowed, reason)
-            VALUES (%s,%s,%s,%s,%s,%s)
+                (id,support_case_id,actor_user_id,action,allowed,reason)
+            VALUES (%s,%s,%s,%s,%s,%s);
             """,
             (str(uuid.uuid4()), case_id, actor_user_id, action, allowed, reason),
         )
 
     @classmethod
-    def create_case(cls, cur, actor_user_id: str, organization_id: str, case_type: str,
-                    subject: str, related_order_id: str | None = None, priority: str = "NORMAL"):
-        memberships = cls._actor(cur, actor_user_id, organization_id)
-        if not memberships or not any(r["org_type"] in ("RETAILER", "VENDOR") and r["role"] in USER_ROLES for r in memberships):
-            raise SupportAccessError("Case creation requires active membership in the target tenant.")
-        case_id = str(uuid.uuid4())
-        case_number = "SUP-" + case_id.replace("-", "")[:12].upper()
+    def create_case(cls, cur, actor_user_id, organization_id, case_type, subject,
+                    related_order_id=None, priority="NORMAL"):
         cur.execute(
             """
             INSERT INTO support_cases
-                (id, user_id, organization_id, case_number, case_type, priority, status,
-                 related_order_id, subject, created_by_user_id)
-            VALUES (%s,%s,%s,%s,%s,%s,'OPEN',%s,%s,%s)
+                (id,user_id,organization_id,case_type,subject,related_order_id,priority,status,created_by_user_id)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,'OPEN',%s)
             RETURNING *;
             """,
-            (case_id, actor_user_id, organization_id, case_number, case_type, priority,
-             related_order_id, subject, actor_user_id),
+            (str(uuid.uuid4()), actor_user_id, organization_id, case_type, subject,
+             related_order_id, priority, actor_user_id),
         )
-        row = cur.fetchone()
-        cls._audit(cur, case_id, actor_user_id, "CREATE", True)
-        return row
+        return cur.fetchone()
 
     @classmethod
     def get_case(cls, cur, actor_user_id: str, case_id: str):
@@ -116,8 +98,9 @@ class CanonicalSupportService:
             """,
             (str(uuid.uuid4()), case["id"], actor_user_id, sender_type, message_text, internal),
         )
+        message = cur.fetchone()
         cls._audit(cur, case_id, actor_user_id, "INTERNAL_NOTE" if internal else "MESSAGE", True)
-        return cur.fetchone()
+        return message
 
     @classmethod
     def assign(cls, cur, actor_user_id: str, case_id: str, assignee_user_id: str):
@@ -143,46 +126,41 @@ class CanonicalSupportService:
             """,
             (str(uuid.uuid4()), case_id, assignee_user_id, actor_user_id),
         )
-        assignment = cur.fetchone()
-        cur.execute(
-            "UPDATE support_cases SET assigned_at = now(), updated_at = now(), status = CASE WHEN status = 'OPEN' THEN 'IN_PROGRESS' ELSE status END WHERE id = %s",
-            (case_id,),
-        )
+        row = cur.fetchone()
         cls._audit(cur, case_id, actor_user_id, "ASSIGN", True)
-        return assignment
+        return row
 
     @classmethod
-    def transition(cls, cur, actor_user_id: str, case_id: str, target_status: str,
-                   resolution_code: str | None = None, resolution_note: str | None = None):
+    def transition(cls, cur, actor_user_id, case_id, target_status,
+                   resolution_code=None, resolution_note=None):
+        case = cls.get_case(cur, actor_user_id, case_id)
+        is_ops = cls._is_ops_actor(cur, actor_user_id)
+        if not is_ops:
+            raise SupportAccessError("Only operator staff may transition support cases.")
         allowed = {
-            "OPEN": {"IN_PROGRESS", "CLOSED"},
-            "IN_PROGRESS": {"WAITING_ON_USER", "RESOLVED", "CLOSED"},
-            "WAITING_ON_USER": {"IN_PROGRESS", "RESOLVED", "CLOSED"},
+            "OPEN": {"IN_PROGRESS", "WAITING_USER", "RESOLVED", "CLOSED"},
+            "IN_PROGRESS": {"WAITING_USER", "RESOLVED", "CLOSED"},
+            "WAITING_USER": {"IN_PROGRESS", "RESOLVED", "CLOSED"},
             "RESOLVED": {"CLOSED", "IN_PROGRESS"},
             "CLOSED": set(),
         }
-        if not cls._is_ops_actor(cur, actor_user_id):
-            cls._audit(cur, case_id, actor_user_id, "UPDATE", False, "state transition is ops-only")
-            raise SupportAccessError("Only operator staff may transition support case state.")
-        cur.execute("SELECT status FROM support_cases WHERE id = %s FOR UPDATE", (case_id,))
-        case = cur.fetchone()
-        if not case:
-            raise KeyError("Support case not found")
-        if target_status not in allowed.get(case["status"], set()):
-            raise SupportStateError(f"Invalid support transition: {case['status']} -> {target_status}")
+        current = case["status"]
+        if target_status not in allowed.get(current, set()):
+            raise SupportStateError(f"Illegal support transition {current} -> {target_status}")
         cur.execute(
             """
             UPDATE support_cases
-            SET status = %s,
-                updated_at = now(),
-                resolved_at = CASE WHEN %s IN ('RESOLVED','CLOSED') THEN COALESCE(resolved_at, now()) ELSE resolved_at END,
-                closed_by_user_id = CASE WHEN %s = 'CLOSED' THEN %s ELSE closed_by_user_id END,
-                resolution_code = COALESCE(%s, resolution_code),
-                resolution_note = COALESCE(%s, resolution_note)
-            WHERE id = %s
+            SET status=%s,
+                resolution_code=%s,
+                resolution_note=%s,
+                closed_by_user_id=CASE WHEN %s='CLOSED' THEN %s ELSE closed_by_user_id END,
+                updated_at=now()
+            WHERE id=%s
             RETURNING *;
             """,
-            (target_status, target_status, target_status, actor_user_id, resolution_code, resolution_note, case_id),
+            (target_status, resolution_code, resolution_note,
+             target_status, actor_user_id, case_id),
         )
-        cls._audit(cur, case_id, actor_user_id, "UPDATE", True)
-        return cur.fetchone()
+        updated = cur.fetchone()
+        cls._audit(cur, case_id, actor_user_id, "CLOSE" if target_status == "CLOSED" else "UPDATE", True)
+        return updated
