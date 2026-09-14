@@ -173,18 +173,20 @@ class VendorReferralService:
             (referral["id"],),
         )
 
+        # Analytics/domain event only: no recipient is attached because this is
+        # intentionally not a notification and vendor user_id is a legacy field.
         cur.execute(
             """
             INSERT INTO outbox_events
                 (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
-                 target_user_id,target_organization_id,dedupe_key)
+                 target_organization_id,dedupe_key)
             SELECT gen_random_uuid(), %s, 'VENDOR_REFERRAL_REDEEMED', 'VENDOR_REFERRAL', %s,
                    jsonb_build_object(
                        'attribution_id', %s,
                        'referral_id', %s,
                        'vendor_id', %s,
                        'retailer_id', %s
-                   ), 'PENDING', v.user_id, v.organization_id, %s
+                   ), 'PENDING', v.organization_id, %s
             FROM vendors v
             WHERE v.id = %s
             ON CONFLICT (event_name, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING;
