@@ -31,8 +31,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_vendor_primary_inventory_responsible
 CREATE INDEX IF NOT EXISTS idx_vendor_inventory_responsibility_active
     ON vendor_inventory_responsibilities(vendor_id, responsibility_type, is_primary, effective_from DESC);
 
--- Migration bridge: materialize the legacy vendor user into the canonical
--- responsibility aggregate once. Runtime routing reads only this table.
 INSERT INTO vendor_inventory_responsibilities (
     vendor_id, user_id, responsibility_type, is_primary, source
 )
@@ -41,8 +39,7 @@ FROM vendors v
 JOIN organizations o ON o.id = v.organization_id AND o.org_type = 'VENDOR'
 WHERE v.user_id IS NOT NULL
   AND NOT EXISTS (
-      SELECT 1
-      FROM vendor_inventory_responsibilities r
+      SELECT 1 FROM vendor_inventory_responsibilities r
       WHERE r.vendor_id = v.id
         AND r.responsibility_type = 'WAREHOUSE_INVENTORY'
         AND r.is_primary = TRUE
@@ -58,6 +55,7 @@ DECLARE
     responsible_org UUID;
     legacy_user UUID;
     legacy_org UUID;
+    sole_member_user UUID;
 BEGIN
     IF NEW.event_name = 'DAILY_INVENTORY_REMINDER'
        AND NEW.aggregate_type = 'VENDOR_INVENTORY'
@@ -74,15 +72,12 @@ BEGIN
         ORDER BY r.effective_from DESC
         LIMIT 1;
 
-        -- Compatibility bridge for vendors created before the responsibility
-        -- entity existed. Materialize once, then route only via the canonical
-        -- responsibility table.
+        -- Legacy bridge: materialize vendors.user_id once when it exists.
         IF responsible_user IS NULL THEN
             SELECT v.user_id, v.organization_id
             INTO legacy_user, legacy_org
             FROM vendors v
-            WHERE v.id::text = NEW.aggregate_id
-              AND v.user_id IS NOT NULL;
+            WHERE v.id::text = NEW.aggregate_id;
 
             IF legacy_user IS NOT NULL AND legacy_org IS NOT NULL THEN
                 INSERT INTO vendor_inventory_responsibilities (
@@ -91,11 +86,31 @@ BEGIN
                     NEW.aggregate_id::UUID, legacy_user, 'WAREHOUSE_INVENTORY', TRUE, 'ONBOARDING'
                 )
                 ON CONFLICT (vendor_id, user_id, responsibility_type) DO UPDATE
-                SET is_primary = TRUE,
-                    effective_until = NULL,
-                    updated_at = now();
-
+                SET is_primary = TRUE, effective_until = NULL, updated_at = now();
                 responsible_user := legacy_user;
+                responsible_org := legacy_org;
+            END IF;
+        END IF;
+
+        -- Deterministic fallback: only if exactly one active vendor member exists.
+        IF responsible_user IS NULL AND legacy_org IS NOT NULL THEN
+            SELECT MIN(m.user_id)
+            INTO sole_member_user
+            FROM organization_memberships m
+            WHERE m.organization_id = legacy_org
+              AND m.status = 'ACTIVE'
+              AND m.role IN ('VENDOR_OWNER', 'VENDOR_STAFF')
+            HAVING COUNT(*) = 1;
+
+            IF sole_member_user IS NOT NULL THEN
+                INSERT INTO vendor_inventory_responsibilities (
+                    vendor_id, user_id, responsibility_type, is_primary, source
+                ) VALUES (
+                    NEW.aggregate_id::UUID, sole_member_user, 'WAREHOUSE_INVENTORY', TRUE, 'ONBOARDING'
+                )
+                ON CONFLICT (vendor_id, user_id, responsibility_type) DO UPDATE
+                SET is_primary = TRUE, effective_until = NULL, updated_at = now();
+                responsible_user := sole_member_user;
                 responsible_org := legacy_org;
             END IF;
         END IF;
