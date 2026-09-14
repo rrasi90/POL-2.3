@@ -1,8 +1,7 @@
 """Canonical asynchronous integration worker for POL.
 
-This module is intentionally provider-neutral. It consumes domain outbox events,
-resolves explicit recipients, materializes logical notifications, and lets the
-notification_deliveries worker handle physical channels.
+This module owns domain-outbox -> logical notification -> physical channel
+materialization. Provider side effects remain in provider_delivery_worker.
 """
 
 from psycopg2.extras import Json
@@ -21,6 +20,8 @@ class CanonicalIntegrationWorker:
         "DISPUTE_OPENED",
         "FEEDBACK_REPLIED",
         "DAILY_INVENTORY_REMINDER",
+        "PAYMENT_RECONCILED",
+        "RETURN_REQUESTED",
     }
 
     @staticmethod
@@ -52,7 +53,6 @@ class CanonicalIntegrationWorker:
 
     @classmethod
     def process_pending(cls, cur, limit: int = 100) -> int:
-        """Process explicit, routable domain events exactly once per transaction."""
         cur.execute(
             """
             SELECT *
@@ -71,18 +71,18 @@ class CanonicalIntegrationWorker:
         for event in events:
             event_name = event["event_name"]
             payload = event["payload"] or {}
-            target_user_id = event.get("target_user_id")
-            target_org_id = event.get("target_organization_id")
-
             if event_name not in cls.ALLOWED_DIRECT_NOTIFICATION_EVENTS:
                 continue
 
+            target_user_id = event.get("target_user_id")
+            target_org_id = event.get("target_organization_id")
             if not target_user_id or not target_org_id:
                 raise IntegrationWorkerError(
                     f"Event {event['event_id']} lacks explicit notification routing."
                 )
 
-            title, body, priority, _channel_hint = cls._render_message(cur, event_name, payload)
+            title, body, priority, channel = cls._render_message(cur, event_name, payload)
+            notification_id = str(uuid.uuid4())
             cur.execute(
                 """
                 INSERT INTO notifications (
@@ -91,7 +91,7 @@ class CanonicalIntegrationWorker:
                 RETURNING id;
                 """,
                 (
-                    str(uuid.uuid4()),
+                    notification_id,
                     str(target_user_id),
                     str(target_org_id),
                     event_name,
@@ -101,6 +101,16 @@ class CanonicalIntegrationWorker:
                     priority,
                 ),
             )
+            if channel != "INBOX":
+                cur.execute(
+                    """
+                    INSERT INTO notification_deliveries
+                        (id, notification_id, channel, status, scheduled_at)
+                    VALUES (%s,%s,%s,'PENDING',now())
+                    ON CONFLICT (notification_id, channel) DO NOTHING;
+                    """,
+                    (str(uuid.uuid4()), notification_id, channel),
+                )
             cur.execute(
                 """
                 UPDATE outbox_events
@@ -115,7 +125,7 @@ class CanonicalIntegrationWorker:
 
 
 class NotificationDeliveryWorker:
-    """Persist/retry physical delivery state without provider-specific side effects."""
+    """Legacy-compatible persistence worker; provider calls live in provider_delivery_worker."""
 
     @staticmethod
     def claim_pending(cur, limit: int = 100):
