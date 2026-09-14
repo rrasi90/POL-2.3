@@ -23,29 +23,46 @@ Every request must carry:
 
 Authorization is evaluated from `organization_memberships` joined to active `organizations`. `users.role`, `vendors.user_id`, and `retailers.user_id` are legacy compatibility fields and are not authorization SSoT.
 
-## 3. Canonical client commands
+## 3. Canonical client commands / queries
 
 | Capability | Canonical command boundary |
 |---|---|
-| Checkout | `POLApplicationBoundary.checkout()` |
+| **Universal profile read** | `profile_get()` |
+| **Universal profile update** | `profile_update()` |
+| **Profile completion** | `profile_completion()` |
+| **Active-tenant persona read** | `profile_get()` with active organization context |
+| **Active-tenant persona update** | `profile_membership_update()` |
+| Checkout | `checkout()` |
 | Feedback list | `feedback_list()` |
 | Feedback admin inbox | `feedback_admin_inbox()` |
 | Feedback reply | `feedback_reply()` |
 | Support create/read/message/assign/transition | `support_*()` |
+| Vendor referral create/redeem | `create_vendor_referral()`, `redeem_vendor_referral()` |
 | Return/RMA request/transition | `return_request()`, `return_transition()` |
 | Payment reconciliation worker | `reconcile_payments()` |
 | External notification delivery worker | `deliver_external_notifications()` |
 
-## 4. Idempotency
+## 4. Profile boundary rules
+
+`user_profiles` is the universal identity/profile SSoT. One row MUST exist for every user.
+
+`membership_profiles` is the tenant-specific persona SSoT. One row MUST exist for every organization membership.
+
+Role-specific profile tables provide structured fields for retailer, vendor, operator and field personas. They are presentation/context data and MUST NOT be treated as a substitute for RBAC.
+
+The client may personalize UI from profile context, but all server authorization MUST still evaluate `organization_memberships.role` and active organization status.
+
+## 5. Idempotency
 
 Commands that create externally meaningful state MUST expose an idempotency key where retries can otherwise duplicate state:
 
 - checkout: `idempotency_key`
 - return request: `idempotency_key`
+- referral redemption: `request_idempotency_key`
 - payment evidence: `external_reference` uniqueness
 - notification provider attempt: deterministic `provider_attempt_key`
 
-## 5. Error contract
+## 6. Error contract
 
 Transport adapters map domain errors without bypassing domain state machines:
 
@@ -55,13 +72,13 @@ Transport adapters map domain errors without bypassing domain state machines:
 - retryable provider error -> worker retry, not synchronous client retry
 - permanent provider/configuration error -> durable FAILED delivery + operational visibility
 
-## 6. Async ownership
+## 7. Async ownership
 
 Synchronous application transactions only persist durable state and enqueue outbox events. Provider calls, notification sending and reconciliation polling are worker responsibilities.
 
 The provider boundary is deliberately provider-neutral until POL selects concrete SMS and push suppliers and provisions credentials. `scripts/provider_adapters.py` is the adapter contract; `scripts/provider_delivery_worker.py` is the execution/retry owner.
 
-## 7. Legacy access prohibition
+## 8. Legacy access prohibition
 
 Before visual-design gate, repository/application integration must demonstrate that no HTTP/mobile/web adapter reaches:
 
@@ -70,6 +87,6 @@ Before visual-design gate, repository/application integration must demonstrate t
 - simplified legacy `PaymentService` success shortcut;
 - direct SQL writes to domain state from a transport handler.
 
-## 8. MVP simplicity invariant
+## 9. MVP simplicity invariant
 
 The API must not expose internal allocation mechanics, retry internals, reconciliation leases, or provider credentials to retailer/vendor clients. External contracts expose business intent and current business state; operational machinery remains internal.
