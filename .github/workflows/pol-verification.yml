@@ -41,7 +41,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Apply Canonical Dynamic Migration Chain (001 -> 002 -> 003)
+      - name: Apply Canonical Dynamic Migration Chain (001 -> N)
         env:
           PGHOST: 127.0.0.1
           PGPORT: 5432
