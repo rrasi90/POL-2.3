@@ -3,7 +3,7 @@
 **Document ID:** `POL-DEC-001`  
 **Status:** `LOCKED / CANONICAL`  
 **Governance Level:** Lead Product Architect / Founder Approved  
-**Last Audit:** 2026-09-14 (Cross-Domain MVP Hardening Pass)  
+**Last Audit:** 2026-09-14 (Global Engineering + Identity/Profile Hardening Pass)  
 **Cross-Reference:** `01_RESEARCH/Assumptions_and_Hypotheses.md` (RES-REG-001)  
 
 ---
@@ -19,7 +19,7 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 
 ---
 
-## 2. Canonical Strategic Decision Register (D-001 through D-016)
+## 2. Canonical Strategic Decision Register (D-001 through D-017)
 
 | Decision ID | Canonical Decision Title | Approved Formal Decision | Strategic Rationale & Invariant Guardrail | Affected Canonical Documents |
 |:---:|:---|:---|:---|:---|
@@ -39,6 +39,7 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 | **D-014** | **Multi-Vendor Basket in MVP** | MVP v1.0 uses ONE unified retailer basket across multiple wholesalers. The deterministic Allocation Engine partitions it into vendor-specific child orders with independent MOV/MOQ, inventory, acceptance, fulfillment, delivery, settlement and dispute lifecycles. | Core POL value proposition; supersedes D-003. | `POL_00_PROJECT_CONTROL/MVP_MULTI_VENDOR_DECISION.md`, `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` |
 | **D-015** | **Canonical Database & Technical Environment** | **PostgreSQL 18** is the sole canonical production, staging, migration and runtime database. SQLite is restricted to isolated unit tests only. | Eliminates dialect/concurrency divergence. | `POL_00_PROJECT_CONTROL/TECHNICAL_ENVIRONMENT.md`, `migrations/001_initial_schema.sql` |
 | **D-016** | **Vendor Referral in MVP** | **Vendor Referral is a mandatory MVP capability.** Vendors create a referral code/link; a retailer redeems it once as first-touch attribution during onboarding/activation; attribution is persisted, auditable and connected to the order lifecycle. **No monetary referral reward, wallet, credit, or complex incentive engine is activated in MVP.** | Vendor relationships are a direct acquisition channel in the Ahvaz B2B model. POL must measure supplier-led acquisition before adding paid/referral incentives. | `scripts/vendor_referral.py`, `migrations/013_vendor_referral_mvp_and_integrity_fixes.sql`, `scripts/test_vendor_referral.py` |
+| **D-017** | **Canonical User Profile & Persona Context in MVP** | Every user MUST have exactly one universal `user_profiles` record. Every organization membership MUST have exactly one `membership_profiles` record plus the appropriate role-specific persona profile. Profile UI may adapt by persona, but authorization MUST remain sourced from `organization_memberships.role` and active tenant context. | A multi-tenant B2B system needs stable personal identity plus tenant-specific context without turning UI profile fields into RBAC. | `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md`, `06_PRODUCT/USER_PROFILE_UX_SPEC.md`, `migrations/017_canonical_user_profiles_and_persona_context.sql` |
 
 ---
 
@@ -57,6 +58,7 @@ The presence of a database foundation does **not** mean the feature is active.
 - Transactional notifications
 - Daily vendor inventory confirmation
 - **Vendor Referral attribution (D-016)**
+- **Universal User Profile + tenant-specific Persona Context (D-017)**
 - Non-custodial direct payment + reconciliation foundation
 
 ### ARCHITECTURE-READY BUT NOT ACTIVATED IN MVP
@@ -78,10 +80,11 @@ See `POL_00_PROJECT_CONTROL/FUTURE_VERSION_NOT_MVP.md`. That document is explici
 
 All code generators, database migration scripts, API controllers and operational playbooks must link their design constraints directly to one of the Decision IDs above.
 
-- **Sprint 0 Migrations:** D-004, D-010, D-012, D-013, D-014, D-016.
+- **Sprint 0 Migrations:** D-004, D-010, D-012, D-013, D-014, D-016, D-017.
 - **Order Engine MVP:** D-014 plus D-004/D-005.
 - **Vendor Referral MVP:** D-016; attribution-first and incentive-free.
-- **Pilot Operations:** D-001, D-002, D-006, D-008, D-014, D-016.
+- **Profile / Identity MVP:** D-017; universal user profile plus membership persona context.
+- **Pilot Operations:** D-001, D-002, D-006, D-008, D-014, D-016, D-017.
 
 ---
 
