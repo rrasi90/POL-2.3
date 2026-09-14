@@ -24,6 +24,15 @@ BEGIN;
 ALTER TABLE organization_memberships
     DROP CONSTRAINT IF EXISTS organization_memberships_role_check;
 
+-- Convert legacy rows before installing the new CHECK constraint.
+UPDATE organization_memberships
+SET role = CASE role
+    WHEN 'SUPER_ADMIN' THEN 'ADMIN_SUPER'
+    WHEN 'OPS_ADMIN' THEN 'OPS_AGENT'
+    ELSE role
+END
+WHERE role IN ('SUPER_ADMIN', 'OPS_ADMIN');
+
 ALTER TABLE organization_memberships
     ADD CONSTRAINT organization_memberships_role_check
     CHECK (role IN (
@@ -35,15 +44,6 @@ ALTER TABLE organization_memberships
         'ADMIN_SUPER',
         'FIELD_ACTIVATOR'
     ));
-
--- Convert legacy rows deterministically when upgrading an existing database.
-UPDATE organization_memberships
-SET role = CASE role
-    WHEN 'SUPER_ADMIN' THEN 'ADMIN_SUPER'
-    WHEN 'OPS_ADMIN' THEN 'OPS_AGENT'
-    ELSE role
-END
-WHERE role IN ('SUPER_ADMIN', 'OPS_ADMIN');
 
 -- ---------------------------------------------------------------------------
 -- 2. Membership role / organization type invariant
@@ -122,11 +122,8 @@ COMMENT ON COLUMN vendors.user_id IS
 'LEGACY / DEPRECATED ownership link. Do not use for authorization. Use organization_id + organization_memberships instead.';
 
 -- ---------------------------------------------------------------------------
--- 5. Required organization references for canonical commercial actors
+-- 5. Canonical organization references
 -- ---------------------------------------------------------------------------
--- 002 added these columns but left them nullable for compatibility. New rows
--- must use organization_id; existing rows can be backfilled before a later
--- migration makes the columns NOT NULL.
 COMMENT ON COLUMN retailers.organization_id IS
 'CANONICAL tenant reference. Authorization and tenant isolation MUST traverse this organization.';
 
