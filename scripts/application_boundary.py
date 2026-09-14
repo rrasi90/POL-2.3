@@ -14,6 +14,7 @@ from scripts.canonical_support import CanonicalSupportService
 from scripts.payment_reconciliation_worker import PaymentReconciliationWorker
 from scripts.provider_delivery_worker import ProviderDeliveryWorker
 from scripts.returns_rma import CanonicalReturnService
+from scripts.user_profiles import UserProfileService
 from scripts.vendor_referral import VendorReferralService
 
 
@@ -30,6 +31,28 @@ class POLApplicationBoundary:
     def __init__(self, cur, context: ApplicationContext):
         self.cur = cur
         self.context = context
+
+    def profile_get(self):
+        return UserProfileService.get_my_profile(
+            self.cur, self.context.user_id, self.context.organization_id
+        )
+
+    def profile_completion(self):
+        return UserProfileService.profile_completion(
+            self.cur, self.context.user_id, self.context.organization_id
+        )
+
+    def profile_update(self, *, fields):
+        return UserProfileService.update_my_profile(
+            self.cur, self.context.user_id, fields
+        )
+
+    def profile_membership_update(self, *, fields):
+        if not self.context.organization_id:
+            raise PermissionError("Membership profile update requires an organization context.")
+        return UserProfileService.update_membership_profile(
+            self.cur, self.context.user_id, self.context.organization_id, fields
+        )
 
     def checkout(self, *, basket_id, plan_id, retailer_id, idempotency_key, address_snapshot, vendor_allocations):
         self._verify_retailer_actor(retailer_id)
