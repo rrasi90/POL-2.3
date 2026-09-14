@@ -31,9 +31,7 @@ class POLApplicationBoundary:
         self.context = context
 
     def checkout(self, *, basket_id, plan_id, retailer_id, idempotency_key, address_snapshot, vendor_allocations):
-        if str(retailer_id) != str(self.context.organization_id):
-            # The caller must provide the retailer actor context explicitly; no implicit tenant switching.
-            self._verify_retailer_actor(retailer_id)
+        self._verify_retailer_actor(retailer_id)
         return CanonicalCheckoutGateway.checkout(
             cur=self.cur,
             basket_id=basket_id,
@@ -123,7 +121,7 @@ class POLApplicationBoundary:
             JOIN organizations o ON o.id = om.organization_id
             WHERE om.user_id = %s
               AND om.status = 'ACTIVE'
-              AND om.role IN ('SUPER_ADMIN','OPS_ADMIN')
+              AND om.role IN ('ADMIN_SUPER','OPS_AGENT','SUPER_ADMIN','OPS_ADMIN')
               AND o.org_type = 'OPERATOR'
               AND o.status = 'ACTIVE'
             LIMIT 1;
