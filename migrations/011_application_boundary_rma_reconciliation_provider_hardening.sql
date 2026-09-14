@@ -11,8 +11,6 @@
 -- MVP posture remains NON_CUSTODIAL_DIRECT and asset-light.
 -- ============================================================================
 
--- 1. RETURNS / RMA ------------------------------------------------------------
-
 ALTER TABLE returns
     ADD COLUMN IF NOT EXISTS request_idempotency_key VARCHAR(128),
     ADD COLUMN IF NOT EXISTS initiated_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
@@ -81,8 +79,6 @@ CREATE TABLE IF NOT EXISTS return_events (
 CREATE INDEX IF NOT EXISTS idx_return_events_return_time
     ON return_events(return_id, created_at DESC);
 
--- 2. SUPPORT AUTHORIZATION / LIFECYCLE --------------------------------------
-
 ALTER TABLE support_cases
     ADD COLUMN IF NOT EXISTS created_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     ADD COLUMN IF NOT EXISTS closed_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
@@ -103,8 +99,6 @@ CREATE TABLE IF NOT EXISTS support_case_access_audit (
 
 CREATE INDEX IF NOT EXISTS idx_support_access_audit_case
     ON support_case_access_audit(support_case_id, created_at DESC);
-
--- 3. PAYMENT RECONCILIATION WORKER STATE -------------------------------------
 
 ALTER TABLE payment_reconciliation_cases
     ADD COLUMN IF NOT EXISTS attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -136,8 +130,6 @@ CREATE TABLE IF NOT EXISTS payment_reconciliation_attempts (
 CREATE INDEX IF NOT EXISTS idx_payment_reconciliation_attempts_case
     ON payment_reconciliation_attempts(reconciliation_case_id, created_at DESC);
 
--- 4. EXTERNAL PROVIDER DELIVERY ATTEMPTS -------------------------------------
-
 ALTER TABLE notification_deliveries
     ADD COLUMN IF NOT EXISTS lease_id VARCHAR(128),
     ADD COLUMN IF NOT EXISTS lease_until TIMESTAMPTZ,
@@ -152,12 +144,12 @@ CREATE TABLE IF NOT EXISTS notification_provider_attempts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     delivery_id UUID NOT NULL REFERENCES notification_deliveries(id) ON DELETE CASCADE,
     attempt_number INTEGER NOT NULL,
-    channel VARCHAR(16) NOT NULL CHECK (channel IN ('PUSH', 'SMS')),
+    channel VARCHAR(16) NOT NULL CHECK (channel IN ('PUSH','SMS')),
     provider VARCHAR(64) NOT NULL,
     idempotency_key VARCHAR(255) NOT NULL,
     request_fingerprint VARCHAR(128),
     provider_message_id VARCHAR(255),
-    outcome VARCHAR(24) NOT NULL CHECK (outcome IN ('SENT', 'FAILED', 'RETRYABLE_FAILURE', 'PERMANENT_FAILURE', 'SKIPPED')),
+    outcome VARCHAR(24) NOT NULL CHECK (outcome IN ('SENT','FAILED','RETRYABLE_FAILURE','PERMANENT_FAILURE','SKIPPED')),
     provider_code VARCHAR(64),
     error_message TEXT,
     response_metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -168,4 +160,4 @@ CREATE TABLE IF NOT EXISTS notification_provider_attempts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notification_provider_attempts_delivery
-    ON notification_provider_attempts(delivery_id, created_at DESC);
+    ON notification_provider_attempts(delivery_id, started_at DESC);
