@@ -144,7 +144,7 @@ class ProviderDeliveryWorker:
                 """
                 UPDATE notification_deliveries
                 SET status='SENT', attempt_count=%s, provider=%s,
-                    provider_message_id=%s, sent_at=now(), delivered_at=now(),
+                    provider_message_id=%s, sent_at=now(),
                     lease_id=NULL, lease_until=NULL, next_retry_at=NULL,
                     last_error=NULL, last_provider_code=%s,
                     provider_attempt_key=%s, updated_at=now()
