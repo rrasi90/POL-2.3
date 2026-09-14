@@ -1,5 +1,6 @@
 # POL Repository Git Ignore
 .pg_data/
+.hyperresearch/
 __pycache__/
 *.py[cod]
 *.class
