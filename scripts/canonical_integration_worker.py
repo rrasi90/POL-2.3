@@ -5,7 +5,8 @@ resolves explicit recipients, materializes logical notifications, and lets the
 notification_deliveries worker handle physical channels.
 """
 
-from psycopg2.extras import Json, RealDictCursor
+from psycopg2.extras import Json
+import uuid
 
 
 class IntegrationWorkerError(RuntimeError):
@@ -74,8 +75,6 @@ class CanonicalIntegrationWorker:
             target_org_id = event.get("target_organization_id")
 
             if event_name not in cls.ALLOWED_DIRECT_NOTIFICATION_EVENTS:
-                # Non-notification domain events are acknowledged by their own
-                # domain worker. This worker must never steal them.
                 continue
 
             if not target_user_id or not target_org_id:
@@ -83,7 +82,7 @@ class CanonicalIntegrationWorker:
                     f"Event {event['event_id']} lacks explicit notification routing."
                 )
 
-            title, body, priority, channel_hint = cls._render_message(cur, event_name, payload)
+            title, body, priority, _channel_hint = cls._render_message(cur, event_name, payload)
             cur.execute(
                 """
                 INSERT INTO notifications (
@@ -92,9 +91,9 @@ class CanonicalIntegrationWorker:
                 RETURNING id;
                 """,
                 (
-                    __import__("uuid").uuid4(),
-                    target_user_id,
-                    target_org_id,
+                    str(uuid.uuid4()),
+                    str(target_user_id),
+                    str(target_org_id),
                     event_name,
                     title,
                     body,
@@ -147,7 +146,7 @@ class NotificationDeliveryWorker:
                 updated_at = now()
             WHERE id = %s;
             """,
-            (error, retry_at, delivery_id),
+            (error, retry_at, str(delivery_id)),
         )
 
     @staticmethod
@@ -163,5 +162,5 @@ class NotificationDeliveryWorker:
                 updated_at = now()
             WHERE id = %s;
             """,
-            (provider_message_id, delivery_id),
+            (provider_message_id, str(delivery_id)),
         )
