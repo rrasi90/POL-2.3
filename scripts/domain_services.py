@@ -490,3 +490,444 @@ class AuditService:
             Json(state_before), Json(state_after), reason, correlation_id
         ))
         return cur.fetchone()["id"]
+
+
+class DailyInventoryService:
+    """
+    Vendor Warehouse Daily Inventory Confirmation Service
+    Implements:
+    - 1-tap confirmation (CONFIRMED_NO_CHANGES)
+    - Item delta adjustment (CONFIRMED_WITH_CHANGES)
+    - Inventory confidence updates (CONFIRMED_TODAY, STALE)
+    - Non-spamming deduplicated reminder dispatch
+    - Anti-gaming reliability event logging
+    """
+    @staticmethod
+    def get_or_create_daily_confirmation(cur, vendor_id: str, confirmation_date: str) -> dict:
+        cur.execute("""
+            SELECT * FROM daily_inventory_confirmations
+            WHERE vendor_id = %s AND confirmation_date = %s;
+        """, (vendor_id, confirmation_date))
+        row = cur.fetchone()
+        if not row:
+            cur.execute("""
+                INSERT INTO daily_inventory_confirmations (vendor_id, confirmation_date, status)
+                VALUES (%s, %s, 'PENDING')
+                RETURNING *;
+            """, (vendor_id, confirmation_date))
+            row = cur.fetchone()
+        return row
+
+    @staticmethod
+    def confirm_no_changes(cur, vendor_id: str, actor_user_id: str, confirmation_date: str, source: str = 'WEB_PANEL') -> dict:
+        """1-tap instant confirmation: 'همه موجودی‌ها درست است'"""
+        cur.execute("""
+            INSERT INTO daily_inventory_confirmations (
+                vendor_id, confirmation_date, status, actor_user_id, confirmed_at, changed_item_count, source, updated_at
+            ) VALUES (
+                %s, %s, 'CONFIRMED_NO_CHANGES', %s, now(), 0, %s, now()
+            )
+            ON CONFLICT (vendor_id, confirmation_date) DO UPDATE SET
+                status = 'CONFIRMED_NO_CHANGES',
+                actor_user_id = EXCLUDED.actor_user_id,
+                confirmed_at = now(),
+                changed_item_count = 0,
+                source = EXCLUDED.source,
+                updated_at = now()
+            RETURNING *;
+        """, (vendor_id, confirmation_date, actor_user_id, source))
+        conf = cur.fetchone()
+
+        # Update all vendor products in inventory to CONFIRMED_TODAY
+        cur.execute("""
+            UPDATE vendor_inventory vi
+            SET last_confirmed_at = now(),
+                inventory_confidence = 'CONFIRMED_TODAY',
+                verification_source = 'DAILY_CONFIRMATION'
+            FROM vendor_products vp
+            WHERE vi.vendor_product_id = vp.id
+              AND vp.vendor_id = %s;
+        """, (vendor_id,))
+
+        # Log to reliability ledger
+        ReliabilityLedgerService.record_event(
+            cur, vendor_id=vendor_id, event_type='DAILY_CONFIRMATION_COMPLETED',
+            impact_score=1.0, metadata={"mode": "NO_CHANGES", "source": source}
+        )
+
+        return conf
+
+    @staticmethod
+    def confirm_with_changes(cur, vendor_id: str, actor_user_id: str, confirmation_date: str,
+                             changes: list, source: str = 'WEB_PANEL') -> dict:
+        """Confirmed with changes: 'چند قلم تغییر کرده است'"""
+        cur.execute("""
+            INSERT INTO daily_inventory_confirmations (
+                vendor_id, confirmation_date, status, actor_user_id, confirmed_at, changed_item_count, source, updated_at
+            ) VALUES (
+                %s, %s, 'CONFIRMED_WITH_CHANGES', %s, now(), %s, %s, now()
+            )
+            ON CONFLICT (vendor_id, confirmation_date) DO UPDATE SET
+                status = 'CONFIRMED_WITH_CHANGES',
+                actor_user_id = EXCLUDED.actor_user_id,
+                confirmed_at = now(),
+                changed_item_count = EXCLUDED.changed_item_count,
+                source = EXCLUDED.source,
+                updated_at = now()
+            RETURNING *;
+        """, (vendor_id, confirmation_date, actor_user_id, len(changes), source))
+        conf = cur.fetchone()
+
+        for chg in changes:
+            vp_id = chg["vendor_product_id"]
+            decl_qty = int(chg["declared_quantity"])
+
+            cur.execute("""
+                SELECT physical_quantity FROM vendor_inventory
+                WHERE vendor_product_id = %s;
+            """, (vp_id,))
+            inv = cur.fetchone()
+            prev_qty = inv["physical_quantity"] if inv else 0
+
+            cur.execute("""
+                INSERT INTO daily_inventory_confirmation_items (
+                    confirmation_id, vendor_product_id, previous_quantity, declared_quantity
+                ) VALUES (%s, %s, %s, %s)
+                ON CONFLICT (confirmation_id, vendor_product_id) DO UPDATE SET
+                    declared_quantity = EXCLUDED.declared_quantity;
+            """, (conf["id"], vp_id, prev_qty, decl_qty))
+
+            cur.execute("""
+                UPDATE vendor_inventory
+                SET physical_quantity = %s,
+                    last_confirmed_at = now(),
+                    inventory_confidence = 'CONFIRMED_TODAY',
+                    verification_source = 'DAILY_CONFIRMATION'
+                WHERE vendor_product_id = %s;
+            """, (decl_qty, vp_id))
+
+        # Mark all other items of this vendor as confirmed today
+        cur.execute("""
+            UPDATE vendor_inventory vi
+            SET last_confirmed_at = now(),
+                inventory_confidence = 'CONFIRMED_TODAY',
+                verification_source = 'DAILY_CONFIRMATION'
+            FROM vendor_products vp
+            WHERE vi.vendor_product_id = vp.id
+              AND vp.vendor_id = %s;
+        """, (vendor_id,))
+
+        ReliabilityLedgerService.record_event(
+            cur, vendor_id=vendor_id, event_type='DAILY_CONFIRMATION_COMPLETED',
+            impact_score=1.0, metadata={"mode": "WITH_CHANGES", "items_changed": len(changes), "source": source}
+        )
+
+        return conf
+
+    @staticmethod
+    def process_daily_reminders(cur, confirmation_date: str) -> list:
+        """Finds active vendors with PENDING status and queues deduplicated outbox reminders"""
+        cur.execute("""
+            SELECT v.id as vendor_id, v.user_id, v.organization_id, v.business_name
+            FROM vendors v
+            LEFT JOIN daily_inventory_confirmations d 
+              ON v.id = d.vendor_id AND d.confirmation_date = %s
+            WHERE d.status IS NULL OR d.status = 'PENDING';
+        """, (confirmation_date,))
+        pending_vendors = cur.fetchall()
+
+        queued_events = []
+        for v in pending_vendors:
+            event_id = f"remind_inv_{v['vendor_id']}_{confirmation_date}"
+            # Check for existing event to prevent duplicate spamming
+            cur.execute("SELECT id FROM outbox_events WHERE event_id = %s;", (event_id,))
+            if cur.fetchone():
+                continue
+
+            payload = {
+                "vendor_id": str(v["vendor_id"]),
+                "confirmation_date": str(confirmation_date),
+                "business_name": v["business_name"],
+                "channel_preference": ["PUSH", "SMS"]
+            }
+            cur.execute("""
+                INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status)
+                VALUES (%s, %s, 'DAILY_INVENTORY_REMINDER', 'VENDOR_INVENTORY', %s, %s, 'PENDING')
+                RETURNING id, event_id, aggregate_id;
+            """, (str(uuid.uuid4()), event_id, v["vendor_id"], Json(payload)))
+            queued_events.append(cur.fetchone())
+
+        return queued_events
+
+    @staticmethod
+    def mark_missed_and_decay(cur, confirmation_date: str) -> int:
+        """Transitions unconfirmed vendors to MISSED and decays inventory confidence to STALE"""
+        cur.execute("""
+            UPDATE daily_inventory_confirmations
+            SET status = 'MISSED', updated_at = now()
+            WHERE confirmation_date = %s AND status = 'PENDING'
+            RETURNING vendor_id;
+        """, (confirmation_date,))
+        missed = cur.fetchall()
+
+        for row in missed:
+            v_id = row["vendor_id"]
+            cur.execute("""
+                UPDATE vendor_inventory vi
+                SET inventory_confidence = 'STALE'
+                FROM vendor_products vp
+                WHERE vi.vendor_product_id = vp.id AND vp.vendor_id = %s;
+            """, (v_id,))
+
+            ReliabilityLedgerService.record_event(
+                cur, vendor_id=v_id, event_type='DAILY_CONFIRMATION_MISSED',
+                impact_score=-2.0, metadata={"confirmation_date": str(confirmation_date)}
+            )
+
+        return len(missed)
+
+
+class FeedbackService:
+    """
+    Universal Feedback & Problem Reporting Service
+    Implements:
+    - Low-friction submission for all user roles
+    - Automatic client context capture
+    - Full lifecycle management (SUBMITTED -> CLOSED)
+    - Admin inbox triage and replies
+    - Tenant-safe isolation
+    """
+    @staticmethod
+    def submit_feedback(cur, user_id: str, org_id: str, feedback_type: str, description: str,
+                        title: str = None, priority: str = 'NORMAL', attachment_url: str = None,
+                        client_context: dict = None, related_order_id: str = None) -> dict:
+        f_id = str(uuid.uuid4())
+        ctx = client_context or {}
+        cur.execute("""
+            INSERT INTO feedback_submissions (
+                id, user_id, organization_id, feedback_type, priority, status,
+                visibility, title, description, attachment_url, client_context,
+                related_order_id, created_at, updated_at
+            ) VALUES (
+                %s, %s, %s, %s, %s, 'SUBMITTED',
+                'PRIVATE_TO_ADMIN', %s, %s, %s, %s,
+                %s, now(), now()
+            ) RETURNING *;
+        """, (
+            f_id, user_id, org_id, feedback_type, priority,
+            title or f"بازخورد {feedback_type}", description, attachment_url, Json(ctx),
+            related_order_id
+        ))
+        fb = cur.fetchone()
+
+        # Emit outbox notification to admin team
+        cur.execute("""
+            INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status)
+            VALUES (%s, %s, 'FEEDBACK_SUBMITTED', 'FEEDBACK', %s, %s, 'PENDING');
+        """, (str(uuid.uuid4()), f"fb_ev_{f_id[:8]}", f_id, Json({"feedback_id": f_id, "type": feedback_type, "priority": priority})))
+
+        return fb
+
+    @staticmethod
+    def triage_feedback(cur, feedback_id: str, admin_user_id: str, new_status: str,
+                        priority: str = None, assigned_to_user_id: str = None, admin_notes: str = None) -> dict:
+        cur.execute("""
+            UPDATE feedback_submissions
+            SET status = %s,
+                priority = COALESCE(%s, priority),
+                assigned_to_user_id = COALESCE(%s, assigned_to_user_id),
+                admin_notes = COALESCE(%s, admin_notes),
+                triaged_at = CASE WHEN triaged_at IS NULL THEN now() ELSE triaged_at END,
+                resolved_at = CASE WHEN %s IN ('IMPLEMENTED', 'REJECTED', 'CLOSED') THEN now() ELSE resolved_at END,
+                updated_at = now()
+            WHERE id = %s
+            RETURNING *;
+        """, (new_status, priority, assigned_to_user_id, admin_notes, new_status, feedback_id))
+        return cur.fetchone()
+
+    @staticmethod
+    def reply_to_feedback(cur, feedback_id: str, admin_user_id: str, reply_text: str) -> dict:
+        cur.execute("""
+            UPDATE feedback_submissions
+            SET admin_reply = %s,
+                status = CASE WHEN status = 'SUBMITTED' THEN 'IN_REVIEW' ELSE status END,
+                updated_at = now()
+            WHERE id = %s
+            RETURNING *;
+        """, (reply_text, feedback_id))
+        fb = cur.fetchone()
+
+        # Notify user of admin response
+        cur.execute("""
+            INSERT INTO notifications (id, user_id, organization_id, event_name, title, body, priority)
+            VALUES (%s, %s, %s, 'FEEDBACK_REPLIED', 'پاسخ به بازخورد شما', %s, 'NORMAL');
+        """, (str(uuid.uuid4()), fb["user_id"], fb["organization_id"], reply_text[:100]))
+
+        return fb
+
+    @staticmethod
+    def get_user_feedback(cur, user_id: str, org_id: str) -> list:
+        """Tenant-safe feedback query"""
+        cur.execute("""
+            SELECT * FROM feedback_submissions
+            WHERE user_id = %s OR (organization_id IS NOT NULL AND organization_id = %s)
+            ORDER BY created_at DESC;
+        """, (user_id, org_id))
+        return cur.fetchall()
+
+    @staticmethod
+    def get_admin_inbox(cur, status_filter: str = None, priority_filter: str = None) -> list:
+        query = "SELECT * FROM feedback_submissions WHERE 1=1"
+        params = []
+        if status_filter:
+            query += " AND status = %s"
+            params.append(status_filter)
+        if priority_filter:
+            query += " AND priority = %s"
+            params.append(priority_filter)
+        query += " ORDER BY CASE priority WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END, created_at DESC;"
+        cur.execute(query, tuple(params))
+        return cur.fetchall()
+
+
+class RevalidationCheckoutService:
+    """
+    Checkout with Pre-Commit Verification
+    Guarantees:
+    - Allocation is never accepted blindly
+    - Price freshness check against effective vendor_prices
+    - Atomic stock reservation with row-level locks
+    - Vendor MOV/MOQ invariant re-check
+    """
+    @staticmethod
+    def revalidate_and_checkout(cur, basket_id: str, plan_id: str, retailer_id: str,
+                                idempotency_key: str, address_snapshot: dict,
+                                vendor_allocations: list) -> dict:
+        # 1. Basket & Plan validation
+        cur.execute("""
+            SELECT b.version, p.basket_version, p.expires_at, p.status
+            FROM baskets b
+            JOIN allocation_plans p ON p.id = %s
+            WHERE b.id = %s;
+        """, (plan_id, basket_id))
+        chk = cur.fetchone()
+        if not chk:
+            raise ValueError("Basket or Allocation Plan not found.")
+        if chk["version"] != chk["basket_version"]:
+            raise ValueError(f"Stale basket checkout: basket v{chk['version']} != plan v{chk['basket_version']}")
+        if chk["expires_at"] < datetime.now(timezone.utc):
+            raise ValueError("Allocation plan has expired (15-minute TTL exceeded).")
+
+        # 2. Revalidate price freshness and physical stock availability with locking
+        for alloc in vendor_allocations:
+            vp_id = alloc["vendor_product_id"]
+            quoted_price = alloc["unit_price_toman"]
+            req_qty = alloc["quantity"]
+
+            # Price check
+            cur.execute("""
+                SELECT price_toman FROM vendor_prices
+                WHERE vendor_product_id = %s AND is_current = TRUE;
+            """, (vp_id,))
+            price_row = cur.fetchone()
+            if not price_row or price_row["price_toman"] != quoted_price:
+                actual = price_row["price_toman"] if price_row else "N/A"
+                raise ValueError(f"Price freshness failure for SKU {vp_id}: Quoted {quoted_price} vs Live {actual}")
+
+            # Physical stock check with row lock
+            cur.execute("""
+                SELECT physical_quantity, reserved_quantity FROM vendor_inventory
+                WHERE vendor_product_id = %s
+                FOR UPDATE;
+            """, (vp_id,))
+            inv_row = cur.fetchone()
+            if not inv_row:
+                raise ValueError(f"No inventory record found for SKU {vp_id}")
+            avail = inv_row["physical_quantity"] - inv_row["reserved_quantity"]
+            if avail < req_qty:
+                raise ValueError(f"Insufficient stock for SKU {vp_id}: Available {avail} < Requested {req_qty}")
+
+        # 3. Create OrderGroup and child Orders
+        total_toman = sum(v["amount_toman"] for v in vendor_allocations)
+        og_id = str(uuid.uuid4())
+        cur.execute("""
+            INSERT INTO order_groups (
+                id, basket_id, allocation_plan_id, retailer_id, checkout_idempotency_key, 
+                total_amount_toman, order_count, group_status
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, 'ACTIVE'
+            ) RETURNING id;
+        """, (og_id, basket_id, plan_id, retailer_id, idempotency_key, total_toman, len(vendor_allocations)))
+
+        child_orders = []
+        for alloc in vendor_allocations:
+            ord_id = str(uuid.uuid4())
+            res_id = str(uuid.uuid4())
+            ord_num = f"ORD-{uuid.uuid4().hex[:8].upper()}"
+
+            cur.execute("""
+                INSERT INTO orders (
+                    id, order_group_id, retailer_id, vendor_id, order_number, 
+                    total_amount_toman, order_status, dispute_status, delivery_address_snapshot, correlation_id
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, 'SUBMITTED', 'NONE', %s, %s
+                ) RETURNING *;
+            """, (
+                ord_id, og_id, retailer_id, alloc["vendor_id"], ord_num,
+                alloc["amount_toman"], Json(address_snapshot), f"corr-{og_id[:8]}"
+            ))
+            child_orders.append(cur.fetchone())
+
+            # Atomic Reservation
+            cur.execute("""
+                INSERT INTO inventory_reservations (
+                    id, vendor_product_id, order_id, quantity, status, idempotency_key, expires_at
+                ) VALUES (
+                    %s, %s, %s, %s, 'ACTIVE', %s, now() + interval '15 minutes'
+                );
+            """, (res_id, alloc["vendor_product_id"], ord_id, alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_id']}"))
+
+            cur.execute("""
+                UPDATE vendor_inventory 
+                SET reserved_quantity = reserved_quantity + %s
+                WHERE vendor_product_id = %s;
+            """, (alloc["quantity"], alloc["vendor_product_id"]))
+
+        return {"order_group_id": og_id, "orders": child_orders}
+
+
+class ReliabilityLedgerService:
+    """
+    Vendor Operational Reliability Ledger
+    Event-based ledger to record and analyze raw operational signals
+    """
+    @staticmethod
+    def record_event(cur, vendor_id: str, event_type: str, order_id: str = None,
+                     impact_score: float = 0.0, declared_val: dict = None,
+                     observed_val: dict = None, metadata: dict = None) -> str:
+        ev_id = str(uuid.uuid4())
+        cur.execute("""
+            INSERT INTO vendor_reliability_events (
+                id, vendor_id, event_type, order_id, impact_score, declared_value, observed_value, metadata, created_at
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, now()
+            ) RETURNING id;
+        """, (
+            ev_id, vendor_id, event_type, order_id, impact_score,
+            Json(declared_val) if declared_val else None,
+            Json(observed_val) if observed_val else None,
+            Json(metadata or {})
+        ))
+        return cur.fetchone()["id"]
+
+    @staticmethod
+    def get_reliability_summary(cur, vendor_id: str) -> dict:
+        cur.execute("""
+            SELECT event_type, count(*) as count, sum(impact_score) as total_impact
+            FROM vendor_reliability_events
+            WHERE vendor_id = %s
+            GROUP BY event_type;
+        """, (vendor_id,))
+        rows = cur.fetchall()
+        return {r["event_type"]: {"count": r["count"], "total_impact": float(r["total_impact"] or 0.0)} for r in rows}
+

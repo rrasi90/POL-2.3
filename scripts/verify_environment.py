@@ -23,8 +23,9 @@ EXPECTED_MIGRATIONS = [
     "001_initial_schema.sql",
     "002_platform_core_schema.sql",
     "003_contract_reconciliation.sql",
+    "004_operational_intelligence.sql",
 ]
-EXPECTED_TABLE_COUNT = 56
+EXPECTED_TABLE_COUNT = 62
 EXPECTED_CORE_TABLES = [
     "users",
     "organizations",
@@ -54,6 +55,12 @@ EXPECTED_CORE_TABLES = [
     "notifications",
     "user_inbox_items",
     "outbox_events",
+    "daily_inventory_confirmations",
+    "daily_inventory_confirmation_items",
+    "feedback_submissions",
+    "vendor_reliability_events",
+    "product_identity_lifecycle_logs",
+    "returns",
 ]
 
 def verify_python():

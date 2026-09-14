@@ -83,11 +83,11 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 
 ---
 
-## 4. Test Suites Master Catalog (19 Suites / 37 Items)
+## 4. Test Suites Master Catalog (20 Suites / 47 Items)
 
 | # | Suite File | Tests | Category | DB Req | Target Domain & Invariants Verified |
 | :-: | :--- | :-: | :---: | :---: | :--- |
-| **01** | `scripts/test_postgres_migrations.py` | 1 | MIGRATION | Real PG 18 | Migration chain integrity; Fresh install (56 tables) + Incremental upgrade (`001+002` -> `003`) |
+| **01** | `scripts/test_postgres_migrations.py` | 1 | MIGRATION | Real PG 18 | Migration chain integrity; Fresh install (62 tables across 001-004) + Incremental upgrade |
 | **02** | `scripts/test_postgres_runtime.py` | 1 | RUNTIME | Real PG 18 | 33 Mission-Critical Runtime Scenarios (15 Retailer, 10 Vendor, 8 Allocation/Gov) |
 | **03** | `scripts/test_identity_tenant_isolation.py` | 6 | IAM/ISOLATION | Real PG 18 | Multi-org tenant boundaries; Section 11 role matrix; Section 13 non-authoritative `users.role`; Section 14 multi-org sessions; Section 15 legacy links; Section 16 negative cross-tenant attack matrix |
 | **04** | `scripts/test_postgres_concurrency.py` | 9 | CONCURRENCY | Real PG 18 | 9 ACID race scenarios: inventory race, duplicate checkout, scarce stock, vendor accept, dispatch creation, refund, dispute creation, vendor isolation, stale price |
@@ -106,6 +106,7 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 | **17** | `scripts/test_sla_calendar.py` | 1 | RUNTIME | Static | Ahvaz business calendar, Friday/holiday exclusions, vendor acceptance SLA deadlines |
 | **18** | `scripts/test_support_cases.py` | 1 | RUNTIME | Real PG 18 | Customer support case lifecycle (`OPEN` -> `CLOSED`), threaded messages, orthogonal separation from financial disputes |
 | **19** | `scripts/test_verification_mutations.py` | 6 | ADVERSARIAL | Real PG 18 | 6 adversarial mutations: dataset count, partial unique index, SKU uniqueness, `DISPUTED` enum in `orders`, carton-only API, multi-packaging offers |
+| **20** | `scripts/test_operational_intelligence.py` | 10 | OP_INTEL | Real PG 18 | Daily 1-tap confirmation, delta updates, reminder deduplication, missed decay, feedback submission & triage, cross-tenant isolation, pre-commit price & stock revalidation, simplicity UX contracts |
 
 ---
 
