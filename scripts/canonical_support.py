@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
 
 class SupportAccessError(PermissionError):
@@ -46,20 +47,34 @@ class CanonicalSupportService:
             (str(uuid.uuid4()), case_id, actor_user_id, action, allowed, reason),
         )
 
+    @staticmethod
+    def _new_case_number() -> str:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+        return f"POL-SUP-{stamp}-{uuid.uuid4().hex[:8].upper()}"
+
     @classmethod
     def create_case(cls, cur, actor_user_id, organization_id, case_type, subject,
                     related_order_id=None, priority="NORMAL"):
-        cur.execute(
-            """
-            INSERT INTO support_cases
-                (id,user_id,organization_id,case_type,subject,related_order_id,priority,status,created_by_user_id)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,'OPEN',%s)
-            RETURNING *;
-            """,
-            (str(uuid.uuid4()), actor_user_id, organization_id, case_type, subject,
-             related_order_id, priority, actor_user_id),
-        )
-        return cur.fetchone()
+        for _ in range(3):
+            case_id = str(uuid.uuid4())
+            case_number = cls._new_case_number()
+            try:
+                cur.execute(
+                    """
+                    INSERT INTO support_cases
+                        (id,user_id,organization_id,case_number,case_type,subject,
+                         related_order_id,priority,status,created_by_user_id)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'OPEN',%s)
+                    RETURNING *;
+                    """,
+                    (case_id, actor_user_id, organization_id, case_number, case_type,
+                     subject, related_order_id, priority, actor_user_id),
+                )
+                return cur.fetchone()
+            except Exception as exc:
+                if getattr(exc, "pgcode", None) != "23505":
+                    raise
+        raise SupportStateError("Unable to allocate a unique support case number.")
 
     @classmethod
     def get_case(cls, cur, actor_user_id: str, case_id: str):
@@ -138,9 +153,9 @@ class CanonicalSupportService:
         if not is_ops:
             raise SupportAccessError("Only operator staff may transition support cases.")
         allowed = {
-            "OPEN": {"IN_PROGRESS", "WAITING_USER", "RESOLVED", "CLOSED"},
-            "IN_PROGRESS": {"WAITING_USER", "RESOLVED", "CLOSED"},
-            "WAITING_USER": {"IN_PROGRESS", "RESOLVED", "CLOSED"},
+            "OPEN": {"IN_PROGRESS", "WAITING_ON_USER", "RESOLVED", "CLOSED"},
+            "IN_PROGRESS": {"WAITING_ON_USER", "RESOLVED", "CLOSED"},
+            "WAITING_ON_USER": {"IN_PROGRESS", "RESOLVED", "CLOSED"},
             "RESOLVED": {"CLOSED", "IN_PROGRESS"},
             "CLOSED": set(),
         }
