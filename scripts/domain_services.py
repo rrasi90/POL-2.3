@@ -538,7 +538,6 @@ class DailyInventoryService:
         """, (vendor_id, confirmation_date, actor_user_id, source))
         conf = cur.fetchone()
 
-        # Update all vendor products in inventory to CONFIRMED_TODAY
         cur.execute("""
             UPDATE vendor_inventory vi
             SET last_confirmed_at = now(),
@@ -549,7 +548,6 @@ class DailyInventoryService:
               AND vp.vendor_id = %s;
         """, (vendor_id,))
 
-        # Log to reliability ledger
         ReliabilityLedgerService.record_event(
             cur, vendor_id=vendor_id, event_type='DAILY_CONFIRMATION_COMPLETED',
             impact_score=1.0, metadata={"mode": "NO_CHANGES", "source": source}
@@ -606,7 +604,6 @@ class DailyInventoryService:
                 WHERE vendor_product_id = %s;
             """, (decl_qty, vp_id))
 
-        # Mark all other items of this vendor as confirmed today
         cur.execute("""
             UPDATE vendor_inventory vi
             SET last_confirmed_at = now(),
@@ -626,11 +623,16 @@ class DailyInventoryService:
 
     @staticmethod
     def process_daily_reminders(cur, confirmation_date: str) -> list:
-        """Finds active vendors with PENDING status and queues deduplicated outbox reminders"""
+        """Queue deduplicated reminders for routable vendors without aborting the whole batch.
+
+        The DB trigger remains fail-closed for direct writes. This service performs
+        the same routing pre-check first so one malformed vendor cannot prevent
+        otherwise valid vendors from receiving their daily confirmation reminder.
+        """
         cur.execute("""
             SELECT v.id as vendor_id, v.user_id, v.organization_id, v.business_name
             FROM vendors v
-            LEFT JOIN daily_inventory_confirmations d 
+            LEFT JOIN daily_inventory_confirmations d
               ON v.id = d.vendor_id AND d.confirmation_date = %s
             WHERE d.status IS NULL OR d.status = 'PENDING';
         """, (confirmation_date,))
@@ -639,9 +641,45 @@ class DailyInventoryService:
         queued_events = []
         for v in pending_vendors:
             event_id = f"remind_inv_{v['vendor_id']}_{confirmation_date}"
-            # Check for existing event to prevent duplicate spamming
             cur.execute("SELECT id FROM outbox_events WHERE event_id = %s;", (event_id,))
             if cur.fetchone():
+                continue
+
+            cur.execute("""
+                SELECT r.user_id
+                FROM vendor_inventory_responsibilities r
+                WHERE r.vendor_id = %s
+                  AND r.responsibility_type = 'WAREHOUSE_INVENTORY'
+                  AND r.is_primary = TRUE
+                  AND r.effective_from <= now()
+                  AND (r.effective_until IS NULL OR r.effective_until > now())
+                LIMIT 1;
+            """, (v["vendor_id"],))
+            responsibility = cur.fetchone()
+
+            if not responsibility:
+                # Fail closed for this vendor but keep the daily job healthy.
+                # Log one operational routing exception per vendor/day.
+                cur.execute("""
+                    SELECT 1
+                    FROM vendor_reliability_events
+                    WHERE vendor_id = %s
+                      AND event_type = 'DAILY_CONFIRMATION_ROUTING_ERROR'
+                      AND metadata->>'confirmation_date' = %s
+                    LIMIT 1;
+                """, (v["vendor_id"], str(confirmation_date)))
+                if not cur.fetchone():
+                    ReliabilityLedgerService.record_event(
+                        cur,
+                        vendor_id=v["vendor_id"],
+                        event_type='DAILY_CONFIRMATION_ROUTING_ERROR',
+                        impact_score=-1.0,
+                        metadata={
+                            "confirmation_date": str(confirmation_date),
+                            "reason": "NO_PRIMARY_WAREHOUSE_RESPONSIBILITY",
+                            "source": "DAILY_REMINDER_SCHEDULER"
+                        }
+                    )
                 continue
 
             payload = {
@@ -720,7 +758,6 @@ class FeedbackService:
         ))
         fb = cur.fetchone()
 
-        # Emit outbox notification to admin team
         cur.execute("""
             INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status)
             VALUES (%s, %s, 'FEEDBACK_SUBMITTED', 'FEEDBACK', %s, %s, 'PENDING');
@@ -757,7 +794,6 @@ class FeedbackService:
         """, (reply_text, feedback_id))
         fb = cur.fetchone()
 
-        # Notify user of admin response
         cur.execute("""
             INSERT INTO notifications (id, user_id, organization_id, event_name, title, body, priority)
             VALUES (%s, %s, %s, 'FEEDBACK_REPLIED', 'پاسخ به بازخورد شما', %s, 'NORMAL');
@@ -803,7 +839,6 @@ class RevalidationCheckoutService:
     def revalidate_and_checkout(cur, basket_id: str, plan_id: str, retailer_id: str,
                                 idempotency_key: str, address_snapshot: dict,
                                 vendor_allocations: list) -> dict:
-        # 1. Basket & Plan validation
         cur.execute("""
             SELECT b.version, p.basket_version, p.expires_at, p.status
             FROM baskets b
@@ -818,13 +853,11 @@ class RevalidationCheckoutService:
         if chk["expires_at"] < datetime.now(timezone.utc):
             raise ValueError("Allocation plan has expired (15-minute TTL exceeded).")
 
-        # 2. Revalidate price freshness and physical stock availability with locking
         for alloc in vendor_allocations:
             vp_id = alloc["vendor_product_id"]
             quoted_price = alloc["unit_price_toman"]
             req_qty = alloc["quantity"]
 
-            # Price check
             cur.execute("""
                 SELECT price_toman FROM vendor_prices
                 WHERE vendor_product_id = %s AND is_current = TRUE;
@@ -834,7 +867,6 @@ class RevalidationCheckoutService:
                 actual = price_row["price_toman"] if price_row else "N/A"
                 raise ValueError(f"Price freshness failure for SKU {vp_id}: Quoted {quoted_price} vs Live {actual}")
 
-            # Physical stock check with row lock
             cur.execute("""
                 SELECT physical_quantity, reserved_quantity FROM vendor_inventory
                 WHERE vendor_product_id = %s
@@ -847,7 +879,6 @@ class RevalidationCheckoutService:
             if avail < req_qty:
                 raise ValueError(f"Insufficient stock for SKU {vp_id}: Available {avail} < Requested {req_qty}")
 
-        # 3. Create OrderGroup and child Orders
         total_toman = sum(v["amount_toman"] for v in vendor_allocations)
         og_id = str(uuid.uuid4())
         cur.execute("""
@@ -878,7 +909,6 @@ class RevalidationCheckoutService:
             ))
             child_orders.append(cur.fetchone())
 
-            # Atomic Reservation
             cur.execute("""
                 INSERT INTO inventory_reservations (
                     id, vendor_product_id, order_id, quantity, status, idempotency_key, expires_at
