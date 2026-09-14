@@ -24,6 +24,13 @@ class CanonicalIntegrationWorker:
         "RETURN_REQUESTED",
     }
 
+    # Domain/analytics events that intentionally do not become user notifications.
+    # They are still published from the outbox so the bus does not accumulate
+    # unconsumed operational records while future analytics consumers are added.
+    PASSTHROUGH_EVENTS = {
+        "VENDOR_REFERRAL_REDEEMED",
+    }
+
     @staticmethod
     def _render_message(cur, event_name: str, payload: dict):
         cur.execute(
@@ -71,6 +78,19 @@ class CanonicalIntegrationWorker:
         for event in events:
             event_name = event["event_name"]
             payload = event["payload"] or {}
+
+            if event_name in cls.PASSTHROUGH_EVENTS:
+                cur.execute(
+                    """
+                    UPDATE outbox_events
+                    SET status='PUBLISHED', published_at=now()
+                    WHERE id=%s;
+                    """,
+                    (event["id"],),
+                )
+                processed += 1
+                continue
+
             if event_name not in cls.ALLOWED_DIRECT_NOTIFICATION_EVENTS:
                 continue
 
@@ -168,7 +188,6 @@ class NotificationDeliveryWorker:
                 attempt_count = attempt_count + 1,
                 provider_message_id = %s,
                 sent_at = now(),
-                delivered_at = now(),
                 updated_at = now()
             WHERE id = %s;
             """,
