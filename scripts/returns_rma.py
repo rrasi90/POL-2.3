@@ -36,9 +36,12 @@ class CanonicalReturnService:
             SELECT 1
             FROM retailers r
             JOIN organization_memberships om ON om.organization_id = r.organization_id
+            JOIN organizations o ON o.id = r.organization_id
             WHERE r.id = %s
               AND om.user_id = %s
               AND om.status = 'ACTIVE'
+              AND o.status = 'ACTIVE'
+              AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
             LIMIT 1
             """,
             (retailer_id, user_id),
@@ -52,9 +55,11 @@ class CanonicalReturnService:
             SELECT 1
             FROM vendors v
             JOIN organization_memberships om ON om.organization_id = v.organization_id
+            JOIN organizations o ON o.id = om.organization_id
             WHERE v.id = %s
               AND om.user_id = %s
               AND om.status = 'ACTIVE'
+              AND o.status = 'ACTIVE'
               AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
             LIMIT 1
             """,
@@ -171,6 +176,47 @@ class CanonicalReturnService:
         return ret
 
     @classmethod
+    def _ensure_refund_pending(cls, cur, ret: dict, actor_user_id: str):
+        amount = ret["approved_refund_amount_toman"]
+        if amount is None or int(amount) <= 0:
+            raise ReturnStateError("A positive approved refund amount is required before REFUND_PENDING.")
+        cur.execute(
+            """
+            INSERT INTO refunds
+                (id, order_id, payment_id, dispute_id, retailer_id, amount_toman,
+                 refund_method, reason, status, approved_by_user_id, return_id)
+            VALUES
+                (%s,%s,NULL,NULL,%s,%s,'VENDOR_CASH_DIRECT',%s,'APPROVED',%s,%s)
+            ON CONFLICT (return_id) WHERE return_id IS NOT NULL DO NOTHING
+            RETURNING id;
+            """,
+            (str(uuid.uuid4()), ret["order_id"], ret["retailer_id"], amount,
+             f"RMA refund {ret['return_number']}", actor_user_id, ret["id"]),
+        )
+        refund_row = cur.fetchone()
+        if refund_row:
+            cur.execute(
+                "UPDATE returns SET refund_id=%s WHERE id=%s",
+                (refund_row["id"], ret["id"]),
+            )
+
+    @staticmethod
+    def _complete_refund(cur, ret: dict):
+        if not ret["refund_id"]:
+            raise ReturnStateError("Cannot mark RMA REFUNDED without a linked refund.")
+        cur.execute(
+            """
+            UPDATE refunds
+            SET status='COMPLETED', completed_at=now()
+            WHERE id=%s AND status='APPROVED'
+            RETURNING id;
+            """,
+            (ret["refund_id"],),
+        )
+        if not cur.fetchone():
+            raise ReturnStateError("Linked refund is missing or is not in APPROVED state.")
+
+    @classmethod
     def transition(cls, cur, actor_user_id: str, return_id: str, target_status: str,
                    reason: str | None = None, approved_refund_amount_toman: int | None = None):
         if approved_refund_amount_toman is not None and approved_refund_amount_toman < 0:
@@ -196,6 +242,10 @@ class CanonicalReturnService:
         if not allowed:
             raise ReturnAccessError("Actor is not authorized for this RMA transition.")
 
+        next_refund_amount = approved_refund_amount_toman
+        if target_status == "REFUND_PENDING" and next_refund_amount is None:
+            next_refund_amount = ret["approved_refund_amount_toman"]
+
         cur.execute(
             """
             UPDATE returns
@@ -209,9 +259,17 @@ class CanonicalReturnService:
             WHERE id = %s
             RETURNING *;
             """,
-            (target_status, approved_refund_amount_toman, target_status, target_status,
+            (target_status, next_refund_amount, target_status, target_status,
              target_status, target_status, reason, return_id),
         )
         updated = cur.fetchone()
+
+        if target_status == "REFUND_PENDING":
+            cls._ensure_refund_pending(cur, updated, actor_user_id)
+            cur.execute("SELECT * FROM returns WHERE id=%s FOR UPDATE", (return_id,))
+            updated = cur.fetchone()
+        elif target_status == "REFUNDED":
+            cls._complete_refund(cur, updated)
+
         cls._write_event(cur, return_id, current, target_status, actor_user_id, reason)
         return updated
