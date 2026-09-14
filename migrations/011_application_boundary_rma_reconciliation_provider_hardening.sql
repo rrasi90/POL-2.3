@@ -1,14 +1,6 @@
 -- ============================================================================
 -- POL Application Boundary / RMA / Support / Reconciliation / Provider Hardening
 -- Migration 011
---
--- Purpose:
---   1. Complete the return/RMA lifecycle without activating escrow or POL custody.
---   2. Add explicit support authorization/auditability.
---   3. Make payment reconciliation worker-safe and idempotent.
---   4. Make external notification-provider delivery attempts auditable and claimable.
---
--- MVP posture remains NON_CUSTODIAL_DIRECT and asset-light.
 -- ============================================================================
 
 ALTER TABLE returns
@@ -39,8 +31,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_returns_request_idempotency
     ON returns(request_idempotency_key)
     WHERE request_idempotency_key IS NOT NULL;
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_open_return_per_order
-    ON returns(order_id)
+DROP INDEX IF EXISTS uq_open_return_per_order;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_open_return_per_order_vendor
+    ON returns(order_id, vendor_id)
     WHERE status IN (
         'RETURN_REQUESTED', 'APPROVED', 'PICKUP_REQUIRED', 'RETURN_IN_TRANSIT',
         'RECEIVED', 'VENDOR_INSPECTION', 'ACCEPTED', 'REFUND_PENDING'
