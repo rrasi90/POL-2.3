@@ -1,0 +1,77 @@
+﻿name: POL Independent Verification & Certification CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    name: Independent Verification & Schema Hardening
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: pol_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Apply Canonical Dynamic Migration Chain (001 -> 002 -> 003)
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          POL_PG_PORT: 5432
+        run: |
+          python scripts/migration_runner.py
+
+      - name: Run Environment & Bootstrap Verifier
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          POL_PG_PORT: 5432
+        run: |
+          python scripts/verify_environment.py --json
+
+      - name: Execute Full Verification Test Suite & Generate Artifact
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          POL_PG_PORT: 5432
+        run: |
+          python scripts/run_verification_suite.py
+
+      - name: Upload Machine-Readable Test Results Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pol-test-results
+          path: artifacts/pol-test-results.json
+          retention-days: 30

@@ -23,8 +23,8 @@ def get_connection(dbname="pol_test"):
         try:
             conn = psycopg2.connect(
                 dbname=dbname,
-                user="postgres",
-                host="127.0.0.1",
+                user=os.environ.get("PGUSER", "postgres"),
+                host=os.environ.get("PGHOST", "127.0.0.1"),
                 port=p
             )
             conn.autocommit = False

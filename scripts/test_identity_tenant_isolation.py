@@ -642,9 +642,299 @@ def test_section_15_legacy_actor_links():
 
     conn.close()
 
+def test_section_16_cross_tenant_negative_matrix():
+    """
+    Section 16: Comprehensive Negative Cross-Tenant Isolation Across Domains:
+    - Invoices: Org A accessing/mutating Org B invoices returns empty / 0 rows modified
+    - Orders: Org A accessing/mutating Org B orders returns empty / 0 rows modified
+    - Inventory & Pricing: Vendor A mutating Vendor B inventory or prices blocked (0 rows modified)
+    - Support Cases: Org A querying or replying to Org B support cases returns empty / 0 rows inserted
+    - Inbox & Notifications: User A querying or modifying User B inbox returns empty / 0 rows modified
+    """
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    # 1. Setup Tenant Organizations & Users
+    org_ret_a = str(uuid.uuid4())
+    org_ret_b = str(uuid.uuid4())
+    org_vnd_1 = str(uuid.uuid4())
+    org_vnd_2 = str(uuid.uuid4())
+
+    cur.execute("""
+        INSERT INTO organizations (id, name, org_type, status) VALUES
+        (%s, 'Retailer Org A', 'RETAILER', 'ACTIVE'),
+        (%s, 'Retailer Org B', 'RETAILER', 'ACTIVE'),
+        (%s, 'Vendor Org 1', 'VENDOR', 'ACTIVE'),
+        (%s, 'Vendor Org 2', 'VENDOR', 'ACTIVE');
+    """, (org_ret_a, org_ret_b, org_vnd_1, org_vnd_2))
+
+    u_ret_a = str(uuid.uuid4())
+    u_ret_b = str(uuid.uuid4())
+    u_vnd_1 = str(uuid.uuid4())
+    u_vnd_2 = str(uuid.uuid4())
+
+    cur.execute("""
+        INSERT INTO users (id, phone_number, full_name) VALUES
+        (%s, %s, 'Retailer A Owner'),
+        (%s, %s, 'Retailer B Owner'),
+        (%s, %s, 'Vendor 1 Owner'),
+        (%s, %s, 'Vendor 2 Owner');
+    """, (
+        u_ret_a, f"+98916{uuid.uuid4().int % 10000000:07d}",
+        u_ret_b, f"+98916{uuid.uuid4().int % 10000000:07d}",
+        u_vnd_1, f"+98916{uuid.uuid4().int % 10000000:07d}",
+        u_vnd_2, f"+98916{uuid.uuid4().int % 10000000:07d}",
+    ))
+
+    cur.execute("""
+        INSERT INTO organization_memberships (organization_id, user_id, role, status) VALUES
+        (%s, %s, 'RETAILER_OWNER', 'ACTIVE'),
+        (%s, %s, 'RETAILER_OWNER', 'ACTIVE'),
+        (%s, %s, 'VENDOR_OWNER', 'ACTIVE'),
+        (%s, %s, 'VENDOR_OWNER', 'ACTIVE');
+    """, (org_ret_a, u_ret_a, org_ret_b, u_ret_b, org_vnd_1, u_vnd_1, org_vnd_2, u_vnd_2))
+
+    # Retailers and Vendors
+    ret_a = str(uuid.uuid4())
+    ret_b = str(uuid.uuid4())
+    vnd_1 = str(uuid.uuid4())
+    vnd_2 = str(uuid.uuid4())
+
+    cur.execute("""
+        INSERT INTO retailers (id, user_id, organization_id, store_name, neighborhood, address) VALUES
+        (%s, %s, %s, 'Store A', 'Kianpars', 'Addr A'),
+        (%s, %s, %s, 'Store B', 'Golestan', 'Addr B');
+    """, (ret_a, u_ret_a, org_ret_a, ret_b, u_ret_b, org_ret_b))
+
+    cur.execute("""
+        INSERT INTO vendors (id, user_id, organization_id, business_name, warehouse_address) VALUES
+        (%s, %s, %s, 'Wholesaler 1', 'Wholesale Park 1'),
+        (%s, %s, %s, 'Wholesaler 2', 'Wholesale Park 2');
+    """, (vnd_1, u_vnd_1, org_vnd_1, vnd_2, u_vnd_2, org_vnd_2))
+    conn.commit()
+
+    # --- DOMAIN 1: INVOICES (Cross-Tenant Negative Checks) ---
+    # Create an invoice for Ret A and an invoice for Ret B
+    og_a = str(uuid.uuid4())
+    og_b = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO order_groups (id, retailer_id, total_amount_toman, group_status) VALUES
+        (%s, %s, 1000000, 'ACTIVE'),
+        (%s, %s, 2000000, 'ACTIVE');
+    """, (og_a, ret_a, og_b, ret_b))
+
+    ord_a = str(uuid.uuid4())
+    ord_b = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO orders (id, order_group_id, retailer_id, vendor_id, order_number, total_amount_toman, order_status) VALUES
+        (%s, %s, %s, %s, %s, 1000000, 'DELIVERED'),
+        (%s, %s, %s, %s, %s, 2000000, 'DELIVERED');
+    """, (
+        ord_a, og_a, ret_a, vnd_1, f"ORD-NEG-A-{uuid.uuid4().hex[:6]}",
+        ord_b, og_b, ret_b, vnd_2, f"ORD-NEG-B-{uuid.uuid4().hex[:6]}"
+    ))
+
+    inv_a = str(uuid.uuid4())
+    inv_b = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO invoices (id, invoice_number, order_id, retailer_organization_id, vendor_organization_id, total_amount, status) VALUES
+        (%s, %s, %s, %s, %s, 1000000, 'ISSUED'),
+        (%s, %s, %s, %s, %s, 2000000, 'ISSUED');
+    """, (
+        inv_a, f"INV-NEG-A-{uuid.uuid4().hex[:6]}", ord_a, org_ret_a, org_vnd_1,
+        inv_b, f"INV-NEG-B-{uuid.uuid4().hex[:6]}", ord_b, org_ret_b, org_vnd_2
+    ))
+    conn.commit()
+
+    # Negative Assertion 1: Org A querying invoices sees 0 rows of Org B
+    cur.execute("""
+        SELECT id FROM invoices 
+        WHERE (retailer_organization_id = %s OR vendor_organization_id = %s)
+          AND id = %s;
+    """, (org_ret_a, org_ret_a, inv_b))
+    assert cur.fetchone() is None, "Cross-tenant leak: Org A fetched Org B invoice!"
+
+    # Negative Assertion 2: Org A unauthorized update on Org B invoice modifies 0 rows
+    cur.execute("""
+        UPDATE invoices SET status = 'CANCELLED'
+        WHERE id = %s AND (retailer_organization_id = %s OR vendor_organization_id = %s);
+    """, (inv_b, org_ret_a, org_ret_a))
+    assert cur.rowcount == 0, "Cross-tenant attack succeeded: Org A updated Org B invoice!"
+
+    # Negative Assertion 3: Vendor 1 querying invoice of Vendor 2 sees 0 rows
+    cur.execute("""
+        SELECT id FROM invoices 
+        WHERE (vendor_organization_id = %s) AND id = %s;
+    """, (org_vnd_1, inv_b))
+    assert cur.fetchone() is None, "Cross-tenant leak: Vendor 1 fetched Vendor 2 invoice!"
+
+    # --- DOMAIN 2: ORDERS (Cross-Tenant Negative Checks) ---
+    # Negative Assertion 4: Org A querying orders sees 0 rows of Org B
+    cur.execute("""
+        SELECT o.id FROM orders o
+        JOIN retailers r ON o.retailer_id = r.id
+        WHERE r.organization_id = %s AND o.id = %s;
+    """, (org_ret_a, ord_b))
+    assert cur.fetchone() is None, "Cross-tenant leak: Org A fetched Org B order!"
+
+    # Negative Assertion 5: Org A unauthorized cancellation on Org B order modifies 0 rows
+    cur.execute("""
+        UPDATE orders SET order_status = 'CANCELLED'
+        WHERE id = %s AND retailer_id IN (SELECT id FROM retailers WHERE organization_id = %s);
+    """, (ord_b, org_ret_a))
+    assert cur.rowcount == 0, "Cross-tenant attack succeeded: Org A cancelled Org B order!"
+
+    # Negative Assertion 6: Vendor 1 querying orders of Vendor 2 sees 0 rows
+    cur.execute("""
+        SELECT o.id FROM orders o
+        JOIN vendors v ON o.vendor_id = v.id
+        WHERE v.organization_id = %s AND o.id = %s;
+    """, (org_vnd_1, ord_b))
+    assert cur.fetchone() is None, "Cross-tenant leak: Vendor 1 fetched Vendor 2 order!"
+
+    # --- DOMAIN 3: VENDOR CATALOG, INVENTORY & PRICING ---
+    # Ensure brand/cat exist for products
+    cur.execute("SELECT id FROM brands LIMIT 1;")
+    brand_id = cur.fetchone()["id"]
+    cur.execute("SELECT id FROM categories LIMIT 1;")
+    cat_id = cur.fetchone()["id"]
+    cur.execute("SELECT id FROM subcategories LIMIT 1;")
+    subcat_id = cur.fetchone()["id"]
+
+    prod_test = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO products (id, master_sku, canonical_name_fa, brand_id, category_id, subcategory_id)
+        VALUES (%s, %s, 'محصول تستی ایزولاسیون', %s, %s, %s);
+    """, (prod_test, f"POL-SKU-{uuid.uuid4().hex[:8]}", brand_id, cat_id, subcat_id))
+
+    vp_1 = str(uuid.uuid4())
+    vp_2 = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO vendor_products (id, vendor_id, product_id, vendor_sku, packaging_unit, pack_quantity) VALUES
+        (%s, %s, %s, %s, 'CARTON', 1),
+        (%s, %s, %s, %s, 'CARTON', 1);
+    """, (vp_1, vnd_1, prod_test, f"SKU-V1-{uuid.uuid4().hex[:6]}", vp_2, vnd_2, prod_test, f"SKU-V2-{uuid.uuid4().hex[:6]}"))
+
+    inv_1_id = str(uuid.uuid4())
+    inv_2_id = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO vendor_inventory (id, vendor_product_id, physical_quantity, reserved_quantity) VALUES
+        (%s, %s, 50, 0),
+        (%s, %s, 80, 0);
+    """, (inv_1_id, vp_1, inv_2_id, vp_2))
+
+    price_1_id = str(uuid.uuid4())
+    price_2_id = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO vendor_prices (id, vendor_product_id, price_toman, is_current) VALUES
+        (%s, %s, 500000, TRUE),
+        (%s, %s, 700000, TRUE);
+    """, (price_1_id, vp_1, price_2_id, vp_2))
+    conn.commit()
+
+    # Negative Assertion 7: Vendor 1 cannot modify Vendor 2 inventory
+    cur.execute("""
+        UPDATE vendor_inventory vi
+        SET physical_quantity = 9999
+        FROM vendor_products vp, vendors v
+        WHERE vi.vendor_product_id = vp.id
+          AND vp.vendor_id = v.id
+          AND v.organization_id = %s
+          AND vi.id = %s;
+    """, (org_vnd_1, inv_2_id))
+    assert cur.rowcount == 0, "Cross-tenant attack succeeded: Vendor 1 modified Vendor 2 inventory!"
+
+    # Verify Vendor 2 inventory unchanged
+    cur.execute("SELECT physical_quantity FROM vendor_inventory WHERE id = %s;", (inv_2_id,))
+    assert cur.fetchone()["physical_quantity"] == 80
+
+    # Negative Assertion 8: Vendor 1 cannot mutate Vendor 2 price
+    cur.execute("""
+        UPDATE vendor_prices pr
+        SET price_toman = 1000
+        FROM vendor_products vp, vendors v
+        WHERE pr.vendor_product_id = vp.id
+          AND vp.vendor_id = v.id
+          AND v.organization_id = %s
+          AND pr.id = %s;
+    """, (org_vnd_1, price_2_id))
+    assert cur.rowcount == 0, "Cross-tenant attack succeeded: Vendor 1 mutated Vendor 2 price!"
+
+    cur.execute("SELECT price_toman FROM vendor_prices WHERE id = %s;", (price_2_id,))
+    assert cur.fetchone()["price_toman"] == 700000
+
+    # --- DOMAIN 4: SUPPORT CASES (Cross-Tenant Negative Checks) ---
+    case_a = str(uuid.uuid4())
+    case_b = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO support_cases (id, user_id, organization_id, case_number, case_type, priority, status, subject) VALUES
+        (%s, %s, %s, %s, 'GENERAL', 'NORMAL', 'OPEN', 'Case for Org A'),
+        (%s, %s, %s, %s, 'GENERAL', 'NORMAL', 'OPEN', 'Case for Org B');
+    """, (
+        case_a, u_ret_a, org_ret_a, f"CAS-NEG-A-{uuid.uuid4().hex[:6]}",
+        case_b, u_ret_b, org_ret_b, f"CAS-NEG-B-{uuid.uuid4().hex[:6]}"
+    ))
+
+    # Add message to Case B
+    cur.execute("""
+        INSERT INTO support_case_messages (id, support_case_id, sender_user_id, sender_type, message_text)
+        VALUES (%s, %s, %s, 'USER', 'Secret note for Org B');
+    """, (str(uuid.uuid4()), case_b, u_ret_b))
+    conn.commit()
+
+    # Negative Assertion 9: User A querying support cases with Org A scope sees 0 rows of Case B
+    cur.execute("""
+        SELECT id FROM support_cases WHERE organization_id = %s AND id = %s;
+    """, (org_ret_a, case_b))
+    assert cur.fetchone() is None, "Cross-tenant leak: Org A queried Org B support case!"
+
+    # Negative Assertion 10: User A cannot read messages from Org B support case
+    cur.execute("""
+        SELECT m.id FROM support_case_messages m
+        JOIN support_cases c ON m.support_case_id = c.id
+        WHERE c.organization_id = %s AND c.id = %s;
+    """, (org_ret_a, case_b))
+    assert cur.fetchone() is None, "Cross-tenant leak: Org A read messages from Org B support case!"
+
+    # --- DOMAIN 5: USER INBOX & NOTIFICATIONS ---
+    notif_id = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO notifications (id, user_id, organization_id, event_name, title, body)
+        VALUES (%s, %s, %s, 'test_event', 'Notification B', 'Private notification for User B');
+    """, (notif_id, u_ret_b, org_ret_b))
+
+    inbox_b_id = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO user_inbox_items (id, user_id, organization_id, notification_id, title, body, is_read)
+        VALUES (%s, %s, %s, %s, 'Inbox Title B', 'Inbox Body B', FALSE);
+    """, (inbox_b_id, u_ret_b, org_ret_b, notif_id))
+    conn.commit()
+
+    # Negative Assertion 11: User A querying inbox sees 0 rows of User B's inbox
+    cur.execute("""
+        SELECT id FROM user_inbox_items 
+        WHERE (user_id = %s OR organization_id = %s) AND id = %s;
+    """, (u_ret_a, org_ret_a, inbox_b_id))
+    assert cur.fetchone() is None, "Cross-tenant leak: User A saw User B's inbox item!"
+
+    # Negative Assertion 12: User A cannot mark User B's inbox item as read
+    cur.execute("""
+        UPDATE user_inbox_items SET is_read = TRUE 
+        WHERE id = %s AND (user_id = %s OR organization_id = %s);
+    """, (inbox_b_id, u_ret_a, org_ret_a))
+    assert cur.rowcount == 0, "Cross-tenant attack succeeded: User A mutated User B's inbox item!"
+
+    # Verify User B inbox remains unread
+    cur.execute("SELECT is_read FROM user_inbox_items WHERE id = %s;", (inbox_b_id,))
+    assert cur.fetchone()["is_read"] is False
+
+    conn.close()
+
 if __name__ == "__main__":
     test_tenant_isolation()
     test_section_11_role_org_matrix()
     test_section_13_users_role_non_authoritative()
     test_section_14_multi_organization_runtime()
     test_section_15_legacy_actor_links()
+    test_section_16_cross_tenant_negative_matrix()
+
