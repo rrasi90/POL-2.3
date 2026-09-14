@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import uuid
-from datetime import timedelta
+
+from psycopg2.extras import Json
 
 from scripts.provider_adapters import (
     ProviderConfigurationError,
@@ -83,22 +84,22 @@ class ProviderDeliveryWorker:
         if not identity:
             raise ValueError("Notification referenced by delivery does not exist.")
 
-        adapter = build_adapter(delivery["channel"])
-        cur.execute(
-            """
-            INSERT INTO notification_provider_attempts
-                (id,delivery_id,attempt_number,channel,provider,idempotency_key,started_at,outcome)
-            VALUES (%s,%s,%s,%s,%s,%s,now(),'RETRYABLE_FAILURE')
-            ON CONFLICT (delivery_id, attempt_number) DO NOTHING
-            RETURNING id;
-            """,
-            (str(uuid.uuid4()), delivery_id, attempt_number, delivery["channel"], adapter.provider_name, provider_attempt_key),
-        )
-        attempt_row = cur.fetchone()
-        if attempt_row is None:
-            return "DUPLICATE_ATTEMPT"
-
         try:
+            adapter = build_adapter(delivery["channel"])
+            cur.execute(
+                """
+                INSERT INTO notification_provider_attempts
+                    (id,delivery_id,attempt_number,channel,provider,idempotency_key,started_at,outcome)
+                VALUES (%s,%s,%s,%s,%s,%s,now(),'RETRYABLE_FAILURE')
+                ON CONFLICT (delivery_id, attempt_number) DO NOTHING
+                RETURNING id;
+                """,
+                (str(uuid.uuid4()), delivery_id, attempt_number, delivery["channel"], adapter.provider_name, provider_attempt_key),
+            )
+            attempt_row = cur.fetchone()
+            if attempt_row is None:
+                return "DUPLICATE_ATTEMPT"
+
             if delivery["channel"] == "SMS":
                 result = adapter.send(
                     phone_number=identity["phone_number"],
@@ -125,7 +126,7 @@ class ProviderDeliveryWorker:
                     response_metadata=%s, completed_at=now()
                 WHERE id = %s;
                 """,
-                (result.provider_message_id, result.provider_code, result.metadata, attempt_row["id"]),
+                (result.provider_message_id, result.provider_code, Json(result.metadata), attempt_row["id"]),
             )
             cur.execute(
                 """
@@ -146,15 +147,6 @@ class ProviderDeliveryWorker:
             delay = cls.RETRY_DELAYS_MINUTES[min(attempt_number - 1, len(cls.RETRY_DELAYS_MINUTES) - 1)]
             cur.execute(
                 """
-                UPDATE notification_provider_attempts
-                SET outcome='RETRYABLE_FAILURE', error_message=%s,
-                    completed_at=now()
-                WHERE id=%s;
-                """,
-                (str(exc), attempt_row["id"]),
-            )
-            cur.execute(
-                """
                 UPDATE notification_deliveries
                 SET status='FAILED', attempt_count=%s, last_error=%s,
                     next_retry_at=now() + (%s || ' minutes')::interval,
@@ -166,14 +158,6 @@ class ProviderDeliveryWorker:
             return "RETRYABLE_FAILURE"
 
         except (ProviderPermanentError, ProviderConfigurationError) as exc:
-            cur.execute(
-                """
-                UPDATE notification_provider_attempts
-                SET outcome='PERMANENT_FAILURE', error_message=%s, completed_at=now()
-                WHERE id=%s;
-                """,
-                (str(exc), attempt_row["id"]),
-            )
             cur.execute(
                 """
                 UPDATE notification_deliveries
