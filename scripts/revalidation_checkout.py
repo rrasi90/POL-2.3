@@ -25,8 +25,6 @@ class RevalidationCheckoutService:
         address_snapshot: dict,
         vendor_allocations: list,
     ) -> dict:
-        # The plan must belong to this basket and retailer. Do not trust caller
-        # supplied IDs independently.
         cur.execute(
             """
             SELECT b.version,
@@ -64,12 +62,17 @@ class RevalidationCheckoutService:
 
             cur.execute(
                 """
-                SELECT vp.vendor_id, vp.product_id, vp.moq, vp.moq_unit,
-                       vp.pack_quantity, vp.status,
+                SELECT vp.vendor_id,
+                       vp.product_id,
+                       vp.pack_quantity,
+                       vp.is_active,
+                       vp.listing_status,
                        v.status AS vendor_status,
+                       vi.moq,
                        vp_price.price_toman
                 FROM vendor_products vp
                 JOIN vendors v ON v.id = vp.vendor_id
+                LEFT JOIN vendor_inventory vi ON vi.vendor_product_id = vp.id
                 LEFT JOIN vendor_prices vp_price
                   ON vp_price.vendor_product_id = vp.id
                  AND vp_price.is_current = TRUE
@@ -80,11 +83,17 @@ class RevalidationCheckoutService:
             offer = cur.fetchone()
             if not offer:
                 raise ValueError(f"Vendor product not found: {vp_id}")
-            if offer["vendor_status"] != "ACTIVE" or offer["status"] != "ACTIVE":
+            if (
+                offer["vendor_status"] != "ACTIVE"
+                or not offer["is_active"]
+                or offer["listing_status"] != "ACTIVE"
+            ):
                 raise ValueError(f"Vendor product is not currently orderable: {vp_id}")
             if offer["price_toman"] != quoted_price:
                 actual = offer["price_toman"] if offer["price_toman"] is not None else "N/A"
-                raise ValueError(f"Price freshness failure for SKU {vp_id}: Quoted {quoted_price} vs Live {actual}")
+                raise ValueError(
+                    f"Price freshness failure for SKU {vp_id}: Quoted {quoted_price} vs Live {actual}"
+                )
             if offer["moq"] is not None and req_qty < offer["moq"]:
                 raise ValueError(f"MOQ violation for SKU {vp_id}: {req_qty} < {offer['moq']}")
             if offer["pack_quantity"] and req_qty % offer["pack_quantity"] != 0:
