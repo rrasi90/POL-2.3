@@ -3,7 +3,7 @@
 **Document ID:** `POL-DEC-001`  
 **Status:** `LOCKED / CANONICAL`  
 **Governance Level:** Lead Product Architect / Founder Approved  
-**Last Audit:** 2026-09-14 (Global Engineering + Identity/Profile Hardening Pass)  
+**Last Audit:** 2026-09-16 (Repository-wide engineering, integrity, documentation and design-readiness audit)  
 **Cross-Reference:** `01_RESEARCH/Assumptions_and_Hypotheses.md` (RES-REG-001)  
 
 ---
@@ -23,15 +23,15 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 
 | Decision ID | Canonical Decision Title | Approved Formal Decision | Strategic Rationale & Invariant Guardrail | Affected Canonical Documents |
 |:---:|:---|:---|:---|:---|
-| **D-001** | **Launch Geography & Scope** | **Ahvaz** (Specifically the 61-hectare Wholesalers Hub / شهرک بنکداران اهواز) is the sole launch and pilot geography for Year 1. Expansion outside Ahvaz is prohibited prior to Gate 1 passage. | Maximum physical inventory density and localized operations during validation. | `00_PROJECT_OVERVIEW/Opportunity_Definition.md`, `06_PRODUCT/PRD.md`, `11_PILOT/Pilot_Strategy.md` |
+| **D-001** | **Launch Geography & Scope** | **Ahvaz** (Specifically the 61-hectare Wholesalers Hub / شهرک بنکداران اهواز) is the sole launch and pilot geography for Year 1. Expansion outside Ahvaz is prohibited prior to Gate 1 passage. | Maximum physical inventory density and localized operations during validation. | `02_STRATEGY/Opportunity_Definition.md`, `06_PRODUCT/PRD.md`, `11_PILOT/Pilot_Strategy.md` |
 | **D-002** | **Pilot Duration & Horizon** | Pilot duration is strictly **3 Months (90 calendar days / 12 weeks)**. | Captures multiple FMCG reorder cycles and real operational retention. | `11_PILOT/Pilot_Strategy.md`, `01_RESEARCH/Assumptions_and_Hypotheses.md` |
 | **D-003** | **MVP Basket Allocation Rule (HISTORICAL v0)** | Single-vendor basket was the historical MVP v0 rule. **SUPERSEDED by D-014.** | Retained only for traceability. | `POL_00_PROJECT_CONTROL/MVP_MULTI_VENDOR_DECISION.md` |
 | **D-004** | **Data Model Multi-Vendor Extensibility** | Database schema, domain aggregates, and outbox event models MUST natively support **N-vendor** order allocation from Day 1. | Prevents architectural rewrite when vendor routing expands. | `08_DATA/Data_Schema.md`, `08_DATA/DOMAIN_MODEL.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` |
-| **D-005** | **Open Future Vendor Count** | Future maximum vendor count per order remains **OPEN**; no hardcoded `<=2` constraint. | Vendor count must remain an optimization variable. | `06_PRODUCT/Future_Cart_Allocation_Research.md`, `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` |
-| **D-006** | **Pilot Take Rate / Commission** | Pilot commission is **0.0%**. | Removes adoption friction during the 90-day validation period. | `03_BUSINESS_MODEL/Revenue_Model.md`, `11_PILOT/Vendor_LOI.md` |
-| **D-007** | **Post-Pilot Commission Framework** | Post-pilot take-rate hypothesis is **1.0%–3.0%**, subject to validation. | Revenue must follow observed vendor economics. | `03_BUSINESS_MODEL/Commission_Model.md`, `03_BUSINESS_MODEL/Business_Model_and_Unit_Economics.md` |
+| **D-005** | **Open Future Vendor Count** | Future maximum vendor count per order remains **OPEN**; no hardcoded `<=2` constraint. | Vendor count must remain an optimization variable. | `07_ALGORITHMS/Future_Cart_Allocation_Research.md`, `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` |
+| **D-006** | **Pilot Take Rate / Commission** | Pilot commission is **0.0%**. | Removes adoption friction during the 90-day validation period. | `05_BUSINESS_MODEL/Revenue_Model.md`, `11_PILOT/Vendor_LOI.md` |
+| **D-007** | **Post-Pilot Commission Framework** | Post-pilot take-rate hypothesis is **1.0%–3.0%**, subject to validation. | Revenue must follow observed vendor economics. | `05_BUSINESS_MODEL/Commission_Model.md`, `05_BUSINESS_MODEL/Business_Model_and_Unit_Economics.md` |
 | **D-008** | **POL Logistics Fleet Cost** | POL owns **no delivery fleet** in the pilot. Local hub / partner carrier capacity is used. | Preserves asset-light economics. | `09_OPERATIONS/Fulfillment.md`, `02_STRATEGY/Strategic_Thesis.md` |
-| **D-009** | **Advertising & Monetization Timeline** | Sponsored listings, banners, and in-app advertising are deferred to **H2 Year 4**. | Trust and supply quality take precedence over early monetization. | `06_PRODUCT/Discovery.md`, `03_BUSINESS_MODEL/Revenue_Model.md` |
+| **D-009** | **Advertising & Monetization Timeline** | Sponsored listings, banners, and in-app advertising are deferred to **H2 Year 4**. | Trust and supply quality take precedence over early monetization. | `07_ALGORITHMS/Discovery.md`, `05_BUSINESS_MODEL/Revenue_Model.md` |
 | **D-010** | **Order Entity Hierarchy Separation** | Strict separation: `Basket -> AllocationPlan -> OrderGroup -> Order -> OrderItem`. | Separates buyer intent from vendor fulfillment commitments. | `08_DATA/Data_Schema.md`, `08_DATA/DOMAIN_MODEL.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` |
 | **D-011** | **Dual Currency Presentation vs Storage** | UI, invoices, and SMS use **Tomans**; analytical/strategic registers may use **USD**. | Local UX plus inflation-invariant strategic analysis. | `00_PROJECT_OVERVIEW/Glossary.md`, `06_PRODUCT/PRD.md` |
 | **D-012** | **Master Product vs Vendor Product Separation** | `Master Product` and `Vendor Product / SKU` are separate canonical entities. | Preserves catalog identity while allowing vendor-specific offers. | `08_DATA/CATALOG_PRODUCT_MASTER.md`, `08_DATA/INVENTORY_MODEL.md` |
