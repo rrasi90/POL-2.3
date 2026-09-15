@@ -1,49 +1,79 @@
 # مشخصات محیط فنی و پایگاه داده کانونیکال (Technical Environment Specification)
 ## پروژه پُل (POL) — B2B FMCG Platform
+
 **شناسه سند:** `POL-ENV-SPEC-001`  
-**نسخه:** ۱.۰ (تثبیت‌شده)  
-**وضعیت:** مصوب و لازم‌الاجرا (Canonical Technical Specification)  
-**تاریخ تدوین:** سپتامبر ۲۰۲۶  
+**نسخه:** ۱.۱  
+**وضعیت:** Canonical Technical Specification  
+**آخرین ممیزی:** 2026-09-16  
 
 ---
 
-## ۱. تصمیم کانونیکال پایگاه داده (Canonical Database Lock)
+## ۱. تصمیم کانونیکال پایگاه داده
 
-بر اساس تصمیم رسمی فنی معماری سیستم:
+> **PostgreSQL 18 تنها پایگاه داده کانونیکال POL در توسعه، تست ران‌تایم، استیجینگ و پروداکشن است.**
 
-> **پایگاه داده کانونیکال و رسمی پلتفرم پُل در کلیه لایه‌های تست، توسعه، استیجینگ و پروداکشن منحصراً PostgreSQL 18 است.**
+- هدف: ACID OLTP برای هویت، کاتالوگ، موجودی، سفارش، تحویل، تسویه، RMA و transactional outbox.
+- SQLite فقط برای unit-testهای کاملاً ایزوله و غیرtransactional-domain مجاز است.
 
-* **موتور و نسخه قطعی:** `PostgreSQL 18.4+`
-* **هدف کاربری:** پایگاه داده رابطه‌ای اصلی (ACID OLTP) برای تمام تراکنش‌های بازرگانی، کاتالوگ، انبار، سفارشات، تسویه مالی و رویدادهای Outbox.
-* **افزونه‌های الزامی فعال در پایگاه داده:**
-  1. `pg_trgm`: جهت جستجوی متنی فازی و تطبیق سریع نام فارسی کالاها و برندها.
-  2. `uuid-ossp`: جهت تولید کلیدهای شناسه سراسری یکتا (UUID v4).
-  3. `btree_gin`: جهت تسریع ایندکس‌های ترکیبی اسکیما.
+### Extensions actually required by the migration chain
 
----
+- `uuid-ossp` — migration 001
+- `pg_trgm` — migration 001 / catalog-search support
+- `btree_gist` — migration 005 / temporal exclusion constraints
 
-## ۲. تفکیک نقش‌ها و تمایز محیط‌ها (Environment Roles & Boundaries)
-
-| لایه محیطی | فناوری / موتور | کاربری و محدوده مجاز | وضعیت اعتبارسنجی |
-|:---|:---|:---|:---:|
-| **Canonical Runtime DB** | **PostgreSQL 18** | پایگاه داده مرجع و هدف نهایی سیستم برای پروداکشن، استیجینگ و اجرای تست‌های ران‌تایم حقیقی | **CANONICAL (اجباری)** |
-| **Local Test DB** | **PostgreSQL 18 (پورت ۵۴۳۳ یا ۵۴۳۲)** | اجرای سوئیت‌های تست تراکنشی، آزمون‌های همزمانی و تست‌های مایگریشن بر روی دیتابیس واقعی `pol_test` | **VERIFIED (پاس‌شده)** |
-| **Unit Test Simulation** | **SQLite (In-Memory)** | تست‌های واحد سبک و محاسباتی درون حافظه (`scripts/test_runtime_scenarios.py`)؛ هرگز جایگزین گیت‌های اعتبارسنجی PostgreSQL نمی‌شود | **AUXILIARY (صرفاً کمکی)** |
-| **Historical Baseline** | **PostgreSQL 16** | مستندات اولیه و گزارش‌های ممیزی قدیمی نسخه v0 پیش از مهاجرت به نسخه ۱۸ | **SUPERSEDED (منسوخ)** |
+مستندات نباید `btree_gin` را به‌عنوان extension الزامی معرفی کنند مگر اینکه یک migration فعال واقعاً به آن وابسته شود.
 
 ---
 
-## ۳. درایور اتصالات پایتون و نیازمندی‌های وابستگی (Python DB Drivers)
+## ۲. محیط‌ها
 
-* **درایور کانونیکال فعلی:** `psycopg2-binary>=2.9.9` به عنوان استاندارد پایدار و تست‌شده در اسکریپت‌های اعتبارسنجی ریپازیتوری انتخاب شده و در `requirements.txt` ثبت گردیده است.
-* **نقشه راه ارتقا:** مسیر ارتقا به درایور ناهمگام `psycopg` (Psycopg 3) برای سرویس‌های Async در اسپرینت‌های آتی باز است.
+| محیط | فناوری | محدوده |
+|---|---|---|
+| Canonical Runtime DB | PostgreSQL 18 | production / staging / runtime verification |
+| Local Test DB | PostgreSQL 18 | `pol_test` و تست‌های migration/concurrency/integration |
+| Unit Simulation | SQLite in-memory | فقط unit tests کاملاً ایزوله؛ هرگز SSoT دامنه نیست |
+| Historical Baseline | PostgreSQL 16 | فقط سوابق تاریخی؛ superseded |
 
 ---
 
-## ۴. چرخه حیات مایگریشن و منبع واحد ساختار داده (Migration Single Source of Truth)
+## ۳. Driver و Python
 
-محیط‌های تست و ران‌تایم باید منحصراً از فایل مایگریشن رسمی کانونیکال ساخته شوند:
+- Driver فعلی verification harness: `psycopg2-binary>=2.9.9`.
+- Psycopg 3 / async access یک مسیر آینده است و تا زمان تصمیم معماری جدید، SSoT نیست.
 
-$$\text{Empty PostgreSQL 18 Database} \longrightarrow \text{migrations/001_initial_schema.sql} \longrightarrow \text{Canonical 37 Tables} \longrightarrow \text{Runtime / Concurrency Tests}$$
+---
 
-هیچ اسکریپت تستی حق بازتعریف دستی و موازی ساختار جداول دامنه‌ای را ندارد.
+## ۴. Migration Single Source of Truth
+
+تمام محیط‌های قابل‌اعتماد باید از زنجیره کامل numbered migrations ساخته شوند:
+
+```text
+Empty PostgreSQL 18
+  → migrations/001_*.sql
+  → migrations/002_*.sql
+  → ...
+  → migrations/021_*.sql
+  → 90 canonical public tables + integrity triggers/constraints
+```
+
+هیچ تست یا سرویس نباید schema دامنه را با DDL موازی بازتعریف کند.
+
+Migration 020 و 021 جدول جدیدی اضافه نمی‌کنند؛ فقط invariantها و cross-entity integrity را سخت‌تر می‌کنند.
+
+---
+
+## ۵. Verification requirement
+
+قبولی repository فقط با table count تعیین نمی‌شود. حداقل این موارد باید روی PostgreSQL 18 بررسی شوند:
+
+- full migration chain;
+- tenant isolation;
+- canonical role authorization;
+- profile/persona cardinality;
+- session-to-membership integrity;
+- basket/allocation/order-group relationship;
+- inventory reservation invariants;
+- temporal pricing/window/capacity constraints;
+- RMA/refund state integrity;
+- outbox/notification behavior;
+- idempotency and replay behavior.
