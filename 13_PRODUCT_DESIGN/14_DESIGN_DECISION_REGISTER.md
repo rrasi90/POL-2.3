@@ -14,8 +14,8 @@
 | UX-010 | ACTIVE | Figma decisions must flow back into repository docs | Preserve written source-of-truth governance |
 | UX-011 | HYPOTHESIS | Retailer home should emphasize reorder/open orders over discovery | To validate in Ahvaz pilot |
 | UX-012 | HYPOTHESIS | Visible pack/MOQ/availability will materially reduce order correction | To validate through support/checkout metrics |
-| UX-013 | OPEN | Frontend framework choice | Requires technical evaluation after design foundation |
-| UX-014 | OPEN | Native retailer app timing vs responsive PWA/web | Depends on usage/retention evidence and technical constraints |
+| UX-013 | ALIGNED | Frontend implementation follows the approved technical architecture: Next.js/React for web and React Native/Expo for the retailer mobile surface. Any framework/version replacement requires a separate architecture decision. | Removes the previous documentation conflict between `06_PRODUCT/Technical_Architecture_Spec.md` and the design register while keeping framework upgrades under explicit change control |
+| UX-014 | OPEN | Native retailer app timing vs responsive PWA/web | Depends on usage/retention evidence and technical constraints; UX remains transport-agnostic until this product-timing decision is made |
 
 ## Governance
 UX decisions cannot override product decisions D-001–D-017. Conflicts must be resolved in `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` first.
