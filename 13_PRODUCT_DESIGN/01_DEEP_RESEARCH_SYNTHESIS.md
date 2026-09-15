@@ -11,28 +11,28 @@ Research focuses on B2B wholesale/mobile ordering UX, reusable design-system pra
 - Order status, shipping information, returns and support are part of the core buying loop.
 - Mobile should prioritize replenishment and status over deep merchandising.
 
-Faire's current retailer app explicitly centers order/shipping visibility, purchase history, reorder, returns and mobile browsing. Its reorder flow also respects brand purchasing restrictions and valid multiples. citeturn658986view0 citeturn984598search3
+Faire's current retailer app explicitly centers order/shipping visibility, purchase history, reorder, returns and mobile browsing. Its reorder flow also respects brand purchasing restrictions and valid multiples.
 
-Udaan's current App Store description similarly emphasizes quick signup, repeat orders, real-time delivery tracking, returns and mobile purchasing for small businesses. citeturn449708view1
+Udaan's current App Store description similarly emphasizes quick signup, repeat orders, real-time delivery tracking, returns and mobile purchasing for small businesses.
 
 ### Vendor / supplier
 - Vendor UX must combine assortment/catalog management, inventory truth and order execution.
 - Sales teams and operations need the same underlying order record even when ordering happens through assisted channels.
 - Operational dashboards should emphasize exceptions, queues and next actions rather than generic KPI decoration.
 
-Cartona publicly describes retailer ordering/comparison, supplier connection, inventory visibility and order tracking; it also describes separate solutions for retailers, wholesalers and sales teams. citeturn449708view0
+Cartona publicly describes retailer ordering/comparison, supplier connection, inventory visibility and order tracking; it also describes separate solutions for retailers, wholesalers and sales teams.
 
 ### B2B mechanics
-Current wholesale UX research highlights account-specific price, MOQ/case packs, stock honesty, reorder, search by SKU/variant/pack and clear approval/order status as the high-value information architecture. citeturn614457search2turn614457search3
+Current wholesale UX research highlights account-specific price, MOQ/case packs, stock honesty, reorder, search by SKU/variant/pack and clear approval/order status as the high-value information architecture.
 
 ### Quick-order patterns
-Wholesale tooling increasingly supports SKU/barcode-first order entry, saved lists and repeat orders because rebuilding large carts is a high-friction task. citeturn984598search2turn984598search8turn984598search16
+Wholesale tooling increasingly supports SKU/barcode-first order entry, saved lists and repeat orders because rebuilding large carts is a high-friction task.
 
 ## 2. Design-system findings
-- Reusable components are essential for consistency across multiple role-specific surfaces. GOV.UK Design System explicitly treats components as reusable building blocks and pairs them with usage guidance. citeturn990483search4
-- Accessibility must be encoded in components, not left to screen-level review. Carbon's current data-table guidance, for example, builds keyboard interaction into the component itself. citeturn990483search6
-- WCAG 2.2 adds/clarifies focus, target-size, redundant-entry and accessible-authentication requirements that are directly relevant to POL's mobile and OTP flows. Target size has a 24x24 CSS px minimum with exceptions; accessible authentication guidance reduces unnecessary cognitive/transcription burden. citeturn990483search0turn990483search2turn990483search5
-- Error states should tell the user what happened and how to recover while preserving entered data. GOV.UK's validation/error guidance is a strong pattern for POL forms and onboarding. citeturn990483search1turn990483search3turn990483search9
+- Reusable components are essential for consistency across multiple role-specific surfaces. GOV.UK Design System explicitly treats components as reusable building blocks and pairs them with usage guidance.
+- Accessibility must be encoded in components, not left to screen-level review. Carbon's current data-table guidance, for example, builds keyboard interaction into the component itself.
+- WCAG 2.2 adds/clarifies focus, target-size, redundant-entry and accessible-authentication requirements that are directly relevant to POL's mobile and OTP flows. Target size has a 24x24 CSS px minimum with exceptions; accessible authentication guidance reduces unnecessary cognitive/transcription burden.
+- Error states should tell the user what happened and how to recover while preserving entered data. GOV.UK's validation/error guidance is a strong pattern for POL forms and onboarding.
 
 ## 3. POL-specific interpretation
 These findings do NOT justify copying competitors. They reinforce decisions already made for POL:
@@ -60,3 +60,17 @@ These remain hypotheses until pilot evidence exists:
 - role/persona implemented as duplicated applications with inconsistent components;
 - UI-only permission hiding without server authorization;
 - repeated manual data entry across onboarding and checkout.
+
+## 6. Primary web sources
+- W3C WCAG 2.2: https://www.w3.org/TR/WCAG22/
+- W3C WCAG 2.2 changes / accessible authentication: https://www.w3.org/WAI/standards-guidelines/wcag/new-in-22/
+- W3C accessible authentication guidance: https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html
+- GOV.UK Design System components: https://design-system.service.gov.uk/components/
+- GOV.UK error messages: https://design-system.service.gov.uk/components/error-message/
+- GOV.UK validation pattern: https://design-system.service.gov.uk/patterns/validation/
+- Carbon Design System data-table accessibility: https://carbondesignsystem.com/components/data-table/accessibility/
+- Faire Retailer App: https://www.faire.com/retailers/app
+- Faire reorder guidance: https://www.faire.com/support/articles/8457499998363
+- Cartona: https://cartona.com/
+- udaan App: https://apps.apple.com/in/app/udaan/id1224098850
+- Shopify B2B quick order/reorder examples: https://apps.shopify.com/single-page-order-form and https://apps.shopify.com/orderflow-3
