@@ -36,7 +36,9 @@ EXPECTED_CORE_TABLES = [
     "vendor_referral_attributions", "return_items", "return_events", "payment_reconciliation_attempts",
     "notification_provider_attempts",
 ]
-MIN_EXPECTED_TABLE_COUNT = 70
+# 90 tables are created by the canonical 001-020 migration chain; 020 adds
+# integrity guards without introducing new tables.
+MIN_EXPECTED_TABLE_COUNT = 90
 
 
 def verify_python():
