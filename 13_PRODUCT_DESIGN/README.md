@@ -19,8 +19,13 @@
 14. `13_PROTOTYPE_AND_FIGMA_PLAN.md`
 15. `14_DESIGN_DECISION_REGISTER.md`
 16. `15_CROSS_PROJECT_DESIGN_AUDIT_2026-09-15.md`
+17. `16_APPLE_DESIGN_CRAFT_ADAPTATION.md`
+18. `17_PENPOT_CANONICAL_BLUEPRINT.md`
+19. `18_DESIGN_COMPLETION_PLAN.md`
+20. `19_ANTIGRAVITY_MASTER_EXECUTION_PROMPT.md`
+21. `20_ANTIGRAVITY_REPOSITORY_AUDIT_PROMPT.md`
 
 ## Execution rule
-`Research → Written Design Source of Truth → Cross-Project Audit → Figma/Prototype → Frontend Implementation → Production Backend Integration`
+`Repository Sync → Repository Audit → Specification Completion → Written Design Source of Truth → Figma/Penpot Prototype → Frontend Implementation → Production Backend Integration`
 
 No visual artifact becomes a canonical product requirement until the corresponding written decision is recorded here or in the governing product/engineering documents.
