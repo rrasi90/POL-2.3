@@ -2,13 +2,13 @@
 
 **Status:** CANONICAL CURRENT MANIFEST  
 **Database:** PostgreSQL 18  
-**Migration chain:** `migrations/001_*.sql` through `migrations/021_*.sql`  
+**Migration chain:** `migrations/001_*.sql` through `migrations/022_*.sql`  
 **Current table count:** 90 public base tables  
 
 ## Canonical rules
 
 1. The numbered migration chain is the physical schema source of truth.
-2. Migrations 001–019 establish the 90-table domain/platform schema; migrations 020–021 add integrity constraints/triggers without adding tables.
+2. Migrations 001–019 establish the 90-table domain/platform schema; migrations 020–022 add integrity constraints/triggers without adding tables.
 3. PostgreSQL 18 is the only canonical runtime database (`D-015`).
 4. SQLite is allowed only for isolated unit tests.
 5. Generated verification artifacts are not schema source-of-truth and must not be committed.
@@ -30,6 +30,7 @@
 | 019 | RMA/refund state integrity |
 | 020 | Temporal, consent, saved-list and refund database invariants |
 | 021 | Session tenant binding and cross-entity order/allocation integrity |
+| 022 | Tenant ownership guards for support and feedback records |
 
 ## Required runtime invariants
 
@@ -40,6 +41,7 @@
 - `OrderGroup.retailer_id` must match its basket retailer;
 - child order retailer must match its order group;
 - child order vendor must belong to an active vendor organization;
+- support/feedback actor must belong to the target tenant;
 - inventory reservation cannot exceed physical quantity;
 - vendor price validity windows cannot overlap;
 - vendor operating/capacity effective windows cannot overlap;
