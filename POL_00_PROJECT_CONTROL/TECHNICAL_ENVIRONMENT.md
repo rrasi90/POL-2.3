@@ -1,49 +1,68 @@
 # مشخصات محیط فنی و پایگاه داده کانونیکال (Technical Environment Specification)
 ## پروژه پُل (POL) — B2B FMCG Platform
+
 **شناسه سند:** `POL-ENV-SPEC-001`  
-**نسخه:** ۱.۰ (تثبیت‌شده)  
-**وضعیت:** مصوب و لازم‌الاجرا (Canonical Technical Specification)  
-**تاریخ تدوین:** سپتامبر ۲۰۲۶  
+**نسخه:** ۱.۱  
+**وضعیت:** `CANONICAL`  
+**تاریخ بازبینی:** سپتامبر ۲۰۲۶  
 
----
+## ۱. پایگاه داده کانونیکال
 
-## ۱. تصمیم کانونیکال پایگاه داده (Canonical Database Lock)
+پایگاه داده رسمی پُل در توسعه، تست تراکنشی، استیجینگ و پروداکشن **PostgreSQL 18** است. نسخه دقیق runtime برای هر محیط باید از خود سرور ثبت شود؛ در آخرین CI evidence ثبت‌شده، PostgreSQL **18.6** اجرا شده است.
 
-بر اساس تصمیم رسمی فنی معماری سیستم:
+SQLite فقط برای تست‌های واحد ایزوله و سریع مجاز است و جایگزین گیت‌های PostgreSQL نیست.
 
-> **پایگاه داده کانونیکال و رسمی پلتفرم پُل در کلیه لایه‌های تست، توسعه، استیجینگ و پروداکشن منحصراً PostgreSQL 18 است.**
+## ۲. درایور
 
-* **موتور و نسخه قطعی:** `PostgreSQL 18.4+`
-* **هدف کاربری:** پایگاه داده رابطه‌ای اصلی (ACID OLTP) برای تمام تراکنش‌های بازرگانی، کاتالوگ، انبار، سفارشات، تسویه مالی و رویدادهای Outbox.
-* **افزونه‌های الزامی فعال در پایگاه داده:**
-  1. `pg_trgm`: جهت جستجوی متنی فازی و تطبیق سریع نام فارسی کالاها و برندها.
-  2. `uuid-ossp`: جهت تولید کلیدهای شناسه سراسری یکتا (UUID v4).
-  3. `btree_gin`: جهت تسریع ایندکس‌های ترکیبی اسکیما.
+درایور کانونیکال فعلی Python: `psycopg2-binary>=2.9.9`. مسیر مهاجرت آتی به Psycopg 3 می‌تواند در اسپرینت‌های بعدی بررسی شود، اما تا آن زمان قرارداد فعلی حفظ می‌شود.
 
----
+## ۳. زنجیره Migration
 
-## ۲. تفکیک نقش‌ها و تمایز محیط‌ها (Environment Roles & Boundaries)
+ساخت دیتابیس باید از زنجیره مرتب و کامل migrationها انجام شود:
 
-| لایه محیطی | فناوری / موتور | کاربری و محدوده مجاز | وضعیت اعتبارسنجی |
-|:---|:---|:---|:---:|
-| **Canonical Runtime DB** | **PostgreSQL 18** | پایگاه داده مرجع و هدف نهایی سیستم برای پروداکشن، استیجینگ و اجرای تست‌های ران‌تایم حقیقی | **CANONICAL (اجباری)** |
-| **Local Test DB** | **PostgreSQL 18 (پورت ۵۴۳۳ یا ۵۴۳۲)** | اجرای سوئیت‌های تست تراکنشی، آزمون‌های همزمانی و تست‌های مایگریشن بر روی دیتابیس واقعی `pol_test` | **VERIFIED (پاس‌شده)** |
-| **Unit Test Simulation** | **SQLite (In-Memory)** | تست‌های واحد سبک و محاسباتی درون حافظه (`scripts/test_runtime_scenarios.py`)؛ هرگز جایگزین گیت‌های اعتبارسنجی PostgreSQL نمی‌شود | **AUXILIARY (صرفاً کمکی)** |
-| **Historical Baseline** | **PostgreSQL 16** | مستندات اولیه و گزارش‌های ممیزی قدیمی نسخه v0 پیش از مهاجرت به نسخه ۱۸ | **SUPERSEDED (منسوخ)** |
+```text
+001_initial_schema.sql
+        ↓
+002_platform_core_schema.sql
+        ↓
+003_contract_reconciliation.sql
+        ↓
+004_operational_intelligence.sql
+        ↓
+N (هر migration جدیدی که با ترتیب عددی به زنجیره افزوده شود)
+```
 
----
+Runner رسمی (`scripts/migration_runner.py`) migrationهای SQL را به‌صورت پویا و ترتیبی کشف و اجرا می‌کند. بنابراین هیچ سندی نباید زنجیره را به 001→003 محدود کند.
 
-## ۳. درایور اتصالات پایتون و نیازمندی‌های وابستگی (Python DB Drivers)
+## ۴. وضعیت فعلی اسکیما
 
-* **درایور کانونیکال فعلی:** `psycopg2-binary>=2.9.9` به عنوان استاندارد پایدار و تست‌شده در اسکریپت‌های اعتبارسنجی ریپازیتوری انتخاب شده و در `requirements.txt` ثبت گردیده است.
-* **نقشه راه ارتقا:** مسیر ارتقا به درایور ناهمگام `psycopg` (Psycopg 3) برای سرویس‌های Async در اسپرینت‌های آتی باز است.
+آخرین verification artifact موجود در repository، اجرای زنجیره تا migration 004 را با **62 جدول پایه** ثبت کرده است. Migration 004 شش جدول جدید اضافه می‌کند:
 
----
+- `daily_inventory_confirmations`
+- `daily_inventory_confirmation_items`
+- `feedback_submissions`
+- `vendor_reliability_events`
+- `product_identity_lifecycle_logs`
+- `returns`
 
-## ۴. چرخه حیات مایگریشن و منبع واحد ساختار داده (Migration Single Source of Truth)
+همچنین ستون‌های freshness/confidence موجودی و version/effective-date قیمت را توسعه می‌دهد.
 
-محیط‌های تست و ران‌تایم باید منحصراً از فایل مایگریشن رسمی کانونیکال ساخته شوند:
+بنابراین اعداد **56 جدول** یا **زنجیره پایان‌یافته در migration 003** در اسناد قدیمی، current schema نیستند.
 
-$$\text{Empty PostgreSQL 18 Database} \longrightarrow \text{migrations/001_initial_schema.sql} \longrightarrow \text{Canonical 37 Tables} \longrightarrow \text{Runtime / Concurrency Tests}$$
+## ۵. محیط‌ها
 
-هیچ اسکریپت تستی حق بازتعریف دستی و موازی ساختار جداول دامنه‌ای را ندارد.
+| محیط | فناوری | نقش |
+|---|---|---|
+| Canonical Runtime | PostgreSQL 18 | SSoT تراکنش‌های واقعی |
+| CI Runtime | PostgreSQL 18 (`postgres:18-alpine`) | اجرای migration و verification مستقل |
+| Local Runtime | PostgreSQL 18 | توسعه و تست تراکنشی |
+| Fast Unit Tests | SQLite in-memory | فقط تست‌های ایزوله غیرتراکنشی |
+| Historical | PostgreSQL 16 | صرفاً اسناد/مقایسه‌های قدیمی و منسوخ |
+
+## ۶. آخرین شواهد CI ثبت‌شده
+
+Workflow run `34818313995` روی commit `f3a65a3060d2f09ca7bf9cbd1b270b13f539ca2f` با PostgreSQL 18.6، تعداد 62 جدول پایه و 47 تست از 47 تست پاس‌شده ثبت شده است. این evidence فقط همان commit آزمایش‌شده را certify می‌کند؛ commitهای بعدی باید دوباره CI شوند.
+
+## ۷. اصل حاکم
+
+هر ادعای «runtime verified»، «MVP implementation ready» یا «production ready» باید دقیقاً به commit، محیط و دامنه تست خود ارجاع دهد. موفقیت migration/domain tests به‌تنهایی معادل production readiness کل Android/PWA/API و سرویس‌های خارجی نیست.
