@@ -1,90 +1,70 @@
 # POL CURRENT SOURCE OF TRUTH & REPOSITORY GOVERNANCE
 
 **Document ID:** `POL-GOV-001`  
-**Version:** 1.0 (Canonical)  
+**Version:** 1.1 (Canonical)  
 **Status:** `LOCKED / OFFICIAL GOVERNANCE CHARTER`  
 **Effective Milestone:** Sprint 0 & MVP v1.0  
-**Last Audit:** 2026-09-13  
+**Last Audit:** 2026-09-16  
 
----
+## 1. Authority hierarchy
 
-## 1. Hierarchy of Authority
+The repository must have one authoritative decision source and explicit domain contracts. In a conflict, use the following order:
 
-To eliminate architectural drift, cross-document contradictions, and unauthorized scope alterations, all development, modeling, and operational protocols must trace their constraints to the authoritative documents defined in this charter.
+1. `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` — founder/architect decisions.
+2. `POL_00_PROJECT_CONTROL/CERTIFICATION_ADDENDUM_2026-09-14.md` — current CI/runtime certification boundary.
+3. Current product, domain, data, API and operational contracts listed below.
+4. Historical audit reports and exploratory documents are evidence only and must not be used as implementation instructions.
 
-```
-                     ┌──────────────────────────────────────────────┐
-                     │ DECISION AUTHORITY (FOUNDER & ARCHITECT)     │
-                     │ POL_00_PROJECT_CONTROL/DECISION_REGISTER.md  │
-                     └──────────────────────┬───────────────────────┘
-                                            │
-           ┌────────────────────────────────┼────────────────────────────────┐
-           ▼                                ▼                                ▼
-┌───────────────────────┐      ┌─────────────────────────┐      ┌────────────────────────┐
-│ PRODUCT SPECIFICATION │      │ TECHNICAL & DATA MODEL  │      │ OPERATIONAL PROTOCOLS  │
-│ 06_PRODUCT/           │      │ 08_DATA/ & 06_PRODUCT/  │      │ 09_OPERATIONS/         │
-│ • MVP_Definition.md   │      │ • DOMAIN_MODEL.md       │      │ • Fulfillment.md       │
-│ • PRD.md              │      │ • Data_Schema.md        │      │ • Payments_and_...     │
-│ • Order_Lifecycle.md  │      │ • API_Contracts.md      │      │ • Support_and_...      │
-│ • Test_Specification  │      │ • MULTI_VENDOR_ORDER... │      │ 11_PILOT/              │
-│ 07_ALGORITHMS/        │      │ • migrations/001_...    │      │ • Pilot_Strategy.md    │
-│ • MVP_MULTI_VENDOR... │      │                         │      │ • KPIs.md              │
-└───────────────────────┘      └─────────────────────────┘      └────────────────────────┘
-```
+## 2. Canonical decisions
 
----
+- **D-001:** Ahvaz, specifically the 61-hectare Wholesalers Hub, is the Year-1 launch/pilot geography.
+- **D-002:** Pilot duration is 90 calendar days / 12 weeks.
+- **D-003:** Historical single-vendor basket decision is superseded.
+- **D-014:** MVP v1.0 uses one unified retailer basket with deterministic multi-vendor allocation and minimum necessary vendor fragmentation. Each basket line is assigned to at most one vendor; quantity splitting of a single line across vendors is not supported in MVP.
+- **D-005:** Future vendor count is open; no hardcoded maximum of two vendors.
+- **D-006:** Pilot vendor take rate is 0%.
+- **D-007:** Post-pilot 1–3% category-tiered take rate remains a hypothesis to validate.
+- **D-008:** POL owns no delivery fleet; pilot fulfillment uses local cluster logistics.
+- **D-009:** Paid advertising is deferred to H2 Year 4.
+- **D-010:** Order hierarchy is `Basket -> AllocationPlan -> OrderGroup -> Order -> OrderItem`.
+- **D-011:** User-facing monetary amounts are Tomans; USD is for internal analytical/financial modeling.
+- **D-012:** Master Product identity is separate from Vendor Product/SKU.
+- **D-013:** `Master SKU/backup_no_images.json` is quarantined imported reference data, not live inventory.
+- **D-015:** PostgreSQL 18 is the canonical database engine; SQLite is auxiliary only for isolated fast-path tests.
 
-## 2. Canonical Authorities by Domain
+## 3. Canonical IAM vocabulary
 
-| Domain | Authoritative Canonical File(s) | Scope & Responsibility | Precedence Rule |
-|:---|:---|:---|:---|
-| **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole repository-wide authority for Founder Decisions (D-001 to D-015). | **Absolute Precedence**: Overrules all other documents in case of conflict. |
-| **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`<br>`06_PRODUCT/PRD.md` | Feature matrix, core user flows, boundary conditions, and MVP inclusions/exclusions. | Governs functional backlog and Sprint 0 acceptance criteria. |
-| **Identity & Access Management (IAM)** | `06_PRODUCT/Roles_and_Permissions.md` | Multi-user organizations, memberships, session management, and RBAC (`User -> Organization -> Membership -> Role`). | `users.role` deprecated; `memberships.role` is authoritative SSoT. |
-| **Order Lifecycle & State Transitions** | `06_PRODUCT/Order_Lifecycle.md`<br>`08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | Aggregate state machines for `OrderGroup`, child `Orders`, and `Deliveries`. | Governs backend workflow engines and worker timers. |
-| **Domain Entities & Business Invariants**| `08_DATA/DOMAIN_MODEL.md` | Ubiquitous language, aggregate boundaries, transactional invariants. | Governs domain entities and domain service logic. |
-| **Database Schema & Migrations** | `migrations/001_initial_schema.sql`<br>`migrations/002_platform_core_schema.sql`<br>`migrations/003_contract_reconciliation.sql`<br>`08_DATA/Data_Schema.md`<br>`POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST.md` | DDL, 56 canonical tables, check constraints, partial indexes, and foreign keys. | DDL in migrations chain (001 + 002 + 003) is the physical schema authority. |
-| **API Contracts & DTOs** | `06_PRODUCT/API_Contracts.md`<br>`POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md` | REST/JSON endpoints, request/response payloads, HTTP status codes, canonical contract matrix across 26 domains. | Governs frontend-backend integration and API gateways. |
-| **Allocation Engine Algorithm** | `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` | Heuristic allocation pipeline, MOV/MOQ evaluation, objective ranking. | Governs `scripts/allocation_engine.py` implementation. |
-| **Brand & Design System** | `POL_00_PROJECT_CONTROL/BRAND_ARCHITECTURE.md` | Brand hierarchy (`POL`, `POL Market`, `POL Vendor`), logo assets, surfaces. | Governs UI/UX typography, logos, app naming, and copies. |
-| **Operations, Fulfillment & Logistics** | `09_OPERATIONS/Fulfillment.md`<br>`09_OPERATIONS/Payments_and_Settlement.md`<br>`09_OPERATIONS/Support_and_Disputes.md` | Field SOPs, local hub fleet coordination (وانت‌های بومی, Option A metadata), dispute resolution. | Governs field ops, driver dispatch, and customer support. |
-| **Pilot Definition & Metrics** | `11_PILOT/Pilot_Strategy.md`<br>`11_PILOT/KPIs.md`<br>`11_PILOT/Success_Criteria.md` | Ahvaz pilot parameters, cohort sizing, Gate 1 evaluation KPIs. | Governs pilot telemetry and validation gates. |
-| **Readiness & Certification** | `POL_00_PROJECT_CONTROL/FINAL_PLATFORM_ARCHITECTURE_AUDIT.md` | Sole document authorized to issue the pre-Sprint-0 platform runtime certification. | Supersedes all previous hardening/certification reports. |
+The physical database and migration chain use these canonical operator roles:
 
----
+`RETAILER_OWNER`, `RETAILER_STAFF`, `VENDOR_OWNER`, `VENDOR_STAFF`, `OPS_AGENT`, `ADMIN_SUPER`, `FIELD_ACTIVATOR`.
 
-## 3. Active Document Rule
+`SUPER_ADMIN` and `OPS_ADMIN` may exist only as legacy aliases accepted by the reconciliation migration and must never be treated as a separate canonical role vocabulary. Runtime authorization is based on `organization_memberships.role` scoped by `user_sessions.active_organization_id`; `users.role` is deprecated and non-authoritative.
 
-All active documents listed above **MUST represent the CURRENT architecture**:
-- The current MVP model is **Multi-Vendor Basket Allocation (`D-014`)**:
-  - One unified retailer basket $\rightarrow$ intelligent heuristic allocation $\rightarrow$ minimum necessary vendor fragmentation $\rightarrow$ 1..N vendor child orders $\rightarrow$ independent fulfillment, delivery, dispute, and settlement.
-- Active documents **MUST NOT** describe Single-Vendor per Basket as the current MVP rule.
-- Active documents **MUST NOT** contradict the brand architecture (`POL Market / پل مغازهدار` for retailers, `POL Vendor / پل بنکدار` for wholesalers, `POL / پُل` for corporate).
+## 4. Canonical product and runtime documents
 
----
+- Product scope: `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md`, `06_PRODUCT/Order_Lifecycle.md`, `06_PRODUCT/Test_Specification.md`.
+- Domain/data: `08_DATA/DOMAIN_MODEL.md`, `08_DATA/Data_Schema.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md`.
+- API: `06_PRODUCT/API_Contracts.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md`.
+- Allocation: `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md`.
+- Operations: `09_OPERATIONS/*` and `11_PILOT/*`.
+- Database: the complete ordered migration chain `migrations/001_initial_schema.sql` through `migrations/004_operational_intelligence.sql`, plus any later migration added through the same ordered mechanism.
 
-## 4. Historical Documents Governance Policy
+## 5. Database truth
 
-Documents generated during earlier exploratory, hardening, or certification phases that reference the superseded Single-Vendor rule (`D-003-HISTORICAL`) or earlier audits are **preserved for auditability and historical traceability**.
+The current migration chain creates/extends a runtime schema observed at **62 base tables** in the latest recorded verification artifact. Migration 004 adds six tables and extends existing inventory/price structures. Therefore any document claiming a canonical total of 56 tables or a migration chain ending at 003 is historical/stale and must not be used as the current schema count.
 
-However, to prevent developer confusion, all historical documents MUST display the canonical banner at the very top:
+The recorded CI evidence in `CERTIFICATION_ADDENDUM_2026-09-14.md` reports PostgreSQL **18.6**, 62 base tables, and 47/47 automated tests passed for workflow run `34818313995` on commit `f3a65a3060d2f09ca7bf9cbd1b270b13f539ca2f`. The current `main` tip is later than that tested commit; consequently the CI result certifies that tested commit, not every subsequent commit.
 
-```markdown
-> [!WARNING]
-> **HISTORICAL / SUPERSEDED**
-> 
-> This document reflects an earlier POL architecture.
-> The current MVP Multi-Vendor architecture supersedes the previous Single-Vendor MVP decision.
-> **Current source of truth:** `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md`  
-> **Current decision:** `D-014`
-```
+## 6. Runtime certification boundary
 
----
+`CI_VERIFIED`, `DATABASE_RUNTIME_VERIFIED`, and `DOMAIN_RUNTIME_VERIFIED` are established for the recorded CI run. `FULL_APPLICATION_RUNTIME_VERIFIED` is **not established** because the repository does not yet contain and exercise the complete Android/PWA/API/external-integration production stack.
 
-## 5. Change Management & Prohibition of Duplicate Registers
+The canonical checkout entry point is `scripts/checkout_gateway.py::CanonicalCheckoutGateway`. New application callers must use the gateway. `CheckoutService` remains only for compatibility until real application callers have migrated.
 
-1. **Zero Competing Registers:** No engineer, product manager, or external contributor may create secondary decision logs, shadow PRDs, or competing certification documents.
-2. **Amendment Protocol:** Amendments to any decision in `DECISION_REGISTER.md` require:
-   - Documented empirical disconfirmation from Ahvaz pilot telemetry.
-   - Written approval from Founder and Lead Product Architect.
-   - A synchronized update across all downstream active documents.
+## 7. Historical-document rule
+
+Historical reports may be retained for traceability, but any document containing superseded architecture, obsolete schema counts, obsolete role names, or old certification claims must carry a `HISTORICAL / SUPERSEDED` banner and must not be referenced as a current implementation contract.
+
+## 8. Change management
+
+No parallel decision register or competing certification register is permitted. Changes to locked decisions require empirical pilot evidence, architecture review, and a synchronized update of downstream canonical contracts. Code and schema changes must be accompanied by regression tests that prove the affected invariant.
