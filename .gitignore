@@ -24,3 +24,6 @@ scratch/
 *.sqlite
 *.sqlite3
 *.log
+research/runs/*/temp/
+artifacts/*.json
+scratch_prompt.txt
