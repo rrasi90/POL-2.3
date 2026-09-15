@@ -19,7 +19,6 @@ build/
 scratch/
 
 # Research runtime artifacts and local databases
-.hyperresearch/
 *.db
 *.sqlite
 *.sqlite3
@@ -27,3 +26,4 @@ scratch/
 research/runs/*/temp/
 artifacts/*.json
 scratch_prompt.txt
+Master SKU/backup_no_images.json
