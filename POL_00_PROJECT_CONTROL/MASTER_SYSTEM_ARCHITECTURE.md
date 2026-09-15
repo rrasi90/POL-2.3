@@ -2,14 +2,14 @@
 
 **Document ID:** POL-ARCH-MASTER-001  
 **Current Status:** CANONICAL SPECIFICATION  
-**Governing Decisions:** D-001 through D-015 (Multi-Vendor MVP D-014, PostgreSQL 18 Canonical D-015, NON_CUSTODIAL_DIRECT Settlement)  
+**Governing Decisions:** D-001 through D-017 (Multi-Vendor MVP D-014, PostgreSQL 18 Canonical D-015, Vendor Referral MVP D-016, Universal Profile & Persona Context D-017, NON_CUSTODIAL_DIRECT Settlement)  
 **Target Release:** POL MVP Pilot (Sprint 0 Target)  
 
 ---
 
 ## 1. Executive Summary & Purpose
 
-This document provides the single comprehensive architectural blueprint for the **POL (پُل)** B2B FMCG platform. It bridges the mature Commerce Core (Baskets, Allocation Engine, Multi-Vendor OrderGroups, Inventory, Settlements, Disputes) with the complete Platform Core (Identity, Organizations, Memberships, Auth/Sessions, Notifications, Inbox, Admin Control Plane, Support Cases, Field Tasks, SLAs, and Observability).
+This document provides the single comprehensive architectural blueprint for the **POL (پُل)** B2B FMCG platform. It bridges the mature Commerce Core (Baskets, Allocation Engine, Multi-Vendor OrderGroups, Inventory, Settlements, Disputes) with the complete Platform Core (Identity, Organizations, Memberships, User Profiles, Persona Contexts, Auth/Sessions, Notifications, Inbox, Admin Control Plane, Support Cases, Field Tasks, SLAs, and Observability).
 
 An engineer building Sprint 0 must be able to navigate every domain boundary, database ownership rule, event flow, and authorization boundary directly from this document.
 
@@ -25,31 +25,41 @@ POL recognizes five primary human and automated actors:
 | **Vendor Owner / Staff** | Tenant Actor | FMCG wholesalers and master distributors. Manages product listings, prices, inventory availability, reviews incoming orders, marks packing/dispatch, provides driver info, and reviews settlement summaries. | Vendor Web Portal (POL Vendor) |
 | **POL Platform Admin / Ops** | Platform Actor | Central operations personnel. Manages catalog taxonomy, reviews candidate SKUs, monitors the Exception Dashboard, handles tier-2 support, and oversees dispute resolution. | Admin Control Plane (POL Ops Console) |
 | **Field Activator / Visitor** | Operational Field Actor | Dedicated field agents operating in target Ahvaz districts. Registers retailer leads, verifies store locations, provides on-site training, assists with first order, and performs spot checks. | Field Operations Interface / Mobile Web |
-| **System Daemon / Workers** | Automated Actor | Background asynchronous workers executing outbox event dispatch, inventory reservation expiry, vendor acceptance SLA timeout enforcement, and SMS/Push notifications. | PostgreSQL / Worker Service |
+| **System Daemon / Workers** | Automated Actor | Background asynchronous workers executing outbox event dispatch, inventory reservation expiry, vendor acceptance SLA timeout enforcement, payment reconciliation, and SMS/Push notifications. | PostgreSQL / Worker Service |
 
 ---
 
-## 3. Organizations & Multi-Tenant Model
+## 3. Organizations, Identity & Canonical Profile Hierarchy
 
-To support multi-user teams and strict organizational data isolation, the platform enforces a 3-tier identity hierarchy:
+To support multi-user teams, strict organizational data isolation, and persona-driven UX without conflating identity with authorization, the platform enforces a 5-layer identity hierarchy:
 
-`	ext
-Organization (Tenant Boundary)
-   │
-   ├── Membership (Role, Scope, Status)
-   │      └── User (Credentials, Phone, Profile)
-   │
-   └── Business Profile (Retailer or Vendor Entity)
-`
+```text
+User
+  ↓
+UserProfile
+  ↓
+OrganizationMembership
+  ↓
+MembershipProfile
+  ↓
+PersonaProfile (RetailerProfile / VendorProfile / OperatorProfile / FieldActivatorProfile)
+```
+
+### Canonical Rules:
+- **Identity = `UserProfile`**: Stable across all tenant contexts; stores universal personal details, language, communication channels, and personal avatar.
+- **Authorization = `organization_memberships.role`**: Role assignments are strictly tenant-scoped (`organization_id`). `users.role` is a deprecated legacy compatibility column and MUST NOT be used as an alternative RBAC source of truth.
+- **Operational Context = `PersonaProfile`**: Role-specific operational preferences and workflow metadata (e.g. purchasing preferences for retailers, fulfillment preferences for vendors).
+- **UX Preferences = `MembershipProfile`**: UI theme, default landing views, tenant-scoped preferences.
+- **Tenant Context = Active Membership / Session Context**: Every API request operates within an explicit `organization_id` context passed via session/token.
 
 1. **Organization Types**:
    - RETAILER: Organization operating one or more retail stores.
    - VENDOR: Organization operating wholesale FMCG distribution.
    - OPERATOR: Platform operator organization (POL Core Ops).
 2. **Tenant Isolation Invariants**:
-   - Every operational resource (baskets, orders, deliveries, payments, settlements, invoices, support_cases) belongs strictly to an organization_id.
-   - Direct database queries and API handlers must enforce WHERE organization_id = :current_tenant_id. Cross-tenant data leakage is a P0 security violation.
-   - A single User may hold memberships in more than one organization (e.g., an owner with a retail branch and a small wholesale depot), but each API request operates under an explicit organization_id context passed via session token.
+   - Every operational resource (baskets, orders, deliveries, payments, settlements, invoices, support_cases) belongs strictly to an `organization_id`.
+   - Direct database queries and API handlers must enforce `WHERE organization_id = :current_tenant_id`. Cross-tenant data leakage is a P0 security violation.
+   - A single User may hold memberships in more than one organization, but each API request operates under an explicit `organization_id` context passed via session token. UserProfile cannot grant authorization, and PersonaProfile cannot grant authorization.
 
 ---
 

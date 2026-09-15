@@ -16,6 +16,8 @@ from datetime import datetime, timezone, timedelta
 import psycopg2
 from psycopg2.extras import RealDictCursor, Json
 
+import secrets
+
 from scripts.operational_config import (
     RESERVATION_TTL_MINUTES,
     ALLOCATION_PLAN_TTL_MINUTES,
@@ -30,15 +32,23 @@ class AuthService:
     @staticmethod
     def request_otp(cur, phone_number: str, purpose: str = 'LOGIN') -> dict:
         otp_id = str(uuid.uuid4())
-        # Static mock code hash for test predictability
-        code = "123456"
+        # Production safeguard: never allow hardcoded OTP in production environment
+        is_prod = os.getenv("ENVIRONMENT", "").lower() in ("prod", "production") or os.getenv("POL_ENV", "").lower() in ("prod", "production")
+        if is_prod:
+            code = f"{secrets.randbelow(1_000_000):06d}"
+        else:
+            # Predictable test OTP strictly restricted to test/dev/staging harnesses
+            code = "123456"
         code_hash = hashlib.sha256(code.encode()).hexdigest()
         cur.execute("""
             INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, attempts_count, max_attempts, status, expires_at)
             VALUES (%s, %s, %s, %s, 0, %s, 'PENDING', now() + interval '2 minutes')
             RETURNING id, phone_number, status, expires_at;
         """, (otp_id, phone_number, code_hash, purpose, OTP_MAX_ATTEMPTS))
-        return cur.fetchone()
+        res = cur.fetchone()
+        if not is_prod and isinstance(res, dict):
+            res["test_code"] = code
+        return res
 
     @staticmethod
     def verify_otp(cur, phone_number: str, code: str, user_id: str, active_org_id: str) -> dict:

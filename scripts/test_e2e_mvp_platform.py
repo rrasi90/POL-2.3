@@ -34,7 +34,6 @@ from scripts.domain_services import (
     BasketService,
     AllocationService,
     OrderGroupProjector,
-    CheckoutService,
     FulfillmentService,
     PaymentService,
     DisputeService,
@@ -42,6 +41,7 @@ from scripts.domain_services import (
     SupportService,
     AuditService
 )
+from scripts.checkout_gateway import CanonicalCheckoutGateway
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -206,7 +206,7 @@ def run_master_e2e_test():
         # -------------------------------------------------------------
         # 4. Inventory Reservations & Checkout with Address Snapshot
         # -------------------------------------------------------------
-        print("\n[STEP 4] Inventory Reservations & Checkout with Delivery Address Snapshot via CheckoutService...")
+        print("\n[STEP 4] Inventory Reservations & Checkout with Delivery Address Snapshot via CanonicalCheckoutGateway...")
         address_snapshot = {
             "address": "Ahvaz, Golestan St 5, Supermarket Golestan",
             "neighborhood": "Golestan",
@@ -217,12 +217,13 @@ def run_master_e2e_test():
             "recipient_phone": "+989161112233"
         }
         vendor_allocations = [
-            {"vendor_id": vnda_id, "vendor_product_id": vp_a, "quantity": 10, "amount_toman": 6000000},
-            {"vendor_id": vndb_id, "vendor_product_id": vp_b, "quantity": 15, "amount_toman": 6750000}
+            {"vendor_id": vnda_id, "vendor_product_id": vp_a, "quantity": 10, "unit_price_toman": 600000, "amount_toman": 6000000},
+            {"vendor_id": vndb_id, "vendor_product_id": vp_b, "quantity": 15, "unit_price_toman": 450000, "amount_toman": 6750000}
         ]
         idempotency_key = f"chk-{uuid.uuid4().hex[:16]}"
-        checkout_res = CheckoutService.checkout(cur, basket_id, plan_id, ret_id, idempotency_key, address_snapshot, vendor_allocations)
-        og_id = checkout_res["order_group_id"]
+        checkout_res = CanonicalCheckoutGateway.checkout(cur, basket_id, plan_id, ret_id, idempotency_key, address_snapshot, vendor_allocations)
+        og = checkout_res.get("order_group")
+        og_id = og["id"] if isinstance(og, dict) else checkout_res.get("order_group_id")
         child_orders = checkout_res["orders"]
         assert len(child_orders) == 2
 

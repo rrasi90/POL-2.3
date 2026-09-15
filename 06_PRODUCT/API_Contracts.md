@@ -584,3 +584,70 @@
 
 ### ۱۳.۲. ایجاد یا ویرایش دسته‌بندی (`POST /admin/categories` و `PATCH /admin/categories/:id`)
 * **مجوز:** منحصراً مدیر ارشد یا مدیر کاتالوگ (`OPS_ADMIN`).
+
+---
+
+## ۱۴. اندپوینت‌های کانونیکال پروفایل کاربری، عضویت و بافت پرسونا (User Profile & Persona APIs — D-017)
+
+> **شفافیت وضعیت ران‌تایم (Runtime Deployment Status):**  
+> کلیه مدل‌های داده، مایگریشن‌های اسکیما (`017_canonical_user_profiles_and_persona_context.sql`) و سرویس‌های دامنه برای این اندپوینت‌ها در ماژول پایتون `scripts/user_profiles.py` پیاده‌سازی شده و تحت تست جامع با PostgreSQL 18 قرار دارند. در لایه گیت‌وی وب/HTTP، این اندپوینت‌ها در وضعیت `CONTRACT_SPECIFIED / NOT_YET_DEPLOYED_AT_HTTP` مستند شده‌اند.
+
+### ۱۴.۱. استعلام پروفایل فراگیر کاربر (`GET /api/v1/profile`)
+* **آدرس:** `GET https://api.polmarket.ir/api/v1/profile`
+* **احراز هویت:** `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+* **پاسخ موفق (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "full_name": "احمد رضایی",
+    "avatar_url": "https://storage.polmarket.ir/avatars/user_1.webp",
+    "preferred_language": "fa",
+    "timezone": "Asia/Tehran",
+    "created_at": "2026-09-14T08:00:00Z",
+    "updated_at": "2026-09-14T08:00:00Z"
+  }
+}
+```
+
+### ۱۴.۲. به‌روزرسانی پروفایل فراگیر کاربر (`PUT /api/v1/profile`)
+* **بدنه درخواست (Request Body):**
+```json
+{
+  "full_name": "احمد رضایی دهکردی",
+  "avatar_url": "https://storage.polmarket.ir/avatars/user_1_new.webp",
+  "preferred_language": "fa"
+}
+```
+* **پاسخ موفق (200 OK):** اطلاعات به‌روزرسانی‌شده پروفایل.
+
+### ۱۴.۳. استعلام درصد تکمیل پروفایل کاربر (`GET /api/v1/profile/completion`)
+* **پاسخ موفق (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "completion_percentage": 80,
+    "missing_fields": ["avatar_url"],
+    "is_complete": false
+  }
+}
+```
+
+### ۱۴.۴. مدیریت پروفایل عضویت در سازمان فعال (`GET` / `PUT /api/v1/membership/profile`)
+* **بدنه ویرایش (PUT Request Body):**
+```json
+{
+  "job_title": "مدیر فروش و تامین",
+  "notification_preferences": {
+    "sms_orders": true,
+    "push_inventory_alerts": true
+  }
+}
+```
+
+### ۱۴.۵. دریافت بافت ترکیبی پرسونا و تننت فعال (`GET /api/v1/profile/context`)
+* **پاسخ موفق (200 OK):** ساختار کامل ۵ لایه شامل اطلاعات کاربری، عضویت فعال، نقش سازمانی و پروفایل پرسونا (`retailer_profiles`، `wholesaler_profiles` یا `staff_profiles`).
+* **قاعده حاکمیت کلیم‌های JWT:** کلیم‌های JWT صرفاً یک کپی مشتق‌شده و کش‌شده از وضعیت دسترسی هستند؛ SSoT اعتبار و نقش همواره جدول `organization_memberships` است.

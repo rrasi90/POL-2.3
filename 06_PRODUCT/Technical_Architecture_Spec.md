@@ -133,6 +133,14 @@ flowchart TD
 * `POST /orders/{id}/dispute` — ثبت گزارش مغایرت تجاری، خرابی یا کسری توسط سوپرمارکت (`dispute_status = OPEN`)
 * `PATCH /orders/{id}/dispute` — بررسی و بستن پرونده مغایرت تجاری توسط پشتیبانی پُل
 
+### ۴.۶. سرویس‌های پروفایل، بافت پرسونا و معرفی همکاران (`/api/v1/profile` و `/api/v1/referrals`)
+* **وضعیت ران‌تایم:** سرویس‌های دامنه در ماژول‌های پایتون `scripts/user_profiles.py` و `scripts/vendor_referral.py` بر بستر PostgreSQL 18 عملیاتی و اعتبارسنجی شده‌اند. استقرار در لایه HTTP در وضعیت `CONTRACT_SPECIFIED / NOT_YET_DEPLOYED_AT_HTTP` قرار دارد.
+* `GET /profile` — دریافت پروفایل انسانی فراگیر یکتا (`user_profiles`)
+* `PUT /profile` — به‌روزرسانی مشخصات فردی، تصویر آواتار و زبان ترجیحی
+* `GET /profile/completion` — محاسبه درصد تکمیل اطلاعات کاربری
+* `GET /profile/context` — استخراج بافت مرکب ۵ لایه (هویت + سازمان + نقش + پرسونای عملیاتی)
+* `POST /referrals/redeem` — ثبت انتساب معرف بنکدار برای سوپرمارکت (D-016 بدون پاداش نقدی)
+
 ---
 
 ## ۵. پایپ‌لاین ذخیره‌سازی رسانه و موتور جستجوی کاتالوگ (Media Pipeline & Search Engine)

@@ -100,9 +100,10 @@ Tracks SMS one-time password lifecycles and brute-force defenses.
 
 ## 3. Strict Tenant Isolation Rules
 
-1. **Context Derivation**:
-   - The user's bearer token carries a claim: `{ "user_id": "...", "org_id": "...", "role": "..." }`.
-   - On every request, middleware validates that `user_id` holds an `ACTIVE` membership in `org_id` with the declared `role`.
+1. **Context Derivation & JWT Claim Governance**:
+   - The user's bearer token carries derived/cached authorization claims: `{ "user_id": "...", "org_id": "...", "role": "...", "membership_id": "..." }`.
+   - **CRITICAL INVARIANT:** JWT claims are **strictly derived and cached authorization context**, NOT the primary Source of Truth. Middleware and security-sensitive handlers must validate that `user_id` holds an `ACTIVE` membership in `org_id` with the declared `role` in the database.
+   - Profile/persona data must NOT be packed into JWT claims as mutable truth.
 2. **Resource Scoping**:
    - Retailer endpoints query resources strictly by `retailer.organization_id = token.org_id`.
    - Vendor endpoints query resources strictly by `vendor.organization_id = token.org_id`.
@@ -110,3 +111,45 @@ Tracks SMS one-time password lifecycles and brute-force defenses.
 3. **Multi-Store & Multiple Memberships**:
    - If a business owner owns 2 retail stores, each store is registered as an Organization.
    - The user switches tenant context by calling `POST /api/v1/auth/switch-context { "target_org_id": "..." }`. The system validates membership and issues a refreshed access token scoped to the selected organization.
+
+---
+
+## 4. Canonical 5-Layer Profile Hierarchy (D-017)
+
+Per decision `D-017` and `USER_PROFILE_AND_PERSONA_MODEL.md`, the platform enforces a strict 5-layer identity and operational persona model:
+
+```text
+Layer 1: users (Authentication credentials, phone number, system audit)
+  ↓ 1:1
+Layer 2: user_profiles (Universal human identity: full name, avatar, preferred lang)
+  ↓ 1:N
+Layer 3: organization_memberships (Tenant boundary, role: RETAILER_OWNER, VENDOR_OWNER, etc.)
+  ↓ 1:1
+Layer 4: membership_profiles (Tenant-scoped operational profile: job title, shift hours)
+  ↓ 1:1
+Layer 5: Persona Profiles (Domain-specific operational data)
+         ├── retailer_profiles (Store name, business license, GPS coords)
+         ├── wholesaler_profiles (Depot code, MOV/MOQ rules, warehouse zone)
+         └── staff_profiles (Badge ID, supervisor ID, assigned vehicle/terminal)
+```
+
+### Authorization vs Personalization Separation Invariant
+- **Identity:** Sourced from `user_profiles`.
+- **Authorization & RBAC:** Sourced strictly from `organization_memberships.role` and `organizations.org_type`.
+- **Operational UI & Personalization:** Sourced from `membership_profiles` and persona profiles (`retailer_profiles`, `wholesaler_profiles`, `staff_profiles`).
+- `users.role` is **DEPRECATED** and must never be evaluated for access control.
+- Persona profile fields never grant RBAC permissions.
+
+---
+
+## 5. Canonical User Profile API Contracts & Runtime Status
+
+| Endpoint | Method | Purpose | Canonical Request / Payload | Target Response Status | Runtime Status |
+|:---|:---:|:---|:---|:---:|:---:|
+| `/api/v1/profile` | `GET` | Retrieve authenticated user's universal profile | Header: `Bearer <token>` | `200 OK` (Profile JSON) | `CONTRACT_SPECIFIED` / `PYTHON_SERVICE_VALIDATED` |
+| `/api/v1/profile` | `PUT` | Update universal human profile (name, avatar, lang) | `{"full_name": "...", "avatar_url": "..."}` | `200 OK` (Updated Profile) | `CONTRACT_SPECIFIED` / `PYTHON_SERVICE_VALIDATED` |
+| `/api/v1/profile/completion` | `GET` | Calculate profile completion percentage & missing fields | Header: `Bearer <token>` | `200 OK` (`{"completion_percentage": 85, "missing_fields": [...]}`) | `CONTRACT_SPECIFIED` / `PYTHON_SERVICE_VALIDATED` |
+| `/api/v1/membership/profile` | `GET` / `PUT` | Retrieve or update tenant-scoped membership profile | `{"job_title": "Store Manager", "notification_preferences": {...}}` | `200 OK` | `CONTRACT_SPECIFIED` / `PYTHON_SERVICE_VALIDATED` |
+| `/api/v1/profile/context` | `GET` | Full resolved active tenant + persona context for client UI | Header: `Bearer <token>` | `200 OK` (Resolved 5-layer context) | `CONTRACT_SPECIFIED` / `PYTHON_SERVICE_VALIDATED` |
+
+> **Note on Runtime Deployment:** The domain service and database schema for these endpoints are implemented and fully verified via `scripts/user_profiles.py` and `scripts/test_user_profiles.py` on PostgreSQL 18. HTTP gateway routing is marked `CONTRACT_SPECIFIED` / `NOT_YET_DEPLOYED_AT_HTTP` until the HTTP reverse proxy layer is stood up.

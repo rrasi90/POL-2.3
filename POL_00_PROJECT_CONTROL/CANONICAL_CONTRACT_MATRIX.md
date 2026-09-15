@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
-import os
-
-MATRIX_CONTENT = \"\"\"# ماتریس جامع انطباق و قراردادهای کانونیکال پلتفرم پُل (POL Canonical Contract Matrix)
+# ماتریس جامع انطباق و قراردادهای کانونیکال پلتفرم پُل (POL Canonical Contract Matrix)
 
 **شناسه سند:** `POL-CONTRACT-MATRIX-2026`  
-**نسخه:** ۲.۰ (مرحله نهایی پیش از اسپرینت صفر)  
+**نسخه:** ۲.۱ (مرحله نهایی پیش از اسپرینت صفر — سازگار با D-001 الی D-017)  
 **وضعیت:** مصوب و تثبیت‌شده (Canonical Source of Truth)  
-**پایگاه داده هدف:** PostgreSQL 18.4  
+**پایگاه داده هدف:** PostgreSQL 18.x  
 
 ---
 
@@ -35,7 +32,7 @@ MATRIX_CONTENT = \"\"\"# ماتریس جامع انطباق و قرارداده�
 | ۶ | **Sessions (نشست‌ها)** | `08_DATA/IDENTITY_AND_MEMBERSHIP.md` | `user_sessions` | `DELETE /auth/sessions/current`<br>`POST /auth/switch-organization` | `status`: ACTIVE, EXPIRED, REVOKED | `test_identity_tenant_isolation.py` | `auth_sessions` (نام جدول) | Aligned (API `/auth/sessions` -> `user_sessions`) | `RUNTIME_VERIFIED` |
 | ۷ | **Catalog (کاتالوگ مرجع)** | `08_DATA/CATALOG_DATA_DICTIONARY.md` | `products`, `brands`, `categories` | `GET /products/search`<br>`POST /products/match-barcode` | `pack_unit`: CARTON, PACK, BOX, ITEM | `verify_repository_consistency.py` | Carton-only schemas | Replaced by generic pack_unit | `RUNTIME_VERIFIED` |
 | ۸ | **Basket (سبد خرید نسخه‌دار)** | `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | `baskets`, `basket_items` | `POST /baskets/items`<br>`GET /baskets/current` | `status`: OPEN, LOCKED, MERGED, ABANDONED<br>`version`: INT (Optimistic lock) | `test_basket_versioning.py` | Unversioned baskets | Upgraded to optimistic `version` | `RUNTIME_VERIFIED` |
-| ۹ | **Allocation (موتور تخصیص)** | `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` | `allocation_plans`, `allocation_items` | `POST /bGORITHMS/allocations/preview` | `strategy`: MULTI_VENDOR_MIN_FRAGMENTATION<br>`status`: PREVIEW, CONFIRMED, EXPIRED | `test_allocation_engine.py` | Single-Vendor MVP (D-003) | Superseded by D-014 | `INTEGRATION_VERIFIED` |
+| ۹ | **Allocation (موتور تخصیص)** | `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` | `allocation_plans`, `allocation_items` | `POST /baskets/allocations/preview` | `strategy`: MULTI_VENDOR_MIN_FRAGMENTATION<br>`status`: PREVIEW, CONFIRMED, EXPIRED | `test_allocation_engine.py` | Single-Vendor MVP (D-003) | Superseded by D-014 | `INTEGRATION_VERIFIED` |
 | ۱۰ | **OrderGroup (سرگروه سفارش)** | `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | `order_groups` | `POST /orders/checkout` | `group_status`: ACTIVE, PARTIALLY_COMPLETED, COMPLETED, CANCELLED | `test_e2e_mvp_platform.py` | Direct arbitrary mutation | Derived via OrderGroupProjector | `INTEGRATION_VERIFIED` |
 | ۱۱ | **Orders (سفارش‌های بنکدار)** | `06_PRODUCT/Order_Lifecycle.md` | `orders`, `order_items` | `GET /orders/:id`<br>`POST /orders/:id/accept` | `order_status`: CREATED, SUBMITTED, ACCEPTED, PARTIALLY_ACCEPTED, REJECTED, PREPARING, READY, DISPATCHED, DELIVERED, CANCELLED | `test_postgres_runtime.py` | انتساب مستقیم DISPUTED به عنوان وضعیت سفارش | Removed (Disputes orthogonal) | `INTEGRATION_VERIFIED` |
 | ۱۲ | **Inventory Reservations (رزرو انبار)** | `08_DATA/INVENTORY_MODEL.md` | `inventory_reservations` | Internal / Checkout Service | `status`: ACTIVE, CONSUMED, RELEASED, EXPIRED | `test_inventory_reservations.py` | Immediate direct decrement | Explicit 15-min reservation lifecycle | `RUNTIME_VERIFIED` |
@@ -53,14 +50,10 @@ MATRIX_CONTENT = \"\"\"# ماتریس جامع انطباق و قرارداده�
 | ۲۴ | **Wallet & Financial Ledger** | `09_OPERATIONS/Payments_and_Settlement.md` | `settlements`, `settlement_adjustments` | `GET /vendors/settlements` | `custody`: NON_CUSTODIAL_DIRECT (Zero Escrow in MVP)<br>`status`: PENDING, CALCULATED, RECONCILED, DISPUTED, CLOSED | `test_postgres_runtime.py` | `LEDGER_DISPUTE_ESCROW` | Suspense / Adjustment Ledger | `RUNTIME_VERIFIED` |
 | ۲۵ | **Configuration (تنظیمات عملیاتی)** | `scripts/operational_config.py` | Python Contract / System Parameters | Read-only configuration module | Reservation TTL (15m), SLA (2h), Dispute (4h), Pilot Commission (0.000) | `test_sla_calendar.py` | Hard-coded distributed magic numbers | Centralized `operational_config.py` | `UNIT_VERIFIED` |
 | ۲۶ | **Observability & Traceability** | `POL_00_PROJECT_CONTROL/MASTER_SYSTEM_ARCHITECTURE.md` | `outbox_events.correlation_id`, `orders.correlation_id`, `admin_audit_logs.correlation_id` | Header `X-Correlation-ID` | End-to-End Traced Chain | `test_e2e_mvp_platform.py` | Untraceable isolated transactions | Correlation ID chain across all aggregates | `INTEGRATION_VERIFIED` |
-\"\"\"
-
-with open(\"POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md\", \"w\", encoding=\"utf-8\") as f:
-    f.write(MATRIX_CONTENT)
-
-print(\"Created POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md successfully.\")
-"""
-
-with open("scratch/create_matrix_script.py", "w", encoding="utf-8") as f:
-    f.write(MATRIX_CONTENT)
-print("Created scratch/create_matrix_script.py")
+| ۲۷ | **User Profile & Persona Context** | `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md` | `user_profiles`, `membership_profiles`, `retailer_profiles`, `vendor_profiles`, `operator_profiles`, `field_activator_profiles` | `GET /api/v1/profile`<br>`PATCH /api/v1/profile`<br>`GET /api/v1/membership/profile` | D-017: Universal Profile + Role Persona Context | `test_user_profiles.py` | Flat `users` fields as profile | 5-Layer Identity & Persona Hierarchy | `RUNTIME_VERIFIED` |
+| ۲۸ | **Daily Inventory Confirmation** | `06_PRODUCT/DAILY_INVENTORY_CONFIRMATION.md` | `daily_inventory_confirmations`, `daily_inventory_confirmation_items` | `POST /api/v1/vendor/inventory/confirm-daily` | `status`: PENDING, CONFIRMED_NO_CHANGES, CONFIRMED_WITH_CHANGES, MISSED, ESCALATED | `test_operational_intelligence.py` | Full daily stock audit | 1-Tap Morning Routine | `RUNTIME_VERIFIED` |
+| ۲۹ | **Universal Feedback Box** | `06_PRODUCT/FEEDBACK_AND_SUGGESTION_MODEL.md` | `feedback_submissions` | `POST /api/v1/feedback`<br>`GET /api/v1/feedback/admin-inbox` | `feedback_type`: BUG, SUGGESTION, COMPLAINT, MISSING_PRODUCT<br>`status`: SUBMITTED, IN_REVIEW, ACCEPTED, REJECTED, RESOLVED | `test_operational_intelligence.py`, `test_canonical_feedback.py` | Scattered support channels | Closed-loop zero-friction feedback | `RUNTIME_VERIFIED` |
+| ۳۰ | **Vendor Reliability Ledger** | `08_DATA/COMMERCIAL_AND_OPERATIONAL_MODELS.md` | `vendor_reliability_events` | Internal Scoring Service | Append-only event ledger: `DAILY_CONFIRMATION_COMPLETED`, `ORDER_FULFILLED_ON_TIME`, `ORDER_CANCELLED_BY_VENDOR` | `test_operational_intelligence.py` | Subjective vendor score | Declared vs Observed Truth | `RUNTIME_VERIFIED` |
+| ۳۱ | **Vendor Referral MVP** | `scripts/vendor_referral.py` | `vendor_referrals`, `vendor_referral_attributions` | `POST /api/v1/referrals/vendor`<br>`POST /api/v1/referrals/redeem` | D-016: Attribution-first, incentive-free referral | `test_vendor_referral.py` | Complex wallet rewards | Clean Attribution-Only MVP | `RUNTIME_VERIFIED` |
+| ۳۲ | **Returns & RMA Management** | `08_DATA/COMMERCIAL_AND_OPERATIONAL_MODELS.md` | `returns`, `return_items` | `POST /api/v1/returns/request`<br>`POST /api/v1/returns/:id/transition` | `return_status`: REQUESTED, APPROVED, RECEIVED, REFUNDED | `test_route_hardening.py` | Untracked return goods | Governed RMA lifecycle | `RUNTIME_VERIFIED` |
+| ۳۳ | **Canonical Checkout Gateway** | `scripts/checkout_gateway.py` | `order_groups`, `orders`, `inventory_reservations` | Application Boundary `checkout()` | Pre-commit revalidation with row-level locks and allocation integrity | `test_checkout_gateway_contract.py` | Direct unvalidated checkout | Canonical Application Gateway | `RUNTIME_VERIFIED` |

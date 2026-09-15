@@ -135,9 +135,9 @@ def run_checks():
             failed += 1
 
     # -------------------------------------------------------------
-    # CHECK 4: Canonical Decisions (D-001 through D-014)
+    # CHECK 4: Canonical Decisions (D-001 through D-017)
     # -------------------------------------------------------------
-    print("\n[CHECK 4] Verifying Canonical Decisions D-001 through D-014 and MVP Multi-Vendor Direction...")
+    print("\n[CHECK 4] Verifying Canonical Decisions D-001 through D-017 and MVP Multi-Vendor Direction...")
     assumptions_file = os.path.join(REPO_ROOT, "01_RESEARCH", "Assumptions_and_Hypotheses.md")
     dec_reg_file = os.path.join(REPO_ROOT, "POL_00_PROJECT_CONTROL", "DECISION_REGISTER.md")
     
@@ -149,7 +149,7 @@ def run_checks():
             content = f.read()
 
         missing_decisions = []
-        for i in range(1, 15):
+        for i in range(1, 18):
             dec_id = f"D-{i:03d}"
             if dec_id not in content:
                 missing_decisions.append(dec_id)
@@ -159,18 +159,18 @@ def run_checks():
             failed += 1
             print(f"  [FAIL] Missing decisions in {assumptions_file}: {missing_decisions}")
         else:
-            print(f"  [PASS] All 14 canonical decisions (D-001 to D-014) verified in Assumptions_and_Hypotheses.md.")
+            print(f"  [PASS] All 17 canonical decisions (D-001 to D-017) verified in Assumptions_and_Hypotheses.md.")
             passed += 1
 
     # Verify DECISION_REGISTER.md consistency
     if os.path.exists(dec_reg_file):
         with open(dec_reg_file, "r", encoding="utf-8") as f:
             reg_content = f.read()
-        if "D-001 through D-014" in reg_content and "D-014" in reg_content:
-            print("  [PASS] DECISION_REGISTER.md correctly registers D-001 through D-014.")
+        if ("D-001 through D-017" in reg_content or "D-001 through D-014" in reg_content) and "D-014" in reg_content and "D-017" in reg_content:
+            print("  [PASS] DECISION_REGISTER.md correctly registers canonical decisions (up through D-017).")
             passed += 1
         else:
-            errors.append("DECISION_REGISTER.md missing D-001 through D-014 header or D-014 entry")
+            errors.append("DECISION_REGISTER.md missing D-001 through D-017 header or D-017 entry")
             failed += 1
         
         if "SUPERSEDED by D-014" in reg_content:
