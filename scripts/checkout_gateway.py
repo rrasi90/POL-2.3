@@ -1,13 +1,13 @@
 """
 POL Canonical Checkout Gateway
 
-The application-facing checkout boundary is responsible for two things before
-calling the transactional revalidation service:
-1. reject forged/stale allocation input; and
-2. make repeated requests with the same idempotency key deterministic.
+The application-facing checkout boundary is responsible for:
+1. rejecting forged/stale allocation input;
+2. making repeated requests with the same idempotency key deterministic; and
+3. delegating transactional revalidation to the canonical standalone service.
 """
 
-from scripts.domain_services import RevalidationCheckoutService
+from scripts.revalidation_checkout import RevalidationCheckoutService
 from scripts.operational_policies import validate_allocation_against_basket
 
 
