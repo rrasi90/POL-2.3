@@ -96,10 +96,6 @@ class RevalidationCheckoutService:
                 )
             if offer["moq"] is not None and req_qty < offer["moq"]:
                 raise ValueError(f"MOQ violation for SKU {vp_id}: {req_qty} < {offer['moq']}")
-            if offer["pack_quantity"] and req_qty % offer["pack_quantity"] != 0:
-                raise ValueError(
-                    f"Pack increment violation for SKU {vp_id}: quantity {req_qty} is not divisible by {offer['pack_quantity']}"
-                )
 
             cur.execute(
                 """
