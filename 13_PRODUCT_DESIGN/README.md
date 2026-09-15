@@ -18,8 +18,9 @@
 13. `12_DESIGN_TOKENS_AND_COMPONENT_INVENTORY.md`
 14. `13_PROTOTYPE_AND_FIGMA_PLAN.md`
 15. `14_DESIGN_DECISION_REGISTER.md`
+16. `15_CROSS_PROJECT_DESIGN_AUDIT_2026-09-15.md`
 
 ## Execution rule
-`Research → Written Design Source of Truth → Figma/Prototype → Frontend Implementation → Production Backend Integration`
+`Research → Written Design Source of Truth → Cross-Project Audit → Figma/Prototype → Frontend Implementation → Production Backend Integration`
 
 No visual artifact becomes a canonical product requirement until the corresponding written decision is recorded here or in the governing product/engineering documents.
