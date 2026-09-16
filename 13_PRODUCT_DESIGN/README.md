@@ -27,18 +27,51 @@
 22. `21_MVP_DESIGN_AND_FRONTEND_READINESS_GATE_2026-09-16.md`
 23. `22_UI_UX_PAGE_AND_SECTION_COMPLETION_SPEC_2026-09-16.md`
 24. `23_ANTIGRAVITY_FAILURE_MODES_AND_AGENT_OPERATING_PROTOCOL_2026-09-16.md`
+25. `24_PENPOT_MANUAL_REBUILD_MASTER_SPEC_2026-09-16.md`
+26. `25_VISUAL_DESIGN_REFINEMENT_AND_PENPOT_STYLE_GUIDE_2026-09-16.md`
+27. `26_SCREEN_WIREFRAME_SPEC_RETAILER_VENDOR_2026-09-16.md`
+28. `27_SCREEN_WIREFRAME_SPEC_SHARED_OPS_FIELD_CORPORATE_2026-09-16.md`
+29. `28_DESIGN_SYSTEM_V2_RESEARCH_BASED_2026-09-16.md`
+30. `29_SCREEN_DESIGN_EXECUTION_RESEARCH_FIRST_2026-09-16.md`
+31. `30_RETAILER_SCREEN_BY_SCREEN_SPEC_2026-09-16.md`
+32. `31_VENDOR_OPS_FIELD_CORPORATE_SCREEN_BY_SCREEN_SPEC_2026-09-16.md`
+33. `32_FINAL_DESIGN_TOKENS_V3_2026-09-16.md`
+34. `33_COMPONENT_SPECIFICATION_V2_2026-09-16.md`
+35. `34_PENPOT_PATTERN_LIBRARY_V2_2026-09-16.md`
+36. `35_PROTOTYPE_FLOWS_AND_FAILURE_BRANCHES_V2_2026-09-16.md`
+37. `36_PENPOT_EXECUTION_AND_QA_GATES_V2_2026-09-16.md`
+38. `37_RESEARCH_PRINCIPLES_MATRIX_V1_2026-09-16.md`
+39. `38_DESIGN_TOKENS_CANONICAL_V4_2026-09-16.md`
+40. `39_COMPONENT_CONTRACTS_CANONICAL_V3_2026-09-16.md`
+41. `40_PATTERN_LIBRARY_CANONICAL_V3_2026-09-16.md`
+42. `41_SCREEN_COMPOSITION_RULES_V3_2026-09-16.md`
+43. `42_PROTOTYPE_SPEC_AND_FLOW_MATRIX_V3_2026-09-16.md`
+44. `43_DESIGN_QA_PROTOCOL_V3_2026-09-16.md`
+45. `44_DESIGN_PIPELINE_MASTER_INDEX_V3_2026-09-16.md`
+46. `45_REPOSITORY_WIDE_DESIGN_COMPLETENESS_AUDIT_2026-09-16.md`
 
 ## Agent operating assets
 
 - `.agents/rules/00-pol-canonical-safety.md` — persistent project safety constraints.
 - `.agents/skills/pol-batch-execution/SKILL.md` — bounded design/frontend execution protocol.
 
+## Official design pipeline
+`Research → Principle → Token → Component → Pattern → Screen → Prototype → QA → Handoff`
+
+## Operational index
+`44_DESIGN_PIPELINE_MASTER_INDEX_V3_2026-09-16.md`
+
+## Latest repository-wide design audit
+`45_REPOSITORY_WIDE_DESIGN_COMPLETENESS_AUDIT_2026-09-16.md`
+
 ## Execution rule
 `Repository Sync → Repository Audit → Specification Completion → Readiness Gate → Page/Section Completion → Agent Safety Gate → Written Design Source of Truth → Figma/Penpot Prototype → Mock-First Frontend → Production Backend Integration`
 
-The readiness gate, page/section specification and agent operating protocol are the final pre-high-fidelity inputs. They close explicit Auth/Session, commerce-state, RMA/Support, payment/notification, localization, analytics, vendor-comparison, delivery-boundary, screen-contract, page-inventory and agent-failure-mode gaps without overriding canonical business decisions.
-
 ### Simplicity rule
 Every new screen must justify its existence by a concrete MVP task. Prefer fewer screens, fewer required fields, fewer decisions per step, progressive disclosure, search/reorder/task queues, and contextual recovery over feature-heavy navigation or decorative complexity.
+
+### Completeness rule
+A screen is not considered complete because it exists. It is complete only when:
+`Canonical requirement → research principle → token → component → pattern → screen → state/failure branches → prototype → accessibility/content/contract QA → verified artifact`.
 
 No visual artifact becomes a canonical product requirement until the corresponding written decision is recorded here or in the governing product/engineering documents.
