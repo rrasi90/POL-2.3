@@ -3,6 +3,12 @@
 ## Purpose
 A single component and visual language for POL Market, POL Vendor, Ops, Field Activator and Corporate surfaces.
 
+## Canonical visual refinement
+The detailed visual execution rules are defined in:
+`13_PRODUCT_DESIGN/25_VISUAL_DESIGN_REFINEMENT_AND_PENPOT_STYLE_GUIDE_2026-09-16.md`
+
+That guide is authoritative for typography, color tokens, spacing, layout, accessibility, density, component styling and Penpot visual acceptance. This file remains the high-level design-system contract.
+
 ## Design character
 - Trustworthy, operational, modern B2B.
 - Dense enough for commerce operations, calm enough for frequent retailer use.
@@ -22,10 +28,12 @@ Use semantic roles rather than component-specific colors:
 - `info-*`
 - `interactive-*`
 
-The final numeric palette is to be decided after brand exploration and contrast verification. No raw hex value should leak into component specs.
+Final numeric values and usage rules are defined in the visual refinement guide. No raw hex value should leak into component specs outside the foundation/token layer.
 
 ### Typography
-Define Persian and Latin families as tokens. Support numeric readability, tabular figures for operational tables, and distinct display/body/caption scales.
+Digital operational UI uses `Vazirmatn` as the primary Persian family where verified. `B Lotus` is an approved secondary POL typeface for printed documents, reports, selected corporate/editorial display headings, and other explicitly approved contexts. It is not the default dense transactional UI typeface.
+
+Support numeric readability, tabular figures for operational tables, and distinct display/body/caption scales.
 
 ### Spacing
 Use a 4/8-based scale with explicit dense-data exceptions. Do not use arbitrary one-off gaps in production components.
@@ -64,7 +72,7 @@ Every interactive component defines at least:
 `default`, `hover`, `focus`, `pressed`, `disabled`, `loading`, `error`, `success` where applicable.
 
 ## Accessibility baseline
-Design to WCAG 2.2 AA-oriented practices. Interactive targets should meet or exceed the 24x24 CSS px minimum; POL's production components should normally target larger touch areas to support the target demographic. Focus must be visible and not obscured. citeturn990483search0
+Design to WCAG 2.2 AA-oriented practices. Interactive targets should meet or exceed the 24x24 CSS px minimum; POL's production components should normally target larger touch areas to support the target demographic. Focus must be visible and not obscured.
 
 ## Content rules
 - Buttons describe actions: `افزودن به سبد`, `ثبت سفارش`, `تکرار سفارش`.
