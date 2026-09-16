@@ -24,8 +24,11 @@
 19. `18_DESIGN_COMPLETION_PLAN.md`
 20. `19_ANTIGRAVITY_MASTER_EXECUTION_PROMPT.md`
 21. `20_ANTIGRAVITY_REPOSITORY_AUDIT_PROMPT.md`
+22. `21_MVP_DESIGN_AND_FRONTEND_READINESS_GATE_2026-09-16.md`
 
 ## Execution rule
-`Repository Sync → Repository Audit → Specification Completion → Written Design Source of Truth → Figma/Penpot Prototype → Frontend Implementation → Production Backend Integration`
+`Repository Sync → Repository Audit → Specification Completion → Readiness Gate → Written Design Source of Truth → Figma/Penpot Prototype → Mock-First Frontend → Production Backend Integration`
+
+The readiness gate is the final pre-high-fidelity checklist. It closes the explicit Auth/Session, commerce-state, RMA/Support, payment/notification, localization, analytics, vendor-comparison, delivery-boundary and screen-contract gaps identified by the cross-project audit without overriding canonical business decisions.
 
 No visual artifact becomes a canonical product requirement until the corresponding written decision is recorded here or in the governing product/engineering documents.
