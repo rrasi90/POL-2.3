@@ -1,0 +1,80 @@
+[
+  {
+    "id": "zar_spaghetti_700g",
+    "sku": "SKU-FMCG-ZAR-700",
+    "title": "اسپاگتی قطر ۱.۲ وزن ۷۰۰ گرم زر ماکارون",
+    "brand": "زر ماکارون",
+    "pack": "کارتن ۲۰ عددی",
+    "url": "https://www.zarmacaron.com/wp-content/uploads/2025/01/700_1.2.webp",
+    "filename": "zar_spaghetti_700g.webp",
+    "source": "وب‌سایت رسمی زر ماکارون (Manufacturer Official Asset)",
+    "license": "Official Manufacturer Product Media",
+    "size_bytes": 74808,
+    "status": "VERIFIED"
+  },
+  {
+    "id": "zar_tomato_paste_700g",
+    "sku": "SKU-FMCG-ROB-700",
+    "title": "رب گوجه فرنگی ۷۰۰ گرمی قوطی کلیددار زرپلاس",
+    "brand": "زرپلاس",
+    "pack": "باکس ۱۲ عددی",
+    "url": "https://www.zarmacaron.com/wp-content/uploads/2026/07/%D8%B1%D8%A8-%DA%AF%D9%88%D8%AC%D9%87-700-%DA%AF%D8%B1%D9%85%DB%8C-%D8%B2%D8%B1%D9%BE%D9%84%D8%A7%D8%B3.webp",
+    "filename": "zar_tomato_paste_700g.webp",
+    "source": "وب‌سایت رسمی زر ماکارون (Manufacturer Official Asset)",
+    "license": "Official Manufacturer Product Media",
+    "size_bytes": 91896,
+    "status": "VERIFIED"
+  },
+  {
+    "id": "zar_tuna_180g",
+    "sku": "SKU-FMCG-TUNA-180",
+    "title": "کنسرو تن ماهی در روغن گیاهی ۱۸۰ گرمی زرپلاس",
+    "brand": "زرپلاس",
+    "pack": "کارتن ۲۴ عددی",
+    "url": "https://www.zarmacaron.com/wp-content/uploads/2026/07/%DA%A9%D9%86%D8%B3%D8%B1%D9%88-%D8%AA%D9%86-%D9%85%D8%A7%D9%87%DB%8C-%D8%AF%D8%B1-%D8%B1%D9%88%D8%BA%D9%86-%DA%AF%DB%8C%D8%A7%D9%87%DB%8C-180-%DA%AF%D8%B1%D9%85%DB%8C-%D8%B2%D8%B1%D9%BE%D9%84%D8%A7%D8%B3.webp",
+    "filename": "zar_tuna_180g.webp",
+    "source": "وب‌سایت رسمی زر ماکارون (Manufacturer Official Asset)",
+    "license": "Official Manufacturer Product Media",
+    "size_bytes": 79990,
+    "status": "VERIFIED"
+  },
+  {
+    "id": "zar_lentils_900g",
+    "sku": "SKU-FMCG-LENTIL-900",
+    "title": "عدس سورت شده ۹۰۰ گرمی زرپلاس",
+    "brand": "زرپلاس",
+    "pack": "بسته ۱۲ عددی",
+    "url": "https://www.zarmacaron.com/wp-content/uploads/2026/07/%D8%B9%D8%AF%D8%B3-900-%DA%AF%D8%B1%D9%85%DB%8C-%D8%B2%D8%B1%D9%BE%D9%84%D8%A7%D8%B3.webp",
+    "filename": "zar_lentils_900g.webp",
+    "source": "وب‌سایت رسمی زر ماکارون (Manufacturer Official Asset)",
+    "license": "Official Manufacturer Product Media",
+    "size_bytes": 183716,
+    "status": "VERIFIED"
+  },
+  {
+    "id": "cooking_oil_sunflower",
+    "sku": "SKU-FMCG-OIL-1500",
+    "title": "روغن آفتابگردان خالص تصفیه‌شده ۱ لیتری",
+    "brand": "روغن آفتابگردان",
+    "pack": "کارتن ۶ عددی",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/33/Bottle_1_liter_Sunflower_refined_oil.jpg",
+    "filename": "cooking_oil_sunflower.jpg",
+    "source": "Wikimedia Commons (Verified Authentic FMCG Product Packaging)",
+    "license": "Creative Commons Attribution-ShareAlike 3.0",
+    "size_bytes": 188510,
+    "status": "VERIFIED"
+  },
+  {
+    "id": "detergent_liquid_4l",
+    "sku": "SKU-FMCG-DET-4000",
+    "title": "مایع ظرفشویی لیمویی غلیظ ۴ لیتری",
+    "brand": "مایع ظرفشویی",
+    "pack": "کارتن ۴ عددی",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Afwasmiddel_Una_Aldi.JPG",
+    "filename": "detergent_liquid_4l.jpg",
+    "source": "Wikimedia Commons (FMCG Packaging Library)",
+    "license": "CC BY-SA 3.0",
+    "size_bytes": 3196285,
+    "status": "VERIFIED"
+  }
+]
