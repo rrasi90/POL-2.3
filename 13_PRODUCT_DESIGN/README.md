@@ -26,11 +26,17 @@
 21. `20_ANTIGRAVITY_REPOSITORY_AUDIT_PROMPT.md`
 22. `21_MVP_DESIGN_AND_FRONTEND_READINESS_GATE_2026-09-16.md`
 23. `22_UI_UX_PAGE_AND_SECTION_COMPLETION_SPEC_2026-09-16.md`
+24. `23_ANTIGRAVITY_FAILURE_MODES_AND_AGENT_OPERATING_PROTOCOL_2026-09-16.md`
+
+## Agent operating assets
+
+- `.agents/rules/00-pol-canonical-safety.md` — persistent project safety constraints.
+- `.agents/skills/pol-batch-execution/SKILL.md` — bounded design/frontend execution protocol.
 
 ## Execution rule
-`Repository Sync → Repository Audit → Specification Completion → Readiness Gate → Page/Section Completion → Written Design Source of Truth → Figma/Penpot Prototype → Mock-First Frontend → Production Backend Integration`
+`Repository Sync → Repository Audit → Specification Completion → Readiness Gate → Page/Section Completion → Agent Safety Gate → Written Design Source of Truth → Figma/Penpot Prototype → Mock-First Frontend → Production Backend Integration`
 
-The readiness gate and page/section specification are the final pre-high-fidelity inputs. They close explicit Auth/Session, commerce-state, RMA/Support, payment/notification, localization, analytics, vendor-comparison, delivery-boundary, screen-contract and page-inventory gaps without overriding canonical business decisions.
+The readiness gate, page/section specification and agent operating protocol are the final pre-high-fidelity inputs. They close explicit Auth/Session, commerce-state, RMA/Support, payment/notification, localization, analytics, vendor-comparison, delivery-boundary, screen-contract, page-inventory and agent-failure-mode gaps without overriding canonical business decisions.
 
 ### Simplicity rule
 Every new screen must justify its existence by a concrete MVP task. Prefer fewer screens, fewer required fields, fewer decisions per step, progressive disclosure, search/reorder/task queues, and contextual recovery over feature-heavy navigation or decorative complexity.
