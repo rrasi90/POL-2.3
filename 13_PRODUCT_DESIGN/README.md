@@ -25,10 +25,14 @@
 20. `19_ANTIGRAVITY_MASTER_EXECUTION_PROMPT.md`
 21. `20_ANTIGRAVITY_REPOSITORY_AUDIT_PROMPT.md`
 22. `21_MVP_DESIGN_AND_FRONTEND_READINESS_GATE_2026-09-16.md`
+23. `22_UI_UX_PAGE_AND_SECTION_COMPLETION_SPEC_2026-09-16.md`
 
 ## Execution rule
-`Repository Sync → Repository Audit → Specification Completion → Readiness Gate → Written Design Source of Truth → Figma/Penpot Prototype → Mock-First Frontend → Production Backend Integration`
+`Repository Sync → Repository Audit → Specification Completion → Readiness Gate → Page/Section Completion → Written Design Source of Truth → Figma/Penpot Prototype → Mock-First Frontend → Production Backend Integration`
 
-The readiness gate is the final pre-high-fidelity checklist. It closes the explicit Auth/Session, commerce-state, RMA/Support, payment/notification, localization, analytics, vendor-comparison, delivery-boundary and screen-contract gaps identified by the cross-project audit without overriding canonical business decisions.
+The readiness gate and page/section specification are the final pre-high-fidelity inputs. They close explicit Auth/Session, commerce-state, RMA/Support, payment/notification, localization, analytics, vendor-comparison, delivery-boundary, screen-contract and page-inventory gaps without overriding canonical business decisions.
+
+### Simplicity rule
+Every new screen must justify its existence by a concrete MVP task. Prefer fewer screens, fewer required fields, fewer decisions per step, progressive disclosure, search/reorder/task queues, and contextual recovery over feature-heavy navigation or decorative complexity.
 
 No visual artifact becomes a canonical product requirement until the corresponding written decision is recorded here or in the governing product/engineering documents.
