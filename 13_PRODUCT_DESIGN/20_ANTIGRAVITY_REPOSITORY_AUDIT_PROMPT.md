@@ -24,7 +24,17 @@ Before reading or editing project files:
 
 Never delete `.env`, credentials, SSH keys, or other secrets merely because they are untracked. Project source files and generated artifacts are different from credentials.
 
-## 1. READ THE GOVERNING FILES FIRST
+## 1. LOAD AGENT SAFETY CONTROLS
+
+Before auditing, read:
+
+- `13_PRODUCT_DESIGN/23_ANTIGRAVITY_FAILURE_MODES_AND_AGENT_OPERATING_PROTOCOL_2026-09-16.md`
+- `.agents/rules/00-pol-canonical-safety.md`
+- `.agents/skills/pol-batch-execution/SKILL.md`
+
+Treat these as execution controls, not optional reading.
+
+## 2. READ THE GOVERNING FILES FIRST
 
 Read these before changing anything:
 
@@ -52,7 +62,7 @@ Then inspect:
 - `scripts/`
 - `.github/workflows/`
 
-## 2. AUDIT CATEGORIES
+## 3. AUDIT CATEGORIES
 
 Audit the repository as one system, not as independent documents.
 
@@ -150,7 +160,7 @@ Pay particular attention to:
 - analytics/telemetry;
 - localization and Persian RTL/LTR stress cases.
 
-## 3. REPAIR RULES
+## 4. REPAIR RULES
 
 When a concrete defect is found:
 
@@ -164,7 +174,7 @@ When a concrete defect is found:
 
 Do not implement future features merely because their database foundation exists.
 
-## 4. GENERATED ARTIFACT HYGIENE
+## 5. GENERATED ARTIFACT HYGIENE
 
 Do not commit:
 
@@ -178,7 +188,7 @@ Do not commit:
 
 Keep durable research findings, final reports and canonical specifications.
 
-## 5. VERIFICATION GATE
+## 6. VERIFICATION GATE
 
 After repairs:
 
@@ -192,7 +202,7 @@ After repairs:
 
 A successful historical CI run is not sufficient. The current HEAD must pass.
 
-## 6. OUTPUT
+## 7. OUTPUT
 
 Create/update:
 
@@ -213,7 +223,7 @@ It must contain:
 
 Do not claim "production ready" merely because the domain verification suite passes.
 
-## 7. STOP CONDITION
+## 8. STOP CONDITION
 
 Do not start high-fidelity Figma/Penpot work until:
 
