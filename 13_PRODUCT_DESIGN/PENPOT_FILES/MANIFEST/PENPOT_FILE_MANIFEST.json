@@ -1,0 +1,35 @@
+[
+  {
+    "filename": "New File 1.penpot.zip",
+    "relative_path": "13_PRODUCT_DESIGN/PENPOT_FILES/SOURCE/New File 1.penpot.zip",
+    "type": "penpot_source",
+    "size_bytes": 5810558,
+    "sha256": "b27dab72381f4e4551b684090f8caff3198f6b113a460c61a484d68e3d7ecbda",
+    "modified_at": "2026-09-16T07:28:10.579843+00:00",
+    "status": "current",
+    "source_location": "C:/Users/rrasi_oorj8fq/Downloads/Compressed/New File 1.penpot.zip",
+    "notes": "Canonical Penpot project archive exported from Penpot v2.18.0-RC5. File ID d8ac01df-6646-81d2-8008-a4f2f52bf86c. Contains complete 11-page board hierarchy, Iranian localized UI, design tokens, and components."
+  },
+  {
+    "filename": "B Lotus_0.ttf",
+    "relative_path": "fonts/B Lotus_0.ttf",
+    "type": "supporting_asset",
+    "size_bytes": 58164,
+    "sha256": "c9c262f1ec2c8ff05d78fc1c964698ecc9cc1b2e3553f7e8bda8559ffc1333c2",
+    "modified_at": "2000-12-30T15:09:46+00:00",
+    "status": "current",
+    "source_location": "fonts/B Lotus_0.ttf",
+    "notes": "Persian typography font asset (B Lotus Regular) for Iranian localized retail UI."
+  },
+  {
+    "filename": "B Lotus Bold_0.ttf",
+    "relative_path": "fonts/B Lotus Bold_0.ttf",
+    "type": "supporting_asset",
+    "size_bytes": 61796,
+    "sha256": "192cc941b0ca1d4bd2dd05a9efe6494ac50df0ebdb499cc420e6bd8198340bbd",
+    "modified_at": "2000-12-30T15:09:54+00:00",
+    "status": "current",
+    "source_location": "fonts/B Lotus Bold_0.ttf",
+    "notes": "Persian typography font asset (B Lotus Bold) for Iranian localized retail UI."
+  }
+]
