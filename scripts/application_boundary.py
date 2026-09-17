@@ -127,13 +127,15 @@ class POLApplicationBoundary:
     def return_request(self, *, order_id, order_items, reason, idempotency_key, claimed_refund_amount_toman):
         return CanonicalReturnService.request_return(
             self.cur, self.context.user_id, order_id, order_items,
-            reason, idempotency_key, claimed_refund_amount_toman
+            reason, idempotency_key, claimed_refund_amount_toman,
+            organization_id=self.context.organization_id,
         )
 
     def return_transition(self, *, return_id, target_status, reason=None, approved_refund_amount_toman=None):
         return CanonicalReturnService.transition(
             self.cur, self.context.user_id, return_id, target_status,
-            reason=reason, approved_refund_amount_toman=approved_refund_amount_toman
+            reason=reason, approved_refund_amount_toman=approved_refund_amount_toman,
+            organization_id=self.context.organization_id,
         )
 
     def reconcile_payments(self, *, limit=50):

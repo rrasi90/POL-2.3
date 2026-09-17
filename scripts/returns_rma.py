@@ -29,12 +29,11 @@ class CanonicalReturnService:
         "CLOSED": set(),
     }
 
-    OPS_ROLES = {"OPS_ADMIN", "SUPER_ADMIN"}
+    OPS_ROLES = {"ADMIN_SUPER", "OPS_AGENT", "SUPER_ADMIN", "OPS_ADMIN"}
 
     @staticmethod
-    def _retailer_access(cur, user_id: str, retailer_id: str) -> bool:
-        cur.execute(
-            """
+    def _retailer_access(cur, user_id: str, retailer_id: str, organization_id: str | None = None) -> bool:
+        sql = """
             SELECT 1
             FROM retailers r
             JOIN organization_memberships om ON om.organization_id = r.organization_id
@@ -44,16 +43,17 @@ class CanonicalReturnService:
               AND om.status = 'ACTIVE'
               AND o.status = 'ACTIVE'
               AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
-            LIMIT 1
-            """,
-            (retailer_id, user_id),
-        )
+        """
+        params = [retailer_id, user_id]
+        sql += " AND om.organization_id = %s"
+        params.append(organization_id)
+        sql += "\n            LIMIT 1"
+        cur.execute(sql, params)
         return cur.fetchone() is not None
 
     @staticmethod
-    def _vendor_access(cur, user_id: str, vendor_id: str) -> bool:
-        cur.execute(
-            """
+    def _vendor_access(cur, user_id: str, vendor_id: str, organization_id: str | None = None) -> bool:
+        sql = """
             SELECT 1
             FROM vendors v
             JOIN organization_memberships om ON om.organization_id = v.organization_id
@@ -63,27 +63,31 @@ class CanonicalReturnService:
               AND om.status = 'ACTIVE'
               AND o.status = 'ACTIVE'
               AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
-            LIMIT 1
-            """,
-            (vendor_id, user_id),
-        )
+        """
+        params = [vendor_id, user_id]
+        sql += " AND om.organization_id = %s"
+        params.append(organization_id)
+        sql += "\n            LIMIT 1"
+        cur.execute(sql, params)
         return cur.fetchone() is not None
 
     @classmethod
-    def _ops_access(cls, cur, user_id: str) -> bool:
-        cur.execute(
-            """
+    def _ops_access(cls, cur, user_id: str, organization_id: str | None = None) -> bool:
+        sql = """
             SELECT 1
             FROM organization_memberships om
             JOIN organizations o ON o.id = om.organization_id
             WHERE om.user_id = %s
               AND om.status = 'ACTIVE'
               AND o.status = 'ACTIVE'
-              AND om.role IN ('OPS_ADMIN','SUPER_ADMIN')
-            LIMIT 1
-            """,
-            (user_id,),
-        )
+              AND o.org_type = 'OPERATOR'
+              AND om.role = ANY(%s)
+        """
+        params = [user_id, sorted(cls.OPS_ROLES)]
+        sql += " AND om.organization_id = %s"
+        params.append(organization_id)
+        sql += "\n            LIMIT 1"
+        cur.execute(sql, params)
         return cur.fetchone() is not None
 
     @staticmethod
@@ -100,7 +104,10 @@ class CanonicalReturnService:
 
     @classmethod
     def request_return(cls, cur, actor_user_id: str, order_id: str, order_items: list[dict],
-                       reason: str, idempotency_key: str, claimed_refund_amount_toman: int):
+                       reason: str, idempotency_key: str, claimed_refund_amount_toman: int,
+                       organization_id: str | None = None):
+        if not organization_id:
+            raise ReturnAccessError("RMA requires an active organization context.")
         if not idempotency_key:
             raise ValueError("Return request requires an idempotency key.")
         if claimed_refund_amount_toman < 0:
@@ -108,6 +115,10 @@ class CanonicalReturnService:
         cur.execute("SELECT * FROM returns WHERE request_idempotency_key = %s", (idempotency_key,))
         existing = cur.fetchone()
         if existing:
+            if not cls._retailer_access(cur, actor_user_id, str(existing["retailer_id"]), organization_id):
+                raise ReturnAccessError("Only an active retailer member may replay an RMA for the order.")
+            if str(existing["order_id"]) != str(order_id):
+                raise ReturnStateError("Return idempotency key is bound to another order.")
             return existing
 
         cur.execute(
@@ -129,7 +140,7 @@ class CanonicalReturnService:
             raise KeyError("Order not found or not return-eligible")
         retailer_id = str(rows[0]["retailer_id"])
         vendor_id = str(rows[0]["vendor_id"])
-        if not cls._retailer_access(cur, actor_user_id, retailer_id):
+        if not cls._retailer_access(cur, actor_user_id, retailer_id, organization_id):
             raise ReturnAccessError("Only an active retailer member may open an RMA for the order.")
         if any(str(r["vendor_id"]) != vendor_id for r in rows):
             raise ValueError("A child order must have one canonical vendor before an MVP RMA is opened.")
@@ -259,7 +270,10 @@ class CanonicalReturnService:
 
     @classmethod
     def transition(cls, cur, actor_user_id: str, return_id: str, target_status: str,
-                   reason: str | None = None, approved_refund_amount_toman: int | None = None):
+                   reason: str | None = None, approved_refund_amount_toman: int | None = None,
+                   organization_id: str | None = None):
+        if not organization_id:
+            raise ReturnAccessError("RMA transition requires an active organization context.")
         if approved_refund_amount_toman is not None and approved_refund_amount_toman < 0:
             raise ValueError("Approved refund amount cannot be negative.")
         cur.execute("SELECT * FROM returns WHERE id = %s FOR UPDATE", (return_id,))
@@ -270,9 +284,9 @@ class CanonicalReturnService:
         if target_status not in cls.TRANSITIONS.get(current, set()):
             raise ReturnStateError(f"Invalid RMA transition: {current} -> {target_status}")
 
-        retailer_ok = cls._retailer_access(cur, actor_user_id, str(ret["retailer_id"]))
-        vendor_ok = cls._vendor_access(cur, actor_user_id, str(ret["vendor_id"]))
-        ops_ok = cls._ops_access(cur, actor_user_id)
+        retailer_ok = cls._retailer_access(cur, actor_user_id, str(ret["retailer_id"]), organization_id)
+        vendor_ok = cls._vendor_access(cur, actor_user_id, str(ret["vendor_id"]), organization_id)
+        ops_ok = cls._ops_access(cur, actor_user_id, organization_id)
         if target_status == "CANCELLED":
             allowed = retailer_ok and current in {"RETURN_REQUESTED", "APPROVED", "PICKUP_REQUIRED"}
         elif target_status in {"APPROVED", "PICKUP_REQUIRED", "RETURN_IN_TRANSIT", "RECEIVED", "VENDOR_INSPECTION", "ACCEPTED", "REJECTED"}:

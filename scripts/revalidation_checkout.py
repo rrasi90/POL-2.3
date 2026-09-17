@@ -204,4 +204,50 @@ class RevalidationCheckoutService:
                 if cur.rowcount != 1:
                     raise ValueError(f"Inventory reservation race detected for SKU {alloc['vendor_product_id']}")
 
+        RevalidationCheckoutService._enqueue_submission_events(cur, og_id)
         return {"order_group_id": og_id, "order_count": vendor_count, "orders": child_orders}
+
+    @staticmethod
+    def _enqueue_submission_events(cur, order_group_id):
+        cur.execute(
+            """
+            SELECT 'ORDER_GROUP_SUBMITTED' AS event_name, 'ORDER_GROUP' AS aggregate_type,
+                   og.id AS aggregate_id, om.user_id, om.organization_id,
+                   jsonb_build_object('group_id', og.id) AS payload
+            FROM order_groups og
+            JOIN retailers r ON r.id = og.retailer_id
+            JOIN organizations org ON org.id = r.organization_id
+            JOIN organization_memberships om ON om.organization_id = org.id
+            WHERE og.id = %s AND org.status = 'ACTIVE' AND om.status = 'ACTIVE'
+              AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
+            UNION ALL
+            SELECT 'ORDER_SUBMITTED', 'ORDER', o.id, om.user_id, om.organization_id,
+                   jsonb_build_object('group_id', o.order_group_id,
+                                      'order_id', o.id, 'order_number', o.order_number)
+            FROM orders o
+            JOIN vendors v ON v.id = o.vendor_id
+            JOIN organizations org ON org.id = v.organization_id
+            JOIN organization_memberships om ON om.organization_id = org.id
+            WHERE o.order_group_id = %s AND org.status = 'ACTIVE' AND om.status = 'ACTIVE'
+              AND om.role IN ('VENDOR_OWNER', 'VENDOR_STAFF')
+            ORDER BY event_name, aggregate_id, organization_id, user_id;
+            """,
+            (order_group_id, order_group_id),
+        )
+        for recipient in cur.fetchall():
+            dedupe_key = ":".join(str(recipient[key]) for key in (
+                "event_name", "aggregate_id", "organization_id", "user_id",
+            ))
+            event_id = str(uuid.uuid5(uuid.NAMESPACE_URL, dedupe_key))
+            cur.execute(
+                """
+                INSERT INTO outbox_events (
+                    id, event_id, event_name, aggregate_type, aggregate_id, payload,
+                    status, target_user_id, target_organization_id, dedupe_key, channel_hint
+                ) VALUES (%s,%s,%s,%s,%s,%s,'PENDING',%s,%s,%s,'INBOX')
+                ON CONFLICT (event_name, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING;
+                """,
+                (str(uuid.uuid4()), event_id, recipient["event_name"], recipient["aggregate_type"],
+                 str(recipient["aggregate_id"]), Json(recipient["payload"]), recipient["user_id"],
+                 recipient["organization_id"], dedupe_key),
+            )

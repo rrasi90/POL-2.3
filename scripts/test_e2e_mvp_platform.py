@@ -4,7 +4,7 @@ import os
 from collections import Counter
 from contextlib import contextmanager
 from copy import deepcopy
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
 import psycopg2
@@ -16,6 +16,8 @@ from psycopg2.extras import RealDictCursor
 from scripts.allocation_engine import BasketItem, MultiVendorAllocationEngine, Vendor, VendorSKU
 from scripts.application_boundary import ApplicationContext, POLApplicationBoundary
 from scripts.migration_runner import apply_migration_chain, get_migration_chain
+from scripts import operational_policies
+from scripts.operational_policies import AllocationIntegrityError, validate_vendor_operational_capacity
 
 
 @pytest.fixture
@@ -357,7 +359,9 @@ def test_checkout_persists_multivendor_orders_snapshots_and_reservations(
         assert [len(state[table]) for table in (
             "order_groups", "orders", "order_items", "inventory_reservations", "idempotency",
         )] == [1, 2, 3, 3, 1]
-        assert state["outbox_events"] == []
+        assert Counter(row["event_name"] for row in state["outbox_events"]) == Counter({
+            "ORDER_GROUP_SUBMITTED": 1, "ORDER_SUBMITTED": 2,
+        })
         cur.execute("UPDATE products SET canonical_name_fa = 'Changed live product'")
         cur.execute("UPDATE brands SET name_fa = 'Changed live brand'")
         cur.execute("UPDATE vendor_products SET vendor_sku = vendor_sku || '-changed', pack_quantity = pack_quantity + 1")
@@ -408,7 +412,10 @@ def test_checkout_replay_fingerprint_and_new_request_same_retailer(
         assert [len(after[table]) for table in (
             "order_groups", "orders", "order_items", "inventory_reservations", "idempotency",
         )] == [2, 4, 6, 6, 2]
-        assert after["outbox_events"] == before["outbox_events"]
+        assert after["outbox_events"] != before["outbox_events"]
+        assert Counter(row["event_name"] for row in after["outbox_events"]) == Counter({
+            "ORDER_GROUP_SUBMITTED": 2, "ORDER_SUBMITTED": 4,
+        })
 
 
 def test_checkout_rolls_back_after_partial_sql_writes(
@@ -464,4 +471,138 @@ def test_checkout_rolls_back_after_partial_sql_writes(
         assert [len(after[table]) for table in (
             "order_groups", "orders", "order_items", "inventory_reservations", "idempotency",
         )] == [1, 2, 3, 3, 1]
-        assert after["outbox_events"] == before["outbox_events"]
+        assert Counter(row["event_name"] for row in after["outbox_events"]) == Counter({
+            "ORDER_GROUP_SUBMITTED": 1, "ORDER_SUBMITTED": 2,
+        })
+
+def test_hourly_capacity_uses_ordered_quantity_and_rejects_at_threshold(
+    postgres_database, checkout_catalog, checkout_request,
+):
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            "UPDATE vendor_capacity_profiles SET max_pick_units_per_hour = 5 WHERE vendor_id = %s",
+            (checkout_catalog["lines"][0]["vendor_id"],),
+        )
+    with pytest.raises(AllocationIntegrityError, match="hourly pick capacity exhausted"):
+        with transaction(postgres_database) as cur:
+            POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
+    with transaction(postgres_database) as cur:
+        cur.execute("SELECT count(*) AS c FROM order_groups")
+        assert cur.fetchone()["c"] == 0
+        cur.execute("SELECT count(*) AS c FROM outbox_events")
+        assert cur.fetchone()["c"] == 0
+        cur.execute("UPDATE vendor_capacity_profiles SET max_pick_units_per_hour = 7")
+    with transaction(postgres_database) as cur:
+        POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            """
+            SELECT sum(oi.ordered_quantity) AS units
+            FROM order_items oi JOIN orders o ON o.id = oi.order_id
+            WHERE o.vendor_id = %s
+            """,
+            (checkout_catalog["lines"][0]["vendor_id"],),
+        )
+        assert cur.fetchone()["units"] == 7
+
+
+@pytest.mark.parametrize("status,age_minutes,limit,allowed", [
+    ("SUBMITTED", 30, 13, False),
+    ("SUBMITTED", 30, 14, True),
+    ("CANCELLED", 30, 7, True),
+    ("REJECTED", 30, 7, True),
+    ("SUBMITTED", 61, 7, True),
+])
+def test_hourly_capacity_counts_recent_orders(
+    postgres_database, checkout_catalog, checkout_request, status, age_minutes, limit, allowed,
+):
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    with transaction(postgres_database) as cur:
+        first = POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
+        cur.execute(
+            "UPDATE orders SET order_status=%s, created_at=now() - %s * interval '1 minute' WHERE vendor_id=%s",
+            (status, age_minutes, vendor_id),
+        )
+        cur.execute(
+            "UPDATE vendor_capacity_profiles SET max_pick_units_per_hour=%s WHERE vendor_id=%s",
+            (limit, vendor_id),
+        )
+        request = persist_request(cur, checkout_catalog)
+    if allowed:
+        with transaction(postgres_database) as cur:
+            second = POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(request))
+            assert second["order_group_id"] != first["order_group_id"]
+    else:
+        with transaction(postgres_database) as cur:
+            before = snapshot(cur)
+        with pytest.raises(AllocationIntegrityError, match="hourly pick capacity exhausted: 14 > 13"):
+            with transaction(postgres_database) as cur:
+                POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(request))
+        with transaction(postgres_database) as cur:
+            assert snapshot(cur) == before
+
+
+def freeze_policy_clock(monkeypatch, instant):
+    class FixedDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return instant.astimezone(tz) if tz else instant.replace(tzinfo=None)
+
+    monkeypatch.setattr(operational_policies, "datetime", FixedDatetime)
+
+
+@pytest.mark.parametrize("created_at,status,allowed", [
+    ("2026-09-16T20:29:59+00:00", "SUBMITTED", True),
+    ("2026-09-16T20:30:00+00:00", "SUBMITTED", False),
+    ("2026-09-17T20:30:00+00:00", "SUBMITTED", True),
+    ("2026-09-16T20:30:00+00:00", "CANCELLED", True),
+    ("2026-09-16T20:30:00+00:00", "REJECTED", True),
+])
+def test_daily_capacity_uses_vendor_local_day(
+    postgres_database, checkout_catalog, checkout_request, monkeypatch, created_at, status, allowed,
+):
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    with transaction(postgres_database) as cur:
+        POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
+        cur.execute(
+            "UPDATE orders SET created_at=%s, order_status=%s WHERE vendor_id=%s",
+            (datetime.fromisoformat(created_at), status, vendor_id),
+        )
+        cur.execute(
+            "UPDATE vendor_capacity_profiles SET timezone='Asia/Tehran', max_orders_per_day=1 WHERE vendor_id=%s",
+            (vendor_id,),
+        )
+    freeze_policy_clock(monkeypatch, datetime(2026, 9, 16, 21, tzinfo=timezone.utc))
+    allocations = [{"vendor_id": vendor_id, "quantity": 7, "amount_toman": 3100000}]
+    with transaction(postgres_database) as cur:
+        if allowed:
+            validate_vendor_operational_capacity(cur, allocations)
+        else:
+            with pytest.raises(AllocationIntegrityError, match="daily order capacity exhausted: 2 > 1"):
+                validate_vendor_operational_capacity(cur, allocations)
+
+
+@pytest.mark.parametrize("instant,allowed", [
+    ("2026-09-16T19:30:00+00:00", True),
+    ("2026-09-16T21:30:00+00:00", True),
+    ("2026-09-17T00:00:00+00:00", False),
+])
+def test_overnight_operating_window_remains_enforced(
+    postgres_database, checkout_catalog, monkeypatch, instant, allowed,
+):
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    with transaction(postgres_database) as cur:
+        cur.execute("UPDATE vendor_capacity_profiles SET timezone='Asia/Tehran' WHERE vendor_id=%s", (vendor_id,))
+        for weekday in (3, 4):
+            insert_row(
+                cur, "vendor_operating_windows", vendor_id=vendor_id, weekday=weekday,
+                timezone="Asia/Tehran", opens_at="22:00", closes_at="02:00", is_active=True,
+            )
+    freeze_policy_clock(monkeypatch, datetime.fromisoformat(instant))
+    allocations = [{"vendor_id": vendor_id, "quantity": 7, "amount_toman": 3100000}]
+    with transaction(postgres_database) as cur:
+        if allowed:
+            validate_vendor_operational_capacity(cur, allocations)
+        else:
+            with pytest.raises(AllocationIntegrityError, match="outside its operating window"):
+                validate_vendor_operational_capacity(cur, allocations)

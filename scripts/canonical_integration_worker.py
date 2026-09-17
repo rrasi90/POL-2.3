@@ -14,6 +14,7 @@ class IntegrationWorkerError(RuntimeError):
 
 class CanonicalIntegrationWorker:
     ALLOWED_DIRECT_NOTIFICATION_EVENTS = {
+        "ORDER_GROUP_SUBMITTED",
         "ORDER_SUBMITTED",
         "ORDER_ACCEPTED",
         "ORDER_REJECTED",

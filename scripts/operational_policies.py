@@ -115,7 +115,7 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
             if capacity["max_pick_units_per_hour"] is not None:
                 cur.execute(
                     """
-                    SELECT COALESCE(SUM(oi.quantity), 0) AS picked_units
+                    SELECT COALESCE(SUM(oi.ordered_quantity), 0) AS picked_units
                     FROM order_items oi
                     JOIN orders o ON o.id = oi.order_id
                     WHERE o.vendor_id = %s
