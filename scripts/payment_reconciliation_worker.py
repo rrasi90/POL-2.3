@@ -1,9 +1,8 @@
 """Canonical payment reconciliation worker for NON_CUSTODIAL_DIRECT.
 
 The worker never takes custody of funds. It reconciles evidence already recorded
-by POL and only marks a payment successful when a trusted observation matches the
-expected payment amount. Evidence rows are observations by default, not additive
-cash fragments, so independent confirmations cannot double-count one payment.
+by POL and only marks a payment successful when trusted observations are mutually
+consistent and at least one matches the expected payment amount.
 """
 
 from __future__ import annotations
@@ -101,26 +100,53 @@ class PaymentReconciliationWorker:
             )
             return "NO_EVIDENCE"
 
-        # SINGLE_PAYMENT evidence rows are independent observations of the same
-        # expected payment. Never sum them. SPLIT_PAYMENT is reserved for a
-        # separately approved future flow and therefore never participates in
-        # MVP reconciliation.
         observed_values = [int(r["observed_amount_toman"]) for r in observed_single]
-        max_observed = max(observed_values)
-        exact_match = any(value == expected for value in observed_values)
+        distinct_values = set(observed_values)
         references = [r["external_reference"] for r in observed_single if r["external_reference"]]
+        conflicting = len(distinct_values) > 1
+        matches_expected = any(value == expected for value in observed_values)
+        conflicting_match = conflicting and matches_expected
+        max_observed = max(observed_values)
         details = {
             "evidence_count": len(evidence),
             "trusted_count": len(trusted),
             "observation_count": len(observed_values),
             "unsupported_split_count": len(unsupported_split),
+            "observed_amounts": sorted(distinct_values),
             "max_observed_amount": max_observed,
             "references": references,
-            "aggregation": "single_payment_observation_max",
+            "conflicting_trusted_observations": conflicting,
+            "aggregation": "single_payment_observation_set",
         }
 
-        if exact_match:
-            outcome = "MATCHED"
+        # A matching observation cannot override another trusted observation that
+        # contradicts it. Conflicting evidence is an exception requiring review.
+        if conflicting_match:
+            cur.execute(
+                """
+                INSERT INTO payment_reconciliation_attempts
+                    (id,reconciliation_case_id,attempt_number,evidence_count,observed_amount_toman,outcome,provider_reference,details)
+                VALUES (%s,%s,%s,%s,%s,'MISMATCH',%s,%s);
+                """,
+                (str(uuid.uuid4()), case_id, case["attempt_count"], len(evidence), expected,
+                 references[0] if references else None, Json(details)),
+            )
+            cur.execute(
+                """
+                UPDATE payment_reconciliation_cases
+                SET status='MISMATCH',
+                    observed_amount_toman=%s,
+                    external_reference=COALESCE(%s, external_reference),
+                    worker_lease_id=NULL,
+                    worker_lease_until=NULL,
+                    next_retry_at=NULL
+                WHERE id=%s AND worker_lease_id=%s;
+                """,
+                (max_observed, references[0] if references else None, case_id, lease_id),
+            )
+            return "MISMATCH"
+
+        if matches_expected:
             matching_ref = next(
                 (r["external_reference"] for r in observed_single if int(r["observed_amount_toman"]) == expected),
                 references[0] if references else None,
@@ -129,33 +155,33 @@ class PaymentReconciliationWorker:
                 """
                 INSERT INTO payment_reconciliation_attempts
                     (id,reconciliation_case_id,attempt_number,evidence_count,observed_amount_toman,outcome,provider_reference,details)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s);
+                VALUES (%s,%s,%s,%s,%s,'MATCHED',%s,%s);
                 """,
                 (str(uuid.uuid4()), case_id, case["attempt_count"], len(evidence), expected,
-                 outcome, matching_ref, Json(details)),
+                 matching_ref, Json(details)),
             )
             cur.execute(
                 """
                 UPDATE payment_reconciliation_cases
-                SET status = 'MATCHED',
-                    observed_amount_toman = %s,
-                    external_reference = COALESCE(%s, external_reference),
-                    resolved_at = now(),
-                    resolved_by_user_id = NULL,
-                    worker_lease_id = NULL,
-                    worker_lease_until = NULL,
-                    next_retry_at = NULL
-                WHERE id = %s AND worker_lease_id = %s;
+                SET status='MATCHED',
+                    observed_amount_toman=%s,
+                    external_reference=COALESCE(%s, external_reference),
+                    resolved_at=now(),
+                    resolved_by_user_id=NULL,
+                    worker_lease_id=NULL,
+                    worker_lease_until=NULL,
+                    next_retry_at=NULL
+                WHERE id=%s AND worker_lease_id=%s;
                 """,
                 (expected, matching_ref, case_id, lease_id),
             )
             cur.execute(
                 """
                 UPDATE payments
-                SET payment_status = 'SUCCESS',
-                    reference_number = COALESCE(reference_number, %s),
-                    paid_at = COALESCE(paid_at, now())
-                WHERE id = %s AND payment_status IN ('PENDING','INITIATED');
+                SET payment_status='SUCCESS',
+                    reference_number=COALESCE(reference_number,%s),
+                    paid_at=COALESCE(paid_at,now())
+                WHERE id=%s AND payment_status IN ('PENDING','INITIATED');
                 """,
                 (matching_ref, case["payment_id"]),
             )
@@ -175,7 +201,7 @@ class PaymentReconciliationWorker:
                  str(case["payment_id"]), expected, matching_ref,
                  "payment_reconciled:" + str(case["payment_id"]), str(case["payment_id"])),
             )
-            return outcome
+            return "MATCHED"
 
         observed_total = max_observed
         outcome = "PARTIAL" if observed_total < expected else "MISMATCH"
