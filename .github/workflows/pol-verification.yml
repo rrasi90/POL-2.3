@@ -65,6 +65,7 @@ jobs:
           PGPORT: 5432
           PGUSER: postgres
           POL_PG_PORT: 5432
+          POL_E2E_PG_DSN: "host=127.0.0.1 port=5432 dbname=postgres user=postgres"
         run: |
           python scripts/run_verification_suite.py
 

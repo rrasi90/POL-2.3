@@ -19,9 +19,32 @@ if hasattr(sys.stdout, "reconfigure"):
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
+HIERARCHY_FILES = [
+    REPO_ROOT / "POL_00_PROJECT_CONTROL" / "CURRENT_SOURCE_OF_TRUTH.md",
+    REPO_ROOT / "06_PRODUCT" / "Order_Lifecycle.md",
+    REPO_ROOT / "08_DATA" / "DOMAIN_MODEL.md",
+    REPO_ROOT / "08_DATA" / "MULTI_VENDOR_ORDERING_MODEL.md",
+]
+
+HIERARCHY_ENTITIES = ("Basket", "AllocationPlan", "OrderGroup", "Order", "OrderItem")
+
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def check_migration_chain(directory: Path):
+    migrations = sorted(
+        directory.glob("[0-9][0-9][0-9]_*.sql"),
+        key=lambda path: (int(path.name[:3]), path.name),
+    )
+    if not migrations:
+        return migrations, ["No canonical migrations found"]
+    numbers = [int(path.name[:3]) for path in migrations]
+    expected = list(range(1, numbers[-1] + 1))
+    if numbers != expected:
+        return migrations, [f"Migration chain has gaps, duplicates or a missing 001: found {numbers}, expected {expected}"]
+    return migrations, []
 
 
 def run_checks() -> bool:
@@ -29,27 +52,27 @@ def run_checks() -> bool:
     failed = 0
     errors: list[str] = []
 
+    def checked_read(path):
+        try:
+            return read_text(path)
+        except (OSError, UnicodeError) as exc:
+            errors.append(f"Cannot read {path.relative_to(REPO_ROOT).as_posix()}: {type(exc).__name__}")
+            return ""
+
     print("=" * 80)
     print("POL REPOSITORY CONSISTENCY & ARCHITECTURAL INTEGRITY AUDIT")
     print(f"Repository Root: {REPO_ROOT}")
     print("=" * 80)
 
-    migrations = sorted(
-        REPO_ROOT.joinpath("migrations").glob("[0-9][0-9][0-9]_*.sql"),
-        key=lambda p: int(p.name[:3]),
-    )
-    if not migrations:
-        errors.append("No canonical migrations found")
+    migrations, migration_errors = check_migration_chain(REPO_ROOT / "migrations")
+    errors.extend(migration_errors)
+    if migration_errors:
+        failed += 1
     else:
-        numbers = [int(p.name[:3]) for p in migrations]
-        expected = list(range(numbers[0], numbers[-1] + 1))
-        if numbers != expected:
-            errors.append(f"Migration chain has gaps: found {numbers}, expected {expected}")
-        else:
-            print(f"  [PASS] Current migration chain is contiguous: {numbers[0]:03d}..{numbers[-1]:03d} ({len(numbers)} files).")
-            passed += 1
+        print(f"  [PASS] Current migration chain is contiguous: 001..{int(migrations[-1].name[:3]):03d} ({len(migrations)} files).")
+        passed += 1
 
-    ddl = "\n".join(read_text(p) for p in migrations) if migrations else ""
+    ddl = "\n".join(checked_read(p) for p in migrations)
 
     required_tables = {
         "users", "organizations", "organization_memberships", "retailers", "vendors",
@@ -79,8 +102,8 @@ def run_checks() -> bool:
         errors.append("Canonical decision files are missing")
         failed += 1
     else:
-        dec = read_text(dec_file)
-        assumptions = read_text(assumptions_file)
+        dec = checked_read(dec_file)
+        assumptions = checked_read(assumptions_file)
         missing_decisions = [f"D-{i:03d}" for i in range(1, 18) if f"D-{i:03d}" not in dec]
         missing_assumption_refs = [f"D-{i:03d}" for i in range(1, 18) if f"D-{i:03d}" not in assumptions]
         if missing_decisions or missing_assumption_refs:
@@ -90,14 +113,9 @@ def run_checks() -> bool:
             print("  [PASS] D-001..D-017 are present in canonical decision sources.")
             passed += 1
 
-    hierarchy_files = [
-        REPO_ROOT / "POL_00_PROJECT_CONTROL" / "CURRENT_SOURCE_OF_TRUTH.md",
-        REPO_ROOT / "06_PRODUCT" / "Order_Lifecycle.md",
-        REPO_ROOT / "08_DATA" / "DOMAIN_MODEL.md",
-        REPO_ROOT / "08_DATA" / "MULTI_VENDOR_ORDERING_MODEL.md",
-    ]
-    hierarchy_ok = all(p.exists() for p in hierarchy_files) and all(
-        "Basket" in read_text(p) and "OrderItem" in read_text(p) for p in hierarchy_files if p.exists()
+    hierarchy_ok = all(p.exists() for p in HIERARCHY_FILES) and all(
+        all(re.search(rf"\b{re.escape(entity)}s?\b", checked_read(p)) for entity in HIERARCHY_ENTITIES)
+        for p in HIERARCHY_FILES if p.exists()
     )
     if hierarchy_ok:
         print("  [PASS] Canonical Basket -> AllocationPlan -> OrderGroup -> Order -> OrderItem hierarchy is documented.")
@@ -112,7 +130,7 @@ def run_checks() -> bool:
         REPO_ROOT / "scripts" / "canonical_integration_worker.py",
         REPO_ROOT / "scripts" / "payment_reconciliation_worker.py",
     ]
-    runtime_text = "\n".join(read_text(p) for p in runtime_files if p.exists())
+    runtime_text = "\n".join(checked_read(p) for p in runtime_files if p.exists())
     required_guards = {
         "checkout_order_items": "INSERT INTO order_items" in runtime_text,
         "checkout_vendor_grouping": "allocations_by_vendor" in runtime_text,
@@ -130,7 +148,7 @@ def run_checks() -> bool:
         passed += 1
 
     migration_024 = REPO_ROOT / "migrations" / "024_runtime_bug_fixes_and_audit_guards.sql"
-    if migration_024.exists() and "outbox_events_status_canonical_check" in read_text(migration_024):
+    if migration_024.exists() and "outbox_events_status_canonical_check" in checked_read(migration_024):
         print("  [PASS] Migration 024 runtime audit guards are present.")
         passed += 1
     else:
@@ -140,7 +158,7 @@ def run_checks() -> bool:
     python_errors = []
     for path in (REPO_ROOT / "scripts").rglob("*.py"):
         try:
-            ast.parse(read_text(path), filename=str(path))
+            ast.parse(checked_read(path), filename=str(path))
         except SyntaxError as exc:
             python_errors.append(f"{path.relative_to(REPO_ROOT)}:{exc.lineno}:{exc.offset}: {exc.msg}")
     if python_errors:
@@ -164,6 +182,7 @@ def run_checks() -> bool:
         errors.append("Master SKU dataset missing")
         failed += 1
 
+    failed = max(failed, len(errors))
     print("\n" + "=" * 80)
     print(f"PASS: {passed} | FAIL: {failed}")
     if errors:

@@ -1,37 +1,467 @@
-"""Canonical MVP E2E contract entrypoint.
+import hashlib
+import json
+import os
+from collections import Counter
+from contextlib import contextmanager
+from copy import deepcopy
+from datetime import timedelta
+from uuid import UUID, uuid4
 
-The former master E2E mixed legacy domain-service mutations with canonical
-checkout. This entrypoint deliberately exercises the canonical application
-boundary contract and delegates detailed regression assertions to the dedicated
-canonical regression module.
-"""
+import psycopg2
+import pytest
+from psycopg2 import sql
+from psycopg2.extensions import parse_dsn
+from psycopg2.extras import RealDictCursor
 
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-
-
-def _read(path: str) -> str:
-    return (ROOT / path).read_text(encoding="utf-8")
-
-
-def test_master_e2e_uses_canonical_checkout_boundary():
-    checkout = _read("scripts/checkout_gateway.py")
-    boundary = _read("scripts/application_boundary.py")
-    revalidation = _read("scripts/revalidation_checkout.py")
-    assert "CanonicalCheckoutGateway" in checkout
-    assert "RevalidationCheckoutService" in checkout
-    assert "CanonicalCheckoutGateway" in boundary
-    assert "INSERT INTO order_items" in revalidation
-    assert "allocations_by_vendor" in revalidation
-    assert "from scripts.domain_services import" not in _read("scripts/test_e2e_mvp_platform.py")
+from scripts.allocation_engine import BasketItem, MultiVendorAllocationEngine, Vendor, VendorSKU
+from scripts.application_boundary import ApplicationContext, POLApplicationBoundary
+from scripts.migration_runner import apply_migration_chain, get_migration_chain
 
 
-def test_master_e2e_covers_the_high_risk_checkout_invariants():
-    regression = _read("scripts/test_canonical_runtime_regressions.py")
-    assert "test_checkout_persists_order_items_and_groups_by_vendor" in regression
-    assert "test_checkout_idempotency_key_is_bound_to_request_fingerprint" in regression
-    assert "test_rma_aggregates_duplicate_order_item_lines" in regression
-    assert "test_refund_requires_operational_actor_and_two_person_control" in regression
-    assert "test_unknown_outbox_events_leave_pending_queue_and_enter_failed_quarantine" in regression
-    assert "test_payment_reconciliation_rejects_conflicting_trusted_evidence" in regression
+@pytest.fixture
+def postgres_database():
+    dsn = os.environ.get("POL_E2E_PG_DSN")
+    if not dsn:
+        pytest.fail("Parent must supply POL_E2E_PG_DSN for an isolated PostgreSQL 18 server; no local fallback.")
+    config = parse_dsn(dsn)
+    if not all(config.get(key) for key in ("host", "port", "dbname", "user")):
+        pytest.fail("POL_E2E_PG_DSN must explicitly specify host, port, dbname and user.")
+    database = f"pol_e2e_{uuid4().hex}"
+    admin = psycopg2.connect(**dict(config, connect_timeout=5))
+    admin.autocommit = True
+    created = False
+    try:
+        assert admin.server_version // 10000 == 18, "D-015 requires PostgreSQL 18."
+        with admin.cursor() as cur:
+            cur.execute(sql.SQL("CREATE DATABASE {} TEMPLATE template0").format(sql.Identifier(database)))
+        created = True
+        test_config = dict(config, dbname=database, connect_timeout=5, options="-c search_path=public")
+        conn = psycopg2.connect(**test_config)
+        try:
+            apply_migration_chain(conn, get_migration_chain(), verbose=False)
+            conn.commit()
+        finally:
+            conn.close()
+        yield test_config
+    finally:
+        try:
+            if created:
+                with admin.cursor() as cur:
+                    cur.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(database)))
+        finally:
+            admin.close()
+
+
+@contextmanager
+def transaction(config):
+    conn = psycopg2.connect(**config)
+    try:
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                yield cur
+    finally:
+        conn.close()
+
+
+def insert_row(cur, table, **values):
+    cur.execute(
+        sql.SQL("INSERT INTO {} ({}) VALUES ({}) RETURNING *").format(
+            sql.Identifier(table),
+            sql.SQL(", ").join(map(sql.Identifier, values)),
+            sql.SQL(", ").join(sql.Placeholder() for _ in values),
+        ),
+        tuple(values.values()),
+    )
+    return cur.fetchone()
+
+
+@pytest.fixture
+def checkout_catalog(postgres_database):
+    with transaction(postgres_database) as cur:
+        actors = []
+        for index, org_type in enumerate(("RETAILER", "VENDOR", "VENDOR")):
+            user = insert_row(
+                cur, "users", phone_number=f"+98916000000{index}",
+                role=f"{org_type}_OWNER", full_name=f"Batch1 {org_type} {index}",
+            )
+            org = insert_row(cur, "organizations", name=f"Batch1 {index}", org_type=org_type, status="ACTIVE")
+            insert_row(
+                cur, "organization_memberships", organization_id=org["id"],
+                user_id=user["id"], role=f"{org_type}_OWNER", status="ACTIVE",
+            )
+            actors.append((str(user["id"]), str(org["id"])))
+        retailer = insert_row(
+            cur, "retailers", user_id=actors[0][0], organization_id=actors[0][1],
+            store_name="Batch1 retailer", city="Ahvaz", neighborhood="Naderi", address="Batch1 address",
+        )
+        vendor_ids = []
+        for index, (user_id, organization_id) in enumerate(actors[1:]):
+            vendor = insert_row(
+                cur, "vendors", user_id=user_id, organization_id=organization_id,
+                business_name=f"Batch1 vendor {index}", warehouse_address="Ahvaz hub",
+                min_order_value_toman=1000000, status="ACTIVE",
+            )
+            vendor_ids.append(str(vendor["id"]))
+            insert_row(cur, "vendor_capacity_profiles", vendor_id=vendor["id"], timezone="UTC")
+        brand = insert_row(cur, "brands", name_fa="برند آزمون", slug="batch1-brand")
+        category = insert_row(cur, "categories", name_fa="مواد غذایی", slug="batch1-food")
+        subcategory = insert_row(
+            cur, "subcategories", category_id=category["id"], name_fa="آزمون", slug="batch1-subcategory",
+        )
+        lines = []
+        for index, (vendor_id, name, unit, pack, quantity, price) in enumerate((
+            (vendor_ids[0], "برنج آزمون", "CARTON", 6, 3, 500000),
+            (vendor_ids[0], "روغن آزمون", "BOX", 4, 4, 400000),
+            (vendor_ids[1], "چای آزمون", "PACK", 8, 5, 300000),
+        )):
+            product = insert_row(
+                cur, "products", master_sku=f"BATCH1-{index}", canonical_name_fa=name,
+                brand_id=brand["id"], category_id=category["id"], subcategory_id=subcategory["id"],
+                default_pack_unit=unit, default_pack_quantity=pack, is_verified=True,
+            )
+            offer = insert_row(
+                cur, "vendor_products", vendor_id=vendor_id, product_id=product["id"],
+                vendor_sku=f"BATCH1-SKU-{index}", packaging_unit=unit, pack_quantity=pack,
+                sales_unit=unit, is_active=True, listing_status="ACTIVE",
+            )
+            insert_row(
+                cur, "vendor_inventory", vendor_product_id=offer["id"], inventory_unit=unit,
+                physical_quantity=100, reserved_quantity=0, moq=2,
+            )
+            insert_row(cur, "vendor_prices", vendor_product_id=offer["id"], price_toman=price, is_current=True)
+            lines.append({
+                "product_id": str(product["id"]), "vendor_product_id": str(offer["id"]),
+                "vendor_id": vendor_id, "quantity": quantity, "unit_price_toman": price,
+                "product_name_snapshot": name, "brand_name_snapshot": brand["name_fa"],
+                "vendor_sku_snapshot": offer["vendor_sku"], "packaging_unit_snapshot": unit,
+                "pack_quantity_snapshot": pack,
+            })
+    return {
+        "retailer_id": str(retailer["id"]), "lines": lines,
+        "context": ApplicationContext(actors[0][0], actors[0][1], f"batch1-{uuid4().hex}"),
+    }
+
+
+def persist_request(cur, catalog):
+    basket = insert_row(cur, "baskets", retailer_id=catalog["retailer_id"], status="OPEN", version=1)
+    basket_items = []
+    for line in catalog["lines"]:
+        row = insert_row(
+            cur, "basket_items", basket_id=basket["id"], product_id=line["product_id"],
+            requested_quantity=line["quantity"], requested_unit=line["packaging_unit_snapshot"],
+            pack_quantity=line["pack_quantity_snapshot"],
+        )
+        basket_items.append(BasketItem(
+            str(row["id"]), str(row["product_id"]), row["requested_quantity"], row["requested_unit"],
+        ))
+    cur.execute("SELECT id, business_name, status, min_order_value_toman FROM vendors ORDER BY id")
+    vendors = {
+        str(row["id"]): Vendor(
+            id=str(row["id"]), name=row["business_name"], active=row["status"] == "ACTIVE",
+            mov_toman=row["min_order_value_toman"], delivery_zones=("Ahvaz",),
+        )
+        for row in cur.fetchall()
+    }
+    cur.execute("""
+        SELECT vp.id, vp.vendor_id, vp.product_id, vp.packaging_unit,
+               p.price_toman, i.physical_quantity, i.reserved_quantity, i.moq
+        FROM vendor_products vp
+        JOIN vendor_inventory i ON i.vendor_product_id = vp.id
+        JOIN vendor_prices p ON p.vendor_product_id = vp.id AND p.is_current = TRUE
+        ORDER BY vp.id
+    """)
+    skus = [VendorSKU(
+        str(row["id"]), str(row["vendor_id"]), str(row["product_id"]), row["packaging_unit"],
+        row["price_toman"], row["physical_quantity"], row["reserved_quantity"], row["moq"],
+    ) for row in cur.fetchall()]
+    engine = MultiVendorAllocationEngine(vendors, skus)
+    plan = engine.allocate(catalog["retailer_id"], "Ahvaz", basket_items)
+    repeated = engine.allocate(catalog["retailer_id"], "Ahvaz", basket_items)
+    assert plan.items == repeated.items
+    assert plan.vendor_subtotals == repeated.vendor_subtotals
+    assert plan.total_amount_toman == repeated.total_amount_toman == 4600000
+    assert plan.is_fully_fulfilled and not plan.unfulfilled_items
+    assert plan.vendor_count == repeated.vendor_count == 2
+    assert len(plan.allocated_items) == 3
+    assert sorted(Counter(item.vendor_id for item in plan.items).values()) == [1, 2]
+    assert {
+        (item.master_product_id, item.vendor_sku_id, item.requested_quantity)
+        for item in plan.items
+    } == {
+        (line["product_id"], line["vendor_product_id"], line["quantity"])
+        for line in catalog["lines"]
+    }
+    cur.execute("SELECT now() + interval '15 minutes' AS expires_at")
+    expires_at = cur.fetchone()["expires_at"]
+    insert_row(
+        cur, "allocation_plans", id=plan.plan_id, basket_id=basket["id"], status="CONFIRMED",
+        basket_version=basket["version"], expires_at=expires_at, vendor_count=plan.vendor_count,
+        total_estimated_toman=plan.total_amount_toman,
+    )
+    for item in plan.items:
+        insert_row(
+            cur, "allocation_items", allocation_plan_id=plan.plan_id, basket_item_id=item.basket_item_id,
+            vendor_id=item.vendor_id, vendor_product_id=item.vendor_sku_id,
+            allocated_quantity=item.requested_quantity, allocated_unit=item.packaging_unit,
+            unit_price_snapshot_toman=item.unit_price_toman, line_total_toman=item.total_price_toman,
+            status=item.status,
+        )
+    return {
+        "basket_id": str(basket["id"]), "plan_id": plan.plan_id, "retailer_id": catalog["retailer_id"],
+        "idempotency_key": f"batch1-{uuid4().hex}",
+        "address_snapshot": {"city": "Ahvaz", "address": "نشانی آزمون", "postal_code": "6130000000"},
+        "vendor_allocations": [{
+            "vendor_id": item.vendor_id, "vendor_product_id": item.vendor_sku_id,
+            "quantity": item.requested_quantity, "unit_price_toman": item.unit_price_toman,
+            "amount_toman": item.total_price_toman,
+        } for item in plan.allocated_items],
+    }
+
+
+@pytest.fixture
+def checkout_request(postgres_database, checkout_catalog):
+    with transaction(postgres_database) as cur:
+        return persist_request(cur, checkout_catalog)
+
+
+def snapshot(cur):
+    state = {}
+    for table in (
+        "order_groups", "orders", "order_items", "inventory_reservations", "vendor_inventory",
+        "outbox_events", "baskets", "basket_items", "allocation_plans", "allocation_items",
+    ):
+        cur.execute(sql.SQL("SELECT * FROM {} ORDER BY id").format(sql.Identifier(table)))
+        state[table] = [dict(row) for row in cur.fetchall()]
+    cur.execute("""
+        SELECT checkout_idempotency_key, checkout_request_fingerprint, id
+        FROM order_groups ORDER BY checkout_idempotency_key
+    """)
+    state["idempotency"] = [dict(row) for row in cur.fetchall()]
+    return state
+
+
+def fingerprint(request):
+    payload = {key: value for key, value in request.items() if key != "idempotency_key"}
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def assert_checkout(cur, catalog, request, result):
+    group_id = result["order_group_id"]
+    UUID(str(group_id))
+    assert result["order_count"] == 2
+    assert not result.get("idempotent_replay", False)
+    cur.execute("SELECT * FROM order_groups WHERE id = %s", (group_id,))
+    group = cur.fetchone()
+    assert str(group["basket_id"]) == request["basket_id"]
+    assert str(group["allocation_plan_id"]) == request["plan_id"]
+    assert str(group["retailer_id"]) == catalog["retailer_id"]
+    assert group["checkout_idempotency_key"] == request["idempotency_key"]
+    assert group["checkout_request_fingerprint"] == fingerprint(request)
+    assert (group["total_amount_toman"], group["order_count"], group["group_status"]) == (4600000, 2, "ACTIVE")
+    cur.execute("""
+        SELECT bi.product_id, bi.requested_quantity, bi.requested_unit, bi.pack_quantity,
+               ai.vendor_id, ai.vendor_product_id, ai.allocated_quantity, ai.allocated_unit,
+               ai.unit_price_snapshot_toman, ai.line_total_toman, ai.status
+        FROM allocation_items ai
+        JOIN basket_items bi ON bi.id = ai.basket_item_id
+        WHERE ai.allocation_plan_id = %s AND bi.basket_id = %s
+    """, (request["plan_id"], request["basket_id"]))
+    allocated = cur.fetchall()
+    assert len(allocated) == 3
+    assert {tuple(row.values()) for row in allocated} == {
+        (
+            line["product_id"], line["quantity"], line["packaging_unit_snapshot"],
+            line["pack_quantity_snapshot"], line["vendor_id"], line["vendor_product_id"],
+            line["quantity"], line["packaging_unit_snapshot"], line["unit_price_toman"],
+            line["quantity"] * line["unit_price_toman"], "ALLOCATED",
+        )
+        for line in catalog["lines"]
+    }
+    cur.execute("SELECT * FROM orders WHERE order_group_id = %s ORDER BY vendor_id", (group_id,))
+    orders = cur.fetchall()
+    assert len(orders) == len(result["orders"]) == 2
+    assert {str(row["id"]) for row in orders} == {str(row["id"]) for row in result["orders"]}
+    assert {str(row["vendor_id"]) for row in orders} == {line["vendor_id"] for line in catalog["lines"]}
+    seen_products = []
+    for order in orders:
+        lines = [line for line in catalog["lines"] if line["vendor_id"] == str(order["vendor_id"])]
+        assert str(order["retailer_id"]) == catalog["retailer_id"]
+        assert order["order_status"] == "SUBMITTED"
+        assert order["dispute_status"] == "NONE"
+        assert order["delivery_address_snapshot"] == request["address_snapshot"]
+        assert order["total_amount_toman"] == sum(line["quantity"] * line["unit_price_toman"] for line in lines)
+        assert order["commission_rate"] == order["commission_amount_toman"] == 0
+        cur.execute("SELECT * FROM order_items WHERE order_id = %s", (order["id"],))
+        items = cur.fetchall()
+        assert len(items) == len(lines)
+        by_offer = {str(item["vendor_product_id"]): item for item in items}
+        assert set(by_offer) == {line["vendor_product_id"] for line in lines}
+        for line in lines:
+            item = dict(by_offer[line["vendor_product_id"]])
+            UUID(str(item.pop("id")))
+            assert item.pop("created_at") == order["created_at"] == group["created_at"]
+            assert item == {
+                "order_id": order["id"], "product_id": line["product_id"],
+                "vendor_product_id": line["vendor_product_id"],
+                "product_name_snapshot": line["product_name_snapshot"],
+                "brand_name_snapshot": line["brand_name_snapshot"],
+                "vendor_sku_snapshot": line["vendor_sku_snapshot"],
+                "packaging_unit_snapshot": line["packaging_unit_snapshot"],
+                "pack_quantity_snapshot": line["pack_quantity_snapshot"],
+                "ordered_quantity": line["quantity"], "accepted_quantity": None, "delivered_quantity": 0,
+                "unit_price_toman": line["unit_price_toman"],
+                "total_line_amount_toman": line["quantity"] * line["unit_price_toman"],
+                "fulfillment_status": "PENDING", "dispute_reason": None,
+            }
+            seen_products.append(str(item["product_id"]))
+        cur.execute("SELECT * FROM inventory_reservations WHERE order_id = %s", (order["id"],))
+        reservations = cur.fetchall()
+        assert len(reservations) == len(lines)
+        by_offer = {str(row["vendor_product_id"]): row for row in reservations}
+        assert set(by_offer) == {line["vendor_product_id"] for line in lines}
+        for line in lines:
+            reservation = by_offer[line["vendor_product_id"]]
+            UUID(str(reservation["id"]))
+            assert reservation["quantity"] == line["quantity"]
+            assert reservation["status"] == "ACTIVE"
+            assert reservation["idempotency_key"] == f"res-{request['idempotency_key']}-{line['vendor_product_id']}"
+            assert reservation["order_item_id"] is None
+            assert reservation["released_at"] is reservation["consumed_at"] is None
+            assert reservation["created_at"] == group["created_at"]
+            assert reservation["expires_at"] - reservation["created_at"] == timedelta(minutes=15)
+    assert Counter(seen_products) == Counter({line["product_id"]: 1 for line in catalog["lines"]})
+
+
+def assert_inventory(cur, catalog, checkouts):
+    cur.execute("SELECT * FROM vendor_inventory")
+    rows = cur.fetchall()
+    assert len(rows) == 3
+    by_offer = {str(row["vendor_product_id"]): row for row in rows}
+    for line in catalog["lines"]:
+        inventory = by_offer[line["vendor_product_id"]]
+        assert inventory["physical_quantity"] == 100
+        assert inventory["reserved_quantity"] == line["quantity"] * checkouts
+        assert inventory["available_quantity"] == 100 - line["quantity"] * checkouts
+
+
+def test_checkout_persists_multivendor_orders_snapshots_and_reservations(
+    postgres_database, checkout_catalog, checkout_request,
+):
+    with transaction(postgres_database) as cur:
+        result = POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
+    with transaction(postgres_database) as cur:
+        assert_checkout(cur, checkout_catalog, checkout_request, result)
+        assert_inventory(cur, checkout_catalog, 1)
+        state = snapshot(cur)
+        assert [len(state[table]) for table in (
+            "order_groups", "orders", "order_items", "inventory_reservations", "idempotency",
+        )] == [1, 2, 3, 3, 1]
+        assert state["outbox_events"] == []
+        cur.execute("UPDATE products SET canonical_name_fa = 'Changed live product'")
+        cur.execute("UPDATE brands SET name_fa = 'Changed live brand'")
+        cur.execute("UPDATE vendor_products SET vendor_sku = vendor_sku || '-changed', pack_quantity = pack_quantity + 1")
+    with transaction(postgres_database) as cur:
+        assert_checkout(cur, checkout_catalog, checkout_request, result)
+
+
+def test_checkout_replay_fingerprint_and_new_request_same_retailer(
+    postgres_database, checkout_catalog, checkout_request,
+):
+    with transaction(postgres_database) as cur:
+        first = POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
+        cur.execute("SELECT txid_current() AS id")
+        first_transaction = cur.fetchone()["id"]
+    with transaction(postgres_database) as cur:
+        before = snapshot(cur)
+    with transaction(postgres_database) as cur:
+        replay = POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
+        cur.execute("SELECT txid_current() AS id")
+        assert cur.fetchone()["id"] != first_transaction
+        assert replay["idempotent_replay"] is True
+        assert str(replay["order_group"]["id"]) == str(first["order_group_id"])
+        assert {
+            str(row["id"]): dict(row) for row in replay["orders"]
+        } == {str(row["id"]): dict(row) for row in first["orders"]}
+    with transaction(postgres_database) as cur:
+        assert snapshot(cur) == before
+    altered = deepcopy(checkout_request)
+    altered["address_snapshot"]["address"] = "Different destination"
+    with pytest.raises(ValueError, match="different checkout request payload"):
+        with transaction(postgres_database) as cur:
+            POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**altered)
+    with transaction(postgres_database) as cur:
+        assert snapshot(cur) == before
+        second_request = persist_request(cur, checkout_catalog)
+    assert second_request["retailer_id"] == checkout_request["retailer_id"]
+    for key in ("basket_id", "plan_id", "idempotency_key"):
+        assert second_request[key] != checkout_request[key]
+    with transaction(postgres_database) as cur:
+        second = POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(second_request))
+    with transaction(postgres_database) as cur:
+        assert_checkout(cur, checkout_catalog, checkout_request, first)
+        assert_checkout(cur, checkout_catalog, second_request, second)
+        assert second["order_group_id"] != first["order_group_id"]
+        assert {str(row["id"]) for row in first["orders"]}.isdisjoint(str(row["id"]) for row in second["orders"])
+        assert_inventory(cur, checkout_catalog, 2)
+        after = snapshot(cur)
+        assert [len(after[table]) for table in (
+            "order_groups", "orders", "order_items", "inventory_reservations", "idempotency",
+        )] == [2, 4, 6, 6, 2]
+        assert after["outbox_events"] == before["outbox_events"]
+
+
+def test_checkout_rolls_back_after_partial_sql_writes(
+    postgres_database, checkout_catalog, checkout_request,
+):
+    with transaction(postgres_database) as cur:
+        before = snapshot(cur)
+    with pytest.raises(psycopg2.errors.RaiseException, match="batch1 checkout fault") as failure:
+        with transaction(postgres_database) as cur:
+            cur.execute("""
+                CREATE FUNCTION pg_temp.batch1_checkout_fault() RETURNS trigger
+                LANGUAGE plpgsql AS $$
+                DECLARE
+                    evidence json;
+                BEGIN
+                    IF (SELECT count(*) FROM inventory_reservations) = 3 THEN
+                        SELECT json_build_object(
+                            'groups', (SELECT count(*) FROM order_groups),
+                            'orders', (SELECT count(*) FROM orders),
+                            'items', (SELECT count(*) FROM order_items),
+                            'reservations', (SELECT count(*) FROM inventory_reservations),
+                            'reserved_quantity', (SELECT sum(reserved_quantity) FROM vendor_inventory),
+                            'idempotency', (SELECT count(*) FROM order_groups
+                                WHERE checkout_idempotency_key IS NOT NULL
+                                  AND checkout_request_fingerprint IS NOT NULL),
+                            'outbox', (SELECT count(*) FROM outbox_events)
+                        ) INTO evidence;
+                        RAISE EXCEPTION 'batch1 checkout fault' USING DETAIL = evidence::text;
+                    END IF;
+                    RETURN NEW;
+                END;
+                $$;
+                CREATE TRIGGER batch1_checkout_fault
+                AFTER UPDATE OF reserved_quantity ON vendor_inventory
+                FOR EACH ROW EXECUTE FUNCTION pg_temp.batch1_checkout_fault();
+            """)
+            POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
+    assert json.loads(failure.value.diag.message_detail) == {
+        "groups": 1, "orders": 2, "items": 3, "reservations": 3,
+        "reserved_quantity": 12, "idempotency": 1, "outbox": 0,
+    }
+    with transaction(postgres_database) as cur:
+        assert snapshot(cur) == before
+        assert_inventory(cur, checkout_catalog, 0)
+        cur.execute("SELECT 1 FROM pg_trigger WHERE tgname = 'batch1_checkout_fault'")
+        assert cur.fetchone() is None
+    with transaction(postgres_database) as cur:
+        retry = POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
+    with transaction(postgres_database) as cur:
+        assert_checkout(cur, checkout_catalog, checkout_request, retry)
+        assert_inventory(cur, checkout_catalog, 1)
+        after = snapshot(cur)
+        assert [len(after[table]) for table in (
+            "order_groups", "orders", "order_items", "inventory_reservations", "idempotency",
+        )] == [1, 2, 3, 3, 1]
+        assert after["outbox_events"] == before["outbox_events"]

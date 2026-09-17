@@ -18,7 +18,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 def get_connection():
-    ports = [5432, 5433]
+    import os
+    ports = [int(os.environ["POL_PG_PORT"])] if os.environ.get("POL_PG_PORT") else [5432, 5433]
     for p in ports:
         try:
             conn = psycopg2.connect(dbname="pol_test", user="postgres", host="127.0.0.1", port=p)

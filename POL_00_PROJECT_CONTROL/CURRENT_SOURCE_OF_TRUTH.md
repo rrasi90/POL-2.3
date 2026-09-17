@@ -62,6 +62,14 @@ All active documents MUST represent the current architecture:
 
 Active documents MUST NOT silently reintroduce superseded rules through examples, API terminology, UI copy, or test fixtures.
 
+Canonical order entity hierarchy (documented in `08_DATA/DOMAIN_MODEL.md` and `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md`):
+
+```
+Basket -> AllocationPlan -> OrderGroup -> Order -> OrderItem
+```
+
+The `Basket` holds retailer demand, the `AllocationPlan` splits it across eligible vendors (D-014), each `OrderGroup` is the parent transaction, each child `Order` is a single-vendor contract, and each `OrderItem` is the atomic unit for delivery, settlement and disputes.
+
 ---
 
 ## 4. Historical Documents Governance Policy
