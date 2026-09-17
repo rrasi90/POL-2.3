@@ -29,6 +29,8 @@ class CanonicalReturnService:
         "CLOSED": set(),
     }
 
+    OPS_ROLES = {"OPS_ADMIN", "SUPER_ADMIN"}
+
     @staticmethod
     def _retailer_access(cur, user_id: str, retailer_id: str) -> bool:
         cur.execute(
@@ -64,6 +66,23 @@ class CanonicalReturnService:
             LIMIT 1
             """,
             (vendor_id, user_id),
+        )
+        return cur.fetchone() is not None
+
+    @classmethod
+    def _ops_access(cls, cur, user_id: str) -> bool:
+        cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN organizations o ON o.id = om.organization_id
+            WHERE om.user_id = %s
+              AND om.status = 'ACTIVE'
+              AND o.status = 'ACTIVE'
+              AND om.role IN ('OPS_ADMIN','SUPER_ADMIN')
+            LIMIT 1
+            """,
+            (user_id,),
         )
         return cur.fetchone() is not None
 
@@ -117,17 +136,29 @@ class CanonicalReturnService:
         order_item_map = {str(r["order_item_id"]): r for r in rows}
         if not order_items:
             raise ValueError("At least one return item is required.")
+
+        # Aggregate by order item before validating. Duplicate request lines must
+        # never bypass the per-item returnable quantity ceiling.
+        requested_by_item = {}
+        reason_by_item = {}
         for item in order_items:
             item_key = str(item["order_item_id"])
             if item_key not in order_item_map:
                 raise ValueError("Return item does not belong to the order.")
             quantity = int(item["quantity"])
-            max_returnable = int(order_item_map[item_key]["delivered_quantity"] or order_item_map[item_key]["ordered_quantity"])
-            if quantity <= 0 or quantity > max_returnable:
-                raise ValueError("Return quantity exceeds delivered/ordered quantity.")
             reason_code = item.get("reason_code", "OTHER")
+            if quantity <= 0:
+                raise ValueError("Return quantity must be positive.")
             if reason_code not in {"DAMAGED", "SHORTAGE", "WRONG_ITEM", "QUALITY", "DELIVERY_ERROR", "OTHER"}:
                 raise ValueError("Unsupported RMA reason code.")
+            requested_by_item[item_key] = requested_by_item.get(item_key, 0) + quantity
+            reason_by_item.setdefault(item_key, reason_code)
+
+        for item_key, quantity in requested_by_item.items():
+            source = order_item_map[item_key]
+            max_returnable = int(source["delivered_quantity"] or source["ordered_quantity"])
+            if quantity > max_returnable:
+                raise ValueError("Aggregated return quantity exceeds delivered/ordered quantity.")
 
         return_id = str(uuid.uuid4())
         return_number = "RMA-" + return_id.replace("-", "")[:12].upper()
@@ -144,8 +175,10 @@ class CanonicalReturnService:
              claimed_refund_amount_toman, idempotency_key, actor_user_id),
         )
         ret = cur.fetchone()
-        for item in order_items:
-            source = order_item_map[str(item["order_item_id"])]
+        for item_key, quantity in requested_by_item.items():
+            source = order_item_map[item_key]
+            # A duplicate line is collapsed into one canonical return_items row.
+            source_item = next(i for i in order_items if str(i["order_item_id"]) == item_key)
             cur.execute(
                 """
                 INSERT INTO return_items
@@ -153,9 +186,9 @@ class CanonicalReturnService:
                      unit_refund_amount_toman, reason_code)
                 VALUES (%s,%s,%s,%s,%s,%s)
                 """,
-                (str(uuid.uuid4()), return_id, item["order_item_id"], int(item["quantity"]),
-                 int(item.get("unit_refund_amount_toman") or source["unit_price_toman"]),
-                 item.get("reason_code", "OTHER")),
+                (str(uuid.uuid4()), return_id, item_key, quantity,
+                 int(source_item.get("unit_refund_amount_toman") or source["unit_price_toman"]),
+                 reason_by_item[item_key]),
             )
         cls._write_event(cur, return_id, None, "RETURN_REQUESTED", actor_user_id, reason)
         cur.execute(
@@ -180,6 +213,8 @@ class CanonicalReturnService:
         amount = ret["approved_refund_amount_toman"]
         if amount is None or int(amount) <= 0:
             raise ReturnStateError("A positive approved refund amount is required before REFUND_PENDING.")
+        if str(ret.get("initiated_by_user_id")) == str(actor_user_id):
+            raise ReturnAccessError("Refund approval must be performed by a different actor than the RMA initiator.")
         cur.execute(
             """
             INSERT INTO refunds
@@ -201,17 +236,23 @@ class CanonicalReturnService:
             )
 
     @staticmethod
-    def _complete_refund(cur, ret: dict):
+    def _complete_refund(cur, ret: dict, actor_user_id: str):
         if not ret["refund_id"]:
             raise ReturnStateError("Cannot mark RMA REFUNDED without a linked refund.")
+        cur.execute("SELECT approved_by_user_id FROM refunds WHERE id=%s FOR UPDATE", (ret["refund_id"],))
+        refund = cur.fetchone()
+        if not refund:
+            raise ReturnStateError("Linked refund does not exist.")
+        if str(refund["approved_by_user_id"]) == str(actor_user_id):
+            raise ReturnAccessError("Refund completion must be performed by a different actor than the approver.")
         cur.execute(
             """
             UPDATE refunds
-            SET status='COMPLETED', completed_at=now()
+            SET status='COMPLETED', completed_at=now(), completed_by_user_id=%s
             WHERE id=%s AND status='APPROVED'
             RETURNING id;
             """,
-            (ret["refund_id"],),
+            (actor_user_id, ret["refund_id"]),
         )
         if not cur.fetchone():
             raise ReturnStateError("Linked refund is missing or is not in APPROVED state.")
@@ -231,12 +272,15 @@ class CanonicalReturnService:
 
         retailer_ok = cls._retailer_access(cur, actor_user_id, str(ret["retailer_id"]))
         vendor_ok = cls._vendor_access(cur, actor_user_id, str(ret["vendor_id"]))
+        ops_ok = cls._ops_access(cur, actor_user_id)
         if target_status == "CANCELLED":
             allowed = retailer_ok and current in {"RETURN_REQUESTED", "APPROVED", "PICKUP_REQUIRED"}
         elif target_status in {"APPROVED", "PICKUP_REQUIRED", "RETURN_IN_TRANSIT", "RECEIVED", "VENDOR_INSPECTION", "ACCEPTED", "REJECTED"}:
             allowed = vendor_ok
         elif target_status in {"REFUND_PENDING", "REFUNDED", "CLOSED"}:
-            allowed = retailer_ok or vendor_ok
+            # Financially meaningful states belong to POL operations, not either
+            # commercial party. REFUNDED additionally enforces two-person control.
+            allowed = ops_ok
         else:
             allowed = False
         if not allowed:
@@ -269,7 +313,7 @@ class CanonicalReturnService:
             cur.execute("SELECT * FROM returns WHERE id=%s FOR UPDATE", (return_id,))
             updated = cur.fetchone()
         elif target_status == "REFUNDED":
-            cls._complete_refund(cur, updated)
+            cls._complete_refund(cur, updated, actor_user_id)
 
         cls._write_event(cur, return_id, current, target_status, actor_user_id, reason)
         return updated
