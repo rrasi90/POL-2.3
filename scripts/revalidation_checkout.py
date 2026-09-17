@@ -1,12 +1,9 @@
-"""Canonical transactional checkout revalidation service.
-
-This module is intentionally independent from the legacy domain_services module.
-The application-facing checkout gateway imports this service directly.
-"""
+"""Canonical transactional checkout revalidation service."""
 
 from __future__ import annotations
 
 import uuid
+from collections import defaultdict
 from datetime import datetime, timezone
 
 from psycopg2.extras import Json
@@ -54,12 +51,22 @@ class RevalidationCheckoutService:
             )
         if chk["expires_at"] < datetime.now(timezone.utc):
             raise ValueError("Allocation plan has expired (15-minute TTL exceeded).")
+        if not vendor_allocations:
+            raise ValueError("Checkout requires at least one allocated basket line.")
 
+        # D-014: one child Order per Vendor. Every allocation line becomes one
+        # persisted OrderItem in that vendor order; quantity is never split.
+        allocations_by_vendor = defaultdict(list)
+        seen_vendor_products = set()
         for alloc in vendor_allocations:
-            vp_id = alloc["vendor_product_id"]
+            vp_id = str(alloc["vendor_product_id"])
+            if vp_id in seen_vendor_products:
+                raise ValueError(f"Duplicate vendor-product allocation in checkout: {vp_id}")
+            seen_vendor_products.add(vp_id)
+            allocations_by_vendor[str(alloc["vendor_id"])].append(alloc)
+
             quoted_price = alloc["unit_price_toman"]
             req_qty = alloc["quantity"]
-
             cur.execute(
                 """
                 SELECT vp.vendor_id,
@@ -83,6 +90,8 @@ class RevalidationCheckoutService:
             offer = cur.fetchone()
             if not offer:
                 raise ValueError(f"Vendor product not found: {vp_id}")
+            if str(offer["vendor_id"]) != str(alloc["vendor_id"]):
+                raise ValueError(f"Vendor allocation mismatch for SKU {vp_id}")
             if (
                 offer["vendor_status"] != "ACTIVE"
                 or not offer["is_active"]
@@ -114,6 +123,7 @@ class RevalidationCheckoutService:
                 raise ValueError(f"Insufficient stock for SKU {vp_id}: Available {avail} < Requested {req_qty}")
 
         total_toman = sum(v["amount_toman"] for v in vendor_allocations)
+        vendor_count = len(allocations_by_vendor)
         og_id = str(uuid.uuid4())
         cur.execute(
             """
@@ -123,14 +133,14 @@ class RevalidationCheckoutService:
             ) VALUES (%s,%s,%s,%s,%s,%s,%s,'ACTIVE')
             RETURNING id;
             """,
-            (og_id, basket_id, plan_id, retailer_id, idempotency_key, total_toman, len(vendor_allocations)),
+            (og_id, basket_id, plan_id, retailer_id, idempotency_key, total_toman, vendor_count),
         )
 
         child_orders = []
-        for alloc in vendor_allocations:
+        for vendor_id, vendor_allocs in allocations_by_vendor.items():
             ord_id = str(uuid.uuid4())
-            res_id = str(uuid.uuid4())
             ord_num = f"ORD-{uuid.uuid4().hex[:8].upper()}"
+            vendor_total = sum(a["amount_toman"] for a in vendor_allocs)
 
             cur.execute(
                 """
@@ -145,40 +155,63 @@ class RevalidationCheckoutService:
                     ord_id,
                     og_id,
                     retailer_id,
-                    alloc["vendor_id"],
+                    vendor_id,
                     ord_num,
-                    alloc["amount_toman"],
+                    vendor_total,
                     Json(address_snapshot),
                     f"corr-{og_id[:8]}",
                 ),
             )
-            child_orders.append(cur.fetchone())
+            order_row = cur.fetchone()
+            child_orders.append(order_row)
 
-            cur.execute(
-                """
-                INSERT INTO inventory_reservations (
-                    id, vendor_product_id, order_id, quantity, status, idempotency_key, expires_at
-                ) VALUES (%s,%s,%s,%s,'ACTIVE',%s,now() + interval '15 minutes');
-                """,
-                (
-                    res_id,
-                    alloc["vendor_product_id"],
-                    ord_id,
-                    alloc["quantity"],
-                    f"res-{idempotency_key}-{alloc['vendor_id']}",
-                ),
-            )
+            for alloc in vendor_allocs:
+                cur.execute(
+                    """
+                    INSERT INTO order_items (
+                        id, order_id, vendor_product_id,
+                        ordered_quantity, delivered_quantity, unit_price_toman
+                    ) VALUES (%s,%s,%s,%s,0,%s)
+                    RETURNING *;
+                    """,
+                    (
+                        str(uuid.uuid4()),
+                        ord_id,
+                        alloc["vendor_product_id"],
+                        alloc["quantity"],
+                        alloc["unit_price_toman"],
+                    ),
+                )
 
-            cur.execute(
-                """
-                UPDATE vendor_inventory
-                SET reserved_quantity = reserved_quantity + %s
-                WHERE vendor_product_id = %s
-                  AND physical_quantity - reserved_quantity >= %s;
-                """,
-                (alloc["quantity"], alloc["vendor_product_id"], alloc["quantity"]),
-            )
-            if cur.rowcount != 1:
-                raise ValueError(f"Inventory reservation race detected for SKU {alloc['vendor_product_id']}")
+                cur.execute(
+                    """
+                    INSERT INTO inventory_reservations (
+                        id, vendor_product_id, order_id, quantity, status, idempotency_key, expires_at
+                    ) VALUES (%s,%s,%s,%s,'ACTIVE',%s,now() + interval '15 minutes');
+                    """,
+                    (
+                        str(uuid.uuid4()),
+                        alloc["vendor_product_id"],
+                        ord_id,
+                        alloc["quantity"],
+                        f"res-{idempotency_key}-{alloc['vendor_product_id']}",
+                    ),
+                )
 
-        return {"order_group_id": og_id, "orders": child_orders}
+                cur.execute(
+                    """
+                    UPDATE vendor_inventory
+                    SET reserved_quantity = reserved_quantity + %s
+                    WHERE vendor_product_id = %s
+                      AND physical_quantity - reserved_quantity >= %s;
+                    """,
+                    (alloc["quantity"], alloc["vendor_product_id"], alloc["quantity"]),
+                )
+                if cur.rowcount != 1:
+                    raise ValueError(f"Inventory reservation race detected for SKU {alloc['vendor_product_id']}")
+
+        return {
+            "order_group_id": og_id,
+            "order_count": vendor_count,
+            "orders": child_orders,
+        }
