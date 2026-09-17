@@ -19,21 +19,16 @@ class RevalidationCheckoutService:
         plan_id: str,
         retailer_id: str,
         idempotency_key: str,
+        request_fingerprint: str,
         address_snapshot: dict,
         vendor_allocations: list,
     ) -> dict:
         cur.execute(
             """
-            SELECT b.version,
-                   b.retailer_id,
-                   p.basket_id,
-                   p.basket_version,
-                   p.expires_at,
-                   p.status
+            SELECT b.version, b.retailer_id, p.basket_id, p.basket_version,
+                   p.expires_at, p.status
             FROM baskets b
-            JOIN allocation_plans p
-              ON p.id = %s
-             AND p.basket_id = b.id
+            JOIN allocation_plans p ON p.id = %s AND p.basket_id = b.id
             WHERE b.id = %s;
             """,
             (plan_id, basket_id),
@@ -46,16 +41,12 @@ class RevalidationCheckoutService:
         if chk["status"] != "CONFIRMED":
             raise ValueError(f"Allocation plan is not checkout-ready: {chk['status']}")
         if chk["version"] != chk["basket_version"]:
-            raise ValueError(
-                f"Stale basket checkout: basket v{chk['version']} != plan v{chk['basket_version']}"
-            )
+            raise ValueError(f"Stale basket checkout: basket v{chk['version']} != plan v{chk['basket_version']}")
         if chk["expires_at"] < datetime.now(timezone.utc):
             raise ValueError("Allocation plan has expired (15-minute TTL exceeded).")
         if not vendor_allocations:
             raise ValueError("Checkout requires at least one allocated basket line.")
 
-        # D-014: one child Order per Vendor. Every allocation line becomes one
-        # persisted OrderItem in that vendor order; quantity is never split.
         allocations_by_vendor = defaultdict(list)
         seen_vendor_products = set()
         for alloc in vendor_allocations:
@@ -69,19 +60,13 @@ class RevalidationCheckoutService:
             req_qty = alloc["quantity"]
             cur.execute(
                 """
-                SELECT vp.vendor_id,
-                       vp.product_id,
-                       vp.pack_quantity,
-                       vp.is_active,
-                       vp.listing_status,
-                       v.status AS vendor_status,
-                       vi.moq,
+                SELECT vp.vendor_id, vp.product_id, vp.pack_quantity, vp.is_active,
+                       vp.listing_status, v.status AS vendor_status, vi.moq,
                        vp_price.price_toman
                 FROM vendor_products vp
                 JOIN vendors v ON v.id = vp.vendor_id
                 LEFT JOIN vendor_inventory vi ON vi.vendor_product_id = vp.id
-                LEFT JOIN vendor_prices vp_price
-                  ON vp_price.vendor_product_id = vp.id
+                LEFT JOIN vendor_prices vp_price ON vp_price.vendor_product_id = vp.id
                  AND vp_price.is_current = TRUE
                 WHERE vp.id = %s;
                 """,
@@ -92,17 +77,11 @@ class RevalidationCheckoutService:
                 raise ValueError(f"Vendor product not found: {vp_id}")
             if str(offer["vendor_id"]) != str(alloc["vendor_id"]):
                 raise ValueError(f"Vendor allocation mismatch for SKU {vp_id}")
-            if (
-                offer["vendor_status"] != "ACTIVE"
-                or not offer["is_active"]
-                or offer["listing_status"] != "ACTIVE"
-            ):
+            if offer["vendor_status"] != "ACTIVE" or not offer["is_active"] or offer["listing_status"] != "ACTIVE":
                 raise ValueError(f"Vendor product is not currently orderable: {vp_id}")
             if offer["price_toman"] != quoted_price:
                 actual = offer["price_toman"] if offer["price_toman"] is not None else "N/A"
-                raise ValueError(
-                    f"Price freshness failure for SKU {vp_id}: Quoted {quoted_price} vs Live {actual}"
-                )
+                raise ValueError(f"Price freshness failure for SKU {vp_id}: Quoted {quoted_price} vs Live {actual}")
             if offer["moq"] is not None and req_qty < offer["moq"]:
                 raise ValueError(f"MOQ violation for SKU {vp_id}: {req_qty} < {offer['moq']}")
 
@@ -129,11 +108,12 @@ class RevalidationCheckoutService:
             """
             INSERT INTO order_groups (
                 id, basket_id, allocation_plan_id, retailer_id, checkout_idempotency_key,
-                total_amount_toman, order_count, group_status
-            ) VALUES (%s,%s,%s,%s,%s,%s,%s,'ACTIVE')
+                checkout_request_fingerprint, total_amount_toman, order_count, group_status
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'ACTIVE')
             RETURNING id;
             """,
-            (og_id, basket_id, plan_id, retailer_id, idempotency_key, total_toman, vendor_count),
+            (og_id, basket_id, plan_id, retailer_id, idempotency_key,
+             request_fingerprint, total_toman, vendor_count),
         )
 
         child_orders = []
@@ -141,7 +121,6 @@ class RevalidationCheckoutService:
             ord_id = str(uuid.uuid4())
             ord_num = f"ORD-{uuid.uuid4().hex[:8].upper()}"
             vendor_total = sum(a["amount_toman"] for a in vendor_allocs)
-
             cur.execute(
                 """
                 INSERT INTO orders (
@@ -151,16 +130,8 @@ class RevalidationCheckoutService:
                 ) VALUES (%s,%s,%s,%s,%s,%s,'SUBMITTED','NONE',%s,%s)
                 RETURNING *;
                 """,
-                (
-                    ord_id,
-                    og_id,
-                    retailer_id,
-                    vendor_id,
-                    ord_num,
-                    vendor_total,
-                    Json(address_snapshot),
-                    f"corr-{og_id[:8]}",
-                ),
+                (ord_id, og_id, retailer_id, vendor_id, ord_num, vendor_total,
+                 Json(address_snapshot), f"corr-{og_id[:8]}"),
             )
             order_row = cur.fetchone()
             child_orders.append(order_row)
@@ -169,35 +140,24 @@ class RevalidationCheckoutService:
                 cur.execute(
                     """
                     INSERT INTO order_items (
-                        id, order_id, vendor_product_id,
-                        ordered_quantity, delivered_quantity, unit_price_toman
+                        id, order_id, vendor_product_id, ordered_quantity,
+                        delivered_quantity, unit_price_toman
                     ) VALUES (%s,%s,%s,%s,0,%s)
                     RETURNING *;
                     """,
-                    (
-                        str(uuid.uuid4()),
-                        ord_id,
-                        alloc["vendor_product_id"],
-                        alloc["quantity"],
-                        alloc["unit_price_toman"],
-                    ),
+                    (str(uuid.uuid4()), ord_id, alloc["vendor_product_id"],
+                     alloc["quantity"], alloc["unit_price_toman"]),
                 )
-
                 cur.execute(
                     """
                     INSERT INTO inventory_reservations (
-                        id, vendor_product_id, order_id, quantity, status, idempotency_key, expires_at
+                        id, vendor_product_id, order_id, quantity, status,
+                        idempotency_key, expires_at
                     ) VALUES (%s,%s,%s,%s,'ACTIVE',%s,now() + interval '15 minutes');
                     """,
-                    (
-                        str(uuid.uuid4()),
-                        alloc["vendor_product_id"],
-                        ord_id,
-                        alloc["quantity"],
-                        f"res-{idempotency_key}-{alloc['vendor_product_id']}",
-                    ),
+                    (str(uuid.uuid4()), alloc["vendor_product_id"], ord_id,
+                     alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_product_id']}"),
                 )
-
                 cur.execute(
                     """
                     UPDATE vendor_inventory
@@ -210,8 +170,4 @@ class RevalidationCheckoutService:
                 if cur.rowcount != 1:
                     raise ValueError(f"Inventory reservation race detected for SKU {alloc['vendor_product_id']}")
 
-        return {
-            "order_group_id": og_id,
-            "order_count": vendor_count,
-            "orders": child_orders,
-        }
+        return {"order_group_id": og_id, "order_count": vendor_count, "orders": child_orders}
