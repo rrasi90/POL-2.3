@@ -60,11 +60,22 @@ class RevalidationCheckoutService:
             req_qty = alloc["quantity"]
             cur.execute(
                 """
-                SELECT vp.vendor_id, vp.product_id, vp.pack_quantity, vp.is_active,
-                       vp.listing_status, v.status AS vendor_status, vi.moq,
-                       vp_price.price_toman
+                SELECT vp.vendor_id,
+                       vp.product_id,
+                       vp.vendor_sku,
+                       vp.packaging_unit,
+                       vp.pack_quantity,
+                       vp.is_active,
+                       vp.listing_status,
+                       v.status AS vendor_status,
+                       vi.moq,
+                       vp_price.price_toman,
+                       p.canonical_name_fa AS product_name_snapshot,
+                       b.name_fa AS brand_name_snapshot
                 FROM vendor_products vp
                 JOIN vendors v ON v.id = vp.vendor_id
+                JOIN products p ON p.id = vp.product_id
+                JOIN brands b ON b.id = p.brand_id
                 LEFT JOIN vendor_inventory vi ON vi.vendor_product_id = vp.id
                 LEFT JOIN vendor_prices vp_price ON vp_price.vendor_product_id = vp.id
                  AND vp_price.is_current = TRUE
@@ -100,6 +111,13 @@ class RevalidationCheckoutService:
             avail = inv_row["physical_quantity"] - inv_row["reserved_quantity"]
             if avail < req_qty:
                 raise ValueError(f"Insufficient stock for SKU {vp_id}: Available {avail} < Requested {req_qty}")
+
+            alloc["_product_id"] = str(offer["product_id"])
+            alloc["_product_name_snapshot"] = offer["product_name_snapshot"]
+            alloc["_brand_name_snapshot"] = offer["brand_name_snapshot"]
+            alloc["_vendor_sku_snapshot"] = offer["vendor_sku"]
+            alloc["_packaging_unit_snapshot"] = offer["packaging_unit"]
+            alloc["_pack_quantity_snapshot"] = offer["pack_quantity"]
 
         total_toman = sum(v["amount_toman"] for v in vendor_allocations)
         vendor_count = len(allocations_by_vendor)
@@ -137,16 +155,32 @@ class RevalidationCheckoutService:
             child_orders.append(order_row)
 
             for alloc in vendor_allocs:
+                line_total = int(alloc["quantity"]) * int(alloc["unit_price_toman"])
                 cur.execute(
                     """
                     INSERT INTO order_items (
-                        id, order_id, vendor_product_id, ordered_quantity,
-                        delivered_quantity, unit_price_toman
-                    ) VALUES (%s,%s,%s,%s,0,%s)
+                        id, order_id, product_id, vendor_product_id,
+                        product_name_snapshot, brand_name_snapshot, vendor_sku_snapshot,
+                        packaging_unit_snapshot, pack_quantity_snapshot,
+                        ordered_quantity, accepted_quantity, delivered_quantity,
+                        unit_price_toman, total_line_amount_toman, fulfillment_status
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NULL,0,%s,%s,'PENDING')
                     RETURNING *;
                     """,
-                    (str(uuid.uuid4()), ord_id, alloc["vendor_product_id"],
-                     alloc["quantity"], alloc["unit_price_toman"]),
+                    (
+                        str(uuid.uuid4()),
+                        ord_id,
+                        alloc["_product_id"],
+                        alloc["vendor_product_id"],
+                        alloc["_product_name_snapshot"],
+                        alloc["_brand_name_snapshot"],
+                        alloc["_vendor_sku_snapshot"],
+                        alloc["_packaging_unit_snapshot"],
+                        alloc["_pack_quantity_snapshot"],
+                        alloc["quantity"],
+                        alloc["unit_price_toman"],
+                        line_total,
+                    ),
                 )
                 cur.execute(
                     """
