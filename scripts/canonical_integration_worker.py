@@ -24,12 +24,7 @@ class CanonicalIntegrationWorker:
         "RETURN_REQUESTED",
     }
 
-    # Domain/analytics events that intentionally do not become user notifications.
-    # They are still published from the outbox so the bus does not accumulate
-    # unconsumed operational records while future analytics consumers are added.
-    PASSTHROUGH_EVENTS = {
-        "VENDOR_REFERRAL_REDEEMED",
-    }
+    PASSTHROUGH_EVENTS = {"VENDOR_REFERRAL_REDEEMED"}
 
     @staticmethod
     def _render_message(cur, event_name: str, payload: dict):
@@ -57,6 +52,25 @@ class CanonicalIntegrationWorker:
             body = body.replace(token, str(value))
             title = title.replace(token, str(value))
         return title, body, template["priority"], template["channel"]
+
+    @classmethod
+    def _quarantine_unsupported(cls, cur, event: dict, reason: str):
+        payload = dict(event.get("payload") or {})
+        payload["_integration_quarantine"] = {
+            "reason": reason,
+            "handler": "CanonicalIntegrationWorker",
+        }
+        cur.execute(
+            """
+            UPDATE outbox_events
+            SET status='FAILED',
+                payload=%s,
+                last_error=%s,
+                published_at=COALESCE(published_at, now())
+            WHERE id=%s;
+            """,
+            (Json(payload), reason, event["id"]),
+        )
 
     @classmethod
     def process_pending(cls, cur, limit: int = 100) -> int:
@@ -92,6 +106,12 @@ class CanonicalIntegrationWorker:
                 continue
 
             if event_name not in cls.ALLOWED_DIRECT_NOTIFICATION_EVENTS:
+                cls._quarantine_unsupported(
+                    cur,
+                    event,
+                    f"Unsupported canonical outbox event: {event_name}",
+                )
+                processed += 1
                 continue
 
             target_user_id = event.get("target_user_id")
