@@ -226,7 +226,7 @@
   "preferred_payment_method": "POS_DRIVER"
 }
 ```
-* **پاسخ موفق (201 Created):** ایجاد گروه سفارش والد (`order_groups`) و سفارش‌های فرزند مستقل (`orders`) به ازای هر بنکدار با وضعیت `PENDING`.
+* **پاسخ موفق (201 Created):** ایجاد گروه سفارش والد (`order_groups`) و سفارش‌های فرزند مستقل (`orders`) به ازای هر بنکدار با وضعیت `SUBMITTED` (وضعیت کانونی مطابق `Order_Lifecycle.md` و قید DDL جدول `orders`؛ وضعیت `PENDING` منسوخ است).
 ```json
 {
   "success": true,
@@ -237,13 +237,13 @@
     {
       "order_id": "ord_1a_uuid",
       "vendor_id": "1a27b810-9dad-11d1-80b4-00c04fd430cd",
-      "order_status": "PENDING",
+      "order_status": "SUBMITTED",
       "subtotal_toman": 6000000
     },
     {
       "order_id": "ord_2b_uuid",
       "vendor_id": "2b38c921-8ebe-22e2-91c5-11d15fe541de",
-      "order_status": "PENDING",
+      "order_status": "SUBMITTED",
       "subtotal_toman": 8000000
     }
   ]
