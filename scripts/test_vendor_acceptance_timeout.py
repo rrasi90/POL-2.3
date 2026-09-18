@@ -249,6 +249,7 @@ def test_timeout_backfills_missing_deadline_from_created_at(pg_connection):
             result = VendorAcceptanceTimeoutWorker.process_expired(
                 cur,
                 now=effective_now,
+                limit=1,
             )
             assert result["cancelled_order_count"] == 1
 
@@ -368,6 +369,12 @@ def test_timeout_assignee_selection_is_deterministic(pg_connection):
             expected_ops_user = cur.fetchone()["user_id"]
 
             cur.execute(
+                "SELECT order_number FROM orders WHERE id = %s",
+                (data["order_id"],),
+            )
+            order_number = cur.fetchone()["order_number"]
+
+            cur.execute(
                 """
                 SELECT assigned_to_user_id
                 FROM field_tasks
@@ -375,7 +382,7 @@ def test_timeout_assignee_selection_is_deterministic(pg_connection):
                   AND notes LIKE %s
                 ORDER BY id
                 """,
-                (f"%{data['order_id']}%",),
+                (f"%{order_number}%",),
             )
             assignees = [row["assigned_to_user_id"] for row in cur.fetchall()]
             assert len(assignees) == 2
