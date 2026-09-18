@@ -8,6 +8,12 @@ from datetime import datetime, timezone
 
 from psycopg2.extras import Json
 
+from scripts.sla_calendar import (
+    VENDOR_ACCEPTANCE_SLA_HOURS,
+    calculate_sla_deadline,
+    load_operational_holidays,
+)
+
 
 class RevalidationCheckoutService:
     """Transactional pre-commit checkout verification and reservation."""
@@ -157,7 +163,7 @@ class RevalidationCheckoutService:
                 RETURNING *;
                 """,
                 (ord_id, og_id, retailer_id, vendor_id, ord_num, vendor_total,
-                 Json(address_snapshot), f"corr-{og_id[:8]}"),
+                 Json(address_snapshot), f"corr-{og_id[:8]}", vendor_acceptance_deadline),
             )
             order_row = cur.fetchone()
             child_orders.append(order_row)
