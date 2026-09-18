@@ -11,7 +11,7 @@
 * **آدرس پایه (Base URL):** `https://api.polmarket.ir/api/v1`
 * **فرمت انتقال داده:** `application/json` با کاراکترست `utf-8`.
 * **احراز هویت:** هدر استاندارد `Authorization: Bearer <JWT_ACCESS_TOKEN>`.
-* **کلید هم‌توانی (Idempotency):** تمامی درخواست‌های جهش داده (`POST` و `PATCH`) حساس به دوباره‌فرستادن (مانند ثبت سفارش یا پرداخت) مستلزم ارسال هدر `Idempotency-Key: <UUIDv4>` هستند. سرور نتیجه را به مدت ۲۴ ساعت در Redis کش می‌کند.
+* **کلید هم‌توانی (Idempotency):** درخواست‌های جهش داده‌ای که ایجاد اثر خارجیِ قابل‌تکرار دارند (مانند ثبت سفارش، درخواست مرجوعی و تخصیص referral) باید idempotency contract مشخص داشته باشند. در مسیرهایی که چنین قرارداد canonicalای تعریف نشده، transport نباید یک هدر idempotency صوری اضافه کند. Checkout از کلید و fingerprint در پایگاه‌داده استفاده می‌کند؛ Redis به‌عنوان SSoT اجرای checkout نیست.
 * **الگوی استاندارد پاسخ خطا (Error Response Schema):**
 ```json
 {
@@ -155,17 +155,38 @@
 
 ## ۴. اندپوینت‌های سبد خرید و پیش‌نمایش تخصیص (Commerce APIs)
 
+### ۴.۰. ایجاد سبد خرید (`POST /baskets`)
+* **مجوز:** کاربر احراز هویت‌شده با عضویت فعال در یک سازمان خرده‌فروشی (`RETAILER_OWNER`, `RETAILER_STAFF`).
+* **بدنه درخواست:** ندارد.
+* **پاسخ موفق (201 Created):**
+```json
+{
+  "success": true,
+  "data": {
+    "basket_id": "7f17b810-9dad-11d1-80b4-00c04fd430cc",
+    "version": 1,
+    "status": "OPEN"
+  }
+}
+```
+> شناسه خرده‌فروش از `ApplicationContext` و عضویت فعال استخراج می‌شود و از کلاینت دریافت نمی‌شود.
+
 ### ۴.۱. افزودن قلم به سبد خرید (`POST /baskets/:id/items`)
 * **بدنه درخواست:**
 ```json
 {
   "product_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
   "requested_quantity": 10,
-  "requested_unit": "CARTON"
+  "pack_quantity": 4,
+  "expected_version": 1
 }
 ```
+* **قفل همزمانی:** `expected_version` باید با نسخه فعلی سبد برابر باشد؛ در صورت mismatch، تغییر اعمال نمی‌شود و درخواست رد می‌شود.
 
 ### ۴.۲. پیش‌نمایش و تولید برنامه تخصیص سبد (`POST /baskets/:id/allocation-preview`)
+* **مجوز:** کاربر خرده‌فروش احراز هویت‌شده در tenant فعال.
+* **رفتار کانونیکال:** اجرای Allocation Engine روی snapshot نسخه فعلی سبد و ذخیره `allocation_plan` و `allocation_items` کانونیکال. برنامه ایجادشده با lifecycle فعلی `CONFIRMED` ذخیره می‌شود تا مستقیماً برای `POST /orders` قابل checkout باشد؛ این مسیر پرداخت را اجرا نمی‌کند.
+
 * **معماری مرجع:** منطبق با تصمیم مصوب **D-014 (Multi-Vendor Basket in MVP)**.
 * **هدف:** ارزیابی بهینه موجودی، قیمت و حداقل سفارش بنکداران شهرک و تولید پیش‌فاکتور تخصیص چندبنکدار.
 * **قاعده تخصیص:** در سطح قلم کالا (Line-Item) با کمینه‌سازی خردشدگی سبد؛ عدم شکست تیراژ یک قلم میان چند بنکدار.
@@ -227,7 +248,7 @@
 }
 ```
 
-> **Transport boundary note (Batch 6C-2):** `preferred_payment_method` is accepted as part of the checkout request contract, but the current canonical order schema does not persist a checkout-level payment-method preference. Payment execution/evidence is a separate downstream capability; the HTTP transport must not invent a new persistence field or execute payment as part of checkout.
+> **Transport boundary note (Batch 6C-3):** `preferred_payment_method` is accepted as part of the checkout request contract, but the current canonical order schema does not persist a checkout-level payment-method preference. Payment execution/evidence is a separate downstream capability; the HTTP transport must not invent a new persistence field or execute payment as part of checkout.
 * **پاسخ موفق (201 Created):** ایجاد گروه سفارش والد (`order_groups`) و سفارش‌های فرزند مستقل (`orders`) به ازای هر بنکدار با وضعیت `SUBMITTED` (وضعیت کانونی مطابق `Order_Lifecycle.md` و قید DDL جدول `orders`؛ وضعیت `PENDING` منسوخ است).
 ```json
 {
