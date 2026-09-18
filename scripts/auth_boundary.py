@@ -30,7 +30,7 @@ from scripts.operational_config import (
 )
 
 
-class AuthError(Exception):
+class AuthError(PermissionError):
     """Canonical authentication/authorization failure."""
     pass
 
