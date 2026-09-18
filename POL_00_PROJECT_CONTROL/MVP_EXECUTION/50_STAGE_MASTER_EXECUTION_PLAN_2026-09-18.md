@@ -218,7 +218,17 @@
 
 **Exit:** production worker model unambiguous باشد.
 
-**Status:** PLANNED
+**Status:** IN_PROGRESS
+
+**Work ID:** EXEC50-007
+
+**Progress — 2026-09-18**
+- Canonical model selected: PostgreSQL 18 transactional outbox + Python workers.
+- Added `POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md` as active runtime contract.
+- Added `scripts/test_worker_architecture.py` and registered Suite 22.
+- Removed active BullMQ/Redis Streams transport wording from Event Architecture; Technical Architecture now names Python workers + PostgreSQL Outbox.
+- Existing worker classes verified to use PostgreSQL locking/leases; no Redis/BullMQ dependency exists in `requirements.txt`.
+- Closure pending CI certification of the expanded suite.
 
 ---
 
