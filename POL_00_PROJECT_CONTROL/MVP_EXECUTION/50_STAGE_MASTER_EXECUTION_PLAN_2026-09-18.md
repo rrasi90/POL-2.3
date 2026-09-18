@@ -65,28 +65,33 @@
 **Macro:** M-01  
 **هدف:** رفع خطاهای قطعی Batch 6C-7 که از CI و source inspection مشخص شده‌اند.
 
-**کار قابل انجام**
-- اصلاح importهای لازم در `revalidation_checkout.py`.
-- بازبینی deterministic ordering در timeout worker.
-- بررسی deadline persistence.
-- بررسی created_at semantics.
-- رفع fixture/pytest pathهای لازم.
-- هر defect مشابهی که source/CI نشان دهد.
+**نتیجه واقعی — 2026-09-18**
+- `scripts/revalidation_checkout.py`: importهای لازم برای `calculate_sla_deadline` و `load_operational_holidays` اضافه شد؛ SLA دو ساعته از constant کانونیکال `VENDOR_ACCEPTANCE_SLA_HOURS` مصرف می‌شود.
+- checkout order insert اصلاح شد: ستون `created_at` دیگر explicit نیست و PostgreSQL default آن را تولید می‌کند؛ `vendor_acceptance_deadline_at` به‌صورت explicit ثبت می‌شود.
+- `scripts/vendor_acceptance_timeout_worker.py`: `MIN(uuid)` حذف و با انتخاب deterministic از `ORDER BY user_id LIMIT 1` جایگزین شد؛ همین constant کانونیکال برای fallback SLA مصرف می‌شود.
+- `scripts/test_vendor_acceptance_timeout.py`: fixture واقعی `pg_connection` به‌صورت محلی در suite ثبت شد تا pytest آن را discover کند.
+- `scripts/sla_calendar.py`: `VENDOR_ACCEPTANCE_SLA_HOURS = 2.0` به‌عنوان constant مشترک در canonical SLA module ثبت شد؛ rule جدیدی ایجاد نشده است.
+- read-back static inspection روی چهار فایل انجام شد؛ defectهای شناخته‌شده در source دیگر مشاهده نشدند.
+- CI جدید روی HEAD فعلی: **Run #352 — IN_PROGRESS**؛ هنوز هیچ PASS/FAIL جدیدی از آن ادعا نمی‌شود.
 
-**خروجی**
-- code/test fixes.
-- Work Log دقیق.
+**فایل‌ها**
+- `scripts/sla_calendar.py`
+- `scripts/revalidation_checkout.py`
+- `scripts/vendor_acceptance_timeout_worker.py`
+- `scripts/test_vendor_acceptance_timeout.py`
+- `POL_00_PROJECT_CONTROL/MVP_EXECUTION/WORK_LOGS/SECTION_02.md`
 
 **Verification**
-- targeted static review.
-- targeted tests در صورت لازم.
+- Static/source read-back: completed.
+- CI Run #352: in progress; not counted as passing.
+- Full regression certification remains Stage 03/CI work.
 
 **External**
-- CI کامل در مرحله بعد.
+- ندارد.
 
-**Exit:** source no longer contains known Batch 6C-7 defects.
+**Exit:** known Batch 6C-7 source defects removed from repository source; regression certification carried forward.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
