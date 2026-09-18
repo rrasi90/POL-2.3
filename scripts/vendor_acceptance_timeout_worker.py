@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from scripts.sla_calendar import calculate_sla_deadline, load_operational_holidays
+from scripts.sla_calendar import (
+    VENDOR_ACCEPTANCE_SLA_HOURS,
+    calculate_sla_deadline,
+    load_operational_holidays,
+)
 
 
 class VendorAcceptanceTimeoutWorker:
@@ -42,7 +46,9 @@ class VendorAcceptanceTimeoutWorker:
         for candidate in candidates:
             deadline = candidate["vendor_acceptance_deadline_at"]
             if deadline is None:
-                deadline = calculate_sla_deadline(candidate["created_at"], 2.0, holidays)
+                deadline = calculate_sla_deadline(
+                    candidate["created_at"], VENDOR_ACCEPTANCE_SLA_HOURS, holidays
+                )
                 cur.execute(
                     "UPDATE orders SET vendor_acceptance_deadline_at = %s WHERE id = %s",
                     (deadline, candidate["id"]),
@@ -232,12 +238,26 @@ class VendorAcceptanceTimeoutWorker:
             cur.execute(
                 """
                 SELECT
-                    MIN(m.user_id) FILTER (WHERE m.role = 'FIELD_ACTIVATOR') AS field_activator_user_id,
-                    MIN(m.user_id) FILTER (WHERE m.role IN ('OPS_ADMIN', 'SUPER_ADMIN')) AS ops_user_id
-                FROM organization_memberships m
-                JOIN organizations org ON org.id = m.organization_id
-                WHERE m.status = 'ACTIVE'
-                  AND org.status = 'ACTIVE'
+                (
+                    SELECT m.user_id
+                    FROM organization_memberships m
+                    JOIN organizations org ON org.id = m.organization_id
+                    WHERE m.status = 'ACTIVE'
+                      AND org.status = 'ACTIVE'
+                      AND m.role = 'FIELD_ACTIVATOR'
+                    ORDER BY m.user_id
+                    LIMIT 1
+                ) AS field_activator_user_id,
+                (
+                    SELECT m.user_id
+                    FROM organization_memberships m
+                    JOIN organizations org ON org.id = m.organization_id
+                    WHERE m.status = 'ACTIVE'
+                      AND org.status = 'ACTIVE'
+                      AND m.role IN ('OPS_ADMIN', 'SUPER_ADMIN')
+                    ORDER BY m.user_id
+                    LIMIT 1
+                ) AS ops_user_id
                 """,
             )
             operational_assignees = cur.fetchone()
