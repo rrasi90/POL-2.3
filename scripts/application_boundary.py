@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from scripts.checkout_gateway import CanonicalCheckoutGateway
 from scripts.canonical_feedback import CanonicalFeedbackService
+from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
 from scripts.canonical_support import CanonicalSupportService
 from scripts.payment_reconciliation_worker import PaymentReconciliationWorker
 from scripts.provider_delivery_worker import ProviderDeliveryWorker
@@ -52,6 +53,28 @@ class POLApplicationBoundary:
             raise PermissionError("Membership profile update requires an organization context.")
         return UserProfileService.update_membership_profile(
             self.cur, self.context.user_id, self.context.organization_id, fields
+        )
+
+    def basket_create(self):
+        return CanonicalBasketAllocationService.create_basket(
+            self.cur, self.context.user_id, self.context.organization_id
+        )
+
+    def basket_add_item(self, *, basket_id, product_id, quantity, pack_quantity, expected_version):
+        return CanonicalBasketAllocationService.add_item(
+            self.cur,
+            self.context.user_id,
+            self.context.organization_id,
+            basket_id,
+            product_id,
+            quantity,
+            pack_quantity,
+            expected_version,
+        )
+
+    def basket_allocation_preview(self, *, basket_id):
+        return CanonicalBasketAllocationService.allocation_preview(
+            self.cur, self.context.user_id, self.context.organization_id, basket_id
         )
 
     def checkout(self, *, basket_id, plan_id, retailer_id, idempotency_key, address_snapshot, vendor_allocations):
