@@ -67,7 +67,7 @@ The automated transport evidence is green at the tested boundary, and the Postgr
 Batch 6C-4 adds the first authenticated vendor-side order transition:
 - `POST /api/v1/orders/{order_id}/accept`
 
-This route is limited to `SUBMITTED -> ACCEPTED` for an active vendor member. The tested mutation consumes active inventory reservations, decrements physical inventory, updates accepted quantities and creates tenant-scoped `ORDER_ACCEPTED` outbox events. This does **not** close partial acceptance, rejection, timeout automation, preparation/dispatch/delivery transitions or live notification provider execution.
+The accept route is limited to `SUBMITTED -> ACCEPTED` for an active vendor member. The tested mutation consumes active inventory reservations, decrements physical inventory, updates accepted quantities and creates tenant-scoped `ORDER_ACCEPTED` outbox events. Batch 6C-5 adds `POST /api/v1/orders/{order_id}/reject`, limited to `SUBMITTED -> REJECTED`; its tested mutation releases active reservations, preserves physical inventory, records the rejection reason and creates tenant-scoped `ORDER_REJECTED` outbox events. Partial acceptance, timeout automation, preparation/dispatch/delivery transitions and live notification provider execution remain separate lifecycle work.
 
 ## Gate to visual-design phase
 

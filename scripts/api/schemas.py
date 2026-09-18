@@ -50,6 +50,10 @@ class CheckoutRequest(APIBaseModel):
     ]
 
 
+class VendorOrderRejectRequest(APIBaseModel):
+    reason: str = Field(min_length=1, max_length=1000)
+
+
 class ProfileUpdateRequest(APIBaseModel):
     display_name: str | None = None
     email: str | None = None

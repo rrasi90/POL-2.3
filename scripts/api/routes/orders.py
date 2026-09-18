@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Header, status
 
 from scripts.api.dependencies import get_application_boundary
 from scripts.api.errors import success_payload
-from scripts.api.schemas import CheckoutRequest
+from scripts.api.schemas import CheckoutRequest, VendorOrderRejectRequest
 
 
 router = APIRouter(prefix="/orders", tags=["orders"])
@@ -47,4 +47,18 @@ def accept_order(
 ):
     return success_payload(
         boundary.vendor_order_accept(order_id=str(order_id))
+    )
+
+
+@router.post("/{order_id}/reject", status_code=200)
+def reject_order(
+    order_id: UUID,
+    payload: VendorOrderRejectRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.vendor_order_reject(
+            order_id=str(order_id),
+            rejection_reason=payload.reason,
+        )
     )

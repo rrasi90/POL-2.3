@@ -281,11 +281,20 @@
 * **اعلام وضعیت غیرمجاز:** اگر سفارش در وضعیت دیگری باشد، درخواست رد می‌شود و mutation جزئی باقی نمی‌ماند.
 * **پاسخ موفق (200 OK):** شامل order_id, order_number, order_group_id, order_status, total_amount_toman, accepted_item_count, reservation_count.
 
-### ۵.۳. پذیرش با کسری موجودی توسط بنکدار (`POST /orders/:id/partial-accept`)
-* **انتقال وضعیت مجاز:** `SUBMITTED -> ACCEPTED`.
-* **پیامد:** رزرو قطعی موجودی در `vendor_inventory` و انتشار رویداد `order_accepted`.
+### ۵.۳. رد کامل سفارش توسط بنکدار (`POST /orders/:id/reject`)
+* **مجوز:** بنکدار مقصد در سازمان فعال (`VENDOR_OWNER`, `VENDOR_STAFF`). شناسه بنکدار و tenant از `ApplicationContext` استخراج می‌شود.
+* **بدنه درخواست:**
+```json
+{
+  "reason": "Out of physical stock"
+}
+```
+* **انتقال وضعیت:** فقط `SUBMITTED -> REJECTED`.
+* **پیامد کانونیکال:** همه reservationهای فعال سفارش به `RELEASED` منتقل می‌شوند و `reserved_quantity` به همان میزان کاهش می‌یابد؛ موجودی فیزیکی تغییر نمی‌کند؛ `rejection_reason` روی سفارش ثبت می‌شود و برای اعضای فعال سازمان خرده‌فروش رویداد `ORDER_REJECTED` در outbox ایجاد می‌شود.
+* **اعلام وضعیت غیرمجاز:** اگر سفارش در وضعیت دیگری باشد، درخواست رد می‌شود و mutation جزئی باقی نمی‌ماند.
+* **پاسخ موفق (200 OK):** شامل `order_id`, `order_number`, `order_group_id`, `order_status`, `total_amount_toman`, `rejection_reason`, `released_reservation_count`.
 
-### ۵.۳. پذیرش با کسری موجودی (`POST /orders/:id/partial-accept`)
+### ۵.۴. پذیرش با کسری موجودی (`POST /orders/:id/partial-accept`)
 * **بدنه درخواست:**
 ```json
 {
@@ -296,7 +305,7 @@
 ```
 * **انتقال وضعیت مجاز:** `SUBMITTED -> PARTIALLY_ACCEPTED`.
 
-### ۵.۴. اعلام خروج و بارگیری وانت (`POST /orders/:id/dispatch`)
+### ۵.۵. اعلام خروج و بارگیری وانت (`POST /orders/:id/dispatch`)
 * **انتقال وضعیت مجاز:** `READY -> DISPATCHED`.
 * **بدنه درخواست:**
 ```json
@@ -308,11 +317,11 @@
 }
 ```
 
-### ۵.۵. تایید تحویل در مقصد (`POST /orders/:id/deliver`)
+### ۵.۶. تایید تحویل در مقصد (`POST /orders/:id/deliver`)
 * **انتقال وضعیت مجاز:** `DISPATCHED -> DELIVERED`.
 * **هدر/فیلد تایید:** کد تایید تحویل (OTP) یا امضای الکترونیک سوپرمارکت‌دار.
 
-### ۵.۶. ثبت فیش واریز / شواهد پرداخت مستقیم (`POST /orders/:id/payments/direct-transfer`)
+### ۵.۷. ثبت فیش واریز / شواهد پرداخت مستقیم (`POST /orders/:id/payments/direct-transfer`)
 * **معماری مرجع:** منطبق با مدل **NON_CUSTODIAL_DIRECT (Zero Escrow - عدم نگهداری وجوه توسط پلتفرم)**.
 * **مجوز:** خریدار (`RETAILER_OWNER`, `RETAILER_STAFF`).
 * **بدنه درخواست:**
@@ -334,7 +343,7 @@
   * `REFUNDED`: استرداد مستقیم در صورت فسخ.
 * **پاسخ موفق (201 Created):** ایجاد رکورد در جدول `payments` با `custody_model = 'NON_CUSTODIAL_DIRECT'` و وضعیت `PENDING`.
 
-### ۵.۷. تأیید وصول وجه توسط بنکدار (`POST /orders/:id/payments/:payment_id/verify`)
+### ۵.۸. تأیید وصول وجه توسط بنکدار (`POST /orders/:id/payments/:payment_id/verify`)
 * **مجوز:** بنکدار مقصد (`VENDOR_OWNER`).
 * **پیامد:**
   * تغییر وضعیت پرداخت به `payment_status = 'SUCCESS'`, ثبت `verified_by = user.id` و `verified_at = now()`.

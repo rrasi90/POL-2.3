@@ -215,6 +215,15 @@ class POLApplicationBoundary:
             order_id=order_id,
         )
 
+    def vendor_order_reject(self, *, order_id, rejection_reason):
+        return CanonicalVendorOrderService.reject_order(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            order_id=order_id,
+            rejection_reason=rejection_reason,
+        )
+
     def feedback_list(self):
         if not self.context.organization_id:
             raise PermissionError("Feedback query requires an organization context.")
