@@ -25,8 +25,15 @@ def client(monkeypatch):
     return TestClient(app)
 
 
+def _test_db_name():
+    dbname = os.environ.get("POL_API_DB_NAME", "pol_test")
+    if dbname not in {"pol_test", "postgres"}:
+        raise RuntimeError("HTTP transport tests refuse non-isolated database names.")
+    return dbname
+
+
 def _conn():
-    conn, _ = get_connection("pol_test")
+    conn, _ = get_connection(_test_db_name())
     conn.autocommit = False
     return conn
 
