@@ -383,6 +383,7 @@
   "success": true,
   "data": {
     "access_token": "eyJhbGciOiJIUzI1Ni...",
+    "refresh_token": "a1B2c3D4e5F6g7H8i9J0...",
     "token_type": "Bearer",
     "expires_in": 900,
     "user": {
@@ -408,7 +409,38 @@
 }
 ```
 
-### ۷.۳. سوئیچ بین سازمان‌ها (`POST /auth/switch-organization`)
+### ۷.۳. تازه‌سازی توکن دسترسی (`POST /auth/refresh`)
+* **مجوز:** عمومی (نیاز به refresh_token معتبر).
+* **بدنه درخواست:**
+```json
+{
+  "refresh_token": "a1B2c3D4e5F6g7H8i9J0..."
+}
+```
+* **پاسخ موفق (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1Ni...",
+    "token_type": "Bearer",
+    "expires_in": 900
+  }
+}
+```
+* **پاسخ خطا (401):**
+```json
+{ "error": "INVALID_REFRESH_TOKEN" }
+```
+```json
+{ "error": "SESSION_EXPIRED" }
+```
+```json
+{ "error": "SESSION_REVOKED" }
+```
+* **نکته:** refresh token چرخش ندارد (Rotation TBD per D-018). همان refresh token تا پایان اعتبار سشن ۳۰ روزه معتبر است.
+
+### ۷.۴. سوئیچ بین سازمان‌ها (`POST /auth/switch-organization`)
 * **مجوز:** کاربر احراز هویت شده دارای بیش از یک عضویت فعال.
 * **بدنه درخواست:**
 ```json
@@ -416,9 +448,24 @@
   "target_organization_id": "7d91e843-c03b-4191-87aa-29775089c93a"
 }
 ```
-* **پاسخ موفق (200 OK):** توکن JWT جدید با ادعای `org_id` و `role` سازمان مقصد صادر می‌شود.
+* **پاسخ موفق (200 OK):** توکن JWT جدید با ادعای `org_id` و `role` سازمان مقصد صادر می‌شود. refresh token تغییر نمی‌کند.
+```json
+{
+  "success": true,
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1Ni...",
+    "token_type": "Bearer",
+    "expires_in": 900,
+    "session": {
+      "id": "uuid",
+      "active_organization_id": "target_org_uuid",
+      "status": "ACTIVE"
+    }
+  }
+}
+```
 
-### ۷.۴. خروج از حساب و ابطال سشن (`DELETE /auth/sessions/current` و `DELETE /auth/sessions/:id`)
+### ۷.۵. خروج از حساب و ابطال سشن (`DELETE /auth/sessions/current` و `DELETE /auth/sessions/:id`)
 * **پاسخ موفق (200 OK):** سشن در جدول `user_sessions` به وضعیت `status = 'REVOKED'` و `revoked_at = now()` درمی‌آید.
 
 ---

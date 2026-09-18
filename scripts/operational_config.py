@@ -14,12 +14,21 @@ DISPUTE_FILING_WINDOW_HOURS = 4
 SUPPORT_FIRST_RESPONSE_SLA_HOURS = 1
 SUPPORT_RESOLUTION_SLA_HOURS = 24
 
-# Authentication & Security
+# Authentication & Security (D-018 LOCKED)
 OTP_CODE_LENGTH = 4
 OTP_TTL_SECONDS = 120
 OTP_MAX_ATTEMPTS = 5
 OTP_LOCKOUT_MINUTES = 10
-SESSION_TTL_HOURS = 0.25  # 15 minutes — D-018: access token lifetime
+OTP_RATE_LIMIT_COUNT = 3          # D-018: max OTP requests per window
+OTP_RATE_LIMIT_WINDOW_MINUTES = 5 # D-018: rate-limit window (phone+IP scoped)
+OTP_SALT_BYTES = 16               # PBKDF2 salt size
+OTP_PBKDF2_ITERATIONS = 100_000   # PBKDF2 iteration count
+SESSION_TTL_HOURS = 720           # 30 days — D-018: refresh session lifetime
+JWT_ALGORITHM = "HS256"
+JWT_ISSUER = "pol-platform"
+JWT_AUDIENCE = "pol-api"
+JWT_ACCESS_TTL_SECONDS = 900      # 15 minutes — D-018: access token lifetime
+REFRESH_TOKEN_BYTES = 32          # 256-bit opaque refresh token
 
 # Finance & Settlement (Pilot Phase Ahvaz)
 PILOT_COMMISSION_RATE = 0.000

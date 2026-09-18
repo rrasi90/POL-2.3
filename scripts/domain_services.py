@@ -25,26 +25,71 @@ from scripts.operational_config import (
     DISPUTE_FILING_WINDOW_HOURS,
     PILOT_COMMISSION_RATE,
     PAYMENT_CUSTODY_MODEL,
-    OTP_MAX_ATTEMPTS
+    OTP_MAX_ATTEMPTS,
+    OTP_RATE_LIMIT_COUNT,
+    OTP_RATE_LIMIT_WINDOW_MINUTES,
+    OTP_LOCKOUT_MINUTES,
+    OTP_TTL_SECONDS,
+    SESSION_TTL_HOURS,
+    JWT_ACCESS_TTL_SECONDS,
+)
+from scripts.auth_boundary import (
+    encode_access_token,
+    decode_access_token,
+    generate_refresh_token,
+    hash_token,
+    store_otp_hash,
+    verify_otp_hash,
 )
 
 class AuthService:
     @staticmethod
-    def request_otp(cur, phone_number: str, purpose: str = 'LOGIN') -> dict:
+    def request_otp(cur, phone_number: str, ip_address: str, purpose: str = 'LOGIN') -> dict:
+        """Request an OTP challenge. Enforces D-018 rate-limit and lockout.
+
+        Rate-limit scope: phone+IP, 3 requests per 5 minutes.
+        Lockout scope: phone only, 10 minutes after 5th failed attempt.
+        """
+        if not ip_address or ip_address.strip() == "":
+            raise ValueError("IP address is required for OTP requests.")
+
+        # 1. Lockout check (phone-scoped, no IP filter)
+        cur.execute("""
+            SELECT blocked_at FROM otp_challenges
+            WHERE phone_number = %s
+              AND status = 'BLOCKED'
+              AND blocked_at > now() - interval %s
+            ORDER BY blocked_at DESC LIMIT 1;
+        """, (phone_number, f"{OTP_LOCKOUT_MINUTES} minutes"))
+        locked = cur.fetchone()
+        if locked:
+            raise PermissionError("Phone temporarily locked. Try again later.")
+
+        # 2. Rate-limit check (phone+IP scoped, no purpose filter)
+        cur.execute("""
+            SELECT count(*) AS cnt FROM otp_challenges
+            WHERE phone_number = %s
+              AND ip_address = %s
+              AND created_at > now() - interval %s;
+        """, (phone_number, ip_address, f"{OTP_RATE_LIMIT_WINDOW_MINUTES} minutes"))
+        row = cur.fetchone()
+        if row and row["cnt"] >= OTP_RATE_LIMIT_COUNT:
+            raise PermissionError("Rate limit exceeded. Max 3 OTP requests per 5 minutes per phone+IP.")
+
+        # 3. Generate OTP code
         otp_id = str(uuid.uuid4())
-        # Production safeguard: never allow hardcoded OTP in production environment
         is_prod = os.getenv("ENVIRONMENT", "").lower() in ("prod", "production") or os.getenv("POL_ENV", "").lower() in ("prod", "production")
         if is_prod:
-            code = f"{secrets.randbelow(10_000):04d}"  # D-018: 4-digit OTP
+            code = f"{secrets.randbelow(10_000):04d}"
         else:
-            # Predictable test OTP strictly restricted to test/dev/staging harnesses
-            code = "1234"  # D-018: 4-digit test OTP
-        code_hash = hashlib.sha256(code.encode()).hexdigest()
+            code = "1234"
+
+        code_hash = store_otp_hash(code)
         cur.execute("""
-            INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, attempts_count, max_attempts, status, expires_at)
-            VALUES (%s, %s, %s, %s, 0, %s, 'PENDING', now() + interval '2 minutes')
+            INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
+            VALUES (%s, %s, %s, %s, %s, 0, %s, 'PENDING', now() + interval %s)
             RETURNING id, phone_number, status, expires_at;
-        """, (otp_id, phone_number, code_hash, purpose, OTP_MAX_ATTEMPTS))
+        """, (otp_id, phone_number, code_hash, purpose, ip_address, OTP_MAX_ATTEMPTS, f"{OTP_TTL_SECONDS} seconds"))
         res = cur.fetchone()
         if not is_prod and isinstance(res, dict):
             res["test_code"] = code
@@ -52,6 +97,11 @@ class AuthService:
 
     @staticmethod
     def verify_otp(cur, phone_number: str, code: str, user_id: str, active_org_id: str) -> dict:
+        """Verify OTP and issue JWT + refresh token. Enforces D-018 brute-force defense.
+
+        On 5th failed attempt: status=BLOCKED, blocked_at=now().
+        On success: creates 30-day session, issues 15-min JWT + refresh token.
+        """
         cur.execute("""
             SELECT * FROM otp_challenges
             WHERE phone_number = %s AND status = 'PENDING' AND expires_at > now()
@@ -61,35 +111,92 @@ class AuthService:
         if not challenge:
             raise ValueError("No pending OTP challenge found or code expired.")
 
-        code_hash = hashlib.sha256(code.encode()).hexdigest()
-        if challenge["code_hash"] != code_hash:
+        if not verify_otp_hash(code, challenge["code_hash"]):
             cur.execute("""
                 UPDATE otp_challenges
                 SET attempts_count = attempts_count + 1,
-                    status = CASE WHEN attempts_count + 1 >= max_attempts THEN 'BLOCKED' ELSE 'PENDING' END
+                    status = CASE WHEN attempts_count + 1 >= max_attempts THEN 'BLOCKED' ELSE 'PENDING' END,
+                    blocked_at = CASE WHEN attempts_count + 1 >= max_attempts THEN now() ELSE blocked_at END
                 WHERE id = %s
                 RETURNING attempts_count, status;
             """, (challenge["id"],))
             upd = cur.fetchone()
             if upd["status"] == "BLOCKED":
-                raise PermissionError("OTP attempts exceeded limit. Challenge BLOCKED.")
+                raise PermissionError("OTP attempts exceeded limit. Phone locked for 10 minutes.")
             raise ValueError(f"Invalid OTP code. Attempt {upd['attempts_count']}/{challenge['max_attempts']}")
 
         cur.execute("""
             UPDATE otp_challenges SET status = 'VERIFIED', verified_at = now() WHERE id = %s;
         """, (challenge["id"],))
 
+        # Create session (30-day refresh session)
         sess_id = str(uuid.uuid4())
-        tok_hash = f"tok_{uuid.uuid4().hex}"
+        refresh_token = generate_refresh_token()
+        refresh_hash = hash_token(refresh_token)
+
         cur.execute("""
-            INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
-            VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '15 minutes')
+            SELECT role FROM organization_memberships
+            WHERE user_id = %s AND organization_id = %s AND status = 'ACTIVE';
+        """, (user_id, active_org_id))
+        mem = cur.fetchone()
+        role = mem["role"] if mem else "UNKNOWN"
+
+        # Issue access JWT
+        access_token = encode_access_token(user_id, sess_id, active_org_id, role)
+        token_hash = hash_token(access_token)
+
+        cur.execute("""
+            INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, refresh_token_hash, status, expires_at)
+            VALUES (%s, %s, %s, %s, %s, 'ACTIVE', now() + interval %s)
             RETURNING id, user_id, active_organization_id, status;
-        """, (sess_id, user_id, active_org_id, tok_hash))
-        return cur.fetchone()
+        """, (sess_id, user_id, active_org_id, token_hash, refresh_hash, f"{int(SESSION_TTL_HOURS * 3600)} seconds"))
+        session = cur.fetchone()
+
+        return {
+            "session": session,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_in": JWT_ACCESS_TTL_SECONDS,
+        }
+
+    @staticmethod
+    def refresh_access_token(cur, refresh_token: str) -> dict:
+        """Issue a new access JWT using a valid refresh token.
+
+        Refresh token is NOT rotated (rotation TBD per D-018).
+        """
+        token_hash = hash_token(refresh_token)
+        cur.execute("""
+            SELECT us.*, m.role
+            FROM user_sessions us
+            JOIN organization_memberships m
+              ON m.user_id = us.user_id AND m.organization_id = us.active_organization_id AND m.status = 'ACTIVE'
+            WHERE us.refresh_token_hash = %s
+              AND us.status = 'ACTIVE'
+              AND us.expires_at > now();
+        """, (token_hash,))
+        session = cur.fetchone()
+        if not session:
+            raise PermissionError("Invalid or expired refresh token.")
+
+        cur.execute("""
+            UPDATE user_sessions SET last_activity_at = now() WHERE id = %s;
+        """, (session["id"],))
+
+        access_token = encode_access_token(
+            session["user_id"], session["id"],
+            str(session["active_organization_id"]), session["role"]
+        )
+
+        return {
+            "access_token": access_token,
+            "token_type": "Bearer",
+            "expires_in": JWT_ACCESS_TTL_SECONDS,
+        }
 
     @staticmethod
     def switch_organization(cur, user_id: str, target_org_id: str, session_id: str) -> dict:
+        """Switch active organization. Returns new JWT with updated org_id + role."""
         cur.execute("""
             SELECT role, status FROM organization_memberships
             WHERE user_id = %s AND organization_id = %s;
@@ -104,7 +211,14 @@ class AuthService:
             WHERE id = %s AND status = 'ACTIVE'
             RETURNING id, active_organization_id, status;
         """, (target_org_id, session_id))
-        return cur.fetchone()
+        session = cur.fetchone()
+
+        new_access_token = encode_access_token(user_id, session_id, target_org_id, mem["role"])
+
+        return {
+            "session": session,
+            "access_token": new_access_token,
+        }
 
     @staticmethod
     def revoke_session(cur, session_id: str) -> None:

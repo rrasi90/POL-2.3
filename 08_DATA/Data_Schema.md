@@ -876,10 +876,12 @@ CREATE TABLE IF NOT EXISTS otp_challenges (
     phone_number VARCHAR(32) NOT NULL,
     code_hash VARCHAR(128) NOT NULL,
     purpose VARCHAR(32) NOT NULL CHECK (purpose IN ('LOGIN', 'REGISTER', 'ORDER_CONFIRMATION', 'DELIVERY_CONFIRM')),
+    ip_address VARCHAR(45) NOT NULL DEFAULT '',
     attempts_count INT NOT NULL DEFAULT 0,
     max_attempts INT NOT NULL DEFAULT 5,
     status VARCHAR(32) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'VERIFIED', 'EXPIRED', 'BLOCKED')),
     expires_at TIMESTAMPTZ NOT NULL,
+    blocked_at TIMESTAMPTZ,
     verified_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
