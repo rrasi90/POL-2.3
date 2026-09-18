@@ -61,6 +61,21 @@ class CanonicalVendorOrderService:
 
         cur.execute(
             """
+            SELECT 1
+            FROM order_partial_acceptance_proposals
+            WHERE order_id = %s
+              AND status = 'PENDING'
+            LIMIT 1
+            """,
+            (order_id,),
+        )
+        if cur.fetchone():
+            raise ValueError(
+                "Order has a pending partial acceptance proposal awaiting retailer decision."
+            )
+
+        cur.execute(
+            """
             SELECT ir.id,
                    ir.vendor_product_id,
                    ir.quantity,
@@ -122,6 +137,7 @@ class CanonicalVendorOrderService:
                 """
                 UPDATE inventory_reservations
                 SET status = 'CONSUMED',
+                    consumed_quantity = quantity,
                     consumed_at = now()
                 WHERE id = %s
                 """,
@@ -285,6 +301,21 @@ class CanonicalVendorOrderService:
 
         cur.execute(
             """
+            SELECT 1
+            FROM order_partial_acceptance_proposals
+            WHERE order_id = %s
+              AND status = 'PENDING'
+            LIMIT 1
+            """,
+            (order_id,),
+        )
+        if cur.fetchone():
+            raise ValueError(
+                "Order has a pending partial acceptance proposal awaiting retailer decision."
+            )
+
+        cur.execute(
+            """
             SELECT ir.id,
                    ir.vendor_product_id,
                    ir.quantity,
@@ -338,6 +369,7 @@ class CanonicalVendorOrderService:
                 """
                 UPDATE inventory_reservations
                 SET status = 'RELEASED',
+                    consumed_quantity = 0,
                     released_at = now()
                 WHERE id = %s
                 """,

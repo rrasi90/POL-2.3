@@ -31,6 +31,36 @@ def api_test_environment(monkeypatch):
 
 
 class _FakeBoundary:
+    def vendor_partial_acceptance_propose(self, *, order_id, idempotency_key, items):
+        return {
+            "proposal_id": str(uuid4()),
+            "order_id": order_id,
+            "status": "PENDING",
+            "items": items,
+        }
+
+    def retailer_partial_acceptance_approve(self, *, order_id, proposal_id):
+        return {
+            "proposal_id": proposal_id,
+            "order_id": order_id,
+            "order_number": "ORD-HTTP-PARTIAL",
+            "order_group_id": str(uuid4()),
+            "order_status": "PARTIALLY_ACCEPTED",
+            "total_amount_toman": 3500000,
+            "consumed_reservation_count": 1,
+            "changed_item_count": 1,
+        }
+
+    def retailer_partial_acceptance_decline(self, *, order_id, proposal_id, reason=None):
+        return {
+            "proposal_id": proposal_id,
+            "order_id": order_id,
+            "status": "DECLINED",
+            "order_status": "SUBMITTED",
+            "decision_reason": reason,
+            "items": [],
+        }
+
     def vendor_order_accept(self, *, order_id):
         return {
             "order_id": order_id,
@@ -146,3 +176,86 @@ def test_vendor_reject_route_rejects_invalid_order_id(client):
     )
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+ 
+ 
+def test_vendor_partial_proposal_route_returns_pending_contract(client):
+    order_id, item_id = uuid4(), uuid4()
+    response = client.post(
+        f"/api/v1/orders/{order_id}/partial-acceptance-proposals",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"items": [{"order_item_id": str(item_id), "accepted_quantity": 7, "reason": "SHORTAGE"}]},
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["success"] is True
+    assert body["data"]["order_id"] == str(order_id)
+    assert body["data"]["status"] == "PENDING"
+
+
+def test_vendor_partial_proposal_route_requires_idempotency_key(client):
+    response = client.post(
+        f"/api/v1/orders/{uuid4()}/partial-acceptance-proposals",
+        json={"items": [{"order_item_id": str(uuid4()), "accepted_quantity": 7, "reason": "SHORTAGE"}]},
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_vendor_partial_proposal_route_rejects_unknown_body_fields(client):
+    response = client.post(
+        f"/api/v1/orders/{uuid4()}/partial-acceptance-proposals",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={
+            "items": [{"order_item_id": str(uuid4()), "accepted_quantity": 7, "reason": "SHORTAGE"}],
+            "vendor_id": str(uuid4()),
+        },
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_vendor_partial_proposal_route_rejects_invalid_idempotency_key(client):
+    response = client.post(
+        f"/api/v1/orders/{uuid4()}/partial-acceptance-proposals",
+        headers={"Idempotency-Key": "not-a-uuid"},
+        json={"items": [{"order_item_id": str(uuid4()), "accepted_quantity": 7, "reason": "SHORTAGE"}]},
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "INVALID_REQUEST"
+
+
+def test_retailer_partial_approval_route_returns_canonical_contract(client):
+    order_id, proposal_id = uuid4(), uuid4()
+    response = client.post(
+        f"/api/v1/orders/{order_id}/partial-acceptance-proposals/{proposal_id}/approve"
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    assert body["data"]["proposal_id"] == str(proposal_id)
+    assert body["data"]["order_status"] == "PARTIALLY_ACCEPTED"
+
+
+def test_retailer_partial_decline_route_returns_canonical_contract(client):
+    order_id, proposal_id = uuid4(), uuid4()
+    response = client.post(
+        f"/api/v1/orders/{order_id}/partial-acceptance-proposals/{proposal_id}/decline",
+        json={"reason": "Need full quantity"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    assert body["data"]["proposal_id"] == str(proposal_id)
+    assert body["data"]["status"] == "DECLINED"
+
+
+def test_partial_acceptance_routes_are_auth_protected(api_test_environment):
+    app.dependency_overrides.clear()
+    response = TestClient(app).post(
+        f"/api/v1/orders/{uuid4()}/partial-acceptance-proposals",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={"items": [{"order_item_id": str(uuid4()), "accepted_quantity": 7, "reason": "SHORTAGE"}]},
+    )
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "INVALID_ACCESS_TOKEN"

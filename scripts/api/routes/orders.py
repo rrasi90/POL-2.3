@@ -8,7 +8,12 @@ from fastapi import APIRouter, Depends, Header, status
 
 from scripts.api.dependencies import get_application_boundary
 from scripts.api.errors import success_payload
-from scripts.api.schemas import CheckoutRequest, VendorOrderRejectRequest
+from scripts.api.schemas import (
+    CheckoutRequest,
+    RetailerPartialAcceptanceDeclineRequest,
+    VendorOrderRejectRequest,
+    VendorPartialAcceptanceProposalRequest,
+)
 
 
 router = APIRouter(prefix="/orders", tags=["orders"])
@@ -60,5 +65,59 @@ def reject_order(
         boundary.vendor_order_reject(
             order_id=str(order_id),
             rejection_reason=payload.reason,
+        )
+    )
+
+ 
+ 
+@router.post("/{order_id}/partial-acceptance-proposals", status_code=201)
+def propose_partial_acceptance(
+    order_id: UUID,
+    payload: VendorPartialAcceptanceProposalRequest,
+    idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=128),
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.vendor_partial_acceptance_propose(
+            order_id=str(order_id),
+            idempotency_key=_validate_idempotency_key(idempotency_key),
+            items=[
+                {
+                    "order_item_id": str(item.order_item_id),
+                    "accepted_quantity": item.accepted_quantity,
+                    "reason": item.reason,
+                }
+                for item in payload.items
+            ],
+        )
+    )
+
+
+@router.post("/{order_id}/partial-acceptance-proposals/{proposal_id}/approve", status_code=200)
+def approve_partial_acceptance(
+    order_id: UUID,
+    proposal_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.retailer_partial_acceptance_approve(
+            order_id=str(order_id),
+            proposal_id=str(proposal_id),
+        )
+    )
+
+
+@router.post("/{order_id}/partial-acceptance-proposals/{proposal_id}/decline", status_code=200)
+def decline_partial_acceptance(
+    order_id: UUID,
+    proposal_id: UUID,
+    payload: RetailerPartialAcceptanceDeclineRequest | None = None,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.retailer_partial_acceptance_decline(
+            order_id=str(order_id),
+            proposal_id=str(proposal_id),
+            reason=payload.reason if payload else None,
         )
     )

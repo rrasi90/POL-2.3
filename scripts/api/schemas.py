@@ -54,6 +54,20 @@ class VendorOrderRejectRequest(APIBaseModel):
     reason: str = Field(min_length=1, max_length=1000)
 
 
+class VendorPartialAcceptanceItemRequest(APIBaseModel):
+    order_item_id: UUID
+    accepted_quantity: int = Field(gt=0)
+    reason: str | None = Field(default=None, max_length=255)
+
+
+class VendorPartialAcceptanceProposalRequest(APIBaseModel):
+    items: list[VendorPartialAcceptanceItemRequest] = Field(min_length=1)
+
+
+class RetailerPartialAcceptanceDeclineRequest(APIBaseModel):
+    reason: str | None = Field(default=None, max_length=1000)
+
+
 class ProfileUpdateRequest(APIBaseModel):
     display_name: str | None = None
     email: str | None = None

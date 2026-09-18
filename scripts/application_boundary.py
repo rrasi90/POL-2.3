@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from scripts.checkout_gateway import CanonicalCheckoutGateway
 from scripts.canonical_feedback import CanonicalFeedbackService
 from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
+from scripts.canonical_partial_acceptance import CanonicalPartialAcceptanceService
 from scripts.canonical_vendor_order import CanonicalVendorOrderService
 from scripts.canonical_support import CanonicalSupportService
 from scripts.payment_reconciliation_worker import PaymentReconciliationWorker
@@ -222,6 +223,35 @@ class POLApplicationBoundary:
             organization_id=self.context.organization_id,
             order_id=order_id,
             rejection_reason=rejection_reason,
+        )
+
+    def vendor_partial_acceptance_propose(self, *, order_id, idempotency_key, items):
+        return CanonicalPartialAcceptanceService.propose(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            order_id=order_id,
+            idempotency_key=idempotency_key,
+            items=items,
+        )
+
+    def retailer_partial_acceptance_approve(self, *, order_id, proposal_id):
+        return CanonicalPartialAcceptanceService.approve(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            order_id=order_id,
+            proposal_id=proposal_id,
+        )
+
+    def retailer_partial_acceptance_decline(self, *, order_id, proposal_id, reason=None):
+        return CanonicalPartialAcceptanceService.decline(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            order_id=order_id,
+            proposal_id=proposal_id,
+            reason=reason,
         )
 
     def feedback_list(self):
