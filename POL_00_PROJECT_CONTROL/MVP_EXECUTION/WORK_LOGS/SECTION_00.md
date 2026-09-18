@@ -3,7 +3,7 @@
 # Section Work Log
 
 ## Current Status
-IN_PROGRESS
+CLOSED
 
 ## Active Workers
 | WORKER | ROLE | WORK_ID | TASK | STARTED_AT | STATUS |
@@ -19,19 +19,22 @@ IN_PROGRESS
 |---|---|---|---|---|---|
 
 ## Evidence
-- Tests:
-- CI:
-- Design:
-- Deployment:
-- Other:
+- Tests: Run #333 artifact — 209 collected / 170 passed / 39 failed / 0 skipped.
+- CI: Run #333 FAILED; environment/bootstrap step SUCCESS.
+- Design: not in Stage 01 scope.
+- Deployment: not in Stage 01 scope.
+- Other: 28 migrations; 93 public base tables.
 
 ## Current Handoff
-- Current state: Stage 01 is IN_PROGRESS under EXEC50-002.
-- Last completed work: Stage 01 execution claimed; baseline inspection started.
-- Remaining work: record branch/PR/CI/schema/document truth and close stale claims.
-- Next worker/task: CHATGPT-5.6-LUNA / EXEC50-002 — finish Stage 01 and publish certification snapshot.
+- Current state: Section 00 CLOSED; Stage 01 CLOSED under EXEC50-002.
+- Last completed work: repository/CI baseline captured and stale active claims synchronized.
+- Remaining work: Stage 02 — Batch 6C-7 Source Repair.
+- Next worker/task: next sequential worker under EXEC50-003 / Stage 02.
 - Required decision: none.
-- Current SHA: pending until Stage 01 commit.
+- Current SHA: 1680f3c7ce855c057294fe555f86f041cabcc3ad.
 
 ## Closing Condition
 این Section فقط وقتی CLOSED می‌شود که تمام acceptance criteria و work items ثبت‌شده بسته شده باشند.
+
+## Stage 01 Closure Event — 2026-09-18
+EXEC50-002 CLOSED. Evidence: `STAGE_01_FRESH_BASELINE_2026-09-18.md`, master plan, and synchronized governance docs. Latest observed CI: Run #333 FAILED with 39 failing tests; Stage 02 owns the source repair.
