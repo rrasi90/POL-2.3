@@ -77,7 +77,7 @@ flowchart TD
 [ کاربر شماره موبایل وارد می‌کند ]
                │
                ▼
-[ تولید کد یکبارمصرف ۴ رقمی در Redis با انقضای ۱۲۰ ثانیه ]
+[ ایجاد چالش OTP چهاررقمی در PostgreSQL (otp_challenges) با انقضای ۱۲۰ ثانیه ]
                │
                ▼
 [ ارسال پیامک از طریق خط خدماتی (بدون مسدودی بلک‌لیست تبلیغاتی) ]
@@ -97,7 +97,7 @@ flowchart TD
 - **Refresh Token Rotation:** هنوز تصمیم‌گیری نشده (D-018).
 
 ### کنترل‌های امنیتی ضد تقلب:
-1. **محدودسازی ارسال پیامک (Rate Limiting):** حداکثر ۳ پیامک OTP در هر ۵ دقیقه به ازای هر شماره تلفن و آی‌پی.
+1. **محدودسازی ارسال پیامک (Rate Limiting):** حداکثر ۳ درخواست OTP در هر ۵ دقیقه به ازای هر شماره تلفن و آی‌پی؛ اجرای فعلی برای جلوگیری از race condition با PostgreSQL `pg_advisory_xact_lock` سریال‌سازی می‌شود و بر `LOGIN`/ `REGISTER` اعمال می‌شود.
 2. **مجوزهای مبتنی بر نقش (RBAC Guards):** هر کنترلر API با گارد امنیتی `@Roles('RETAILER')` یا `@Roles('WHOLESALER')` محافظت می‌شود.
 
 ---
@@ -107,9 +107,12 @@ flowchart TD
 تمام اندپوینت‌ها از ساختار استاندارد نسخه ۱ استفاده می‌کنند (`/api/v1/...`):
 
 ### ۴.۱. اندپوینت‌های احراز هویت (`/api/v1/auth`)
-* `POST /auth/otp/send` — ارسال کد تأیید ورود
-* `POST /auth/otp/verify` — اعتبارسنجی کد و بازگرداندن پروفایل و توکن JWT
-* `POST /auth/refresh` — تمدید توکن دسترسی
+* `POST /api/v1/auth/request-otp` — ایجاد چالش OTP ورود
+* `POST /api/v1/auth/verify-otp` — اعتبارسنجی OTP و صدور access/refresh token
+* `POST /api/v1/auth/refresh` — تمدید access token با refresh session
+* `POST /api/v1/auth/switch-organization` — تغییر tenant فعال و صدور JWT جدید
+* `DELETE /api/v1/auth/sessions/current` — ابطال سشن جاری
+* `DELETE /api/v1/auth/sessions/{id}` — ابطال یک سشن متعلق به کاربر احراز‌شده
 
 ### ۴.۲. اندپوینت‌های کاتالوگ، بارکد و تطبیق کالا (`/api/v1/catalog`)
 * `GET /categories` — درخت دسته‌بندی اقلام با آیکون‌ها
