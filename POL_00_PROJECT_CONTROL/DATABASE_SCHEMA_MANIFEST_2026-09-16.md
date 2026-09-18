@@ -1,9 +1,9 @@
 # POL Database Schema Manifest — 2026-09-16
 
-**Status:** CANONICAL CURRENT MANIFEST  
+**Status:** CANONICAL CURRENT MANIFEST — synced 2026-09-18  
 **Database:** PostgreSQL 18  
 **Migration chain:** `migrations/001_*.sql` through `migrations/028_*.sql`  
-**Current table count:** 90 public base tables  
+**Current table count:** 93 public base tables  
 
 ## Canonical rules
 
