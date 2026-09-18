@@ -147,7 +147,7 @@ This document does not certify the product as production-ready.
 
 
 ## Stage 04 — 2026-09-18 repository-truth amendment
-- Current PR #1 control-document HEAD: `4539c77a557290dc8476b6c29d3a7cfeab36feea`.
+- Stage 04 audit-start PR #1 control-document HEAD: `4539c77a557290dc8476b6c29d3a7cfeab36feea`.
 - Latest completed full verification on the PR lineage: **Run #365 — SUCCESS** on certified code head `5ac5974b2caf045f8020e3c8b48f889ed3ff94e9`.
 - Full suite: **212 collected / 212 passed / 0 failed / 0 skipped**.
 - CI environment: PostgreSQL 18.6; **93 public base tables**.
