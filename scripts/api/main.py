@@ -25,6 +25,7 @@ from scripts.api.errors import (
     value_error_handler,
 )
 from scripts.api.routes.auth import router as auth_router
+from scripts.api.routes.baskets import router as baskets_router
 from scripts.api.routes.profile import membership_router, router as profile_router
 from scripts.api.routes.orders import router as orders_router
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -76,6 +77,7 @@ def create_app() -> FastAPI:
             conn.close()
 
     app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(baskets_router, prefix="/api/v1")
     app.include_router(profile_router, prefix="/api/v1")
     app.include_router(membership_router, prefix="/api/v1")
     app.include_router(orders_router, prefix="/api/v1")
