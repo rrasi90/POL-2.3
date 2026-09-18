@@ -32,7 +32,8 @@ IN_PROGRESS
 - Remaining work: certify expanded suite in CI; close or repair based on evidence.
 - Next worker/task: CHATGPT-5.6-LUNA / EXEC50-007.
 - Required decision: none; D-019/D-015 already govern runtime/database.
-- Current SHA: a010b435dcfcbfab5ed35ea3191397271f1a01e2.
+- Current SHA: f76c9ebae857eb9a2573848780dd3a5aaf4d0a26.
 
 ## Closing Condition
 این Section فقط وقتی CLOSED می‌شود که تمام acceptance criteria و work items ثبت‌شده بسته شده باشند.
+| EVT-002 | 2026-09-18 | EXEC50-007 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | Run #395 executed 213 tests with 212 PASS / 1 FAIL. The failure was the newly added worker-architecture contract test using the pre-reconciliation Persian queue label; code architecture itself was consistent. Fixed the assertion to target the canonical `موتور worker / event processing` row and require `Python workers + PostgreSQL Outbox`. | scripts/test_worker_architecture.py | Run #395 failure; 212 passed / 1 failed / 0 skipped | f76c9ebae857eb9a2573848780dd3a5aaf4d0a26 | Run #403 pending | consume Run #403 result |
