@@ -38,6 +38,22 @@ class PytestResultCollector:
                 "phase": report.when,
             })
 
+def configure_test_environment():
+    """Make the master suite propagate one isolated PostgreSQL test configuration."""
+    pg_host = os.environ.get("PGHOST", "127.0.0.1")
+    pg_port = os.environ.get("POL_PG_PORT") or os.environ.get("PGPORT") or "5432"
+    os.environ.setdefault("PGHOST", pg_host)
+    os.environ.setdefault("PGPORT", pg_port)
+    os.environ.setdefault("POL_PG_PORT", pg_port)
+    os.environ.setdefault("POL_API_DB_NAME", "pol_test")
+    os.environ.setdefault("POL_API_DB_HOST", pg_host)
+    os.environ.setdefault("POL_API_DB_PORT", pg_port)
+    os.environ.setdefault(
+        "POL_E2E_PG_DSN",
+        f"host={pg_host} port={pg_port} dbname=postgres user={os.environ.get('PGUSER', 'postgres')}",
+    )
+    os.environ.setdefault("ENVIRONMENT", "test")
+
 def get_git_info():
     info = {"commit": "unknown", "branch": "unknown", "is_dirty": False}
     try:
@@ -93,6 +109,8 @@ def run():
     print("=" * 80)
     print("POL INDEPENDENT VERIFICATION & CERTIFICATION TEST SUITE")
     print("=" * 80)
+
+    configure_test_environment()
 
     git_info = get_git_info()
     db_info = get_db_info()
