@@ -43,6 +43,7 @@ DECISION AUTHORITY
 | **Allocation Engine Algorithm** | `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` | Deterministic multi-vendor allocation, MOV/MOQ and ranking. | Governs allocation implementation. |
 | **Brand & Design System** | `POL_00_PROJECT_CONTROL/BRAND_ARCHITECTURE.md`, `13_PRODUCT_DESIGN/` | Brand hierarchy, design system, interaction patterns and visual language. | Design may not override product/engineering decisions. |
 | **Operations, Fulfillment & Logistics** | `09_OPERATIONS/Fulfillment.md`, `09_OPERATIONS/Payments_and_Settlement.md`, `09_OPERATIONS/Support_and_Disputes.md` | Field SOPs, logistics, direct settlement and support/dispute operations. | Governs operational workflows. |
+| **Async Workers & Event Runtime** | `POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md`, `08_DATA/Event_Architecture.md` | Canonical PostgreSQL 18 transactional outbox + Python worker execution model. | Supersedes BullMQ/Redis Streams as the MVP event transport. |
 | **Pilot Definition & Metrics** | `11_PILOT/Pilot_Strategy.md`, `11_PILOT/KPIs.md`, `11_PILOT/Success_Criteria.md` | Ahvaz pilot parameters and Gate 1 telemetry. | Governs pilot validation. |
 | **Readiness & Certification** | `POL_00_PROJECT_CONTROL/GLOBAL_ENGINEERING_AUDIT_2026-09-14.md`, `POL_00_PROJECT_CONTROL/REPOSITORY_COMPLETION_AUDIT_2026-09-16.md`, `POL_00_PROJECT_CONTROL/CERTIFICATION_ADDENDUM_2026-09-14.md` | Explicit separation of verified domain core vs remaining production-applicationization gates. | No document may claim production readiness beyond these boundaries. |
 
