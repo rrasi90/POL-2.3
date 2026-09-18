@@ -32,7 +32,8 @@ IN_PROGRESS
 - Remaining work: certify Suite 23 in CI and close Stage 07.
 - Next worker/task: CHATGPT-5.6-LUNA / EXEC50-008.
 - Required decision: none.
-- Current SHA: 10c429b994fbf2729a15f5b53b3ad7511d4be49d.
+- Current SHA: 42c770a402d983a478bc6aaac2466e06f4b18528.
 
 ## Closing Condition
 این Section فقط وقتی CLOSED می‌شود که تمام acceptance criteria و work items ثبت‌شده بسته شده باشند.
+| EVT-002 | 2026-09-18 | EXEC50-008 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | CI executions triggered after route inventory/test commits. Run #413 (35381462408) has migration and environment verification successful and full suite still in progress; latest current-head Run #417 (35381519054) is also in progress. No certification claim made. | API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md; scripts/test_api_boundary_route_inventory.py | Run #413 / 35381462408; Run #417 / 35381519054 | 42c770a402d983a478bc6aaac2466e06f4b18528 | artifact pending | consume latest completed route-inventory CI result |
