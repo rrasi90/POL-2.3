@@ -72,7 +72,7 @@ The `order_groups` aggregate coordinates the buyer's high-level order progress a
 
 | State | Definition | Trigger / Precondition |
 |:---|:---|:---|
-| `DRAFT` | Allocation confirmed; order group created | Created by `POST /api/v1/checkout` |
+| `DRAFT` | Allocation confirmed; order group created | Created by `POST /api/v1/orders` |
 | `ACTIVE` | Child orders dispatched to vendors; fulfillment & direct payment in progress | OrderGroup confirmed; child orders created |
 | `COMPLETED` | 100% of child orders successfully reached `DELIVERED` | All child orders marked `DELIVERED` |
 | `PARTIALLY_COMPLETED` | At least 1 child order `DELIVERED`, and at least 1 child order `CANCELLED` or `REJECTED` | Terminal states reached for all child orders with mixed results |
