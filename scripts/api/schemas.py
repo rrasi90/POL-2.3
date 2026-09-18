@@ -31,6 +31,13 @@ class SwitchOrganizationRequest(APIBaseModel):
     target_organization_id: UUID
 
     
+class BasketItemRequest(APIBaseModel):
+    product_id: UUID
+    requested_quantity: int = Field(gt=0)
+    pack_quantity: int = Field(default=1, gt=0)
+    expected_version: int = Field(ge=1)
+
+
 class CheckoutRequest(APIBaseModel):
     allocation_plan_id: UUID
     delivery_address: str = Field(min_length=5, max_length=1000)
