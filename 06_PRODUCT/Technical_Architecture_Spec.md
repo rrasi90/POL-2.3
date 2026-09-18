@@ -62,11 +62,11 @@ flowchart TD
 | **فریم‌ورک بک‌اند (Framework)** | **FastAPI (thin transport adapter over modular monolith)** | D-020:uthoritative HTTP framework. Thin adapter layer over `authentication/session → ApplicationContext → POLApplicationBoundary → canonical domain service → PostgreSQL → outbox → worker`. Modular monolith maintained via Python module boundaries. |
 | **پایگاه داده اصلی (Database)** | **PostgreSQL 18** | پشتیبانی کامل از تراکنش‌های مالی ACID، جستجوی متنی فازی زبان فارسی با افزونه `pg_trgm`، ایندکس‌های B-Tree روی بارکدها و فیلدهای JSONB. |
 | **کش و نشست‌ها (Cache)** | **Redis 7** | کش کردن نتایج کاتالوگ بنکداران، نرخ‌گذاری پیامک (Rate Limiting) و مدیریت جلسات ورود. |
-| **موتور صف و پردازش رویدادها (Queue)** | **BullMQ بر بستر Redis 7** | اجرای صف‌های پردازش پس‌زمینه، ارسال پیامک، بازپردازش خطای DLQ و الگوی Transactional Outbox. |
+| **موتور صف و پردازش رویدادها (Queue)** | **LEGACY / RECONCILIATION PENDING** | این BullMQ/Redis wording یک legacy architecture reference است و تحت D-019 به‌عنوان تصمیم اجرایی نهایی معتبر نیست. Stage 06 باید مکانیزم worker/queue را بدون ایجاد dual Node/Python runtime نهایی کند. PostgreSQL outbox remains the transactional source of truth. |
 | **ذخیره‌سازی فایل و تصاویر (Storage)** | **MinIO (فضای شی‌محور سازگار با پروتکل S3 ابری)** | ذخیره‌سازی ابری فایل‌های باینری تصاویر کالاها با ساختار کلیدهای پایدار (`products/{id}/canonical/{uuid}.webp`) و حذف EXIF. |
 | **فرانت‌اند وب و دسکتاپ (Web)** | **Next.js 14 (App Router) با استایل‌دهی Tailwind CSS** | ساختار فوق‌العاده سبک، رندر سریع سمت سرور (SSR) برای گوشی‌های ضعیف، و قابلیت PWA روی گوشی سوپرمارکت. |
 | **اپلیکیشن موبایل (Mobile)** | **React Native با فریم‌ورک Expo** | اشتراک بیش از ۸۰٪ کدهای تجاری با نسخه وب؛ ماژول اسکنر دوربین برای اسکن پیوسته بارکد (Continuous Scan). |
-| **رصد و مانیتورینگ (Observability)** | **Pino JSON Logger به همراه متریک‌های Prometheus و داشبورد Grafana** | ثبت بلادرنگ خطاها، پایش زمان پاسخگویی APIها و مانیتورینگ سلامت صف‌های BullMQ. |
+| **رصد و مانیتورینگ (Observability)** | **Pino JSON Logger به همراه متریک‌های Prometheus و داشبورد Grafana** | ثبت بلادرنگ خطاها، پایش زمان پاسخگویی APIها و مانیتورینگ سلامت worker/queue پس از Stage 06 canonicalization. |
 | **زیرساخت سرور و استقرار (Deployment)** | **Docker Compose روی سرورهای ابری داخل ایران (ابر آروان یا پارس‌پک)** | تضمین دسترسی ۱۰۰٪ پایدار درون کشور حتی در زمان اختلالات اینترنت بین‌الملل؛ استقرار ایزوله و مستقل. |
 
 ---
