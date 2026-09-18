@@ -274,6 +274,14 @@
 ```
 
 ### ۵.۲. پذیرش کامل سفارش توسط بنکدار (`POST /orders/:id/accept`)
+* **مجوز:** بنکدار مقصد در سازمان فعال (VENDOR_OWNER, VENDOR_STAFF). شناسه بنکدار و tenant از ApplicationContext استخراج می‌شود و از کلاینت دریافت نمی‌شود.
+* **بدنه درخواست:** ندارد.
+* **انتقال وضعیت:** فقط SUBMITTED -> ACCEPTED.
+* **پیامد کانونیکال:** همه reservationهای فعال سفارش به CONSUMED منتقل می‌شوند، reserved_quantity به همان میزان کاهش و physical_quantity کسر می‌شود، accepted_quantity اقلام برابر مقدار سفارش می‌شود و برای اعضای فعال سازمان خرده‌فروش رویداد ORDER_ACCEPTED در outbox ایجاد می‌شود.
+* **اعلام وضعیت غیرمجاز:** اگر سفارش در وضعیت دیگری باشد، درخواست رد می‌شود و mutation جزئی باقی نمی‌ماند.
+* **پاسخ موفق (200 OK):** شامل order_id, order_number, order_group_id, order_status, total_amount_toman, accepted_item_count, reservation_count.
+
+### ۵.۳. پذیرش با کسری موجودی توسط بنکدار (`POST /orders/:id/partial-accept`)
 * **انتقال وضعیت مجاز:** `SUBMITTED -> ACCEPTED`.
 * **پیامد:** رزرو قطعی موجودی در `vendor_inventory` و انتشار رویداد `order_accepted`.
 
