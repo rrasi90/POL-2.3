@@ -1,17 +1,20 @@
 """
-POL Auth Contract Verification Suite — Batch 6B-2
-Tests the D-018 auth runtime contract:
+POL Auth Contract Verification Suite — Batch 6B-2.1
+Tests the D-018 auth runtime contract with proper validation:
 - JWT claims, access token lifetime, refresh session lifetime
 - OTP PBKDF2 hashing, timing-safe comparison
-- Rate limit (3/5min/phone+IP)
+- Rate limit (3/5min/phone+IP) with advisory lock serialization
 - Phone lockout (10min after 5th failed attempt)
-- Organization switch: old JWT rejected, new JWT accepted
-- Refresh token flow
-- Session revocation
+- Organization switch: old JWT rejected via validate_access_token
+- Session revocation: validate_access_token rejects revoked sessions
+- Refresh token flow with hash persistence verification
+- Purpose policy: D-018 applies to LOGIN/REGISTER only
+- Concurrency test for rate-limit serialization
 """
 
 import os
 import sys
+import threading
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -21,8 +24,10 @@ from psycopg2.extras import RealDictCursor
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scripts.auth_boundary import (
+    AuthError,
     encode_access_token,
     decode_access_token,
+    validate_access_token,
     generate_refresh_token,
     hash_token,
     store_otp_hash,
@@ -84,13 +89,21 @@ def setup_test_user(cur):
 
 def cleanup(cur, user_id, org_a, org_b):
     """Clean up test data."""
-    cur.execute("DELETE FROM user_sessions WHERE user_id = %s;", (user_id,))
-    cur.execute("DELETE FROM otp_challenges WHERE phone_number LIKE '+9891611100%';")
-    cur.execute("DELETE FROM organization_memberships WHERE user_id = %s;", (user_id,))
-    cur.execute("DELETE FROM organizations WHERE id IN (%s, %s);", (org_a, org_b))
-    cur.execute("DELETE FROM users WHERE id = %s;", (user_id,))
-    conn = cur.connection
-    conn.commit()
+    try:
+        conn = cur.connection
+        conn.rollback()  # Clear any failed transaction state
+        cur.execute("DELETE FROM user_sessions WHERE user_id = %s;", (user_id,))
+        cur.execute("DELETE FROM otp_challenges WHERE phone_number LIKE '+9891611100%';")
+        cur.execute("DELETE FROM otp_challenges WHERE phone_number LIKE '+98916concurrent%';")
+        cur.execute("DELETE FROM organization_memberships WHERE user_id = %s;", (user_id,))
+        cur.execute("DELETE FROM organizations WHERE id IN (%s, %s);", (org_a, org_b))
+        cur.execute("DELETE FROM users WHERE id = %s;", (user_id,))
+        conn.commit()
+    except Exception:
+        try:
+            cur.connection.rollback()
+        except Exception:
+            pass
 
 
 def run_tests():
@@ -103,105 +116,252 @@ def run_tests():
     user_id, org_a, org_b = setup_test_user(cur)
     conn.commit()
 
-    # Set JWT secret for tests
     os.environ.setdefault("POL_JWT_SECRET", "test-secret-key-for-auth-contract-tests-only-32bytes!!")
 
     try:
+        # Helper to safely run a test with automatic rollback on failure
+        def safe_test(name, fn):
+            nonlocal passed, failed
+            try:
+                fn()
+                tests.append((name, True))
+                passed += 1
+            except Exception as e:
+                conn.rollback()
+                tests.append((name, False, str(e)))
+                failed += 1
+
         # =========================================================
         # T-AC1: JWT claims complete
         # =========================================================
-        try:
+        def test_ac1():
             token = encode_access_token(user_id, str(uuid.uuid4()), org_a, "RETAILER_OWNER")
             claims = decode_access_token(token)
-            assert "sub" in claims and claims["sub"] == user_id
+            assert claims["sub"] == user_id
             assert "sid" in claims
-            assert "org_id" in claims and claims["org_id"] == org_a
-            assert "role" in claims and claims["role"] == "RETAILER_OWNER"
+            assert claims["org_id"] == org_a
+            assert claims["role"] == "RETAILER_OWNER"
             assert claims["iss"] == "pol-platform"
             assert claims["aud"] == "pol-api"
-            assert "iat" in claims
-            assert "exp" in claims
-            tests.append(("T-AC1: JWT claims complete", True))
-            passed += 1
-        except Exception as e:
-            tests.append(("T-AC1: JWT claims complete", False, str(e)))
-            failed += 1
+            assert "iat" in claims and "exp" in claims
+        safe_test("T-AC1: JWT claims complete", test_ac1)
 
         # =========================================================
         # T-AC2: JWT exp = iat + 15 min
         # =========================================================
-        try:
+        def test_ac2():
             token = encode_access_token(user_id, str(uuid.uuid4()), org_a, "RETAILER_OWNER")
             claims = decode_access_token(token)
-            exp_minus_iat = claims["exp"] - claims["iat"]
-            assert exp_minus_iat == JWT_ACCESS_TTL_SECONDS == 900, f"Expected 900s, got {exp_minus_iat}"
-            tests.append(("T-AC2: JWT exp = iat + 15 min", True))
-            passed += 1
-        except Exception as e:
-            tests.append(("T-AC2: JWT exp = iat + 15 min", False, str(e)))
-            failed += 1
+            assert claims["exp"] - claims["iat"] == 900
+        safe_test("T-AC2: JWT exp = iat + 15 min", test_ac2)
 
         # =========================================================
-        # T-AC3: user_sessions.expires_at = created_at + 30 days
+        # T-AC3: SESSION_TTL_HOURS = 720 (30 days)
         # =========================================================
-        try:
-            expected_seconds = int(SESSION_TTL_HOURS * 3600)
-            assert expected_seconds == 2592000, f"SESSION_TTL_HOURS should be 720, got {SESSION_TTL_HOURS}"
-            tests.append(("T-AC3: SESSION_TTL_HOURS = 720 (30 days)", True))
-            passed += 1
-        except Exception as e:
-            tests.append(("T-AC3: SESSION_TTL_HOURS = 720 (30 days)", False, str(e)))
-            failed += 1
+        def test_ac3():
+            assert SESSION_TTL_HOURS == 720
+        safe_test("T-AC3: SESSION_TTL_HOURS = 720", test_ac3)
 
         # =========================================================
-        # T-AC4: refresh_token_hash stored
+        # T-AC11: OTP PBKDF2 hash + timing-safe verify
         # =========================================================
-        try:
-            refresh = generate_refresh_token()
-            r_hash = hash_token(refresh)
-            assert len(refresh) > 30, "Refresh token should be high-entropy"
-            assert verify_otp_hash is not None  # Function exists
-            tests.append(("T-AC4: refresh_token_hash stored correctly", True))
-            passed += 1
-        except Exception as e:
-            tests.append(("T-AC4: refresh_token_hash stored correctly", False, str(e)))
-            failed += 1
-
-        # =========================================================
-        # T-AC11: hmac.compare_digest used for OTP hash
-        # =========================================================
-        try:
-            code = "1234"
-            stored = store_otp_hash(code)
-            assert "$" in stored, f"PBKDF2 hash should contain $ separator, got: {stored}"
+        def test_ac11():
+            stored = store_otp_hash("1234")
             parts = stored.split("$")
-            assert len(parts) == 3, f"PBKDF2 hash should have 3 parts, got {len(parts)}"
-            assert int(parts[0]) == 100_000, f"Iterations should be 100000, got {parts[0]}"
+            assert len(parts) == 3
+            assert int(parts[0]) == 100_000
             assert verify_otp_hash("1234", stored) is True
             assert verify_otp_hash("9999", stored) is False
-            tests.append(("T-AC11: OTP PBKDF2 hash + timing-safe verify", True))
-            passed += 1
-        except Exception as e:
-            tests.append(("T-AC11: OTP PBKDF2 hash + timing-safe verify", False, str(e)))
-            failed += 1
+        safe_test("T-AC11: OTP PBKDF2 hash + timing-safe verify", test_ac11)
 
         # =========================================================
         # T-AC12: SESSION_TTL_HOURS = 720
         # =========================================================
-        try:
-            assert SESSION_TTL_HOURS == 720, f"Expected 720, got {SESSION_TTL_HOURS}"
-            tests.append(("T-AC12: SESSION_TTL_HOURS = 720", True))
-            passed += 1
-        except Exception as e:
-            tests.append(("T-AC12: SESSION_TTL_HOURS = 720", False, str(e)))
-            failed += 1
+        def test_ac12():
+            assert SESSION_TTL_HOURS == 720
+        safe_test("T-AC12: SESSION_TTL_HOURS = 720", test_ac12)
+
+        # =========================================================
+        # T-AC13: validate_access_token — valid token accepted
+        # =========================================================
+        def test_ac13():
+            sess_id = str(uuid.uuid4())
+            token = encode_access_token(user_id, sess_id, org_a, "RETAILER_OWNER")
+            cur.execute("""
+                INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
+                VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days');
+            """, (sess_id, user_id, org_a, hash_token(token)))
+            conn.commit()
+            result = validate_access_token(cur, token)
+            assert result["sub"] == user_id
+            assert result["org_id"] == org_a
+            cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+            conn.commit()
+        safe_test("T-AC13: validate_access_token — valid token accepted", test_ac13)
+
+        # =========================================================
+        # T-AC14: validate_access_token — expired token rejected
+        # =========================================================
+        def test_ac14():
+            sess_id = str(uuid.uuid4())
+            now = datetime.now(timezone.utc)
+            claims = {
+                "sub": user_id, "sid": sess_id, "org_id": org_a, "role": "RETAILER_OWNER",
+                "iss": "pol-platform", "aud": "pol-api",
+                "iat": now - timedelta(seconds=2000),
+                "exp": now - timedelta(seconds=100),
+            }
+            import jwt as _jwt
+            token = _jwt.encode(claims, os.environ["POL_JWT_SECRET"], algorithm="HS256")
+            try:
+                validate_access_token(cur, token)
+                raise AssertionError("No exception raised")
+            except AuthError as e:
+                assert "expired" in str(e).lower()
+        safe_test("T-AC14: validate_access_token — expired rejected", test_ac14)
+
+        # =========================================================
+        # T-AC15: validate_access_token — session not found → rejected
+        # =========================================================
+        def test_ac15():
+            fake_session_id = str(uuid.uuid4())
+            token = encode_access_token(user_id, fake_session_id, org_a, "RETAILER_OWNER")
+            try:
+                validate_access_token(cur, token)
+                raise AssertionError("No exception raised")
+            except AuthError as e:
+                assert "session" in str(e).lower()
+        safe_test("T-AC15: validate_access_token — no session → rejected", test_ac15)
+
+        # =========================================================
+        # T-AC16: validate_access_token — REVOKED session → rejected
+        # =========================================================
+        def test_ac16():
+            sess_id = str(uuid.uuid4())
+            token = encode_access_token(user_id, sess_id, org_a, "RETAILER_OWNER")
+            cur.execute("""
+                INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
+                VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days');
+            """, (sess_id, user_id, org_a, hash_token(token)))
+            conn.commit()
+            cur.execute("UPDATE user_sessions SET status = 'REVOKED' WHERE id = %s;", (sess_id,))
+            conn.commit()
+            try:
+                validate_access_token(cur, token)
+                raise AssertionError("No exception raised")
+            except AuthError as e:
+                assert "not active" in str(e).lower() or "session" in str(e).lower()
+            finally:
+                cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+                conn.commit()
+        safe_test("T-AC16: validate_access_token — REVOKED session → rejected", test_ac16)
+
+        # =========================================================
+        # T-AC17: validate_access_token — stale org_id → rejected
+        # =========================================================
+        def test_ac17():
+            sess_id = str(uuid.uuid4())
+            token_a = encode_access_token(user_id, sess_id, org_a, "RETAILER_OWNER")
+            cur.execute("""
+                INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
+                VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days');
+            """, (sess_id, user_id, org_a, hash_token(token_a)))
+            conn.commit()
+            cur.execute("""
+                UPDATE user_sessions SET active_organization_id = %s WHERE id = %s;
+            """, (org_b, sess_id))
+            conn.commit()
+            try:
+                validate_access_token(cur, token_a)
+                raise AssertionError("No exception raised")
+            except AuthError as e:
+                assert "organization" in str(e).lower()
+            finally:
+                cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+                conn.commit()
+        safe_test("T-AC17: validate_access_token — stale org A → rejected", test_ac17)
+
+        # =========================================================
+        # T-AC18: validate_access_token — new org B JWT → accepted
+        # =========================================================
+        def test_ac18():
+            sess_id = str(uuid.uuid4())
+            cur.execute("""
+                INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
+                VALUES (%s, %s, %s, 'placeholder', 'ACTIVE', now() + interval '30 days');
+            """, (sess_id, user_id, org_a))
+            conn.commit()
+            cur.execute("""
+                UPDATE user_sessions SET active_organization_id = %s WHERE id = %s;
+            """, (org_b, sess_id))
+            conn.commit()
+            token_b = encode_access_token(user_id, sess_id, org_b, "VENDOR_OWNER")
+            cur.execute("""
+                UPDATE user_sessions SET token_hash = %s WHERE id = %s;
+            """, (hash_token(token_b), sess_id))
+            conn.commit()
+            result = validate_access_token(cur, token_b)
+            assert result["org_id"] == org_b
+            assert result["role"] == "VENDOR_OWNER"
+            cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+            conn.commit()
+        safe_test("T-AC18: validate_access_token — new org B → accepted", test_ac18)
+
+        # =========================================================
+        # T-AC19: validate_access_token — membership revoked → rejected
+        # =========================================================
+        def test_ac19():
+            sess_id = str(uuid.uuid4())
+            token = encode_access_token(user_id, sess_id, org_a, "RETAILER_OWNER")
+            cur.execute("""
+                INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
+                VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days');
+            """, (sess_id, user_id, org_a, hash_token(token)))
+            conn.commit()
+            cur.execute("""
+                UPDATE organization_memberships SET status = 'REVOKED'
+                WHERE user_id = %s AND organization_id = %s;
+            """, (user_id, org_a))
+            conn.commit()
+            try:
+                validate_access_token(cur, token)
+                raise AssertionError("No exception raised")
+            except AuthError as e:
+                assert "membership" in str(e).lower()
+            finally:
+                cur.execute("""
+                    UPDATE organization_memberships SET status = 'ACTIVE'
+                    WHERE user_id = %s AND organization_id = %s;
+                """, (user_id, org_a))
+                cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+                conn.commit()
+        safe_test("T-AC19: validate_access_token — membership revoked → rejected", test_ac19)
+
+        # =========================================================
+        # T-AC4: Refresh token hash actually persisted
+        # =========================================================
+        def test_ac4():
+            sess_id = str(uuid.uuid4())
+            token = encode_access_token(user_id, sess_id, org_a, "RETAILER_OWNER")
+            refresh_token = generate_refresh_token()
+            refresh_hash = hash_token(refresh_token)
+            cur.execute("""
+                INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, refresh_token_hash, status, expires_at)
+                VALUES (%s, %s, %s, %s, %s, 'ACTIVE', now() + interval '30 days');
+            """, (sess_id, user_id, org_a, hash_token(token), refresh_hash))
+            conn.commit()
+            cur.execute("SELECT refresh_token_hash FROM user_sessions WHERE id = %s;", (sess_id,))
+            stored_hash = cur.fetchone()["refresh_token_hash"]
+            assert stored_hash == hash_token(refresh_token), "Refresh token hash mismatch"
+            cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+            conn.commit()
+        safe_test("T-AC4: Refresh token hash actually persisted", test_ac4)
 
         # =========================================================
         # RATE LIMIT TESTS
         # =========================================================
 
-        # T-RL1: 4th request from same phone+IP in 5min → rejected
-        try:
+        def test_rl1():
             phone = "+989161110001"
             ip = "192.168.1.100"
             for i in range(OTP_RATE_LIMIT_COUNT):
@@ -211,25 +371,18 @@ def run_tests():
                     VALUES (%s, %s, 'hash', 'LOGIN', %s, 0, 5, 'PENDING', now() + interval '2 minutes');
                 """, (otp_id, phone, ip))
             conn.commit()
-
+            from scripts.domain_services import AuthService
             try:
-                from scripts.domain_services import AuthService
                 AuthService.request_otp(cur, phone, ip, "LOGIN")
-                tests.append(("T-RL1: 4th request same phone+IP rejected", False, "No exception raised"))
-                failed += 1
+                raise AssertionError("No exception")
             except PermissionError as e:
                 assert "Rate limit" in str(e)
-                tests.append(("T-RL1: 4th request same phone+IP rejected", True))
-                passed += 1
             finally:
                 cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
                 conn.commit()
-        except Exception as e:
-            tests.append(("T-RL1: 4th request same phone+IP rejected", False, str(e)))
-            failed += 1
+        safe_test("T-RL1: 4th request same phone+IP rejected", test_rl1)
 
-        # T-RL2: Same phone, different IPs → separate buckets
-        try:
+        def test_rl2():
             phone = "+989161110002"
             for i in range(OTP_RATE_LIMIT_COUNT):
                 otp_id = str(uuid.uuid4())
@@ -238,20 +391,14 @@ def run_tests():
                     VALUES (%s, %s, 'hash', 'LOGIN', %s, 0, 5, 'PENDING', now() + interval '2 minutes');
                 """, (otp_id, phone, "10.0.0.1"))
             conn.commit()
-
             from scripts.domain_services import AuthService
             result = AuthService.request_otp(cur, phone, "10.0.0.2", "LOGIN")
             assert result is not None
-            tests.append(("T-RL2: Same phone different IPs → separate buckets", True))
-            passed += 1
             cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
             conn.commit()
-        except Exception as e:
-            tests.append(("T-RL2: Same phone different IPs → separate buckets", False, str(e)))
-            failed += 1
+        safe_test("T-RL2: Same phone different IPs → separate buckets", test_rl2)
 
-        # T-RL3: Same phone+IP after 5min window → allowed
-        try:
+        def test_rl3():
             phone = "+989161110003"
             ip = "192.168.1.200"
             otp_id = str(uuid.uuid4())
@@ -260,73 +407,14 @@ def run_tests():
                 VALUES (%s, %s, 'hash', 'LOGIN', %s, 0, 5, 'PENDING', now() - interval '6 minutes');
             """, (otp_id, phone, ip))
             conn.commit()
-
             from scripts.domain_services import AuthService
             result = AuthService.request_otp(cur, phone, ip, "LOGIN")
             assert result is not None
-            tests.append(("T-RL3: Same phone+IP after 5min → allowed", True))
-            passed += 1
             cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
             conn.commit()
-        except Exception as e:
-            tests.append(("T-RL3: Same phone+IP after 5min → allowed", False, str(e)))
-            failed += 1
+        safe_test("T-RL3: Same phone+IP after 5min → allowed", test_rl3)
 
-        # T-RL4: LOGIN + LOGIN + LOGIN → 4th rejected
-        try:
-            phone = "+989161110004"
-            ip = "192.168.1.300"
-            for i in range(3):
-                otp_id = str(uuid.uuid4())
-                cur.execute("""
-                    INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
-                    VALUES (%s, %s, 'hash', 'LOGIN', %s, 0, 5, 'PENDING', now() + interval '2 minutes');
-                """, (otp_id, phone, ip))
-            conn.commit()
-
-            try:
-                AuthService.request_otp(cur, phone, ip, "LOGIN")
-                tests.append(("T-RL4: 3x LOGIN same phone+IP → 4th rejected", False, "No exception"))
-                failed += 1
-            except PermissionError:
-                tests.append(("T-RL4: 3x LOGIN same phone+IP → 4th rejected", True))
-                passed += 1
-            finally:
-                cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
-                conn.commit()
-        except Exception as e:
-            tests.append(("T-RL4: 3x LOGIN same phone+IP → 4th rejected", False, str(e)))
-            failed += 1
-
-        # T-RL5: LOGIN + REGISTER + ORDER_CONFIRMATION → 4th rejected (same bucket)
-        try:
-            phone = "+989161110005"
-            ip = "192.168.1.400"
-            purposes = ["LOGIN", "REGISTER", "ORDER_CONFIRMATION"]
-            for purp in purposes:
-                otp_id = str(uuid.uuid4())
-                cur.execute("""
-                    INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
-                    VALUES (%s, %s, 'hash', %s, %s, 0, 5, 'PENDING', now() + interval '2 minutes');
-                """, (otp_id, phone, purp, ip))
-            conn.commit()
-
-            try:
-                AuthService.request_otp(cur, phone, ip, "DELIVERY_CONFIRM")
-                tests.append(("T-RL5: Mixed purposes same phone+IP → 4th rejected", False, "No exception"))
-                failed += 1
-            except PermissionError:
-                tests.append(("T-RL5: Mixed purposes same phone+IP → 4th rejected", True))
-                passed += 1
-            finally:
-                cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
-                conn.commit()
-        except Exception as e:
-            tests.append(("T-RL5: Mixed purposes same phone+IP → 4th rejected", False, str(e)))
-            failed += 1
-
-        # T-RL6: Different phone is unaffected
-        try:
+        def test_rl6():
             phone_a = "+989161110006"
             phone_b = "+989161110007"
             ip = "192.168.1.500"
@@ -337,23 +425,94 @@ def run_tests():
                     VALUES (%s, %s, 'hash', 'LOGIN', %s, 0, 5, 'PENDING', now() + interval '2 minutes');
                 """, (otp_id, phone_a, ip))
             conn.commit()
-
+            from scripts.domain_services import AuthService
             result = AuthService.request_otp(cur, phone_b, ip, "LOGIN")
             assert result is not None
-            tests.append(("T-RL6: Different phone unaffected by rate limit", True))
-            passed += 1
             cur.execute("DELETE FROM otp_challenges WHERE phone_number IN (%s, %s);", (phone_a, phone_b))
             conn.commit()
-        except Exception as e:
-            tests.append(("T-RL6: Different phone unaffected by rate limit", False, str(e)))
-            failed += 1
+        safe_test("T-RL6: Different phone unaffected by rate limit", test_rl6)
+
+        def test_rl7():
+            phone = "+989161110020"
+            ip = "192.168.1.700"
+            for i in range(OTP_RATE_LIMIT_COUNT):
+                otp_id = str(uuid.uuid4())
+                cur.execute("""
+                    INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
+                    VALUES (%s, %s, 'hash', 'LOGIN', %s, 0, 5, 'PENDING', now() + interval '2 minutes');
+                """, (otp_id, phone, ip))
+            conn.commit()
+            from scripts.domain_services import AuthService
+            result = AuthService.request_otp(cur, phone, ip, "ORDER_CONFIRMATION")
+            assert result is not None
+            cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
+            conn.commit()
+        safe_test("T-RL7: ORDER_CONFIRMATION bypasses D-018 rate-limit", test_rl7)
+
+        def test_rl8():
+            phone = "+989161110021"
+            ip = "192.168.1.701"
+            for i in range(OTP_RATE_LIMIT_COUNT):
+                otp_id = str(uuid.uuid4())
+                cur.execute("""
+                    INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
+                    VALUES (%s, %s, 'hash', 'LOGIN', %s, 0, 5, 'PENDING', now() + interval '2 minutes');
+                """, (otp_id, phone, ip))
+            conn.commit()
+            from scripts.domain_services import AuthService
+            result = AuthService.request_otp(cur, phone, ip, "DELIVERY_CONFIRM")
+            assert result is not None
+            cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
+            conn.commit()
+        safe_test("T-RL8: DELIVERY_CONFIRM bypasses D-018 rate-limit", test_rl8)
+
+        def test_rl9():
+            phone = "+989161110022"
+            ip = "192.168.1.702"
+            for i in range(OTP_RATE_LIMIT_COUNT):
+                otp_id = str(uuid.uuid4())
+                cur.execute("""
+                    INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
+                    VALUES (%s, %s, 'hash', 'LOGIN', %s, 0, 5, 'PENDING', now() + interval '2 minutes');
+                """, (otp_id, phone, ip))
+            conn.commit()
+            from scripts.domain_services import AuthService
+            try:
+                AuthService.request_otp(cur, phone, ip, "LOGIN")
+                raise AssertionError("No exception")
+            except PermissionError:
+                pass
+            finally:
+                cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
+                conn.commit()
+        safe_test("T-RL9: LOGIN is D-018 enforced", test_rl9)
+
+        def test_rl10():
+            phone = "+989161110023"
+            ip = "192.168.1.703"
+            for i in range(OTP_RATE_LIMIT_COUNT):
+                otp_id = str(uuid.uuid4())
+                cur.execute("""
+                    INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
+                    VALUES (%s, %s, 'hash', 'REGISTER', %s, 0, 5, 'PENDING', now() + interval '2 minutes');
+                """, (otp_id, phone, ip))
+            conn.commit()
+            from scripts.domain_services import AuthService
+            try:
+                AuthService.request_otp(cur, phone, ip, "REGISTER")
+                raise AssertionError("No exception")
+            except PermissionError:
+                pass
+            finally:
+                cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
+                conn.commit()
+        safe_test("T-RL10: REGISTER is D-018 enforced", test_rl10)
 
         # =========================================================
         # LOCKOUT TESTS
         # =========================================================
 
-        # T-LO1: 5th wrong OTP → BLOCKED + blocked_at
-        try:
+        def test_lo1():
             phone = "+989161110010"
             otp_id = str(uuid.uuid4())
             cur.execute("""
@@ -361,7 +520,6 @@ def run_tests():
                 VALUES (%s, %s, %s, 'LOGIN', '10.0.0.1', 0, 5, 'PENDING', now() + interval '2 minutes');
             """, (otp_id, phone, store_otp_hash("5678")))
             conn.commit()
-
             for attempt in range(1, 6):
                 cur.execute("""
                     UPDATE otp_challenges
@@ -373,19 +531,13 @@ def run_tests():
                 """, (otp_id,))
                 res = cur.fetchone()
             conn.commit()
-
             assert res["status"] == "BLOCKED"
             assert res["blocked_at"] is not None
-            tests.append(("T-LO1: 5th wrong OTP → BLOCKED + blocked_at", True))
-            passed += 1
             cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
             conn.commit()
-        except Exception as e:
-            tests.append(("T-LO1: 5th wrong OTP → BLOCKED + blocked_at", False, str(e)))
-            failed += 1
+        safe_test("T-LO1: 5th wrong OTP → BLOCKED + blocked_at", test_lo1)
 
-        # T-LO2: Request during 10-min lockout → rejected
-        try:
+        def test_lo2():
             phone = "+989161110011"
             otp_id = str(uuid.uuid4())
             cur.execute("""
@@ -393,24 +545,18 @@ def run_tests():
                 VALUES (%s, %s, 'hash', 'LOGIN', '10.0.0.1', 5, 5, 'BLOCKED', now(), now() + interval '2 minutes');
             """, (otp_id, phone,))
             conn.commit()
-
+            from scripts.domain_services import AuthService
             try:
                 AuthService.request_otp(cur, phone, "10.0.0.2", "LOGIN")
-                tests.append(("T-LO2: Request during lockout → rejected", False, "No exception"))
-                failed += 1
+                raise AssertionError("No exception")
             except PermissionError as e:
                 assert "locked" in str(e).lower()
-                tests.append(("T-LO2: Request during lockout → rejected", True))
-                passed += 1
             finally:
                 cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
                 conn.commit()
-        except Exception as e:
-            tests.append(("T-LO2: Request during lockout → rejected", False, str(e)))
-            failed += 1
+        safe_test("T-LO2: Request during lockout → rejected", test_lo2)
 
-        # T-LO3: blocked_at = now() - 10min + 1sec → REJECT
-        try:
+        def test_lo3():
             phone = "+989161110012"
             otp_id = str(uuid.uuid4())
             cur.execute("""
@@ -418,23 +564,18 @@ def run_tests():
                 VALUES (%s, %s, 'hash', 'LOGIN', '10.0.0.1', 5, 5, 'BLOCKED', now() - interval '10 minutes' + interval '1 second', now() + interval '2 minutes');
             """, (otp_id, phone,))
             conn.commit()
-
+            from scripts.domain_services import AuthService
             try:
                 AuthService.request_otp(cur, phone, "10.0.0.2", "LOGIN")
-                tests.append(("T-LO3: blocked_at = now()-10min+1s → REJECT", False, "No exception"))
-                failed += 1
+                raise AssertionError("No exception")
             except PermissionError:
-                tests.append(("T-LO3: blocked_at = now()-10min+1s → REJECT", True))
-                passed += 1
+                pass
             finally:
                 cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
                 conn.commit()
-        except Exception as e:
-            tests.append(("T-LO3: blocked_at = now()-10min+1s → REJECT", False, str(e)))
-            failed += 1
+        safe_test("T-LO3: blocked_at = now()-10min+1s → REJECT", test_lo3)
 
-        # T-LO4: blocked_at = now() - 10min - 1sec → ALLOW
-        try:
+        def test_lo4():
             phone = "+989161110013"
             otp_id = str(uuid.uuid4())
             cur.execute("""
@@ -442,19 +583,14 @@ def run_tests():
                 VALUES (%s, %s, 'hash', 'LOGIN', '10.0.0.1', 5, 5, 'BLOCKED', now() - interval '10 minutes' - interval '1 second', now() + interval '2 minutes');
             """, (otp_id, phone,))
             conn.commit()
-
+            from scripts.domain_services import AuthService
             result = AuthService.request_otp(cur, phone, "10.0.0.2", "LOGIN")
             assert result is not None
-            tests.append(("T-LO4: blocked_at = now()-10min-1s → ALLOW", True))
-            passed += 1
             cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
             conn.commit()
-        except Exception as e:
-            tests.append(("T-LO4: blocked_at = now()-10min-1s → ALLOW", False, str(e)))
-            failed += 1
+        safe_test("T-LO4: blocked_at = now()-10min-1s → ALLOW", test_lo4)
 
-        # T-LO5: Phone A locked, phone A + IP Y during lockout → REJECTED
-        try:
+        def test_lo5():
             phone = "+989161110014"
             otp_id = str(uuid.uuid4())
             cur.execute("""
@@ -462,23 +598,18 @@ def run_tests():
                 VALUES (%s, %s, 'hash', 'LOGIN', '10.0.0.1', 5, 5, 'BLOCKED', now(), now() + interval '2 minutes');
             """, (otp_id, phone,))
             conn.commit()
-
+            from scripts.domain_services import AuthService
             try:
                 AuthService.request_otp(cur, phone, "10.0.0.99", "LOGIN")
-                tests.append(("T-LO5: Phone locked + different IP → REJECTED", False, "No exception"))
-                failed += 1
+                raise AssertionError("No exception")
             except PermissionError:
-                tests.append(("T-LO5: Phone locked + different IP → REJECTED", True))
-                passed += 1
+                pass
             finally:
                 cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
                 conn.commit()
-        except Exception as e:
-            tests.append(("T-LO5: Phone locked + different IP → REJECTED", False, str(e)))
-            failed += 1
+        safe_test("T-LO5: Phone locked + different IP → REJECTED", test_lo5)
 
-        # T-LO6: Phone A locked, phone B + any IP → ALLOWED
-        try:
+        def test_lo6():
             phone_a = "+989161110015"
             phone_b = "+989161110016"
             otp_id = str(uuid.uuid4())
@@ -487,19 +618,14 @@ def run_tests():
                 VALUES (%s, %s, 'hash', 'LOGIN', '10.0.0.1', 5, 5, 'BLOCKED', now(), now() + interval '2 minutes');
             """, (otp_id, phone_a,))
             conn.commit()
-
+            from scripts.domain_services import AuthService
             result = AuthService.request_otp(cur, phone_b, "10.0.0.1", "LOGIN")
             assert result is not None
-            tests.append(("T-LO6: Phone A locked, phone B → ALLOWED", True))
-            passed += 1
             cur.execute("DELETE FROM otp_challenges WHERE phone_number IN (%s, %s);", (phone_a, phone_b))
             conn.commit()
-        except Exception as e:
-            tests.append(("T-LO6: Phone A locked, phone B → ALLOWED", False, str(e)))
-            failed += 1
+        safe_test("T-LO6: Phone A locked, phone B → ALLOWED", test_lo6)
 
-        # T-LO7: Lockout starts at 5th failed attempt, not challenge creation
-        try:
+        def test_lo7():
             phone = "+989161110017"
             otp_id = str(uuid.uuid4())
             cur.execute("""
@@ -507,95 +633,58 @@ def run_tests():
                 VALUES (%s, %s, %s, 'LOGIN', '10.0.0.1', 0, 5, 'PENDING', now() + interval '2 minutes');
             """, (otp_id, phone, store_otp_hash("5678")))
             conn.commit()
-
-            # Simulate 5th failure at T+8min
             cur.execute("""
                 UPDATE otp_challenges
                 SET attempts_count = 5, status = 'BLOCKED', blocked_at = now()
-                WHERE id = %s
-                RETURNING blocked_at;
+                WHERE id = %s RETURNING blocked_at;
             """, (otp_id,))
             blocked_at = cur.fetchone()["blocked_at"]
             conn.commit()
-
-            # Lockout should expire at blocked_at + 10min, not created_at + 10min
             assert blocked_at is not None
-            tests.append(("T-LO7: Lockout starts at 5th attempt, not creation", True))
-            passed += 1
             cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
             conn.commit()
-        except Exception as e:
-            tests.append(("T-LO7: Lockout starts at 5th attempt, not creation", False, str(e)))
-            failed += 1
+        safe_test("T-LO7: Lockout starts at 5th attempt, not creation", test_lo7)
 
         # =========================================================
-        # ORG SWITCH TEST
+        # CONCURRENCY TEST (T-CON1)
         # =========================================================
+        def test_con1():
+            phone = "+98916concurrent01"
+            ip = "10.99.0.1"
+            results = {"count": 0, "errors": []}
 
-        # T-AC9: Org switch: old A JWT rejected, new B JWT accepted
-        try:
-            sess_id = str(uuid.uuid4())
-            token_a = encode_access_token(user_id, sess_id, org_a, "RETAILER_OWNER")
+            def insert_otp():
+                try:
+                    c = get_connection()
+                    c.autocommit = False
+                    cur2 = c.cursor(cursor_factory=RealDictCursor)
+                    from scripts.domain_services import AuthService
+                    AuthService.request_otp(cur2, phone, ip, "LOGIN")
+                    c.commit()
+                    results["count"] += 1
+                except PermissionError:
+                    pass
+                except Exception as e:
+                    results["errors"].append(str(e))
+                finally:
+                    try:
+                        c.close()
+                    except Exception:
+                        pass
 
-            # Create session with org_a
-            cur.execute("""
-                INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
-                VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days');
-            """, (sess_id, user_id, org_a, hash_token(token_a)))
+            threads = [threading.Thread(target=insert_otp) for _ in range(6)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join(timeout=30)
+
+            assert results["count"] <= OTP_RATE_LIMIT_COUNT, \
+                f"Expected at most {OTP_RATE_LIMIT_COUNT} OTPs, got {results['count']}"
+            assert results["count"] >= 1, f"At least 1 OTP should succeed, got {results['count']}. Errors: {results['errors']}"
+            assert len(results["errors"]) == 0, f"Unexpected errors: {results['errors']}"
+            cur.execute("DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,))
             conn.commit()
-
-            # Switch to org_b
-            result = AuthService.switch_organization(cur, user_id, org_b, sess_id)
-            conn.commit()
-
-            # Old A JWT should have org_id=A, but session.active_organization_id is now B
-            claims_a = decode_access_token(token_a)
-            cur.execute("SELECT active_organization_id FROM user_sessions WHERE id = %s;", (sess_id,))
-            session_org = str(cur.fetchone()["active_organization_id"])
-            assert claims_a["org_id"] == org_a, "Old JWT org_id should be A"
-            assert session_org == org_b, "Session org should now be B"
-            assert claims_a["org_id"] != session_org, "Old JWT org_id must mismatch session"
-
-            # New token should have org_id=B
-            new_claims = decode_access_token(result["access_token"])
-            assert new_claims["org_id"] == org_b, "New JWT org_id should be B"
-            assert new_claims["role"] == "VENDOR_OWNER", "New JWT role should be VENDOR_OWNER"
-
-            tests.append(("T-AC9: Org switch: old A JWT rejected, new B JWT accepted", True))
-            passed += 1
-            cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
-            conn.commit()
-        except Exception as e:
-            tests.append(("T-AC9: Org switch: old A JWT rejected, new B JWT accepted", False, str(e)))
-            failed += 1
-
-        # T-AC10: Revoked session rejects JWT even if exp not passed
-        try:
-            sess_id = str(uuid.uuid4())
-            token = encode_access_token(user_id, sess_id, org_a, "RETAILER_OWNER")
-            cur.execute("""
-                INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
-                VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days');
-            """, (sess_id, user_id, org_a, hash_token(token)))
-            conn.commit()
-
-            AuthService.revoke_session(cur, sess_id)
-            conn.commit()
-
-            cur.execute("SELECT status FROM user_sessions WHERE id = %s;", (sess_id,))
-            assert cur.fetchone()["status"] == "REVOKED"
-
-            # JWT is still valid (exp not passed), but session is REVOKED
-            claims = decode_access_token(token)
-            assert claims["exp"] > datetime.now(timezone.utc).timestamp(), "JWT exp should not have passed"
-
-            tests.append(("T-AC10: Revoked session rejects valid JWT", True))
-            passed += 1
-            cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
-            conn.commit()
-        except Exception as e:
-            tests.append(("T-AC10: Revoked session rejects valid JWT", False, str(e)))
-            failed += 1
+        safe_test(f"T-CON1: Concurrent rate-limit (advisory lock)", test_con1)
 
     finally:
         cleanup(cur, user_id, org_a, org_b)

@@ -17,6 +17,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor, Json
 
 import secrets
+import hashlib as _hashlib
 
 from scripts.operational_config import (
     RESERVATION_TTL_MINUTES,
@@ -36,11 +37,17 @@ from scripts.operational_config import (
 from scripts.auth_boundary import (
     encode_access_token,
     decode_access_token,
+    validate_access_token,
+    AuthError,
     generate_refresh_token,
     hash_token,
     store_otp_hash,
     verify_otp_hash,
 )
+
+# D-018 enforcement scope: rate-limit and lockout apply to LOGIN and REGISTER only.
+# ORDER_CONFIRMATION / DELIVERY_CONFIRM have separate domain scope (future policy TBD).
+_D018_ENFORCED_PURPOSES = {"LOGIN", "REGISTER"}
 
 class AuthService:
     @staticmethod
@@ -49,32 +56,45 @@ class AuthService:
 
         Rate-limit scope: phone+IP, 3 requests per 5 minutes.
         Lockout scope: phone only, 10 minutes after 5th failed attempt.
+        D-018 enforcement applies to LOGIN/REGISTER only.
         """
         if not ip_address or ip_address.strip() == "":
             raise ValueError("IP address is required for OTP requests.")
 
-        # 1. Lockout check (phone-scoped, no IP filter)
-        cur.execute("""
-            SELECT blocked_at FROM otp_challenges
-            WHERE phone_number = %s
-              AND status = 'BLOCKED'
-              AND blocked_at > now() - interval %s
-            ORDER BY blocked_at DESC LIMIT 1;
-        """, (phone_number, f"{OTP_LOCKOUT_MINUTES} minutes"))
-        locked = cur.fetchone()
-        if locked:
-            raise PermissionError("Phone temporarily locked. Try again later.")
+        # Advisory lock on deterministic hash of phone+IP for serialization
+        lock_key = int.from_bytes(
+            _hashlib.sha256(f"{phone_number}:{ip_address}".encode()).digest()[:8],
+            "big"
+        ) & 0x7FFFFFFFFFFFFFFF
+        cur.execute("SELECT pg_advisory_xact_lock(%s::bigint);", (lock_key,))
 
-        # 2. Rate-limit check (phone+IP scoped, no purpose filter)
-        cur.execute("""
-            SELECT count(*) AS cnt FROM otp_challenges
-            WHERE phone_number = %s
-              AND ip_address = %s
-              AND created_at > now() - interval %s;
-        """, (phone_number, ip_address, f"{OTP_RATE_LIMIT_WINDOW_MINUTES} minutes"))
-        row = cur.fetchone()
-        if row and row["cnt"] >= OTP_RATE_LIMIT_COUNT:
-            raise PermissionError("Rate limit exceeded. Max 3 OTP requests per 5 minutes per phone+IP.")
+        # D-018 purpose policy: rate-limit and lockout apply to LOGIN/REGISTER only
+        enforce = purpose in _D018_ENFORCED_PURPOSES
+
+        # 1. Lockout check (phone-scoped, no IP filter) — only for D-018 purposes
+        if enforce:
+            cur.execute("""
+                SELECT blocked_at FROM otp_challenges
+                WHERE phone_number = %s
+                  AND status = 'BLOCKED'
+                  AND blocked_at > now() - interval %s
+                ORDER BY blocked_at DESC LIMIT 1;
+            """, (phone_number, f"{OTP_LOCKOUT_MINUTES} minutes"))
+            locked = cur.fetchone()
+            if locked:
+                raise PermissionError("Phone temporarily locked. Try again later.")
+
+        # 2. Rate-limit check (phone+IP scoped, no purpose filter) — only for D-018 purposes
+        if enforce:
+            cur.execute("""
+                SELECT count(*) AS cnt FROM otp_challenges
+                WHERE phone_number = %s
+                  AND ip_address = %s
+                  AND created_at > now() - interval %s;
+            """, (phone_number, ip_address, f"{OTP_RATE_LIMIT_WINDOW_MINUTES} minutes"))
+            row = cur.fetchone()
+            if row and row["cnt"] >= OTP_RATE_LIMIT_COUNT:
+                raise PermissionError("Rate limit exceeded. Max 3 OTP requests per 5 minutes per phone+IP.")
 
         # 3. Generate OTP code
         otp_id = str(uuid.uuid4())

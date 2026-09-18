@@ -30,6 +30,11 @@ from scripts.operational_config import (
 )
 
 
+class AuthError(Exception):
+    """Canonical authentication/authorization failure."""
+    pass
+
+
 def get_jwt_secret() -> str:
     """Return the JWT signing secret from environment. Fails fast if missing."""
     secret = os.environ.get("POL_JWT_SECRET")
@@ -69,6 +74,60 @@ def decode_access_token(token: str) -> dict:
         audience=JWT_AUDIENCE,
         options={"require": ["exp", "iss", "aud", "sub", "sid", "org_id", "role"]},
     )
+
+
+def validate_access_token(cur, token: str) -> dict:
+    """Canonical access-token validation path.
+
+    Validates JWT signature, claims, session existence, session status,
+    org_id match, and active membership. Returns the validated claims dict.
+
+    This is the SINGLE source-of-truth validation for all access tokens.
+    JWT claims are cached authorization context, NOT the authorization SSoT.
+    The database is the SSoT for session status, org context, and membership.
+    """
+    # 1. Decode + validate JWT signature, iss, aud, exp, required claims
+    try:
+        claims = decode_access_token(token)
+    except jwt.ExpiredSignatureError:
+        raise AuthError("Token has expired.")
+    except jwt.InvalidTokenError as e:
+        raise AuthError(f"Invalid token: {e}")
+
+    user_id = claims["sub"]
+    session_id = claims["sid"]
+    jwt_org_id = claims["org_id"]
+
+    # 2. Session exists + status == ACTIVE
+    cur.execute("""
+        SELECT id, user_id, active_organization_id, status
+        FROM user_sessions
+        WHERE id = %s;
+    """, (session_id,))
+    session = cur.fetchone()
+    if not session:
+        raise AuthError("Session not found.")
+    if session["status"] != "ACTIVE":
+        raise AuthError("Session is not active.")
+
+    # 3. JWT.sub == session.user_id
+    if str(session["user_id"]) != user_id:
+        raise AuthError("Token user does not match session user.")
+
+    # 4. JWT.org_id == session.active_organization_id
+    if str(session["active_organization_id"]) != jwt_org_id:
+        raise AuthError("Token organization does not match session organization.")
+
+    # 5. Active membership exists for JWT.org_id
+    cur.execute("""
+        SELECT role, status FROM organization_memberships
+        WHERE user_id = %s AND organization_id = %s;
+    """, (user_id, jwt_org_id))
+    membership = cur.fetchone()
+    if not membership or membership["status"] != "ACTIVE":
+        raise AuthError("No active membership for token organization.")
+
+    return claims
 
 
 def generate_refresh_token() -> str:

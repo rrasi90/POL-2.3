@@ -342,7 +342,7 @@
 ## ۷. اندپوینت‌های احراز هویت، سازمان و مدیریت سشن‌ها (Identity & Auth APIs)
 
 ### ۷.۱. درخواست رمز یک‌بار مصرف (`POST /auth/request-otp`)
-* **مجوز:** عمومی (Rate Limited: حداکثر ۳ بار در هر ۵ دقیقه به ازای هر شماره تلفن و آی‌پی — D-018).
+* **مجوز:** عمومی (محدودیت تعداد درخواست: حداکثر ۳ بار در هر ۵ دقیقه به ازای هر شماره تلفن و آی‌پی — اعمال D-018 فقط برای اهداف `LOGIN` و `REGISTER`؛ اهداف `ORDER_CONFIRMATION` و `DELIVERY_CONFIRM` خارج از سیاست فعلی D-018 هستند).
 * **بدنه درخواست:**
 ```json
 {
@@ -430,13 +430,37 @@
 ```
 * **پاسخ خطا (401):**
 ```json
-{ "error": "INVALID_REFRESH_TOKEN" }
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_REFRESH_TOKEN",
+    "message": "Refresh token is invalid or expired.",
+    "details": {},
+    "timestamp": "2026-09-18T12:00:00Z"
+  }
+}
 ```
 ```json
-{ "error": "SESSION_EXPIRED" }
+{
+  "success": false,
+  "error": {
+    "code": "SESSION_EXPIRED",
+    "message": "Session has expired. Please re-authenticate.",
+    "details": {},
+    "timestamp": "2026-09-18T12:00:00Z"
+  }
+}
 ```
 ```json
-{ "error": "SESSION_REVOKED" }
+{
+  "success": false,
+  "error": {
+    "code": "SESSION_REVOKED",
+    "message": "Session has been revoked.",
+    "details": {},
+    "timestamp": "2026-09-18T12:00:00Z"
+  }
+}
 ```
 * **نکته:** refresh token چرخش ندارد (Rotation TBD per D-018). همان refresh token تا پایان اعتبار سشن ۳۰ روزه معتبر است.
 

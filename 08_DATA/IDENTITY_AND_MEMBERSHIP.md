@@ -88,13 +88,17 @@ Registers physical hardware devices for push notifications and anti-fraud finger
 Tracks SMS one-time password lifecycles and brute-force defenses.
 - `id` (UUID, PK).
 - `phone_number` (VARCHAR 32).
-- `code_hash` (VARCHAR 128): Salted SHA-256 hash of the 4-digit verification code. (D-018 supersedes historical 5-digit/6-digit values.)
+- `code_hash` (VARCHAR 128): PBKDF2-HMAC-SHA256 hash of the 4-digit verification code with random salt. Format: `iterations$hex(salt)$hex(derived_key)`. (D-018 supersedes historical SHA-256 hashes.)
 - `purpose` (VARCHAR 32): `LOGIN`, `REGISTER`, `ORDER_CONFIRMATION`, `DELIVERY_CONFIRM`.
+- `ip_address` (VARCHAR 45): Client IP address at time of OTP request. Required for D-018 rate-limit enforcement (3 requests per 5 minutes per phone+IP). Default `''` for historical rows.
 - `attempts_count` (INT DEFAULT 0).
 - `max_attempts` (INT DEFAULT 5).
 - `status` (VARCHAR 32): `PENDING`, `VERIFIED`, `EXPIRED`, `BLOCKED`.
+- `blocked_at` (TIMESTAMPTZ): Timestamp when the phone was locked out after 5th failed attempt. NULL when not locked. The 10-minute lockout window is calculated as `blocked_at + 10 minutes`.
 - `expires_at` (TIMESTAMPTZ): 120-second validity window.
 - `created_at` (TIMESTAMPTZ).
+
+**D-018 enforcement scope:** Rate-limit (3/5min/phone+IP) and phone lockout (10min after 5 failures) apply to `LOGIN` and `REGISTER` purposes only. `ORDER_CONFIRMATION` and `DELIVERY_CONFIRM` have separate domain scope (future policy TBD).
 
 ---
 
