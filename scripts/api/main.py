@@ -16,6 +16,7 @@ from fastapi.exceptions import RequestValidationError
 from scripts.api.errors import (
     auth_error_handler,
     generic_error_handler,
+    http_exception_handler,
     key_error_handler,
     otp_lockout_handler,
     otp_rate_limit_handler,
@@ -25,6 +26,8 @@ from scripts.api.errors import (
 )
 from scripts.api.routes.auth import router as auth_router
 from scripts.api.routes.profile import membership_router, router as profile_router
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from scripts.auth_boundary import (
     AuthError,
     InvalidRefreshTokenError,
@@ -76,6 +79,7 @@ def create_app() -> FastAPI:
     app.include_router(membership_router, prefix="/api/v1")
 
     app.add_exception_handler(RequestValidationError, request_validation_handler)
+    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(InvalidRefreshTokenError, auth_error_handler)
     app.add_exception_handler(SessionExpiredError, auth_error_handler)
     app.add_exception_handler(SessionRevokedError, auth_error_handler)
