@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from scripts.checkout_gateway import CanonicalCheckoutGateway
 from scripts.canonical_feedback import CanonicalFeedbackService
 from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
+from scripts.canonical_vendor_order import CanonicalVendorOrderService
 from scripts.canonical_support import CanonicalSupportService
 from scripts.payment_reconciliation_worker import PaymentReconciliationWorker
 from scripts.provider_delivery_worker import ProviderDeliveryWorker
@@ -205,6 +206,14 @@ class POLApplicationBoundary:
             ],
             "idempotent_replay": bool(result.get("idempotent_replay", False)),
         }
+
+    def vendor_order_accept(self, *, order_id):
+        return CanonicalVendorOrderService.accept_order(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            order_id=order_id,
+        )
 
     def feedback_list(self):
         if not self.context.organization_id:
