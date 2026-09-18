@@ -22,11 +22,11 @@ def test_worker_architecture_is_postgres_python_canonical():
     assert "BullMQ" in worker_arch
     assert "historical / superseded" in worker_arch.lower()
 
-    active_queue_row = next(
+    active_worker_row = next(
         line for line in technical.splitlines()
-        if "موتور صف و پردازش رویدادها" in line
+        if "موتور worker / event processing" in line
     )
-    assert "LEGACY / RECONCILIATION PENDING" in active_queue_row
+    assert "Python workers + PostgreSQL Outbox" in active_worker_row
 
     # Event transport must not retain an active BullMQ/Redis-Streams path.
     assert "BullMQ Outbox Worker" not in events
