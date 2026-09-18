@@ -32,7 +32,7 @@ flowchart TD
 
     subgraph Data & Storage Layer
         D1[(PostgreSQL 18 - Relational DB)]
-        D2[(Redis 7 - Cache & Session & Queue)]
+        D2[(Redis 7 - Optional Cache / Rate Limit / Session Acceleration)]
         D3[MinIO / S3 - Photo Storage / Invoices]
     end
 
@@ -45,7 +45,7 @@ flowchart TD
     A1 & A2 & A3 & A4 --> B1
     B1 --> C1 & C2 & C3 & C4 & C5 & C6
     C1 & C2 & C3 & C4 & C5 & C6 --> D1
-    C1 & C3 & C4 --> D2
+    C1 & C4 --> D2
     C4 & C6 --> D3
     C1 & C4 --> E1
     C2 & C4 --> E2
@@ -61,12 +61,12 @@ flowchart TD
 | **محیط اجرایی بک‌اند (Runtime)** | **Python** | D-019:uthoritative production backend runtime. Ecosystem maturity, psycopg2/asyncpg native PostgreSQL driver, asyncio-native I/O. No Node/Python dual runtime. Concrete interpreter version (≥3.11) enforced by `verify_environment.py` and CI. |
 | **فریم‌ورک بک‌اند (Framework)** | **FastAPI (thin transport adapter over modular monolith)** | D-020:uthoritative HTTP framework. Thin adapter layer over `authentication/session → ApplicationContext → POLApplicationBoundary → canonical domain service → PostgreSQL → outbox → worker`. Modular monolith maintained via Python module boundaries. |
 | **پایگاه داده اصلی (Database)** | **PostgreSQL 18** | پشتیبانی کامل از تراکنش‌های مالی ACID، جستجوی متنی فازی زبان فارسی با افزونه `pg_trgm`، ایندکس‌های B-Tree روی بارکدها و فیلدهای JSONB. |
-| **کش و نشست‌ها (Cache)** | **Redis 7** | کش کردن نتایج کاتالوگ بنکداران، نرخ‌گذاری پیامک (Rate Limiting) و مدیریت جلسات ورود. |
-| **موتور صف و پردازش رویدادها (Queue)** | **LEGACY / RECONCILIATION PENDING** | این BullMQ/Redis wording یک legacy architecture reference است و تحت D-019 به‌عنوان تصمیم اجرایی نهایی معتبر نیست. Stage 06 باید مکانیزم worker/queue را بدون ایجاد dual Node/Python runtime نهایی کند. PostgreSQL outbox remains the transactional source of truth. |
+| **کش / Rate Limit** | **Redis 7 (Optional)** | در صورت استقرار، فقط برای cache / rate-limit / acceleration؛ canonical business state و outbox به Redis وابسته نیست. |
+| **موتور worker / event processing** | **Python workers + PostgreSQL Outbox** | Canonical per D-019/D-015: workers claim durable PostgreSQL work with `FOR UPDATE SKIP LOCKED` and leases; no BullMQ/Redis Streams dependency. See `POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md`. |
 | **ذخیره‌سازی فایل و تصاویر (Storage)** | **MinIO (فضای شی‌محور سازگار با پروتکل S3 ابری)** | ذخیره‌سازی ابری فایل‌های باینری تصاویر کالاها با ساختار کلیدهای پایدار (`products/{id}/canonical/{uuid}.webp`) و حذف EXIF. |
 | **فرانت‌اند وب و دسکتاپ (Web)** | **Next.js 14 (App Router) با استایل‌دهی Tailwind CSS** | ساختار فوق‌العاده سبک، رندر سریع سمت سرور (SSR) برای گوشی‌های ضعیف، و قابلیت PWA روی گوشی سوپرمارکت. |
 | **اپلیکیشن موبایل (Mobile)** | **React Native با فریم‌ورک Expo** | اشتراک بیش از ۸۰٪ کدهای تجاری با نسخه وب؛ ماژول اسکنر دوربین برای اسکن پیوسته بارکد (Continuous Scan). |
-| **رصد و مانیتورینگ (Observability)** | **Pino JSON Logger به همراه متریک‌های Prometheus و داشبورد Grafana** | ثبت بلادرنگ خطاها، پایش زمان پاسخگویی APIها و مانیتورینگ سلامت worker/queue پس از Stage 06 canonicalization. |
+| **رصد و مانیتورینگ (Observability)** | **Pino JSON Logger به همراه متریک‌های Prometheus و داشبورد Grafana** | ثبت بلادرنگ خطاها، پایش زمان پاسخگویی APIها و سلامت Python worker processes؛ deployment/process supervision remains a later deployment gate. |
 | **زیرساخت سرور و استقرار (Deployment)** | **Docker Compose روی سرورهای ابری داخل ایران (ابر آروان یا پارس‌پک)** | تضمین دسترسی ۱۰۰٪ پایدار درون کشور حتی در زمان اختلالات اینترنت بین‌الملل؛ استقرار ایزوله و مستقل. |
 
 ---
@@ -159,7 +159,7 @@ flowchart LR
     B -->|2. Generate S3 Presigned PUT| A
     A -->|3. Upload Compressed WebP| C[(MinIO / S3 Object Storage)]
     A -->|4. Confirm Upload| B
-    B -->|5. BullMQ Job| D[Image Processing Worker]
+    B -->|5. Python Worker Job| D[Python Image Processing Worker]
     D -->|Generate 150x150 WebP Thumbnail| C
     D -->|Register in media_assets & product_media| E[(PostgreSQL 18)]
 ```
