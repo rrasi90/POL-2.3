@@ -1,7 +1,7 @@
 # POL Canonical API / Application Boundary
 
 **Status:** CANONICAL PRE-UI ENGINEERING CONTRACT  
-**Scope:** MVP application boundary; transport implementation remains framework-neutral until the production API stack is selected.
+**Scope:** MVP application boundary with FastAPI (D-020) as the production HTTP transport adapter.
 
 ## 1. Boundary rule
 
@@ -11,7 +11,11 @@ Transport adapter:
 
 `HTTP / mobile client / web client -> request authentication -> ApplicationContext -> POLApplicationBoundary -> canonical domain service/gateway -> PostgreSQL transaction -> domain event/outbox -> async worker`
 
-The current framework-agnostic command facade is `scripts/application_boundary.py`.
+The current client-facing command facade is `scripts/application_boundary.py`; the FastAPI transport entrypoint is `scripts/api/main.py`.
+
+## 1.1 HTTP transport status (Batch 6C)
+
+The first HTTP transport slice is implemented at `scripts/api/` and currently exposes the canonical authentication/session routes plus the profile/context routes required to exercise the transport-to-ApplicationBoundary chain. The transport remains thin: it performs schema validation, authentication/session validation, ApplicationContext construction, error-envelope mapping, and transaction lifecycle management; it does not write domain tables directly or implement business state machines.
 
 ## 2. ApplicationContext
 
