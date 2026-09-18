@@ -339,7 +339,14 @@
 
 **محدودیت متقابل:** تا وقتی proposal در وضعیت `PENDING` است، full accept و full reject همان سفارش مجاز نیستند.
 
-### ۵.۵. اعلام خروج و بارگیری وانت (`POST /orders/:id/dispatch`)
+### ۵.۵. تایم‌اوت سیستمی تایید بنکدار (Worker)
+* **محرک:** worker زمانی که `vendor_acceptance_deadline_at` سپری شده باشد.
+* **انتقال وضعیت:** فقط `SUBMITTED -> CANCELLED` با `cancellation_reason = VENDOR_TIMEOUT`.
+* **شرط زمانی:** دقیقاً ۲ ساعت کاری بر اساس تقویم `AHVAZ_WHOLESALE`; شنبه تا پنج‌شنبه ۰۸:۰۰ تا ۱۸:۰۰، جمعه و تعطیلات فعال در `operational_holidays` خارج از SLA هستند.
+* **پیامد:** reservationهای `ACTIVE` آزاد می‌شوند؛ `reserved_quantity` کاهش می‌یابد؛ موجودی فیزیکی تغییر نمی‌کند؛ proposal ناقصِ `PENDING` غیرقابل‌اجرا شده و `DECLINED` با دلیل `VENDOR_TIMEOUT` می‌شود.
+* **رویداد و عملیات:** `ORDER_CANCELLED` برای اعضای فعال خرده‌فروش در outbox؛ رکورد `ACCEPTANCE_LATE` با اثر `-0.25` در `vendor_reliability_events`; taskهای `VENDOR_TIMEOUT` برای کاربران فعال `FIELD_ACTIVATOR`/`OPS_ADMIN`/`SUPER_ADMIN`.
+
+### ۵.۶. اعلام خروج و بارگیری وانت (`POST /orders/:id/dispatch`)
 * **انتقال وضعیت مجاز:** `READY -> DISPATCHED`.
 * **بدنه درخواست:**
 ```json

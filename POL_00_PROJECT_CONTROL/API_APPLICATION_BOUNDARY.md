@@ -25,6 +25,8 @@ Batch 6C-3 adds `POST /api/v1/baskets`, `POST /api/v1/baskets/{basket_id}/items`
 
 Batch 6C-4 adds the first vendor-side order transition over HTTP: `POST /api/v1/orders/{order_id}/accept`. The route is authenticated through `ApplicationContext` and the canonical vendor-order boundary. It permits only `SUBMITTED -> ACCEPTED` for an active member of the target vendor organization; it consumes active inventory reservations, decrements physical inventory, sets accepted quantities, and enqueues tenant-scoped `ORDER_ACCEPTED` outbox events. Batch 6C-5 adds `POST /api/v1/orders/{order_id}/reject`, limited to `SUBMITTED -> REJECTED`, requiring a non-empty reason and releasing active reservations without changing physical inventory. Batch 6C-6 closes the partial-acceptance contract with a two-party proposal/decision protocol: the vendor creates a pending proposal without mutating the order; the active retailer approves or declines it; only approval performs `SUBMITTED -> PARTIALLY_ACCEPTED`, reconciles inventory/amounts and emits tenant-scoped outbox events. While a proposal is `PENDING`, full accept/reject is blocked for that order. Timeout automation and downstream fulfillment transitions remain separate lifecycle work.
 
+Batch 6C-7 adds automated vendor-acceptance timeout processing through `process_vendor_acceptance_timeouts()`. The worker is ops-context protected and performs the canonical `SUBMITTED -> CANCELLED` transition once the Ahvaz working-calendar deadline is reached. It releases active inventory reservations, records `VENDOR_TIMEOUT`, emits tenant-scoped `ORDER_CANCELLED`, writes the existing vendor reliability ledger with `impact_score = -0.25`, creates `VENDOR_TIMEOUT` operational field tasks for active field/ops users, and closes any pending partial-acceptance proposal as non-actionable. This is a worker capability, not a client-facing HTTP route.
+
 ## 2. ApplicationContext
 
 Every request must carry:
@@ -50,6 +52,7 @@ Authorization is evaluated from `organization_memberships` joined to active `org
 | Checkout | `checkout_from_allocation_plan()` → `checkout()` |
 | Vendor full order acceptance | `vendor_order_accept()` |
 | Vendor order rejection | `vendor_order_reject()` |
+| Vendor acceptance timeout worker | `process_vendor_acceptance_timeouts()` |
 | Vendor partial-acceptance proposal | `vendor_partial_acceptance_propose()` |
 | Retailer partial-acceptance approval | `retailer_partial_acceptance_approve()` |
 | Retailer partial-acceptance decline | `retailer_partial_acceptance_decline()` |
