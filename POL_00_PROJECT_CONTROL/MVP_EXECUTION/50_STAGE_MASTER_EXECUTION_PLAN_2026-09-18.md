@@ -272,7 +272,18 @@
 
 **Exit:** برای هر MVP capability یک status و owner path مشخص باشد.
 
-**Status:** PLANNED
+**Status:** IN_PROGRESS
+
+**Work ID:** EXEC50-008
+
+**Progress — 2026-09-18**
+- Canonical endpoint contract inventory normalized to **50 unique business endpoint specifications**.
+- Actual FastAPI business route inventory is **21**, plus `/healthz` and `/readyz` operational routes.
+- `POLApplicationBoundary` exposes 29 public methods; 13 are reachable from current HTTP routes and 16 remain boundary-ready/internal-only.
+- Added `POL_00_PROJECT_CONTROL/API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md`.
+- Added Suite 23 `scripts/test_api_boundary_route_inventory.py` to freeze the current executable route set.
+- No contract-only endpoint is represented as live HTTP; applicationization is assigned to later canonical stages.
+- Closure pending CI certification.
 
 ---
 
