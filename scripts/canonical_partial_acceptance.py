@@ -134,7 +134,6 @@ class CanonicalPartialAcceptanceService:
               AND vo.status = 'ACTIVE'
               AND ro.status = 'ACTIVE'
               AND v.status = 'ACTIVE'
-              AND r.status = 'ACTIVE'
             FOR UPDATE OF o
             """,
             (user_id, order_id, organization_id),
