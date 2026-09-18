@@ -17,6 +17,8 @@ The current client-facing command facade is `scripts/application_boundary.py`; t
 
 The first HTTP transport slice is implemented at `scripts/api/` and currently exposes the canonical authentication/session routes plus the profile/context routes required to exercise the transport-to-ApplicationBoundary chain. The transport remains thin: it performs schema validation, authentication/session validation, ApplicationContext construction, error-envelope mapping, and transaction lifecycle management; it does not write domain tables directly or implement business state machines.
 
+Authentication endpoints that establish or refresh a session (request-otp, verify-otp, refresh, switch-organization, session revocation) execute in the pre-ApplicationContext authentication/session layer through scripts/auth_application.py. They are not business-domain commands and therefore do not bypass the canonical POLApplicationBoundary for authenticated product capabilities. Once an access token is validated, all product profile/commerce/support capabilities enter POLApplicationBoundary with a derived ApplicationContext.
+
 ## 2. ApplicationContext
 
 Every request must carry:
