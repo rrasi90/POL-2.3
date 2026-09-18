@@ -38,3 +38,13 @@ def create_order(
             idempotency_key=_validate_idempotency_key(idempotency_key),
         )
     )
+
+
+@router.post("/{order_id}/accept", status_code=200)
+def accept_order(
+    order_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.vendor_order_accept(order_id=str(order_id))
+    )
