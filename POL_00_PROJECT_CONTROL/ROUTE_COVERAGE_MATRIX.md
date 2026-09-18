@@ -53,6 +53,22 @@ Recipient membership is checked at canonical worker materialization time, using 
 
 See `BATCH4_CONTRACT_CLOSURE_2026-09-17.md` for policy blockers, individual pre-UI gate qualifications and design synchronization requirements. An unchanged GREEN* label must not override these explicit limitations.
 
+
+
+## Batch 6C HTTP transport evidence — 2026-09-18
+
+Batch 6C-3 adds authenticated HTTP coverage for the retailer commerce entrypoints:
+- `POST /api/v1/baskets`
+- `POST /api/v1/baskets/{basket_id}/items`
+- `POST /api/v1/baskets/{basket_id}/allocation-preview`
+
+The automated transport evidence is green at the tested boundary, and the PostgreSQL application-boundary test verifies basket creation, optimistic versioning, deterministic allocation and allocation-plan persistence. The GREEN classification still does not certify deployed production API/mobile/web runtime.
+
+Batch 6C-4 adds the first authenticated vendor-side order transition:
+- `POST /api/v1/orders/{order_id}/accept`
+
+This route is limited to `SUBMITTED -> ACCEPTED` for an active vendor member. The tested mutation consumes active inventory reservations, decrements physical inventory, updates accepted quantities and creates tenant-scoped `ORDER_ACCEPTED` outbox events. This does **not** close partial acceptance, rejection, timeout automation, preparation/dispatch/delivery transitions or live notification provider execution.
+
 ## Gate to visual-design phase
 
 POL should not begin full visual-system engineering until all MVP-critical rows are GREEN and every AMBER row has a documented explicit reason that is outside the UI scope.
