@@ -23,6 +23,8 @@ Authentication endpoints that establish or refresh a session (request-otp, verif
 
 Batch 6C-3 adds `POST /api/v1/baskets`, `POST /api/v1/baskets/{basket_id}/items`, and `POST /api/v1/baskets/{basket_id}/allocation-preview`. These routes derive the retailer tenant from the authenticated membership, use the canonical optimistic basket-version guard, execute the deterministic multi-vendor allocation engine through `CanonicalBasketAllocationService`, persist the canonical `allocation_plans` / `allocation_items`, and return only the business-level allocation preview contract. They do not accept `retailer_id`, perform direct SQL in the route, or expose allocator internals.
 
+Batch 6C-4 adds the first vendor-side order transition over HTTP: `POST /api/v1/orders/{order_id}/accept`. The route is authenticated through `ApplicationContext` and the canonical vendor-order boundary. It permits only `SUBMITTED -> ACCEPTED` for an active member of the target vendor organization; it consumes active inventory reservations, decrements physical inventory, sets accepted quantities, and enqueues tenant-scoped `ORDER_ACCEPTED` outbox events. Partial acceptance, rejection, timeout automation and downstream fulfillment transitions remain separate lifecycle work and are not implied by this route.
+
 ## 2. ApplicationContext
 
 Every request must carry:
@@ -46,6 +48,7 @@ Authorization is evaluated from `organization_memberships` joined to active `org
 | Basket item add | `basket_add_item()` |
 | Allocation preview | `basket_allocation_preview()` |
 | Checkout | `checkout_from_allocation_plan()` → `checkout()` |
+| Vendor full order acceptance | `vendor_order_accept()` |
 | Feedback list | `feedback_list()` |
 | Feedback admin inbox | `feedback_admin_inbox()` |
 | Feedback reply | `feedback_reply()` |
