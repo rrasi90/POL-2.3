@@ -96,7 +96,7 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 
 ---
 
-## 4. Test Suites Master Catalog (static contract index; execution inventory is dynamic)
+## 4. Test Suites Master Catalog (21 suites / 56 registered test items; execution inventory is dynamic)
 
 | # | Suite File | Tests | Category | DB Req | Target Domain & Invariants Verified |
 | :-: | :--- | :-: | :---: | :---: | :--- |
