@@ -4,317 +4,58 @@
 این سند execution contract بخش متناظر در Master است.
 
 ## Canonical scope
-# 32. ترتیب اجرای پیشنهادی — Critical Path
+این بخش اکنون توسط یک برنامه‌ی ۵۰ مرحله‌ای کنترل می‌شود. هر مرحله یک work package مستقل است و فقط پس از ثبت evidence، نتیجه و next action بسته می‌شود.
 
-## Batch M-01
-### Close Batch 6C-7
-- [ ] fix
-- [ ] test
-- [ ] commit
-- [ ] push
-- [ ] CI
-- [ ] certify
+## Stage controller
+- Canonical staged execution plan: `POL_00_PROJECT_CONTROL/MVP_EXECUTION/50_STAGE_MASTER_EXECUTION_PLAN_2026-09-18.md`
+- Current work item: `EXEC50-001`
+- Rule: each user `ادامه` executes the next not-completed stage.
+- Every stage updates: master plan, relevant Section Work Log, Active Work Ledger, and affected source/test/design/config documentation.
+- No stage may claim a green test that was not actually run.
+- Work outside this environment is marked `EXTERNAL_PENDING`, never silently treated as done.
 
-## Batch M-02
-### Architecture / Documentation Synchronization
-- [ ] D-019/D-020 sync
-- [ ] capability matrix sync
-- [ ] test manifest sync
-- [ ] queue runtime decision
-- [ ] route matrix refresh
-
-## Batch M-03
-### Production Auth / Security
-- [ ] real OTP provider
-- [ ] rate limit
-- [ ] session/revocation
-- [ ] refresh policy
-- [ ] security middleware
-
-## Batch M-04
-### Catalog + Vendor Catalog + Pricing
-- [ ] search
-- [ ] product detail
-- [ ] vendor offers
-- [ ] catalog management
-- [ ] price management
-- [ ] category management
-- [ ] barcode/candidate flows
-
-## Batch M-05
-### Inventory + Daily Confirmation
-- [ ] inventory APIs
-- [ ] scan/publish
-- [ ] freshness
-- [ ] daily confirmation
-- [ ] reminders
-- [ ] vendor inventory UI
-
-## Batch M-06
-### Commerce HTTP Completion
-- [ ] vendor order query
-- [ ] retailer order query
-- [ ] order timeline
-- [ ] all checkout failure states
-- [ ] idempotency over HTTP
-
-## Batch M-07
-### Fulfillment / Delivery
-- [ ] prepare
-- [ ] dispatch
-- [ ] deliver
-- [ ] POD
-- [ ] delivery exceptions
-- [ ] HTTP + UI
-
-## Batch M-08
-### Payment / Invoice / Settlement
-- [ ] payment evidence
-- [ ] verification
-- [ ] invoice
-- [ ] reconciliation
-- [ ] settlement
-- [ ] dispute adjustment
-
-## Batch M-09
-### Dispute / RMA / Support
-- [ ] dispute routes
-- [ ] RMA routes
-- [ ] refund separation of duties
-- [ ] support routes
-- [ ] notifications
-
-## Batch M-10
-### Notification + Provider Certification
-- [ ] inbox
-- [ ] preferences
-- [ ] SMS
-- [ ] push
-- [ ] retries
-- [ ] receipts
-- [ ] DLQ/quarantine
-
-## Batch M-11
-### Ops / Admin / Referral / Field
-- [ ] admin exception dashboard
-- [ ] vendor onboarding
-- [ ] broadcast
-- [ ] audit
-- [ ] referral
-- [ ] field tasks
-
-## Batch M-12
-### Frontend Foundation + Retailer
-- [ ] app bootstrap
-- [ ] auth
-- [ ] catalog
-- [ ] basket
-- [ ] allocation
-- [ ] checkout
-- [ ] orders
-- [ ] delivery
-- [ ] RMA/support/profile
-
-## Batch M-13
-### Vendor + Ops + Field UI
-- [ ] vendor panel
-- [ ] inventory
-- [ ] orders
-- [ ] fulfillment
-- [ ] payments
-- [ ] ops
-- [ ] field
-
-## Batch M-14
-### Infrastructure
-- [ ] staging
-- [ ] deployment
-- [ ] secrets
-- [ ] DB
-- [Redis if selected]
-- [ ] workers
-- [ ] TLS
-- [ ] backups
-- [ ] monitoring
-
-## Batch M-15
-### Real Pilot Data / Onboarding
-- [ ] vendor onboarding
-- [ ] catalog seed
-- [ ] price
-- [ ] inventory
-- [ ] retailer cohort
-- [ ] LOIs
-- [ ] training
-- [ ] assisted orders
-
-## Batch M-16
-### E2E Pilot Certification
-- [ ] complete scenario matrix
-- [ ] security matrix
-- [ ] reliability tests
-- [ ] provider failure tests
-- [ ] restore test
-- [ ] observability test
-- [ ] KPI telemetry test
-- [ ] final CI
-- [ ] release snapshot
-
-## Batch M-17
-### MVP Launch Gate
-- [ ] no P0 open
-- [ ] no critical P1 open
-- [ ] all MVP-critical routes green
-- [ ] all real clients connected
-- [ ] all critical provider flows certified
-- [ ] backup verified
-- [ ] observability verified
-- [ ] pilot operations staffed
-- [ ] rollback procedure tested
-- [ ] final release SHA recorded
-- [ ] MVP declared `PILOT-READY`
-
----
+## Macro batches
+1. M-01 Certification / truth synchronization
+2. M-02 Security / authentication / HTTP hardening
+3. M-03 Catalog / pricing / inventory
+4. M-04 Commerce / order / fulfillment
+5. M-05 Finance / dispute / support / notifications
+6. M-06 Ops / referral / field / analytics
+7. M-07 Frontend implementation and handoff
+8. M-08 Infrastructure / recovery / performance
+9. M-09 Pilot preparation and evidence
+10. M-10 Final release and external handoff
 
 ## Open work
-- [ ] fix
-- [ ] test
-- [ ] commit
-- [ ] push
-- [ ] CI
-- [ ] certify
-- [ ] D-019/D-020 sync
-- [ ] capability matrix sync
-- [ ] test manifest sync
-- [ ] queue runtime decision
-- [ ] route matrix refresh
-- [ ] real OTP provider
-- [ ] rate limit
-- [ ] session/revocation
-- [ ] refresh policy
-- [ ] security middleware
-- [ ] search
-- [ ] product detail
-- [ ] vendor offers
-- [ ] catalog management
-- [ ] price management
-- [ ] category management
-- [ ] barcode/candidate flows
-- [ ] inventory APIs
-- [ ] scan/publish
-- [ ] freshness
-- [ ] daily confirmation
-- [ ] reminders
-- [ ] vendor inventory UI
-- [ ] vendor order query
-- [ ] retailer order query
-- [ ] order timeline
-- [ ] all checkout failure states
-- [ ] idempotency over HTTP
-- [ ] prepare
-- [ ] dispatch
-- [ ] deliver
-- [ ] POD
-- [ ] delivery exceptions
-- [ ] HTTP + UI
-- [ ] payment evidence
-- [ ] verification
-- [ ] invoice
-- [ ] reconciliation
-- [ ] settlement
-- [ ] dispute adjustment
-- [ ] dispute routes
-- [ ] RMA routes
-- [ ] refund separation of duties
-- [ ] support routes
-- [ ] notifications
-- [ ] inbox
-- [ ] preferences
-- [ ] SMS
-- [ ] push
-- [ ] retries
-- [ ] receipts
-- [ ] DLQ/quarantine
-- [ ] admin exception dashboard
-- [ ] vendor onboarding
-- [ ] broadcast
-- [ ] audit
-- [ ] referral
-- [ ] field tasks
-- [ ] app bootstrap
-- [ ] auth
-- [ ] catalog
-- [ ] basket
-- [ ] allocation
-- [ ] checkout
-- [ ] orders
-- [ ] delivery
-- [ ] RMA/support/profile
-- [ ] vendor panel
-- [ ] inventory
-- [ ] orders
-- [ ] fulfillment
-- [ ] payments
-- [ ] ops
-- [ ] field
-- [ ] staging
-- [ ] deployment
-- [ ] secrets
-- [ ] DB
-- [ ] workers
-- [ ] TLS
-- [ ] backups
-- [ ] monitoring
-- [ ] vendor onboarding
-- [ ] catalog seed
-- [ ] price
-- [ ] inventory
-- [ ] retailer cohort
-- [ ] LOIs
-- [ ] training
-- [ ] assisted orders
-- [ ] complete scenario matrix
-- [ ] security matrix
-- [ ] reliability tests
-- [ ] provider failure tests
-- [ ] restore test
-- [ ] observability test
-- [ ] KPI telemetry test
-- [ ] final CI
-- [ ] release snapshot
-- [ ] no P0 open
-- [ ] no critical P1 open
-- [ ] all MVP-critical routes green
-- [ ] all real clients connected
-- [ ] all critical provider flows certified
-- [ ] backup verified
-- [ ] observability verified
-- [ ] pilot operations staffed
-- [ ] rollback procedure tested
-- [ ] final release SHA recorded
-- [ ] MVP declared `PILOT-READY`
+- [ ] Execute 50-stage plan sequentially.
+- [ ] Keep repository documentation synchronized with real code and evidence.
+- [ ] Isolate external blockers such as live Penpot editing, local-only infrastructure access, real provider credentials and large final regression runs.
 
 ## Decisions required
-1. batch order/dependencies.
-2. exit criteria.
-3. stop rule on failure/contradiction.
+1. Existing decisions remain authoritative.
+2. New business/architecture rules require an explicit Decision ID.
+3. External blockers must be recorded with exact handoff instructions.
 
 ## Dependencies
 - [ ] `02_BATCH_6C_7_CERTIFICATION`
 - [ ] `03_GOVERNANCE_REVIEW`
+- [ ] `19_FRONTEND_MVP_WORKSTREAM`
+- [ ] `20_DESIGN_PENPOT_CLOSURE`
+- [ ] `21_INFRASTRUCTURE_DEPLOYMENT`
 
 ## Acceptance Gate
-- [ ] تمام کارهای باز بسته یا با دلیل رسمی NOT APPLICABLE شده‌اند.
-- [ ] contradiction باز در این حوزه وجود ندارد.
-- [ ] تست/verification مناسب اجرا و evidence ثبت شده است.
-- [ ] اگر client-facing است: HTTP + Auth + tenant isolation + failure states تست شده‌اند.
-- [ ] commit SHA نهایی قابل اشاره است.
+- [ ] All 50 stages are CLOSED/VERIFIED or explicitly EXTERNAL_PENDING with exact handoff instructions.
+- [ ] Final test/CI bundle is green where executable evidence exists.
+- [ ] Final Penpot and live-environment blockers are isolated for the external agent.
+- [ ] Final release SHA and evidence pack are recorded.
 
 ## Execution rules
-- business rule جدید بدون Decision ID ممنوع.
+- Business rule جدید بدون Decision ID ممنوع.
 - SSoTهای repository از این فایل مقدم‌اند.
 - GREEN* domain evidence با production-ready اشتباه نشود.
 - failure را با حذف/کاهش تست پنهان نکن.
+- Test execution can be batched; stage execution does not imply one-test-at-a-time.
+- Documentation updates are part of each stage.
 
 ## Status
-NOT STARTED / IN PROGRESS / BLOCKED / VERIFIED / CLOSED
+IN_PROGRESS
