@@ -40,3 +40,6 @@ IN_PROGRESS
 
 ## Closing Condition
 این Section فقط وقتی CLOSED می‌شود که تمام acceptance criteria و work items ثبت‌شده بسته شده باشند.
+
+## Stage 03 Progress Event — 2026-09-18
+EXEC50-004 remains IN_PROGRESS. Run #356 completed successfully at 209/209 on the prior suite; three new regression tests were added and Run #360 is currently executing the expanded suite. Controller will not advance until Stage 03 has final evidence.
