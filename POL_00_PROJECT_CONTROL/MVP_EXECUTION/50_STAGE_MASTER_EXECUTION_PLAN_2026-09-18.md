@@ -35,21 +35,29 @@
 - ثبت current migration count/table count از evidence معتبر.
 - شناسایی تمام claimهای stale مثل `209/209`.
 
-**خروجی**
-- به‌روزرسانی Master Checklist.
-- ثبت snapshot در این فایل.
-- اصلاح هر سندی که وضعیت فعلی را اشتباه گزارش می‌کند.
+**نتیجه واقعی — 2026-09-18**
+- PR #1 باز و unmerged است؛ HEAD واقعی: `e6484daf9f0926b807577c71477d8f1405c24a3e`.
+- آخرین CI تکمیل‌شده روی این HEAD: Run #333؛ نتیجه **FAILED**.
+- Environment/bootstrap verification در Run #333 موفق بود.
+- PostgreSQL 18.6 با **93 public base tables** ساخته شد.
+- migrationهای repository از `001` تا `028` = **28 migrations**.
+- full suite: **209 collected / 170 passed / 39 failed / 0 skipped**.
+- failure families: Batch 2 RMA/outbox (15)، Batch 3 contract matrix (5)، E2E MVP platform (14)، vendor acceptance timeout (5).
+- machine-readable artifact: artifact ID `10560188267`; merge-ref checkout SHA recorded by runner: `7bf440dd55d300253d099c6f70c5c76973bd8e25`.
+- پنج سند active که current schema/count را stale گزارش می‌کردند، با baseline جدید sync شدند: `TEST_VERIFICATION_MANIFEST.md`, `TECHNICAL_ENVIRONMENT.md`, `DATABASE_SCHEMA_MANIFEST_2026-09-16.md`, `REPOSITORY_COMPLETION_AUDIT_2026-09-16.md`, `CURRENT_SOURCE_OF_TRUTH.md`.
+- snapshot مستقل: `POL_00_PROJECT_CONTROL/MVP_EXECUTION/STAGE_01_FRESH_BASELINE_2026-09-18.md`.
 
 **Verification**
-- GitHub commit/PR/workflow evidence.
-- بدون ادعای green جدید.
+- GitHub PR/commit/workflow evidence inspected.
+- CI certification **NOT GREEN**; no green claim made.
+- Current failing-test families are carried forward to Stage 02+.
 
 **External**
 - ندارد.
 
-**Exit:** snapshot با HEAD واقعی، CI واقعی و blockers واقعی هم‌خوان شود.
+**Exit:** snapshot با HEAD واقعی، CI واقعی و blockers واقعی هم‌خوان شد.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
