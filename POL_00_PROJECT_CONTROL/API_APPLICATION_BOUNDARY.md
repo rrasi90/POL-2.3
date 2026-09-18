@@ -15,11 +15,13 @@ The current client-facing command facade is `scripts/application_boundary.py`; t
 
 ## 1.1 HTTP transport status (Batch 6C)
 
-The first HTTP transport slice is implemented at `scripts/api/` and currently exposes the canonical authentication/session routes plus the profile/context routes required to exercise the transport-to-ApplicationBoundary chain.
+The first HTTP transport slice is implemented at `scripts/api/` and exposes the canonical authentication/session and profile/context routes. Batch 6C-3 extends the production transport to the retailer basket → allocation-preview entrypoints.
 
 The Batch 6C-2 checkout transport adds `POST /api/v1/orders` as the canonical authenticated checkout entrypoint. The route accepts the confirmed allocation-plan ID, delivery address, preferred payment method and idempotency key, derives the active retailer/basket allocation context server-side, and invokes `POLApplicationBoundary.checkout_from_allocation_plan()`. Allocation, freshness, stock, MOQ and reservation rules remain owned by the canonical checkout gateway; the HTTP adapter does not accept client-supplied retailer IDs or vendor allocation mechanics. The transport remains thin: it performs schema validation, authentication/session validation, ApplicationContext construction, error-envelope mapping, and transaction lifecycle management; it does not write domain tables directly or implement business state machines.
 
 Authentication endpoints that establish or refresh a session (request-otp, verify-otp, refresh, switch-organization, session revocation) execute in the pre-ApplicationContext authentication/session layer through scripts/auth_application.py. They are not business-domain commands and therefore do not bypass the canonical POLApplicationBoundary for authenticated product capabilities. Once an access token is validated, all product profile/commerce/support capabilities enter POLApplicationBoundary with a derived ApplicationContext.
+
+Batch 6C-3 adds `POST /api/v1/baskets`, `POST /api/v1/baskets/{basket_id}/items`, and `POST /api/v1/baskets/{basket_id}/allocation-preview`. These routes derive the retailer tenant from the authenticated membership, use the canonical optimistic basket-version guard, execute the deterministic multi-vendor allocation engine through `CanonicalBasketAllocationService`, persist the canonical `allocation_plans` / `allocation_items`, and return only the business-level allocation preview contract. They do not accept `retailer_id`, perform direct SQL in the route, or expose allocator internals.
 
 ## 2. ApplicationContext
 
@@ -40,6 +42,9 @@ Authorization is evaluated from `organization_memberships` joined to active `org
 | **Profile completion** | `profile_completion()` |
 | **Active-tenant persona read** | `profile_get()` with active organization context |
 | **Active-tenant persona update** | `profile_membership_update()` |
+| Basket create | `basket_create()` |
+| Basket item add | `basket_add_item()` |
+| Allocation preview | `basket_allocation_preview()` |
 | Checkout | `checkout_from_allocation_plan()` → `checkout()` |
 | Feedback list | `feedback_list()` |
 | Feedback admin inbox | `feedback_admin_inbox()` |
