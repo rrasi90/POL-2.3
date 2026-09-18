@@ -294,7 +294,15 @@
 * **اعلام وضعیت غیرمجاز:** اگر سفارش در وضعیت دیگری باشد، درخواست رد می‌شود و mutation جزئی باقی نمی‌ماند.
 * **پاسخ موفق (200 OK):** شامل `order_id`, `order_number`, `order_group_id`, `order_status`, `total_amount_toman`, `rejection_reason`, `released_reservation_count`.
 
-### ۵.۴. پذیرش با کسری موجودی (`POST /orders/:id/partial-accept`)
+### ۵.۴. پذیرش با کسری موجودی — پروتکل دوطرفه
+
+پذیرش ناقص مستقیماً توسط بنکدار وضعیت سفارش را تغییر نمی‌دهد. این capability یک پروتکل سه‌مرحله‌ای دارد:
+
+**مرحله ۱ — پیشنهاد بنکدار**
+`POST /api/v1/orders/:id/partial-acceptance-proposals`
+
+* **مجوز:** بنکدار مقصد در سازمان فعال (`VENDOR_OWNER`, `VENDOR_STAFF`).
+* **Idempotency:** هدر `Idempotency-Key` باید UUIDv4 باشد.
 * **بدنه درخواست:**
 ```json
 {
@@ -303,7 +311,33 @@
   ]
 }
 ```
-* **انتقال وضعیت مجاز:** `SUBMITTED -> PARTIALLY_ACCEPTED`.
+* اقلام ذکرنشده در proposal، در زمان approval با مقدار کامل سفارش پذیرفته می‌شوند.
+* حداقل یک قلم باید کاهش مقدار داشته باشد و برای هر قلم کاهش‌یافته `reason` الزامی است.
+* ایجاد proposal فقط proposal و اقلام proposal را ثبت و رویداد `ORDER_PARTIAL_ACCEPTANCE_PROPOSED` را در outbox ایجاد می‌کند؛ سفارش همچنان `SUBMITTED` و موجودی بدون تغییر باقی می‌ماند.
+* در هر سفارش فقط یک proposal با وضعیت `PENDING` می‌تواند وجود داشته باشد.
+
+**مرحله ۲ — تایید خرده‌فروش**
+`POST /api/v1/orders/:id/partial-acceptance-proposals/:proposal_id/approve`
+
+* **مجوز:** خرده‌فروش مقصد (`RETAILER_OWNER`, `RETAILER_STAFF`) در سازمان فعال.
+* **انتقال وضعیت:** فقط `SUBMITTED -> PARTIALLY_ACCEPTED`.
+* **پیامد:** `accepted_quantity` هر قلم از proposal اعمال می‌شود؛ اقلام کاهش‌یافته `SHORTAGE` می‌گیرند؛ `order_items.total_line_amount_toman`، مبلغ `orders` و مبلغ `order_groups` با مقدار پذیرفته‌شده بازمحاسبه می‌شوند.
+* **رزرو انبار:** مقدار رزروشده کامل از `reserved_quantity` آزاد و مقدار پذیرفته‌شده از `physical_quantity` کسر می‌شود. `inventory_reservations.status` به `CONSUMED` می‌رود و `consumed_quantity` مقدار واقعی مصرف‌شده را ثبت می‌کند؛ بخش آزادشده از `quantity - consumed_quantity` قابل محاسبه است.
+* **خروجی:** رویداد `ORDER_PARTIALLY_ACCEPTED` برای اعضای فعال سازمان خرده‌فروش و بنکدار در outbox ثبت می‌شود.
+* بدون تایید خرده‌فروش هیچ تغییر وضعیت سفارش، مبلغ یا موجودی انجام نمی‌شود.
+
+**مرحله ۳ — رد پیشنهاد توسط خرده‌فروش**
+`POST /api/v1/orders/:id/partial-acceptance-proposals/:proposal_id/decline`
+
+* **مجوز:** خرده‌فروش مقصد (`RETAILER_OWNER`, `RETAILER_STAFF`).
+* **بدنه اختیاری:**
+```json
+{ "reason": "Need full quantity" }
+```
+* proposal به `DECLINED` می‌رود؛ سفارش، مبلغ و موجودی بدون تغییر می‌مانند و رویداد `ORDER_PARTIAL_ACCEPTANCE_DECLINED` برای اعضای فعال بنکدار ایجاد می‌شود.
+* پس از رد، در صورت باقی‌ماندن سفارش در `SUBMITTED`، proposal جدید با Idempotency-Key جدید مجاز است.
+
+**محدودیت متقابل:** تا وقتی proposal در وضعیت `PENDING` است، full accept و full reject همان سفارش مجاز نیستند.
 
 ### ۵.۵. اعلام خروج و بارگیری وانت (`POST /orders/:id/dispatch`)
 * **انتقال وضعیت مجاز:** `READY -> DISPATCHED`.

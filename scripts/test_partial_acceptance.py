@@ -217,8 +217,13 @@ def test_retailer_approval_reconciles_order_inventory_amounts_and_outbox(pg_conn
             assert inv["reserved_quantity"] == 0
 
             cur.execute(
+                "SELECT order_group_id FROM orders WHERE id = %s",
+                (data["order_id"],),
+            )
+            order_group_id = cur.fetchone()["order_group_id"]
+            cur.execute(
                 "SELECT total_amount_toman FROM order_groups WHERE id = %s",
-                (data["order_group_id"],),
+                (order_group_id,),
             )
             assert cur.fetchone()["total_amount_toman"] == 3500000
 

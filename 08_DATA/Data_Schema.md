@@ -1045,8 +1045,47 @@ CREATE TABLE IF NOT EXISTS inventory_reservations (
     expires_at TIMESTAMPTZ NOT NULL,
     released_at TIMESTAMPTZ,
     consumed_at TIMESTAMPTZ,
+    consumed_quantity INT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- 16.1. Two-Party Partial Acceptance Proposal
+CREATE TABLE IF NOT EXISTS order_partial_acceptance_proposals (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    vendor_id UUID NOT NULL REFERENCES vendors(id),
+    retailer_id UUID NOT NULL REFERENCES retailers(id),
+    proposed_by_user_id UUID NOT NULL REFERENCES users(id),
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+        CHECK (status IN ('PENDING', 'ACCEPTED', 'DECLINED')),
+    idempotency_key VARCHAR(128) NOT NULL,
+    request_fingerprint VARCHAR(64) NOT NULL,
+    decision_by_user_id UUID REFERENCES users(id),
+    decision_reason TEXT,
+    decided_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT uq_partial_acceptance_proposal_idempotency
+        UNIQUE (order_id, idempotency_key)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_partial_acceptance_one_pending_order
+    ON order_partial_acceptance_proposals(order_id)
+    WHERE status = 'PENDING';
+
+CREATE TABLE IF NOT EXISTS order_partial_acceptance_proposal_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    proposal_id UUID NOT NULL REFERENCES order_partial_acceptance_proposals(id) ON DELETE CASCADE,
+    order_item_id UUID NOT NULL REFERENCES order_items(id) ON DELETE CASCADE,
+    accepted_quantity INT NOT NULL CHECK (accepted_quantity >= 0),
+    reason VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT uq_partial_acceptance_proposal_item
+        UNIQUE (proposal_id, order_item_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_partial_acceptance_proposal_items_order_item
+    ON order_partial_acceptance_proposal_items(order_item_id);
 
 -- 17. Invoices (Simplified Official Accounting Records / Commercial Invoice Records)
 CREATE TABLE IF NOT EXISTS invoices (

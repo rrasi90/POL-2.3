@@ -148,3 +148,9 @@ flowchart TD
   $$\text{User} \longrightarrow \text{UserProfile (Universal Identity)} \longrightarrow \text{Membership} \longrightarrow \text{MembershipProfile} \longrightarrow \text{PersonaProfile}$$
   هر کاربر دقیقاً یک پروفایل جهان‌شمول انسانی (`user_profiles`) دارد. هر عضویت سازمانی یک پروفایل عضویت (`membership_profiles`) و یک پروفایل پرسونای متناسب با نقش (`retailer_profiles`, `wholesaler_profiles`, `staff_profiles`) دارد.
   **قاعده حاکمیت امنیتی:** پرسونای عملیاتی صرفاً رفتار و ظاهر رابط کاربری را تنظیم می‌کند. کلیه تصمیمات احراز هویت و سطوح دسترسی (RBAC) منحصراً از `organization_memberships.role` و جدول سازمان استعلام می‌شود. کلیم‌های JWT وضعیت مشتق‌شده/کش‌شده هستند و هرگز SSoT اختیارات محسوب نمی‌شوند.
+
+
+### ۲.۱۵. زیردامنه ۱۴: پروتکل تایید دوطرفه سفارش (Two-Party Partial Acceptance)
+* **انواریانت ۳۱ (عدم جهش یک‌طرفه به پذیرش ناقص):** `PARTIALLY_ACCEPTED` فقط بعد از `PENDING proposal -> retailer approval` قابل ثبت است. proposal در `order_partial_acceptance_proposals` و اقلام آن در `order_partial_acceptance_proposal_items` نگهداری می‌شوند؛ ایجاد proposal هیچ mutation روی سفارش یا موجودی ندارد.
+* **انواریانت ۳۲ (تطبیق رزرو با کسری پذیرفته‌شده):** هنگام approval، `inventory_reservations.quantity` مقدار رزرو اولیه و `consumed_quantity` مقدار واقعی مصرف‌شده را نشان می‌دهد. بخش آزادشده از `quantity - consumed_quantity` قابل محاسبه است و مبلغ `order`, `order_items` و `order_group` با `accepted_quantity` هم‌راستا می‌شوند.
+* **انواریانت ۳۳ (انحصار proposal در هر سفارش):** برای هر order حداکثر یک proposal با وضعیت `PENDING` وجود دارد و تا تصمیم خریدار، full accept/full reject روی همان order مجاز نیست.

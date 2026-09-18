@@ -44,6 +44,33 @@ stateDiagram-v2
     REJECTED --> [*] : سفارش رد شد
 ```
 
+#### پروتکل دوطرفه پذیرش ناقص (Partial Acceptance Protocol)
+
+وضعیت `PARTIALLY_ACCEPTED` فقط پس از موافقت خرده‌فروش ایجاد می‌شود؛ بنکدار نمی‌تواند با یک command یک‌طرفه از `SUBMITTED` به `PARTIALLY_ACCEPTED` عبور کند.
+
+```text
+SUBMITTED
+   │
+   ├── Vendor proposes shortage ──> SUBMITTED + PENDING Proposal
+   │                                  │
+   │                                  ├── Retailer approves ──> PARTIALLY_ACCEPTED
+   │                                  │
+   │                                  └── Retailer declines ──> SUBMITTED
+   │
+   ├── Full accept ──> ACCEPTED
+   └── Full reject  ──> REJECTED
+```
+
+قواعد کانونیکال:
+- proposal صرفاً یک پیشنهاد تجاری است و در زمان ایجاد آن هیچ mutation روی سفارش، اقلام سفارش یا موجودی انجام نمی‌شود.
+- proposal فقط زمانی قابل تایید است که order در `SUBMITTED` و proposal در `PENDING` باشد.
+- اقلامی که در proposal نیامده‌اند در زمان approval با مقدار کامل سفارش پذیرفته می‌شوند.
+- در approval، مقدار رزروشده کامل از `reserved_quantity` آزاد و مقدار پذیرفته‌شده از `physical_quantity` کسر می‌شود؛ `consumed_quantity` مصرف واقعی را ثبت می‌کند.
+- مبلغ `order`, `order_items` و `order_group` بر مبنای مقدار پذیرفته‌شده بازمحاسبه می‌شود.
+- در صورت decline، سفارش، مبلغ و موجودی دست‌نخورده می‌مانند و proposal به `DECLINED` تبدیل می‌شود.
+- وجود proposal در `PENDING` مسیرهای full accept/full reject را تا تصمیم خریدار مسدود می‌کند.
+- timeout ممکن است proposal را غیرقابل‌اجرا کند، چون approval فقط برای `SUBMITTED` مجاز است؛ automation تایم‌اوت در slice مستقل lifecycle اجرا خواهد شد.
+
 #### جدول تشریح وضعیت‌های سفارش (Order States):
 
 | نام وضعیت | تعریف و رخداد محرک | بازیگر مجاز (Actor) | پنجره زمانی / SLA | رویداد خروجی |
