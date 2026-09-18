@@ -2,6 +2,7 @@
 
 **Document ID:** `POL-TEST-MANIFEST-v1.0`  
 **Date:** September 14, 2026  
+**Latest baseline amendment:** 2026-09-18 — Stage 01
 **Status:** **ACTIVE / CANONICAL**  
 **Target Engine:** PostgreSQL 18.x (Native Windows / Docker `postgres:18-alpine`)  
 **Python Runtime:** Python 3.11+ | pytest 8.0+ | psycopg2-binary 2.9.9+  
@@ -13,6 +14,18 @@
 This manifest is the authoritative, definitive registry of all test suites, verification scripts, and machine-readable evidence generators for the POL B2B FMCG Middleware Platform.
 
 Every claim made in the platform documentation or engineering reports maps directly to an executable test suite registered in this manifest.
+
+### 2.1 Current execution baseline — 2026-09-18
+- Repository branch: `research-hardening-2026-09-14`
+- PR #1 current head at snapshot: `e6484daf9f0926b807577c71477d8f1405c24a3e`
+- Latest completed verification run observed on that head: Run #333.
+- CI checkout executed the PR merge ref; machine-readable artifact recorded merge commit `7bf440dd55d300253d099c6f70c5c76973bd8e25`.
+- PostgreSQL: 18.6; public base-table count: **93**.
+- Test collection: **209**; passed **170**; failed **39**; skipped **0**; overall **FAILED**.
+- Environment/bootstrap verifier step: **success**.
+- Therefore the repository is **not CI_VERIFIED** at this snapshot. No `209/209` or equivalent green claim is valid.
+- Failure families in Run #333: Batch 2 RMA/outbox (15), Batch 3 contract matrix (5), E2E MVP platform (14), vendor-acceptance-timeout (5).
+
 
 ```text
 Claim in Architecture / Spec
@@ -46,9 +59,9 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 - **Checks:**
   1. Python runtime version `>= 3.11`.
   2. Python dependency availability (`psycopg2`, `pytest`).
-  3. SQL migration chain files (`001_initial_schema.sql`, `002_platform_core_schema.sql`, `003_contract_reconciliation.sql`).
+  3. Complete SQL migration chain, dynamically discovered by `scripts/migration_runner.py` (current repository range: `001` → `028`).
   4. PostgreSQL 18 connection on port 5432/5433 (via `POL_PG_PORT` or `PGPORT`).
-  5. Target database schema integrity (56 canonical tables).
+  5. Target database schema integrity (current CI baseline: 93 public base tables).
   6. Trigger integrity (`trg_enforce_org_membership_role_invariant`).
 - **CLI Commands:**
   ```bash
@@ -83,11 +96,11 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 
 ---
 
-## 4. Test Suites Master Catalog (20 Suites / 47 Items)
+## 4. Test Suites Master Catalog (static contract index; execution inventory is dynamic)
 
 | # | Suite File | Tests | Category | DB Req | Target Domain & Invariants Verified |
 | :-: | :--- | :-: | :---: | :---: | :--- |
-| **01** | `scripts/test_postgres_migrations.py` | 1 | MIGRATION | Real PG 18 | Migration chain integrity; Fresh install (62 tables across 001-004) + Incremental upgrade |
+| **01** | `scripts/test_postgres_migrations.py` | 1 | MIGRATION | Real PG 18 | Migration chain integrity; full numbered chain (`001` → current) + incremental upgrade |
 | **02** | `scripts/test_postgres_runtime.py` | 1 | RUNTIME | Real PG 18 | 33 Mission-Critical Runtime Scenarios (15 Retailer, 10 Vendor, 8 Allocation/Gov) |
 | **03** | `scripts/test_identity_tenant_isolation.py` | 6 | IAM/ISOLATION | Real PG 18 | Multi-org tenant boundaries; Section 11 role matrix; Section 13 non-authoritative `users.role`; Section 14 multi-org sessions; Section 15 legacy links; Section 16 negative cross-tenant attack matrix |
 | **04** | `scripts/test_postgres_concurrency.py` | 9 | CONCURRENCY | Real PG 18 | 9 ACID race scenarios: inventory race, duplicate checkout, scarce stock, vendor accept, dispatch creation, refund, dispute creation, vendor isolation, stale price |
