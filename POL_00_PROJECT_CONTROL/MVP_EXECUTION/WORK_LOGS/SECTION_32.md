@@ -34,7 +34,7 @@ IN_PROGRESS
 - Current state: Section 32 is IN_PROGRESS under EXEC50-001; Stages 01–03 closed.
 - Last completed work: Stage 03 regression contract hardening certified by Run #365.
 - Remaining work: execute Stages 04–50 sequentially; external blockers remain explicitly tagged.
-- Next worker/task: CHATGPT-5.6-LUNA / EXEC50-001 — supervise Stage 05 next.
+- Next worker/task: CHATGPT-5.6-LUNA / EXEC50-001 — supervise Stage 06 next.
 - Required decision: none for execution-program structure; later product/architecture changes require Decision IDs.
 - Stage 04 controller checkpoint commit: c80965b42a61412623e247a04e6e058bd72a1283
 
@@ -44,7 +44,7 @@ IN_PROGRESS
 ## Stage 03 Progress Event — 2026-09-18
 EXEC50-004 CLOSED. Run #365 completed successfully at 212/212 on the expanded suite; controller advanced to Stage 04 and completed repository-truth synchronization.
 
-| EVT-004 | 2026-09-18 | EXEC50-001 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | Stage 03 / EXEC50-004 closed after Run #365 certification with 212/212 PASS; controller remains active and advances to Stage 04. | 50-stage master plan; Active Work Ledger; Section 03 Work Log | Run #365 SUCCESS — 212/212 PASS | 1f211f5b07b02fc8c6ed5ed63d57d9b97fd1af43 | none | Claim EXEC50-006 for Stage 05 on next user `ادامه` |
+| EVT-004 | 2026-09-18 | EXEC50-001 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | Stage 03 / EXEC50-004 closed after Run #365 certification with 212/212 PASS; controller remains active and advances to Stage 04. | 50-stage master plan; Active Work Ledger; Section 03 Work Log | Run #365 SUCCESS — 212/212 PASS | 1f211f5b07b02fc8c6ed5ed63d57d9b97fd1af43 | none | Claim EXEC50-007 for Stage 06 on next user `ادامه` |
 
 ## Stage 03 Closure Evidence — 2026-09-18
 - EXEC50-004 CLOSED.
@@ -59,3 +59,10 @@ EXEC50-004 CLOSED. Run #365 completed successfully at 212/212 on the expanded su
 - Cross-document repository-truth synchronization completed.
 - Next open stage: 05 — Governance / Decision Register Reconciliation.
 - No new business or architecture decision introduced.
+
+## Stage 05 Closure Event — 2026-09-18
+- EXEC50-006 CLOSED.
+- D-001…D-020 governance reconciliation completed.
+- No new Decision ID required; D-018/D-019 used as existing authority.
+- BullMQ/Redis legacy queue reference formally carried to Stage 06 under D-019 single-runtime constraint.
+- Next open stage: 06 — Queue / Worker Architecture Closure.
