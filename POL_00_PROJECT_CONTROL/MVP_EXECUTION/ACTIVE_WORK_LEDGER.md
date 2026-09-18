@@ -5,7 +5,7 @@
 | WORK_ID | SECTION_ID | WORKER | ROLE | TASK | STATUS | STARTED_AT | LAST_UPDATE | FILES | COMMIT_SHA | BLOCKER | NEXT_ACTION |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 6C7-001 | 02 | TBD | implementation | Close Batch 6C-7 certification | PLANNED | 2026-09-18 | 2026-09-18 | TBD | 7bc2d435c7eef7a073b2f8b70de1b361c4246328 | CI certification pending | commit fixes + rerun CI |
-| EXEC50-001 | 32 | CHATGPT-5.6-LUNA | program-architect | Design and register the 50-stage execution program; establish the iterative execution/handoff loop | IN_PROGRESS | 2026-09-18 | 2026-09-18 | MVP_EXECUTION/50_STAGE_MASTER_EXECUTION_PLAN_2026-09-18.md; ACTIVE_WORK_LEDGER.md; WORK_LOGS/SECTION_32.md; 32_CRITICAL_PATH.md | pending | none | supervise sequential execution; Stage 03 is now claimed by EXEC50-004 |
+| EXEC50-001 | 32 | CHATGPT-5.6-LUNA | program-architect | Design and register the 50-stage execution program; establish the iterative execution/handoff loop | IN_PROGRESS | 2026-09-18 | 2026-09-18 | MVP_EXECUTION/50_STAGE_MASTER_EXECUTION_PLAN_2026-09-18.md; ACTIVE_WORK_LEDGER.md; WORK_LOGS/SECTION_32.md; 32_CRITICAL_PATH.md | 2a20e77080e1bb8a5b694db0e5e5d962a2a8ac1c | none | supervise sequential execution; Stage 03 closed; next open stage is 04 |
 | EXEC50-002 | 00 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 01 — Fresh Baseline & Certification Snapshot | CLOSED | 2026-09-18 | 2026-09-18 | WORK_LOGS/SECTION_00.md; STAGE_01_FRESH_BASELINE_2026-09-18.md; synchronized control docs | 1680f3c7ce855c057294fe555f86f041cabcc3ad | Run #333 failed: 39 tests; schema baseline 93 tables | next sequential stage: 02 — closed |
 
 ## Section Status
@@ -14,8 +14,8 @@
 | 00 | CLOSED | 0 | EXEC50-002 closed | Stage 01 closed; next action Stage 02 |
 | 01 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 02 | CLOSED | 0 | EXEC50-003 closed | Stage 02 closed; next action Stage 03 |
-| 03 | IN_PROGRESS | 1 | EXEC50-004 active | Run #360 certification pending |
-| 04 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
+| 03 | CLOSED | 0 | EXEC50-004 closed; Run #365 certified | Stage 03 closed; next action Stage 04
+| 04 | NOT STARTED | 0 | Initial registration | Claim EXEC50-005 on next user `ادامه`
 | 05 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 06 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 07 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
@@ -51,3 +51,5 @@
 
 ## Allowed statuses
 PLANNED, CLAIMED, IN_PROGRESS, BLOCKED, READY_FOR_REVIEW, VERIFIED, CLOSED
+
+| EXEC50-004 | 03 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 03 — Batch 6C-7 Regression Contract Hardening | CLOSED | 2026-09-18 | 2026-09-18 | scripts/test_vendor_acceptance_timeout.py; TEST_VERIFICATION_MANIFEST.md; MVP_EXECUTION/WORK_LOGS/SECTION_03.md | 5ac5974b2caf045f8020e3c8b48f889ed3ff94e9 | none | next sequential stage: 04 — Repository Truth Synchronization |
