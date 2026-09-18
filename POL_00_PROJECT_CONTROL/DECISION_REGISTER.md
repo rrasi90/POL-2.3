@@ -3,7 +3,7 @@
 **Document ID:** `POL-DEC-001`  
 **Status:** `LOCKED / CANONICAL`  
 **Governance Level:** Lead Product Architect / Founder Approved  
-**Last Audit:** 2026-09-16 (Repository-wide engineering, integrity, documentation and design-readiness audit)  
+**Last Audit:** 2026-09-18 (Governance reconciliation against current PR/CI lineage)  
 **Cross-Reference:** `01_RESEARCH/Assumptions_and_Hypotheses.md` (RES-REG-001)  
 
 ---
@@ -109,6 +109,12 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 5. **Delivery OTP is a separate domain concern.** D-018 governs login/registration OTP only. The canonical `deliveries` table (`Data_Schema.md:556-574`) does not define an `otp_code` column. The `confirm_delivery_otp` path records `proof_of_delivery.otp_verified` but does not establish a canonical delivery OTP generation/verification contract. Delivery OTP digit count, lifetime, and security policy require a separate domain decision or explicit canonical contract later.
 
 ---
+
+### Governance Reconciliation Note — 2026-09-18
+- **D-018 refresh-token rotation remains UNDECIDED.** Existing runtime/API behavior may be described as current implementation behavior only; no document may present “no rotation” as a new approved product/security decision. Stage 10 owns explicit rotation-policy closure.
+- **D-019 single-runtime constraint prevails over legacy queue wording.** The current technical specification still contains BullMQ/Redis queue references; those references are not a superseding decision. Stage 06 must reconcile the worker/queue mechanism without introducing a Node.js runtime that violates D-019, unless a new explicit decision supersedes D-019.
+- **D-020 FastAPI is already canonical and implemented as the production HTTP transport boundary.** Legacy “framework-neutral” wording is historical/stale and must not remain an active architecture claim.
+- No new Founder/Architect Decision ID was required by this reconciliation.
 
 ### D-019 — Detailed Decision: Production Backend Runtime
 
