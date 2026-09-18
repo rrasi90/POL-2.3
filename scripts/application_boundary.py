@@ -69,6 +69,120 @@ class POLApplicationBoundary:
             VendorReferralService.activate_on_first_order(self.cur, retailer_id, str(order["id"]))
         return result
 
+    def checkout_from_allocation_plan(
+        self,
+        *,
+        allocation_plan_id,
+        delivery_address,
+        preferred_payment_method,
+        idempotency_key,
+    ):
+        """Resolve the authenticated retailer allocation plan and execute canonical checkout."""
+        self.cur.execute(
+            """
+            SELECT r.id AS retailer_id, b.id AS basket_id
+            FROM allocation_plans ap
+            JOIN baskets b ON b.id = ap.basket_id
+            JOIN retailers r ON r.id = b.retailer_id
+            JOIN organizations o ON o.id = r.organization_id
+            JOIN organization_memberships om
+              ON om.organization_id = r.organization_id
+            WHERE ap.id = %s
+              AND om.user_id = %s
+              AND om.organization_id = %s
+              AND om.status = 'ACTIVE'
+              AND o.status = 'ACTIVE'
+              AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
+            LIMIT 1
+            """,
+            (allocation_plan_id, self.context.user_id, self.context.organization_id),
+        )
+        owner = self.cur.fetchone()
+        if not owner:
+            raise PermissionError(
+                "Allocation plan is not accessible from the active retailer organization."
+            )
+
+        retailer_id = str(owner["retailer_id"])
+        basket_id = str(owner["basket_id"])
+        self._verify_retailer_actor(retailer_id)
+
+        self.cur.execute(
+            """
+            SELECT vendor_id, vendor_product_id, allocated_quantity,
+                   unit_price_snapshot_toman, line_total_toman, status
+            FROM allocation_items
+            WHERE allocation_plan_id = %s
+            ORDER BY id
+            """,
+            (allocation_plan_id,),
+        )
+        allocation_rows = self.cur.fetchall()
+        vendor_allocations = [
+            {
+                "vendor_id": str(row["vendor_id"]),
+                "vendor_product_id": str(row["vendor_product_id"]),
+                "quantity": int(row["allocated_quantity"]),
+                "unit_price_toman": int(row["unit_price_snapshot_toman"]),
+                "amount_toman": int(row["line_total_toman"]),
+            }
+            for row in allocation_rows
+            if row["status"] in ("ALLOCATED", "PARTIALLY_ALLOCATED")
+        ]
+
+        # Payment execution is a separate canonical order/payment capability.
+        # The current order schema has no payment-method persistence field, so
+        # transport accepts the documented preference without inventing storage.
+        _ = preferred_payment_method
+
+        result = self.checkout(
+            basket_id=basket_id,
+            plan_id=str(allocation_plan_id),
+            retailer_id=retailer_id,
+            idempotency_key=idempotency_key,
+            address_snapshot={"address": delivery_address},
+            vendor_allocations=vendor_allocations,
+        )
+
+        if result.get("idempotent_replay"):
+            group = result["order_group"]
+            orders = result["orders"]
+            group_status = group["group_status"]
+            total_amount_toman = int(group["total_amount_toman"])
+            order_group_id = str(group["id"])
+        else:
+            order_group_id = str(result["order_group_id"])
+            orders = result["orders"]
+            self.cur.execute(
+                """
+                SELECT group_status, total_amount_toman
+                FROM order_groups
+                WHERE id = %s
+                """,
+                (order_group_id,),
+            )
+            group = self.cur.fetchone()
+            if not group:
+                raise RuntimeError("Checkout succeeded but the order group could not be loaded.")
+            group_status = group["group_status"]
+            total_amount_toman = int(group["total_amount_toman"])
+
+        return {
+            "order_group_id": order_group_id,
+            "group_status": group_status,
+            "total_amount_toman": total_amount_toman,
+            "child_orders": [
+                {
+                    "order_id": str(order["id"]),
+                    "vendor_id": str(order["vendor_id"]),
+                    "order_status": order["order_status"],
+                    "subtotal_toman": int(order["total_amount_toman"]),
+                }
+                for order in orders
+            ],
+            "idempotent_replay": bool(result.get("idempotent_replay", False)),
+        }
+
     def feedback_list(self):
         if not self.context.organization_id:
             raise PermissionError("Feedback query requires an organization context.")
