@@ -17,8 +17,8 @@
 | 03 | CLOSED | 0 | EXEC50-004 closed; Run #365 certified | Stage 03 closed; next action Stage 04 |
 | 04 | CLOSED | 0 | EXEC50-005 closed | Stage 04 closed; next action Stage 05 |
 | 05 | CLOSED | 0 | EXEC50-006 closed | Stage 05 closed; next action Stage 06 |
-| 06 | IN_PROGRESS | 1 | EXEC50-007 active | CI certification pending |
-| 07 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
+| 06 | CLOSED | 0 | EXEC50-007 closed; Run #403 certified | Stage 06 closed; next action Stage 07 |
+| 07 | NOT STARTED | 0 | Initial registration | Claim EXEC50-008 on next user `ادامه` |
 | 08 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 09 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 10 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
@@ -56,4 +56,4 @@ PLANNED, CLAIMED, IN_PROGRESS, BLOCKED, READY_FOR_REVIEW, VERIFIED, CLOSED
 
 | EXEC50-005 | 04 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 04 — Repository Truth Synchronization | CLOSED | 2026-09-18 | 2026-09-18 | control docs + WORK_LOGS/SECTION_04.md | adf767578d7c25372b4c589e5675aa925b5d8fc1 | none | next sequential stage: 05 — Governance / Decision Register Reconciliation |
 | EXEC50-006 | 05 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 05 — Governance / Decision Register Reconciliation | CLOSED | 2026-09-18 | 2026-09-18 | DECISION_REGISTER.md; GLOBAL_ENGINEERING_AUDIT_2026-09-14.md; Technical_Architecture_Spec.md; API_Contracts.md; test_current_source_of_truth.py; WORK_LOGS/SECTION_05.md | ba072293d69614f9aea927d0eada43cb6c28dd8a | BullMQ/Redis queue mechanism remains a Stage 06 reconciliation item under D-019 | next sequential stage: 06 — Queue / Worker Architecture Closure |
-| EXEC50-007 | 06 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 06 — Queue / Worker Architecture Closure | IN_PROGRESS | 2026-09-18 | 2026-09-18 | WORKER_ARCHITECTURE.md; Event_Architecture.md; Technical_Architecture_Spec.md; scripts/test_worker_architecture.py; TEST_VERIFICATION_MANIFEST.md | f76c9ebae857eb9a2573848780dd3a5aaf4d0a26 | Run #403 pending after Run #395 exposed a contract-test label mismatch | consume Run #403 result then close or repair |
+| EXEC50-007 | 06 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 06 — Queue / Worker Architecture Closure | CLOSED | 2026-09-18 | 2026-09-18 | WORKER_ARCHITECTURE.md; Event_Architecture.md; Technical_Architecture_Spec.md; scripts/test_worker_architecture.py; TEST_VERIFICATION_MANIFEST.md | f76c9ebae857eb9a2573848780dd3a5aaf4d0a26 | none | next sequential stage: 07 — API/Boundary Master Inventory |
