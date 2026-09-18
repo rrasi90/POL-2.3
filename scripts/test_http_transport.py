@@ -106,7 +106,7 @@ def test_auth_profile_switch_and_revocation_flow(client):
     try:
         response = client.post(
             "/api/v1/auth/request-otp",
-            json={"mobile_number": phone, "purpose": "LOGIN"},
+            json={"mobile_number": phone},
         )
         assert response.status_code == 200
         assert response.json()["success"] is True
@@ -187,7 +187,7 @@ def test_rate_limit_and_error_envelope(client):
         for _ in range(3):
             response = client.post(
                 "/api/v1/auth/request-otp",
-                json={"mobile_number": phone, "purpose": "LOGIN"},
+                json={"mobile_number": phone},
             )
             assert response.status_code == 200
 
