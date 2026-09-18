@@ -35,6 +35,30 @@ class AuthError(Exception):
     pass
 
 
+class InvalidRefreshTokenError(AuthError):
+    """Refresh token does not map to an existing session."""
+
+
+class SessionExpiredError(AuthError):
+    """Refresh session has reached its 30-day expiry."""
+
+
+class SessionRevokedError(AuthError):
+    """Refresh session was explicitly revoked."""
+
+
+class OTPRateLimitError(PermissionError):
+    """D-018 phone+IP OTP request rate limit was exceeded."""
+
+
+class OTPLockoutError(PermissionError):
+    """D-018 phone-scoped OTP lockout is active."""
+
+
+class InvalidOTPError(ValueError):
+    """Submitted OTP code is invalid for the active challenge."""
+
+
 def get_jwt_secret() -> str:
     """Return the JWT signing secret from environment. Fails fast if missing."""
     secret = os.environ.get("POL_JWT_SECRET")
@@ -91,8 +115,8 @@ def validate_access_token(cur, token: str) -> dict:
         claims = decode_access_token(token)
     except jwt.ExpiredSignatureError:
         raise AuthError("Token has expired.")
-    except jwt.InvalidTokenError as e:
-        raise AuthError(f"Invalid token: {e}")
+    except jwt.InvalidTokenError:
+        raise AuthError("Invalid access token.")
 
     user_id = claims["sub"]
     session_id = claims["sid"]
