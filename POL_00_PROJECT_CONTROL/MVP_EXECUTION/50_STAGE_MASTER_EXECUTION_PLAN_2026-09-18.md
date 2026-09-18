@@ -72,7 +72,7 @@
 - `scripts/test_vendor_acceptance_timeout.py`: fixture واقعی `pg_connection` به‌صورت محلی در suite ثبت شد تا pytest آن را discover کند.
 - `scripts/sla_calendar.py`: `VENDOR_ACCEPTANCE_SLA_HOURS = 2.0` به‌عنوان constant مشترک در canonical SLA module ثبت شد؛ rule جدیدی ایجاد نشده است.
 - read-back static inspection روی چهار فایل انجام شد؛ defectهای شناخته‌شده در source دیگر مشاهده نشدند.
-- CI جدید روی HEAD فعلی: **Run #352 — IN_PROGRESS**؛ هنوز هیچ PASS/FAIL جدیدی از آن ادعا نمی‌شود.
+- Run #356 subsequently completed with **209/209 PASS** on the pre-Stage-03 suite; this is the completed regression certification carried forward into Stage 03.
 
 **فایل‌ها**
 - `scripts/sla_calendar.py`
@@ -159,6 +159,15 @@
 **Status:** PLANNED
 
 ---
+
+## Stage 04 — Closure Evidence — 2026-09-18
+- Work ID: EXEC50-005
+- Cross-document truth audit completed across CURRENT_SOURCE_OF_TRUTH, TEST_VERIFICATION_MANIFEST, TECHNICAL_ENVIRONMENT, DATABASE_SCHEMA_MANIFEST, REPOSITORY_COMPLETION_AUDIT, Active Work Ledger and Section 32 controller.
+- Current PR #1 control-document HEAD at audit start: 4539c77a557290dc8476b6c29d3a7cfeab36feea.
+- Latest completed PR-lineage certification: Run #365 / 35378830823, 212/212 PASS on certified code head 5ac5974b2caf045f8020e3c8b48f889ed3ff94e9.
+- Stale active claims corrected: old e6484... current-head claim, current 209/170/39 execution claim, 90-table current header, outdated Stage 03/Run #360 live status, and stale Stage 01/02 execution-log statuses.
+- Historical Run #333 evidence is explicitly retained as historical baseline only.
+- Status: CLOSED
 
 # Stage 05 — Governance / Decision Register Reconciliation
 **Macro:** M-01  
@@ -1510,7 +1519,9 @@
 # Execution Log
 
 ## Stage 01
-- Status: PLANNED
+- Status: CLOSED
+- Work ID: EXEC50-002
+- Baseline evidence: Run #333 historical failure snapshot
 - Work ID: TBD
 - Changes:
 - Files:
@@ -1521,7 +1532,9 @@
 - Next Action:
 
 ## Stage 02
-- Status: PLANNED
+- Status: CLOSED
+- Work ID: EXEC50-003
+- Certified regression evidence: Run #356 — 209/209 PASS on pre-Stage-03 suite
 
 ## Stage 03
 - Status: CLOSED
@@ -1532,7 +1545,10 @@
 - Next Action: execute Stage 04 — Repository Truth Synchronization
 
 ## Stage 04
-- Status: PLANNED
+- Status: CLOSED
+- Work ID: EXEC50-005
+- Verification: cross-document repository-truth audit completed
+- Next Action: execute Stage 05 — Governance / Decision Register Reconciliation
 
 ## Stage 05
 - Status: PLANNED
