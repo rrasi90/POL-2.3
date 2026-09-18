@@ -4,7 +4,7 @@
 **شناسه سند:** `POL-ENV-SPEC-001`  
 **نسخه:** ۱.۱  
 **وضعیت:** Canonical Technical Specification  
-**آخرین ممیزی:** 2026-09-16  
+**آخرین ممیزی:** 2026-09-18  
 
 ---
 
@@ -58,7 +58,7 @@ Empty PostgreSQL 18
 
 هیچ تست یا سرویس نباید schema دامنه را با DDL موازی بازتعریف کند.
 
-Migration 020–026 عمدتاً guard/runtime hardening را اضافه می‌کنند؛ migration 027 دو جدول partial-acceptance اضافه می‌کند و migration 028 یک جدول operational-holidays اضافه می‌کند. بنابراین baseline فعلی repository برابر **28 migrations / 93 public base tables** است.
+Migration 020–026 عمدتاً guard/runtime hardening را اضافه می‌کنند؛ migration 027 دو جدول partial-acceptance اضافه می‌کند و migration 028 یک جدول operational-holidays اضافه می‌کند. بنابراین baseline فعلی repository برابر **28 migrations / 93 public base tables** است. آخرین full verification موفق PR روی Run #365 با 212/212 test pass ثبت شده است.
 
 ---
 
