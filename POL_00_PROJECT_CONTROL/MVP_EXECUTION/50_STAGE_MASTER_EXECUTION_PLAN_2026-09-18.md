@@ -99,28 +99,36 @@
 **Macro:** M-01  
 **هدف:** مطمئن شدن از اینکه timeout behavior فقط happy-path نیست.
 
-**کار انجام‌شده — 2026-09-18**
+**نتیجه نهایی — 2026-09-18**
 - audit کامل suite `scripts/test_vendor_acceptance_timeout.py` انجام شد.
-- سه regression contract جدید اضافه شد: backfill و persistenceِ deadline مفقود، tenant isolation برای `ORDER_CANCELLED` notification، و deterministic assignee selection.
+- سه regression contract machine-checkable اضافه شد: backfill و persistenceِ deadline مفقود، tenant isolation برای `ORDER_CANCELLED` notification، و deterministic assignee selection.
 - timeout suite اکنون **9 test function** دارد.
-- `TEST_VERIFICATION_MANIFEST.md` به suite شماره 21 با 9 test item به‌روزرسانی شد؛ catalog اکنون 21 suite / 56 registered items است.
-- Run #356 روی pre-regression-test head، کل suite قبلی را با **209/209 PASS** اجرا کرد؛ این evidence صحت Stage 02 repairs را تأیید می‌کند، اما شامل سه تست جدید نیست.
-- Run #360 روی head فعلی `d779d7b2733a6bbf2eb0f902ef39e9ac16900fdf` آغاز شده؛ migration و environment verification آن موفق شده‌اند، ولی full verification step هنوز `IN_PROGRESS` است و artifact هنوز منتشر نشده.
+- `TEST_VERIFICATION_MANIFEST.md` به Suite 21 با 9 test item به‌روزرسانی شد؛ catalog ثبت‌شده همچنان 21 suite / 56 registered items است و execution inventory برابر 212 test item در CI است.
+- Run #356 روی pre-regression-test head کل suite قبلی را با **209/209 PASS** اجرا کرد.
+- Run #364 روی head `1d53170fd270cac9cf4d9c12b7426d7fde04791c`، suite گسترش‌یافته را با **210/212 PASS** اجرا کرد؛ دو failure هر دو test-fixture/assertion defects بودند و با commit `5ac5974b2caf045f8020e3c8b48f889ed3ff94e9` اصلاح شدند.
+- Run #365 با run id `35378830823` روی head `5ac5974b2caf045f8020e3c8b48f889ed3ff94e9` با نتیجه **SUCCESS** تکمیل شد.
+- Run #365: **212 collected / 212 passed / 0 failed / 0 skipped** در **72.74s**.
+- Artifact: `10561965892` با digest `sha256:22cb435f5008516719bb221115844b8edab8b61c562e9d4f80586d50699a233a`.
+- CI environment: PostgreSQL **18.6**, اتصال موفق، **93 public tables**؛ artifact runner metadata commit برابر `3bd6788ed1d509893fc98879b57a29b17f86cac9` و branch `HEAD`/dirty=false ثبت شده است.
 
 **Verification**
 - Source/read-back: completed.
-- Run #356: SUCCESS — 209 collected / 209 passed / 0 failed / 0 skipped.
-- Run #360: IN_PROGRESS — new regression tests not yet certified.
+- Regression CI: **GREEN — Run #365, 212/212 PASS**.
+- Timeout suite: 9/9 PASS داخل full suite.
+- Machine-readable artifact inspected and summary verified.
+- No skipped tests.
 
 **External**
 - ندارد.
 
-**Current Blocker**
-- `CI Run #360` هنوز full verification را تمام نکرده است.
+**Blockers**
+- هیچ blocker داخلی برای Stage 03 باقی نمانده است.
+- Full production deployment و external provider validation همچنان در stages بعدی/External Handoff scope هستند و جزو شرط بستن Stage 03 نیستند.
 
-**Exit:** فقط پس از اتمام Run #360 و مشاهده artifact/run result، Stage 03 به CLOSED یا BLOCKED تغییر وضعیت می‌دهد.
+**Exit:** regression contractها با CI واقعی machine-check شدند و Stage 03 قابل بستن است.
 
-**Status:** IN_PROGRESS
+**Status:** CLOSED
+
 ---
 
 # Stage 04 — Repository Truth Synchronization
@@ -1516,7 +1524,12 @@
 - Status: PLANNED
 
 ## Stage 03
-- Status: PLANNED
+- Status: CLOSED
+- Work ID: EXEC50-004
+- CI: Run #365 — 212/212 PASS, 0 failed, 0 skipped
+- Certified HEAD: 5ac5974b2caf045f8020e3c8b48f889ed3ff94e9
+- Artifact: 10561965892
+- Next Action: execute Stage 04 — Repository Truth Synchronization
 
 ## Stage 04
 - Status: PLANNED
