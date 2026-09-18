@@ -35,7 +35,7 @@ Several D-001–D-017 references pointed to paths that no longer existed after r
 
 The old manifest described the earlier 56-table baseline and stopped at migration 003 while the repository had evolved substantially.
 
-**Repair:** created `DATABASE_SCHEMA_MANIFEST_2026-09-16.md`, updated governance to use it, and marked the old manifest historical/superseded. The current migration chain extends through 022 and the verified public-table baseline is 90.
+**Repair:** created `DATABASE_SCHEMA_MANIFEST_2026-09-16.md`, updated governance to use it, and marked the old manifest historical/superseded. At the 2026-09-18 Stage 01 baseline, the physical migration chain extends through 028 and the CI-built PostgreSQL 18.6 public-table baseline is 93.
 
 ### R-03 — Canonical role/status terminology drift — FIXED VIA CORRECTION OVERLAY
 
@@ -144,3 +144,12 @@ These are **not hidden by this audit** and are intentionally separate from repos
 The repository is **structurally ready to enter the Design Completion phase after current-head CI passes**. The next phase must still complete the documented design specification gaps identified by `13_PRODUCT_DESIGN/15_CROSS_PROJECT_DESIGN_AUDIT_2026-09-15.md`, especially Auth/Session, commerce state matrices, RMA/Support, Notifications, localization and telemetry.
 
 This document does not certify the product as production-ready.
+
+
+## Stage 01 — 2026-09-18 baseline amendment
+- Current PR #1 head: `e6484daf9f0926b807577c71477d8f1405c24a3e`.
+- Latest completed CI run observed on that head: **Run #333 — FAILED**.
+- CI environment/bootstrap step: successful; PostgreSQL 18.6; **93 public base tables**.
+- Verification suite: 209 collected, 170 passed, 39 failed, 0 skipped.
+- Failed families: Batch 2 RMA/outbox, Batch 3 contract matrix, E2E MVP platform, vendor acceptance timeout.
+- This amendment supersedes this document's older 022/90 schema-currentness claim. The document remains an active audit record, not a production-readiness certification.
