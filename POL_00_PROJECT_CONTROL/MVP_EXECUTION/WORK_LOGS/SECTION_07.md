@@ -20,8 +20,8 @@ IN_PROGRESS
 |---|---|---|---|---|---|
 
 ## Evidence
-- Tests:
-- CI:
+- Tests: Suite 23 initially failed because the assertion assumed exactly one method per FastAPI route; the production route set itself was present. Test repaired to enumerate every registered route method.
+- CI: Run #420 (`35381645828`) — **FAILED 213/214**, with only Suite 23 failing; migration/bootstrap passed. Artifact `10562786328` digest `sha256:310e7ef6b5d2272af549365ef08fcc02eb95a71c6f769a216be761ec0ba5481d`. Repair commit `5870b5721d60c06b1cb809808d09fcb1e8ba55f6` triggered Run #421 (`35397369041`), currently QUEUED.
 - Design:
 - Deployment:
 - Other:
@@ -37,3 +37,5 @@ IN_PROGRESS
 ## Closing Condition
 این Section فقط وقتی CLOSED می‌شود که تمام acceptance criteria و work items ثبت‌شده بسته شده باشند.
 | EVT-002 | 2026-09-18 | EXEC50-008 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | CI executions triggered after route inventory/test commits. Run #413 (35381462408) has migration and environment verification successful and full suite still in progress; latest current-head Run #417 (35381519054) is also in progress. No certification claim made. | API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md; scripts/test_api_boundary_route_inventory.py | Run #413 / 35381462408; Run #417 / 35381519054 | 42c770a402d983a478bc6aaac2466e06f4b18528 | artifact pending | consume latest completed route-inventory CI result |
+
+| EVT-003 | 2026-09-19 | EXEC50-008 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | Consumed Run #420 failure evidence; isolated the defect to Suite 23 route-method enumeration, repaired the test without weakening route coverage, and triggered Run #421. | scripts/test_api_boundary_route_inventory.py | Run #420 failed 213/214; Run #421 queued | 5870b5721d60c06b1cb809808d09fcb1e8ba55f6 | CI #421 pending | consume Run #421 result |
