@@ -15,7 +15,6 @@ class APIBaseModel(BaseModel):
 class RequestOTPRequest(APIBaseModel):
     mobile_number: str = Field(min_length=7, max_length=32)
     client_fingerprint: str | None = Field(default=None, max_length=128)
-    purpose: Literal["LOGIN", "REGISTER"] = "LOGIN"
 
 
 class VerifyOTPRequest(APIBaseModel):
