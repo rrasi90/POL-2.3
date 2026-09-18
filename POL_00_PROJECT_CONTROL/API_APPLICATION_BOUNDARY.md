@@ -40,7 +40,7 @@ Authorization is evaluated from `organization_memberships` joined to active `org
 | **Profile completion** | `profile_completion()` |
 | **Active-tenant persona read** | `profile_get()` with active organization context |
 | **Active-tenant persona update** | `profile_membership_update()` |
-| Checkout | `checkout()` |
+| Checkout | `checkout_from_allocation_plan()` → `checkout()` |
 | Feedback list | `feedback_list()` |
 | Feedback admin inbox | `feedback_admin_inbox()` |
 | Feedback reply | `feedback_reply()` |
