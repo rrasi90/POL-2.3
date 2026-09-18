@@ -226,6 +226,8 @@
   "preferred_payment_method": "POS_DRIVER"
 }
 ```
+
+> **Transport boundary note (Batch 6C-2):** `preferred_payment_method` is accepted as part of the checkout request contract, but the current canonical order schema does not persist a checkout-level payment-method preference. Payment execution/evidence is a separate downstream capability; the HTTP transport must not invent a new persistence field or execute payment as part of checkout.
 * **پاسخ موفق (201 Created):** ایجاد گروه سفارش والد (`order_groups`) و سفارش‌های فرزند مستقل (`orders`) به ازای هر بنکدار با وضعیت `SUBMITTED` (وضعیت کانونی مطابق `Order_Lifecycle.md` و قید DDL جدول `orders`؛ وضعیت `PENDING` منسوخ است).
 ```json
 {
