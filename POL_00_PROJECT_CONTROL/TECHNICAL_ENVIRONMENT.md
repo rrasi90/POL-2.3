@@ -52,13 +52,13 @@ Empty PostgreSQL 18
   → migrations/001_*.sql
   → migrations/002_*.sql
   → ...
-  → migrations/021_*.sql
-  → 90 canonical public tables + integrity triggers/constraints
+  → migrations/028_*.sql
+  → 93 canonical public tables + integrity triggers/constraints
 ```
 
 هیچ تست یا سرویس نباید schema دامنه را با DDL موازی بازتعریف کند.
 
-Migration 020 و 021 جدول جدیدی اضافه نمی‌کنند؛ فقط invariantها و cross-entity integrity را سخت‌تر می‌کنند.
+Migration 020–026 عمدتاً guard/runtime hardening را اضافه می‌کنند؛ migration 027 دو جدول partial-acceptance اضافه می‌کند و migration 028 یک جدول operational-holidays اضافه می‌کند. بنابراین baseline فعلی repository برابر **28 migrations / 93 public base tables** است.
 
 ---
 
