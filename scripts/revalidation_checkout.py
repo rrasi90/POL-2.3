@@ -158,8 +158,8 @@ class RevalidationCheckoutService:
                     id, order_group_id, retailer_id, vendor_id, order_number,
                     total_amount_toman, order_status, dispute_status,
                     delivery_address_snapshot, correlation_id,
-                    vendor_acceptance_deadline_at, created_at
-                ) VALUES (%s,%s,%s,%s,%s,%s,'SUBMITTED','NONE',%s,%s,%s,%s)
+                    vendor_acceptance_deadline_at
+                ) VALUES (%s,%s,%s,%s,%s,%s,'SUBMITTED','NONE',%s,%s,%s)
                 RETURNING *;
                 """,
                 (ord_id, og_id, retailer_id, vendor_id, ord_num, vendor_total,
