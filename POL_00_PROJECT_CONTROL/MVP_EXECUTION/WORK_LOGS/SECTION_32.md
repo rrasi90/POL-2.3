@@ -36,7 +36,7 @@ IN_PROGRESS
 - Remaining work: execute Stages 04–50 sequentially; external blockers remain explicitly tagged.
 - Next worker/task: CHATGPT-5.6-LUNA / EXEC50-001 — supervise Stage 04 next.
 - Required decision: none for execution-program structure; later product/architecture changes require Decision IDs.
-- Current controller sync SHA: c80965b42a61412623e247a04e6e058bd72a1283
+- Stage 04 controller checkpoint commit: c80965b42a61412623e247a04e6e058bd72a1283
 
 ## Closing Condition
 این Section فقط وقتی CLOSED می‌شود که تمام acceptance criteria و work items ثبت‌شده بسته شده باشند.
