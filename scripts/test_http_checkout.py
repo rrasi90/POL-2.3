@@ -111,6 +111,20 @@ def test_checkout_rejects_extra_request_fields(client):
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
 
 
+def test_checkout_transport_source_boundary_has_no_domain_import_or_sql():
+    from pathlib import Path
+
+    route_text = (
+        Path(__file__).resolve().parents[0] / "api" / "routes" / "orders.py"
+    ).read_text(encoding="utf-8")
+
+    assert "domain_services" not in route_text
+    assert "SELECT " not in route_text
+    assert "INSERT " not in route_text
+    assert "UPDATE " not in route_text
+    assert "DELETE " not in route_text
+
+
 def test_checkout_route_is_auth_protected():
     app.dependency_overrides.clear()
     response = TestClient(app).post(
