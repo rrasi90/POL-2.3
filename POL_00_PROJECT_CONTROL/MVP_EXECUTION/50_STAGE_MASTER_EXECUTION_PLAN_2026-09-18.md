@@ -99,31 +99,28 @@
 **Macro:** M-01  
 **هدف:** مطمئن شدن از اینکه timeout behavior فقط happy-path نیست.
 
-**کار قابل انجام**
-- audit تست‌های timeout.
-- idempotency.
-- before-deadline.
-- ops-context.
-- pending partial proposal closure.
-- reservation release.
-- notification tenant scope.
-- reliability ledger/task creation.
-- deterministic assignee selection.
-
-**خروجی**
-- tests missing در صورت نیاز.
-- اصلاح assertions شکننده.
+**کار انجام‌شده — 2026-09-18**
+- audit کامل suite `scripts/test_vendor_acceptance_timeout.py` انجام شد.
+- سه regression contract جدید اضافه شد: backfill و persistenceِ deadline مفقود، tenant isolation برای `ORDER_CANCELLED` notification، و deterministic assignee selection.
+- timeout suite اکنون **9 test function** دارد.
+- `TEST_VERIFICATION_MANIFEST.md` به suite شماره 21 با 9 test item به‌روزرسانی شد؛ catalog اکنون 21 suite / 56 registered items است.
+- Run #356 روی pre-regression-test head، کل suite قبلی را با **209/209 PASS** اجرا کرد؛ این evidence صحت Stage 02 repairs را تأیید می‌کند، اما شامل سه تست جدید نیست.
+- Run #360 روی head فعلی `d779d7b2733a6bbf2eb0f902ef39e9ac16900fdf` آغاز شده؛ migration و environment verification آن موفق شده‌اند، ولی full verification step هنوز `IN_PROGRESS` است و artifact هنوز منتشر نشده.
 
 **Verification**
-- targeted test execution در حد لازم.
+- Source/read-back: completed.
+- Run #356: SUCCESS — 209 collected / 209 passed / 0 failed / 0 skipped.
+- Run #360: IN_PROGRESS — new regression tests not yet certified.
 
 **External**
-- final CI certification هنوز بعداً.
+- ندارد.
 
-**Exit:** timeout contract machine-checkable و deterministic باشد.
+**Current Blocker**
+- `CI Run #360` هنوز full verification را تمام نکرده است.
 
-**Status:** PLANNED
+**Exit:** فقط پس از اتمام Run #360 و مشاهده artifact/run result، Stage 03 به CLOSED یا BLOCKED تغییر وضعیت می‌دهد.
 
+**Status:** IN_PROGRESS
 ---
 
 # Stage 04 — Repository Truth Synchronization
