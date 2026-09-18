@@ -113,10 +113,11 @@ def test_daily_inventory_materializes_canonical_warehouse_responsibility():
         conn.close()
 
 
-def test_integration_worker_uses_exact_recipient_and_template():
-    conn = _conn()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-    try:
+def test_integration_worker_uses_exact_recipient_and_template(postgres_database):
+    # Use a fresh PostgreSQL 18 database for this worker test. Shared pol_test state can
+    # contain unrelated PENDING outbox events from other tests, making process_pending()
+    # legitimately process more than this test's event.
+    with transaction(postgres_database) as cur:
         org = str(uuid.uuid4())
         user = str(uuid.uuid4())
         event_id = f"ORDER_ACCEPTED_{uuid.uuid4().hex}"
@@ -161,9 +162,6 @@ def test_integration_worker_uses_exact_recipient_and_template():
             (event_id,),
         )
         assert cur.fetchone()["status"] == "PUBLISHED"
-    finally:
-        conn.rollback()
-        conn.close()
 
 
 @pytest.mark.parametrize("routing", [
