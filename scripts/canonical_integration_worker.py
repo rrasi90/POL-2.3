@@ -122,6 +122,22 @@ class CanonicalIntegrationWorker:
                     f"Event {event['event_id']} lacks explicit notification routing."
                 )
 
+            cur.execute(
+                """
+                SELECT 1
+                FROM organization_memberships om
+                JOIN organizations o ON o.id = om.organization_id
+                WHERE om.user_id = %s AND om.organization_id = %s
+                  AND om.status = 'ACTIVE' AND o.status = 'ACTIVE'
+                FOR SHARE OF om, o;
+                """,
+                (target_user_id, target_org_id),
+            )
+            if not cur.fetchone():
+                raise IntegrationWorkerError(
+                    "Notification recipient requires an active membership in the target organization."
+                )
+
             title, body, priority, channel = cls._render_message(cur, event_name, payload)
             notification_id = str(uuid.uuid4())
             cur.execute(

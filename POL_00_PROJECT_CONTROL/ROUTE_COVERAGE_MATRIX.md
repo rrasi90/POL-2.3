@@ -35,6 +35,24 @@
 
 \* GREEN means the domain route and database behavior are verified; it does **not** mean the production API/mobile/web runtime is complete.
 
+## Batch 4 evidence qualification — 2026-09-17
+
+This section supersedes the GREEN-eligibility recommendations in `CONTRACT_RECONCILIATION_2026-09-17.md` section 4. No AMBER route is promoted by Batch 4. GREEN* entries above remain limited historical domain/database evidence, not certification of a complete authenticated application route.
+
+| Route | Previous | Result | Evidence and remaining gate |
+|---|---|---|---|
+| Notification -> delivery | AMBER | AMBER | `test_batch4_recipient_membership_isolation` in `scripts/test_canonical_integration_worker.py` verifies active recipient membership and no unauthorized notification/delivery creation. It does not certify live SMS/push delivery, channel fan-out or retry recovery. |
+| Feedback -> Admin | AMBER | AMBER | Existing feedback tests verify direct service reads/admin checks. `application_boundary.py` does not pass the active operator context into admin reads/replies; `_require_admin` checks any operator membership. Complete active-context route evidence is absent. |
+| Feedback reply -> user | AMBER | AMBER | Reply outbox routing exists, but active-context authorization, repeated reply delivery semantics and complete user delivery evidence remain incomplete. Provider credentials alone do not close the route. |
+| Support -> case lifecycle | AMBER | AMBER | Direct service tests verify ownership and ops restrictions. Read/message/assignment/transition facade methods do not propagate active organization context. Owner/any-operator checks are not full active-tenant route evidence. |
+| Returns / RMA | AMBER | AMBER | Batch 2/3 tests verify request/transition/refund controls; they do not certify reverse-logistics execution and inspection quantities, the failure modes for this row. The narrower RMA -> Refund row is a separate claim. |
+| Analytics / KPI | AMBER | AMBER | `11_PILOT/KPIs.md` defines KPIs; lineage schema checks do not prove an operational calculation/read pipeline with correct cohorts and timezone behavior. |
+| External provider delivery | AMBER | AMBER | Adapter/configuration tests are not live provider certification. Deployment, channel policy integration and failure recovery remain gates. |
+
+Recipient membership is checked at canonical worker materialization time, using the existing `organization_memberships` and active `organizations` authority with row locks. Missing routing or inactive/mismatched membership raises `IntegrationWorkerError` before notification creation. Event-specific producer role/aggregate selection remains separate; Batch 4 does not certify arbitrary producer payloads or direct SQL notification writes.
+
+See `BATCH4_CONTRACT_CLOSURE_2026-09-17.md` for policy blockers, individual pre-UI gate qualifications and design synchronization requirements. An unchanged GREEN* label must not override these explicit limitations.
+
 ## Gate to visual-design phase
 
 POL should not begin full visual-system engineering until all MVP-critical rows are GREEN and every AMBER row has a documented explicit reason that is outside the UI scope.
