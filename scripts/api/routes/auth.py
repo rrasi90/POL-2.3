@@ -28,7 +28,7 @@ def request_otp(payload: RequestOTPRequest, request: Request, cur=Depends(get_db
         cur,
         payload.mobile_number,
         client_ip,
-        payload.purpose,
+        "LOGIN",
     )
     return success_payload(
         {
