@@ -171,33 +171,30 @@
 
 # Stage 05 — Governance / Decision Register Reconciliation
 **Macro:** M-01  
-**هدف:** یکسان‌سازی تمام terminology و precedence.
+**هدف:** یکسان‌سازی terminology، precedence و status بین Decision Register و اسناد فعال.
 
-**کار قابل انجام**
-- Audit D-001…D-020.
-- بررسی legacy terminology.
-- payment wording.
-- role aliases.
-- runtime claims.
-- frontend framework wording.
-- reputation UI wording.
-- historical/superseded labels.
-
-**خروجی**
-- reconciliation edits.
-- Decision references.
+**نتیجه نهایی — 2026-09-18**
+- D-001 تا D-020 در `DECISION_REGISTER.md` audit شدند و authority/precedence آن‌ها با اسناد canonical اصلی cross-check شد.
+- D-018: refresh-token rotation به‌عنوان policy تصمیم‌نگرفته باقی ماند؛ runtime/API docs اکنون صراحتاً رفتار فعلی implementation را از policy نهایی جدا می‌کنند.
+- D-019/D-020: Python + FastAPI به‌عنوان runtime/HTTP authority تثبیت شد؛ stale claimِ framework-neutral بودن transport از `GLOBAL_ENGINEERING_AUDIT` حذف شد.
+- تضاد BullMQ/Redis با D-019 شناسایی و **حل‌نشده اما formally carried** به Stage 06 شد؛ BullMQ دیگر به‌عنوان تصمیم اجرایی canonical معرفی نمی‌شود و D-019 مانع dual Node/Python runtime باقی می‌ماند.
+- Payment wording با `NON_CUSTODIAL_DIRECT` / zero custody هم‌خوان باقی ماند.
+- Multi-vendor wording با D-014 و open vendor count با D-005 هم‌خوان باقی ماند.
+- stale wording در `scripts/test_current_source_of_truth.py` اصلاح شد: Decision Register اکنون D-001 تا D-020 را به‌درستی توصیف می‌کند.
+- Last Audit در `DECISION_REGISTER.md` به 2026-09-18 به‌روزرسانی شد.
 
 **Verification**
-- repository-wide text search.
+- Canonical source inspection completed across Decision Register, Technical Architecture, API Contracts, Identity/Membership, API Application Boundary, Global Engineering Audit, MVP Multi-Vendor Decision, operational config, payment/commission docs and SSoT verification gate.
+- Identified legacy claims were either reconciled or explicitly carried under an existing Decision ID (D-018/D-019), with queue resolution assigned to Stage 06.
+- GitHub code-search endpoint did not provide repository-wide code results in this connector; therefore no claim of exhaustive repository-wide grep is made.
+- No new business/architecture Decision ID was created.
 
-**External**
-- only if a genuinely new Founder decision is required.
+**Tests / CI**
+- No domain-code change was made in Stage 05.
+- Latest completed full regression remains Run #365: 212/212 PASS on certified code head `5ac5974b2caf045f8020e3c8b48f889ed3ff94e9`.
+- A new CI run was queued after Stage 05 documentation changes; its result is not used as Stage 05 closure evidence because Stage 05 changes are governance/documentation plus a test message correction.
 
-**Exit:** contradictions یا resolved شوند یا با Decision ID open بمانند.
-
-**Status:** PLANNED
-
----
+**Exit:** Stage 05 CLOSED. Next open stage: Stage 06 — Queue / Worker Architecture Closure.
 
 # Stage 06 — Queue / Worker Architecture Closure
 **Macro:** M-01  
@@ -1551,7 +1548,10 @@
 - Next Action: execute Stage 05 — Governance / Decision Register Reconciliation
 
 ## Stage 05
-- Status: PLANNED
+- Status: CLOSED
+- Work ID: EXEC50-006
+- Verification: governance reconciliation completed; D-018/D-019 conflicts explicitly carried by existing decisions
+- Next Action: execute Stage 06 — Queue / Worker Architecture Closure
 
 ## Stage 06
 - Status: PLANNED
