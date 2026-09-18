@@ -30,6 +30,18 @@ class RefreshTokenRequest(APIBaseModel):
 class SwitchOrganizationRequest(APIBaseModel):
     target_organization_id: UUID
 
+    
+class CheckoutRequest(APIBaseModel):
+    allocation_plan_id: UUID
+    delivery_address: str = Field(min_length=5, max_length=1000)
+    preferred_payment_method: Literal[
+        "CASH_ON_DELIVERY",
+        "POS_DRIVER",
+        "DIRECT_BANK_TRANSFER",
+        "CHEQUE_SAYYAD",
+        "ONLINE_MOCK",
+    ]
+
 
 class ProfileUpdateRequest(APIBaseModel):
     display_name: str | None = None
