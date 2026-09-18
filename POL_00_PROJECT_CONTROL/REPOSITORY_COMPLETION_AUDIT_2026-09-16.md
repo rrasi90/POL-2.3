@@ -146,10 +146,12 @@ The repository is **structurally ready to enter the Design Completion phase afte
 This document does not certify the product as production-ready.
 
 
-## Stage 01 — 2026-09-18 baseline amendment
-- Current PR #1 head: `e6484daf9f0926b807577c71477d8f1405c24a3e`.
-- Latest completed CI run observed on that head: **Run #333 — FAILED**.
-- CI environment/bootstrap step: successful; PostgreSQL 18.6; **93 public base tables**.
-- Verification suite: 209 collected, 170 passed, 39 failed, 0 skipped.
-- Failed families: Batch 2 RMA/outbox, Batch 3 contract matrix, E2E MVP platform, vendor acceptance timeout.
-- This amendment supersedes this document's older 022/90 schema-currentness claim. The document remains an active audit record, not a production-readiness certification.
+## Stage 04 — 2026-09-18 repository-truth amendment
+- Current PR #1 control-document HEAD: `4539c77a557290dc8476b6c29d3a7cfeab36feea`.
+- Latest completed full verification on the PR lineage: **Run #365 — SUCCESS** on certified code head `5ac5974b2caf045f8020e3c8b48f889ed3ff94e9`.
+- Full suite: **212 collected / 212 passed / 0 failed / 0 skipped**.
+- CI environment: PostgreSQL 18.6; **93 public base tables**.
+- Artifact: `10561965892`; digest `sha256:22cb435f5008516719bb221115844b8edab8b61c562e9d4f80586d50699a233a`.
+- Run #333 remains historical Stage 01 evidence only; its 209/170/39 failure counts are not current.
+- The document remains an active audit record, not a production-readiness certification.
+- The repository is still an open PR and is not represented as merged-to-`main`.
