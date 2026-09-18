@@ -54,7 +54,7 @@ All active documents MUST represent the current architecture:
 
 - Current MVP basket model is **Multi-Vendor (`D-014`)**.
 
-**Repository-truth sync (2026-09-18):** current PR #1 control-document HEAD is `4539c77a557290dc8476b6c29d3a7cfeab36feea`; latest completed full verification on the PR lineage is Run #365 (`35378830823`) with 212/212 pass on certified code head `5ac5974b2caf045f8020e3c8b48f889ed3ff94e9`. The PR remains open and unmerged.
+**Repository-truth sync (2026-09-18):** Stage 04 audit-start PR #1 control-document HEAD was `4539c77a557290dc8476b6c29d3a7cfeab36feea`; subsequent control-only commits record the synchronized document changes. Latest completed full verification on the PR lineage is Run #365 (`35378830823`) with 212/212 pass on certified code head `5ac5974b2caf045f8020e3c8b48f889ed3ff94e9`. The PR remains open and unmerged.
 - Single-Vendor MVP is historical only (`D-003`).
 - Vendor count is open; no hardcoded `<=2` rule.
 - MVP payment remains `NON_CUSTODIAL_DIRECT`.
