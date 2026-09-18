@@ -230,7 +230,7 @@
 - Existing worker classes verified to use PostgreSQL locking/leases; no Redis/BullMQ dependency exists in `requirements.txt`.
 - Run #395 on the expanded 213-test suite: **212 PASS / 1 FAIL**; only the new static worker-architecture test failed due to an outdated label matcher.
 - Test repair committed in `f76c9ebae857eb9a2573848780dd3a5aaf4d0a26`.
-- Run #403 is the current certification run on the repaired SHA and remains pending.
+- Run #403 subsequently completed successfully on the repaired SHA; closure evidence is recorded below.
 
 ---
 
