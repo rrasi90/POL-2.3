@@ -4,14 +4,14 @@
 
 | WORK_ID | SECTION_ID | WORKER | ROLE | TASK | STATUS | STARTED_AT | LAST_UPDATE | FILES | COMMIT_SHA | BLOCKER | NEXT_ACTION |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 6C7-001 | 02 | TBD | implementation | Close Batch 6C-7 certification | IN_PROGRESS | 2026-09-18 | 2026-09-18 | TBD | 7bc2d435c7eef7a073b2f8b70de1b361c4246328 | CI certification pending | commit fixes + rerun CI |
+| 6C7-001 | 02 | TBD | implementation | Close Batch 6C-7 certification | PLANNED | 2026-09-18 | 2026-09-18 | TBD | 7bc2d435c7eef7a073b2f8b70de1b361c4246328 | CI certification pending | commit fixes + rerun CI |
 
 ## Section Status
 | SECTION_ID | STATUS | ACTIVE_WORKERS | LAST_EVENT | NEXT_ACTION |
 |---:|---|---:|---|---|
 | 00 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 01 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
-| 02 | IN_PROGRESS | 1 | Initial Batch 6C-7 tracking | Finish certification |
+| 02 | PLANNED | 0 | Initial registration; no worker claimed | Claim a work item before starting |
 | 03 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 04 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 05 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
