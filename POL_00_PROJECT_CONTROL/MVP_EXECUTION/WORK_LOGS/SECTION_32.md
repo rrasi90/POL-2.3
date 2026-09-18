@@ -31,15 +31,25 @@ IN_PROGRESS
 - Other:
 
 ## Current Handoff
-- Current state: Section 32 is IN_PROGRESS under EXEC50-001; Stages 01–02 closed.
-- Last completed work: 50-stage controller published and Stage 01 baseline closed.
-- Remaining work: execute Stages 03–50 sequentially; external blockers remain explicitly tagged.
-- Next worker/task: CHATGPT-5.6-LUNA / EXEC50-001 — supervise Stage 03 next.
+- Current state: Section 32 is IN_PROGRESS under EXEC50-001; Stages 01–03 closed.
+- Last completed work: Stage 03 regression contract hardening certified by Run #365.
+- Remaining work: execute Stages 04–50 sequentially; external blockers remain explicitly tagged.
+- Next worker/task: CHATGPT-5.6-LUNA / EXEC50-001 — supervise Stage 04 next.
 - Required decision: none for execution-program structure; later product/architecture changes require Decision IDs.
-- Current SHA: 1680f3c7ce855c057294fe555f86f041cabcc3ad
+- Current controller sync SHA: 1f211f5b07b02fc8c6ed5ed63d57d9b97fd1af43
 
 ## Closing Condition
 این Section فقط وقتی CLOSED می‌شود که تمام acceptance criteria و work items ثبت‌شده بسته شده باشند.
 
 ## Stage 03 Progress Event — 2026-09-18
 EXEC50-004 remains IN_PROGRESS. Run #356 completed successfully at 209/209 on the prior suite; three new regression tests were added and Run #360 is currently executing the expanded suite. Controller will not advance until Stage 03 has final evidence.
+
+| EVT-004 | 2026-09-18 | EXEC50-001 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | Stage 03 / EXEC50-004 closed after Run #365 certification with 212/212 PASS; controller remains active and advances to Stage 04. | 50-stage master plan; Active Work Ledger; Section 03 Work Log | Run #365 SUCCESS — 212/212 PASS | 1f211f5b07b02fc8c6ed5ed63d57d9b97fd1af43 | none | Claim EXEC50-005 for Stage 04 on next user `ادامه` |
+
+## Stage 03 Closure Evidence — 2026-09-18
+- EXEC50-004 CLOSED.
+- Certified code SHA: 5ac5974b2caf045f8020e3c8b48f889ed3ff94e9
+- Run #365 / 35378830823: SUCCESS
+- Full suite: 212/212 PASS; 0 failed; 0 skipped
+- Artifact: 10561965892; digest sha256:22cb435f5008516719bb221115844b8edab8b61c562e9d4f80586d50699a233a
+- Next stage: 04 — Repository Truth Synchronization
