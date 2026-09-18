@@ -14,7 +14,7 @@
 | 00 | CLOSED | 0 | EXEC50-002 closed | Stage 01 closed; next action Stage 02 |
 | 01 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 02 | CLOSED | 0 | EXEC50-003 closed | Stage 02 closed; next action Stage 03 |
-| 03 | IN_PROGRESS | 1 | EXEC50-004 claimed | Harden Batch 6C-7 timeout regression contract |
+| 03 | IN_PROGRESS | 1 | EXEC50-004 active | Run #360 certification pending |
 | 04 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 05 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 06 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
