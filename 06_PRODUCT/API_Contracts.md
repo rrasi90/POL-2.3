@@ -545,7 +545,7 @@
   }
 }
 ```
-* **نکته:** refresh token چرخش ندارد (Rotation TBD per D-018). همان refresh token تا پایان اعتبار سشن ۳۰ روزه معتبر است.
+* **Governance note (D-018):** refresh-token rotation policy هنوز تصمیم‌گیری نشده است. رفتار فعلی implementation این است که refresh token را rotate نمی‌کند و همان token را در طول refresh-session معتبر مصرف می‌کند؛ این جمله صرفاً وضعیت runtime فعلی است و به‌عنوان policy نهایی تلقی نمی‌شود.
 
 ### ۷.۴. سوئیچ بین سازمان‌ها (`POST /auth/switch-organization`)
 * **مجوز:** کاربر احراز هویت شده دارای بیش از یک عضویت فعال.
@@ -555,7 +555,7 @@
   "target_organization_id": "7d91e843-c03b-4191-87aa-29775089c93a"
 }
 ```
-* **پاسخ موفق (200 OK):** توکن JWT جدید با ادعای `org_id` و `role` سازمان مقصد صادر می‌شود. refresh token تغییر نمی‌کند.
+* **پاسخ موفق (200 OK):** توکن JWT جدید با ادعای `org_id` و `role` سازمان مقصد صادر می‌شود. در implementation فعلی refresh token تغییر نمی‌کند؛ rotation policy طبق D-018 هنوز TBD است.
 ```json
 {
   "success": true,
