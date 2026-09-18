@@ -228,7 +228,9 @@
 - Added `scripts/test_worker_architecture.py` and registered Suite 22.
 - Removed active BullMQ/Redis Streams transport wording from Event Architecture; Technical Architecture now names Python workers + PostgreSQL Outbox.
 - Existing worker classes verified to use PostgreSQL locking/leases; no Redis/BullMQ dependency exists in `requirements.txt`.
-- Closure pending CI certification of the expanded suite.
+- Run #395 on the expanded 213-test suite: **212 PASS / 1 FAIL**; only the new static worker-architecture test failed due to an outdated label matcher.
+- Test repair committed in `f76c9ebae857eb9a2573848780dd3a5aaf4d0a26`.
+- Run #403 is the current certification run on the repaired SHA and remains pending.
 
 ---
 
