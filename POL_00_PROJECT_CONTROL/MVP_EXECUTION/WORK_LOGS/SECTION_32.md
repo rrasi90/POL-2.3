@@ -17,6 +17,8 @@ IN_PROGRESS
 
 | EVT-002 | 2026-09-18 | EXEC50-001 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | Stage 01 executed and closed under EXEC50-002; controller remains active for sequential execution. | Stage 01 snapshot; 50-stage master plan; synchronized governance docs | GitHub CI evidence only; no new source tests | 1680f3c7ce855c057294fe555f86f041cabcc3ad | Run #333 failed with 39 tests failing | Execute Stage 02 on next user `ادامه` |
 
+| EVT-003 | 2026-09-18 | EXEC50-001 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | Stage 02 executed and closed under EXEC50-003; controller advances to Stage 03 while Run #352 remains pending. | Stage 02 source files; 50-stage master plan; Section 02 log; Active Work Ledger | Static source verification; CI Run #352 IN_PROGRESS | 45bfa518d9f75d8ea7c83ba01463619dd61f72a8 | No passing CI result yet | Execute Stage 03 on next user `ادامه` |
+
 ## Decision Log
 | DECISION_ID | DATE | DECISION | OWNER | SOURCE | STATUS |
 |---|---|---|---|---|---|
@@ -29,10 +31,10 @@ IN_PROGRESS
 - Other:
 
 ## Current Handoff
-- Current state: Section 32 is IN_PROGRESS under EXEC50-001.
+- Current state: Section 32 is IN_PROGRESS under EXEC50-001; Stages 01–02 closed.
 - Last completed work: 50-stage controller published and Stage 01 baseline closed.
-- Remaining work: execute Stages 02–50 sequentially; external blockers remain explicitly tagged.
-- Next worker/task: CHATGPT-5.6-LUNA / EXEC50-001 — supervise Stage 02 next.
+- Remaining work: execute Stages 03–50 sequentially; external blockers remain explicitly tagged.
+- Next worker/task: CHATGPT-5.6-LUNA / EXEC50-001 — supervise Stage 03 next.
 - Required decision: none for execution-program structure; later product/architecture changes require Decision IDs.
 - Current SHA: 1680f3c7ce855c057294fe555f86f041cabcc3ad
 
