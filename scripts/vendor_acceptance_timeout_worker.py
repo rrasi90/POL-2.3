@@ -231,16 +231,24 @@ class VendorAcceptanceTimeoutWorker:
 
             cur.execute(
                 """
-                SELECT m.user_id
+                SELECT
+                    MIN(m.user_id) FILTER (WHERE m.role = 'FIELD_ACTIVATOR') AS field_activator_user_id,
+                    MIN(m.user_id) FILTER (WHERE m.role IN ('OPS_ADMIN', 'SUPER_ADMIN')) AS ops_user_id
                 FROM organization_memberships m
                 JOIN organizations org ON org.id = m.organization_id
                 WHERE m.status = 'ACTIVE'
                   AND org.status = 'ACTIVE'
-                  AND m.role IN ('FIELD_ACTIVATOR', 'OPS_ADMIN', 'SUPER_ADMIN')
-                ORDER BY m.user_id
                 """,
             )
-            for assignee in cur.fetchall():
+            operational_assignees = cur.fetchone()
+
+            for assignee_id in (
+                operational_assignees["field_activator_user_id"],
+                operational_assignees["ops_user_id"],
+            ):
+                if assignee_id is None:
+                    continue
+
                 cur.execute(
                     """
                     INSERT INTO field_tasks (
@@ -262,7 +270,7 @@ class VendorAcceptanceTimeoutWorker:
                     """,
                     (
                         order["vendor_id"],
-                        assignee["user_id"],
+                        assignee_id,
                         f"Critical vendor acceptance timeout for order {order['order_number']}.",
                     ),
                 )
