@@ -16,7 +16,7 @@
 | 02 | CLOSED | 0 | EXEC50-003 closed | Stage 02 closed; next action Stage 03 |
 | 03 | CLOSED | 0 | EXEC50-004 closed; Run #365 certified | Stage 03 closed; next action Stage 04 |
 | 04 | CLOSED | 0 | EXEC50-005 closed | Stage 04 closed; next action Stage 05 |
-| 05 | NOT STARTED | 0 | Initial registration | Claim EXEC50-006 on next user `ادامه` |
+| 05 | CLOSED | 0 | EXEC50-006 closed | Stage 05 closed; next action Stage 06 |
 | 06 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 07 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 08 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
@@ -55,3 +55,4 @@ PLANNED, CLAIMED, IN_PROGRESS, BLOCKED, READY_FOR_REVIEW, VERIFIED, CLOSED
 | EXEC50-004 | 03 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 03 — Batch 6C-7 Regression Contract Hardening | CLOSED | 2026-09-18 | 2026-09-18 | scripts/test_vendor_acceptance_timeout.py; TEST_VERIFICATION_MANIFEST.md; MVP_EXECUTION/WORK_LOGS/SECTION_03.md | 5ac5974b2caf045f8020e3c8b48f889ed3ff94e9 | none | next sequential stage: 04 — Repository Truth Synchronization |
 
 | EXEC50-005 | 04 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 04 — Repository Truth Synchronization | CLOSED | 2026-09-18 | 2026-09-18 | control docs + WORK_LOGS/SECTION_04.md | adf767578d7c25372b4c589e5675aa925b5d8fc1 | none | next sequential stage: 05 — Governance / Decision Register Reconciliation |
+| EXEC50-006 | 05 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 05 — Governance / Decision Register Reconciliation | CLOSED | 2026-09-18 | 2026-09-18 | DECISION_REGISTER.md; GLOBAL_ENGINEERING_AUDIT_2026-09-14.md; Technical_Architecture_Spec.md; API_Contracts.md; test_current_source_of_truth.py; WORK_LOGS/SECTION_05.md | ba072293d69614f9aea927d0eada43cb6c28dd8a | BullMQ/Redis queue mechanism remains a Stage 06 reconciliation item under D-019 | next sequential stage: 06 — Queue / Worker Architecture Closure |
