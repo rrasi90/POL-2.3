@@ -218,7 +218,7 @@
 
 **Exit:** production worker model unambiguous باشد.
 
-**Status:** IN_PROGRESS
+**Status:** CLOSED
 
 **Work ID:** EXEC50-007
 
@@ -234,6 +234,22 @@
 
 ---
 
+
+## Stage 06 Closure Evidence — 2026-09-18
+- Work ID: EXEC50-007.
+- Canonical architecture: **PostgreSQL 18 Transactional Outbox + Python Workers**.
+- Canonical worker contract: `POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md`.
+- Event Architecture and Technical Architecture no longer expose BullMQ / Redis Streams as the active MVP event transport.
+- Redis is explicitly non-authoritative and limited to optional cache/rate-limit/session-adjacent acceleration.
+- Four concrete Python workers were verified by source inspection: CanonicalIntegrationWorker, ProviderDeliveryWorker, PaymentReconciliationWorker, VendorAcceptanceTimeoutWorker.
+- Suite 22 added: `scripts/test_worker_architecture.py`.
+- Run #395: 212 PASS / 1 FAIL; the single failure was a stale assertion label in the newly added contract test and was repaired in `f76c9ebae857eb9a2573848780dd3a5aaf4d0a26`.
+- **Run #403 / workflow 35380839893: SUCCESS.**
+- Run #403: **213 collected / 213 passed / 0 failed / 0 skipped** in 70.6s.
+- Artifact: **10562004166**, digest `sha256:7d2180da8d8edca1cf962e352ac2ad907240ec42cfe108dcd301b63ca2a3ab64`.
+- Artifact metadata: PostgreSQL 18.6, 93 public tables, clean CI workspace.
+- Status: CLOSED.
+- Next stage: 07 — API/Boundary Master Inventory.
 # Stage 07 — API/Boundary Master Inventory
 **Macro:** M-01  
 **هدف:** تبدیل route gaps به inventory دقیق executable.
@@ -1566,7 +1582,12 @@
 - Next Action: execute Stage 06 — Queue / Worker Architecture Closure
 
 ## Stage 06
-- Status: PLANNED
+- Status: CLOSED
+- Work ID: EXEC50-007
+- CI: Run #403 — 213/213 PASS, 0 failed, 0 skipped
+- Certified test-repair SHA: f76c9ebae857eb9a2573848780dd3a5aaf4d0a26
+- Artifact: 10562004166
+- Next Action: execute Stage 07 — API/Boundary Master Inventory
 
 ## Stage 07
 - Status: PLANNED
