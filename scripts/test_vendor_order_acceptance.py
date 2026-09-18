@@ -372,3 +372,49 @@ def test_vendor_order_accept_is_tenant_protected(pg_connection):
                 (data["order_id"],),
             )
             assert cur.fetchone()["order_status"] == "SUBMITTED"
+
+
+def test_vendor_order_accept_rejects_non_submitted_state_without_mutation(pg_connection):
+    suffix = uuid4().hex[:10]
+    with pg_connection:
+        with pg_connection.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _setup_order(cur, suffix)
+            cur.execute(
+                "UPDATE orders SET order_status = 'ACCEPTED' WHERE id = %s",
+                (data["order_id"],),
+            )
+            boundary = POLApplicationBoundary(
+                cur,
+                ApplicationContext(
+                    user_id=data["vendor_user"],
+                    organization_id=data["vendor_org"],
+                    correlation_id=f"state-{suffix}",
+                ),
+            )
+
+            with pytest.raises(ValueError):
+                boundary.vendor_order_accept(order_id=data["order_id"])
+
+            cur.execute(
+                "SELECT order_status FROM orders WHERE id = %s",
+                (data["order_id"],),
+            )
+            assert cur.fetchone()["order_status"] == "ACCEPTED"
+
+            cur.execute(
+                "SELECT status FROM inventory_reservations WHERE id = %s",
+                (data["reservation_id"],),
+            )
+            assert cur.fetchone()["status"] == "ACTIVE"
+
+            cur.execute(
+                """
+                SELECT physical_quantity, reserved_quantity
+                FROM vendor_inventory
+                WHERE vendor_product_id = %s
+                """,
+                (data["vendor_product_id"],),
+            )
+            inventory = cur.fetchone()
+            assert inventory["physical_quantity"] == 100
+            assert inventory["reserved_quantity"] == 10
