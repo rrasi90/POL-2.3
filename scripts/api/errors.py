@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from scripts.auth_boundary import (
     AuthError,
@@ -67,6 +68,15 @@ async def request_validation_handler(request: Request, exc: RequestValidationErr
     return _response(request, "VALIDATION_ERROR", "Request validation failed.", 422, details)
 
 
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    code = {
+        404: "NOT_FOUND",
+        405: "METHOD_NOT_ALLOWED",
+    }.get(exc.status_code, "HTTP_ERROR")
+    message = exc.detail if isinstance(exc.detail, str) else "HTTP request failed."
+    return _response(request, code, message, exc.status_code, {})
+
+
 async def auth_error_handler(request: Request, exc: AuthError):
     if isinstance(exc, SessionExpiredError):
         return _response(
@@ -89,7 +99,7 @@ async def auth_error_handler(request: Request, exc: AuthError):
             "Refresh token is invalid or expired.",
             401,
         )
-    return _response(request, "INVALID_ACCESS_TOKEN", str(exc), 401)
+    return _response(request, "INVALID_ACCESS_TOKEN", "Invalid or expired access token.", 401)
 
 
 async def otp_rate_limit_handler(request: Request, exc: OTPRateLimitError):
