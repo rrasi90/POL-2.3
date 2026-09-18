@@ -9,6 +9,7 @@ TEHRAN_TZ = zoneinfo.ZoneInfo("Asia/Tehran")
 WORK_START = time(8, 0)
 WORK_END = time(18, 0)
 CALENDAR_KEY = "AHVAZ_WHOLESALE"
+VENDOR_ACCEPTANCE_SLA_HOURS = 2.0
 
 
 def is_working_day(day: date, holidays: set[date] | None = None) -> bool:
