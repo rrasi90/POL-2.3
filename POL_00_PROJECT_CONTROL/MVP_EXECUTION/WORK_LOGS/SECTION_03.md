@@ -23,7 +23,7 @@ CLOSED
 
 ## Evidence
 - Tests: timeout suite expanded to 9 test functions.
-- CI: Run #356 SUCCESS (209/209); Run #360 IN_PROGRESS.
+- CI: Run #365 SUCCESS (212/212); Run #356 retained as prior 209/209 certification evidence.
 - Design: not in Stage 03 scope.
 - Deployment: not in Stage 03 scope.
 - Other: manifest updated to 21 suites / 56 registered items.
@@ -32,7 +32,7 @@ CLOSED
 - Current state: Stage 03 CLOSED under EXEC50-004; regression contract certified.
 - Last completed work: Stage 02 source repairs completed.
 - Remaining work: none inside Stage 03; next sequential work is Stage 04.
-- Next worker/task: CHATGPT-5.6-LUNA / EXEC50-004.
+- Next worker/task: Stage 04 / EXEC50-005.
 - Required decision: none unless a new business/architecture rule is required.
 - Certified code SHA: 5ac5974b2caf045f8020e3c8b48f889ed3ff94e9
 - Controller closure commit: 2a20e77080e1bb8a5b694db0e5e5d962a2a8ac1c.
