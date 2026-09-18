@@ -36,10 +36,10 @@ EXPECTED_OPERATIONAL_ROUTES = {
 def test_fastapi_runtime_route_inventory_is_explicit():
     app = create_app()
     actual = {
-        (route.methods.copy().pop(), route.path)
+        (method, route.path)
         for route in app.routes
-        if getattr(route, "methods", None) and route.path not in {"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
-        and len(route.methods) == 1
+        for method in (route.methods or set())
+        if route.path not in {"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
     }
 
     assert actual == EXPECTED_BUSINESS_ROUTES | EXPECTED_OPERATIONAL_ROUTES
