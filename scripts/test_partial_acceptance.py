@@ -2,11 +2,35 @@
 
 from __future__ import annotations
 
-import pytest
-from psycopg2.extras import RealDictCursor
+import os
 from uuid import uuid4
 
+import psycopg2
+import pytest
+from psycopg2.extras import RealDictCursor
+
 from scripts.application_boundary import ApplicationContext, POLApplicationBoundary
+
+
+@pytest.fixture
+def pg_connection():
+    conn = psycopg2.connect(
+        dbname=os.environ.get("POL_API_DB_NAME", "pol_test"),
+        host=os.environ.get("POL_API_DB_HOST", os.environ.get("PGHOST", "127.0.0.1")),
+        port=int(
+            os.environ.get("POL_API_DB_PORT")
+            or os.environ.get("POL_PG_PORT")
+            or os.environ.get("PGPORT", "5432")
+        ),
+        user=os.environ.get("POL_API_DB_USER", os.environ.get("PGUSER", "postgres")),
+        password=os.environ.get("POL_API_DB_PASSWORD") or os.environ.get("PGPASSWORD"),
+    )
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
 from scripts.test_vendor_order_acceptance import _setup_order
 
 
