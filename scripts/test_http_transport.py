@@ -1,4 +1,4 @@
-"""PostgreSQL-backed smoke tests for the first FastAPI transport slice."""
+""""PostgreSQL-backed smoke tests for the first FastAPI transport slice."""
 
 from __future__ import annotations
 
@@ -193,7 +193,7 @@ def test_rate_limit_and_error_envelope(client):
 
         response = client.post(
             "/api/v1/auth/request-otp",
-            json={"mobile_number": phone, "purpose": "LOGIN"},
+            json={"mobile_number": phone},
         )
         assert response.status_code == 429
         assert response.json()["error"]["code"] == "OTP_RATE_LIMITED"
@@ -216,3 +216,4 @@ def test_transport_validation_uses_canonical_error_envelope(client):
     assert body["success"] is False
     assert body["error"]["code"] == "VALIDATION_ERROR"
     assert "timestamp" in body["error"]
+"
