@@ -2,13 +2,13 @@
 
 **Status:** CANONICAL CURRENT MANIFEST  
 **Database:** PostgreSQL 18  
-**Migration chain:** `migrations/001_*.sql` through `migrations/022_*.sql`  
+**Migration chain:** `migrations/001_*.sql` through `migrations/028_*.sql`  
 **Current table count:** 90 public base tables  
 
 ## Canonical rules
 
 1. The numbered migration chain is the physical schema source of truth.
-2. Migrations 001–019 establish the 90-table domain/platform schema; migrations 020–022 add integrity constraints/triggers without adding tables.
+2. Migrations 001–019 establish the 90-table domain/platform schema; migrations 020–026 add integrity/runtime guards without adding base tables; migration 027 adds 2 partial-acceptance tables and migration 028 adds 1 operational-holidays table. Current baseline: **93 public base tables**.
 3. PostgreSQL 18 is the only canonical runtime database (`D-015`).
 4. SQLite is allowed only for isolated unit tests.
 5. Generated verification artifacts are not schema source-of-truth and must not be committed.
@@ -53,3 +53,7 @@
 ## Verification requirement
 
 A schema change is not considered complete until the full migration chain executes cleanly on PostgreSQL 18 and the verification suite passes. Table count alone is insufficient; constraints, triggers, tenant isolation and state-transition tests must also pass.
+
+
+## Stage 01 baseline amendment — 2026-09-18
+The repository now contains migrations `001` through `028`. Run #333 of the verification workflow built PostgreSQL 18.6 and observed **93 public base tables**. Any prior 90-table statement in this dated manifest is retained only as historical context; the current physical schema authority is the numbered migration chain through migration 028.
