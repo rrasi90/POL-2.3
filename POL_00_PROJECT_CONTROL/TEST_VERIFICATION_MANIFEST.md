@@ -120,6 +120,7 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 | **18** | `scripts/test_support_cases.py` | 1 | RUNTIME | Real PG 18 | Customer support case lifecycle (`OPEN` -> `CLOSED`), threaded messages, orthogonal separation from financial disputes |
 | **19** | `scripts/test_verification_mutations.py` | 6 | ADVERSARIAL | Real PG 18 | 6 adversarial mutations: dataset count, partial unique index, SKU uniqueness, `DISPUTED` enum in `orders`, carton-only API, multi-packaging offers |
 | **20** | `scripts/test_operational_intelligence.py` | 10 | OP_INTEL | Real PG 18 | Daily 1-tap confirmation, delta updates, reminder deduplication, missed decay, feedback submission & triage, cross-tenant isolation, pre-commit price & stock revalidation, simplicity UX contracts |
+| **21** | `scripts/test_vendor_acceptance_timeout.py` | 9 | RUNTIME | Real PG 18 | Vendor acceptance SLA timeout: Ahvaz calendar/holiday deadline, timeout cancellation, reservation release, idempotent replay, before-deadline protection, ops authorization, deadline backfill persistence, retailer-tenant notification isolation, deterministic operational assignee selection, pending partial-acceptance closure |
 
 ---
 
@@ -191,3 +192,8 @@ python scripts/run_verification_suite.py
 # 5. Inspect generated machine-readable artifact
 cat artifacts/pol-test-results.json
 ```
+
+
+### Suite 21: `scripts/test_vendor_acceptance_timeout.py` (9 Tests)
+- **Commands:** `pytest scripts/test_vendor_acceptance_timeout.py -v`
+- **Coverage:** Ahvaz working calendar and holiday exclusions; cancellation after persisted deadline; reservation release; `VENDOR_TIMEOUT` and reliability penalty; idempotent replay; before-deadline protection; ops-only execution; pending partial-acceptance closure; missing-deadline backfill; retailer tenant-scoped `ORDER_CANCELLED` notifications; deterministic field/ops assignee selection.
