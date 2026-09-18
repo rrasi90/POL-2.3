@@ -224,6 +224,162 @@ def test_timeout_requires_ops_context(pg_connection):
                 ).process_vendor_acceptance_timeouts()
 
 
+
+def test_timeout_backfills_missing_deadline_from_created_at(pg_connection):
+    suffix = uuid4().hex[:10]
+    with pg_connection:
+        with pg_connection.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _setup_order(cur, suffix)
+            _, boundary = _ops_boundary(cur)
+
+            created_at = datetime(2026, 9, 17, 17, 0, tzinfo=TEHRAN_TZ)
+            effective_now = datetime(2026, 9, 19, 9, 1, tzinfo=TEHRAN_TZ)
+            cur.execute(
+                """
+                UPDATE orders
+                SET created_at = %s,
+                    vendor_acceptance_deadline_at = NULL
+                WHERE id = %s
+                """,
+                (created_at, data["order_id"]),
+            )
+
+            from scripts.vendor_acceptance_timeout_worker import VendorAcceptanceTimeoutWorker
+
+            result = VendorAcceptanceTimeoutWorker.process_expired(
+                cur,
+                now=effective_now,
+            )
+            assert result["cancelled_order_count"] == 1
+
+            cur.execute(
+                "SELECT vendor_acceptance_deadline_at FROM orders WHERE id = %s",
+                (data["order_id"],),
+            )
+            deadline = cur.fetchone()["vendor_acceptance_deadline_at"]
+            expected = datetime(2026, 9, 19, 9, 0, tzinfo=TEHRAN_TZ)
+            assert deadline.astimezone(TEHRAN_TZ) == expected
+
+
+def test_timeout_notification_is_tenant_scoped(pg_connection):
+    suffix = uuid4().hex[:10]
+    with pg_connection:
+        with pg_connection.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _setup_order(cur, suffix)
+            _, boundary = _ops_boundary(cur)
+
+            other_user = str(uuid4())
+            other_org = str(uuid4())
+            cur.execute(
+                """
+                INSERT INTO users (id, phone_number, full_name, role)
+                VALUES (%s, %s, 'Unrelated Retailer', 'RETAILER_OWNER')
+                """,
+                (other_user, f"+9891{uuid4().int % 100000000:08d}"),
+            )
+            cur.execute(
+                """
+                INSERT INTO organizations (id, name, org_type, status)
+                VALUES (%s, 'Unrelated Retailer Org', 'RETAILER', 'ACTIVE')
+                """,
+                (other_org,),
+            )
+            cur.execute(
+                """
+                INSERT INTO organization_memberships (id, organization_id, user_id, role, status)
+                VALUES (%s, %s, %s, 'RETAILER_OWNER', 'ACTIVE')
+                """,
+                (str(uuid4()), other_org, other_user),
+            )
+
+            cur.execute(
+                "UPDATE orders SET vendor_acceptance_deadline_at = now() - interval '1 minute' WHERE id = %s",
+                (data["order_id"],),
+            )
+            boundary.process_vendor_acceptance_timeouts()
+
+            cur.execute(
+                """
+                SELECT COUNT(*) AS count
+                FROM outbox_events
+                WHERE event_name = 'ORDER_CANCELLED'
+                  AND aggregate_id = %s
+                  AND target_user_id = %s
+                """,
+                (data["order_id"], other_user),
+            )
+            assert cur.fetchone()["count"] == 0
+
+            cur.execute(
+                """
+                SELECT COUNT(*) AS count
+                FROM outbox_events
+                WHERE event_name = 'ORDER_CANCELLED'
+                  AND aggregate_id = %s
+                  AND target_organization_id = %s
+                """,
+                (data["order_id"], other_org),
+            )
+            assert cur.fetchone()["count"] == 0
+
+
+def test_timeout_assignee_selection_is_deterministic(pg_connection):
+    suffix = uuid4().hex[:10]
+    with pg_connection:
+        with pg_connection.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _setup_order(cur, suffix)
+            ops_user, _ = _ops_user(cur)
+            field_user = _field_activator(cur)
+
+            second_ops_user, second_ops_org = _ops_user(cur)
+            second_field_user = _field_activator(cur)
+
+            cur.execute(
+                "UPDATE orders SET vendor_acceptance_deadline_at = now() - interval '1 minute' WHERE id = %s",
+                (data["order_id"],),
+            )
+
+            from scripts.vendor_acceptance_timeout_worker import VendorAcceptanceTimeoutWorker
+
+            VendorAcceptanceTimeoutWorker.process_expired(cur)
+
+            cur.execute(
+                """
+                SELECT user_id
+                FROM organization_memberships
+                WHERE role = 'FIELD_ACTIVATOR'
+                  AND status = 'ACTIVE'
+                ORDER BY user_id
+                LIMIT 1
+                """
+            )
+            expected_field_user = cur.fetchone()["user_id"]
+
+            cur.execute(
+                """
+                SELECT user_id
+                FROM organization_memberships
+                WHERE role IN ('OPS_ADMIN', 'SUPER_ADMIN')
+                  AND status = 'ACTIVE'
+                ORDER BY user_id
+                LIMIT 1
+                """
+            )
+            expected_ops_user = cur.fetchone()["user_id"]
+
+            cur.execute(
+                """
+                SELECT assigned_to_user_id
+                FROM field_tasks
+                WHERE task_type = 'VENDOR_TIMEOUT'
+                  AND notes LIKE %s
+                ORDER BY id
+                """,
+                (f"%{data['order_id']}%",),
+            )
+            assignees = [row["assigned_to_user_id"] for row in cur.fetchall()]
+            assert assignees == [expected_field_user, expected_ops_user]
+
 def test_timeout_closes_pending_partial_proposal(pg_connection):
     suffix = uuid4().hex[:10]
     with pg_connection:
