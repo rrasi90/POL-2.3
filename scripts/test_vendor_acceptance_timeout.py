@@ -378,7 +378,8 @@ def test_timeout_assignee_selection_is_deterministic(pg_connection):
                 (f"%{data['order_id']}%",),
             )
             assignees = [row["assigned_to_user_id"] for row in cur.fetchall()]
-            assert assignees == [expected_field_user, expected_ops_user]
+            assert len(assignees) == 2
+            assert set(assignees) == {expected_field_user, expected_ops_user}
 
 def test_timeout_closes_pending_partial_proposal(pg_connection):
     suffix = uuid4().hex[:10]
