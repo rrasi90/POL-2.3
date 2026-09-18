@@ -1,0 +1,236 @@
+"""Canonical vendor-side full order acceptance service."""
+
+from __future__ import annotations
+
+from uuid import uuid5, NAMESPACE_URL
+
+
+class CanonicalVendorOrderService:
+    """Apply the canonical SUBMITTED -> ACCEPTED transition for one child order."""
+
+    @classmethod
+    def accept_order(cls, cur, *, user_id: str, organization_id: str, order_id: str):
+        if not organization_id:
+            raise PermissionError("Vendor order acceptance requires an active organization context.")
+
+        cur.execute(
+            """
+            SELECT o.id,
+                   o.order_number,
+                   o.order_group_id,
+                   o.order_status,
+                   o.retailer_id,
+                   o.vendor_id,
+                   v.organization_id AS vendor_organization_id,
+                   v.status AS vendor_status,
+                   ro.id AS retailer_organization_id
+            FROM orders o
+            JOIN vendors v ON v.id = o.vendor_id
+            JOIN organizations vo ON vo.id = v.organization_id
+            JOIN retailers r ON r.id = o.retailer_id
+            JOIN organizations ro ON ro.id = r.organization_id
+            JOIN organization_memberships om
+              ON om.organization_id = v.organization_id
+             AND om.user_id = %s
+            WHERE o.id = %s
+              AND om.organization_id = %s
+              AND om.status = 'ACTIVE'
+              AND om.role IN ('VENDOR_OWNER', 'VENDOR_STAFF')
+              AND vo.status = 'ACTIVE'
+              AND ro.status = 'ACTIVE'
+              AND v.status = 'ACTIVE'
+            FOR UPDATE OF o
+            """,
+            (user_id, order_id, organization_id),
+        )
+        order = cur.fetchone()
+        if not order:
+            raise PermissionError(
+                "Order is not accessible from the active vendor organization."
+            )
+
+        if str(order["vendor_organization_id"]) != str(organization_id):
+            raise PermissionError(
+                "Order vendor does not belong to the active vendor organization."
+            )
+
+        if order["order_status"] != "SUBMITTED":
+            raise ValueError(
+                f"Order cannot be accepted from status {order['order_status']}."
+            )
+
+        cur.execute(
+            """
+            SELECT ir.id,
+                   ir.vendor_product_id,
+                   ir.quantity,
+                   ir.status
+            FROM inventory_reservations ir
+            WHERE ir.order_id = %s
+            ORDER BY ir.id
+            FOR UPDATE
+            """,
+            (order_id,),
+        )
+        reservations = cur.fetchall()
+        if not reservations:
+            raise ValueError("Order has no inventory reservation to consume.")
+
+        for reservation in reservations:
+            if reservation["status"] != "ACTIVE":
+                raise ValueError(
+                    f"Order reservation {reservation['id']} is not ACTIVE."
+                )
+            cur.execute(
+                """
+                SELECT physical_quantity, reserved_quantity
+                FROM vendor_inventory
+                WHERE vendor_product_id = %s
+                FOR UPDATE
+                """,
+                (reservation["vendor_product_id"],),
+            )
+            inventory = cur.fetchone()
+            if not inventory:
+                raise ValueError(
+                    f"Inventory record not found for SKU {reservation['vendor_product_id']}."
+                )
+            if int(inventory["reserved_quantity"]) < int(reservation["quantity"]):
+                raise ValueError(
+                    f"Reserved inventory is insufficient for SKU {reservation['vendor_product_id']}."
+                )
+            if int(inventory["physical_quantity"]) < int(reservation["quantity"]):
+                raise ValueError(
+                    f"Physical inventory is insufficient for SKU {reservation['vendor_product_id']}."
+                )
+
+            cur.execute(
+                """
+                UPDATE vendor_inventory
+                SET physical_quantity = physical_quantity - %s,
+                    reserved_quantity = reserved_quantity - %s,
+                    updated_at = now()
+                WHERE vendor_product_id = %s
+                """,
+                (
+                    reservation["quantity"],
+                    reservation["quantity"],
+                    reservation["vendor_product_id"],
+                ),
+            )
+            cur.execute(
+                """
+                UPDATE inventory_reservations
+                SET status = 'CONSUMED',
+                    consumed_at = now()
+                WHERE id = %s
+                """,
+                (reservation["id"],),
+            )
+
+        cur.execute(
+            """
+            UPDATE order_items
+            SET accepted_quantity = ordered_quantity
+            WHERE order_id = %s
+            """,
+            (order_id,),
+        )
+        if cur.rowcount < 1:
+            raise ValueError("Order has no order items.")
+
+        cur.execute(
+            """
+            UPDATE orders
+            SET order_status = 'ACCEPTED',
+                updated_at = now()
+            WHERE id = %s
+            RETURNING id, order_number, order_group_id, order_status, total_amount_toman
+            """,
+            (order_id,),
+        )
+        accepted = cur.fetchone()
+
+        cur.execute(
+            """
+            SELECT om.user_id, om.organization_id
+            FROM retailers r
+            JOIN organization_memberships om
+              ON om.organization_id = r.organization_id
+            JOIN organizations ro
+              ON ro.id = r.organization_id
+            WHERE r.id = %s
+              AND om.status = 'ACTIVE'
+              AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
+              AND ro.status = 'ACTIVE'
+            ORDER BY om.user_id
+            """,
+            (order["retailer_id"],),
+        )
+        recipients = cur.fetchall()
+        if not recipients:
+            raise ValueError("Order has no active retailer recipient membership.")
+
+        for recipient in recipients:
+            dedupe_key = (
+                f"ORDER_ACCEPTED:{order_id}:"
+                f"{recipient['organization_id']}:{recipient['user_id']}"
+            )
+            event_id = str(uuid5(NAMESPACE_URL, dedupe_key))
+            cur.execute(
+                """
+                INSERT INTO outbox_events (
+                    id, event_id, event_name, aggregate_type, aggregate_id,
+                    payload, status, target_user_id, target_organization_id,
+                    dedupe_key, channel_hint
+                )
+                VALUES (
+                    gen_random_uuid(), %s, 'ORDER_ACCEPTED', 'ORDER', %s,
+                    jsonb_build_object(
+                        'order_id', %s,
+                        'order_number', %s,
+                        'order_group_id', %s,
+                        'order_status', 'ACCEPTED'
+                    ),
+                    'PENDING', %s, %s, %s, 'INBOX'
+                )
+                ON CONFLICT (event_name, dedupe_key)
+                WHERE dedupe_key IS NOT NULL
+                DO NOTHING
+                """,
+                (
+                    event_id,
+                    order_id,
+                    order_id,
+                    accepted["order_number"],
+                    str(accepted["order_group_id"]),
+                    recipient["user_id"],
+                    recipient["organization_id"],
+                    dedupe_key,
+                ),
+            )
+
+        return {
+            "order_id": str(accepted["id"]),
+            "order_number": accepted["order_number"],
+            "order_group_id": str(accepted["order_group_id"]),
+            "order_status": accepted["order_status"],
+            "total_amount_toman": int(accepted["total_amount_toman"]),
+            "accepted_item_count": int(
+                cls._accepted_item_count(cur, order_id)
+            ),
+            "reservation_count": len(reservations),
+        }
+
+    @staticmethod
+    def _accepted_item_count(cur, order_id: str) -> int:
+        cur.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM order_items
+            WHERE order_id = %s
+              AND accepted_quantity = ordered_quantity
+            """,
+            (order_id,),
+        )
+        return int(cur.fetchone()["count"])
