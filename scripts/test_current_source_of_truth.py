@@ -46,7 +46,7 @@ def check_single_decision_register():
             print(f"  [FAIL] Rogue decision document found: {fname}")
             return False
 
-    print("  [PASS] Single Decision Authority verified: DECISION_REGISTER.md governs D-001 through D-015.")
+    print("  [PASS] Single Decision Authority verified: DECISION_REGISTER.md governs D-001 through D-020.")
     return True
 
 def check_historical_banners():
