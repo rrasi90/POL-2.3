@@ -33,8 +33,8 @@ DECISION AUTHORITY
 
 | Domain | Authoritative Canonical File(s) | Scope & Responsibility | Precedence Rule |
 |:---|:---|:---|:---|
-| **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-017. | Absolute precedence. |
-| **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md` | Feature matrix, core flows, boundaries and MVP inclusions/exclusions. | Must conform to D-001–D-017. |
+| **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-020. | Absolute precedence. |
+| **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md` | Feature matrix, core flows, boundaries and MVP inclusions/exclusions. | Must conform to D-001–D-020. |
 | **Identity & Access Management** | `06_PRODUCT/Roles_and_Permissions.md`, `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md` | Identity, tenant membership, authorization, persona context and UX preferences. | `organization_memberships.role` is authorization SSoT; `users.role` is legacy/deprecated. |
 | **Order Lifecycle & State Transitions** | `06_PRODUCT/Order_Lifecycle.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | OrderGroup, child Orders, Delivery and exception state machines. | Governs backend workflows and UI state mapping. |
 | **Domain Entities & Business Invariants** | `08_DATA/DOMAIN_MODEL.md` | Ubiquitous language, aggregates and invariants. | Governs domain service behavior. |
@@ -59,6 +59,9 @@ All active documents MUST represent the current architecture:
 - Vendor Referral is active MVP (`D-016`) without rewards/wallet/credit incentives.
 - Universal User Profile + Membership Persona Context is active MVP (`D-017`).
 - PostgreSQL 18 is the sole canonical runtime database.
+- Authentication OTP policy: 4-digit, 120s TTL, 3/5min rate limit per phone+IP, 15-min access token, 30-day refresh (`D-018`).
+- Production backend runtime: Python; canonical domain/application implementation (`D-019`).
+- Production HTTP framework: FastAPI as thin transport adapter behind `POLApplicationBoundary` (`D-020`).
 
 Active documents MUST NOT silently reintroduce superseded rules through examples, API terminology, UI copy, or test fixtures.
 
@@ -93,7 +96,7 @@ No visual artifact becomes canonical until the corresponding written requirement
 ## 6. Change Management
 
 1. No competing decision registers or shadow PRDs.
-2. Changes to D-001–D-017 require explicit superseding decisions.
+2. Changes to D-001–D-020 require explicit superseding decisions.
 3. Code, migrations, tests and design artifacts must be traceable to current canonical documents.
 4. Generated local artifacts must not be committed to the repository.
 5. Production-readiness claims must distinguish domain verification from HTTP/auth/provider/UI/observability/deployment/recovery implementation.

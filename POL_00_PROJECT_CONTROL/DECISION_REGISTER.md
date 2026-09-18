@@ -19,7 +19,7 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 
 ---
 
-## 2. Canonical Strategic Decision Register (D-001 through D-017)
+## 2. Canonical Strategic Decision Register (D-001 through D-020)
 
 | Decision ID | Canonical Decision Title | Approved Formal Decision | Strategic Rationale & Invariant Guardrail | Affected Canonical Documents |
 |:---:|:---|:---|:---|:---|
@@ -40,10 +40,176 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 | **D-015** | **Canonical Database & Technical Environment** | **PostgreSQL 18** is the sole canonical production, staging, migration and runtime database. SQLite is restricted to isolated unit tests only. | Eliminates dialect/concurrency divergence. | `POL_00_PROJECT_CONTROL/TECHNICAL_ENVIRONMENT.md`, `migrations/001_initial_schema.sql` |
 | **D-016** | **Vendor Referral in MVP** | **Vendor Referral is a mandatory MVP capability.** Vendors create a referral code/link; a retailer redeems it once as first-touch attribution during onboarding/activation; attribution is persisted, auditable and connected to the order lifecycle. **No monetary referral reward, wallet, credit, or complex incentive engine is activated in MVP.** | Vendor relationships are a direct acquisition channel in the Ahvaz B2B model. POL must measure supplier-led acquisition before adding paid/referral incentives. | `scripts/vendor_referral.py`, `migrations/013_vendor_referral_mvp_and_integrity_fixes.sql`, `scripts/test_vendor_referral.py` |
 | **D-017** | **Canonical User Profile & Persona Context in MVP** | Every user MUST have exactly one universal `user_profiles` record. Every organization membership MUST have exactly one `membership_profiles` record plus the appropriate role-specific persona profile. Profile UI may adapt by persona, but authorization MUST remain sourced from `organization_memberships.role` and active tenant context. | A multi-tenant B2B system needs stable personal identity plus tenant-specific context without turning UI profile fields into RBAC. | `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md`, `06_PRODUCT/USER_PROFILE_UX_SPEC.md`, `migrations/017_canonical_user_profiles_and_persona_context.sql` |
+| **D-018** | **Authentication / OTP Policy** | **OTP: 4-digit numeric, 120-second TTL, 60-second resend interval. Rate limit: 3 OTP requests per 5 minutes per phone+IP. Max verification attempts: 5 per challenge. Lockout: 10-minute phone lockout after 5 failed attempts. Access token: 15-minute JWT. Refresh token: 30-day lifetime, issued on successful OTP verification. Refresh-token rotation: requires explicit downstream decision (see D-018 note below).** | Founder selected Option A (Technical Architecture alignment). Supersedes conflicting OTP/auth values in `Technical_Architecture_Spec.md`, `IDENTITY_AND_MEMBERSHIP.md`, `API_Contracts.md`, and `operational_config.py`. PostgreSQL D-015, tenant/RBAC rules, ApplicationContext model, domain state machines, and non-custodial payment are preserved. | `06_PRODUCT/Technical_Architecture_Spec.md` §3, `08_DATA/IDENTITY_AND_MEMBERSHIP.md` §2.5, `06_PRODUCT/API_Contracts.md` §7, `scripts/operational_config.py`, `scripts/domain_services.py`, auth tests, design specs 26/30 |
+| **D-019** | **Production Backend Runtime** | **Python is the authoritative production backend runtime.** Existing canonical Python domain/application implementation (`scripts/application_boundary.py`, `scripts/domain_services.py`, all domain services, gateways, workers) becomes the production runtime direction. Single-runtime architecture: HTTP transport → authentication/session → `ApplicationContext` → `POLApplicationBoundary` → canonical Python domain services → PostgreSQL 18 transaction → outbox → async workers. | Founder selected Python as production runtime. Supersedes `Technical_Architecture_Spec.md:57-62` Node.js/NestJS/Fastify production-runtime claim ONLY to the extent necessary to make Python authoritative. No Node/Python dual runtime. No communication boundary. No adapter layer migration. | `06_PRODUCT/Technical_Architecture_Spec.md` §2, `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md`, `POL_00_PROJECT_CONTROL/GLOBAL_ENGINEERING_AUDIT_2026-09-14.md` §5A |
+| **D-020** | **Production HTTP Framework** | **FastAPI is the production HTTP framework.** FastAPI is a thin transport adapter. It MUST: authenticate the request, construct `ApplicationContext`, validate transport schema, call `POLApplicationBoundary`, map canonical domain errors to transport responses, return API responses. It MUST NOT: implement business rules, write domain tables directly, bypass `POLApplicationBoundary`, import legacy `domain_services`, duplicate state machines, implement allocation logic, or implement authorization independently from canonical membership context. | Founder selected FastAPI. D-019 establishes Python as runtime; D-020 selects the HTTP framework as a separate decision. FastAPI is the thin translation layer: `FastAPI → authentication/session → ApplicationContext → POLApplicationBoundary → canonical service → PostgreSQL → outbox → worker`. No business logic in the adapter. | `06_PRODUCT/Technical_Architecture_Spec.md` §2 (supersedes NestJS/Fastify), `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md`, `POL_00_PROJECT_CONTROL/GLOBAL_ENGINEERING_AUDIT_2026-09-14.md` §5A |
+
+### D-018 — Detailed Decision: Authentication / OTP Policy
+
+**Source:** `POL_00_PROJECT_CONTROL/FOUNDER_ARCHITECT_DECISION_BRIEF_2026-09-18.md` (Founder selected Option A — Technical Architecture alignment).
+
+**Approved values:**
+
+| Parameter | Value | Source |
+|---|---|---|
+| OTP digit count | 4 | `Technical_Architecture_Spec.md:80` |
+| OTP TTL | 120 seconds | All sources agree |
+| Resend interval | 60 seconds | `API_Contracts.md:360` |
+| Rate-limit window | 3 per 5 minutes | `Technical_Architecture_Spec.md:95` |
+| Rate-limit scope | phone + IP | `Technical_Architecture_Spec.md:95` |
+| Max verification attempts | 5 per challenge | All sources agree |
+| Lockout duration | 10 minutes | `API_Contracts.md:367` |
+| Lockout scope | phone | `API_Contracts.md:367` |
+| Access-token lifetime | 15 minutes | `Technical_Architecture_Spec.md:90` |
+| Refresh-token lifetime | 30 days | `Technical_Architecture_Spec.md:91` |
+| Refresh-token rotation | **Requires explicit downstream decision** | No canonical source defines rotation policy; Tech Arch implies but does not specify |
+| Session revocation | Single-session DELETE to REVOKED | All sources agree, implemented and tested |
+
+**Supersedes:**
+- `06_PRODUCT/Technical_Architecture_Spec.md` §3 — OTP digit count, access-token lifetime, rate-limit parameters now authoritative.
+- `08_DATA/IDENTITY_AND_MEMBERSHIP.md` §2.5 — `code_hash` description ("5-digit") is superseded.
+- `06_PRODUCT/API_Contracts.md` §7 — `otp_code` example (6-digit), `expires_in` (86400), rate-limit (3/10min) are superseded.
+- `scripts/operational_config.py` — `OTP_CODE_LENGTH = 6` and `SESSION_TTL_HOURS = 24` are superseded (implementation sync deferred to next engineering batch).
+- `POL_00_PROJECT_CONTROL/PRE_MVP_100_SCENARIO_STRESS_TEST.md` §32 — 5/hour rate limit superseded.
+
+**Does NOT change:**
+- OTP TTL (120s, already aligned across all sources)
+- Maximum verification attempts (5, already aligned)
+- Session revocation behavior (already implemented and tested)
+- PostgreSQL D-015
+- Tenant/RBAC rules
+- ApplicationContext model
+- Domain state machines
+- Non-custodial payment
+
+**Downstream synchronization required (next engineering batch):**
+- `06_PRODUCT/Technical_Architecture_Spec.md` — align §3 digit count to 4, align §4.1 refresh endpoint
+- `08_DATA/IDENTITY_AND_MEMBERSHIP.md` — update `code_hash` description from "5-digit" to "4-digit"
+- `06_PRODUCT/API_Contracts.md` — update §7.1 rate limit to 3/5min per phone+IP, §7.2 `otp_code` example to 4-digit, `expires_in` to 900
+- `scripts/operational_config.py` — `OTP_CODE_LENGTH = 4`, `SESSION_TTL_HOURS = 0.25` (15 minutes)
+- `scripts/domain_services.py` — update OTP generation (`secrets.randbelow(10_000):04d`), token expiry (`interval '15 minutes'`)
+- Auth tests — update expected OTP length, token lifetime assertions
+- Design specs 26/30 — align OTP input field to 4 digits, add 15-minute countdown, add refresh flow
+- Frontend auth screens — align input length, countdown display, lockout state
+
+**Note on refresh-token rotation:** The Technical Architecture document implies refresh-token rotation ("Refresh Token (عمر ۳۰ روز)") but does not explicitly define a rotation policy (full rotation, rotation with reuse detection, or no rotation). This parameter requires a separate explicit Founder/Architect decision before implementation. Do not silently inherit any behavior.
 
 ---
 
-## 3. MVP vs Future Activation Rule
+### D-019 — Detailed Decision: Production Backend Runtime
+
+**Source:** `POL_00_PROJECT_CONTROL/FOUNDER_ARCHITECT_DECISION_BRIEF_2026-09-18.md` (Founder selected Python production backend runtime).
+
+**Approved architecture:**
+
+```
+HTTP transport → authentication/session → ApplicationContext → POLApplicationBoundary
+→ canonical Python domain services → PostgreSQL 18 transaction → transactional outbox → async workers
+```
+
+**What D-019 establishes:**
+- Python is the authoritative production backend runtime.
+- The existing canonical Python implementation (`scripts/application_boundary.py`, `scripts/domain_services.py`, all domain services, gateways, workers) becomes the production runtime direction.
+- Single-runtime architecture: no Node/Python dual runtime, no communication boundary, no adapter layer migration.
+
+**Supersedes:**
+- `06_PRODUCT/Technical_Architecture_Spec.md:57-62` — Node.js 20 / TypeScript / NestJS / Fastify production-runtime claim is superseded ONLY to the extent necessary to make Python authoritative.
+
+**Does NOT change:**
+- D-015 PostgreSQL 18 (sole canonical database)
+- Redis 7 (cache/session/queue infrastructure)
+- Outbox architecture and worker architecture
+- Frontend architecture (Next.js/React for web, React Native/Expo for mobile per UX-013)
+- Domain/application boundary (`POLApplicationBoundary`)
+- Business invariants and domain state machines
+- Authorization SSoT (`organization_memberships.role`)
+- Non-custodial payment model
+
+**Downstream synchronization required (next engineering batch):**
+- `06_PRODUCT/Technical_Architecture_Spec.md` — update §2 runtime row from Node.js to Python, update §2 framework row to reference D-020
+- `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md` — update §1 from "framework-neutral" to "FastAPI (D-020)" as transport adapter
+- `POL_00_PROJECT_CONTROL/GLOBAL_ENGINEERING_AUDIT_2026-09-14.md` §5A — close "production HTTP/API runtime" gate (stack now selected: Python + FastAPI)
+- Docker Compose — update deployment topology to single-runtime Python
+- CI pipeline — update backend build/test to use Python production runtime; frontend Node.js/Next.js toolchain remains unchanged
+
+---
+
+### D-020 — Detailed Decision: Production HTTP Framework
+
+**Source:** `POL_00_PROJECT_CONTROL/FOUNDER_ARCHITECT_DECISION_BRIEF_2026-09-18.md` (Founder selected FastAPI as separate decision from D-019).
+
+**Approved framework:** FastAPI
+
+**Architecture rule — FastAPI is a thin transport adapter:**
+
+FastAPI MUST:
+- Authenticate the request (JWT validation, session check)
+- Construct `ApplicationContext(user_id, organization_id, correlation_id)`
+- Validate transport schema (Pydantic models)
+- Call `POLApplicationBoundary` method
+- Map canonical domain errors to transport responses per `API_APPLICATION_BOUNDARY.md:66-73`
+- Return API responses matching `API_Contracts.md`
+
+FastAPI MUST NOT:
+- Implement business rules
+- Write domain tables directly
+- Bypass `POLApplicationBoundary`
+- Import legacy `domain_services`
+- Duplicate state machines
+- Implement allocation logic
+- Implement authorization independently from canonical membership context
+- Create a second business-logic layer
+
+**Canonical chain:**
+```
+FastAPI → authentication/session → ApplicationContext → POLApplicationBoundary
+→ canonical service → PostgreSQL → outbox → worker
+```
+
+**Supersedes:**
+- `06_PRODUCT/Technical_Architecture_Spec.md:62` — NestJS with Fastify adapter is superseded as the HTTP framework.
+
+**Does NOT change:**
+- D-015 PostgreSQL 18
+- D-019 Python runtime
+- Domain/application boundary (`POLApplicationBoundary`)
+- Business invariants
+- Authorization SSoT
+- Frontend architecture
+
+**Downstream synchronization required (next engineering batch):**
+- `06_PRODUCT/Technical_Architecture_Spec.md` — update §2 framework row from NestJS/Fastify to FastAPI
+- `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md` — update §1 transport adapter from "framework-neutral" to "FastAPI"
+- New: `requirements.txt` / `pyproject.toml` — add `fastapi`, `uvicorn` dependencies
+- New: HTTP route module (e.g., `scripts/api/`) — thin FastAPI app mapping routes to `POLApplicationBoundary`
+- Auth middleware — JWT validation, rate limiting, lockout enforcement
+- Docker Compose — add Uvicorn process
+
+---
+
+### SMS.ir — Provider Readiness
+
+**Status:** SMS.ir is the current operational OTP/SMS provider candidate. The founder has successfully registered and activated an SMS.ir account.
+
+**Environment contract (no credentials in Git):**
+
+```text
+POL_SMS_PROVIDER=SMSIR
+SMSIR_API_KEY=<secret from environment>
+SMSIR_TEMPLATE_ID=<approved OTP pattern>
+SMSIR_LINE_NUMBER=<configured line if required>
+```
+
+**Constraints:**
+- Do NOT store API key, secret, password, token, or production credential in Git.
+- Do NOT ask the founder to paste credentials into chat or commit them.
+- Use the provider adapter boundary already defined in `scripts/provider_adapters.py`.
+- Keep provider-specific behavior behind the adapter; do not expose SMS.ir details to product/domain services.
+- Future SMS.ir OTP template MUST support a 4-digit verification code (per D-018).
+- Do NOT create or approve a 6-digit template.
+- Do NOT modify auth runtime in this batch — this is decision formalization only.
+
+---
 
 The presence of a database foundation does **not** mean the feature is active.
 
@@ -60,6 +226,9 @@ The presence of a database foundation does **not** mean the feature is active.
 - **Vendor Referral attribution (D-016)**
 - **Universal User Profile + tenant-specific Persona Context (D-017)**
 - Non-custodial direct payment + reconciliation foundation
+- **Authentication / OTP Policy (D-018)** — 4-digit OTP, 15-min access token, 3/5min rate limit, 30-day refresh
+- **Production Backend Runtime: Python (D-019)** — canonical domain/application implementation is production direction
+- **Production HTTP Framework: FastAPI (D-020)** — thin transport adapter behind `POLApplicationBoundary`
 
 ### ARCHITECTURE-READY BUT NOT ACTIVATED IN MVP
 - Personalized pricing
@@ -84,7 +253,10 @@ All code generators, database migration scripts, API controllers and operational
 - **Order Engine MVP:** D-014 plus D-004/D-005.
 - **Vendor Referral MVP:** D-016; attribution-first and incentive-free.
 - **Profile / Identity MVP:** D-017; universal user profile plus membership persona context.
-- **Pilot Operations:** D-001, D-002, D-006, D-008, D-014, D-016, D-017.
+- **Auth / OTP implementation:** D-018; 4-digit OTP, 15-min access token, 3/5min rate limit per phone+IP, 30-day refresh, 5 max attempts, 10min lockout.
+- **Production HTTP transport:** D-019 (Python runtime) + D-020 (FastAPI framework); thin adapter behind `POLApplicationBoundary`.
+- **SMS provider integration:** D-018 (OTP values) + SMS.ir provider readiness (environment contract, adapter boundary).
+- **Pilot Operations:** D-001, D-002, D-006, D-008, D-014, D-016, D-017, D-018.
 
 ---
 
