@@ -17,7 +17,7 @@ Every claim made in the platform documentation or engineering reports maps direc
 
 ### 2.1 Current execution baseline — 2026-09-18
 - Repository branch: `research-hardening-2026-09-14`
-- PR #1 current control-document head: `4539c77a557290dc8476b6c29d3a7cfeab36feea`.
+- PR #1 Stage 04 audit-start control-document head: `4539c77a557290dc8476b6c29d3a7cfeab36feea`.
 - Latest completed full verification on the current PR lineage: **Run #365** on certified code head `5ac5974b2caf045f8020e3c8b48f889ed3ff94e9`.
 - Run #365 / workflow id `35378830823`: **212 collected / 212 passed / 0 failed / 0 skipped**, result **SUCCESS**.
 - Machine-readable artifact: `pol-test-results` artifact **10561965892**, digest `sha256:22cb435f5008516719bb221115844b8edab8b61c562e9d4f80586d50699a233a`.
