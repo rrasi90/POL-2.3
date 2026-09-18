@@ -19,6 +19,7 @@ from scripts.provider_delivery_worker import ProviderDeliveryWorker
 from scripts.returns_rma import CanonicalReturnService
 from scripts.user_profiles import UserProfileService
 from scripts.vendor_referral import VendorReferralService
+from scripts.vendor_acceptance_timeout_worker import VendorAcceptanceTimeoutWorker
 
 
 @dataclass(frozen=True)
@@ -322,6 +323,10 @@ class POLApplicationBoundary:
             reason=reason, approved_refund_amount_toman=approved_refund_amount_toman,
             organization_id=self.context.organization_id,
         )
+
+    def process_vendor_acceptance_timeouts(self, *, limit=100):
+        self._require_ops_context()
+        return VendorAcceptanceTimeoutWorker.process_expired(self.cur, limit=limit)
 
     def reconcile_payments(self, *, limit=50):
         self._require_ops_context()

@@ -135,6 +135,13 @@ class RevalidationCheckoutService:
         )
 
         child_orders = []
+        holidays = load_operational_holidays(cur)
+        submitted_at = datetime.now(timezone.utc)
+        vendor_acceptance_deadline = calculate_sla_deadline(
+            submitted_at,
+            duration_hours=VENDOR_ACCEPTANCE_SLA_HOURS,
+            holidays=holidays,
+        )
         for vendor_id, vendor_allocs in allocations_by_vendor.items():
             ord_id = str(uuid.uuid4())
             ord_num = f"ORD-{uuid.uuid4().hex[:8].upper()}"
@@ -144,8 +151,9 @@ class RevalidationCheckoutService:
                 INSERT INTO orders (
                     id, order_group_id, retailer_id, vendor_id, order_number,
                     total_amount_toman, order_status, dispute_status,
-                    delivery_address_snapshot, correlation_id
-                ) VALUES (%s,%s,%s,%s,%s,%s,'SUBMITTED','NONE',%s,%s)
+                    delivery_address_snapshot, correlation_id,
+                    vendor_acceptance_deadline_at, created_at
+                ) VALUES (%s,%s,%s,%s,%s,%s,'SUBMITTED','NONE',%s,%s,%s,%s)
                 RETURNING *;
                 """,
                 (ord_id, og_id, retailer_id, vendor_id, ord_num, vendor_total,

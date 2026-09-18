@@ -18,6 +18,7 @@ class CanonicalIntegrationWorker:
         "ORDER_SUBMITTED",
         "ORDER_ACCEPTED",
         "ORDER_REJECTED",
+        "ORDER_CANCELLED",
         "DISPUTE_OPENED",
         "FEEDBACK_REPLIED",
         "DAILY_INVENTORY_REMINDER",
