@@ -6,12 +6,12 @@
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 6C7-001 | 02 | TBD | implementation | Close Batch 6C-7 certification | PLANNED | 2026-09-18 | 2026-09-18 | TBD | 7bc2d435c7eef7a073b2f8b70de1b361c4246328 | CI certification pending | commit fixes + rerun CI |
 | EXEC50-001 | 32 | CHATGPT-5.6-LUNA | program-architect | Design and register the 50-stage execution program; establish the iterative execution/handoff loop | IN_PROGRESS | 2026-09-18 | 2026-09-18 | MVP_EXECUTION/50_STAGE_MASTER_EXECUTION_PLAN_2026-09-18.md; ACTIVE_WORK_LEDGER.md; WORK_LOGS/SECTION_32.md; 32_CRITICAL_PATH.md | pending | none | supervise sequential execution; Stage 01 is now claimed by EXEC50-002 |
-| EXEC50-002 | 00 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 01 — Fresh Baseline & Certification Snapshot | IN_PROGRESS | 2026-09-18 | 2026-09-18 | WORK_LOGS/SECTION_00.md; 50-stage plan; certification/control docs | pending | none | inspect actual branch/PR/CI/schema truth; synchronize stale claims |
+| EXEC50-002 | 00 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 01 — Fresh Baseline & Certification Snapshot | CLOSED | 2026-09-18 | 2026-09-18 | WORK_LOGS/SECTION_00.md; STAGE_01_FRESH_BASELINE_2026-09-18.md; synchronized control docs | 1680f3c7ce855c057294fe555f86f041cabcc3ad | Run #333 failed: 39 tests; schema baseline 93 tables | next sequential stage: 02 Batch 6C-7 Source Repair |
 
 ## Section Status
 | SECTION_ID | STATUS | ACTIVE_WORKERS | LAST_EVENT | NEXT_ACTION |
 |---:|---|---:|---|---|
-| 00 | IN_PROGRESS | 1 | EXEC50-002 claimed | Execute Stage 01 baseline snapshot |
+| 00 | CLOSED | 0 | EXEC50-002 closed | Stage 01 closed; next action Stage 02 |
 | 01 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 02 | PLANNED | 0 | Initial registration; no worker claimed | Claim a work item before starting |
 | 03 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
