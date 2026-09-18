@@ -283,7 +283,7 @@
 - Added `POL_00_PROJECT_CONTROL/API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md`.
 - Added Suite 23 `scripts/test_api_boundary_route_inventory.py` to freeze the current executable route set.
 - No contract-only endpoint is represented as live HTTP; applicationization is assigned to later canonical stages.
-- Closure pending CI certification.
+- CI certification pending. Run #413 (35381462408) has migration/environment PASS and full suite IN_PROGRESS; latest current-head Run #417 (35381519054) is also IN_PROGRESS.
 
 ---
 
@@ -1601,7 +1601,10 @@
 - Next Action: execute Stage 07 — API/Boundary Master Inventory
 
 ## Stage 07
-- Status: PLANNED
+- Status: IN_PROGRESS
+- Work ID: EXEC50-008
+- Verification: 50-endpoint contract matrix / 21 live business routes / 16 boundary-only commands inventoried
+- CI: Run #413 and current-head Run #417 in progress; no certification claim yet
 
 ## Stage 08
 - Status: PLANNED
