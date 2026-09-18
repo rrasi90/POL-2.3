@@ -2,7 +2,7 @@
 
 **Document ID:** `POL-TEST-MANIFEST-v1.0`  
 **Date:** September 14, 2026  
-**Latest baseline amendment:** 2026-09-18 — Stage 04
+**Latest baseline amendment:** 2026-09-18 — Stage 06
 **Status:** **ACTIVE / CANONICAL**  
 **Target Engine:** PostgreSQL 18.x (Native Windows / Docker `postgres:18-alpine`)  
 **Python Runtime:** Python 3.11+ | pytest 8.0+ | psycopg2-binary 2.9.9+  
@@ -95,7 +95,7 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 
 ---
 
-## 4. Test Suites Master Catalog (21 suites / 56 registered test items; execution inventory is dynamic)
+## 4. Test Suites Master Catalog (22 suites / 57 registered test items; execution inventory is dynamic)
 
 | # | Suite File | Tests | Category | DB Req | Target Domain & Invariants Verified |
 | :-: | :--- | :-: | :---: | :---: | :--- |
@@ -120,6 +120,7 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 | **19** | `scripts/test_verification_mutations.py` | 6 | ADVERSARIAL | Real PG 18 | 6 adversarial mutations: dataset count, partial unique index, SKU uniqueness, `DISPUTED` enum in `orders`, carton-only API, multi-packaging offers |
 | **20** | `scripts/test_operational_intelligence.py` | 10 | OP_INTEL | Real PG 18 | Daily 1-tap confirmation, delta updates, reminder deduplication, missed decay, feedback submission & triage, cross-tenant isolation, pre-commit price & stock revalidation, simplicity UX contracts |
 | **21** | `scripts/test_vendor_acceptance_timeout.py` | 9 | RUNTIME | Real PG 18 | Vendor acceptance SLA timeout: Ahvaz calendar/holiday deadline, timeout cancellation, reservation release, idempotent replay, before-deadline protection, ops authorization, deadline backfill persistence, retailer-tenant notification isolation, deterministic operational assignee selection, pending partial-acceptance closure |
+| **22** | `scripts/test_worker_architecture.py` | 1 | STATIC | Static | Canonical PostgreSQL 18 outbox + Python worker runtime; no BullMQ/Redis-Streams event transport; queue/runtime terminology drift guard |
 
 ---
 
@@ -196,3 +197,7 @@ cat artifacts/pol-test-results.json
 ### Suite 21: `scripts/test_vendor_acceptance_timeout.py` (9 Tests)
 - **Commands:** `pytest scripts/test_vendor_acceptance_timeout.py -v`
 - **Coverage:** Ahvaz working calendar and holiday exclusions; cancellation after persisted deadline; reservation release; `VENDOR_TIMEOUT` and reliability penalty; idempotent replay; before-deadline protection; ops-only execution; pending partial-acceptance closure; missing-deadline backfill; retailer tenant-scoped `ORDER_CANCELLED` notifications; deterministic field/ops assignee selection.
+
+### Suite 22: `scripts/test_worker_architecture.py` (1 Test)
+- **Commands:** `pytest scripts/test_worker_architecture.py -v`
+- **Coverage:** PostgreSQL 18 durable outbox, Python worker runtime, concurrent-safe claiming, explicit lease model, and prohibition of BullMQ/Redis Streams as the canonical event transport.
