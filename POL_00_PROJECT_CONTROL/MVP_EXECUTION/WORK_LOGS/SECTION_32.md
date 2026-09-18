@@ -17,7 +17,7 @@ IN_PROGRESS
 
 | EVT-002 | 2026-09-18 | EXEC50-001 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | Stage 01 executed and closed under EXEC50-002; controller remains active for sequential execution. | Stage 01 snapshot; 50-stage master plan; synchronized governance docs | GitHub CI evidence only; no new source tests | 1680f3c7ce855c057294fe555f86f041cabcc3ad | Run #333 failed with 39 tests failing | Execute Stage 02 on next user `ادامه` |
 
-| EVT-003 | 2026-09-18 | EXEC50-001 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | Stage 02 executed and closed under EXEC50-003; controller advances to Stage 03 while Run #352 remains pending. | Stage 02 source files; 50-stage master plan; Section 02 log; Active Work Ledger | Static source verification; CI Run #352 IN_PROGRESS | 45bfa518d9f75d8ea7c83ba01463619dd61f72a8 | No passing CI result yet | Execute Stage 03 on next user `ادامه` |
+| EVT-003 | 2026-09-18 | EXEC50-001 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | Stage 02 executed and closed under EXEC50-003; Run #356 later completed with 209/209 PASS for the pre-Stage-03 suite. | Stage 02 source files; 50-stage master plan; Section 02 log; Active Work Ledger | Static source verification; CI Run #352 IN_PROGRESS | 45bfa518d9f75d8ea7c83ba01463619dd61f72a8 | No passing CI result yet | Execute Stage 03 on next user `ادامه` |
 
 ## Decision Log
 | DECISION_ID | DATE | DECISION | OWNER | SOURCE | STATUS |
@@ -36,13 +36,13 @@ IN_PROGRESS
 - Remaining work: execute Stages 04–50 sequentially; external blockers remain explicitly tagged.
 - Next worker/task: CHATGPT-5.6-LUNA / EXEC50-001 — supervise Stage 04 next.
 - Required decision: none for execution-program structure; later product/architecture changes require Decision IDs.
-- Current controller sync SHA: 1f211f5b07b02fc8c6ed5ed63d57d9b97fd1af43
+- Current controller sync SHA: c80965b42a61412623e247a04e6e058bd72a1283
 
 ## Closing Condition
 این Section فقط وقتی CLOSED می‌شود که تمام acceptance criteria و work items ثبت‌شده بسته شده باشند.
 
 ## Stage 03 Progress Event — 2026-09-18
-EXEC50-004 remains IN_PROGRESS. Run #356 completed successfully at 209/209 on the prior suite; three new regression tests were added and Run #360 is currently executing the expanded suite. Controller will not advance until Stage 03 has final evidence.
+EXEC50-004 CLOSED. Run #365 completed successfully at 212/212 on the expanded suite; controller advanced to Stage 04 and completed repository-truth synchronization.
 
 | EVT-004 | 2026-09-18 | EXEC50-001 | CHATGPT-5.6-LUNA | program-architect | IN_PROGRESS | IN_PROGRESS | Stage 03 / EXEC50-004 closed after Run #365 certification with 212/212 PASS; controller remains active and advances to Stage 04. | 50-stage master plan; Active Work Ledger; Section 03 Work Log | Run #365 SUCCESS — 212/212 PASS | 1f211f5b07b02fc8c6ed5ed63d57d9b97fd1af43 | none | Claim EXEC50-005 for Stage 04 on next user `ادامه` |
 
@@ -53,3 +53,9 @@ EXEC50-004 remains IN_PROGRESS. Run #356 completed successfully at 209/209 on th
 - Full suite: 212/212 PASS; 0 failed; 0 skipped
 - Artifact: 10561965892; digest sha256:22cb435f5008516719bb221115844b8edab8b61c562e9d4f80586d50699a233a
 - Next stage: 04 — Repository Truth Synchronization
+
+## Stage 04 Closure Event — 2026-09-18
+- EXEC50-005 CLOSED.
+- Cross-document repository-truth synchronization completed.
+- Next open stage: 05 — Governance / Decision Register Reconciliation.
+- No new business or architecture decision introduced.
