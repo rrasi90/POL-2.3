@@ -11,6 +11,22 @@ from scripts.api.dependencies import get_application_boundary
 from scripts.api.main import app
 
 
+@pytest.fixture
+def api_test_environment(monkeypatch):
+    pg_port = (
+        os.environ.get("POL_API_DB_PORT")
+        or os.environ.get("POL_PG_PORT")
+        or os.environ.get("PGPORT")
+        or "5432"
+    )
+    monkeypatch.setenv("POL_API_DB_NAME", "pol_test")
+    monkeypatch.setenv("POL_API_DB_HOST", os.environ.get("PGHOST", "127.0.0.1"))
+    monkeypatch.setenv("POL_API_DB_PORT", pg_port)
+    monkeypatch.setenv("POL_JWT_SECRET", "test-secret-key-for-auth-contract-tests-only-32bytes!!")
+    monkeypatch.setenv("ENVIRONMENT", "test")
+
+
+
 class _FakeBoundary:
     def checkout_from_allocation_plan(
         self,
@@ -125,7 +141,7 @@ def test_checkout_transport_source_boundary_has_no_domain_import_or_sql():
     assert "DELETE " not in route_text
 
 
-def test_checkout_route_is_auth_protected():
+def test_checkout_route_is_auth_protected(api_test_environment):
     app.dependency_overrides.clear()
     response = TestClient(app).post(
         "/api/v1/orders",
