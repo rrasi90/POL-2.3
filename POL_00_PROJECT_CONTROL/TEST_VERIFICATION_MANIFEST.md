@@ -2,7 +2,7 @@
 
 **Document ID:** `POL-TEST-MANIFEST-v1.0`  
 **Date:** September 14, 2026  
-**Latest baseline amendment:** 2026-09-18 — Stage 01
+**Latest baseline amendment:** 2026-09-18 — Stage 04
 **Status:** **ACTIVE / CANONICAL**  
 **Target Engine:** PostgreSQL 18.x (Native Windows / Docker `postgres:18-alpine`)  
 **Python Runtime:** Python 3.11+ | pytest 8.0+ | psycopg2-binary 2.9.9+  
@@ -17,14 +17,13 @@ Every claim made in the platform documentation or engineering reports maps direc
 
 ### 2.1 Current execution baseline — 2026-09-18
 - Repository branch: `research-hardening-2026-09-14`
-- PR #1 current head at snapshot: `e6484daf9f0926b807577c71477d8f1405c24a3e`
-- Latest completed verification run observed on that head: Run #333.
-- CI checkout executed the PR merge ref; machine-readable artifact recorded merge commit `7bf440dd55d300253d099c6f70c5c76973bd8e25`.
+- PR #1 current control-document head: `4539c77a557290dc8476b6c29d3a7cfeab36feea`.
+- Latest completed full verification on the current PR lineage: **Run #365** on certified code head `5ac5974b2caf045f8020e3c8b48f889ed3ff94e9`.
+- Run #365 / workflow id `35378830823`: **212 collected / 212 passed / 0 failed / 0 skipped**, result **SUCCESS**.
+- Machine-readable artifact: `pol-test-results` artifact **10561965892**, digest `sha256:22cb435f5008516719bb221115844b8edab8b61c562e9d4f80586d50699a233a`.
 - PostgreSQL: 18.6; public base-table count: **93**.
-- Test collection: **209**; passed **170**; failed **39**; skipped **0**; overall **FAILED**.
-- Environment/bootstrap verifier step: **success**.
-- Therefore the repository is **not CI_VERIFIED** at this snapshot. No `209/209` or equivalent green claim is valid.
-- Failure families in Run #333: Batch 2 RMA/outbox (15), Batch 3 contract matrix (5), E2E MVP platform (14), vendor-acceptance-timeout (5).
+- The current PR has not been merged to `main`; therefore the manifest's strict `CI_VERIFIED` label (defined as a green workflow on `main`) is **not claimed**. The PR verification itself is green and certified by Run #365.
+- Historical Run #333 remains preserved only as the Stage 01 failure snapshot; its 209/170/39 counts are not current execution claims.
 
 
 ```text
