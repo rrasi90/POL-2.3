@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from scripts.allocation_engine import (
     BasketItem,
-    MasterProduct,
     MultiVendorAllocationEngine,
     Vendor,
     VendorSKU,
