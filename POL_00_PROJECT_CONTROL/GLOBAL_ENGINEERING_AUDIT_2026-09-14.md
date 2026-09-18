@@ -1,5 +1,7 @@
 # POL Global Engineering Audit — 2026-09-14
 
+**Governance reconciliation amendment:** 2026-09-18
+
 **Scope:** Full repository / architecture review after MVP hardening and User Profile completion.
 
 **Audit level:** Principal/Staff Engineer review standard.
@@ -88,10 +90,10 @@ See `POL_00_PROJECT_CONTROL/FUTURE_VERSION_NOT_MVP.md` for the non-MVP roadmap.
 The repository is an engineering/domain verification environment, not yet a claim of a deployed production application. Before real production traffic, these gates must still be completed:
 
 ### A. Production HTTP/API runtime
-A concrete transport stack must be selected and implemented against `POLApplicationBoundary`. The repository currently specifies a framework-neutral boundary rather than a deployed FastAPI/NestJS/etc. server.
+D-020 now canonically selects FastAPI as the production HTTP transport adapter behind `POLApplicationBoundary`. The repository contains the FastAPI transport entrypoint; actual production deployment/certification remains a later gate.
 
 ### B. Production authentication provider
-The legacy test-oriented auth service still contains predictable test behavior. Production OTP/SMS issuance, refresh-token rotation, secret management, brute-force/rate-limit infrastructure, and session revocation must be implemented behind the canonical auth boundary before production launch.
+Production authentication still has open provider/infrastructure gates. D-018 rotation policy remains explicitly undecided; the repository must not infer a rotation requirement from this audit. Provider-backed OTP/SMS, secret management, production rate-limit infrastructure and deployment certification remain later gates.
 
 ### C. Live provider certification
 SMS/push providers are adapter-neutral and must receive concrete credentials, delivery receipts/webhooks, secret rotation and production certification.
