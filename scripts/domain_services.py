@@ -35,10 +35,10 @@ class AuthService:
         # Production safeguard: never allow hardcoded OTP in production environment
         is_prod = os.getenv("ENVIRONMENT", "").lower() in ("prod", "production") or os.getenv("POL_ENV", "").lower() in ("prod", "production")
         if is_prod:
-            code = f"{secrets.randbelow(1_000_000):06d}"
+            code = f"{secrets.randbelow(10_000):04d}"  # D-018: 4-digit OTP
         else:
             # Predictable test OTP strictly restricted to test/dev/staging harnesses
-            code = "123456"
+            code = "1234"  # D-018: 4-digit test OTP
         code_hash = hashlib.sha256(code.encode()).hexdigest()
         cur.execute("""
             INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, attempts_count, max_attempts, status, expires_at)
@@ -83,7 +83,7 @@ class AuthService:
         tok_hash = f"tok_{uuid.uuid4().hex}"
         cur.execute("""
             INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
-            VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '24 hours')
+            VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '15 minutes')
             RETURNING id, user_id, active_organization_id, status;
         """, (sess_id, user_id, active_org_id, tok_hash))
         return cur.fetchone()

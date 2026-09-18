@@ -64,6 +64,8 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 | Refresh-token lifetime | 30 days | `Technical_Architecture_Spec.md:91` |
 | Refresh-token rotation | **Requires explicit downstream decision** | No canonical source defines rotation policy; Tech Arch implies but does not specify |
 | Session revocation | Single-session DELETE to REVOKED | All sources agree, implemented and tested |
+| Session-row expiry (`user_sessions.expires_at`) | 30 days (= refresh-session lifetime) | Derived from D-018 refresh-token lifetime; NOT access-token lifetime |
+| Access-token validation | Stateless JWT `exp` claim (15 min) | JWT library per-request validation; not stored in `user_sessions.expires_at` |
 
 **Supersedes:**
 - `06_PRODUCT/Technical_Architecture_Spec.md` §3 — OTP digit count, access-token lifetime, rate-limit parameters now authoritative.
@@ -83,16 +85,28 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 - Non-custodial payment
 
 **Downstream synchronization required (next engineering batch):**
-- `06_PRODUCT/Technical_Architecture_Spec.md` — align §3 digit count to 4, align §4.1 refresh endpoint
-- `08_DATA/IDENTITY_AND_MEMBERSHIP.md` — update `code_hash` description from "5-digit" to "4-digit"
-- `06_PRODUCT/API_Contracts.md` — update §7.1 rate limit to 3/5min per phone+IP, §7.2 `otp_code` example to 4-digit, `expires_in` to 900
-- `scripts/operational_config.py` — `OTP_CODE_LENGTH = 4`, `SESSION_TTL_HOURS = 0.25` (15 minutes)
-- `scripts/domain_services.py` — update OTP generation (`secrets.randbelow(10_000):04d`), token expiry (`interval '15 minutes'`)
-- Auth tests — update expected OTP length, token lifetime assertions
+- `06_PRODUCT/Technical_Architecture_Spec.md` — align §3 digit count to 4, clarify §3 token semantics: access token = stateless JWT (15-minute `exp` claim, validated by JWT library per request); refresh session = server-tracked `user_sessions.expires_at` (30-day lifetime). Refresh endpoint §4.1 TBD.
+- `08_DATA/IDENTITY_AND_MEMBERSHIP.md` — update `code_hash` description from "5-digit" to "4-digit". Add semantic note: `user_sessions.expires_at` represents refresh-session expiry (30 days), NOT access-token expiry (15 minutes). Access-token expiry is embedded in the JWT `exp` claim and validated statelessly.
+- `06_PRODUCT/API_Contracts.md` — update §7.1 rate limit to 3/5min per phone+IP, §7.2 `otp_code` example to 4-digit, `expires_in` to 900 (access token only). §7.4 session revocation: session rows live for 30 days (refresh-session lifetime), not 15 minutes.
+- `scripts/operational_config.py` — `OTP_CODE_LENGTH = 4`, `SESSION_TTL_HOURS = 720` (30 days = refresh-session lifetime)
+- `scripts/domain_services.py` — update OTP generation (`secrets.randbelow(10_000):04d`), session expiry (`interval '30 days'` for `user_sessions.expires_at`). Access-token 15-minute expiry is a JWT concern, not a session-row concern.
+- Auth tests — update expected OTP length, session lifetime assertions to 30 days, add negative test: refresh_token_hash must persist beyond 15 minutes
 - Design specs 26/30 — align OTP input field to 4 digits, add 15-minute countdown, add refresh flow
 - Frontend auth screens — align input length, countdown display, lockout state
 
 **Note on refresh-token rotation:** The Technical Architecture document implies refresh-token rotation ("Refresh Token (عمر ۳۰ روز)") but does not explicitly define a rotation policy (full rotation, rotation with reuse detection, or no rotation). This parameter requires a separate explicit Founder/Architect decision before implementation. Do not silently inherit any behavior.
+
+**Note on session-expiry semantics (Batch 6A.2 clarification):** D-018 defines two distinct token lifetimes. The repository schema (`user_sessions`) contains a single `expires_at` column. The following interpretation is canonical:
+
+1. **`user_sessions.expires_at`** = refresh-session expiry = **30 days** from creation. This is when the entire session row becomes EXPIRED and the refresh token stored in `refresh_token_hash` becomes invalid. The user must re-authenticate via OTP.
+
+2. **Access-token expiry** = **15 minutes**, embedded in the JWT itself as an `exp` claim. Validated statelessly by the JWT library on every request. NOT stored in `user_sessions.expires_at`. The access token is independent of the session row's expiry.
+
+3. **Refresh flow** (when implemented): Client presents a valid refresh token; server validates `refresh_token_hash` and `user_sessions.expires_at > now()`, then issues a new 15-minute access token. Refresh-token rotation remains undecided per D-018.
+
+4. **No schema migration required.** The `refresh_token_hash` column already exists. The only change is the value assigned to `user_sessions.expires_at` (30 days instead of 15 minutes) and the documentation of its semantic meaning.
+
+5. **Delivery OTP is a separate domain concern.** D-018 governs login/registration OTP only. The canonical `deliveries` table (`Data_Schema.md:556-574`) does not define an `otp_code` column. The `confirm_delivery_otp` path records `proof_of_delivery.otp_verified` but does not establish a canonical delivery OTP generation/verification contract. Delivery OTP digit count, lifetime, and security policy require a separate domain decision or explicit canonical contract later.
 
 ---
 

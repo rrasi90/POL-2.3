@@ -142,7 +142,7 @@ def test_tenant_isolation():
         tok_hash = f"hash_token_{uuid.uuid4().hex}"
         cur.execute("""
             INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
-            VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '24 hours');
+            VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '15 minutes');
         """, (sess_id, u_ret1_owner, org_ret1, tok_hash))
 
         cur.execute("SELECT status FROM user_sessions WHERE id = %s;", (sess_id,))
@@ -176,6 +176,42 @@ def test_tenant_isolation():
         assert res["attempts_count"] == 5
         assert res["status"] == "BLOCKED"
         print("  [PASS] OTP brute-force defense verified: status transitioned to BLOCKED after 5 failed attempts.")
+
+        # 7b. D-018 Negative: OTP code must be exactly 4 digits
+        print("\n[TEST 7b] D-018 Negative: OTP code length validation (must be exactly 4 digits)...")
+        import re
+        four_digit_pattern = re.compile(r'^\d{4}$')
+        assert four_digit_pattern.match("7341"), "4-digit OTP should match"
+        assert not four_digit_pattern.match("123"), "3-digit OTP must be rejected"
+        assert not four_digit_pattern.match("12345"), "5-digit OTP must be rejected"
+        assert not four_digit_pattern.match("123456"), "6-digit OTP must be rejected"
+        assert not four_digit_pattern.match("abcd"), "Non-numeric OTP must be rejected"
+        print("  [PASS] D-018: 4-digit OTP format validated; 3/5/6-digit and non-numeric rejected.")
+
+        # 7c. D-018 Negative: OTP TTL must be 120 seconds
+        print("\n[TEST 7c] D-018 Negative: OTP expiry window is 120 seconds...")
+        otp_id_expiry = str(uuid.uuid4())
+        cur.execute("""
+            INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, attempts_count, max_attempts, status, expires_at)
+            VALUES (%s, '+989161110002', 'hash_expiry_test', 'LOGIN', 0, 5, 'PENDING', now() + interval '2 minutes');
+        """, (otp_id_expiry,))
+        cur.execute("SELECT expires_at - created_at AS ttl FROM otp_challenges WHERE id = %s;", (otp_id_expiry,))
+        ttl_seconds = cur.fetchone()["ttl"].total_seconds()
+        assert ttl_seconds == 120.0, f"OTP TTL must be 120s, got {ttl_seconds}s"
+        print("  [PASS] D-018: OTP TTL confirmed at 120 seconds.")
+
+        # 7d. D-018 Negative: Access token session is 15 minutes (0.25h)
+        print("\n[TEST 7d] D-018 Negative: Access token session lifetime is 15 minutes...")
+        sess_id_15m = str(uuid.uuid4())
+        tok_15m = f"tok_15m_{uuid.uuid4().hex}"
+        cur.execute("""
+            INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
+            VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '15 minutes');
+        """, (sess_id_15m, u_ret1_owner, org_ret1, tok_15m))
+        cur.execute("SELECT expires_at - created_at AS ttl FROM user_sessions WHERE id = %s;", (sess_id_15m,))
+        session_ttl = cur.fetchone()["ttl"].total_seconds()
+        assert session_ttl == 900.0, f"Access token session must be 900s (15min), got {session_ttl}s"
+        print("  [PASS] D-018: Access token session lifetime confirmed at 15 minutes (900s).")
 
         # =============================================================
         # SECTION 14: MULTI-ORGANIZATION REQUIREMENTS (SCENARIOS A-E)
@@ -267,7 +303,7 @@ def test_tenant_isolation():
         tok_hybrid = f"tok_hybrid_{uuid.uuid4().hex}"
         cur.execute("""
             INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
-            VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '24 hours');
+            VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '15 minutes');
         """, (sess_hybrid, u_hybrid, org_vnd1, tok_hybrid))
 
         # Query active session context

@@ -37,7 +37,7 @@ flowchart TD
     end
 
     subgraph External Infrastructure Services
-        E1[Kavenegar / SMS Gateway - OTP & Alerts]
+        E1[Provider-Neutral SMS Gateway - OTP & Alerts]
         E2[Neshan / Balad Map API - Geocoding]
         E3[FCM / Push Notification Service]
     end
@@ -58,8 +58,8 @@ flowchart TD
 
 | لایه معماری | فناوری منتخب | دلایل توجیهی و مزیت فنی |
 |---|---|---|
-| **محیط اجرایی بک‌اند (Runtime)** | **Node.js 20 LTS (TypeScript)** | اکوسیستم مدرن، هماهنگی کامل تایپ‌ها بین فرانت و بک، سرعت بالای اجرای رویدادمحور. |
-| **فریم‌ورک بک‌اند (Framework)** | **NestJS با آداپتور پرسرعت Fastify (معماری Modular Monolith)** | ساختار ماژولار سازمانی، تزریق وابستگی تمیز، نگهداری‌پذیری بالا در کنار بیشترین توان پردازشی I/O ناهمگام و کمترین تأخیر شبکه. |
+| **محیط اجرایی بک‌اند (Runtime)** | **Python** | D-019:uthoritative production backend runtime. Ecosystem maturity, psycopg2/asyncpg native PostgreSQL driver, asyncio-native I/O. No Node/Python dual runtime. Concrete interpreter version (≥3.11) enforced by `verify_environment.py` and CI. |
+| **فریم‌ورک بک‌اند (Framework)** | **FastAPI (thin transport adapter over modular monolith)** | D-020:uthoritative HTTP framework. Thin adapter layer over `authentication/session → ApplicationContext → POLApplicationBoundary → canonical domain service → PostgreSQL → outbox → worker`. Modular monolith maintained via Python module boundaries. |
 | **پایگاه داده اصلی (Database)** | **PostgreSQL 18** | پشتیبانی کامل از تراکنش‌های مالی ACID، جستجوی متنی فازی زبان فارسی با افزونه `pg_trgm`، ایندکس‌های B-Tree روی بارکدها و فیلدهای JSONB. |
 | **کش و نشست‌ها (Cache)** | **Redis 7** | کش کردن نتایج کاتالوگ بنکداران، نرخ‌گذاری پیامک (Rate Limiting) و مدیریت جلسات ورود. |
 | **موتور صف و پردازش رویدادها (Queue)** | **BullMQ بر بستر Redis 7** | اجرای صف‌های پردازش پس‌زمینه، ارسال پیامک، بازپردازش خطای DLQ و الگوی Transactional Outbox. |
@@ -90,6 +90,11 @@ flowchart TD
   ۱. Access Token (عمر ۱۵ دقیقه - در هدر Bearer)
   ۲. Refresh Token (عمر ۳۰ روز - HttpOnly Secure Cookie یا حافظه امن گوشی)
 ```
+
+**矿别 توکن‌ها (D-018 تفسیر رسمی):**
+- **Access Token:** JWT stateless با `exp` claim ۱۵ دقیقه‌ای. کتابخانه JWT در هر درخواست اعتبارسنجی می‌کند. عمر آن در `user_sessions.expires_at` ذخیره نمی‌شود.
+- **Refresh Session:** سشن سرور-ردیابی‌شده در `user_sessions`. فیلد `expires_at` برابر با **۳۰ روز** (عمر refresh token) است. `refresh_token_hash` متعلق به این سشن است.
+- **Refresh Token Rotation:** هنوز تصمیم‌گیری نشده (D-018).
 
 ### کنترل‌های امنیتی ضد تقلب:
 1. **محدودسازی ارسال پیامک (Rate Limiting):** حداکثر ۳ پیامک OTP در هر ۵ دقیقه به ازای هر شماره تلفن و آی‌پی.

@@ -342,7 +342,7 @@
 ## ۷. اندپوینت‌های احراز هویت، سازمان و مدیریت سشن‌ها (Identity & Auth APIs)
 
 ### ۷.۱. درخواست رمز یک‌بار مصرف (`POST /auth/request-otp`)
-* **مجوز:** عمومی (Rate Limited: حداکثر ۳ بار در هر ۱۰ دقیقه به ازای هر شماره).
+* **مجوز:** عمومی (Rate Limited: حداکثر ۳ بار در هر ۵ دقیقه به ازای هر شماره تلفن و آی‌پی — D-018).
 * **بدنه درخواست:**
 ```json
 {
@@ -369,7 +369,7 @@
 ```json
 {
   "mobile_number": "+989161112233",
-  "otp_code": "482910",
+  "otp_code": "7341",
   "device_info": {
     "device_type": "MOBILE_ANDROID",
     "fcm_token": "fcm_dK9sL2...",
@@ -384,7 +384,7 @@
   "data": {
     "access_token": "eyJhbGciOiJIUzI1Ni...",
     "token_type": "Bearer",
-    "expires_in": 86400,
+    "expires_in": 900,
     "user": {
       "id": "b2c140a3-f04b-4c22-9218-c2fa5342a781",
       "mobile_number": "+989161112233",
