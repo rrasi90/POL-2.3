@@ -18,8 +18,8 @@
 | 04 | CLOSED | 0 | EXEC50-005 closed | Stage 04 closed; next action Stage 05 |
 | 05 | CLOSED | 0 | EXEC50-006 closed | Stage 05 closed; next action Stage 06 |
 | 06 | CLOSED | 0 | EXEC50-007 closed; Run #403 certified | Stage 06 closed; next action Stage 07 |
-| 07 | IN_PROGRESS | 1 | EXEC50-008 active | CI certification pending |
-| 08 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
+| 07 | CLOSED | 0 | EXEC50-008 closed; Run #429 certified | Stage 07 route inventory certified 214/214 |
+| 08 | IN_PROGRESS | 1 | EXEC50-009 active | Authentication contract audit started; fresh CI pending |
 | 09 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 10 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
 | 11 | NOT STARTED | 0 | Initial registration | Create/claim first work item |
@@ -58,3 +58,4 @@ PLANNED, CLAIMED, IN_PROGRESS, BLOCKED, READY_FOR_REVIEW, VERIFIED, CLOSED
 | EXEC50-006 | 05 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 05 — Governance / Decision Register Reconciliation | CLOSED | 2026-09-18 | 2026-09-18 | DECISION_REGISTER.md; GLOBAL_ENGINEERING_AUDIT_2026-09-14.md; Technical_Architecture_Spec.md; API_Contracts.md; test_current_source_of_truth.py; WORK_LOGS/SECTION_05.md | ba072293d69614f9aea927d0eada43cb6c28dd8a | BullMQ/Redis queue mechanism remains a Stage 06 reconciliation item under D-019 | next sequential stage: 06 — Queue / Worker Architecture Closure |
 | EXEC50-007 | 06 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 06 — Queue / Worker Architecture Closure | CLOSED | 2026-09-18 | 2026-09-18 | WORKER_ARCHITECTURE.md; Event_Architecture.md; Technical_Architecture_Spec.md; scripts/test_worker_architecture.py; TEST_VERIFICATION_MANIFEST.md | f76c9ebae857eb9a2573848780dd3a5aaf4d0a26 | none | next sequential stage: 07 — API/Boundary Master Inventory |
 | EXEC50-008 | 07 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 07 — API/Boundary Master Inventory | IN_PROGRESS | 2026-09-18 | 2026-09-19 | API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md; scripts/test_api_boundary_route_inventory.py; TEST_VERIFICATION_MANIFEST.md | b459393d570e5e9fcd7d5fb329d3a658a168e586 | Run #420 failed 213/214; Suite 23 repaired; Run #421 queued | consume Run #421 result then close |
+| EXEC50-009 | 08 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 08 — Authentication Contract Audit | IN_PROGRESS | 2026-09-19 | 2026-09-19 | AUTHENTICATION_CONTRACT_AUDIT_2026-09-19.md; scripts/domain_services.py; scripts/test_auth_contract.py; WORK_LOGS/SECTION_08.md | e13ce4b0274b450c12dd914aca3f9f30514aaffc | Fresh CI pending | certify auth regression and close Stage 08 |
