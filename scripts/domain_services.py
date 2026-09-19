@@ -128,10 +128,14 @@ class AuthService:
         On 5th failed attempt: status=BLOCKED, blocked_at=now().
         On success: creates 30-day session, issues 15-min JWT + refresh token.
         """
+        # Serialize verification on the active challenge so one OTP cannot
+        # be accepted successfully by concurrent requests.
         cur.execute("""
             SELECT * FROM otp_challenges
             WHERE phone_number = %s AND status = 'PENDING' AND expires_at > now()
-            ORDER BY created_at DESC LIMIT 1;
+            ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE;
         """, (phone_number,))
         challenge = cur.fetchone()
         if not challenge:
