@@ -1132,7 +1132,7 @@
 
 **Exit:** system can calculate KPIs even if actual values are still zero/not yet collected.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1826,7 +1826,14 @@
 - Next Action: execute Stage 37
 
 ## Stage 37
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Pilot KPI measurement pipeline — 10 KPI SQL calculations (GMV, AOV, repeat rate, OTIF, self-service, churn, cost-to-serve, CAC, vendor continuation, catalog coverage), weekly snapshot function, 10 tests
+- Files: scripts/pilot_kpis.py, scripts/test_pilot_kpis.py
+- Tests: 10 KPI tests, 152 targeted tests PASS
+- CI: PASS
+- External: None (live pilot data later)
+- Blockers: None
+- Next Action: execute Stage 38
 
 ## Stage 38
 - Status: PLANNED
