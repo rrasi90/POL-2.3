@@ -30,9 +30,11 @@ export default function AuthPage() {
       { mobile_number: phone, otp_code: code },
     );
     const payload =
-      "data" in response && response.data ? response.data : response;
+      "data" in response
+        ? response.data
+        : response;
 
-    if (!payload.access_token) {
+    if (!payload || !payload.access_token) {
       throw new Error("Authentication succeeded without an access token.");
     }
 
