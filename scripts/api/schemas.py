@@ -83,3 +83,22 @@ class MembershipProfileUpdateRequest(APIBaseModel):
     default_contact_channel: Literal["IN_APP", "PUSH", "SMS"] | None = None
     locale_override: Literal["fa-IR", "en-US"] | None = None
     preferences: dict[str, Any] | None = None
+
+
+class VendorCatalogCreateRequest(APIBaseModel):
+    vendor_sku: str = Field(min_length=1, max_length=100)
+    product_id: UUID | None = None
+    candidate_id: UUID | None = None
+    packaging_unit: str = Field(default="CARTON", max_length=30)
+    pack_quantity: int = Field(default=12, gt=0)
+    sales_unit: str = Field(default="CARTON", max_length=30)
+    initial_price_toman: int | None = Field(default=None, gt=0)
+    moq: int = Field(default=1, ge=1)
+
+
+class VendorCatalogUpdateRequest(APIBaseModel):
+    packaging_unit: str | None = Field(default=None, max_length=30)
+    pack_quantity: int | None = Field(default=None, gt=0)
+    sales_unit: str | None = Field(default=None, max_length=30)
+    moq: int | None = Field(default=None, ge=1)
+    is_active: bool | None = None

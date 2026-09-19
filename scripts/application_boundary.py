@@ -7,6 +7,7 @@ methods. Domain tables must not be written directly by client-facing code.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from uuid import uuid4
 
 from scripts.checkout_gateway import CanonicalCheckoutGateway
 from scripts.canonical_feedback import CanonicalFeedbackService
@@ -474,6 +475,176 @@ class POLApplicationBoundary:
         product["media"] = self.cur.fetchall()
 
         return product
+
+    def vendor_catalog_list_products(self):
+        """List vendor products for the current vendor organization."""
+        if not self.context.organization_id:
+            raise PermissionError("Vendor catalog requires an active organization context.")
+        self.cur.execute(
+            """
+            SELECT vp.id, vp.vendor_sku, vp.packaging_unit, vp.pack_quantity,
+                   vp.sales_unit, vp.is_active, vp.listing_status,
+                   vp.product_id, vp.candidate_id,
+                   p.canonical_name_fa, p.master_sku,
+               vi.physical_quantity, vi.reserved_quantity, vi.available_quantity,
+                   vi.moq, vi.freshness_status,
+                   vp_price.price_toman
+            FROM vendor_products vp
+            JOIN vendors v ON v.id = vp.vendor_id
+            LEFT JOIN products p ON p.id = vp.product_id
+            LEFT JOIN vendor_inventory vi ON vi.vendor_product_id = vp.id
+            LEFT JOIN vendor_prices vp_price
+                ON vp_price.vendor_product_id = vp.id AND vp_price.is_current = TRUE
+            WHERE v.organization_id = %s::uuid
+              AND v.status = 'ACTIVE'
+            ORDER BY vp.created_at DESC
+            """,
+            (self.context.organization_id,),
+        )
+        return self.cur.fetchall()
+
+    def vendor_catalog_create_product(
+        self,
+        *,
+        vendor_sku: str,
+        product_id: str | None = None,
+        candidate_id: str | None = None,
+        packaging_unit: str = "CARTON",
+        pack_quantity: int = 12,
+        sales_unit: str = "CARTON",
+        initial_price_toman: int | None = None,
+        moq: int = 1,
+    ):
+        """Create a new vendor product listing."""
+        if not self.context.organization_id:
+            raise PermissionError("Vendor catalog requires an active organization context.")
+
+        if not product_id and not candidate_id:
+            raise ValueError("Either product_id or candidate_id is required.")
+
+        self.cur.execute(
+            "SELECT id FROM vendors WHERE organization_id = %s::uuid AND status = 'ACTIVE'",
+            (self.context.organization_id,),
+        )
+        vendor = self.cur.fetchone()
+        if not vendor:
+            raise PermissionError("No active vendor found for the current organization.")
+        vendor_id = str(vendor["id"])
+
+        self.cur.execute(
+            "SELECT id FROM vendor_products WHERE vendor_id = %s::uuid AND vendor_sku = %s",
+            (vendor_id, vendor_sku),
+        )
+        if self.cur.fetchone():
+            raise ValueError(f"Vendor SKU '{vendor_sku}' already exists for this vendor.")
+
+        listing_status = "ACTIVE" if product_id else "DRAFT_PENDING_CATALOG"
+
+        self.cur.execute(
+            """
+            INSERT INTO vendor_products (
+                id, vendor_id, product_id, candidate_id, vendor_sku,
+                packaging_unit, pack_quantity, sales_unit,
+                is_active, listing_status
+            ) VALUES (gen_random_uuid(), %s::uuid, %s::uuid, %s::uuid,
+                      %s, %s, %s, %s, TRUE, %s)
+            RETURNING id
+            """,
+            (
+                vendor_id,
+                product_id,
+                candidate_id,
+                vendor_sku,
+                packaging_unit,
+                pack_quantity,
+                sales_unit,
+                listing_status,
+            ),
+        )
+        new_id = str(self.cur.fetchone()["id"])
+
+        self.cur.execute(
+            """
+            INSERT INTO vendor_inventory (
+                vendor_product_id, inventory_unit, physical_quantity,
+                reserved_quantity, moq, freshness_status
+            ) VALUES (%s::uuid, %s, 0, 0, %s, 'UNKNOWN')
+            """,
+            (new_id, packaging_unit, moq),
+        )
+
+        if initial_price_toman:
+            self.cur.execute(
+                "INSERT INTO vendor_prices (vendor_product_id, price_toman, is_current) VALUES (%s::uuid, %s, TRUE)",
+                (new_id, initial_price_toman),
+            )
+
+        return {
+            "vendor_product_id": new_id,
+            "vendor_sku": vendor_sku,
+            "listing_status": listing_status,
+            "packaging_unit": packaging_unit,
+            "pack_quantity": pack_quantity,
+            "moq": moq,
+        }
+
+    def vendor_catalog_update_product(
+        self,
+        *,
+        vendor_product_id: str,
+        packaging_unit: str | None = None,
+        pack_quantity: int | None = None,
+        sales_unit: str | None = None,
+        moq: int | None = None,
+        is_active: bool | None = None,
+    ):
+        """Update vendor product packaging, MOQ, or active status."""
+        if not self.context.organization_id:
+            raise PermissionError("Vendor catalog requires an active organization context.")
+
+        self.cur.execute(
+            """
+            SELECT vp.id, vp.vendor_id
+            FROM vendor_products vp
+            JOIN vendors v ON v.id = vp.vendor_id
+            WHERE vp.id = %s::uuid AND v.organization_id = %s::uuid AND v.status = 'ACTIVE'
+            """,
+            (vendor_product_id, self.context.organization_id),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise PermissionError("Vendor product not found or not accessible from this organization.")
+
+        updates = []
+        params = []
+        if packaging_unit is not None:
+            updates.append("packaging_unit = %s")
+            params.append(packaging_unit)
+        if pack_quantity is not None:
+            updates.append("pack_quantity = %s")
+            params.append(pack_quantity)
+        if sales_unit is not None:
+            updates.append("sales_unit = %s")
+            params.append(sales_unit)
+        if is_active is not None:
+            updates.append("is_active = %s")
+            params.append(is_active)
+
+        if updates:
+            updates.append("updated_at = now()")
+            params.append(vendor_product_id)
+            self.cur.execute(
+                f"UPDATE vendor_products SET {', '.join(updates)} WHERE id = %s::uuid",
+                params,
+            )
+
+        if moq is not None:
+            self.cur.execute(
+                "UPDATE vendor_inventory SET moq = %s WHERE vendor_product_id = %s::uuid",
+                (moq, vendor_product_id),
+            )
+
+        return {"vendor_product_id": vendor_product_id, "updated": True}
 
     def catalog_product_vendors(self, product_id: str):
         self.cur.execute(
