@@ -905,3 +905,51 @@ class POLApplicationBoundary:
             (product_id,),
         )
         return self.cur.fetchall()
+
+    def daily_inventory_get(self, confirmation_date: str):
+        """Get daily confirmation status for the current vendor (tenant-scoped)."""
+        from scripts import daily_inventory_boundary
+        if not self.context.organization_id:
+            raise PermissionError("Daily inventory requires an active organization context.")
+        self.cur.execute(
+            "SELECT id FROM vendors WHERE organization_id = %s::uuid AND status = 'ACTIVE'",
+            (self.context.organization_id,),
+        )
+        vendor = self.cur.fetchone()
+        if not vendor:
+            raise PermissionError("No active vendor found for this organization.")
+        return daily_inventory_boundary.get_or_create_daily_confirmation(
+            self.cur, str(vendor["id"]), confirmation_date,
+        )
+
+    def daily_inventory_confirm_no_changes(self, confirmation_date: str):
+        """1-tap instant confirmation (tenant-scoped)."""
+        from scripts import daily_inventory_boundary
+        if not self.context.organization_id:
+            raise PermissionError("Daily inventory requires an active organization context.")
+        self.cur.execute(
+            "SELECT id FROM vendors WHERE organization_id = %s::uuid AND status = 'ACTIVE'",
+            (self.context.organization_id,),
+        )
+        vendor = self.cur.fetchone()
+        if not vendor:
+            raise PermissionError("No active vendor found for this organization.")
+        return daily_inventory_boundary.confirm_no_changes(
+            self.cur, str(vendor["id"]), self.context.user_id, confirmation_date,
+        )
+
+    def daily_inventory_confirm_with_changes(self, confirmation_date: str, changes: list):
+        """Confirm with item quantity changes (tenant-scoped)."""
+        from scripts import daily_inventory_boundary
+        if not self.context.organization_id:
+            raise PermissionError("Daily inventory requires an active organization context.")
+        self.cur.execute(
+            "SELECT id FROM vendors WHERE organization_id = %s::uuid AND status = 'ACTIVE'",
+            (self.context.organization_id,),
+        )
+        vendor = self.cur.fetchone()
+        if not vendor:
+            raise PermissionError("No active vendor found for this organization.")
+        return daily_inventory_boundary.confirm_with_changes(
+            self.cur, str(vendor["id"]), self.context.user_id, confirmation_date, changes,
+        )

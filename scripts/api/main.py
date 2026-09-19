@@ -30,6 +30,7 @@ from scripts.api.routes.catalog import router as catalog_router
 from scripts.api.routes.profile import membership_router, router as profile_router
 from scripts.api.routes.orders import router as orders_router
 from scripts.api.routes.vendor_catalog import router as vendor_catalog_router
+from scripts.api.routes.daily_inventory import router as daily_inventory_router
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from scripts.auth_boundary import (
@@ -82,6 +83,7 @@ def create_app() -> FastAPI:
     app.include_router(baskets_router, prefix="/api/v1")
     app.include_router(catalog_router, prefix="/api/v1")
     app.include_router(vendor_catalog_router, prefix="/api/v1")
+    app.include_router(daily_inventory_router, prefix="/api/v1")
     app.include_router(profile_router, prefix="/api/v1")
     app.include_router(membership_router, prefix="/api/v1")
     app.include_router(orders_router, prefix="/api/v1")

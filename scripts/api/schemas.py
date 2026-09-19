@@ -111,3 +111,17 @@ class VendorPriceSetRequest(APIBaseModel):
 class VendorInventoryAdjustRequest(APIBaseModel):
     new_physical_quantity: int = Field(ge=0)
     reason: str = Field(default="MANUAL_EDIT", max_length=50)
+
+
+class DailyInventoryConfirmRequest(APIBaseModel):
+    confirmation_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+
+class DailyInventoryChangeItemRequest(APIBaseModel):
+    vendor_product_id: UUID
+    declared_quantity: int = Field(ge=0)
+
+
+class DailyInventoryConfirmWithChangesRequest(APIBaseModel):
+    confirmation_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    changes: list[DailyInventoryChangeItemRequest] = Field(min_length=1)
