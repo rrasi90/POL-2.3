@@ -338,6 +338,33 @@ def run_tests():
         safe_test("T-AC19: validate_access_token — membership revoked → rejected", test_ac19)
 
         # =========================================================
+        # T-AC20: OTP challenge is consumed exactly once under verification
+        # =========================================================
+        def test_ac20():
+            phone = "+989161110030"
+            otp_id = str(uuid.uuid4())
+            cur.execute("""
+                INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
+                VALUES (%s, %s, %s, 'LOGIN', '10.0.0.30', 0, 5, 'PENDING', now() + interval '2 minutes');
+            """, (otp_id, phone, store_otp_hash("1234")))
+            conn.commit()
+            from scripts.domain_services import AuthService
+            first = AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+            assert first["access_token"]
+            cur.execute("SELECT status FROM otp_challenges WHERE id = %s;", (otp_id,))
+            assert cur.fetchone()["status"] == "VERIFIED"
+            try:
+                AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+                raise AssertionError("OTP was accepted more than once")
+            except ValueError as e:
+                assert "No pending OTP challenge" in str(e)
+            finally:
+                cur.execute("DELETE FROM user_sessions WHERE user_id = %s;", (user_id,))
+                cur.execute("DELETE FROM otp_challenges WHERE id = %s;", (otp_id,))
+                conn.commit()
+        safe_test("T-AC20: OTP challenge is consumed exactly once", test_ac20)
+
+        # =========================================================
         # T-AC4: Refresh token hash actually persisted
         # =========================================================
         def test_ac4():
