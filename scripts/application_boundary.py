@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import uuid4
 
+from psycopg2.extras import Json
+
 from scripts.checkout_gateway import CanonicalCheckoutGateway
 from scripts.canonical_feedback import CanonicalFeedbackService
 from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
@@ -631,6 +633,13 @@ class POLApplicationBoundary:
             subject, related_order_id=related_order_id, priority=priority
         )
 
+    def support_list(self):
+        if not self.context.organization_id:
+            raise PermissionError("Support case listing requires an organization context.")
+        return CanonicalSupportService.list_cases(
+            self.cur, self.context.user_id, self.context.organization_id
+        )
+
     def support_get(self, *, case_id):
         return CanonicalSupportService.get_case(self.cur, self.context.user_id, case_id)
 
@@ -677,6 +686,148 @@ class POLApplicationBoundary:
             organization_id=self.context.organization_id,
         )
 
+    def return_get(self, *, return_id):
+        if not self.context.organization_id:
+            raise PermissionError("Return query requires an organization context.")
+        self.cur.execute(
+            "SELECT * FROM returns WHERE id = %s", (return_id,)
+        )
+        ret = self.cur.fetchone()
+        if not ret:
+            raise KeyError("Return not found.")
+        ret = dict(ret)
+        self.cur.execute(
+            "SELECT id FROM retailers WHERE id = %s AND organization_id = %s",
+            (ret["retailer_id"], self.context.organization_id),
+        )
+        if not self.cur.fetchone():
+            self.cur.execute(
+                "SELECT id FROM vendors WHERE id = %s AND organization_id = %s",
+                (ret["vendor_id"], self.context.organization_id),
+            )
+            if not self.cur.fetchone():
+                raise PermissionError("Access denied.")
+        self.cur.execute(
+            "SELECT * FROM return_items WHERE return_id = %s", (return_id,)
+        )
+        ret["items"] = [dict(i) for i in self.cur.fetchall()]
+        return ret
+
+    def returns_list(self, *, order_id):
+        if not self.context.organization_id:
+            raise PermissionError("Return query requires an organization context.")
+        self.cur.execute(
+            "SELECT * FROM returns WHERE order_id = %s ORDER BY created_at DESC",
+            (order_id,),
+        )
+        returns = [dict(r) for r in self.cur.fetchall()]
+        filtered = []
+        for ret in returns:
+            self.cur.execute(
+                "SELECT id FROM retailers WHERE id = %s AND organization_id = %s",
+                (ret["retailer_id"], self.context.organization_id),
+            )
+            if self.cur.fetchone():
+                filtered.append(ret)
+                continue
+            self.cur.execute(
+                "SELECT id FROM vendors WHERE id = %s AND organization_id = %s",
+                (ret["vendor_id"], self.context.organization_id),
+            )
+            if self.cur.fetchone():
+                filtered.append(ret)
+        return {"returns": filtered, "count": len(filtered)}
+
+    def dispute_open(self, *, order_id, description, evidence_media_id=None):
+        if not self.context.organization_id:
+            raise PermissionError("Dispute open requires an organization context.")
+        self.cur.execute(
+            "SELECT id, retailer_id, vendor_id FROM orders WHERE id = %s",
+            (order_id,),
+        )
+        order = self.cur.fetchone()
+        if not order:
+            raise KeyError("Order not found.")
+        order = dict(order)
+        self.cur.execute(
+            "SELECT id FROM retailers WHERE id = %s AND organization_id = %s",
+            (order["retailer_id"], self.context.organization_id),
+        )
+        if not self.cur.fetchone():
+            raise PermissionError("Only the order retailer may open a dispute.")
+        self.cur.execute(
+            "SELECT id FROM settlements WHERE order_id = %s AND status != 'DISPUTED' ORDER BY created_at DESC LIMIT 1",
+            (order_id,),
+        )
+        settlement = self.cur.fetchone()
+        if not settlement:
+            raise ValueError("No active settlement found for this order.")
+        from scripts.domain_services import DisputeService
+        disp_id = DisputeService.open_dispute(
+            self.cur,
+            order_id=order_id,
+            retailer_id=str(order["retailer_id"]),
+            vendor_id=str(order["vendor_id"]),
+            settlement_id=str(settlement["id"]),
+            claimed_amount=0,
+            description=description,
+        )
+        if evidence_media_id:
+            self.cur.execute(
+                "UPDATE disputes SET evidence_media_id = %s WHERE id = %s",
+                (evidence_media_id, disp_id),
+            )
+        self.cur.execute("SELECT * FROM disputes WHERE id = %s", (disp_id,))
+        return dict(self.cur.fetchone())
+
+    def dispute_get(self, *, dispute_id):
+        if not self.context.organization_id:
+            raise PermissionError("Dispute query requires an organization context.")
+        self.cur.execute(
+            "SELECT * FROM disputes WHERE id = %s", (dispute_id,)
+        )
+        disp = self.cur.fetchone()
+        if not disp:
+            raise KeyError("Dispute not found.")
+        disp = dict(disp)
+        self.cur.execute(
+            "SELECT id FROM retailers WHERE id = %s AND organization_id = %s",
+            (disp["retailer_id"], self.context.organization_id),
+        )
+        if not self.cur.fetchone():
+            self.cur.execute(
+                "SELECT id FROM vendors WHERE id = %s AND organization_id = %s",
+                (disp["vendor_id"], self.context.organization_id),
+            )
+            if not self.cur.fetchone():
+                raise PermissionError("Access denied.")
+        return disp
+
+    def disputes_list(self, *, order_id):
+        if not self.context.organization_id:
+            raise PermissionError("Dispute query requires an organization context.")
+        self.cur.execute(
+            "SELECT * FROM disputes WHERE order_id = %s ORDER BY opened_at DESC",
+            (order_id,),
+        )
+        disputes = [dict(d) for d in self.cur.fetchall()]
+        filtered = []
+        for disp in disputes:
+            self.cur.execute(
+                "SELECT id FROM retailers WHERE id = %s AND organization_id = %s",
+                (disp["retailer_id"], self.context.organization_id),
+            )
+            if self.cur.fetchone():
+                filtered.append(disp)
+                continue
+            self.cur.execute(
+                "SELECT id FROM vendors WHERE id = %s AND organization_id = %s",
+                (disp["vendor_id"], self.context.organization_id),
+            )
+            if self.cur.fetchone():
+                filtered.append(disp)
+        return {"disputes": filtered, "count": len(filtered)}
+
     def process_vendor_acceptance_timeouts(self, *, limit=100):
         self._require_ops_context()
         return VendorAcceptanceTimeoutWorker.process_expired(self.cur, limit=limit)
@@ -684,6 +835,189 @@ class POLApplicationBoundary:
     def reconcile_payments(self, *, limit=50):
         self._require_ops_context()
         return PaymentReconciliationWorker.process_pending(self.cur, limit=limit)
+
+    # ── Payment Evidence (Stage 27) ─────────────────────────────────
+
+    VALID_EVIDENCE_TYPES = frozenset({
+        "BANK_REFERENCE", "POS_REFERENCE", "RECEIPT_IMAGE",
+        "VENDOR_CONFIRMATION", "RETAILER_CONFIRMATION",
+    })
+
+    def submit_payment_evidence(self, *, order_id, evidence_type, reference_number, amount_toman, notes=None):
+        if evidence_type not in self.VALID_EVIDENCE_TYPES:
+            raise ValueError(
+                f"Invalid evidence_type '{evidence_type}'. "
+                f"Must be one of: {', '.join(sorted(self.VALID_EVIDENCE_TYPES))}"
+            )
+        if not self.context.organization_id:
+            raise PermissionError("Payment evidence requires an active organization context.")
+
+        # Locate the order and its payment
+        self.cur.execute(
+            """
+            SELECT o.id AS order_id, o.retailer_id, o.vendor_id,
+                   p.id AS payment_id, p.payment_status, p.retailer_id AS pay_retailer_id,
+                   p.vendor_id AS pay_vendor_id
+            FROM orders o
+            JOIN payments p ON p.order_id = o.id
+            WHERE o.id = %s
+            LIMIT 1
+            """,
+            (order_id,),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise ValueError(f"Order {order_id} not found or has no payment.")
+
+        # Tenant check: actor must belong to the retailer or vendor org of this order
+        pay_retailer_id = str(row["pay_retailer_id"])
+        pay_vendor_id = str(row["pay_vendor_id"])
+        actor_org = self.context.organization_id
+
+        self.cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN organizations o ON o.id = om.organization_id
+            WHERE om.user_id = %s
+              AND om.organization_id = %s
+              AND om.status = 'ACTIVE'
+              AND o.status = 'ACTIVE'
+              AND (
+                  (om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+                   AND EXISTS (SELECT 1 FROM retailers r WHERE r.id = %s AND r.organization_id = %s))
+                  OR
+                  (om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
+                   AND EXISTS (SELECT 1 FROM vendors v WHERE v.id = %s AND v.organization_id = %s))
+              )
+            LIMIT 1
+            """,
+            (self.context.user_id, actor_org,
+             pay_retailer_id, actor_org,
+             pay_vendor_id, actor_org),
+        )
+        if not self.cur.fetchone():
+            raise PermissionError("Actor is not an authorized member of this order's retailer or vendor tenant.")
+
+        evidence_id = str(uuid4())
+        self.cur.execute(
+            """
+            INSERT INTO payment_evidence (
+                id, payment_id, evidence_type, external_reference,
+                claimed_amount_toman, observed_amount_toman,
+                captured_by_user_id, observation_scope, metadata
+            ) VALUES (
+                %s, %s, %s, %s,
+                %s, %s,
+                %s, 'SINGLE_PAYMENT', %s
+            ) RETURNING *;
+            """,
+            (
+                evidence_id, str(row["payment_id"]), evidence_type, reference_number,
+                amount_toman, amount_toman,
+                self.context.user_id,
+                Json({"notes": notes} if notes else {}),
+            ),
+        )
+        ev = self.cur.fetchone()
+        return {
+            "evidence_id": str(ev["id"]),
+            "payment_id": str(ev["payment_id"]),
+            "evidence_type": ev["evidence_type"],
+            "reference_number": ev["external_reference"],
+            "amount_toman": int(ev["claimed_amount_toman"]),
+            "captured_at": ev["captured_at"].isoformat() if ev["captured_at"] else None,
+        }
+
+    def get_payment_evidence(self, *, order_id):
+        if not self.context.organization_id:
+            raise PermissionError("Payment evidence requires an active organization context.")
+
+        self.cur.execute(
+            """
+            SELECT p.id AS payment_id
+            FROM payments p
+            WHERE p.order_id = %s
+            LIMIT 1
+            """,
+            (order_id,),
+        )
+        pay = self.cur.fetchone()
+        if not pay:
+            raise ValueError(f"Order {order_id} has no payment record.")
+
+        self.cur.execute(
+            """
+            SELECT pe.id, pe.evidence_type, pe.external_reference,
+                   pe.claimed_amount_toman, pe.observed_amount_toman,
+                   pe.captured_at, pe.captured_by_user_id, pe.observation_scope,
+                   pe.metadata
+            FROM payment_evidence pe
+            WHERE pe.payment_id = %s
+            ORDER BY pe.captured_at ASC
+            """,
+            (str(pay["payment_id"]),),
+        )
+        rows = self.cur.fetchall()
+        return [
+            {
+                "evidence_id": str(r["id"]),
+                "evidence_type": r["evidence_type"],
+                "reference_number": r["external_reference"],
+                "amount_toman": int(r["claimed_amount_toman"]) if r["claimed_amount_toman"] is not None else None,
+                "captured_at": r["captured_at"].isoformat() if r["captured_at"] else None,
+                "observation_scope": r["observation_scope"],
+            }
+            for r in rows
+        ]
+
+    def verify_payment(self, *, order_id, notes=None):
+        if not self.context.organization_id:
+            raise PermissionError("Payment verification requires an active organization context.")
+
+        # Only vendor can verify payment
+        self.cur.execute(
+            """
+            SELECT p.id AS payment_id, p.payment_status, p.vendor_id,
+                   v.organization_id AS vendor_org_id
+            FROM payments p
+            JOIN vendors v ON v.id = p.vendor_id
+            WHERE p.order_id = %s
+            LIMIT 1
+            """,
+            (order_id,),
+        )
+        pay = self.cur.fetchone()
+        if not pay:
+            raise ValueError(f"Order {order_id} has no payment record.")
+
+        if str(pay["vendor_org_id"]) != self.context.organization_id:
+            raise PermissionError("Only the vendor tenant may verify a payment.")
+
+        if pay["payment_status"] == "SUCCESS":
+            return {"payment_id": str(pay["payment_id"]), "status": "SUCCESS", "message": "Payment already verified."}
+
+        self.cur.execute(
+            """
+            UPDATE payments
+            SET payment_status = 'SUCCESS',
+                verified_by = %s,
+                verified_at = now(),
+                paid_at = COALESCE(paid_at, now())
+            WHERE id = %s AND payment_status IN ('PENDING', 'INITIATED')
+            RETURNING *;
+            """,
+            (self.context.user_id, str(pay["payment_id"])),
+        )
+        updated = self.cur.fetchone()
+        if not updated:
+            raise ValueError("Payment cannot be verified in its current status.")
+
+        return {
+            "payment_id": str(updated["id"]),
+            "status": updated["payment_status"],
+            "verified_at": updated["verified_at"].isoformat() if updated["verified_at"] else None,
+        }
 
     def deliver_external_notifications(self, *, limit=100):
         self._require_ops_context()

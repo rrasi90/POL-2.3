@@ -29,8 +29,13 @@ from scripts.api.routes.baskets import router as baskets_router
 from scripts.api.routes.catalog import router as catalog_router
 from scripts.api.routes.profile import membership_router, router as profile_router
 from scripts.api.routes.orders import router as orders_router
+from scripts.api.routes.returns import router as returns_order_router
+from scripts.api.routes.returns import returns_router
+from scripts.api.routes.disputes import router as disputes_order_router
+from scripts.api.routes.disputes import disputes_router
 from scripts.api.routes.vendor_catalog import router as vendor_catalog_router
 from scripts.api.routes.daily_inventory import router as daily_inventory_router
+from scripts.api.routes.support import router as support_router
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from scripts.auth_boundary import (
@@ -87,6 +92,11 @@ def create_app() -> FastAPI:
     app.include_router(profile_router, prefix="/api/v1")
     app.include_router(membership_router, prefix="/api/v1")
     app.include_router(orders_router, prefix="/api/v1")
+    app.include_router(returns_order_router, prefix="/api/v1")
+    app.include_router(returns_router, prefix="/api/v1")
+    app.include_router(disputes_order_router, prefix="/api/v1")
+    app.include_router(disputes_router, prefix="/api/v1")
+    app.include_router(support_router, prefix="/api/v1")
 
     app.add_exception_handler(RequestValidationError, request_validation_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)

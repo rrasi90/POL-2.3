@@ -146,6 +146,28 @@ class CanonicalSupportService:
         return row
 
     @classmethod
+    def list_cases(cls, cur, actor_user_id: str, organization_id: str):
+        cur.execute(
+            """
+            SELECT id, user_id, organization_id, case_number, case_type, subject,
+                   related_order_id, priority, status, created_by_user_id,
+                   created_at, updated_at
+            FROM support_cases
+            WHERE organization_id = %s
+            ORDER BY created_at DESC;
+            """,
+            (organization_id,),
+        )
+        cases = cur.fetchall()
+        for case in cases:
+            allowed = str(case["user_id"]) == str(actor_user_id)
+            if not allowed:
+                allowed = cls._is_ops_actor(cur, actor_user_id)
+            if not allowed:
+                raise SupportAccessError("Actor is not authorized to list support cases for this organization.")
+        return cases
+
+    @classmethod
     def transition(cls, cur, actor_user_id, case_id, target_status,
                    resolution_code=None, resolution_note=None):
         case = cls.get_case(cur, actor_user_id, case_id)

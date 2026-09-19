@@ -1,0 +1,284 @@
+"""HTTP tests for Support Cases -- Stage 31.
+
+Tests case creation, listing, retrieval, messaging, transition, secure access.
+"""
+
+from __future__ import annotations
+
+import os
+from datetime import datetime, timedelta, timezone
+from uuid import uuid4
+
+import psycopg2
+import pytest
+from fastapi.testclient import TestClient
+from psycopg2.extras import RealDictCursor
+
+from scripts.api.main import app
+from scripts.auth_boundary import encode_access_token, hash_token
+
+
+JWT_SECRET = "test-secret-key-for-auth-contract-tests-only-32bytes!!"
+
+
+@pytest.fixture
+def api_env(monkeypatch):
+    pg_port = (
+        os.environ.get("POL_API_DB_PORT")
+        or os.environ.get("POL_PG_PORT")
+        or os.environ.get("PGPORT")
+        or "5432"
+    )
+    monkeypatch.setenv("POL_API_DB_NAME", "pol_test")
+    monkeypatch.setenv("POL_API_DB_HOST", os.environ.get("PGHOST", "127.0.0.1"))
+    monkeypatch.setenv("POL_API_DB_PORT", pg_port)
+    monkeypatch.setenv("POL_JWT_SECRET", JWT_SECRET)
+    monkeypatch.setenv("ENVIRONMENT", "test")
+
+
+def _db():
+    port = int(
+        os.environ.get("POL_API_DB_PORT")
+        or os.environ.get("POL_PG_PORT")
+        or os.environ.get("PGPORT", "5432")
+    )
+    return psycopg2.connect(
+        dbname="pol_test",
+        host=os.environ.get("POL_API_DB_HOST", os.environ.get("PGHOST", "127.0.0.1")),
+        port=port,
+        user=os.environ.get("POL_API_DB_USER", os.environ.get("PGUSER", "postgres")),
+    )
+
+
+def _create_session(cur, user_id, org_id):
+    session_id = str(uuid4())
+    cur.execute(
+        "INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at) "
+        "VALUES (%s, %s, %s, %s, 'ACTIVE', %s)",
+        (session_id, user_id, org_id, hash_token(session_id),
+         datetime.now(timezone.utc) + timedelta(hours=1)),
+    )
+    return session_id
+
+
+def _seed_support(suffix, *, include_ops=False):
+    """Seed retailer + vendor + org infrastructure for support tests."""
+    conn = _db()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            ru = str(uuid4()); ro = str(uuid4()); ri = str(uuid4())
+            vu = str(uuid4()); vo = str(uuid4()); vi = str(uuid4())
+
+            cur.execute(
+                "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, 'R', 'RETAILER_OWNER')",
+                (ru, f"+9891{uuid4().int % 100000000:08d}"),
+            )
+            cur.execute(
+                "INSERT INTO organizations (id, name, org_type, status) VALUES (%s, 'RO', 'RETAILER', 'ACTIVE')",
+                (ro,),
+            )
+            cur.execute(
+                "INSERT INTO organization_memberships (id, organization_id, user_id, role, status) VALUES (%s, %s, %s, 'RETAILER_OWNER', 'ACTIVE')",
+                (str(uuid4()), ro, ru),
+            )
+            cur.execute(
+                "INSERT INTO retailers (id, user_id, organization_id, store_name, city, neighborhood, address) VALUES (%s, %s, %s, 'S', 'Ahvaz', 'N', 'A')",
+                (ri, ru, ro),
+            )
+
+            cur.execute(
+                "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, 'V', 'VENDOR_OWNER')",
+                (vu, f"+9891{uuid4().int % 100000000:08d}"),
+            )
+            cur.execute(
+                "INSERT INTO organizations (id, name, org_type, status) VALUES (%s, 'VO', 'VENDOR', 'ACTIVE')",
+                (vo,),
+            )
+            cur.execute(
+                "INSERT INTO organization_memberships (id, organization_id, user_id, role, status) VALUES (%s, %s, %s, 'VENDOR_OWNER', 'ACTIVE')",
+                (str(uuid4()), vo, vu),
+            )
+            cur.execute(
+                "INSERT INTO vendors (id, user_id, organization_id, business_name, warehouse_address, min_order_value_toman, status) "
+                "VALUES (%s, %s, %s, 'V', 'Ahvaz', 1000000, 'ACTIVE')",
+                (vi, vu, vo),
+            )
+
+            ou = str(uuid4()); oo = str(uuid4())
+            if include_ops:
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, 'OPS', 'OPS_AGENT')",
+                    (ou, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    "INSERT INTO organizations (id, name, org_type, status) VALUES (%s, 'OO', 'OPERATOR', 'ACTIVE')",
+                    (oo,),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status) VALUES (%s, %s, %s, 'OPS_AGENT', 'ACTIVE')",
+                    (str(uuid4()), oo, ou),
+                )
+
+            rs = _create_session(cur, ru, ro)
+            vs = _create_session(cur, vu, vo)
+            os_s = _create_session(cur, ou, oo) if include_ops else None
+
+        conn.commit()
+        rt = encode_access_token(ru, rs, ro, "RETAILER_OWNER")
+        vt = encode_access_token(vu, vs, vo, "VENDOR_OWNER")
+        ot = encode_access_token(ou, os_s, oo, "OPS_AGENT") if include_ops else None
+        return {"r_token": rt, "v_token": vt, "o_token": ot, "ru": ru, "ro": ro, "vu": vu, "vo": vo, "ou": ou, "oo": oo}
+    finally:
+        conn.close()
+
+
+@pytest.fixture(scope="module")
+def client():
+    return TestClient(app, raise_server_exceptions=False)
+
+
+class TestCreateSupportCase:
+    def test_create_case(self, client):
+        data = _seed_support(uuid4().hex[:8])
+        resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "ORDER_INQUIRY", "subject": "Where is my delivery?"},
+        )
+        assert resp.status_code == 201
+        body = resp.json()
+        assert body["success"] is True
+        assert body["data"]["case_type"] == "ORDER_INQUIRY"
+        assert body["data"]["status"] == "OPEN"
+        assert "case_number" in body["data"]
+
+    def test_create_case_with_high_priority(self, client):
+        data = _seed_support(uuid4().hex[:8])
+        resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "PAYMENT_ASSISTANCE", "subject": "Payment issue",
+                  "priority": "HIGH"},
+        )
+        assert resp.status_code == 201
+        assert resp.json()["data"]["priority"] == "HIGH"
+
+
+class TestListSupportCases:
+    def test_list_cases(self, client):
+        data = _seed_support(uuid4().hex[:8])
+        client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "First case"},
+        )
+        client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "ORDER_INQUIRY", "subject": "Second case"},
+        )
+        resp = client.get(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["success"] is True
+        assert len(body["data"]) >= 2
+
+
+class TestGetSupportCase:
+    def test_get_case_by_id(self, client):
+        data = _seed_support(uuid4().hex[:8])
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Test get"},
+        )
+        case_id = create_resp.json()["data"]["id"]
+        resp = client.get(
+            f"/api/v1/support/cases/{case_id}",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["id"] == case_id
+
+    def test_get_case_not_found(self, client):
+        data = _seed_support(uuid4().hex[:8])
+        resp = client.get(
+            f"/api/v1/support/cases/{uuid4()}",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+        )
+        assert resp.status_code == 404
+
+
+class TestAddMessage:
+    def test_add_message_to_case(self, client):
+        data = _seed_support(uuid4().hex[:8])
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Msg test"},
+        )
+        case_id = create_resp.json()["data"]["id"]
+        resp = client.post(
+            f"/api/v1/support/cases/{case_id}/messages",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"message_text": "Hello support team!"},
+        )
+        assert resp.status_code == 201
+        assert resp.json()["data"]["message_text"] == "Hello support team!"
+        assert resp.json()["data"]["sender_type"] == "USER"
+
+
+class TestTransitionCase:
+    def test_transition_to_in_progress(self, client):
+        data = _seed_support(uuid4().hex[:8], include_ops=True)
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Transition test"},
+        )
+        case_id = create_resp.json()["data"]["id"]
+        resp = client.patch(
+            f"/api/v1/support/cases/{case_id}",
+            headers={"Authorization": f"Bearer {data['o_token']}"},
+            json={"target_status": "IN_PROGRESS"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["status"] == "IN_PROGRESS"
+
+    def test_transition_user_rejected(self, client):
+        data = _seed_support(uuid4().hex[:8])
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "User transition"},
+        )
+        case_id = create_resp.json()["data"]["id"]
+        resp = client.patch(
+            f"/api/v1/support/cases/{case_id}",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"target_status": "IN_PROGRESS"},
+        )
+        assert resp.status_code == 403
+
+
+class TestSupportSecureAccess:
+    def test_unauthenticated_rejected(self, client):
+        resp = client.get("/api/v1/support/cases")
+        assert resp.status_code == 401
+
+    def test_wrong_tenant_rejected(self, client):
+        data = _seed_support(uuid4().hex[:8])
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Tenant isolation"},
+        )
+        case_id = create_resp.json()["data"]["id"]
+        resp = client.get(
+            f"/api/v1/support/cases/{case_id}",
+            headers={"Authorization": f"Bearer {data['v_token']}"},
+        )
+        assert resp.status_code == 403

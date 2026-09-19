@@ -161,3 +161,59 @@ class DeliveryExceptionResolveRequest(APIBaseModel):
 
 class DeliveryExceptionEscalateRequest(APIBaseModel):
     reason: str | None = Field(default=None, max_length=2000)
+
+
+class ReturnItemRequest(APIBaseModel):
+    order_item_id: UUID
+    quantity: int = Field(gt=0)
+    reason_code: str = Field(default="OTHER", max_length=30)
+    unit_refund_amount_toman: int | None = Field(default=None, ge=0)
+
+
+class ReturnRequestRequest(APIBaseModel):
+    items: list[ReturnItemRequest] = Field(min_length=1)
+    reason: str = Field(min_length=1, max_length=1000)
+    idempotency_key: str = Field(min_length=1, max_length=128)
+    claimed_refund_amount_toman: int = Field(ge=0)
+
+
+class ReturnTransitionRequest(APIBaseModel):
+    target_status: str = Field(min_length=1, max_length=32)
+    reason: str | None = Field(default=None, max_length=1000)
+    approved_refund_amount_toman: int | None = Field(default=None, ge=0)
+
+
+class DisputeOpenRequest(APIBaseModel):
+    description: str = Field(min_length=1, max_length=2000)
+    evidence_media_id: UUID | None = None
+
+
+class PaymentEvidenceRequest(APIBaseModel):
+    evidence_type: Literal[
+        "BANK_REFERENCE", "POS_REFERENCE", "RECEIPT_IMAGE",
+        "VENDOR_CONFIRMATION", "RETAILER_CONFIRMATION",
+    ]
+    reference_number: str = Field(min_length=1, max_length=255)
+    amount_toman: int = Field(gt=0)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class PaymentVerifyRequest(APIBaseModel):
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class SupportCaseCreateRequest(APIBaseModel):
+    case_type: str = Field(min_length=1, max_length=50)
+    subject: str = Field(min_length=1, max_length=500)
+    related_order_id: str | None = Field(default=None, max_length=64)
+    priority: str = Field(default="NORMAL", max_length=20)
+
+
+class SupportCaseMessageRequest(APIBaseModel):
+    message_text: str = Field(min_length=1, max_length=5000)
+
+
+class SupportCaseTransitionRequest(APIBaseModel):
+    target_status: str = Field(min_length=1, max_length=30)
+    resolution_code: str | None = Field(default=None, max_length=50)
+    resolution_note: str | None = Field(default=None, max_length=2000)

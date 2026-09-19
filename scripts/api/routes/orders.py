@@ -15,6 +15,8 @@ from scripts.api.schemas import (
     DeliveryExceptionReportRequest,
     DeliveryExceptionResolveRequest,
     DispatchRequest,
+    PaymentEvidenceRequest,
+    PaymentVerifyRequest,
     RetailerPartialAcceptanceDeclineRequest,
     VendorOrderRejectRequest,
     VendorPartialAcceptanceProposalRequest,
@@ -348,5 +350,49 @@ def escalate_delivery_exception(
         boundary.escalate_delivery_exception(
             exception_id=str(exception_id),
             reason=payload.reason if payload else None,
+        )
+    )
+
+
+# ── Payment Evidence Routes (Stage 27) ────────────────────────────
+
+
+@router.post("/{order_id}/payments/evidence", status_code=201)
+def submit_payment_evidence(
+    order_id: UUID,
+    payload: PaymentEvidenceRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.submit_payment_evidence(
+            order_id=str(order_id),
+            evidence_type=payload.evidence_type,
+            reference_number=payload.reference_number,
+            amount_toman=payload.amount_toman,
+            notes=payload.notes,
+        )
+    )
+
+
+@router.get("/{order_id}/payments/evidence")
+def list_payment_evidence(
+    order_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.get_payment_evidence(order_id=str(order_id))
+    )
+
+
+@router.post("/{order_id}/payments/verify", status_code=200)
+def verify_payment(
+    order_id: UUID,
+    payload: PaymentVerifyRequest | None = None,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.verify_payment(
+            order_id=str(order_id),
+            notes=payload.notes if payload else None,
         )
     )

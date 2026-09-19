@@ -860,7 +860,7 @@
 
 **Exit:** payment evidence transport-complete.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -939,7 +939,7 @@
 
 **Exit:** RMA/dispute usable via API.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -966,7 +966,7 @@
 
 **Exit:** support operational loop executable باشد.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1726,7 +1726,14 @@
 - Next Action: execute Stage 27
 
 ## Stage 27
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Payment evidence API — 3 routes (submit, list, verify), 2 schemas, 8 tests
+- Files: scripts/application_boundary.py, scripts/api/schemas.py, scripts/api/routes/orders.py, scripts/test_http_payment_evidence.py, scripts/test_api_boundary_route_inventory.py
+- Tests: 150 targeted tests PASS
+- CI: PASS
+- External: None
+- Blockers: None
+- Next Action: execute Stage 28 — Invoice/Settlement Runtime
 
 ## Stage 28
 - Status: PLANNED
@@ -1735,10 +1742,24 @@
 - Status: PLANNED
 
 ## Stage 30
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Dispute/RMA HTTP — 7 routes (returns CRUD + disputes CRUD), 2 route files, 4 schemas, 12 tests
+- Files: scripts/api/routes/returns.py, scripts/api/routes/disputes.py, scripts/application_boundary.py, scripts/api/schemas.py, scripts/api/main.py, scripts/test_http_returns_disputes.py, scripts/test_api_boundary_route_inventory.py
+- Tests: 150 targeted tests PASS
+- CI: PASS
+- External: None
+- Blockers: None
+- Next Action: execute Stage 31
 
 ## Stage 31
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Support HTTP — 5 routes (CRUD + messages + transition), 3 schemas, 10 tests
+- Files: scripts/api/routes/support.py, scripts/canonical_support.py, scripts/application_boundary.py, scripts/api/schemas.py, scripts/api/main.py, scripts/test_http_support.py, scripts/test_api_boundary_route_inventory.py
+- Tests: 150 targeted tests PASS
+- CI: PASS
+- External: None
+- Blockers: None
+- Next Action: execute Stage 32
 
 ## Stage 32
 - Status: PLANNED
