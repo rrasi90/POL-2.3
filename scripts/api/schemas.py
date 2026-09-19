@@ -125,3 +125,9 @@ class DailyInventoryChangeItemRequest(APIBaseModel):
 class DailyInventoryConfirmWithChangesRequest(APIBaseModel):
     confirmation_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
     changes: list[DailyInventoryChangeItemRequest] = Field(min_length=1)
+
+
+class OrderQueryParams(APIBaseModel):
+    status: str | None = None
+    offset: int = Field(default=0, ge=0)
+    limit: int = Field(default=50, ge=1, le=200)

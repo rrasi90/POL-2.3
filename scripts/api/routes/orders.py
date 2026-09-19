@@ -1,10 +1,10 @@
-"""Authenticated order checkout HTTP routes."""
+"""Authenticated order HTTP routes — writes (checkout/accept/reject) + reads (query/timeline)."""
 
 from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Depends, Header, Query, status
 
 from scripts.api.dependencies import get_application_boundary
 from scripts.api.errors import success_payload
@@ -120,4 +120,69 @@ def decline_partial_acceptance(
             proposal_id=str(proposal_id),
             reason=payload.reason if payload else None,
         )
+    )
+
+
+# ── Order Query Routes (Stage 20) ─────────────────────────────────
+
+
+@router.get("")
+def list_orders(
+    order_status: str | None = Query(default=None, alias="status"),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.order_list(status=order_status, offset=offset, limit=limit)
+    )
+
+
+@router.get("/{order_id}")
+def get_order(
+    order_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.order_get(order_id=str(order_id))
+    )
+
+
+@router.get("/{order_id}/items")
+def get_order_items(
+    order_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.order_items_list(order_id=str(order_id))
+    )
+
+
+@router.get("/{order_id}/timeline")
+def get_order_timeline(
+    order_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.order_timeline(order_id=str(order_id))
+    )
+
+
+@router.get("/group/{order_group_id}")
+def get_order_group(
+    order_group_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.order_group_get(order_group_id=str(order_group_id))
+    )
+
+
+@router.get("/group/{order_group_id}/orders")
+def get_order_group_child_orders(
+    order_group_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.order_group_child_orders(order_group_id=str(order_group_id))
     )

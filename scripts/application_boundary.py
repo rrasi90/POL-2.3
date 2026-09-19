@@ -256,6 +256,208 @@ class POLApplicationBoundary:
             reason=reason,
         )
 
+    # ── Order Query Methods (Stage 20) ──────────────────────────────
+
+    def _resolve_actor_role(self):
+        if not self.context.organization_id:
+            raise PermissionError("Order query requires an organization context.")
+        self.cur.execute(
+            "SELECT role FROM organization_memberships WHERE organization_id = %s AND user_id = %s AND status = 'ACTIVE'",
+            (self.context.organization_id, self.context.user_id),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise PermissionError("User is not an active member of the organization.")
+        role = row["role"] if isinstance(row, dict) else row[0]
+        if role.startswith("VENDOR"):
+            return "VENDOR"
+        if role.startswith("RETAILER"):
+            return "RETAILER"
+        if role.startswith("ADMIN") or role.startswith("OPS"):
+            return "ADMIN"
+        raise PermissionError(f"Role {role} does not have order query access.")
+
+    def order_list(self, *, status=None, offset=0, limit=50):
+        actor_role = self._resolve_actor_role()
+        params: list = []
+        if actor_role == "RETAILER":
+            params.append(self.context.organization_id)
+            where = "o.retailer_id IN (SELECT id FROM retailers WHERE organization_id = %s)"
+        elif actor_role == "VENDOR":
+            params.append(self.context.organization_id)
+            where = "o.vendor_id IN (SELECT id FROM vendors WHERE organization_id = %s)"
+        else:
+            where = "1 = 1"
+        if status:
+            params.append(status)
+            where += f" AND o.order_status = %s"
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT o.id, o.order_number, o.order_status, o.dispute_status,
+                   o.total_amount_toman, o.created_at, o.updated_at,
+                   o.vendor_id, o.retailer_id,
+                   og.id AS order_group_id, og.group_status
+            FROM orders o
+            JOIN order_groups og ON og.id = o.order_group_id
+            WHERE {where}
+            ORDER BY o.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            params,
+        )
+        orders = [dict(r) for r in self.cur.fetchall()]
+        for o in orders:
+            o["id"] = str(o["id"])
+            o["vendor_id"] = str(o["vendor_id"])
+            o["retailer_id"] = str(o["retailer_id"])
+            o["order_group_id"] = str(o["order_group_id"])
+        return {"orders": orders, "limit": limit, "offset": offset}
+
+    def order_get(self, *, order_id):
+        actor_role = self._resolve_actor_role()
+        self.cur.execute(
+            """
+            SELECT o.*, og.group_status, og.basket_id, og.total_amount_toman AS group_total_toman,
+                   og.order_count AS group_order_count
+            FROM orders o
+            JOIN order_groups og ON og.id = o.order_group_id
+            WHERE o.id = %s
+            """,
+            (order_id,),
+        )
+        order = self.cur.fetchone()
+        if not order:
+            raise ValueError("Order not found.")
+        order = dict(order)
+        if actor_role == "RETAILER":
+            org_check = self.cur.execute(
+                "SELECT id FROM retailers WHERE id = %s AND organization_id = %s",
+                (order["retailer_id"], self.context.organization_id),
+            ) or True
+            self.cur.execute(
+                "SELECT 1 FROM retailers WHERE id = %s AND organization_id = %s",
+                (order["retailer_id"], self.context.organization_id),
+            )
+            if not self.cur.fetchone():
+                raise PermissionError("Access denied.")
+        elif actor_role == "VENDOR":
+            self.cur.execute(
+                "SELECT 1 FROM vendors WHERE id = %s AND organization_id = %s",
+                (order["vendor_id"], self.context.organization_id),
+            )
+            if not self.cur.fetchone():
+                raise PermissionError("Access denied.")
+        order["id"] = str(order["id"])
+        order["vendor_id"] = str(order["vendor_id"])
+        order["retailer_id"] = str(order["retailer_id"])
+        order["order_group_id"] = str(order["order_group_id"])
+        order["basket_id"] = str(order.get("basket_id", ""))
+        order["allocation_plan_id"] = str(order.get("allocation_plan_id", ""))
+        return order
+
+    def order_items_list(self, *, order_id):
+        self.order_get(order_id=order_id)
+        self.cur.execute(
+            """
+            SELECT id, product_id, vendor_product_id, product_name_snapshot,
+                   brand_name_snapshot, vendor_sku_snapshot, packaging_unit_snapshot,
+                   pack_quantity_snapshot, ordered_quantity, accepted_quantity,
+                   delivered_quantity, unit_price_toman, total_line_amount_toman,
+                   fulfillment_status, dispute_reason
+            FROM order_items
+            WHERE order_id = %s
+            ORDER BY created_at ASC
+            """,
+            (order_id,),
+        )
+        items = [dict(r) for r in self.cur.fetchall()]
+        for item in items:
+            item["id"] = str(item["id"])
+            item["product_id"] = str(item["product_id"])
+            item["vendor_product_id"] = str(item["vendor_product_id"])
+        return {"order_id": order_id, "items": items}
+
+    def order_group_get(self, *, order_group_id):
+        actor_role = self._resolve_actor_role()
+        self.cur.execute(
+            """
+            SELECT og.*,
+                   r.store_name AS retailer_name,
+                   array_agg(DISTINCT v.business_name) AS vendor_names
+            FROM order_groups og
+            LEFT JOIN retailers r ON r.id = og.retailer_id
+            LEFT JOIN orders o ON o.order_group_id = og.id
+            LEFT JOIN vendors v ON v.id = o.vendor_id
+            WHERE og.id = %s
+            GROUP BY og.id, r.store_name
+            """,
+            (order_group_id,),
+        )
+        group = self.cur.fetchone()
+        if not group:
+            raise ValueError("Order group not found.")
+        group = dict(group)
+        if actor_role == "RETAILER":
+            self.cur.execute(
+                "SELECT 1 FROM retailers WHERE id = %s AND organization_id = %s",
+                (group["retailer_id"], self.context.organization_id),
+            )
+            if not self.cur.fetchone():
+                raise PermissionError("Access denied.")
+        elif actor_role == "VENDOR":
+            self.cur.execute(
+                "SELECT 1 FROM orders WHERE order_group_id = %s AND vendor_id IN "
+                "(SELECT id FROM vendors WHERE organization_id = %s)",
+                (order_group_id, self.context.organization_id),
+            )
+            if not self.cur.fetchone():
+                raise PermissionError("Access denied.")
+        group["id"] = str(group["id"])
+        group["basket_id"] = str(group.get("basket_id", ""))
+        group["retailer_id"] = str(group["retailer_id"])
+        group["vendor_names"] = group["vendor_names"] or []
+        return group
+
+    def order_group_child_orders(self, *, order_group_id):
+        self.order_group_get(order_group_id=order_group_id)
+        self.cur.execute(
+            """
+            SELECT o.id, o.order_number, o.order_status, o.dispute_status,
+                   o.total_amount_toman, o.vendor_id, o.created_at, o.updated_at,
+                   v.business_name AS vendor_name
+            FROM orders o
+            JOIN vendors v ON v.id = o.vendor_id
+            WHERE o.order_group_id = %s
+            ORDER BY o.created_at ASC
+            """,
+            (order_group_id,),
+        )
+        orders = [dict(r) for r in self.cur.fetchall()]
+        for o in orders:
+            o["id"] = str(o["id"])
+            o["vendor_id"] = str(o["vendor_id"])
+        return {"order_group_id": order_group_id, "orders": orders}
+
+    def order_timeline(self, *, order_id):
+        self.order_get(order_id=order_id)
+        self.cur.execute(
+            """
+            SELECT id, event_type, from_status, to_status,
+                   actor_user_id, actor_organization_id, event_data, created_at
+            FROM order_timeline_events
+            WHERE order_id = %s
+            ORDER BY created_at ASC
+            """,
+            (order_id,),
+        )
+        events = [dict(r) for r in self.cur.fetchall()]
+        for ev in events:
+            ev["id"] = str(ev["id"])
+            ev["actor_user_id"] = str(ev["actor_user_id"]) if ev["actor_user_id"] else None
+            ev["actor_organization_id"] = str(ev["actor_organization_id"]) if ev["actor_organization_id"] else None
+        return {"order_id": order_id, "events": events}
+
     def feedback_list(self):
         if not self.context.organization_id:
             raise PermissionError("Feedback query requires an organization context.")
