@@ -38,7 +38,7 @@ def test_fastapi_runtime_route_inventory_is_explicit():
     actual = {
         (method, route.path)
         for route in app.routes
-        for method in (route.methods or set())
+        for method in (getattr(route, "methods", None) or set())
         if route.path not in {"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
     }
 
