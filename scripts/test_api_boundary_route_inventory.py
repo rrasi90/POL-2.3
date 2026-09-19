@@ -47,6 +47,8 @@ EXPECTED_BUSINESS_ROUTES = {
     ("POST", "/api/v1/orders/{order_id}/ready"),
     ("POST", "/api/v1/orders/{order_id}/dispatch"),
     ("POST", "/api/v1/orders/{order_id}/deliver"),
+    ("GET", "/api/v1/orders/{order_id}/delivery"),
+    ("GET", "/api/v1/orders/{order_id}/delivery/proof"),
     ("GET", "/api/v1/profile"),
     ("GET", "/api/v1/profile/completion"),
     ("GET", "/api/v1/profile/context"),

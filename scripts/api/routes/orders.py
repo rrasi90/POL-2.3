@@ -242,3 +242,25 @@ def confirm_delivery(
             recipient_name=payload.recipient_name if payload else None,
         )
     )
+
+
+# ── Delivery Tracking Routes (Stage 23) ────────────────────────────
+
+
+@router.get("/{order_id}/delivery")
+def get_delivery(
+    order_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.delivery_get(order_id=str(order_id))
+    )
+
+
+@router.get("/{order_id}/delivery/proof")
+def get_delivery_proof(
+    order_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    proof = boundary.delivery_proof(order_id=str(order_id))
+    return success_payload(proof if proof else {"message": "No proof of delivery found."})

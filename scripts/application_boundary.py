@@ -502,6 +502,50 @@ class POLApplicationBoundary:
             recipient_name=recipient_name,
         )
 
+    # ── Delivery Tracking Methods (Stage 23) ───────────────────────
+
+    def delivery_get(self, *, order_id):
+        self.order_get(order_id=order_id)
+        self.cur.execute(
+            """
+            SELECT d.id, d.order_id, d.vendor_id, d.delivery_status, d.driver_name,
+                   d.vehicle_plate, d.driver_phone, d.dispatched_at, d.delivered_at, d.created_at
+            FROM deliveries d
+            WHERE d.order_id = %s
+            ORDER BY d.created_at DESC LIMIT 1
+            """,
+            (order_id,),
+        )
+        delivery = self.cur.fetchone()
+        if not delivery:
+            raise ValueError("No delivery record found for this order.")
+        delivery = dict(delivery)
+        delivery["id"] = str(delivery["id"])
+        delivery["order_id"] = str(delivery["order_id"])
+        delivery["vendor_id"] = str(delivery["vendor_id"])
+        return delivery
+
+    def delivery_proof(self, *, order_id):
+        self.order_get(order_id=order_id)
+        self.cur.execute(
+            """
+            SELECT pod.id, pod.delivery_id, pod.accepted_by_name, pod.accepted_at,
+                   pod.otp_verified, pod.issue_reported_at_delivery
+            FROM proof_of_delivery pod
+            JOIN deliveries d ON d.id = pod.delivery_id
+            WHERE d.order_id = %s
+            ORDER BY pod.accepted_at DESC LIMIT 1
+            """,
+            (order_id,),
+        )
+        proof = self.cur.fetchone()
+        if not proof:
+            return None
+        proof = dict(proof)
+        proof["id"] = str(proof["id"])
+        proof["delivery_id"] = str(proof["delivery_id"])
+        return proof
+
     def feedback_list(self):
         if not self.context.organization_id:
             raise PermissionError("Feedback query requires an organization context.")
