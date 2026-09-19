@@ -2,9 +2,9 @@
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, research-hardening-2026-09-14 ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, research-hardening-2026-09-14 ]
 
 jobs:
   verify:
