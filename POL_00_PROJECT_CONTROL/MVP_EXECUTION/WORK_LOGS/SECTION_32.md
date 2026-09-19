@@ -72,3 +72,16 @@ EXEC50-004 CLOSED. Run #365 completed successfully at 212/212 on the expanded su
 - Full suite: 213/213 PASS; 0 failed; 0 skipped.
 - Canonical worker model: PostgreSQL 18 Outbox + Python workers.
 - Next open stage: 07 — API/Boundary Master Inventory.
+
+## Stage 07 Closure Event — 2026-09-19
+- EXEC50-008 CLOSED after Run #429 / 35424359991 SUCCESS on `ad686ff3da437d0736da8bbf9f31fb484bd601aa`.
+- Full verification: 214/214 PASS; 0 failed; 0 skipped.
+- Artifact: 10578268045; digest `sha256:5b20fffcb4f45e9b418b23870cdc7d578fb642339ec25145709234985ac30f04`.
+- Next open stage: 08 — Authentication Contract Audit.
+
+## Stage 08 Start Event — 2026-09-19
+- EXEC50-009 claimed and IN_PROGRESS.
+- D-018 audit completed; one-time OTP verification concurrency gap repaired with PostgreSQL `FOR UPDATE` and regression T-AC20 added.
+- Refresh-token rotation remains explicitly undecided under D-018; no policy change made.
+- Deterministic non-production OTP/provider boundary carried to Stage 09.
+- Fresh CI certification pending.
