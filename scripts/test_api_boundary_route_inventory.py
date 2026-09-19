@@ -35,12 +35,13 @@ EXPECTED_OPERATIONAL_ROUTES = {
 
 def test_fastapi_runtime_route_inventory_is_explicit():
     app = create_app()
-    # FastAPI includes nested routers in app.routes; only concrete routes expose methods.
+    # FastAPI may expose nested _IncludedRouter wrappers in app.routes. OpenAPI is
+    # the normalized transport surface after router inclusion and prefix composition.
     actual = {
-        (method, route.path)
-        for route in app.routes
-        for method in (getattr(route, "methods", None) or set())
-        if route.path not in {"/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
+        (method.upper(), path)
+        for path, operations in app.openapi()["paths"].items()
+        for method in operations
+        if method.lower() in {"get", "post", "put", "patch", "delete", "options", "head"}
     }
 
     assert actual == EXPECTED_BUSINESS_ROUTES | EXPECTED_OPERATIONAL_ROUTES
