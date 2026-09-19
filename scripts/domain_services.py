@@ -117,8 +117,25 @@ class AuthService:
             RETURNING id, phone_number, status, expires_at;
         """, (otp_id, phone_number, code_hash, purpose, ip_address, OTP_MAX_ATTEMPTS, f"{OTP_TTL_SECONDS} seconds"))
         res = cur.fetchone()
-        if not is_prod and isinstance(res, dict):
-            res["test_code"] = code
+
+        if is_prod:
+            from scripts.provider_adapters import build_adapter, ProviderConfigurationError, ProviderTransientError
+            try:
+                adapter = build_adapter("SMS")
+                adapter.send(
+                    phone_number=phone_number,
+                    title="POL Verification Code",
+                    body=f"Your POL verification code is: {code}",
+                    idempotency_key=str(otp_id),
+                )
+            except ProviderConfigurationError:
+                raise RuntimeError("Production OTP delivery failed: SMS provider not configured. Set POL_SMS_ENDPOINT.")
+            except ProviderTransientError as exc:
+                raise RuntimeError(f"Production OTP delivery failed: provider transient error. {exc}") from exc
+        else:
+            if isinstance(res, dict):
+                res["test_code"] = code
+
         return res
 
     @staticmethod
