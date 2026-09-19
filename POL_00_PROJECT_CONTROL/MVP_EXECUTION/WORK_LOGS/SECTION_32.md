@@ -94,8 +94,8 @@ EXEC50-004 CLOSED. Run #365 completed successfully at 212/212 on the expanded su
 | EVT-FINAL-001 | 2026-09-19 | EXEC50-CORR-001 | CHATGPT-5.6-LUNA | independent-supervisor | IN_PROGRESS | CLOSED | Independent post-completion correction pass fixed the CI hard-coded port defects, repaired the 4-digit OTP frontend contract, created the actual Next.js App Router/build foundation, and added frontend typecheck/build gating. Fresh CI then certified the full repository test suite. | `scripts/test_checkout_fingerprint.py`; `scripts/test_operational_policies.py`; `frontend/src/app/*`; `frontend/src/components/auth/OtpVerifyForm.tsx`; `.github/workflows/pol-verification.yml`; canonical manifests | **490/490 PASS, 0 failed, 0 skipped**; frontend typecheck/build PASS | d2997b5ca1e4026e38b30f0a9dcbe391faf80394 | Live Penpot, provider credentials, production deployment, restore drill, real pilot and production-scale performance remain EXTERNAL_PENDING | external handoff only |
 
 ### Final evidence
-- GitHub Actions Run #473 / 35468878504: **SUCCESS**.
-- Artifact: **10592840227**.
-- Digest: `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`.
-- Exact artifact metadata commit: `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`, branch `research-hardening-2026-09-14`, dirty=false.
+- GitHub Actions Run #475 / 35469086093: **SUCCESS**.
+- Artifact: **10592725680**.
+- Digest: `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`.
+- Exact artifact metadata commit: `ce3dd5cecd301bf16ba8f575388df260bce3b2c8`, branch `research-hardening-2026-09-14`, dirty=false.
 - PostgreSQL 18.6, 95 public base tables, 31 migrations.

@@ -1940,8 +1940,8 @@
 - Changes: Final test bundle independently certified; canonical runner executes the full repository test inventory.
 - Files: scripts/run_verification_suite.py; scripts/test_*.py
 - Tests: **490 collected / 490 passed / 0 failed / 0 skipped**
-- CI: **Run #473 / 35468878504 — PASS**
-- Artifact: **10592840227**; digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`
+- CI: **Run #475 / 35469086093 — PASS**
+- Artifact: **10592725680**; digest `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`
 - External: production-scale performance certification remains external.
 - Blockers: None
 - Next Action: Stage 49 is operationally ready; external pilot remains pending.
@@ -1961,8 +1961,8 @@
 - Changes: Final independent corrective certification completed against current repository state.
 - Files: Current repository + final corrective audit dossier
 - Tests: **490/490 PASS** with 0 failures, errors, or skips
-- CI: **Run #473 / 35468878504 — SUCCESS** on `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`
-- Artifact: **10592840227**, digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`
+- CI: **Run #475 / 35469086093 — SUCCESS** on `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`
+- Artifact: **10592725680**, digest `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`
 - Frontend CI: **typecheck PASS + build PASS**
 - Database: **31 migrations / 95 public base tables / PostgreSQL 18.6**
 - External: live Penpot, live SMS/Push/Email credentials, production deployment, real restore drill, real pilot, and production-scale performance remain `EXTERNAL_PENDING`.
@@ -1979,7 +1979,7 @@ This amendment supersedes stale post-Stage-50 certification claims where they co
 - Corrective implementation head: `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`.
 - Fresh GitHub Actions certification: **Run #473 / workflow ID 35468878504 — SUCCESS**.
 - Full canonical verification artifact: **490 collected / 490 passed / 0 failed / 0 skipped**.
-- Artifact: **10592840227**; digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`.
+- Artifact: **10592725680**; digest `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`.
 - Artifact metadata: PostgreSQL **18.6**, **95 public base tables**, branch `research-hardening-2026-09-14`, clean workspace, exact commit `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`.
 - Fresh frontend CI: **Typecheck PASS + Next.js Build PASS** on the same SHA.
 - Current migration chain: **001 → 031 = 31 migrations**.

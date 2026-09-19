@@ -49,5 +49,5 @@ For the complete column definitions, constraints, triggers, and indices of all 9
 
 - PostgreSQL 18.6 CI verification applied the complete migration chain **001 → 031**.
 - Active public base-table count: **95**.
-- Fresh full verification: **490/490 PASS** under Run #473 / 35468878504.
+- Fresh full verification: **490/490 PASS** under Run #475 / 35469086093.
 - Historical 56/90/93-table statements remain historical context only.

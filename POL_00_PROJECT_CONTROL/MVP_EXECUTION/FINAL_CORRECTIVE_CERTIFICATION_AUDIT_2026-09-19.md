@@ -8,7 +8,7 @@ Independent post-completion correction and certification of the previously repor
 
 - Repository: `rrasi90/POL-2.3`
 - Branch: `research-hardening-2026-09-14`
-- Final SHA: `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`
+- Documentation-synchronized HEAD: `ce3dd5cecd301bf16ba8f575388df260bce3b2c8`
 
 ## Corrective implementation
 
@@ -30,8 +30,8 @@ Independent post-completion correction and certification of the previously repor
 - Run ID: **35468878504**
 - Conclusion: **SUCCESS**
 - Full repository test inventory: **490 collected / 490 passed / 0 failed / 0 skipped**
-- Artifact: **10592840227**
-- Artifact digest: `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`
+- Artifact: **10592725680**
+- Artifact digest: `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`
 - Artifact metadata:
   - Commit: `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`
   - Branch: `research-hardening-2026-09-14`

@@ -17,9 +17,9 @@ Every claim made in the platform documentation or engineering reports maps direc
 
 ### 2.1 Current execution baseline — 2026-09-19
 - Repository branch: `research-hardening-2026-09-14`
-- Final certified code head: `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`.
+- Documentation-synchronized certified HEAD: `ce3dd5cecd301bf16ba8f575388df260bce3b2c8`.
 - Fresh GitHub Actions Run #473 / workflow id `35468878504`: **490 collected / 490 passed / 0 failed / 0 skipped**, result **SUCCESS**.
-- Machine-readable artifact: `pol-test-results` artifact **10592840227**, digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`.
+- Machine-readable artifact: `pol-test-results` artifact **10592725680**, digest `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`.
 - PostgreSQL: **18.6**; public base-table count: **95**.
 - Migration chain: **31 migrations, 001 → 031**.
 - CI artifact metadata confirms the exact commit, branch, and clean workspace.
@@ -216,9 +216,9 @@ cat artifacts/pol-test-results.json
 
 - Full suite: **490/490 PASS**, 0 failed, 0 skipped.
 - CI Run: **#473 / 35468878504**.
-- Head SHA: `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`.
-- Artifact: **10592840227**.
-- Digest: `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`.
+- Head SHA: `ce3dd5cecd301bf16ba8f575388df260bce3b2c8`.
+- Artifact: **10592725680**.
+- Digest: `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`.
 - PostgreSQL: **18.6**; **95** public base tables.
 - Migration chain: **001 → 031 (31 migrations)**.
 - Frontend typecheck/build: **PASS** on the same certified SHA.

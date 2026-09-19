@@ -71,4 +71,4 @@ The repository now contains migrations `001` through `031`. Final Run #473 of th
 - PostgreSQL: **18.6**.
 - Public base tables: **95**.
 - Run #473 / workflow `35468878504`: **490/490 PASS**, 0 failed, 0 skipped.
-- Artifact: **10592840227**; digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`.
+- Artifact: **10592725680**; digest `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`.

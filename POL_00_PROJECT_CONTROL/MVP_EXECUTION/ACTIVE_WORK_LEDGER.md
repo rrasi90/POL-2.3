@@ -68,9 +68,9 @@ PLANNED, CLAIMED, IN_PROGRESS, BLOCKED, READY_FOR_REVIEW, VERIFIED, CLOSED
 | EXEC50-CORR-001 | 50 | CHATGPT-5.6-LUNA | independent-supervisor | Correct CI portability defects, repair frontend auth/build foundation, execute fresh full certification, synchronize canonical control documents | CLOSED | 2026-09-19 | 2026-09-19 | test_checkout_fingerprint.py; test_operational_policies.py; OtpVerifyForm.tsx; frontend App Router; frontend CI; canonical control docs | d2997b5ca1e4026e38b30f0a9dcbe391faf80394 | Live Penpot/provider credentials/production infrastructure/pilot remain EXTERNAL_PENDING | external handoff only |
 
 ### Current certified repository state
-- Final SHA: `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`
-- Run #473 / 35468878504: **SUCCESS**
+- Documentation-synchronized HEAD: `ce3dd5cecd301bf16ba8f575388df260bce3b2c8`
+- Run #475 / 35469086093: **SUCCESS**
 - Full suite: **490/490 PASS, 0 failed, 0 skipped**
-- Artifact: **10592840227**; digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`
+- Artifact: **10592725680**; digest `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`
 - PostgreSQL 18.6 / 95 public tables / 31 migrations
 - Frontend typecheck and production build: **PASS**
