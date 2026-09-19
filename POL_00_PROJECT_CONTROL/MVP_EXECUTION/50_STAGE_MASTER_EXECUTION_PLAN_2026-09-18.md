@@ -809,7 +809,7 @@
 
 **Exit:** no ambiguous delivery exception branch remains.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1706,7 +1706,14 @@
 - Next Action: execute Stage 25 — Delivery Exceptions / Reverse Logistics Boundary
 
 ## Stage 25
-- Status: PLANNED
+- Status: CLOSED
+- Changes: delivery_exceptions table (7 types, 5 statuses, 6 resolutions), DeliveryExceptionService, 5 HTTP routes, 12 tests, route inventory 55
+- Files: migrations/031_delivery_exceptions.sql, scripts/delivery_exceptions.py, scripts/application_boundary.py, scripts/api/schemas.py, scripts/api/routes/orders.py, scripts/test_http_delivery_exceptions.py, scripts/test_api_boundary_route_inventory.py
+- Tests: 12 delivery exception tests (report, resolve, escalate, query, secure access)
+- CI: 120 targeted tests PASS
+- External: None
+- Blockers: None
+- Next Action: execute Stage 26 — Payment Architecture & Wording Closure
 
 ## Stage 26
 - Status: PLANNED

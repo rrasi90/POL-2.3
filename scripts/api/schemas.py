@@ -145,3 +145,19 @@ class DeliveryConfirmRequest(APIBaseModel):
     proof_type: str = Field(default="OTP_CODE", max_length=30)
     proof_media_id: str | None = Field(default=None, max_length=64)
     issue_reported: str | None = Field(default=None, max_length=500)
+
+
+class DeliveryExceptionReportRequest(APIBaseModel):
+    delivery_id: str = Field(min_length=1, max_length=64)
+    order_id: str = Field(min_length=1, max_length=64)
+    exception_type: str = Field(min_length=1, max_length=30)
+    description: str | None = Field(default=None, max_length=2000)
+
+
+class DeliveryExceptionResolveRequest(APIBaseModel):
+    resolution_type: str = Field(min_length=1, max_length=30)
+    resolution_note: str | None = Field(default=None, max_length=2000)
+
+
+class DeliveryExceptionEscalateRequest(APIBaseModel):
+    reason: str | None = Field(default=None, max_length=2000)

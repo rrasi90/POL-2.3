@@ -11,6 +11,9 @@ from scripts.api.errors import success_payload
 from scripts.api.schemas import (
     CheckoutRequest,
     DeliveryConfirmRequest,
+    DeliveryExceptionEscalateRequest,
+    DeliveryExceptionReportRequest,
+    DeliveryExceptionResolveRequest,
     DispatchRequest,
     RetailerPartialAcceptanceDeclineRequest,
     VendorOrderRejectRequest,
@@ -271,3 +274,79 @@ def get_delivery_proof(
 ):
     proof = boundary.delivery_proof(order_id=str(order_id))
     return success_payload(proof if proof else {"message": "No proof of delivery found."})
+
+
+# ── Delivery Exception Routes (Stage 25) ──────────────────────────
+
+
+@router.post("/{order_id}/delivery-exceptions", status_code=201)
+def report_delivery_exception(
+    order_id: UUID,
+    payload: DeliveryExceptionReportRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.report_delivery_exception(
+            delivery_id=payload.delivery_id,
+            order_id=str(order_id),
+            exception_type=payload.exception_type,
+            description=payload.description,
+        )
+    )
+
+
+@router.get("/{order_id}/delivery-exceptions")
+def list_delivery_exceptions(
+    order_id: UUID,
+    status: str | None = Query(default=None, alias="status"),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.delivery_exceptions_list(
+            order_id=str(order_id),
+            status=status,
+            offset=offset,
+            limit=limit,
+        )
+    )
+
+
+@router.get("/delivery-exceptions/{exception_id}")
+def get_delivery_exception(
+    exception_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.delivery_exception_get(exception_id=str(exception_id))
+    )
+
+
+@router.patch("/delivery-exceptions/{exception_id}/resolve")
+def resolve_delivery_exception(
+    exception_id: UUID,
+    payload: DeliveryExceptionResolveRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.resolve_delivery_exception(
+            exception_id=str(exception_id),
+            resolution_type=payload.resolution_type,
+            resolution_note=payload.resolution_note,
+        )
+    )
+
+
+@router.patch("/delivery-exceptions/{exception_id}/escalate")
+def escalate_delivery_exception(
+    exception_id: UUID,
+    payload: DeliveryExceptionEscalateRequest | None = None,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.escalate_delivery_exception(
+            exception_id=str(exception_id),
+            reason=payload.reason if payload else None,
+        )
+    )

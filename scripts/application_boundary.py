@@ -552,6 +552,62 @@ class POLApplicationBoundary:
         proof["delivery_id"] = str(proof["delivery_id"])
         return proof
 
+    # ── Delivery Exception Methods (Stage 25) ──────────────────────
+
+    def report_delivery_exception(self, *, delivery_id, order_id,
+                                   exception_type, description=None):
+        from scripts.delivery_exceptions import report_delivery_exception as _report
+        return _report(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            delivery_id=delivery_id,
+            order_id=order_id,
+            exception_type=exception_type,
+            description=description,
+        )
+
+    def resolve_delivery_exception(self, *, exception_id,
+                                    resolution_type, resolution_note=None):
+        from scripts.delivery_exceptions import resolve_delivery_exception as _resolve
+        return _resolve(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            exception_id=exception_id,
+            resolution_type=resolution_type,
+            resolution_note=resolution_note,
+        )
+
+    def escalate_delivery_exception(self, *, exception_id, reason=None):
+        from scripts.delivery_exceptions import escalate_delivery_exception as _escalate
+        return _escalate(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            exception_id=exception_id,
+            reason=reason,
+        )
+
+    def delivery_exceptions_list(self, *, order_id=None, delivery_id=None,
+                                  status=None, offset=0, limit=50):
+        from scripts.delivery_exceptions import list_delivery_exceptions as _list
+        return _list(
+            self.cur,
+            order_id=order_id,
+            delivery_id=delivery_id,
+            status=status,
+            offset=offset,
+            limit=limit,
+        )
+
+    def delivery_exception_get(self, *, exception_id):
+        from scripts.delivery_exceptions import get_delivery_exception as _get
+        result = _get(self.cur, exception_id=exception_id)
+        if not result:
+            raise ValueError("Delivery exception not found.")
+        return result
+
     def feedback_list(self):
         if not self.context.organization_id:
             raise PermissionError("Feedback query requires an organization context.")
