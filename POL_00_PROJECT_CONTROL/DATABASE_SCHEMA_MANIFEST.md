@@ -1,9 +1,9 @@
 # POL Database Schema Manifest (Historical Baseline & Evolution)
 
 **Historical Baseline:** 56 public base tables (`migrations/001_initial_schema.sql` through `migrations/003_contract_reconciliation.sql`)  
-**Current Canonical Manifest:** 90 public base tables (`POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST_2026-09-16.md`)  
-**Current Migration Chain:** `migrations/001_*.sql` through `migrations/023_*.sql`  
-**Runtime Engine:** PostgreSQL 18.4  
+**Current Canonical Manifest:** 95 public base tables (`POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST_2026-09-16.md`)  
+**Current Migration Chain:** `migrations/001_*.sql` through `migrations/031_*.sql`  
+**Runtime Engine:** PostgreSQL 18.6  
 
 ---
 
@@ -32,9 +32,9 @@ The foundation migration chain (`001`, `002`, `003`) established the initial 56 
 
 ---
 
-## 3. Current 90-Table Extension Overview
+## 3. Current 95-Table Extension Overview
 
-As detailed in `DATABASE_SCHEMA_MANIFEST_2026-09-16.md`, migrations `004` through `023` introduced:
+As detailed in `DATABASE_SCHEMA_MANIFEST_2026-09-16.md`, migrations `004` through `031` introduced:
 - Operational intelligence and decay tracking (`daily_inventory_routing_exception_ledger`)
 - Competitive temporal pricing and non-overlapping window constraints
 - Outbox and notification delivery worker contracts
@@ -42,4 +42,12 @@ As detailed in `DATABASE_SCHEMA_MANIFEST_2026-09-16.md`, migrations `004` throug
 - Universal user profile and membership profile integrity (`user_profiles`, `membership_profiles`)
 - Strict tenant session binding and cross-entity order/allocation validation
 
-For the complete column definitions, constraints, triggers, and indices of all 90 tables, refer directly to `DATABASE_SCHEMA_MANIFEST_2026-09-16.md` and the SQL migrations under `migrations/`.
+For the complete column definitions, constraints, triggers, and indices of all 95 tables, refer directly to `DATABASE_SCHEMA_MANIFEST_2026-09-16.md` and the SQL migrations under `migrations/`.
+
+
+## Current certification amendment — 2026-09-19
+
+- PostgreSQL 18.6 CI verification applied the complete migration chain **001 → 031**.
+- Active public base-table count: **95**.
+- Fresh full verification: **490/490 PASS** under Run #473 / 35468878504.
+- Historical 56/90/93-table statements remain historical context only.

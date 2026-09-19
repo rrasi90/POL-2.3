@@ -59,3 +59,18 @@ PLANNED, CLAIMED, IN_PROGRESS, BLOCKED, READY_FOR_REVIEW, VERIFIED, CLOSED
 | EXEC50-007 | 06 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 06 — Queue / Worker Architecture Closure | CLOSED | 2026-09-18 | 2026-09-18 | WORKER_ARCHITECTURE.md; Event_Architecture.md; Technical_Architecture_Spec.md; scripts/test_worker_architecture.py; TEST_VERIFICATION_MANIFEST.md | f76c9ebae857eb9a2573848780dd3a5aaf4d0a26 | none | next sequential stage: 07 — API/Boundary Master Inventory |
 | EXEC50-008 | 07 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 07 — API/Boundary Master Inventory | IN_PROGRESS | 2026-09-18 | 2026-09-19 | API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md; scripts/test_api_boundary_route_inventory.py; TEST_VERIFICATION_MANIFEST.md | b459393d570e5e9fcd7d5fb329d3a658a168e586 | Run #420 failed 213/214; Suite 23 repaired; Run #421 queued | consume Run #421 result then close |
 | EXEC50-009 | 08 | CHATGPT-5.6-LUNA | program-architect | Execute Stage 08 — Authentication Contract Audit | IN_PROGRESS | 2026-09-19 | 2026-09-19 | AUTHENTICATION_CONTRACT_AUDIT_2026-09-19.md; scripts/domain_services.py; scripts/test_auth_contract.py; WORK_LOGS/SECTION_08.md | e13ce4b0274b450c12dd914aca3f9f30514aaffc | Fresh CI pending | certify auth regression and close Stage 08 |
+
+
+## Final Corrective Certification Work — 2026-09-19
+
+| WORK_ID | SECTION_ID | WORKER | ROLE | TASK | STATUS | STARTED_AT | LAST_UPDATE | FILES | COMMIT_SHA | BLOCKER | NEXT_ACTION |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| EXEC50-CORR-001 | 50 | CHATGPT-5.6-LUNA | independent-supervisor | Correct CI portability defects, repair frontend auth/build foundation, execute fresh full certification, synchronize canonical control documents | CLOSED | 2026-09-19 | 2026-09-19 | test_checkout_fingerprint.py; test_operational_policies.py; OtpVerifyForm.tsx; frontend App Router; frontend CI; canonical control docs | d2997b5ca1e4026e38b30f0a9dcbe391faf80394 | Live Penpot/provider credentials/production infrastructure/pilot remain EXTERNAL_PENDING | external handoff only |
+
+### Current certified repository state
+- Final SHA: `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`
+- Run #473 / 35468878504: **SUCCESS**
+- Full suite: **490/490 PASS, 0 failed, 0 skipped**
+- Artifact: **10592840227**; digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`
+- PostgreSQL 18.6 / 95 public tables / 31 migrations
+- Frontend typecheck and production build: **PASS**

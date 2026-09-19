@@ -1937,13 +1937,14 @@
 
 ## Stage 48
 - Status: CLOSED
-- Changes: Final test bundle — 152 targeted tests verified passing, route inventory at 68 routes, all boundary methods documented
-- Files: scripts/test_*.py (all test files)
-- Tests: 152 targeted tests PASS
-- CI: PASS
-- External: Full 200+ test run in production environment
+- Changes: Final test bundle independently certified; canonical runner executes the full repository test inventory.
+- Files: scripts/run_verification_suite.py; scripts/test_*.py
+- Tests: **490 collected / 490 passed / 0 failed / 0 skipped**
+- CI: **Run #473 / 35468878504 — PASS**
+- Artifact: **10592840227**; digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`
+- External: production-scale performance certification remains external.
 - Blockers: None
-- Next Action: execute Stage 49
+- Next Action: Stage 49 is operationally ready; external pilot remains pending.
 
 ## Stage 49
 - Status: CLOSED
@@ -1957,10 +1958,43 @@
 
 ## Stage 50
 - Status: CLOSED
-- Changes: Final release audit — all 50 stages CLOSED, 152 targeted tests PASS, 68 routes, frontend foundation complete, all documentation reconciled
-- Files: All repository files
-- Tests: 152 targeted tests PASS
-- CI: PASS
-- External: CI/test bundle execution, live Penpot, deployment, provider certification, pilot
-- Blockers: None
-- Next Action: EXTERNAL — pilot execution
+- Changes: Final independent corrective certification completed against current repository state.
+- Files: Current repository + final corrective audit dossier
+- Tests: **490/490 PASS** with 0 failures, errors, or skips
+- CI: **Run #473 / 35468878504 — SUCCESS** on `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`
+- Artifact: **10592840227**, digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`
+- Frontend CI: **typecheck PASS + build PASS**
+- Database: **31 migrations / 95 public base tables / PostgreSQL 18.6**
+- External: live Penpot, live SMS/Push/Email credentials, production deployment, real restore drill, real pilot, and production-scale performance remain `EXTERNAL_PENDING`.
+- Blockers: None for repository-internal certification.
+- Next Action: External handoff only.
+
+
+---
+
+# Final Corrective Certification Amendment — 2026-09-19
+
+This amendment supersedes stale post-Stage-50 certification claims where they conflict with current repository/CI evidence.
+
+- Corrective implementation head: `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`.
+- Fresh GitHub Actions certification: **Run #473 / workflow ID 35468878504 — SUCCESS**.
+- Full canonical verification artifact: **490 collected / 490 passed / 0 failed / 0 skipped**.
+- Artifact: **10592840227**; digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`.
+- Artifact metadata: PostgreSQL **18.6**, **95 public base tables**, branch `research-hardening-2026-09-14`, clean workspace, exact commit `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`.
+- Fresh frontend CI: **Typecheck PASS + Next.js Build PASS** on the same SHA.
+- Current migration chain: **001 → 031 = 31 migrations**.
+- Prior `152 targeted tests` statements are historical and must not be used as the current full-suite count.
+- Live Penpot synchronization, live provider certification, production deployment, real backup/restore drill, real pilot execution, and production-scale performance remain `EXTERNAL_PENDING`.
+- D-018 refresh-token rotation remains `DECISION_REQUIRED`; no policy was invented.
+
+## Corrective defects closed in this audit
+
+1. Removed CI-incompatible hard-coded PostgreSQL port `55432` from checkout-fingerprint and operational-policy tests; tests now use the canonical `get_connection("pol_test")` environment-aware connection.
+2. Fixed the auth UI to the canonical **4-digit** OTP contract and added the missing `useState` import.
+3. Added real Next.js App Router entrypoints, RTL root layout, global CSS/Tailwind 4 PostCSS wiring, and a real `/auth` flow wired to the canonical auth endpoints.
+4. Added frontend CI gates for dependency installation, TypeScript typecheck, and Next.js production build.
+5. Fixed the frontend auth response typing to match the canonical HTTP success envelope.
+
+## Final status
+
+Stages 01–50 remain logically CLOSED, but the certification state is now defined by the fresh evidence above rather than the earlier 152-test snapshot.

@@ -2,7 +2,7 @@
 
 **Document ID:** `POL-TEST-MANIFEST-v1.0`  
 **Date:** September 14, 2026  
-**Latest baseline amendment:** 2026-09-18 — Stage 07
+**Latest baseline amendment:** 2026-09-19 — Final corrective certification
 **Status:** **ACTIVE / CANONICAL**  
 **Target Engine:** PostgreSQL 18.x (Native Windows / Docker `postgres:18-alpine`)  
 **Python Runtime:** Python 3.11+ | pytest 8.0+ | psycopg2-binary 2.9.9+  
@@ -15,15 +15,17 @@ This manifest is the authoritative, definitive registry of all test suites, veri
 
 Every claim made in the platform documentation or engineering reports maps directly to an executable test suite registered in this manifest.
 
-### 2.1 Current execution baseline — 2026-09-18
+### 2.1 Current execution baseline — 2026-09-19
 - Repository branch: `research-hardening-2026-09-14`
-- PR #1 Stage 04 audit-start control-document head: `4539c77a557290dc8476b6c29d3a7cfeab36feea`.
-- Latest completed full verification on the current PR lineage: **Run #365** on certified code head `5ac5974b2caf045f8020e3c8b48f889ed3ff94e9`.
-- Run #365 / workflow id `35378830823`: **212 collected / 212 passed / 0 failed / 0 skipped**, result **SUCCESS**.
-- Machine-readable artifact: `pol-test-results` artifact **10561965892**, digest `sha256:22cb435f5008516719bb221115844b8edab8b61c562e9d4f80586d50699a233a`.
-- PostgreSQL: 18.6; public base-table count: **93**.
-- The current PR has not been merged to `main`; therefore the manifest's strict `CI_VERIFIED` label (defined as a green workflow on `main`) is **not claimed**. The PR verification itself is green and certified by Run #365.
-- Historical Run #333 remains preserved only as the Stage 01 failure snapshot; its 209/170/39 counts are not current execution claims.
+- Final certified code head: `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`.
+- Fresh GitHub Actions Run #473 / workflow id `35468878504`: **490 collected / 490 passed / 0 failed / 0 skipped**, result **SUCCESS**.
+- Machine-readable artifact: `pol-test-results` artifact **10592840227**, digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`.
+- PostgreSQL: **18.6**; public base-table count: **95**.
+- Migration chain: **31 migrations, 001 → 031**.
+- CI artifact metadata confirms the exact commit, branch, and clean workspace.
+- Frontend CI on the same SHA: **TypeScript typecheck PASS** and **Next.js production build PASS**.
+- Historical Run #333, Run #365 and the previous 212-test baseline remain retained as historical evidence only.
+
 
 
 ```text
@@ -95,7 +97,9 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 
 ---
 
-## 4. Test Suites Master Catalog (23 suites / 58 registered test items; execution inventory is dynamic)
+## 4. Test Suites Master Catalog (registered baseline; execution inventory is dynamic)
+
+The registered catalog below is a historical/domain registry, not a hard-coded total-test count. The canonical execution inventory is generated dynamically by `scripts/run_verification_suite.py`. The current certified execution inventory is **490 tests**.
 
 | # | Suite File | Tests | Category | DB Req | Target Domain & Invariants Verified |
 | :-: | :--- | :-: | :---: | :---: | :--- |
@@ -160,7 +164,7 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 ## 6. Continuous Integration (CI) Specifications
 
 - **Workflow File:** `.github/workflows/pol-verification.yml`
-- **Trigger:** `push` and `pull_request` on `main`.
+- **Trigger:** `push` and `pull_request` on `main` and `research-hardening-2026-09-14`.
 - **Runner:** `ubuntu-latest` with container service `postgres:18-alpine`.
 - **Execution Sequence in CI:**
   1. Checkout code (`actions/checkout@v4`).
@@ -206,3 +210,16 @@ cat artifacts/pol-test-results.json
 ### Suite 23: `scripts/test_api_boundary_route_inventory.py` (1 Test)
 - **Commands:** `pytest scripts/test_api_boundary_route_inventory.py -v`
 - **Coverage:** exact runtime FastAPI route set for auth, basket, order, profile/membership and health/readiness endpoints; contract-only endpoints remain explicitly outside the live route set.
+
+
+## Final corrective certification evidence — 2026-09-19
+
+- Full suite: **490/490 PASS**, 0 failed, 0 skipped.
+- CI Run: **#473 / 35468878504**.
+- Head SHA: `d2997b5ca1e4026e38b30f0a9dcbe391faf80394`.
+- Artifact: **10592840227**.
+- Digest: `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`.
+- PostgreSQL: **18.6**; **95** public base tables.
+- Migration chain: **001 → 031 (31 migrations)**.
+- Frontend typecheck/build: **PASS** on the same certified SHA.
+- Verification artifact records `is_dirty=false` and exact commit identity.

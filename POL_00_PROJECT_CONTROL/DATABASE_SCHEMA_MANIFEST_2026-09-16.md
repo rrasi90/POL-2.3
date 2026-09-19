@@ -1,9 +1,9 @@
 # POL Database Schema Manifest — 2026-09-16
 
-**Status:** CANONICAL CURRENT MANIFEST — synced 2026-09-18  
+**Status:** CANONICAL CURRENT MANIFEST — synced 2026-09-19  
 **Database:** PostgreSQL 18  
-**Migration chain:** `migrations/001_*.sql` through `migrations/028_*.sql`  
-**Current table count:** 93 public base tables  
+**Migration chain:** `migrations/001_*.sql` through `migrations/031_*.sql`  
+**Current table count:** 95 public base tables  
 
 ## Canonical rules
 
@@ -31,6 +31,12 @@
 | 020 | Temporal, consent, saved-list and refund database invariants |
 | 021 | Session tenant binding and cross-entity order/allocation integrity |
 | 022 | Tenant ownership guards for support and feedback records |
+| 023–026 | Compatibility/runtime bug fixes, refund amount hardening, OTP rate limiting and lockout |
+| 027 | Partial-acceptance two-party contract tables |
+| 028 | Vendor acceptance timeout canonical/operational holidays |
+| 029 | Order timeline event persistence |
+| 030 | Delivery proof OTP storage |
+| 031 | Delivery exceptions and reverse-logistics records |
 
 ## Required runtime invariants
 
@@ -56,4 +62,13 @@ A schema change is not considered complete until the full migration chain execut
 
 
 ## Stage 01 baseline amendment — 2026-09-18
-The repository now contains migrations `001` through `028`. Run #333 of the verification workflow built PostgreSQL 18.6 and observed **93 public base tables**. Any prior 90-table statement in this dated manifest is retained only as historical context; the current physical schema authority is the numbered migration chain through migration 028.
+The repository now contains migrations `001` through `031`. Final Run #473 of the verification workflow built PostgreSQL 18.6 and observed **95 public base tables**. Any prior 90-table statement in this dated manifest is retained only as historical context; the current physical schema authority is the numbered migration chain through migration 028.
+
+
+## Final certification evidence — 2026-09-19
+
+- Migration chain: **31 migrations (001 → 031)**.
+- PostgreSQL: **18.6**.
+- Public base tables: **95**.
+- Run #473 / workflow `35468878504`: **490/490 PASS**, 0 failed, 0 skipped.
+- Artifact: **10592840227**; digest `sha256:90c87ce5c3c566bb2b2b3915a90b1f418a6cfacdf8d5071721a7bb2bc10b5a8b`.
