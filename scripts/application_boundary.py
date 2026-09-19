@@ -762,15 +762,18 @@ class POLApplicationBoundary:
         settlement = self.cur.fetchone()
         if not settlement:
             raise ValueError("No active settlement found for this order.")
-        from scripts.domain_services import DisputeService
-        disp_id = DisputeService.open_dispute(
-            self.cur,
-            order_id=order_id,
-            retailer_id=str(order["retailer_id"]),
-            vendor_id=str(order["vendor_id"]),
-            settlement_id=str(settlement["id"]),
-            claimed_amount=0,
-            description=description,
+        disp_id = str(uuid4())
+        self.cur.execute(
+            "INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description) "
+            "VALUES (%s, %s, %s, %s, 'OPEN', %s, %s) RETURNING id",
+            (disp_id, order_id, str(order["retailer_id"]), str(order["vendor_id"]), 0, description),
+        )
+        self.cur.execute("UPDATE orders SET dispute_status = 'OPEN' WHERE id = %s", (order_id,))
+        self.cur.execute("UPDATE settlements SET status = 'DISPUTED' WHERE id = %s", (str(settlement["id"]),))
+        self.cur.execute(
+            "INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status) "
+            "VALUES (%s, %s, 'DISPUTE_OPENED', 'ORDER', %s, %s, 'PENDING')",
+            (str(uuid4()), str(uuid4()), order_id, Json({"dispute_id": disp_id, "amount_toman": 0})),
         )
         if evidence_media_id:
             self.cur.execute(
