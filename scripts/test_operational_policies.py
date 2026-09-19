@@ -9,10 +9,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-import psycopg2
 import pytest
 from psycopg2.extras import RealDictCursor
 
+from scripts.migration_runner import get_connection
 from scripts.operational_policies import (
     AllocationIntegrityError,
     validate_allocation_against_basket,
@@ -20,10 +20,8 @@ from scripts.operational_policies import (
 
 
 def _db():
-    port = 55432
-    return psycopg2.connect(
-        dbname="pol_test", host="127.0.0.1", port=port, user="postgres",
-    )
+    conn, _ = get_connection("pol_test")
+    return conn
 
 
 def _seed_basket_and_plan(cur, suffix, *, basket_status="OPEN", plan_status="CONFIRMED",

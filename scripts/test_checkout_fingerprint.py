@@ -12,6 +12,7 @@ import pytest
 from psycopg2.extras import RealDictCursor
 
 from scripts.checkout_gateway import CanonicalCheckoutGateway
+from scripts.migration_runner import get_connection
 
 
 def _base_payload():
@@ -71,8 +72,7 @@ def test_fingerprint_is_sha256_hex():
 
 
 def test_replay_returns_none_when_no_existing_order():
-    port = 55432
-    conn = psycopg2.connect(dbname="pol_test", host="127.0.0.1", port=port, user="postgres")
+    conn, _ = get_connection("pol_test")
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             result = CanonicalCheckoutGateway._replay_existing(
