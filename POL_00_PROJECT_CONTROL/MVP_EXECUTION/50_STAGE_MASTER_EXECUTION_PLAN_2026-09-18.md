@@ -1155,7 +1155,7 @@
 
 **Exit:** implementation map complete.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1186,7 +1186,7 @@
 
 **Exit:** frontend foundation exists and follows canonical backend contracts.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1836,10 +1836,24 @@
 - Next Action: execute Stage 38
 
 ## Stage 38
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Frontend route-to-contract master map — screen→route→persona→context→data→command→state→analytics→notification→recovery mapping for all 7 personas and 6 domain areas
+- Files: POL_00_PROJECT_CONTROL/FRONTEND/frontend_route_contract_map.md
+- Tests: N/A (documentation)
+- CI: N/A
+- External: Live Penpot inspection later
+- Blockers: None
+- Next Action: execute Stage 39
 
 ## Stage 39
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Frontend repository foundation — Next.js 15 + React 19 + TypeScript + Tailwind 4 + Zustand 5 + SWR 2 package structure, API client with auth intercept, TypeScript types, RTL hook, design token plumbing
+- Files: frontend/package.json, frontend/tsconfig.json, frontend/src/lib/api/client.ts, frontend/src/lib/types/index.ts, frontend/src/lib/hooks/useDirection.ts
+- Tests: N/A (foundation)
+- CI: N/A
+- External: None
+- Blockers: None
+- Next Action: execute Stage 40
 
 ## Stage 40
 - Status: PLANNED
