@@ -46,3 +46,11 @@ def catalog_product_vendors(
     boundary=Depends(get_application_boundary),
 ):
     return success_payload(boundary.catalog_product_vendors(str(product_id)))
+
+
+@router.get("/products/{product_id}/compare-prices")
+def catalog_compare_prices(
+    product_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(boundary.catalog_compare_prices(str(product_id)))

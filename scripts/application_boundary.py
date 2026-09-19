@@ -646,6 +646,118 @@ class POLApplicationBoundary:
 
         return {"vendor_product_id": vendor_product_id, "updated": True}
 
+    def vendor_price_history(self, vendor_product_id: str):
+        """Get full price history for a vendor product (tenant-scoped)."""
+        if not self.context.organization_id:
+            raise PermissionError("Pricing requires an active organization context.")
+        self._assert_vendor_product_ownership(vendor_product_id)
+        self.cur.execute(
+            """
+            SELECT id, price_toman, effective_from, effective_to,
+                   is_current
+            FROM vendor_prices
+            WHERE vendor_product_id = %s::uuid
+            ORDER BY effective_from DESC
+            """,
+            (vendor_product_id,),
+        )
+        return self.cur.fetchall()
+
+    def vendor_price_current(self, vendor_product_id: str):
+        """Get current active price for a vendor product (tenant-scoped)."""
+        if not self.context.organization_id:
+            raise PermissionError("Pricing requires an active organization context.")
+        self._assert_vendor_product_ownership(vendor_product_id)
+        self.cur.execute(
+            """
+            SELECT id, price_toman, effective_from, is_current
+            FROM vendor_prices
+            WHERE vendor_product_id = %s::uuid AND is_current = TRUE
+            """,
+            (vendor_product_id,),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError("No current price found for this vendor product.")
+        return row
+
+    def vendor_price_set(
+        self,
+        *,
+        vendor_product_id: str,
+        price_toman: int,
+    ):
+        """Set a new current price for a vendor product.
+
+        The DB trigger trg_close_vendor_price_version auto-closes the previous
+        current price's effective_to when the new current price is inserted.
+        The GiST exclusion constraint prevents overlapping price windows.
+        """
+        if not self.context.organization_id:
+            raise PermissionError("Pricing requires an active organization context.")
+        self._assert_vendor_product_ownership(vendor_product_id)
+
+        if price_toman <= 0:
+            raise ValueError("Price must be positive.")
+
+        self.cur.execute(
+            """
+            UPDATE vendor_prices
+            SET is_current = FALSE, effective_to = now()
+            WHERE vendor_product_id = %s::uuid AND is_current = TRUE
+            """,
+            (vendor_product_id,),
+        )
+
+        self.cur.execute(
+            """
+            INSERT INTO vendor_prices (vendor_product_id, price_toman, is_current, effective_from)
+            VALUES (%s::uuid, %s, TRUE, now())
+            RETURNING id, price_toman, effective_from, is_current
+            """,
+            (vendor_product_id, price_toman),
+        )
+        return self.cur.fetchone()
+
+    def catalog_compare_prices(self, product_id: str):
+        """Compare prices across all vendors for a given product (tenant-agnostic)."""
+        self.cur.execute(
+            """
+            SELECT vp.id AS vendor_product_id, vp.vendor_sku,
+                   vp.packaging_unit, vp.pack_quantity,
+                   v.business_name, v.status AS vendor_status,
+                   vp_price.price_toman,
+                   vi.available_quantity, vi.moq
+            FROM vendor_products vp
+            JOIN vendors v ON v.id = vp.vendor_id
+            LEFT JOIN vendor_prices vp_price
+                ON vp_price.vendor_product_id = vp.id AND vp_price.is_current = TRUE
+            LEFT JOIN vendor_inventory vi ON vi.vendor_product_id = vp.id
+            WHERE vp.product_id = %s::uuid
+              AND vp.is_active = TRUE
+              AND vp.listing_status = 'ACTIVE'
+              AND v.status = 'ACTIVE'
+            ORDER BY vp_price.price_toman ASC NULLS LAST
+            """,
+            (product_id,),
+        )
+        return self.cur.fetchall()
+
+    def _assert_vendor_product_ownership(self, vendor_product_id: str):
+        """Verify the current organization owns this vendor product."""
+        self.cur.execute(
+            """
+            SELECT 1 FROM vendor_products vp
+            JOIN vendors v ON v.id = vp.vendor_id
+            WHERE vp.id = %s::uuid
+              AND v.organization_id = %s::uuid
+              AND v.status = 'ACTIVE'
+            """,
+            (vendor_product_id, self.context.organization_id),
+        )
+        if not self.cur.fetchone():
+            raise PermissionError("Vendor product not found or not accessible from this organization.")
+
     def catalog_product_vendors(self, product_id: str):
         self.cur.execute(
             """

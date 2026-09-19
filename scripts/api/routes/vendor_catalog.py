@@ -1,4 +1,4 @@
-"""Authenticated vendor catalog management routes."""
+"""Authenticated vendor catalog and pricing management routes."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from scripts.api.errors import success_payload
 from scripts.api.schemas import (
     VendorCatalogCreateRequest,
     VendorCatalogUpdateRequest,
+    VendorPriceSetRequest,
 )
 
 router = APIRouter(prefix="/catalog/vendors", tags=["catalog"])
@@ -54,5 +55,35 @@ def vendor_update_product(
             sales_unit=payload.sales_unit,
             moq=payload.moq,
             is_active=payload.is_active,
+        )
+    )
+
+
+@router.get("/products/{vendor_product_id}/prices")
+def vendor_price_history(
+    vendor_product_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(boundary.vendor_price_history(str(vendor_product_id)))
+
+
+@router.get("/products/{vendor_product_id}/prices/current")
+def vendor_price_current(
+    vendor_product_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(boundary.vendor_price_current(str(vendor_product_id)))
+
+
+@router.post("/products/{vendor_product_id}/prices")
+def vendor_price_set(
+    vendor_product_id: UUID,
+    payload: VendorPriceSetRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.vendor_price_set(
+            vendor_product_id=str(vendor_product_id),
+            price_toman=payload.price_toman,
         )
     )

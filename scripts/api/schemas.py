@@ -102,3 +102,7 @@ class VendorCatalogUpdateRequest(APIBaseModel):
     sales_unit: str | None = Field(default=None, max_length=30)
     moq: int | None = Field(default=None, ge=1)
     is_active: bool | None = None
+
+
+class VendorPriceSetRequest(APIBaseModel):
+    price_toman: int = Field(gt=0)
