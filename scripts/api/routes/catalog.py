@@ -54,3 +54,11 @@ def catalog_compare_prices(
     boundary=Depends(get_application_boundary),
 ):
     return success_payload(boundary.catalog_compare_prices(str(product_id)))
+
+
+@router.get("/products/{product_id}/compare-inventory")
+def catalog_compare_inventory(
+    product_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(boundary.catalog_inventory_compare(str(product_id)))

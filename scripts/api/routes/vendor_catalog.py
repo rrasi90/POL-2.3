@@ -1,4 +1,4 @@
-"""Authenticated vendor catalog and pricing management routes."""
+"""Authenticated vendor catalog, pricing, and inventory management routes."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from scripts.api.errors import success_payload
 from scripts.api.schemas import (
     VendorCatalogCreateRequest,
     VendorCatalogUpdateRequest,
+    VendorInventoryAdjustRequest,
     VendorPriceSetRequest,
 )
 
@@ -85,5 +86,28 @@ def vendor_price_set(
         boundary.vendor_price_set(
             vendor_product_id=str(vendor_product_id),
             price_toman=payload.price_toman,
+        )
+    )
+
+
+@router.get("/products/{vendor_product_id}/inventory")
+def vendor_inventory_get(
+    vendor_product_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(boundary.vendor_inventory_get(str(vendor_product_id)))
+
+
+@router.patch("/products/{vendor_product_id}/inventory")
+def vendor_inventory_adjust(
+    vendor_product_id: UUID,
+    payload: VendorInventoryAdjustRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.vendor_inventory_adjust(
+            vendor_product_id=str(vendor_product_id),
+            new_physical_quantity=payload.new_physical_quantity,
+            reason=payload.reason,
         )
     )

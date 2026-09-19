@@ -106,3 +106,8 @@ class VendorCatalogUpdateRequest(APIBaseModel):
 
 class VendorPriceSetRequest(APIBaseModel):
     price_toman: int = Field(gt=0)
+
+
+class VendorInventoryAdjustRequest(APIBaseModel):
+    new_physical_quantity: int = Field(ge=0)
+    reason: str = Field(default="MANUAL_EDIT", max_length=50)

@@ -758,6 +758,130 @@ class POLApplicationBoundary:
         if not self.cur.fetchone():
             raise PermissionError("Vendor product not found or not accessible from this organization.")
 
+    def vendor_inventory_get(self, vendor_product_id: str):
+        """Get inventory details for a vendor product (tenant-scoped)."""
+        if not self.context.organization_id:
+            raise PermissionError("Inventory requires an active organization context.")
+        self._assert_vendor_product_ownership(vendor_product_id)
+        self.cur.execute(
+            """
+            SELECT vi.vendor_product_id, vi.inventory_unit, vi.physical_quantity,
+                   vi.reserved_quantity, vi.available_quantity, vi.moq,
+                   vi.freshness_status, vi.inventory_confidence,
+                   vi.verification_source, vi.last_confirmed_at, vi.updated_at
+            FROM vendor_inventory vi
+            WHERE vi.vendor_product_id = %s::uuid
+            """,
+            (vendor_product_id,),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError("Inventory record not found for this vendor product.")
+        return row
+
+    def vendor_inventory_adjust(
+        self,
+        *,
+        vendor_product_id: str,
+        new_physical_quantity: int,
+        reason: str = "MANUAL_EDIT",
+    ):
+        """Adjust physical inventory quantity (tenant-scoped, logged to audit)."""
+        if not self.context.organization_id:
+            raise PermissionError("Inventory requires an active organization context.")
+        self._assert_vendor_product_ownership(vendor_product_id)
+
+        if new_physical_quantity < 0:
+            raise ValueError("Physical quantity cannot be negative.")
+
+        self.cur.execute(
+            "SELECT physical_quantity FROM vendor_inventory WHERE vendor_product_id = %s::uuid",
+            (vendor_product_id,),
+        )
+        inv = self.cur.fetchone()
+        if not inv:
+            raise KeyError("Inventory record not found.")
+
+        old_qty = int(inv["physical_quantity"])
+        delta = new_physical_quantity - old_qty
+
+        self.cur.execute(
+            """
+            UPDATE vendor_inventory
+            SET physical_quantity = %s, updated_at = now()
+            WHERE vendor_product_id = %s::uuid
+            """,
+            (new_physical_quantity, vendor_product_id),
+        )
+
+        self.cur.execute(
+            """
+            SELECT v.id AS vendor_id FROM vendor_products vp
+            JOIN vendors v ON v.id = vp.vendor_id
+            WHERE vp.id = %s::uuid
+            """,
+            (vendor_product_id,),
+        )
+        vendor = self.cur.fetchone()
+
+        self.cur.execute(
+            """
+            INSERT INTO inventory_audit_log (
+                vendor_id, vendor_product_id, old_quantity, new_quantity,
+                source_trigger, actor_user_id
+            ) VALUES (%s::uuid, %s::uuid, %s, %s, %s, %s::uuid)
+            """,
+            (vendor["vendor_id"], vendor_product_id, old_qty, new_physical_quantity,
+             reason, self.context.user_id),
+        )
+
+        self.cur.execute(
+            """
+            UPDATE vendor_inventory
+            SET freshness_status = CASE
+                WHEN physical_quantity > 0 THEN 'FRESH'
+                ELSE freshness_status
+            END,
+            inventory_confidence = 'CONFIRMED_TODAY',
+            verification_source = 'MANUAL',
+            last_confirmed_at = now()
+            WHERE vendor_product_id = %s::uuid
+            """,
+            (vendor_product_id,),
+        )
+
+        return {
+            "vendor_product_id": vendor_product_id,
+            "old_quantity": old_qty,
+            "new_quantity": new_physical_quantity,
+            "delta": delta,
+        }
+
+    def catalog_inventory_compare(self, product_id: str):
+        """Compare inventory across vendors for a given product (tenant-agnostic)."""
+        self.cur.execute(
+            """
+            SELECT vp.id AS vendor_product_id, vp.vendor_sku,
+                   vp.packaging_unit, vp.pack_quantity,
+                   v.business_name, v.status AS vendor_status,
+                   vi.physical_quantity, vi.reserved_quantity,
+                   vi.available_quantity, vi.moq, vi.freshness_status,
+                   vp_price.price_toman
+            FROM vendor_products vp
+            JOIN vendors v ON v.id = vp.vendor_id
+            JOIN vendor_inventory vi ON vi.vendor_product_id = vp.id
+            LEFT JOIN vendor_prices vp_price
+                ON vp_price.vendor_product_id = vp.id AND vp_price.is_current = TRUE
+            WHERE vp.product_id = %s::uuid
+              AND vp.is_active = TRUE
+              AND vp.listing_status = 'ACTIVE'
+              AND v.status = 'ACTIVE'
+            ORDER BY vi.available_quantity DESC
+            """,
+            (product_id,),
+        )
+        return self.cur.fetchall()
+
     def catalog_product_vendors(self, product_id: str):
         self.cur.execute(
             """
