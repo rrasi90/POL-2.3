@@ -272,18 +272,20 @@
 
 **Exit:** برای هر MVP capability یک status و owner path مشخص باشد.
 
-**Status:** IN_PROGRESS
+**Status:** CLOSED
 
 **Work ID:** EXEC50-008
 
-**Progress — 2026-09-18**
+**Closure Evidence — 2026-09-19**
 - Canonical endpoint contract inventory normalized to **50 unique business endpoint specifications**.
 - Actual FastAPI business route inventory is **21**, plus `/healthz` and `/readyz` operational routes.
 - `POLApplicationBoundary` exposes 29 public methods; 13 are reachable from current HTTP routes and 16 remain boundary-ready/internal-only.
 - Added `POL_00_PROJECT_CONTROL/API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md`.
 - Added Suite 23 `scripts/test_api_boundary_route_inventory.py` to freeze the current executable route set.
 - No contract-only endpoint is represented as live HTTP; applicationization is assigned to later canonical stages.
-- CI certification pending. Run #413 (35381462408) has migration/environment PASS and full suite IN_PROGRESS; latest current-head Run #417 (35381519054) is also IN_PROGRESS.
+- CI certification: **Run #429 / 35424359991 — SUCCESS** on `ad686ff3da437d0736da8bbf9f31fb484bd601aa`; full verification passed **214/214**, with migration/bootstrap/environment verification successful. Artifact `10578268045`; digest `sha256:5b20fffcb4f45e9b418b23870cdc7d578fb642339ec25145709234985ac30f04`.
+- Stage 07 route inventory gate was therefore certified without weakening the 23-route equality contract.
+- Stage 07 is CLOSED; next open stage is Stage 08.
 
 ---
 
@@ -313,7 +315,19 @@
 
 **Exit:** exact remaining production auth gaps مشخص باشند.
 
-**Status:** PLANNED
+**Status:** IN_PROGRESS
+
+**Work ID:** EXEC50-009
+
+**Progress — 2026-09-19**
+- Audited D-018 against `scripts/operational_config.py`, `scripts/auth_boundary.py`, `scripts/auth_application.py`, `scripts/domain_services.py`, FastAPI auth routes/schemas and `scripts/test_auth_contract.py`.
+- Confirmed OTP 4-digit/120s, resend 60s, 3/5min phone+IP rate limit, 5 attempts, 10-minute phone lockout, 15-minute JWT, 30-day refresh session, session revocation and membership validation.
+- Identified and repaired a concurrency gap in one-time OTP consumption: verification now locks the pending challenge row with PostgreSQL `FOR UPDATE` before successful consumption.
+- Added regression T-AC20 for exactly-once OTP consumption.
+- Refresh-token rotation remains explicitly **UNDECIDED** under D-018; no policy or implementation change was made.
+- Deterministic non-production OTP behavior and live SMS/provider boundary are carried to Stage 09.
+- Audit document: `POL_00_PROJECT_CONTROL/MVP_EXECUTION/AUTHENTICATION_CONTRACT_AUDIT_2026-09-19.md`.
+- Fresh CI certification pending.
 
 ---
 
