@@ -10,6 +10,8 @@ from scripts.api.dependencies import get_application_boundary
 from scripts.api.errors import success_payload
 from scripts.api.schemas import (
     CheckoutRequest,
+    DeliveryConfirmRequest,
+    DispatchRequest,
     RetailerPartialAcceptanceDeclineRequest,
     VendorOrderRejectRequest,
     VendorPartialAcceptanceProposalRequest,
@@ -185,4 +187,58 @@ def get_order_group_child_orders(
 ):
     return success_payload(
         boundary.order_group_child_orders(order_group_id=str(order_group_id))
+    )
+
+
+# ── Fulfillment Routes (Stage 22) ─────────────────────────────────
+
+
+@router.post("/{order_id}/preparing", status_code=200)
+def mark_preparing(
+    order_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.vendor_mark_preparing(order_id=str(order_id))
+    )
+
+
+@router.post("/{order_id}/ready", status_code=200)
+def mark_ready(
+    order_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.vendor_mark_ready(order_id=str(order_id))
+    )
+
+
+@router.post("/{order_id}/dispatch", status_code=200)
+def dispatch_order(
+    order_id: UUID,
+    payload: DispatchRequest | None = None,
+    boundary=Depends(get_application_boundary),
+):
+    kwargs = {"order_id": str(order_id)}
+    if payload:
+        if payload.driver_name:
+            kwargs["driver_name"] = payload.driver_name
+        if payload.vehicle_plate:
+            kwargs["vehicle_plate"] = payload.vehicle_plate
+        if payload.driver_phone:
+            kwargs["driver_phone"] = payload.driver_phone
+    return success_payload(boundary.vendor_dispatch_order(**kwargs))
+
+
+@router.post("/{order_id}/deliver", status_code=200)
+def confirm_delivery(
+    order_id: UUID,
+    payload: DeliveryConfirmRequest | None = None,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.retailer_confirm_delivery(
+            order_id=str(order_id),
+            recipient_name=payload.recipient_name if payload else None,
+        )
     )

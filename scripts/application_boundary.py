@@ -15,6 +15,12 @@ from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
 from scripts.canonical_partial_acceptance import CanonicalPartialAcceptanceService
 from scripts.canonical_vendor_order import CanonicalVendorOrderService
 from scripts.canonical_support import CanonicalSupportService
+from scripts.fulfillment_service import (
+    mark_preparing as _mark_preparing,
+    mark_ready as _mark_ready,
+    dispatch_order as _dispatch_order,
+    confirm_delivery as _confirm_delivery,
+)
 from scripts.payment_reconciliation_worker import PaymentReconciliationWorker
 from scripts.provider_delivery_worker import ProviderDeliveryWorker
 from scripts.returns_rma import CanonicalReturnService
@@ -457,6 +463,44 @@ class POLApplicationBoundary:
             ev["actor_user_id"] = str(ev["actor_user_id"]) if ev["actor_user_id"] else None
             ev["actor_organization_id"] = str(ev["actor_organization_id"]) if ev["actor_organization_id"] else None
         return {"order_id": order_id, "events": events}
+
+    # ── Fulfillment Methods (Stage 22) ─────────────────────────────
+
+    def vendor_mark_preparing(self, *, order_id):
+        return _mark_preparing(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            order_id=order_id,
+        )
+
+    def vendor_mark_ready(self, *, order_id):
+        return _mark_ready(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            order_id=order_id,
+        )
+
+    def vendor_dispatch_order(self, *, order_id, driver_name=None, vehicle_plate=None, driver_phone=None):
+        return _dispatch_order(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            order_id=order_id,
+            driver_name=driver_name,
+            vehicle_plate=vehicle_plate,
+            driver_phone=driver_phone,
+        )
+
+    def retailer_confirm_delivery(self, *, order_id, recipient_name=None):
+        return _confirm_delivery(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            order_id=order_id,
+            recipient_name=recipient_name,
+        )
 
     def feedback_list(self):
         if not self.context.organization_id:

@@ -131,3 +131,13 @@ class OrderQueryParams(APIBaseModel):
     status: str | None = None
     offset: int = Field(default=0, ge=0)
     limit: int = Field(default=50, ge=1, le=200)
+
+
+class DispatchRequest(APIBaseModel):
+    driver_name: str | None = Field(default=None, max_length=100)
+    vehicle_plate: str | None = Field(default=None, max_length=20)
+    driver_phone: str | None = Field(default=None, max_length=32)
+
+
+class DeliveryConfirmRequest(APIBaseModel):
+    recipient_name: str | None = Field(default=None, max_length=200)
