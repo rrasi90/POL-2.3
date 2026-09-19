@@ -35,6 +35,7 @@ EXPECTED_OPERATIONAL_ROUTES = {
 
 def test_fastapi_runtime_route_inventory_is_explicit():
     app = create_app()
+    # FastAPI includes nested routers in app.routes; only concrete routes expose methods.
     actual = {
         (method, route.path)
         for route in app.routes
