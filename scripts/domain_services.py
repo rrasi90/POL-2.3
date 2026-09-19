@@ -294,6 +294,24 @@ class AuthService:
         """, (session_id,))
 
     @staticmethod
+    def revoke_all_sessions(cur, user_id: str) -> int:
+        cur.execute("""
+            UPDATE user_sessions
+            SET status = 'REVOKED', revoked_at = now()
+            WHERE user_id = %s AND status = 'ACTIVE';
+        """, (user_id,))
+        return cur.rowcount
+
+    @staticmethod
+    def cleanup_expired_sessions(cur) -> int:
+        cur.execute("""
+            UPDATE user_sessions
+            SET status = 'EXPIRED'
+            WHERE status = 'ACTIVE' AND expires_at <= now();
+        """)
+        return cur.rowcount
+
+    @staticmethod
     def authorize_action(cur, user_id: str, active_org_id: str, allowed_roles: list) -> dict:
         """
         SSoT for authorization: derives active membership role from active organization context.

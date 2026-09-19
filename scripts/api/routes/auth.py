@@ -87,3 +87,12 @@ def revoke_session(
 ):
     AuthApplicationService.revoke_session(cur, token, str(session_id))
     return success_payload({"session_id": str(session_id), "status": "REVOKED"})
+
+
+@router.post("/logout-all")
+def logout_all(
+    token: str = Depends(get_bearer_token),
+    cur=Depends(get_db_cursor),
+):
+    revoked_count = AuthApplicationService.logout_all(cur, token)
+    return success_payload({"revoked_sessions": revoked_count, "status": "ALL_REVOKED"})

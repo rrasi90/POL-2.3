@@ -10,6 +10,7 @@ EXPECTED_BUSINESS_ROUTES = {
     ("POST", "/api/v1/auth/switch-organization"),
     ("DELETE", "/api/v1/auth/sessions/current"),
     ("DELETE", "/api/v1/auth/sessions/{session_id}"),
+    ("POST", "/api/v1/auth/logout-all"),
     ("POST", "/api/v1/baskets"),
     ("POST", "/api/v1/baskets/{basket_id}/items"),
     ("POST", "/api/v1/baskets/{basket_id}/allocation-preview"),

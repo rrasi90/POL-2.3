@@ -134,3 +134,8 @@ class AuthApplicationService:
             if not cur.fetchone():
                 raise AuthError("Session not found or not owned by authenticated user.")
         AuthService.revoke_session(cur, target_session_id)
+
+    @staticmethod
+    def logout_all(cur, access_token: str) -> int:
+        claims = validate_access_token(cur, access_token)
+        return AuthService.revoke_all_sessions(cur, claims["sub"])
