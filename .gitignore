@@ -18,6 +18,12 @@ build/
 .vscode/
 scratch/
 
+# Frontend build artifacts
+frontend/node_modules/
+frontend/.next/
+frontend/package-lock.json
+frontend/tsconfig.tsbuildinfo
+
 # Research runtime artifacts and local databases
 *.db
 *.sqlite
