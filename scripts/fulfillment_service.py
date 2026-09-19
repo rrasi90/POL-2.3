@@ -162,12 +162,16 @@ def dispatch_order(cur, *, user_id, organization_id, order_id, driver_name=None,
     }
 
 
-def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=None) -> dict:
-    """Transition DISPATCHED → DELIVERED. Creates proof of delivery."""
+def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=None,
+                     otp_code=None, proof_type="OTP_CODE", proof_media_id=None,
+                     issue_reported=None) -> dict:
+    """Transition DISPATCHED → DELIVERED. Creates proof of delivery with optional OTP verification.
+    Only the retailer (recipient) can confirm delivery."""
     order = _guard_transition(cur, order_id, {"DISPATCHED"})
+    _verify_retailer_actor(cur, user_id, organization_id, order["retailer_id"])
 
     cur.execute(
-        "SELECT id FROM deliveries WHERE order_id = %s AND delivery_status = 'IN_TRANSIT' LIMIT 1",
+        "SELECT id, driver_name FROM deliveries WHERE order_id = %s AND delivery_status = 'IN_TRANSIT' LIMIT 1",
         (order_id,),
     )
     delivery = cur.fetchone()
@@ -175,21 +179,32 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
         raise ValueError("No active delivery found for this order.")
     delivery_id = str(delivery["id"])
 
+    otp_verified = False
+    if otp_code:
+        cur.execute(
+            "SELECT 1 FROM deliveries WHERE id = %s AND delivery_otp = %s",
+            (delivery_id, otp_code),
+        )
+        otp_verified = cur.fetchone() is not None
+
     cur.execute(
         "UPDATE deliveries SET delivery_status = 'DELIVERED', delivered_at = now() WHERE id = %s",
         (delivery_id,),
     )
     cur.execute(
-        "INSERT INTO proof_of_delivery (id, delivery_id, accepted_by_name, accepted_at) "
-        "VALUES (%s, %s, %s, now())",
-        (str(uuid4()), delivery_id, recipient_name),
+        "INSERT INTO proof_of_delivery (id, delivery_id, accepted_by_name, accepted_at, "
+        "proof_type, otp_verified, proof_media_id, issue_reported_at_delivery) "
+        "VALUES (%s, %s, %s, now(), %s, %s, %s, %s IS NOT NULL)",
+        (str(uuid4()), delivery_id, recipient_name, proof_type, otp_verified,
+         proof_media_id, issue_reported),
     )
     cur.execute(
         "UPDATE orders SET order_status = 'DELIVERED', updated_at = now() WHERE id = %s",
         (order_id,),
     )
     _record_timeline(cur, order_id, "DISPATCHED", "DELIVERED", user_id, organization_id,
-                     {"delivery_id": delivery_id, "recipient_name": recipient_name})
+                     {"delivery_id": delivery_id, "recipient_name": recipient_name,
+                      "otp_verified": otp_verified, "proof_type": proof_type})
     _emit_outbox(
         cur,
         event_name="ORDER_DELIVERED",
@@ -200,6 +215,7 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
             "order_number": order["order_number"],
             "order_status": "DELIVERED",
             "delivery_id": delivery_id,
+            "otp_verified": otp_verified,
         },
         recipient_org_id=order["retailer_id"],
     )
@@ -207,6 +223,7 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
         "order_id": order_id,
         "order_status": "DELIVERED",
         "delivery_id": delivery_id,
+        "otp_verified": otp_verified,
     }
 
 
@@ -217,6 +234,15 @@ def _verify_vendor_actor(cur, user_id, organization_id, vendor_id):
     )
     if not cur.fetchone():
         raise PermissionError("Actor is not authorized for this vendor.")
+
+
+def _verify_retailer_actor(cur, user_id, organization_id, retailer_id):
+    cur.execute(
+        "SELECT 1 FROM retailers WHERE id = %s AND organization_id = %s",
+        (retailer_id, organization_id),
+    )
+    if not cur.fetchone():
+        raise PermissionError("Actor is not authorized for this retailer.")
 
 
 def _record_timeline(cur, order_id, from_status, to_status, actor_user_id,

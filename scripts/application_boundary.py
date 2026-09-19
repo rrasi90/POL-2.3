@@ -493,13 +493,19 @@ class POLApplicationBoundary:
             driver_phone=driver_phone,
         )
 
-    def retailer_confirm_delivery(self, *, order_id, recipient_name=None):
+    def retailer_confirm_delivery(self, *, order_id, recipient_name=None,
+                                    otp_code=None, proof_type="OTP_CODE",
+                                    proof_media_id=None, issue_reported=None):
         return _confirm_delivery(
             self.cur,
             user_id=self.context.user_id,
             organization_id=self.context.organization_id,
             order_id=order_id,
             recipient_name=recipient_name,
+            otp_code=otp_code,
+            proof_type=proof_type,
+            proof_media_id=proof_media_id,
+            issue_reported=issue_reported,
         )
 
     # ── Delivery Tracking Methods (Stage 23) ───────────────────────

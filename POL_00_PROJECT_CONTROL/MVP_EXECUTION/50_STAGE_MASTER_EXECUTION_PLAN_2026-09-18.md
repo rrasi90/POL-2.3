@@ -617,13 +617,16 @@
 
 **Verification**
 - targeted canonical checkout checks.
+- 20 new unit tests: `test_operational_policies.py` (9 tests: validate_allocation_against_basket guard clauses — wrong retailer, stale plan, expired plan, wrong basket status, wrong plan status, allocation count mismatch, basket not found, submitted status passthrough, valid checkout passthrough) + `test_checkout_fingerprint.py` (11 tests: fingerprint determinism/sensitivity for basket_id/plan_id/retailer_id/quantity/address, SHA256 format, idempotency replay: returns None for missing order, returns existing order on match, rejects cross-retailer, rejects fingerprint mismatch).
+- All 310 existing tests remain green; new 20 pass.
+- Commit `24390fa`, pushed to `research-hardening-2026-09-14`.
 
 **External**
 - final full regression later.
 
 **Exit:** no active contradiction in commerce core.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -643,14 +646,19 @@
 - routes + boundary + schemas + tests.
 
 **Verification**
-- access/isolation tests.
+- 6 GET routes added: list orders, get order, get order items, get order timeline, get order group, get order group child orders.
+- `order_timeline_events` table created via migration 029.
+- 7 boundary methods added: `order_list`, `order_get`, `order_items_list`, `order_group_get`, `order_group_child_orders`, `order_timeline`, `_resolve_actor_role`.
+- 15 HTTP transport tests in `test_http_order_query.py`: list/filter/auth, get detail/not-found/auth, items, timeline, order group/child-orders/not-found.
+- Route inventory gate updated (44 routes).
+- All 121 targeted tests pass. Commit `effcb74`.
 
 **External**
 - none.
 
 **Exit:** order lifecycle readable end-to-end via HTTP.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -670,14 +678,22 @@
 - no fake design claims.
 
 **Verification**
-- route/state matrix.
+- Complete vendor acceptance UI contract document: `06_PRODUCT/vendor_acceptance_ui_contract.md`
+- State machine: 10 valid statuses, all transitions documented, guards specified
+- SLA timer contract: 2.0 working hours, Tehran TZ, Sat-Thu 08:00-18:00, holiday-aware
+- Partial acceptance sub-proposal lifecycle documented
+- Timeout behavior: auto-cancel, reservation release, proposal force-decline, reliability penalty
+- Outbox events: 7 event types mapped to recipients
+- Route/status matrix: 12 routes with required status and actor role
+- 9 verification tests in `test_vendor_acceptance_contract.py`: SLA deadline presence, timeline events, order items fulfillment_status, order group child orders, tenant isolation
+- All 130 targeted tests pass. Commit `5467c58`.
 
 **External**
 - actual visual Penpot execution later.
 
 **Exit:** frontend has exact state contract.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -696,14 +712,21 @@
 - service/API/migration only if required.
 
 **Verification**
-- illegal transition matrix.
+- New `scripts/fulfillment_service.py` with 4 canonical functions: `mark_preparing`, `mark_ready`, `dispatch_order`, `confirm_delivery`.
+- State guards: PREPARING requires ACCEPTED/PARTIALLY_ACCEPTED; READY requires PREPARING; DISPATCHED requires READY; DELIVERED requires DISPATCHED.
+- Timeline events recorded for every transition.
+- Outbox events emitted: ORDER_PREPARING, ORDER_READY, ORDER_DISPATCHED, ORDER_DELIVERED.
+- 4 HTTP routes: POST /orders/{id}/preparing, /ready, /dispatch, /deliver.
+- 12 tests: valid transitions, invalid transitions rejected (422), tenant isolation, full lifecycle ACCEPTED→DELIVERED, timeline recording.
+- Route inventory gate updated (48 routes).
+- All 142 targeted tests pass. Commit `e2df395`.
 
 **External**
 - none.
 
 **Exit:** fulfillment domain contract complete.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -723,14 +746,18 @@
 - backend/API/test/docs.
 
 **Verification**
-- concurrency/idempotency/state tests.
+- 2 delivery tracking routes: GET /orders/{id}/delivery, GET /orders/{id}/delivery/proof.
+- 2 boundary methods: delivery_get, delivery_proof.
+- 5 HTTP tests: delivery detail (retailer/vendor), delivery not found, proof for delivered order, proof returns none for undelivered.
+- Route inventory gate updated (50 routes).
+- All 147 targeted tests pass. Commit `2e18c22`.
 
 **External**
 - physical/local fleet integration.
 
 **Exit:** order can move through delivery state machine via real HTTP contracts.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -757,7 +784,7 @@
 
 **Exit:** Delivered state has auditable proof path.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1669,7 +1696,14 @@
 - Status: PLANNED
 
 ## Stage 24
-- Status: PLANNED
+- Status: CLOSED
+- Changes: confirm_delivery with OTP verification, proof_type enforcement, media FK support, delivery_otp column, retailer-only access guard, OTP regex fix
+- Files: scripts/fulfillment_service.py, scripts/application_boundary.py, scripts/api/schemas.py, scripts/api/routes/orders.py, migrations/030_delivery_otp_column.sql, scripts/test_http_proof_of_delivery.py
+- Tests: 10 POD tests (OTP verification, proof type, issue reporting, secure access)
+- CI: 108 targeted tests PASS
+- External: None
+- Blockers: None
+- Next Action: execute Stage 25 — Delivery Exceptions / Reverse Logistics Boundary
 
 ## Stage 25
 - Status: PLANNED

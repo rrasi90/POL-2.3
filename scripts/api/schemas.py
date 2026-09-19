@@ -141,3 +141,7 @@ class DispatchRequest(APIBaseModel):
 
 class DeliveryConfirmRequest(APIBaseModel):
     recipient_name: str | None = Field(default=None, max_length=200)
+    otp_code: str | None = Field(default=None, pattern=r"^\d{6}$")
+    proof_type: str = Field(default="OTP_CODE", max_length=30)
+    proof_media_id: str | None = Field(default=None, max_length=64)
+    issue_reported: str | None = Field(default=None, max_length=500)

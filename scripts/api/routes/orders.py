@@ -236,12 +236,19 @@ def confirm_delivery(
     payload: DeliveryConfirmRequest | None = None,
     boundary=Depends(get_application_boundary),
 ):
-    return success_payload(
-        boundary.retailer_confirm_delivery(
-            order_id=str(order_id),
-            recipient_name=payload.recipient_name if payload else None,
-        )
-    )
+    kwargs = {"order_id": str(order_id)}
+    if payload:
+        if payload.recipient_name:
+            kwargs["recipient_name"] = payload.recipient_name
+        if payload.otp_code:
+            kwargs["otp_code"] = payload.otp_code
+        if payload.proof_type:
+            kwargs["proof_type"] = payload.proof_type
+        if payload.proof_media_id:
+            kwargs["proof_media_id"] = payload.proof_media_id
+        if payload.issue_reported:
+            kwargs["issue_reported"] = payload.issue_reported
+    return success_payload(boundary.retailer_confirm_delivery(**kwargs))
 
 
 # ── Delivery Tracking Routes (Stage 23) ────────────────────────────
