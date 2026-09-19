@@ -60,9 +60,9 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 - **Checks:**
   1. Python runtime version `>= 3.11`.
   2. Python dependency availability (`psycopg2`, `pytest`).
-  3. Complete SQL migration chain, dynamically discovered by `scripts/migration_runner.py` (current repository range: `001` → `028`).
+  3. Complete SQL migration chain, dynamically discovered by `scripts/migration_runner.py` (current repository range: `001` → `031`).
   4. PostgreSQL 18 connection on port 5432/5433 (via `POL_PG_PORT` or `PGPORT`).
-  5. Target database schema integrity (current CI baseline: 93 public base tables).
+  5. Target database schema integrity (current baseline: 95 public base tables).
   6. Trigger integrity (`trg_enforce_org_membership_role_invariant`).
 - **CLI Commands:**
   ```bash
