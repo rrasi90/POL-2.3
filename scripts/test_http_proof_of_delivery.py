@@ -71,14 +71,14 @@ def _seed_dispatched(suffix, otp="123456"):
             oi = str(uuid4()); di = str(uuid4())
 
             cur.execute("INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, \'R\', \'RETAILER_OWNER\')",
-                        (ru, f"+9891{uuid4().int % 100000000:08d}"))
+                        (ru, f"+9891{uuid4().hex[:8]}"))
             cur.execute("INSERT INTO organizations (id, name, org_type, status) VALUES (%s, \'RO\', \'RETAILER\', \'ACTIVE\')", (ro,))
             cur.execute("INSERT INTO organization_memberships (id, organization_id, user_id, role, status) VALUES (%s, %s, %s, \'RETAILER_OWNER\', \'ACTIVE\')",
                         (str(uuid4()), ro, ru))
             cur.execute("INSERT INTO retailers (id, user_id, organization_id, store_name, city, neighborhood, address) VALUES (%s, %s, %s, \'S\', \'Ahvaz\', \'N\', \'A\')",
                         (ri, ru, ro))
             cur.execute("INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, \'V\', \'VENDOR_OWNER\')",
-                        (vu, f"+9891{uuid4().int % 100000000:08d}"))
+                        (vu, f"+9891{uuid4().hex[:8]}"))
             cur.execute("INSERT INTO organizations (id, name, org_type, status) VALUES (%s, \'VO\', \'VENDOR\', \'ACTIVE\')", (vo,))
             cur.execute("INSERT INTO organization_memberships (id, organization_id, user_id, role, status) VALUES (%s, %s, %s, \'VENDOR_OWNER\', \'ACTIVE\')",
                         (str(uuid4()), vo, vu))

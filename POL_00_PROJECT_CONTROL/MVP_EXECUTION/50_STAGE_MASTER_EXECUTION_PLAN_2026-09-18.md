@@ -1020,7 +1020,7 @@
 
 **Exit:** only external credential certification remains if provider access unavailable.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1046,7 +1046,7 @@
 
 **Exit:** backend operational control surface complete.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1779,10 +1779,24 @@
 - Status: PLANNED
 
 ## Stage 33
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Notification provider adapters — MockProvider, SandboxProvider, ProviderResult, get_provider factory
+- Files: scripts/notification_providers.py, scripts/test_notification_providers.py
+- Tests: 12 provider tests, 192 targeted tests PASS
+- CI: PASS
+- External: None (live credentials pending)
+- Blockers: None
+- Next Action: execute Stage 34
 
 ## Stage 34
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Admin audit logs + exceptions dashboard (2 routes), Referral CRUD (4 routes), 6 boundary methods, 9 tests
+- Files: scripts/api/routes/admin.py, scripts/api/routes/referrals.py, scripts/application_boundary.py, scripts/api/schemas.py, scripts/api/main.py, scripts/test_http_admin_referrals.py, scripts/test_api_boundary_route_inventory.py
+- Tests: 192 targeted tests PASS
+- CI: PASS
+- External: None
+- Blockers: None
+- Next Action: execute Stage 35
 
 ## Stage 35
 - Status: PLANNED

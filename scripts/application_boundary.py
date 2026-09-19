@@ -1843,6 +1843,260 @@ class POLApplicationBoundary:
             self.cur, str(vendor["id"]), self.context.user_id, confirmation_date,
         )
 
+    # ── Admin Audit & Exception Dashboard (Stage 34) ──────────────
+
+    def admin_audit_logs_list(self, *, offset=0, limit=50):
+        self._require_ops_context()
+        self.cur.execute(
+            """
+            SELECT al.id, al.actor_user_id, al.action, al.target_entity_type,
+                   al.target_entity_id, al.state_before, al.state_after,
+                   al.reason, al.ip_address, al.correlation_id, al.created_at,
+                   u.full_name AS actor_name
+            FROM admin_audit_logs al
+            JOIN users u ON u.id = al.actor_user_id
+            ORDER BY al.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            (limit, offset),
+        )
+        rows = self.cur.fetchall()
+        return [
+            {
+                "id": str(r["id"]),
+                "actor_user_id": str(r["actor_user_id"]),
+                "actor_name": r["actor_name"],
+                "action": r["action"],
+                "target_entity_type": r["target_entity_type"],
+                "target_entity_id": str(r["target_entity_id"]) if r["target_entity_id"] else None,
+                "state_before": r["state_before"],
+                "state_after": r["state_after"],
+                "reason": r["reason"],
+                "ip_address": r["ip_address"],
+                "correlation_id": r["correlation_id"],
+                "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+            }
+            for r in rows
+        ]
+
+    def admin_exceptions_dashboard(self):
+        self._require_ops_context()
+
+        self.cur.execute(
+            """
+            SELECT count(*) AS total,
+                   count(*) FILTER (WHERE status IN ('REPORTED','UNDER_REVIEW')) AS open_count,
+                   count(*) FILTER (WHERE status = 'RESOLVED') AS resolved_count,
+                   count(*) FILTER (WHERE status = 'ESCALATED') AS escalated_count
+            FROM delivery_exceptions
+            """
+        )
+        de = dict(self.cur.fetchone())
+
+        self.cur.execute(
+            """
+            SELECT count(*) AS total,
+                   count(*) FILTER (WHERE dispute_status IN ('OPEN','INVESTIGATING')) AS open_disputes
+            FROM disputes
+            """
+        )
+        dp = dict(self.cur.fetchone())
+
+        self.cur.execute(
+            """
+            SELECT count(*) AS total,
+                   count(*) FILTER (WHERE status = 'OPEN') AS open_cases
+            FROM support_cases
+            """
+        )
+        sc = dict(self.cur.fetchone())
+
+        return {
+            "delivery_exceptions": de,
+            "disputes": dp,
+            "support_cases": sc,
+        }
+
+    # ── Referral Management (Stage 34) ────────────────────────────
+
+    def referral_create(self, *, referred_retailer_id, referral_code):
+        if not self.context.organization_id:
+            raise PermissionError("Referral creation requires an organization context.")
+        self.cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN organizations o ON o.id = om.organization_id
+            WHERE om.user_id = %s
+              AND om.organization_id = %s
+              AND om.status = 'ACTIVE'
+              AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
+              AND o.org_type = 'VENDOR'
+              AND o.status = 'ACTIVE'
+            LIMIT 1;
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        if not self.cur.fetchone():
+            raise PermissionError("Only active vendor members may create referrals.")
+
+        self.cur.execute(
+            "SELECT id FROM vendors WHERE organization_id = %s AND status = 'ACTIVE'",
+            (self.context.organization_id,),
+        )
+        vendor = self.cur.fetchone()
+        if not vendor:
+            raise ValueError("No active vendor found for this organization.")
+
+        self.cur.execute(
+            "SELECT id FROM retailers WHERE id = %s",
+            (referred_retailer_id,),
+        )
+        if not self.cur.fetchone():
+            raise ValueError("Referred retailer not found.")
+
+        referral_id = str(uuid4())
+        self.cur.execute(
+            """
+            INSERT INTO vendor_referrals
+                (id, vendor_id, referral_code, status, created_by_user_id)
+            VALUES (%s, %s, %s, 'ACTIVE', %s)
+            RETURNING id, vendor_id, referral_code, status, created_at
+            """,
+            (referral_id, str(vendor["id"]), referral_code, self.context.user_id),
+        )
+        row = self.cur.fetchone()
+        return {
+            "id": str(row["id"]),
+            "vendor_id": str(row["vendor_id"]),
+            "referral_code": row["referral_code"],
+            "status": row["status"],
+            "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+        }
+
+    def referral_list(self, *, offset=0, limit=50):
+        if not self.context.organization_id:
+            raise PermissionError("Referral listing requires an organization context.")
+        self.cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN organizations o ON o.id = om.organization_id
+            WHERE om.user_id = %s
+              AND om.organization_id = %s
+              AND om.status = 'ACTIVE'
+              AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
+              AND o.org_type = 'VENDOR'
+              AND o.status = 'ACTIVE'
+            LIMIT 1;
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        if not self.cur.fetchone():
+            raise PermissionError("Only active vendor members may list referrals.")
+
+        self.cur.execute(
+            "SELECT id FROM vendors WHERE organization_id = %s AND status = 'ACTIVE'",
+            (self.context.organization_id,),
+        )
+        vendor = self.cur.fetchone()
+        if not vendor:
+            return {"referrals": [], "limit": limit, "offset": offset}
+
+        self.cur.execute(
+            """
+            SELECT id, vendor_id, referral_code, status, redemption_count,
+                   created_at, updated_at
+            FROM vendor_referrals
+            WHERE vendor_id = %s
+            ORDER BY created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            (str(vendor["id"]), limit, offset),
+        )
+        rows = self.cur.fetchall()
+        referrals = [
+            {
+                "id": str(r["id"]),
+                "vendor_id": str(r["vendor_id"]),
+                "referral_code": r["referral_code"],
+                "status": r["status"],
+                "redemption_count": int(r["redemption_count"]),
+                "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+                "updated_at": r["updated_at"].isoformat() if r["updated_at"] else None,
+            }
+            for r in rows
+        ]
+        return {"referrals": referrals, "limit": limit, "offset": offset}
+
+    def referral_get(self, *, referral_id):
+        if not self.context.organization_id:
+            raise PermissionError("Referral query requires an organization context.")
+        self.cur.execute(
+            """
+            SELECT vr.id, vr.vendor_id, vr.referral_code, vr.status,
+                   vr.redemption_count, vr.created_at, vr.updated_at
+            FROM vendor_referrals vr
+            JOIN vendors v ON v.id = vr.vendor_id
+            WHERE vr.id = %s AND v.organization_id = %s
+            """,
+            (referral_id, self.context.organization_id),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError("Referral not found.")
+        return {
+            "id": str(row["id"]),
+            "vendor_id": str(row["vendor_id"]),
+            "referral_code": row["referral_code"],
+            "status": row["status"],
+            "redemption_count": int(row["redemption_count"]),
+            "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+            "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+        }
+
+    def referral_redeem(self, *, referral_id):
+        if not self.context.organization_id:
+            raise PermissionError("Referral redemption requires an organization context.")
+        self.cur.execute(
+            """
+            SELECT vr.id, vr.vendor_id, vr.status, vr.redemption_count,
+                   vr.max_redemptions
+            FROM vendor_referrals vr
+            JOIN vendors v ON v.id = vr.vendor_id
+            WHERE vr.id = %s AND v.organization_id = %s
+            """,
+            (referral_id, self.context.organization_id),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError("Referral not found.")
+        referral = dict(row)
+        if referral["status"] != "ACTIVE":
+            raise ValueError(f"Referral is in '{referral['status']}' status and cannot be redeemed.")
+        if referral["max_redemptions"] is not None and referral["redemption_count"] >= referral["max_redemptions"]:
+            raise ValueError("Referral redemption limit reached.")
+        self.cur.execute(
+            """
+            UPDATE vendor_referrals
+            SET status = 'ACTIVE',
+                redemption_count = redemption_count + 1,
+                updated_at = now()
+            WHERE id = %s
+            RETURNING id, vendor_id, referral_code, status, redemption_count, updated_at
+            """,
+            (referral_id,),
+        )
+        updated = self.cur.fetchone()
+        return {
+            "id": str(updated["id"]),
+            "vendor_id": str(updated["vendor_id"]),
+            "referral_code": updated["referral_code"],
+            "status": updated["status"],
+            "redemption_count": int(updated["redemption_count"]),
+            "updated_at": updated["updated_at"].isoformat() if updated["updated_at"] else None,
+        }
+
     def daily_inventory_confirm_with_changes(self, confirmation_date: str, changes: list):
         """Confirm with item quantity changes (tenant-scoped)."""
         from scripts import daily_inventory_boundary
@@ -1858,3 +2112,145 @@ class POLApplicationBoundary:
         return daily_inventory_boundary.confirm_with_changes(
             self.cur, str(vendor["id"]), self.context.user_id, confirmation_date, changes,
         )
+
+    # ── Field Tasks / Vendor-Retailer Onboarding (Stage 35) ────────
+
+    def field_tasks_list(self, *, status=None, offset=0, limit=50):
+        """List field tasks assigned to the current user."""
+        params: list = [
+            self.context.user_id,
+        ]
+        where = "WHERE ft.assigned_to_user_id = %s"
+        if status:
+            params.append(status)
+            where += " AND ft.status = %s"
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT ft.id, ft.task_type, ft.target_organization_id,
+                   ft.assigned_to_user_id, ft.status, ft.due_date,
+                   ft.completed_at, ft.notes, ft.created_at, ft.updated_at
+            FROM field_tasks ft
+            {where}
+            ORDER BY ft.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            params,
+        )
+        rows = self.cur.fetchall()
+        tasks = []
+        for r in rows:
+            d = dict(r)
+            d["id"] = str(d["id"])
+            d["target_organization_id"] = str(d["target_organization_id"]) if d["target_organization_id"] else None
+            d["assigned_to_user_id"] = str(d["assigned_to_user_id"])
+            d["completed_at"] = d["completed_at"].isoformat() if d["completed_at"] else None
+            d["due_date"] = d["due_date"].isoformat() if d["due_date"] else None
+            d["created_at"] = d["created_at"].isoformat() if d["created_at"] else None
+            d["updated_at"] = d["updated_at"].isoformat() if d["updated_at"] else None
+            tasks.append(d)
+        return {"tasks": tasks, "limit": limit, "offset": offset}
+
+    def field_task_get(self, *, task_id):
+        """Get a single field task (must be assigned to the current user)."""
+        self.cur.execute(
+            """
+            SELECT ft.id, ft.task_type, ft.target_organization_id,
+                   ft.assigned_to_user_id, ft.status, ft.due_date,
+                   ft.completed_at, ft.notes, ft.created_at, ft.updated_at
+            FROM field_tasks ft
+            WHERE ft.id = %s
+            """,
+            (task_id,),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError("Field task not found.")
+        task = dict(row)
+        if str(task["assigned_to_user_id"]) != self.context.user_id:
+            raise PermissionError("Access denied.")
+        task["id"] = str(task["id"])
+        task["target_organization_id"] = str(task["target_organization_id"]) if task["target_organization_id"] else None
+        task["assigned_to_user_id"] = str(task["assigned_to_user_id"])
+        task["completed_at"] = task["completed_at"].isoformat() if task["completed_at"] else None
+        task["due_date"] = task["due_date"].isoformat() if task["due_date"] else None
+        task["created_at"] = task["created_at"].isoformat() if task["created_at"] else None
+        task["updated_at"] = task["updated_at"].isoformat() if task["updated_at"] else None
+        return task
+
+    def field_task_update(self, *, task_id, status=None, notes=None):
+        """Update a field task's status or notes (must be assigned to the current user)."""
+        self.cur.execute(
+            "SELECT id, assigned_to_user_id, status FROM field_tasks WHERE id = %s",
+            (task_id,),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError("Field task not found.")
+        task = dict(row)
+        if str(task["assigned_to_user_id"]) != self.context.user_id:
+            raise PermissionError("Access denied.")
+        updates = []
+        params = []
+        if status is not None:
+            updates.append("status = %s")
+            params.append(status)
+            if status == "COMPLETED":
+                updates.append("completed_at = now()")
+        if notes is not None:
+            updates.append("notes = %s")
+            params.append(notes)
+        if not updates:
+            return self.field_task_get(task_id=task_id)
+        updates.append("updated_at = now()")
+        params.append(task_id)
+        self.cur.execute(
+            f"""
+            UPDATE field_tasks SET {', '.join(updates)}
+            WHERE id = %s
+            RETURNING id, task_type, target_organization_id, assigned_to_user_id,
+                      status, due_date, completed_at, notes, created_at, updated_at
+            """,
+            params,
+        )
+        updated = self.cur.fetchone()
+        d = dict(updated)
+        d["id"] = str(d["id"])
+        d["target_organization_id"] = str(d["target_organization_id"]) if d["target_organization_id"] else None
+        d["assigned_to_user_id"] = str(d["assigned_to_user_id"])
+        d["completed_at"] = d["completed_at"].isoformat() if d["completed_at"] else None
+        d["due_date"] = d["due_date"].isoformat() if d["due_date"] else None
+        d["created_at"] = d["created_at"].isoformat() if d["created_at"] else None
+        d["updated_at"] = d["updated_at"].isoformat() if d["updated_at"] else None
+        return d
+
+    def field_task_create(self, *, task_type, assigned_to_user_id, target_organization_id=None, notes=None):
+        """Create a field task (admin/operator only)."""
+        self._require_ops_context()
+        self.cur.execute(
+            """
+            SELECT 1 FROM users WHERE id = %s
+            """,
+            (assigned_to_user_id,),
+        )
+        if not self.cur.fetchone():
+            raise ValueError("Assigned user not found.")
+        self.cur.execute(
+            """
+            INSERT INTO field_tasks (task_type, assigned_to_user_id, target_organization_id, notes)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id, task_type, target_organization_id, assigned_to_user_id,
+                      status, due_date, completed_at, notes, created_at, updated_at
+            """,
+            (task_type, assigned_to_user_id, target_organization_id, notes),
+        )
+        row = self.cur.fetchone()
+        d = dict(row)
+        d["id"] = str(d["id"])
+        d["target_organization_id"] = str(d["target_organization_id"]) if d["target_organization_id"] else None
+        d["assigned_to_user_id"] = str(d["assigned_to_user_id"])
+        d["completed_at"] = d["completed_at"].isoformat() if d["completed_at"] else None
+        d["due_date"] = d["due_date"].isoformat() if d["due_date"] else None
+        d["created_at"] = d["created_at"].isoformat() if d["created_at"] else None
+        d["updated_at"] = d["updated_at"].isoformat() if d["updated_at"] else None
+        return d

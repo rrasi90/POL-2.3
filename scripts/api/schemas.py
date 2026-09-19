@@ -221,3 +221,12 @@ class SupportCaseTransitionRequest(APIBaseModel):
     target_status: str = Field(min_length=1, max_length=30)
     resolution_code: str | None = Field(default=None, max_length=50)
     resolution_note: str | None = Field(default=None, max_length=2000)
+
+
+class ReferralCreateRequest(APIBaseModel):
+    referred_retailer_id: UUID
+    referral_code: str = Field(min_length=1, max_length=32)
+
+
+class ReferralRedeemRequest(APIBaseModel):
+    pass

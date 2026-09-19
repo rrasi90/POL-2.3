@@ -83,6 +83,12 @@ EXPECTED_BUSINESS_ROUTES = {
     ("GET", "/api/v1/orders/{order_id}/invoice"),
     ("GET", "/api/v1/vendors/settlements"),
     ("GET", "/api/v1/settlements/{settlement_id}"),
+    ("GET", "/api/v1/admin/audit-logs"),
+    ("GET", "/api/v1/admin/exceptions/dashboard"),
+    ("POST", "/api/v1/referrals"),
+    ("GET", "/api/v1/referrals"),
+    ("GET", "/api/v1/referrals/{referral_id}"),
+    ("POST", "/api/v1/referrals/{referral_id}/redeem"),
 }
 
 EXPECTED_OPERATIONAL_ROUTES = {
