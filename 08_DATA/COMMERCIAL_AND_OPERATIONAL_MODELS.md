@@ -33,7 +33,7 @@ CREATE TABLE vendor_reliability_events (
 | `DAILY_CONFIRMATION_MISSED` | عدم تأیید تا موعد مقرر | **-۱۰.۰** | تنزل وضعیت موجودی به `STALE` |
 | `ORDER_FULFILLED_ON_TIME` | ارسال دقیق در بازه SLA | **+۱۰.۰** | ارتقای بنکدار به رتبه «تأمین‌کننده برتر» |
 | `ORDER_CANCELLED_BY_VENDOR` | لغو سفارش توسط بنکدار به دلیل کسری | **-۳۰.۰** | جریمه در رتبه‌بندی، بررسی توسط تیم عملیات |
-| `DISPUTE_FOUND_VENDOR_FAULT` | اثبات مغایرت یا آسیب بار در حکمیت | **-۲۵.۰** | کسر از کیف پول امانی و جریمه امتیازی |
+| `DISPUTE_FOUND_VENDOR_FAULT` | اثبات مغایرت یا آسیب بار در حکمیت | **-۲۵.۰** | کسر مستقیم از حساب فروشنده و جریمه امتیازی |
 | `INVENTORY_DISCREPANCY_REPORTED`| گزارش مغایرت تعداد بار تحویلی | **-۱۵.۰** | الزام به بازبینی دستی موجودی انبار |
 
 ---
@@ -107,4 +107,4 @@ CREATE TABLE returns (
 ```
 
 ### چرخه عمر مرجوعی:
-`REQUESTED` ➔ `APPROVED` ➔ `COLLECTED` (توسط راننده در سفر بعدی) ➔ `RECEIVED_AT_VENDOR` ➔ `REFUNDED` (شارژ کیف پول سوپرمارکت).
+`REQUESTED` ➔ `APPROVED` ➔ `COLLECTED` (توسط راننده در سفر بعدی) ➔ `RECEIVED_AT_VENDOR` ➔ `REFUNDED` (بازپرداخت مستقیم فروشنده).

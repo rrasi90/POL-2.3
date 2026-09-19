@@ -198,7 +198,7 @@ c:\Star\pol\2.2 - antigravity\
 ## ۱۳. معماری پرداخت، تسویه و حل اختلاف (Payment, Settlement & Dispute)
 
 * **پرداخت غیرامانی (Non-Custodial):** مبالغ خرید بدون توقف در حساب پُل، مستقیماً به کارت‌خوان، حساب یا چک صیادی بنکدار منتقل می‌شود.
-* **وضعیت‌های پرداخت در جدول `payments`:** `UNPAID`, `PENDING_VERIFICATION`, `PAID_DIRECT`, `PAID_GATEWAY`, `FAILED`, `REFUNDED`.
+* **وضعیت‌های پرداخت در جدول `payments`:** `PENDING`, `INITIATED`, `SUCCESS`, `FAILED`, `REFUNDED`.
 * **محاسبه تسویه (Gross-to-Net Settlement):**
   $$\text{Net Settlement} = \text{Delivered Subtotal} - \text{Dispute Deductions} - \text{Platform Fee} + \text{Prior Adjustments}$$
 * در صورت تایید اختلاف به نفع سوپرمارکت، رکورد `settlement_adjustments` ثبت شده و از صورت‌حساب دوره بعدی بنکدار کسر می‌گردد.

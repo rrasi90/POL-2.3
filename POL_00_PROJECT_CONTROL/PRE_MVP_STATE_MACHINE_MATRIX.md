@@ -184,8 +184,8 @@ This document specifies the complete, exhaustive state transition rules for all 
 | From State | Allowed To State | Actor | Triggering Action | Required Fields | DB Mutation | Domain Event | Side Effects |
 |---|---|---|---|---|---|---|---|
 | `[*] (None)` | `PENDING` | Ops Admin | Dispute resolved in retailer favor | `order_id`, `dispute_id`, `amount_toman > 0`, `refund_method` | `INSERT INTO refunds` | `refund_created` | Creates pending refund voucher |
-| `PENDING` | `APPROVED` | Finance Lead | Finance approves disbursement | `approved_by_user_id` | `UPDATE refunds SET status='APPROVED'` | `refund_approved` | Scheduled for wallet or cash direct credit |
-| `APPROVED / PENDING` | `COMPLETED` | Finance / System | Vendor direct cash deduction or wallet credit executed | `completed_at` | `UPDATE refunds SET status='COMPLETED'` | `refund_completed` | Settles retailer claim; logs ledger entry |
+| `PENDING` | `APPROVED` | Finance Lead | Finance approves disbursement | `approved_by_user_id` | `UPDATE refunds SET status='APPROVED'` | `refund_approved` | Scheduled for settlement credit or cash direct credit |
+| `APPROVED / PENDING` | `COMPLETED` | Finance / System | Vendor direct cash deduction or settlement credit executed | `completed_at` | `UPDATE refunds SET status='COMPLETED'` | `refund_completed` | Settles retailer claim; logs ledger entry |
 | `PENDING` | `REJECTED` | Finance Lead | Duplicate or invalid refund claim | Rejection justification | `UPDATE refunds SET status='REJECTED'` | `refund_rejected` | Refund cancelled; dispute re-evaluated |
 
 - **Forbidden Transitions:**

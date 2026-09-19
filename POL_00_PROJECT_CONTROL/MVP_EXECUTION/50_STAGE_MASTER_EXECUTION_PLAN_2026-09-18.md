@@ -834,7 +834,7 @@
 
 **Exit:** active docs use one canonical financial model.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1716,7 +1716,14 @@
 - Next Action: execute Stage 26 — Payment Architecture & Wording Closure
 
 ## Stage 26
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Reconciled payment states in PRD (UNPAID→PENDING, PAID_DIRECT→SUCCESS), removed wallet/escrow language from 9 files across 06_PRODUCT/, 08_DATA/, and POL_00_PROJECT_CONTROL/
+- Files: 06_PRODUCT/PRD.md, 06_PRODUCT/Order_Lifecycle.md, 06_PRODUCT/Product_Vision.md, 08_DATA/Event_Architecture.md, 08_DATA/COMMERCIAL_AND_OPERATIONAL_MODELS.md, POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md, POL_00_PROJECT_CONTROL/CANONICAL_AUDIT_REPORT.md, POL_00_PROJECT_CONTROL/PRE_MVP_STATE_MACHINE_MATRIX.md
+- Tests: 120 targeted tests PASS (no code changes)
+- CI: PASS
+- External: None
+- Blockers: None
+- Next Action: execute Stage 27
 
 ## Stage 27
 - Status: PLANNED

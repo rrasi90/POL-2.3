@@ -88,7 +88,7 @@ export interface DomainEvent<T = Record<string, any>> {
 | **پرداخت** | `payment_failed` | ثبت عدم موفقیت یا مغایرت پرداخت | Delivery / Vendor | کارتابل پیگیری مالی و اخطار به خریدار |
 | **تسویه مالی** | `settlement_created` | صدور صورت‌حساب ناخالص و خالص بنکدار | Settlement Engine | پنل مالی بنکدار، لاگ حسابداری پلتفرم |
 | **تسویه مالی** | `settlement_completed` | تایید نهایی تسویه حساب سفارش | Settlement Worker | بایگانی پرونده مالی سفارش |
-| **استرداد وجه** | `refund_created` | ثبت طلب خریدار ناشی از مغایرت تاییدشده | Finance Module | کیف پول سوپرمارکت یا حساب بانکی |
+| **استرداد وجه** | `refund_created` | ثبت طلب خریدار ناشی از مغایرت تاییدشده | Finance Module | بازپرداخت مستقیم فروشنده یا حساب بانکی |
 | **کاتالوگ** | `product_created` | ایجاد محصول مستر جدید در کاتالوگ مرجع | Ops / Admin Portal | ایندکس سرچ تری‌گرام، کشینگ کاتالوگ |
 | **کاتالوگ** | `product_barcode_scanned` | اسکن بارکد توسط بنکدار یا ویزیتور | Vendor App / Scanner | سرویس تطبیق کاتالوگ (Matching Engine) |
 | **کاتالوگ** | `product_match_confirmed` | تایید تطبیق بارکد اسکن‌شده با مستر کالا | Vendor App / Ops Portal | ایجاد نگاشت Vendor SKU به Master SKU |

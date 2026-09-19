@@ -139,7 +139,7 @@
 7. **تحویل فیزیکی و ثبت سند تحویل (Proof of Delivery - PoD):**
    - بار به سوپرمارکت تحویل داده شده و با لمس دکمه «تحویل گرفتم» یا امضا/کد تایید، رکورد `proof_of_delivery` ثبت و وضعیت سفارش به `DELIVERED` تبدیل می‌شود.
 8. **پرداخت و تسویه غیرامانی (Payment & Non-Custodial Settlement):**
-   - پرداخت به صورت مستقیم به حساب بنکدار یا نقد/کارت‌خوان پای بار انجام شده و وضعیت پرداخت در جدول `payments` ثبت می‌شود (`UNPAID`, `PENDING_VERIFICATION`, `PAID_DIRECT`).
+   - پرداخت به صورت مستقیم به حساب بنکدار یا نقد/کارت‌خوان پای بار انجام شده و وضعیت پرداخت در جدول `payments` ثبت می‌شود (`PENDING`, `INITIATED`, `SUCCESS`).
    - رکورد تسویه در جدول `settlements` با محاسبه Gross-to-Net و کسر کارمزد پلتفرم ایجاد می‌شود.
 
 ---
@@ -156,7 +156,7 @@ CREATED ──► SUBMITTED ──► ACCEPTED / PARTIALLY_ACCEPTED ──► PR
 CANCELLED     REJECTED
 
 [ ۲. وضعیت پرداخت - payments.payment_status ]
-UNPAID ──► PENDING_VERIFICATION ──► PAID_DIRECT / PAID_GATEWAY
+PENDING ──► INITIATED ──► SUCCESS
    │
    ▼
 FAILED / REFUNDED
