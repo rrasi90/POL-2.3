@@ -376,3 +376,125 @@ class POLApplicationBoundary:
         )
         if not self.cur.fetchone():
             raise PermissionError("Only active operator staff may execute operational workers.")
+
+    def catalog_search(self, query: str, category_id: str | None = None, limit: int = 20):
+        self.cur.execute(
+            """
+            SELECT p.id, p.master_sku, p.canonical_name_fa, p.base_unit,
+                   p.default_pack_unit, p.default_pack_quantity,
+                   b.name_fa AS brand_name, c.name_fa AS category_name,
+                   sc.name_fa AS subcategory_name,
+                   COALESCE(
+                       similarity(p.canonical_name_fa, %s), 0
+                   ) AS relevance
+            FROM products p
+            JOIN brands b ON b.id = p.brand_id
+            JOIN categories c ON c.id = p.category_id
+            JOIN subcategories sc ON sc.id = p.subcategory_id
+            WHERE p.is_active = TRUE
+              AND (
+                  p.canonical_name_fa ILIKE %s
+                  OR b.name_fa ILIKE %s
+                  OR p.master_sku ILIKE %s
+                  OR similarity(p.canonical_name_fa, %s) > 0.15
+              )
+              AND (%s::uuid IS NULL OR p.category_id = %s::uuid)
+            ORDER BY relevance DESC, p.canonical_name_fa
+            LIMIT %s
+            """,
+            (query, f"%{query}%", f"%{query}%", f"%{query}%", query, category_id, category_id, limit),
+        )
+        return self.cur.fetchall()
+
+    def catalog_categories(self):
+        self.cur.execute(
+            """
+            SELECT c.id, c.name_fa, c.slug, c.icon_url, c.display_order,
+                   COALESCE(
+                       json_agg(
+                           json_build_object(
+                               'id', sc.id, 'name_fa', sc.name_fa,
+                               'slug', sc.slug, 'display_order', sc.display_order
+                           ) ORDER BY sc.display_order, sc.name_fa
+                       ) FILTER (WHERE sc.id IS NOT NULL),
+                       '[]'::json
+                   ) AS subcategories
+            FROM categories c
+            LEFT JOIN subcategories sc ON sc.category_id = c.id
+            GROUP BY c.id, c.name_fa, c.slug, c.icon_url, c.display_order
+            ORDER BY c.display_order, c.name_fa
+            """
+        )
+        return self.cur.fetchall()
+
+    def catalog_product_detail(self, product_id: str):
+        self.cur.execute(
+            """
+            SELECT p.id, p.master_sku, p.canonical_name_fa, p.base_unit,
+                   p.default_pack_unit, p.default_pack_quantity,
+                   p.net_weight_grams, p.volume_ml, p.dimensions_cm,
+                   p.description, p.is_active, p.is_verified,
+                   b.id AS brand_id, b.name_fa AS brand_name,
+                   c.id AS category_id, c.name_fa AS category_name,
+                   sc.id AS subcategory_id, sc.name_fa AS subcategory_name
+            FROM products p
+            JOIN brands b ON b.id = p.brand_id
+            JOIN categories c ON c.id = p.category_id
+            JOIN subcategories sc ON sc.id = p.subcategory_id
+            WHERE p.id = %s::uuid AND p.is_active = TRUE
+            """,
+            (product_id,),
+        )
+        product = self.cur.fetchone()
+        if not product:
+            raise KeyError("Product not found.")
+
+        self.cur.execute(
+            """
+            SELECT pi.identifier_type, pi.identifier_value,
+                   pi.identifier_scope, pi.packaging_scope
+            FROM product_identifiers pi
+            WHERE pi.product_id = %s::uuid
+            ORDER BY pi.is_primary DESC, pi.identifier_type
+            """,
+            (product_id,),
+        )
+        product["identifiers"] = self.cur.fetchall()
+
+        self.cur.execute(
+            """
+            SELECT ma.id, ma.storage_key, ma.mime_type, pm.is_primary, pm.display_order
+            FROM product_media pm
+            JOIN media_assets ma ON ma.id = pm.media_asset_id
+            WHERE pm.product_id = %s::uuid AND ma.status = 'READY'
+            ORDER BY pm.is_primary DESC, pm.display_order
+            """,
+            (product_id,),
+        )
+        product["media"] = self.cur.fetchall()
+
+        return product
+
+    def catalog_product_vendors(self, product_id: str):
+        self.cur.execute(
+            """
+            SELECT vp.id AS vendor_product_id, vp.vendor_sku,
+                   vp.packaging_unit, vp.pack_quantity, vp.sales_unit,
+                   vi.physical_quantity, vi.available_quantity, vi.moq,
+                   vi.freshness_status,
+                   vp_price.price_toman,
+                   v.id AS vendor_id, v.business_name, v.status AS vendor_status
+            FROM vendor_products vp
+            JOIN vendors v ON v.id = vp.vendor_id
+            JOIN vendor_inventory vi ON vi.vendor_product_id = vp.id
+            LEFT JOIN vendor_prices vp_price
+                ON vp_price.vendor_product_id = vp.id AND vp_price.is_current = TRUE
+            WHERE vp.product_id = %s::uuid
+              AND vp.is_active = TRUE
+              AND vp.listing_status = 'ACTIVE'
+              AND v.status = 'ACTIVE'
+            ORDER BY vp_price.price_toman ASC NULLS LAST
+            """,
+            (product_id,),
+        )
+        return self.cur.fetchall()
