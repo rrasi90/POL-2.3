@@ -202,6 +202,10 @@ class PaymentVerifyRequest(APIBaseModel):
     notes: str | None = Field(default=None, max_length=2000)
 
 
+class ReconciliationCaseResolveRequest(APIBaseModel):
+    resolution_note: str | None = Field(default=None, max_length=2000)
+
+
 class SupportCaseCreateRequest(APIBaseModel):
     case_type: str = Field(min_length=1, max_length=50)
     subject: str = Field(min_length=1, max_length=500)

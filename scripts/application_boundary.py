@@ -836,6 +836,83 @@ class POLApplicationBoundary:
         self._require_ops_context()
         return PaymentReconciliationWorker.process_pending(self.cur, limit=limit)
 
+    # ── Reconciliation Exception Management (Stage 29) ──────────────
+
+    def reconciliation_cases_list(self, *, status=None, offset=0, limit=50):
+        self._require_ops_context()
+        params: list = []
+        where = ""
+        if status:
+            where = "WHERE c.status = %s"
+            params.append(status)
+        self.cur.execute(
+            f"""
+            SELECT c.id, c.payment_id, c.status, c.expected_amount_toman,
+                   c.observed_amount_toman, c.external_reference,
+                   c.resolution_reason, c.resolved_by_user_id,
+                   c.opened_at, c.resolved_at, c.attempt_count
+            FROM payment_reconciliation_cases c
+            {where}
+            ORDER BY c.opened_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            (*params, limit, offset),
+        )
+        rows = self.cur.fetchall()
+        return [
+            {k: str(v) if hasattr(v, 'hex') else v for k, v in dict(row).items()}
+            for row in rows
+        ]
+
+    def reconciliation_case_get(self, *, case_id):
+        self._require_ops_context()
+        self.cur.execute(
+            """
+            SELECT c.id, c.payment_id, c.status, c.expected_amount_toman,
+                   c.observed_amount_toman, c.external_reference,
+                   c.resolution_reason, c.resolved_by_user_id,
+                   c.opened_at, c.resolved_at, c.attempt_count
+            FROM payment_reconciliation_cases c
+            WHERE c.id = %s
+            """,
+            (case_id,),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError(f"Reconciliation case {case_id} not found.")
+        return {k: str(v) if hasattr(v, 'hex') else v for k, v in dict(row).items()}
+
+    def reconciliation_case_resolve(self, *, case_id, resolution_note=None):
+        self._require_ops_context()
+        self.cur.execute(
+            "SELECT id, status FROM payment_reconciliation_cases WHERE id = %s",
+            (case_id,),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError(f"Reconciliation case {case_id} not found.")
+        case = dict(row)
+        if case["status"] in ("RESOLVED", "CANCELLED"):
+            raise ValueError(f"Cannot resolve case in '{case['status']}' status.")
+        resolved_status = "MATCHED" if case["status"] in ("OPEN", "MISMATCH", "PARTIALLY_MATCHED") else "RESOLVED"
+        self.cur.execute(
+            """
+            UPDATE payment_reconciliation_cases
+            SET status = %s,
+                resolved_at = now(),
+                resolved_by_user_id = %s,
+                resolution_reason = COALESCE(%s, resolution_reason)
+            WHERE id = %s
+            RETURNING id, payment_id, status, expected_amount_toman,
+                      observed_amount_toman, external_reference,
+                      resolution_reason, resolved_by_user_id,
+                      opened_at, resolved_at, attempt_count
+            """,
+            (resolved_status, self.context.user_id, resolution_note, case_id),
+        )
+        updated = self.cur.fetchone()
+        return {k: str(v) if hasattr(v, 'hex') else v for k, v in dict(updated).items()}
+
     # ── Payment Evidence (Stage 27) ─────────────────────────────────
 
     VALID_EVIDENCE_TYPES = frozenset({
@@ -1022,6 +1099,148 @@ class POLApplicationBoundary:
     def deliver_external_notifications(self, *, limit=100):
         self._require_ops_context()
         return ProviderDeliveryWorker.process_pending(self.cur, limit=limit)
+
+    # ── Invoice / Settlement Read Model (Stage 28) ─────────────────
+
+    def invoices_list(self, *, offset=0, limit=50):
+        actor_role = self._resolve_actor_role()
+        params: list = []
+        if actor_role == "RETAILER":
+            params.append(self.context.organization_id)
+            where = "i.retailer_organization_id = %s"
+        elif actor_role == "VENDOR":
+            params.append(self.context.organization_id)
+            where = "i.vendor_organization_id = %s"
+        else:
+            params.append(self.context.organization_id)
+            where = "(i.retailer_organization_id = %s OR i.vendor_organization_id = %s)"
+            params.append(self.context.organization_id)
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT i.id, i.invoice_number, i.order_id, i.total_amount,
+                   i.currency, i.status, i.issued_at, i.created_at,
+                   i.retailer_organization_id, i.vendor_organization_id
+            FROM invoices i
+            WHERE {where}
+            ORDER BY i.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            params,
+        )
+        invoices = [dict(r) for r in self.cur.fetchall()]
+        for inv in invoices:
+            inv["id"] = str(inv["id"])
+            inv["order_id"] = str(inv["order_id"])
+            inv["retailer_organization_id"] = str(inv["retailer_organization_id"])
+            inv["vendor_organization_id"] = str(inv["vendor_organization_id"])
+        return {"invoices": invoices, "limit": limit, "offset": offset}
+
+    def invoice_get(self, *, invoice_id):
+        actor_role = self._resolve_actor_role()
+        self.cur.execute(
+            "SELECT * FROM invoices WHERE id = %s",
+            (invoice_id,),
+        )
+        inv = self.cur.fetchone()
+        if not inv:
+            raise KeyError("Invoice not found.")
+        inv = dict(inv)
+        if actor_role == "RETAILER":
+            if str(inv["retailer_organization_id"]) != self.context.organization_id:
+                raise PermissionError("Access denied.")
+        elif actor_role == "VENDOR":
+            if str(inv["vendor_organization_id"]) != self.context.organization_id:
+                raise PermissionError("Access denied.")
+        inv["id"] = str(inv["id"])
+        inv["order_id"] = str(inv["order_id"])
+        inv["retailer_organization_id"] = str(inv["retailer_organization_id"])
+        inv["vendor_organization_id"] = str(inv["vendor_organization_id"])
+        self.cur.execute(
+            "SELECT id, invoice_id, order_item_id, product_name, quantity, unit_price, total_line_amount "
+            "FROM invoice_items WHERE invoice_id = %s ORDER BY id",
+            (invoice_id,),
+        )
+        inv["items"] = []
+        for item in self.cur.fetchall():
+            item = dict(item)
+            item["id"] = str(item["id"])
+            item["invoice_id"] = str(item["invoice_id"])
+            if item["order_item_id"] is not None:
+                item["order_item_id"] = str(item["order_item_id"])
+            inv["items"].append(item)
+        return inv
+
+    def invoice_by_order(self, *, order_id):
+        self.order_get(order_id=order_id)
+        self.cur.execute(
+            "SELECT id FROM invoices WHERE order_id = %s LIMIT 1",
+            (order_id,),
+        )
+        inv_row = self.cur.fetchone()
+        if not inv_row:
+            raise KeyError("No invoice found for this order.")
+        return self.invoice_get(invoice_id=str(inv_row["id"]))
+
+    def settlements_list(self, *, offset=0, limit=50):
+        actor_role = self._resolve_actor_role()
+        if actor_role != "VENDOR":
+            raise PermissionError("Settlement listing is restricted to vendor tenants.")
+        params = [self.context.organization_id, limit, offset]
+        self.cur.execute(
+            """
+            SELECT s.id, s.order_id, s.vendor_id, s.gross_amount_toman,
+                   s.commission_rate, s.commission_amount_toman,
+                   s.adjustment_amount_toman, s.net_vendor_amount_toman,
+                   s.status, s.settled_at, s.settlement_batch_id, s.created_at
+            FROM settlements s
+            JOIN vendors v ON v.id = s.vendor_id
+            WHERE v.organization_id = %s
+            ORDER BY s.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            params,
+        )
+        settlements = [dict(r) for r in self.cur.fetchall()]
+        for s in settlements:
+            s["id"] = str(s["id"])
+            s["order_id"] = str(s["order_id"])
+            s["vendor_id"] = str(s["vendor_id"])
+        return {"settlements": settlements, "limit": limit, "offset": offset}
+
+    def settlement_get(self, *, settlement_id):
+        actor_role = self._resolve_actor_role()
+        if actor_role != "VENDOR":
+            raise PermissionError("Settlement detail is restricted to vendor tenants.")
+        self.cur.execute(
+            """
+            SELECT s.* FROM settlements s
+            JOIN vendors v ON v.id = s.vendor_id
+            WHERE s.id = %s AND v.organization_id = %s
+            """,
+            (settlement_id, self.context.organization_id),
+        )
+        st = self.cur.fetchone()
+        if not st:
+            raise KeyError("Settlement not found.")
+        st = dict(st)
+        st["id"] = str(st["id"])
+        st["order_id"] = str(st["order_id"])
+        st["vendor_id"] = str(st["vendor_id"])
+        self.cur.execute(
+            "SELECT id, settlement_id, dispute_id, adjustment_type, amount_toman, reason, created_at "
+            "FROM settlement_adjustments WHERE settlement_id = %s ORDER BY created_at",
+            (settlement_id,),
+        )
+        st["adjustments"] = []
+        for adj in self.cur.fetchall():
+            adj = dict(adj)
+            adj["id"] = str(adj["id"])
+            adj["settlement_id"] = str(adj["settlement_id"])
+            if adj["dispute_id"] is not None:
+                adj["dispute_id"] = str(adj["dispute_id"])
+            st["adjustments"].append(adj)
+        return st
 
     def _verify_retailer_actor(self, retailer_id):
         self.cur.execute(

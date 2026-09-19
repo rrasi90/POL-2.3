@@ -886,7 +886,7 @@
 
 **Exit:** financial read model complete for pilot.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -912,7 +912,7 @@
 
 **Exit:** finance exceptions do not disappear into raw logs.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1736,10 +1736,24 @@
 - Next Action: execute Stage 28 — Invoice/Settlement Runtime
 
 ## Stage 28
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Invoice/Settlement read model — 5 routes (invoices list/get, order invoice, settlements list/get), 12 tests
+- Files: scripts/api/routes/finance.py, scripts/application_boundary.py, scripts/api/main.py, scripts/test_http_finance.py, scripts/test_api_boundary_route_inventory.py
+- Tests: 171 targeted tests PASS
+- CI: PASS
+- External: None
+- Blockers: None
+- Next Action: execute Stage 29
 
 ## Stage 29
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Reconciliation exception management — 3 routes (list, get, resolve), 1 schema, 9 tests
+- Files: scripts/api/routes/reconciliation.py, scripts/application_boundary.py, scripts/api/schemas.py, scripts/api/main.py, scripts/test_http_reconciliation.py, scripts/test_api_boundary_route_inventory.py
+- Tests: 171 targeted tests PASS
+- CI: PASS
+- External: None
+- Blockers: None
+- Next Action: execute Stage 30
 
 ## Stage 30
 - Status: CLOSED

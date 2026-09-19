@@ -35,7 +35,14 @@ from scripts.api.routes.disputes import router as disputes_order_router
 from scripts.api.routes.disputes import disputes_router
 from scripts.api.routes.vendor_catalog import router as vendor_catalog_router
 from scripts.api.routes.daily_inventory import router as daily_inventory_router
+from scripts.api.routes.reconciliation import router as reconciliation_router
 from scripts.api.routes.support import router as support_router
+from scripts.api.routes.finance import (
+    invoices_router as finance_invoices_router,
+    order_invoice_router as finance_order_invoice_router,
+    settlements_router as finance_settlements_router,
+    settlement_detail_router as finance_settlement_detail_router,
+)
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from scripts.auth_boundary import (
@@ -97,6 +104,11 @@ def create_app() -> FastAPI:
     app.include_router(disputes_order_router, prefix="/api/v1")
     app.include_router(disputes_router, prefix="/api/v1")
     app.include_router(support_router, prefix="/api/v1")
+    app.include_router(finance_invoices_router, prefix="/api/v1")
+    app.include_router(finance_order_invoice_router, prefix="/api/v1")
+    app.include_router(finance_settlements_router, prefix="/api/v1")
+    app.include_router(finance_settlement_detail_router, prefix="/api/v1")
+    app.include_router(reconciliation_router, prefix="/api/v1")
 
     app.add_exception_handler(RequestValidationError, request_validation_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)

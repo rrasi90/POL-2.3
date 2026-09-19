@@ -75,6 +75,14 @@ EXPECTED_BUSINESS_ROUTES = {
     ("GET", "/api/v1/support/cases/{case_id}"),
     ("POST", "/api/v1/support/cases/{case_id}/messages"),
     ("PATCH", "/api/v1/support/cases/{case_id}"),
+    ("GET", "/api/v1/finance/reconciliation"),
+    ("GET", "/api/v1/finance/reconciliation/{case_id}"),
+    ("PATCH", "/api/v1/finance/reconciliation/{case_id}/resolve"),
+    ("GET", "/api/v1/invoices"),
+    ("GET", "/api/v1/invoices/{invoice_id}"),
+    ("GET", "/api/v1/orders/{order_id}/invoice"),
+    ("GET", "/api/v1/vendors/settlements"),
+    ("GET", "/api/v1/settlements/{settlement_id}"),
 }
 
 EXPECTED_OPERATIONAL_ROUTES = {
