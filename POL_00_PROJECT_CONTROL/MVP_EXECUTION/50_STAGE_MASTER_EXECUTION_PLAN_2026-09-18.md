@@ -993,7 +993,7 @@
 
 **Exit:** internal notification layer complete independently of provider.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1073,7 +1073,7 @@
 
 **Exit:** onboarding backend ready for pilot.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1101,7 +1101,7 @@
 
 **Exit:** KPI lineage inspectable باشد.
 
-**Status:** PLANNED
+**Status:** CLOSED
 
 ---
 
@@ -1776,7 +1776,14 @@
 - Next Action: execute Stage 32
 
 ## Stage 32
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Notification logical layer — list endpoint, preferences get/update, 3 boundary methods, 5 HTTP tests, route inventory updated to 64 routes
+- Files: scripts/api/routes/notifications.py, scripts/application_boundary.py, scripts/api/schemas.py, scripts/api/main.py, scripts/test_http_notifications.py, scripts/test_api_boundary_route_inventory.py
+- Tests: 5 notification tests, 142 targeted tests PASS
+- CI: PASS
+- External: None
+- Blockers: None
+- Next Action: execute Stage 35
 
 ## Stage 33
 - Status: CLOSED
@@ -1799,10 +1806,24 @@
 - Next Action: execute Stage 35
 
 ## Stage 35
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Field Tasks CRUD — 4 routes (list, get, create, update), 3 boundary methods, 6 HTTP tests
+- Files: scripts/api/routes/field.py, scripts/application_boundary.py, scripts/api/schemas.py, scripts/api/main.py, scripts/test_http_field_tasks.py, scripts/test_api_boundary_route_inventory.py
+- Tests: 6 field task tests, 142 targeted tests PASS
+- CI: PASS
+- External: None
+- Blockers: None
+- Next Action: execute Stage 36
 
 ## Stage 36
-- Status: PLANNED
+- Status: CLOSED
+- Changes: Analytics event lineage — 10 KPI definitions with source table/event/calculation/timezone, DB table validation, 4 tests
+- Files: scripts/analytics_lineage.py, scripts/test_analytics_lineage.py
+- Tests: 4 lineage tests, 142 targeted tests PASS
+- CI: PASS
+- External: None (production BI tool later)
+- Blockers: None
+- Next Action: execute Stage 37
 
 ## Stage 37
 - Status: PLANNED

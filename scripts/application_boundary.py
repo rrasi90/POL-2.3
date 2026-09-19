@@ -2254,3 +2254,112 @@ class POLApplicationBoundary:
         d["created_at"] = d["created_at"].isoformat() if d["created_at"] else None
         d["updated_at"] = d["updated_at"].isoformat() if d["updated_at"] else None
         return d
+
+    # ── Notification Logical Layer (Stage 32) ──────────────────────
+
+    def notifications_list(self, *, status=None, offset=0, limit=50):
+        where_clauses = ["n.user_id = %s"]
+        params: list = [self.context.user_id]
+        if self.context.organization_id:
+            where_clauses.append("n.organization_id = %s")
+            params.append(self.context.organization_id)
+        where_sql = " AND ".join(where_clauses)
+        self.cur.execute(
+            f"SELECT n.id, n.event_name, n.title, n.body, n.priority, n.created_at "
+            f"FROM notifications n WHERE {where_sql} "
+            f"ORDER BY n.created_at DESC LIMIT %s OFFSET %s",
+            (*params, limit, offset),
+        )
+        return [dict(r) for r in self.cur.fetchall()]
+
+    def notification_preferences_get(self):
+        self.cur.execute(
+            "SELECT user_id, category, push_enabled, sms_enabled "
+            "FROM notification_preferences WHERE user_id = %s",
+            (self.context.user_id,),
+        )
+        return [dict(r) for r in self.cur.fetchall()]
+
+    def notification_preferences_update(self, *, event_name, channel, is_enabled):
+        channel_lower = channel.lower()
+        if channel_lower not in ("push", "sms"):
+            raise ValueError(f"Invalid channel: {channel}. Must be PUSH or SMS.")
+        if channel_lower == "push":
+            self.cur.execute(
+                "INSERT INTO notification_preferences (user_id, category, push_enabled, sms_enabled) "
+                "VALUES (%s, %s, %s, true) "
+                "ON CONFLICT (user_id, category) DO UPDATE SET push_enabled = EXCLUDED.push_enabled, updated_at = now()",
+                (self.context.user_id, event_name, is_enabled),
+            )
+        else:
+            self.cur.execute(
+                "INSERT INTO notification_preferences (user_id, category, push_enabled, sms_enabled) "
+                "VALUES (%s, %s, true, %s) "
+                "ON CONFLICT (user_id, category) DO UPDATE SET sms_enabled = EXCLUDED.sms_enabled, updated_at = now()",
+                (self.context.user_id, event_name, is_enabled),
+            )
+        return {"event_name": event_name, "channel": channel, "is_enabled": is_enabled}
+
+    # ── Field Tasks (Stage 35) ────────────────────────────────────
+
+    def field_tasks_list(self, *, status=None, offset=0, limit=50):
+        where_clauses = ["ft.assigned_to_user_id = %s"]
+        params: list = [self.context.user_id]
+        if status:
+            where_clauses.append("ft.status = %s")
+            params.append(status)
+        where_sql = " AND ".join(where_clauses)
+        self.cur.execute(
+            f"SELECT ft.id, ft.task_type, ft.status, ft.notes, ft.created_at, ft.completed_at "
+            f"FROM field_tasks ft WHERE {where_sql} "
+            f"ORDER BY ft.created_at DESC LIMIT %s OFFSET %s",
+            (*params, limit, offset),
+        )
+        return [dict(r) for r in self.cur.fetchall()]
+
+    def field_task_get(self, *, task_id):
+        self.cur.execute(
+            "SELECT id, task_type, assigned_to_user_id, target_organization_id, "
+            "status, notes, due_date, completed_at, created_at "
+            "FROM field_tasks WHERE id = %s",
+            (task_id,),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise ValueError("Field task not found.")
+        return dict(row)
+
+    def field_task_update(self, *, task_id, status=None, notes=None):
+        updates = []
+        params: list = []
+        if status:
+            updates.append("status = %s")
+            params.append(status)
+        if notes:
+            updates.append("notes = %s")
+            params.append(notes)
+        if not updates:
+            raise ValueError("No fields to update.")
+        updates.append("updated_at = now()")
+        params.append(task_id)
+        self.cur.execute(
+            f"UPDATE field_tasks SET {', '.join(updates)} WHERE id = %s "
+            "RETURNING id, task_type, status, notes, created_at, updated_at",
+            tuple(params),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise ValueError("Field task not found.")
+        return dict(row)
+
+    def field_task_create(self, *, task_type, assigned_to_user_id,
+                          retailer_id=None, vendor_id=None, notes=None):
+        self._require_ops_context()
+        self.cur.execute(
+            "INSERT INTO field_tasks (task_type, assigned_to_user_id, notes) "
+            "VALUES (%s, %s, %s) "
+            "RETURNING id, task_type, status, notes, created_at",
+            (task_type, assigned_to_user_id, notes),
+        )
+        row = self.cur.fetchone()
+        return dict(row)

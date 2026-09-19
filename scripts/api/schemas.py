@@ -163,6 +163,25 @@ class DeliveryExceptionEscalateRequest(APIBaseModel):
     reason: str | None = Field(default=None, max_length=2000)
 
 
+class NotificationPreferenceUpdateRequest(APIBaseModel):
+    event_name: str = Field(min_length=1, max_length=100)
+    channel: str = Field(min_length=1, max_length=10)
+    is_enabled: bool
+
+
+class FieldTaskCreateRequest(APIBaseModel):
+    task_type: str = Field(min_length=1, max_length=30)
+    assigned_to_user_id: str = Field(min_length=1, max_length=64)
+    retailer_id: str | None = Field(default=None, max_length=64)
+    vendor_id: str | None = Field(default=None, max_length=64)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class FieldTaskUpdateRequest(APIBaseModel):
+    status: str | None = Field(default=None, max_length=20)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
 class ReturnItemRequest(APIBaseModel):
     order_item_id: UUID
     quantity: int = Field(gt=0)

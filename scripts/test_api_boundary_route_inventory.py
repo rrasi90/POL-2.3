@@ -89,6 +89,13 @@ EXPECTED_BUSINESS_ROUTES = {
     ("GET", "/api/v1/referrals"),
     ("GET", "/api/v1/referrals/{referral_id}"),
     ("POST", "/api/v1/referrals/{referral_id}/redeem"),
+    ("GET", "/api/v1/notifications"),
+    ("GET", "/api/v1/notifications/preferences"),
+    ("PUT", "/api/v1/notifications/preferences"),
+    ("GET", "/api/v1/field/tasks"),
+    ("GET", "/api/v1/field/tasks/{task_id}"),
+    ("PATCH", "/api/v1/field/tasks/{task_id}"),
+    ("POST", "/api/v1/field/tasks"),
 }
 
 EXPECTED_OPERATIONAL_ROUTES = {

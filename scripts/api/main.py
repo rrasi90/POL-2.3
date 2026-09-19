@@ -39,6 +39,8 @@ from scripts.api.routes.reconciliation import router as reconciliation_router
 from scripts.api.routes.support import router as support_router
 from scripts.api.routes.admin import router as admin_router
 from scripts.api.routes.referrals import router as referrals_router
+from scripts.api.routes.notifications import router as notifications_router
+from scripts.api.routes.field import router as field_router
 from scripts.api.routes.finance import (
     invoices_router as finance_invoices_router,
     order_invoice_router as finance_order_invoice_router,
@@ -113,6 +115,8 @@ def create_app() -> FastAPI:
     app.include_router(reconciliation_router, prefix="/api/v1")
     app.include_router(admin_router, prefix="/api/v1")
     app.include_router(referrals_router, prefix="/api/v1")
+    app.include_router(notifications_router, prefix="/api/v1")
+    app.include_router(field_router, prefix="/api/v1")
 
     app.add_exception_handler(RequestValidationError, request_validation_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
