@@ -84,8 +84,7 @@ def test_replay_returns_none_when_no_existing_order():
 
 
 def test_replay_rejects_cross_retailer():
-    port = 55432
-    conn = psycopg2.connect(dbname="pol_test", host="127.0.0.1", port=port, user="postgres")
+    conn, _ = get_connection("pol_test")
     try:
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -121,8 +120,7 @@ def test_replay_rejects_cross_retailer():
 
 
 def test_replay_rejects_fingerprint_mismatch():
-    port = 55432
-    conn = psycopg2.connect(dbname="pol_test", host="127.0.0.1", port=port, user="postgres")
+    conn, _ = get_connection("pol_test")
     try:
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -159,8 +157,7 @@ def test_replay_rejects_fingerprint_mismatch():
 
 
 def test_replay_returns_existing_order_on_match():
-    port = 55432
-    conn = psycopg2.connect(dbname="pol_test", host="127.0.0.1", port=port, user="postgres")
+    conn, _ = get_connection("pol_test")
     try:
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
