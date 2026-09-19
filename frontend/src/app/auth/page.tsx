@@ -11,7 +11,7 @@ interface AuthResult {
 }
 
 interface SuccessEnvelope<T> {
-  data?: T;
+  data: T;
 }
 
 export default function AuthPage() {
@@ -25,16 +25,13 @@ export default function AuthPage() {
   }
 
   async function verifyOtp(phone: string, code: string) {
-    const response = await api.post<AuthResult | SuccessEnvelope<AuthResult>>(
+    const response = await api.post<SuccessEnvelope<AuthResult>>(
       "/api/v1/auth/verify-otp",
       { mobile_number: phone, otp_code: code },
     );
-    const payload =
-      "data" in response
-        ? response.data
-        : response;
+    const payload = response.data;
 
-    if (!payload || !payload.access_token) {
+    if (!payload.access_token) {
       throw new Error("Authentication succeeded without an access token.");
     }
 
