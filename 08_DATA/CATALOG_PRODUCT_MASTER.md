@@ -96,3 +96,63 @@ stateDiagram-v2
 * تغییر نام، ویرایش دسته‌بندی یا ادغام دو محصول **هرگز نباید فاکتورها و تاریخچه سفارش‌های قبلی را مخدوش کند**.
 * در جدول اقلام سفارش (`order_items`)، مشخصات متنی کالا در لحظه خرید (`product_name_snapshot`, `pack_snapshot`, `unit_price_snapshot`) ذخیره می‌شود تا با ادغام محصول، گزارش‌های مالی گذشته تغییر نکنند.
 * حذف فیزیکی (Hard Delete) در جدول `products` اکیداً **ممنوع** است.
+
+
+---
+
+## 2026-09-20 Product Architecture Amendment — Master SKU Media Provenance
+
+### ۵. Media identity and provenance
+
+Master Product identity remains independent from Vendor Product / Vendor SKU.
+
+Product media should carry provenance metadata sufficient to answer:
+
+- where the media came from
+- who supplied/imported it
+- which product it belongs to
+- whether the source was manufacturer-provided, vendor-provided or POL-owned
+- when the source was last verified
+- what internal rights/provenance status is recorded
+
+Recommended conceptual metadata:
+
+- source_url
+- source_type
+- provenance
+- rights_status
+- imported_at
+- verified_at
+- verified_by
+
+### ۶. Manufacturer image import
+
+POL may support an assisted import flow from a manufacturer product page or authorized media source.
+
+Import must:
+
+1. record the source URL
+2. record provenance
+3. preserve the Master Product relationship
+4. normalize the asset into POL-managed media storage where permitted
+5. retain the original source metadata
+6. prevent duplicated uncontrolled copies
+7. allow operations to replace or disable media when provenance is disputed
+
+Direct remote hotlinking should not be treated as the canonical asset strategy because external URLs can change, become unavailable or impose runtime dependencies.
+
+### ۷. Intellectual-property boundary
+
+The product UI and data model must not assert that a product image is free to reuse merely because it is publicly visible on a manufacturer website.
+
+The system records provenance and operational verification status; legal clearance remains a separate operational/legal process where required.
+
+### ۸. Barcode relationship
+
+A scanned global barcode may identify or suggest a Master Product. It does not by itself authorize creation of a new canonical Master Product or establish media rights.
+
+Unknown scans follow:
+
+**Scan → Candidate → Catalog Review → Master Product**
+
+No change to prior order snapshots is permitted when media or Master Product metadata changes.
