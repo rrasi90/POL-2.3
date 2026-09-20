@@ -1,0 +1,53 @@
+{
+  "sub_questions": [
+    "What are best practices for B2B SaaS operational dashboard design in 2025-2026?",
+    "How should KPIs be displayed on operational dashboards?",
+    "What is the ideal information hierarchy for B2B dashboards?",
+    "What are best practices for RTL/Persian UI design in B2B platforms?",
+    "How do leading B2B platforms handle RTL layout and what are common pitfalls?",
+    "How do multi-vendor marketplace platforms display vendor information and storefronts?",
+    "What are best practices for data-dense table design with many columns, status badges, and actions?",
+    "How should mobile responsive table design be handled?",
+    "How should complex order state machines and lifecycle UI be displayed to users?",
+    "What are best practices for complex B2B form design (checkout, order creation, dispute filing)?",
+    "What color palettes and semantic color systems work best for operational/enterprise apps?",
+    "What are the best web fonts and font stack recommendations for Persian/Farsi typography?"
+  ],
+  "entities": [
+    {"name": "B2B SaaS dashboards", "type": "ui-pattern", "required_fields": ["layout", "KPI-display", "information-hierarchy"]},
+    {"name": "RTL/Persian interfaces", "type": "localization-pattern", "required_fields": ["layout-approaches", "common-pitfalls", "platform-examples"]},
+    {"name": "Multi-vendor marketplaces", "type": "marketplace-pattern", "required_fields": ["vendor-display", "storefront-design", "platform-examples"]},
+    {"name": "Data-dense tables", "type": "data-display-pattern", "required_fields": ["column-management", "status-badges", "pagination", "mobile-responsive"]},
+    {"name": "Order lifecycle UI", "type": "state-machine-pattern", "required_fields": ["timeline", "stepper", "status-badge", "state-machine-visualization"]},
+    {"name": "B2B form design", "type": "form-pattern", "required_fields": ["multi-step", "single-page", "complex-forms"]},
+    {"name": "B2B color systems", "type": "design-system-pattern", "required_fields": ["palette", "semantic-colors", "status-colors"]},
+    {"name": "Persian/Farsi typography", "type": "typography-pattern", "required_fields": ["web-fonts", "font-stacks", "rtl-considerations"]}
+  ],
+  "required_formats": [
+    "actionable design recommendations",
+    "specific examples where possible"
+  ],
+  "required_sections": [],
+  "required_section_headings": [
+    "## 1. B2B SaaS Dashboard Design Patterns",
+    "## 2. RTL/Persian UI Design Patterns",
+    "## 3. Multi-Vendor Marketplace UI Patterns",
+    "## 4. Data-Dense Table Design",
+    "## 5. Order Lifecycle UI Patterns",
+    "## 6. B2B Form Design Best Practices",
+    "## 7. Color Systems for B2B Applications",
+    "## 8. Persian/Farsi Typography"
+  ],
+  "time_horizons": ["2025-2026"],
+  "time_periods": [],
+  "scope_conditions": [],
+  "pipeline_tier": "light",
+  "response_format": "structured",
+  "citation_style": "wikilink",
+  "levers": {
+    "register": "survey",
+    "register_confidence": "high",
+    "domain_notes": "Sourcing: design system documentation from major B2B platforms (Shopify Polaris, Ant Design, Material Design), UX research from Nielsen Norman Group and Smashing Magazine, RTL design guides from Microsoft and Google, typography databases for Persian fonts. Evidence norms: practitioner patterns outrank theoretical frameworks; real product examples outrank generic advice.",
+    "inference_depth": "surface"
+  }
+}

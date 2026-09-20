@@ -1,0 +1,54 @@
+{
+  "manifest_version": 1,
+  "vault_tag": "b2b-saas-ui-patterns-4e1498",
+  "profile": "full",
+  "profile_steps": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16"
+  ],
+  "status": "blocked",
+  "started_at": "2026-09-20T02:16:35.491589+00:00",
+  "updated_at": "2026-09-20T02:29:52.036500+00:00",
+  "budget_usd": null,
+  "blocked_on": "verify",
+  "steps": {},
+  "chapters": {},
+  "spend": {
+    "estimated_usd": 0.0,
+    "sources_fetched": 0,
+    "notes_written": 0,
+    "agents_spawned": 0
+  },
+  "levers": {
+    "register": "survey",
+    "inference_depth": "surface",
+    "domain_notes": "Sourcing: design system documentation from major B2B platforms (Shopify Polaris, Ant Design, Material Design), UX research from Nielsen Norman Group and Smashing Magazine, RTL design guides from Microsoft and Google, typography databases for Persian fonts. Evidence norms: practitioner patterns outrank theoretical frameworks; real product examples outrank generic advice."
+  },
+  "verify": {
+    "passed": false,
+    "at": "2026-09-20T02:29:52.030750+00:00",
+    "failed_checks": [
+      "citation-density",
+      "artifact:critic-findings-dialectic.json",
+      "artifact:critic-findings-depth.json",
+      "artifact:critic-findings-width.json",
+      "artifact:critic-findings-instruction.json",
+      "artifact:patch-log.json",
+      "artifact:polish-log.json"
+    ]
+  }
+}

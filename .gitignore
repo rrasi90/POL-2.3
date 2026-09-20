@@ -17,6 +17,7 @@ build/
 .idea/
 .vscode/
 scratch/
+.agents/
 
 # Frontend build artifacts
 frontend/node_modules/
