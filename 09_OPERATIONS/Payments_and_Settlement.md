@@ -91,3 +91,56 @@ $$\text{net\_vendor\_amount} = \text{gross\_amount} - \text{commission\_amount} 
 1. **قانون تغییرناپذیری اسناد مالی (Immutability):** پس از انتقال سفارش به وضعیت `DELIVERED` و ثبت وضعیت پرداخت `SUCCESS`، مقادیر فاکتور اولیه هرگز ویرایش نمی‌شوند؛ هرگونه تغییر منحصراً در قالب رکوردهای مستقل `settlement_adjustments` اعمال می‌گردد.
 2. **تفکیک مسئولیت‌ها (Separation of Duties):** ثبت مغایرت توسط سوپرمارکت، تایید فنی توسط پشتیبانی پُل، و تایید مالی توسط مدیر عملیات انجام می‌شود. هیچ کاربری نمی‌تواند هم شاکی و هم تاییدکننده تعدیل مالی باشد.
 3. **لاگ کامل ممیزی (Audit Logging):** هر تراکنش مالی به صورت خودکار رویدادهای `payment_completed`، `settlement_created` و `refund_created` را در جدول `domain_events_log` منتشر می‌کند.
+
+
+---
+
+## 2026-09-20 Product Architecture Amendment — Financial Activity & Future Wallet Boundary
+
+### ۶. Financial Activity
+
+POL should expose a tenant-scoped Financial Activity view built from existing canonical records.
+
+For an authorized user, this can include:
+
+- payment attempts
+- completed payments
+- failed payments
+- refunds
+- order amount
+- invoice amount
+- payment status
+- settlement status where the user is authorized
+
+This is a read/visibility layer. It is not a wallet and must not expose an artificial stored balance.
+
+### ۷. Wallet boundary
+
+The MVP remains NON_CUSTODIAL_DIRECT.
+
+POL does not hold user funds as a stored-value wallet balance in MVP.
+
+If a future Wallet is approved, it must be implemented as a separately governed financial ledger with explicit accounting, reconciliation, funding, withdrawal, refund-credit, authorization and audit semantics.
+
+### ۸. Settlement language
+
+Active UI/product copy must not promise a permanent direct-settlement guarantee by POL.
+
+Canonical neutral wording:
+
+> «پرداخت و تسویه طبق شرایط ثبت‌شده سفارش و طرفین معامله انجام می‌شود.»
+
+This wording describes the operational contract without freezing future financial architecture.
+
+### ۹. Multi-vendor payment visibility
+
+Because D-014 allows one retailer checkout to create multiple vendor child orders, financial UX must distinguish:
+
+- parent OrderGroup amount
+- vendor invoice amount
+- vendor payment status
+- vendor settlement status
+
+The platform may aggregate visibility for the retailer, but the underlying financial records remain tied to the relevant vendor child order.
+
+No wallet or custodial schema is added by this amendment.
