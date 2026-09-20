@@ -103,3 +103,21 @@ No visual artifact becomes canonical until the corresponding written requirement
 3. Code, migrations, tests and design artifacts must be traceable to current canonical documents.
 4. Generated local artifacts must not be committed to the repository.
 5. Production-readiness claims must distinguish domain verification from HTTP/auth/provider/UI/observability/deployment/recovery implementation.
+
+### Product Architecture Evolution — 2026-09-20
+
+The current product-design authority now also includes:
+
+- POL_00_PROJECT_CONTROL/PRODUCT_EVOLUTION/PRODUCT_ARCHITECTURE_EVOLUTION_WAVE_01_2026-09-20.md
+
+This document records the adopted product-architecture direction for:
+- Financial Activity without MVP stored-value Wallet
+- Multi-vendor OrderGroup -> vendor Orders -> vendor Invoices visibility
+- Lightweight Delivery Handoff without a full Driver App
+- Product-first and Vendor-first discovery
+- Neutral settlement wording
+- Web + Android for every persona with delegated permissions
+- Barcode scanning as a first-class operational capability
+- Master SKU and product-media provenance
+
+These directions refine presentation, UX and implementation sequencing without overriding D-001 through D-020 or the canonical PostgreSQL/Python/FastAPI architecture. The Decision Register amendments D-021 through D-028 are the governing product decisions for this wave.
