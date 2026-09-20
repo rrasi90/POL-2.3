@@ -8,7 +8,7 @@ Independent post-completion correction and certification of the previously repor
 
 - Repository: `rrasi90/POL-2.3`
 - Branch: `research-hardening-2026-09-14`
-- Documentation-synchronized HEAD: `ce3dd5cecd301bf16ba8f575388df260bce3b2c8`
+- Documentation-synchronized HEAD: `ebc9931` (research-hardening-2026-09-14)
 
 ## Corrective implementation
 
