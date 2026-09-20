@@ -97,5 +97,5 @@ EXEC50-004 CLOSED. Run #365 completed successfully at 212/212 on the expanded su
 - GitHub Actions Run #475 / 35469086093: **SUCCESS**.
 - Artifact: **10592725680**.
 - Digest: `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`.
-- Exact artifact metadata commit: `ce3dd5cecd301bf16ba8f575388df260bce3b2c8`, branch `research-hardening-2026-09-14`, dirty=false.
+- Exact artifact metadata commit: `ebc9931`, branch `research-hardening-2026-09-14`, dirty=false.
 - PostgreSQL 18.6, 95 public base tables, 31 migrations.

@@ -17,7 +17,7 @@ Every claim made in the platform documentation or engineering reports maps direc
 
 ### 2.1 Current execution baseline — 2026-09-19
 - Repository branch: `research-hardening-2026-09-14`
-- Documentation-synchronized certified HEAD: `ce3dd5cecd301bf16ba8f575388df260bce3b2c8`.
+- Documentation-synchronized certified HEAD: `ebc9931`.
 - Fresh GitHub Actions Run #473 / workflow id `35468878504`: **490 collected / 490 passed / 0 failed / 0 skipped**, result **SUCCESS**.
 - Machine-readable artifact: `pol-test-results` artifact **10592725680**, digest `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`.
 - PostgreSQL: **18.6**; public base-table count: **95**.
@@ -216,7 +216,7 @@ cat artifacts/pol-test-results.json
 
 - Full suite: **490/490 PASS**, 0 failed, 0 skipped.
 - CI Run: **#473 / 35468878504**.
-- Head SHA: `ce3dd5cecd301bf16ba8f575388df260bce3b2c8`.
+- Head SHA: `ebc9931`.
 - Artifact: **10592725680**.
 - Digest: `sha256:fbf1f2f656f5af726ea570ffcebd8598b25c5d79c0c3661e38e4da0fb651614f`.
 - PostgreSQL: **18.6**; **95** public base tables.
