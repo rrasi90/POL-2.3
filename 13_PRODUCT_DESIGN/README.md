@@ -49,6 +49,9 @@
 44. `43_DESIGN_QA_PROTOCOL_V3_2026-09-16.md`
 45. `44_DESIGN_PIPELINE_MASTER_INDEX_V3_2026-09-16.md`
 46. `45_REPOSITORY_WIDE_DESIGN_COMPLETENESS_AUDIT_2026-09-16.md`
+47. `46_DESIGN_CLOSURE_BACKLOG_AND_CONFLICT_RESOLUTION_2026-09-16.md`
+48. `47_PROJECT_WIDE_BUG_AUDIT_2026-09-16.md`
+49. `48_PENPOT_CANONICAL_COMPLETION_AND_MULTI_DIMENSIONAL_AUDIT_2026-09-20.md`
 
 ## Agent operating assets
 
@@ -62,7 +65,7 @@
 `44_DESIGN_PIPELINE_MASTER_INDEX_V3_2026-09-16.md`
 
 ## Latest repository-wide design audit
-`45_REPOSITORY_WIDE_DESIGN_COMPLETENESS_AUDIT_2026-09-16.md`
+`48_PENPOT_CANONICAL_COMPLETION_AND_MULTI_DIMENSIONAL_AUDIT_2026-09-20.md`
 
 ## Execution rule
 `Repository Sync → Repository Audit → Specification Completion → Readiness Gate → Page/Section Completion → Agent Safety Gate → Written Design Source of Truth → Figma/Penpot Prototype → Mock-First Frontend → Production Backend Integration`
