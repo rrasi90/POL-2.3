@@ -72,3 +72,18 @@ To ensure brand cohesion and prevent user confusion, the three brand marks must 
 - ❌ Do NOT use "POL Retail", "POL Shop", "POL Store", or "سوپرمارکت پُل". The canonical retailer product name is **POL Market / پل مغازهدار**.
 - ❌ Do NOT use "POL Wholesaler", "POL Supplier", or "تأمین‌کننده پُل". The canonical vendor product name is **POL Vendor / پل بنکدار**.
 - ❌ Do NOT treat these entities as independent companies; they are specialized interfaces of the same POL platform.
+
+
+---
+
+## 2026-09-20 Product Architecture Amendment — Dual Client Policy
+
+POL is a single platform with multiple client surfaces.
+
+The Web and Android applications are not separate products or separate backends. They are client surfaces over the same POL identity, organization membership, authorization, API boundary and domain model.
+
+All canonical personas may use both clients. The visible capabilities are determined by the active organization membership and delegated permissions.
+
+The existing product-facing identities POL Market and POL Vendor remain valid as product-context labels; this amendment does not create a third backend or a new legal/company identity.
+
+Android is optimized for operational, warehouse, field and quick-action workflows. Web is optimized for management, search, reporting, catalog and bulk operations.
