@@ -103,3 +103,109 @@
 }
 ```
 5. **سوئیچ بین سازمان‌ها:** کاربری که دارای چند عضویت معتبر در سازمان‌های مختلف است، می‌تواند با فراخوانی اندپوینت `/auth/switch-organization` بدون نیاز به ورود مجدد، توکن جدیدی با `org_id` و `role` سازمان مقصد دریافت کند.
+
+
+---
+
+## ۵. مدل دسترسی تفویضی مدیر سازمان (Delegated Permissions) — Amendment 2026-09-20
+
+### ۵.۱. اصل معماری
+
+نقش سازمانی Role سطح مسئولیت پایه را مشخص می‌کند؛ اما «دسترسی واقعی به قابلیت‌ها» می‌تواند برای هر عضویت سازمانی توسط مدیر مجاز تنظیم شود.
+
+زنجیره مرجع دسترسی:
+
+**Organization → Membership → Role → Delegated Permissions → Client Surface**
+
+این مدل جایگزین organization_memberships.role به‌عنوان منبع RBAC نمی‌شود؛ بلکه بعد تفویض قابلیت‌ها را روی همان عضویت اضافه می‌کند.
+
+### ۵.۲. قواعد قطعی
+
+1. **Server-side authorization:** همه دسترسی‌های حساس در Backend اعتبارسنجی می‌شوند.
+2. **Deny by default:** قابلیت جدید تا زمانی که صریحاً برای Role/Permission مجاز نشده باشد قابل اجرا نیست.
+3. **Least privilege:** هر عضو فقط حداقل قابلیت لازم برای وظیفه خود را دریافت می‌کند.
+4. **Tenant isolation:** مدیر بنکداری یا خرده‌فروشی فقط می‌تواند دسترسی اعضای سازمان خودش را تنظیم کند.
+5. **Privilege ceiling:** مدیر سازمان نمی‌تواند نقش/مجوزهای سطح پلتفرم مانند ADMIN_SUPER را به عضو سازمان خود تفویض کند.
+6. **Auditability:** هر Grant/Revoke باید actor، target membership، permission، timestamp و reason داشته باشد.
+7. **Client neutrality:** Web و Android از یک authorization boundary مشترک استفاده می‌کنند؛ هیچ client منطق مجوز مستقل و متناقض ندارد.
+
+### ۵.۳. نمونه Permissionهای قابلیت‌محور
+
+| Domain | Permission | نمونه نقش پایه |
+|---|---|---|
+| Catalog | catalog.view | همه نقش‌های مرتبط |
+| Catalog | catalog.manage | Vendor Owner / Ops |
+| Inventory | inventory.view | Vendor Owner / Vendor Staff |
+| Inventory | inventory.scan | Vendor Owner / Vendor Staff |
+| Inventory | inventory.adjust | Vendor Owner / Delegated Staff |
+| Pricing | price.view | مجاز بر اساس scope |
+| Pricing | price.manage | Vendor Owner / Delegated Staff |
+| Orders | order.view | کاربران مجاز همان سازمان |
+| Orders | order.accept | Vendor Owner / Delegated Staff |
+| Orders | order.fulfillment | Vendor Owner / Vendor Staff |
+| Delivery | delivery.dispatch | Vendor Owner / Vendor Staff |
+| Delivery | delivery.handoff | کاربران مجاز Fulfillment |
+| Finance | payment.view | کاربران مالی مجاز |
+| Finance | payment.record | کاربران مجاز عملیاتی |
+| Finance | settlement.view | Vendor Owner / کاربران مالی مجاز |
+| People | membership.manage | Organization Owner |
+| Reports | reports.view | طبق تفویض مدیر |
+
+این جدول «catalog اولیه permission» است؛ grantهای نهایی باید هنگام applicationization با route/command matrix سازگار شوند.
+
+---
+
+## ۵.۴. برابری Web و Android
+
+برای همه Personaهای کانونیکال پروژه:
+
+- Web client در دسترس است.
+- Android client در دسترس است.
+- Backend و Domain Model مشترک است.
+- مجوزها بین دو client مشترک است.
+- تفاوت فقط در UX و context of use است.
+
+### Web — اولویت تعامل
+
+- مدیریت
+- جستجوی گسترده
+- قیمت‌گذاری
+- catalog maintenance
+- reports
+- reconciliation
+- bulk operations
+
+### Android — اولویت تعامل
+
+- warehouse operations
+- field work
+- quick actions
+- barcode scan
+- picking
+- dispatch
+- delivery confirmation
+- exception capture
+
+Android یک نسخه کوچک‌شده از Web نیست؛ یک client عملیاتی با همان permission contract است.
+
+---
+
+## ۵.۵. Scanner Permission
+
+قابلیت اسکن بارکد باید یک permission مستقل و قابل تفویض باشد:
+
+inventory.scan
+
+اسکن به‌خودی‌خود مجوز ایجاد Master Product نیست.
+
+Flow:
+
+**Scan → Match → Exact / Ambiguous / Unknown → Candidate Review → Canonical Master**
+
+---
+
+## ۵.۶. Financial Access
+
+دسترسی به سوابق پرداخت، refund، invoice و settlement باید capability-based و tenant-scoped باشد.
+
+مخفی کردن مسیر یا دکمه در Client به‌تنهایی کنترل دسترسی محسوب نمی‌شود.
