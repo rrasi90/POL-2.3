@@ -39,3 +39,16 @@ Use a coherent stroke system, consistent optical weight and clear metaphors. Ico
 
 ## Brand guardrails
 Do not use promotional language that contradicts evidence/hypothesis governance. UI copy must not promise savings, delivery time or stock availability that the system cannot substantiate.
+
+
+---
+
+## 2026-09-20 RTL/LTR Typography Rule — Parentheses
+
+در UI فارسی، از استفاده ترکیبی و غیرضروری از پرانتز برای عبارت‌های دو زبانه اجتناب شود، زیرا در متن‌های Bidirectional ممکن است ترتیب بصری پرانتز و متن LTR/RTL مبهم شود.
+
+قاعده ترجیحی:
+- عنوان فارسی در یک line و اصطلاح انگلیسی در line/element جداگانه
+- یا عنوان فارسی — English Term با عنصرهای مستقل
+- برای status, SKU, code و numeric values از span/element مستقل با direction مناسب استفاده شود
+- پرانتز فقط زمانی استفاده شود که از نظر معنایی ضروری باشد و سپس rendering واقعی RTL/LTR بررسی شود.
