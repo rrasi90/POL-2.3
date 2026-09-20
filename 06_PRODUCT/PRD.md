@@ -54,10 +54,11 @@
 
 | نقش کاربری | بستر دسترسی | دسترسی‌ها و اختیارات کلیدی |
 |---|---|---|
-| **سوپرمارکت (Retailer)** | Android App + Mobile Web | جستجوی کاتالوگ، مقایسه قیمت بنکداران، سبد خرید، ثبت سفارش، پیگیری وضعیت، ثبت مغایرت، مشاهده سابقه فاکتورها، استفاده از آموزش تعاملی. |
-| **بنکدار (Wholesaler / Vendor)** | Web Panel (دسکتاپ) + Mobile Web | مدیریت کاتالوگ و قیمت کالاها، مشاهده فاکتورهای جدید، تأیید یا رد سفارش (با ذکر دلیل)، اعلام وضعیت آماده‌سازی، چاپ حواله خروج انبار، گزارش تسویه. |
-| **کارشناس فعال‌سازی میدانی (Field Activator)** | Android App / Mobile Agent | دسترسی به فهرست مغازه‌های کلاستر، آنبوردینگ مغازه‌دار جدید، اجرای «سفارش کمکی» به نام مغازه در حضور او، ثبت بازخورد میدانی و گزارش موانع. |
-| **مدیر سامانه (Super Admin / Ops)** | Admin Web Panel | نظارت بر کل جریان سفارش‌ها، تعریف دسته‌های کالایی، مدیریت بنکداران، حل اختلاف و مغایرت‌ها، گزارش‌های تجمیعی GMV و کارمزد. |
+| **سوپرمارکت (Retailer)** | **Android + Web** | جستجوی کاتالوگ و بنکدار، مقایسه قیمت، سبد خرید، ثبت سفارش، مشاهده OrderGroup و فاکتورهای بنکداران، پیگیری تحویل، ثبت مغایرت و Financial Activity؛ قابلیت دقیق هر کاربر بر اساس Permissionهای عضویت تعیین می‌شود. |
+| **بنکدار (Wholesaler / Vendor)** | **Android + Web** | مدیریت کاتالوگ/قیمت، موجودی و اسکن بارکد، مشاهده و تعیین تکلیف سفارش، picking/dispatch، اسناد مالی و مدیریت کارکنان؛ سطح دسترسی دقیق بر اساس Permissionهای عضویت تعیین می‌شود. |
+| **کارشناس فعال‌سازی میدانی (Field Activator)** | **Android + Web** | مدیریت taskها، آنبوردینگ، سفارش کمکی، پیگیری و ثبت evidence؛ قابلیت دقیق بر اساس Permissionهای عضویت تعیین می‌شود. |
+| **مدیر سامانه / عملیات (Super Admin / Ops)** | **Android + Web** | صف‌های عملیاتی، کاربران و سازمان‌ها، کاتالوگ و candidate review، اختلافات، reconciliation، اعلان‌ها و analytics؛ دسترسی دقیق بر اساس سطح مجوز پلتفرمی تعیین می‌شود. |
+| **کاربر Staff / Finance / Warehouse / Sales** | **Android + Web** | بستر هر دو برای همه personaها یکسان است؛ صفحه‌ها و commandهای قابل استفاده صرفاً بر اساس Role + Delegated Permissions فعال می‌شوند. |
 
 ---
 
@@ -237,3 +238,68 @@ OPEN ──► UNDER_REVIEW ──► RESOLVED_ADJUSTED / RESOLVED_REJECTED ─�
 * **آمادگی برای پیاده‌سازی (Build Readiness):** تأیید قطعی جهت آغاز کدنویسی و توسعه MVP.
 
 
+
+---
+
+## ۲.۱ اصلاح معماری دسترسی چند-کلاینتی — 2026-09-20
+
+تمام personaهای کانونیکال POL باید از هر دو client اصلی پشتیبانی شوند: Android و Web / Responsive Web / PWA.
+
+این الزام به معنی یکسان بودن UI نیست. Android برای عملیات سریع، انبار، اسکن، field work و fulfillment بهینه می‌شود و Web برای مدیریت، جست‌وجوی گسترده، bulk operation، گزارش و reconciliation.
+
+مدل مجوز:
+
+Organization → Membership → Role → Delegated Permissions → Client Surface
+
+Role سطح مسئولیت پایه را تعیین می‌کند. مدیر مجاز سازمان می‌تواند در محدوده سیاست پلتفرم، دسترسی‌های capability-based را برای membershipهای سازمان خود تنظیم کند.
+
+UI visibility کنترل امنیتی نیست. همه command/resourceهای حساس باید در Backend و بر اساس active organization membership و permission نهایی مجدداً authorization شوند.
+
+## ۵.۲ مسیرهای کشف و خرید
+
+دو مسیر رسمی discovery وجود دارد:
+
+1. Product-first: جستجوی محصول → مشاهده آفرهای بنکداران → سبد
+2. Vendor-first: جستجوی بنکدار → Vendor Storefront → کاتالوگ بنکدار → سبد
+
+Vendor Storefront بخشی از همان catalog/inventory domain است و backend مستقل برای آن ایجاد نمی‌شود.
+
+## ۵.۳ سفارش و فاکتور چندبنکدار
+
+Retailer Checkout → OrderGroup → Vendor Orders → Vendor Invoices
+
+کاربر باید OrderGroup را به‌عنوان یک خرید واحد ببیند و بتواند فاکتورها، مبلغ، payment status و delivery state هر بنکدار را به‌صورت تفکیک‌شده مشاهده کند.
+
+## ۵.۴ Financial Activity
+
+POL در MVP Wallet با موجودی نگهداری‌شده ندارد.
+
+Financial Activity باید سابقه پرداخت، refund، مبلغ سفارش، مبلغ فاکتور، وضعیت پرداخت و وضعیت تسویه در صورت مجاز بودن را از داده‌های canonical نمایش دهد.
+
+## ۵.۵ Delivery Handoff
+
+MVP به Full Driver App نیاز ندارد.
+
+تحویل می‌تواند از جریان زیر استفاده کند:
+
+Dispatch → Restricted Delivery Handoff → Receiver Confirmation / Delivery OTP → POD
+
+Handoff token یک session/auth token نیست و نباید به‌تنهایی امکان تغییر financial state را داشته باشد.
+
+## ۵.۶ Scanner و Master SKU
+
+Scanner یک capability مستقل است: inventory.scan
+
+اسکن ناشناخته:
+Scan → Candidate → Catalog Review → Master Product
+
+هیچ اسکن ناشناخته‌ای نباید مستقیماً Master Product جدید ایجاد کند.
+
+تصاویر محصول باید provenance/source metadata داشته باشند؛ وجود تصویر عمومی روی سایت سازنده به‌تنهایی مجوز استفاده مجدد تلقی نمی‌شود.
+
+## ۵.۷ Settlement Copy
+
+هر متن active که برای کاربر تضمین دائمی تسویه مستقیم توسط POL ایجاد می‌کند باید حذف شود.
+
+کهن‌الگوی متن:
+«پرداخت و تسویه طبق شرایط ثبت‌شده سفارش و طرفین معامله انجام می‌شود.»
