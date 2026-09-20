@@ -64,7 +64,7 @@ flowchart TD
 | **کش / Rate Limit** | **Redis 7 (Optional)** | در صورت استقرار، فقط برای cache / rate-limit / acceleration؛ canonical business state و outbox به Redis وابسته نیست. |
 | **موتور worker / event processing** | **Python workers + PostgreSQL Outbox** | Canonical per D-019/D-015: workers claim durable PostgreSQL work with `FOR UPDATE SKIP LOCKED` and leases; no BullMQ/Redis Streams dependency. See `POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md`. |
 | **ذخیره‌سازی فایل و تصاویر (Storage)** | **MinIO (فضای شی‌محور سازگار با پروتکل S3 ابری)** | ذخیره‌سازی ابری فایل‌های باینری تصاویر کالاها با ساختار کلیدهای پایدار (`products/{id}/canonical/{uuid}.webp`) و حذف EXIF. |
-| **فرانت‌اند وب و دسکتاپ (Web)** | **Next.js 14 (App Router) با استایل‌دهی Tailwind CSS** | ساختار فوق‌العاده سبک، رندر سریع سمت سرور (SSR) برای گوشی‌های ضعیف، و قابلیت PWA روی گوشی سوپرمارکت. |
+| **فرانت‌اند وب و دسکتاپ (Web)** | **Next.js 15 (App Router) با استایل‌دهی Tailwind CSS** | ساختار فوق‌العاده سبک، رندر سریع سمت سرور (SSR) برای گوشی‌های ضعیف، و قابلیت PWA روی گوشی سوپرمارکت. |
 | **اپلیکیشن موبایل (Mobile)** | **React Native با فریم‌ورک Expo** | اشتراک بیش از ۸۰٪ کدهای تجاری با نسخه وب؛ ماژول اسکنر دوربین برای اسکن پیوسته بارکد (Continuous Scan). |
 | **رصد و مانیتورینگ (Observability)** | **Pino JSON Logger به همراه متریک‌های Prometheus و داشبورد Grafana** | ثبت بلادرنگ خطاها، پایش زمان پاسخگویی APIها و سلامت Python worker processes؛ deployment/process supervision remains a later deployment gate. |
 | **زیرساخت سرور و استقرار (Deployment)** | **Docker Compose روی سرورهای ابری داخل ایران (ابر آروان یا پارس‌پک)** | تضمین دسترسی ۱۰۰٪ پایدار درون کشور حتی در زمان اختلالات اینترنت بین‌الملل؛ استقرار ایزوله و مستقل. |
