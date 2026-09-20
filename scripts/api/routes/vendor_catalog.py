@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from scripts.api.dependencies import get_application_boundary
+from scripts.api.dependencies import get_application_boundary, require_roles
 from scripts.api.errors import success_payload
 from scripts.api.schemas import (
     VendorCatalogCreateRequest,
@@ -27,6 +28,7 @@ def vendor_list_products(boundary=Depends(get_application_boundary)):
 def vendor_create_product(
     payload: VendorCatalogCreateRequest,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.vendor_catalog_create_product(
@@ -47,6 +49,7 @@ def vendor_update_product(
     vendor_product_id: UUID,
     payload: VendorCatalogUpdateRequest,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.vendor_catalog_update_product(
@@ -81,6 +84,7 @@ def vendor_price_set(
     vendor_product_id: UUID,
     payload: VendorPriceSetRequest,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.vendor_price_set(
@@ -103,6 +107,7 @@ def vendor_inventory_adjust(
     vendor_product_id: UUID,
     payload: VendorInventoryAdjustRequest,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.vendor_inventory_adjust(

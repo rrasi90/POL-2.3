@@ -96,6 +96,10 @@ EXPECTED_BUSINESS_ROUTES = {
     ("GET", "/api/v1/field/tasks/{task_id}"),
     ("PATCH", "/api/v1/field/tasks/{task_id}"),
     ("POST", "/api/v1/field/tasks"),
+    ("GET", "/api/v1/storefront/vendors"),
+    ("GET", "/api/v1/storefront/vendors/{vendor_id}"),
+    ("GET", "/api/v1/storefront/vendors/{vendor_id}/products"),
+    ("GET", "/api/v1/search"),
 }
 
 EXPECTED_OPERATIONAL_ROUTES = {

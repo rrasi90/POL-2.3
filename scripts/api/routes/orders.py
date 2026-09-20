@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, status
 
-from scripts.api.dependencies import get_application_boundary
+from scripts.api.dependencies import get_application_boundary, require_roles
 from scripts.api.errors import success_payload
 from scripts.api.schemas import (
     CheckoutRequest,
@@ -41,6 +42,7 @@ def create_order(
     payload: CheckoutRequest,
     idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=128),
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "RETAILER_STAFF"))] = None,
 ):
     return success_payload(
         boundary.checkout_from_allocation_plan(
@@ -56,6 +58,7 @@ def create_order(
 def accept_order(
     order_id: UUID,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.vendor_order_accept(order_id=str(order_id))
@@ -67,6 +70,7 @@ def reject_order(
     order_id: UUID,
     payload: VendorOrderRejectRequest,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.vendor_order_reject(
@@ -83,6 +87,7 @@ def propose_partial_acceptance(
     payload: VendorPartialAcceptanceProposalRequest,
     idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=128),
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.vendor_partial_acceptance_propose(
@@ -105,6 +110,7 @@ def approve_partial_acceptance(
     order_id: UUID,
     proposal_id: UUID,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "RETAILER_STAFF"))] = None,
 ):
     return success_payload(
         boundary.retailer_partial_acceptance_approve(
@@ -120,6 +126,7 @@ def decline_partial_acceptance(
     proposal_id: UUID,
     payload: RetailerPartialAcceptanceDeclineRequest | None = None,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "RETAILER_STAFF"))] = None,
 ):
     return success_payload(
         boundary.retailer_partial_acceptance_decline(
@@ -202,6 +209,7 @@ def get_order_group_child_orders(
 def mark_preparing(
     order_id: UUID,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.vendor_mark_preparing(order_id=str(order_id))
@@ -212,6 +220,7 @@ def mark_preparing(
 def mark_ready(
     order_id: UUID,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.vendor_mark_ready(order_id=str(order_id))
@@ -223,6 +232,7 @@ def dispatch_order(
     order_id: UUID,
     payload: DispatchRequest | None = None,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     kwargs = {"order_id": str(order_id)}
     if payload:
@@ -240,6 +250,7 @@ def confirm_delivery(
     order_id: UUID,
     payload: DeliveryConfirmRequest | None = None,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "RETAILER_STAFF", "FIELD_ACTIVATOR"))] = None,
 ):
     kwargs = {"order_id": str(order_id)}
     if payload:
@@ -330,6 +341,7 @@ def resolve_delivery_exception(
     exception_id: UUID,
     payload: DeliveryExceptionResolveRequest,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "VENDOR_OWNER"))] = None,
 ):
     return success_payload(
         boundary.resolve_delivery_exception(
@@ -389,6 +401,7 @@ def verify_payment(
     order_id: UUID,
     payload: PaymentVerifyRequest | None = None,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT"))] = None,
 ):
     return success_payload(
         boundary.verify_payment(
