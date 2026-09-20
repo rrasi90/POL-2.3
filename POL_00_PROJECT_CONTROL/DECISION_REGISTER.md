@@ -3,7 +3,7 @@
 **Document ID:** `POL-DEC-001`  
 **Status:** `LOCKED / CANONICAL`  
 **Governance Level:** Lead Product Architect / Founder Approved  
-**Last Audit:** 2026-09-18 (Governance reconciliation against current PR/CI lineage)  
+**Last Audit:** 2026-09-20 (Governance reconciliation against current PR/CI lineage)  
 **Cross-Reference:** `01_RESEARCH/Assumptions_and_Hypotheses.md` (RES-REG-001)  
 
 ---
