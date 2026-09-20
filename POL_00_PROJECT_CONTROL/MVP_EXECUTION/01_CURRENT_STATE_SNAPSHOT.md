@@ -10,7 +10,7 @@
 
 - [x] معماری اصلی `Retailer → Basket → Allocation → Checkout → Vendor Order → Fulfillment → Delivery → Settlement → Data`
 - [x] PostgreSQL 18 به عنوان DB کانونیکال
-- [x] زنجیره Migrationهای 001 تا 028
+- [x] زنجیره Migrationهای 001 تا 031
 - [x] tenant / organization / membership architecture
 - [x] canonical RBAC بر مبنای `organization_memberships.role`
 - [x] universal user profile + membership/persona model
