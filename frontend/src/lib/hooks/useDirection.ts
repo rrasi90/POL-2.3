@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export function useDirection(): "ltr" | "rtl" {
-  const [dir, setDir] = useState<"ltr" | "rtl">("ltr");
+  const [dir, setDir] = useState<"ltr" | "rtl">("rtl");
 
   useEffect(() => {
     const stored = localStorage.getItem("ui_direction");

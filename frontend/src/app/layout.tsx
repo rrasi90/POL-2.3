@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "POL",
-  description: "POL B2B FMCG platform",
+  title: "پُل | POL — پلتفرم B2B FMCG",
+  description: "پلتفرم فروش عمده FMCG",
 };
 
 export default function RootLayout({
@@ -12,7 +12,9 @@ export default function RootLayout({
 }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="fa" dir="rtl">
-      <body className="min-h-screen bg-gray-50 text-gray-900">{children}</body>
+      <body className="min-h-screen bg-gray-50 font-sans text-gray-900 antialiased">
+        {children}
+      </body>
     </html>
   );
 }
