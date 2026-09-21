@@ -7197,3 +7197,56 @@ Endpoint governance:
 - Path normalization may reconcile :id and {id}; this does not create a second endpoint.
 - Duplicate documentation examples must not create duplicate trace nodes.
 - Every endpoint must still resolve to CAP → SCR → ACT → PERM → STATE → QA → Evidence.
+
+
+## 67.26. STRATEGIC OUTCOME / STAKEHOLDER CLOSURE
+
+The repository-wide review confirms that several strategy concepts are design-relevant even when they are not separate MVP screens.
+
+### Core stakeholder nodes
+- Retailer
+- Vendor / Wholesaler
+- Manufacturer
+- Visitor / Field Force
+- POL Operations
+- 3PL / Delivery actor
+- Bank / Financial Partner
+
+### Core strategic outcome nodes
+- Visitor → POL substitution
+- Retailer self-service
+- Price transparency / price comparison
+- Frictionless multi-vendor basket assembly
+- Supply anchor / vendor density
+- Asset-light operating model
+- Anti-disintermediation
+- Trust network
+- Data network
+- Transaction network
+- Future Manufacturer Intelligence
+- Pilot evidence / investor evidence pack
+
+### Design interpretation
+These are not automatically pages. They must resolve to one of:
+- CAP / Outcome node
+- Journey / KPI
+- Service Blueprint responsibility
+- Future / Deferred capability
+- Non-UI evidence artifact
+
+This prevents strategy concepts from being accidentally converted into unsupported MVP screens while ensuring that the reason for each major product surface remains traceable.
+
+## 67.27. NON-UI PRODUCT SURFACE REGISTRY
+
+Some repository artifacts are product-critical but are not application screens:
+
+- Pilot commitment / LOI
+- Investor evidence pack
+- Research evidence register
+- Pilot KPI dashboard/export
+- operational SOPs
+- field evidence
+- deployment/readiness evidence
+- audit/certification evidence
+
+These belong in Measurement / Research / Governance / Operations views and must not be forced into the Penpot screen tree.
