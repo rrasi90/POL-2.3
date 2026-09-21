@@ -2,9 +2,9 @@
 ## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Dark/Light
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `3.1.0`  
+**Version:** `3.2.0`  
 **Date:** 2026-09-21  
-**Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL / GITHUB-AUDITED  
+**Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL / REPOSITORY-CLOSURE-AUDITED  
 **Repository:** `rrasi90/POL-2.3`  
 **Working Branch:** `product-architecture-evolution-2026-09-20`  
 **Primary Intent:** تبدیل معماری محصول، مستندات، APIها، مدل داده، نقش‌ها، state machineها و وضعیت فعلی Penpot به یک درخت واحد و قابل‌ردگیری برای ساخت/تکمیل طراحی.
@@ -6314,3 +6314,800 @@ Segment by persona, role, organization type, client, surface, capability, journe
 
 ## 2.7.12 Interpretation
 A KPI is a signal, not a verdict. High fan-in can be a healthy shared primitive or a blast-radius risk. Low component reuse can reveal a real product-specific need or a missing library variant. High tree depth can reflect useful hierarchy or poor information architecture. Alerts must create diagnostic queues, not automatic redesign decisions.
+
+---
+
+# 67. REPOSITORY-WIDE CLOSURE PACK — VERSION 3.2
+
+این بخش نتیجه چندمرحله‌ای Repository Audit است که Master Tree را با کنترل‌پلن، Product Architecture، Product Specs، Domain/Data Model، API Contract، Route Inventory، MVP Execution Plan، Pilot Measurement، Operations، User Journeys، Design Specs و Frontend tree تطبیق می‌دهد.
+
+## 67.1. Coverage Contract — تعریف پوشش
+
+برای جلوگیری از «پوشش ۱۰۰٪ ظاهری»، پوشش این سند در چهار لایه سنجیده می‌شود:
+
+1. Semantic Coverage: هر capability، journey، state، actor/role، service handoff، entity، route family، failure scenario، KPI و decision مؤثر بر طراحی باید به یک node یا registry entry نگاشت داشته باشد.
+2. Traceability Coverage: هر node باید source، authority، owner، evidence level و lifecycle داشته باشد.
+3. Implementation Evidence Coverage: وضعیت Design / Prototype / Route / Runtime / QA مستقل ثبت می‌شود.
+4. Historical Containment: هیچ سند تاریخی، target stack یا journey قدیمی نباید بدون برچسب وارد architecture فعال شود.
+
+قاعده نهایی:
+Coverage = 100% فقط زمانی اعلام می‌شود که در Pass نهایی هیچ delta قابل‌اقدام جدیدی نسبت به منابع بررسی‌شده پیدا نشود. این به معنی «مصونیت از تغییر آینده» نیست؛ هر commit یا Decision جدید باید Pass بعدی ایجاد کند.
+
+## 67.2. CANONICAL CAPABILITY REGISTRY — رجیستری کامل قابلیت‌ها
+
+منبع پایه: POL_00_PROJECT_CONTROL/CAPABILITY_COVERAGE_MATRIX.md
+
+| Capability | Canonical Tree Node | Scope | Design consequence |
+|---|---|---|---|
+| IAM & Multi-Org Identity | CAP-IAM-MULTI-ORG | MVP | Auth, Membership, Context |
+| Master Catalog Hierarchy | CAP-CATALOG-HIERARCHY | MVP | Category / Brand / Product |
+| Vendor Product Listings | CAP-VENDOR-OFFER | MVP | Vendor SKU / packaging / offer |
+| Inventory & Stock Locking | CAP-INVENTORY-LOCKING | MVP | availability / reservation / revalidation |
+| Daily Inventory Confirmation | CAP-DAILY-INVENTORY | MVP | morning operational routine |
+| Pricing & Temporal Versioning | CAP-PRICING-TEMPORAL | MVP | effective price / version conflict |
+| Retailer Basket Engine | CAP-BASKET | MVP | versioned basket |
+| Multi-Vendor Allocation Engine | CAP-ALLOCATION | MVP | deterministic allocation / MOV / MOQ |
+| Pre-Commit Revalidation Checkout | CAP-REVALIDATION-CHECKOUT | MVP | last-mile conflict resolution |
+| OrderGroup / Multi-Vendor Splitting | CAP-ORDER-GROUP | MVP | parent → vendor child orders |
+| Fulfillment & Dispatch | CAP-FULFILLMENT | MVP | fulfillment / dispatch / delivery |
+| Invoice Generation & Access Control | CAP-INVOICE | MVP | vendor-scoped financial visibility |
+| Payments & Reconciliation | CAP-PAYMENT-RECON | MVP | direct payment evidence / reconciliation |
+| Multi-Vendor Dispute Resolution | CAP-DISPUTE | MVP | orthogonal dispute projection |
+| Suggestion & Universal Feedback Box | CAP-FEEDBACK | MVP | feedback submission / admin triage / reply |
+| Vendor Reliability Ledger | CAP-VENDOR-RELIABILITY | MVP | reliability history and operational consequences |
+| Notifications & Delivery Boundary | CAP-NOTIFICATION | MVP | logical inbox + delivery boundary |
+| Broadcast Announcements | CAP-BROADCAST | MVP | admin-created targeted broadcast |
+| Support Cases & Ticketing | CAP-SUPPORT | MVP | support case lifecycle separate from dispute |
+| SLA Calendar & Delivery Windows | CAP-SLA-CALENDAR | MVP | working-time semantics |
+| Admin Authorization & RBAC | CAP-ADMIN-RBAC | MVP | admin role/permission boundary |
+| Product Identity Lifecycle & Merge Safety | CAP-PRODUCT-LIFECYCLE | MVP | candidate / merge / archive / snapshot integrity |
+| Returns & RMA Management | CAP-RMA | MVP | return lifecycle + refund linkage |
+| Universal User Profile & Persona Context | CAP-UNIVERSAL-PROFILE | MVP | user → membership → persona |
+| Vendor Referral MVP | CAP-REFERRAL-MVP | MVP | attribution-only acquisition |
+| Credit Terms & BNPL Underwriting | CAP-CREDIT-BNPL | POST-MVP | explicitly deferred; never design as MVP |
+| Dynamic Route Optimization | CAP-ROUTE-OPTIMIZATION | POST-MVP | explicitly deferred; never design as MVP |
+
+Capability coverage is not route coverage. A capability may be SPECIFIED / DOMAIN_VERIFIED / BOUNDARY_READY / HTTP_IMPLEMENTED / DESIGN_VERIFIED / RUNTIME_VERIFIED independently.
+
+## 67.3. ONBOARDING CAPABILITY — GUIDED FIRST USE
+
+PRD commitment که در Master Tree قبلی به‌صورت first-class نیامده بود:
+
+CAP-GUIDED-ONBOARDING
+→ EXP-RET-FIRST-USE
+→ JRN-GUIDED-ONBOARDING
+→ FLOW-GUIDED-WALKTHROUGH
+→ PAT-GUIDED-WALKTHROUGH
+
+Required steps:
+1. Welcome / value proposition
+2. Search + category discovery
+3. Price comparison across vendors
+4. Basket + checkout explanation
+
+Behavior:
+- first-use eligible
+- step active
+- step completed
+- skipped
+- dismissed
+- replay from Settings
+- completion receipt
+- no video dependency
+
+Required measurement events:
+EVT-ONBOARDING-STARTED
+EVT-ONBOARDING-STEP-VIEWED
+EVT-ONBOARDING-STEP-COMPLETED
+EVT-ONBOARDING-SKIPPED
+EVT-ONBOARDING-REPLAYED
+EVT-ONBOARDING-COMPLETED
+
+Guided onboarding must never silently grant permission, mutate business state, or substitute for field/ops verification.
+
+## 67.4. CANONICAL ENTITY REGISTRY — DOMAIN / DATA / DESIGN BRIDGE
+
+### Identity / Organization
+users
+user_profiles
+organizations
+organization_memberships
+membership_profiles
+retailer_profiles
+wholesaler_profiles
+staff_profiles
+user_sessions
+user_devices
+otp_challenges
+
+### Catalog / Product Identity
+brands
+categories
+subcategories
+products
+product_reference_metadata
+product_identifiers
+media_assets
+product_media
+product_candidates
+product_merge_history
+product_identity_lifecycle_logs
+vendor_products
+
+### Supply / Pricing / Inventory
+vendor_inventory
+vendor_prices
+inventory_reservations
+inventory_audit_log
+daily_inventory_confirmations
+daily_inventory_confirmation_items
+vendor_inventory_responsibilities
+
+### Commerce
+baskets
+basket_items
+allocation_plans
+allocation_items
+order_groups
+orders
+order_items
+order_partial_acceptance_proposals
+order_partial_acceptance_proposal_items
+
+### Fulfillment / Delivery
+deliveries
+proof_of_delivery
+delivery_address_snapshot
+handoff token / restricted delivery-handoff representation
+
+### Finance / Trust
+invoices
+invoice_items
+payments
+payment_attempts
+settlements
+settlement_adjustments
+refunds
+reputations
+reputation_snapshots
+vendor_reliability_events
+
+### Disputes / Support / Feedback
+disputes
+support_cases
+support_case_messages
+support_case_assignments
+feedback_submissions
+
+### Notifications / Event Runtime
+notifications
+notification_deliveries
+user_inbox_items
+notification_preferences
+notification_templates
+broadcast_messages
+broadcast_recipients
+outbox_events
+domain_events_log
+
+### Operations / Field / Governance
+field_tasks
+admin_roles
+admin_permissions
+sla_configurations
+calendar_schedules
+admin_audit_logs
+
+### Referral
+vendor_referral_campaigns
+vendor_referrals
+vendor_referral_redemptions
+vendor_referral_attributions
+
+### Deferred data — explicit future branches
+credit_lines
+credit_transactions
+delivery_routes
+waypoints
+
+Registry rule: نام conceptual مثل Barcode یا Financial Activity برای UX کافی است، اما در Traceability باید به entity/table canonical نیز resolve شود.
+
+## 67.5. VENDOR ONBOARDING STATE TREE
+
+CAP-VENDOR-ONBOARDING
+
+LEAD
+→ DOCUMENTS_PENDING
+→ UNDER_REVIEW
+→ VERIFICATION_PENDING
+→ APPROVED
+→ ACTIVE
+
+Terminal / exception:
+REJECTED
+SUSPENDED
+
+Required surfaces:
+- onboarding lead record
+- document checklist
+- verification queue
+- inspection/evidence
+- approval decision
+- activation receipt
+- suspension/review state
+
+ACTIVE vendor must never be inferred from visual presence in UI; it is the result of authoritative onboarding state.
+
+## 67.6. DAILY INVENTORY CONFIRMATION + OPERATIONAL INTELLIGENCE
+
+State tree:
+PENDING
+→ CONFIRMED_NO_CHANGES
+or
+→ CONFIRMED_WITH_CHANGES
+or
+→ MISSED
+
+Inventory confidence:
+CONFIRMED_TODAY
+STALE
+UNVERIFIED
+
+Required UX:
+- 1-tap morning confirmation
+- changed-item edit path
+- exception path
+- confirmation receipt
+- reminder state
+- stale/unverified warning
+
+DAILY_CONFIRMATION_COMPLETED is reliability evidence.
+
+## 67.7. FIELD TASK / FIELD FORCE REGISTRY
+
+Canonical task types:
+- ONBOARD_RETAILER
+- TRAIN_RETAILER
+- FIRST_ORDER_ASSIST
+- FOLLOW_UP
+- VENDOR_VISIT
+- DISPUTE_VISIT
+
+Task contract:
+Task → Territory → Assignee → Due → Evidence → Outcome → Next Action → Attribution
+
+Required states:
+- unassigned
+- assigned
+- due today
+- overdue
+- in progress
+- blocked
+- completed
+- requires follow-up
+
+Measurement must distinguish ASSISTED ORDER from INDEPENDENT FIRST ORDER.
+
+## 67.8. VENDOR RELIABILITY LEDGER
+
+CAP-VENDOR-RELIABILITY
+
+Evidence sources:
+- daily inventory confirmation
+- on-time fulfillment
+- vendor cancellation/rejection
+- timeout / SLA breach
+- delivery quality
+- dispute outcomes
+
+Vendor
+→ Reliability Event
+→ Reliability Snapshot
+→ Operational Visibility / Queue Priority / Eligibility
+
+Any ranking, badge or prioritization requires an explicit source rule; an opaque score is not a source of truth.
+
+## 67.9. SLA / WORKING-CALENDAR TREE
+
+Canonical semantics:
+- Acceptance average target: <45 working minutes
+- Acceptance hard timeout: 120 working minutes
+- SLA uses the Ahvaz working calendar rather than wall-clock duration.
+- Working calendar: Saturday–Thursday, 08:00–18:00; Friday holiday; official exclusions represented by calendar data.
+
+Entities:
+sla_configurations
+calendar_schedules
+
+Required UX:
+- remaining working time
+- paused outside working calendar
+- overdue
+- admin override
+- override reason
+- audit entry
+
+45 minutes is an outcome KPI. 120 working minutes is a hard operational timeout. They must never be rendered as the same value.
+
+## 67.10. NOTIFICATION / BROADCAST / DELIVERY LINEAGE
+
+Logical lineage:
+Domain Event
+→ Notification Template
+→ Notification
+→ Inbox Item
+→ Notification Delivery
+→ Provider Attempt
+→ Delivered / Failed
+
+Broadcast lineage:
+Admin
+→ Broadcast Message
+→ Frozen Recipient Set
+→ Broadcast Recipient
+→ Delivery
+
+Recipient eligibility is revalidated against active organization membership at canonical worker materialization time.
+
+Notification route coverage must separately report:
+- logical notification complete
+- in-app inbox complete
+- provider delivery complete
+- retry/recovery complete
+
+## 67.11. EVENT RUNTIME / OUTBOX / FAILURE GOVERNANCE
+
+Canonical runtime:
+Domain Mutation
+→ Transactional Outbox
+→ Python Worker
+→ Provider / Async Consumer
+→ Delivery / Projection / Analytics
+
+Required runtime entities:
+outbox_events
+domain_events_log
+
+Required runtime controls:
+- correlation ID
+- idempotency key
+- producer identity
+- event version
+- consumer status
+- retry count
+- retry backoff
+- dead-letter handling
+- unsupported-event rejection
+- provider attempt trace
+- replay / recovery policy
+
+X-Correlation-ID must be traceable across request → domain mutation → outbox → worker → provider/downstream effect.
+
+BUG-005 invariant: unsupported outbox events must not remain silently PENDING forever.
+
+Historical BullMQ / Redis Streams references do not override the current PostgreSQL transactional outbox + Python worker authority.
+
+## 67.12. CANONICAL API / ROUTE COVERAGE TREE
+
+Canonical route status:
+HTTP_IMPLEMENTED
+OPERATIONAL
+CONTRACT_ONLY
+BOUNDARY_READY / NOT_YET_HTTP
+DOMAIN_VERIFIED_ONLY
+
+Current route evidence:
+- 21 implemented business HTTP routes
+- 2 operational transport routes: /healthz and /readyz
+- 50 documented business endpoint specifications in the canonical contract inventory
+
+Implemented business route families:
+- Auth: request OTP / verify OTP / refresh / switch organization / session revoke
+- Basket: create / add item / allocation preview
+- Commerce: checkout from allocation plan
+- Order: accept / reject / partial-accept proposal / approve / decline
+- Profile: universal profile / completion / context / membership profile
+
+Contract-only or not-yet-HTTP families:
+- product search / barcode match / product candidate
+- vendor continuous scan / inventory publish
+- dispatch / delivery / POD
+- payment evidence / payment verification
+- disputes / RMA
+- support case lifecycle
+- inbox read/read-all
+- notification preferences
+- broadcasts
+- invoices
+- admin exceptions / SLA override / audit
+- categories / category admin
+- referral
+- feedback
+- operational workers
+
+A screen may be designed and prototype-complete while its route remains CONTRACT_ONLY. Preserve both dimensions.
+
+## 67.13. ROUTE → SCREEN → CAPABILITY TRACEABILITY CONTRACT
+
+Every client-facing route family should resolve:
+
+ROUTE
+→ CAP
+→ SCR
+→ ACT
+→ PERM
+→ API
+→ STATE
+→ QA
+→ Evidence
+
+Example:
+ROUTE-ORDER-ACCEPT
+→ CAP-ORDER-GROUP
+→ VD-02
+→ ACT-ORDER-ACCEPT
+→ PERM-order.accept
+→ /api/v1/orders/{order_id}/accept
+→ SUBMITTED → ACCEPTED
+→ QA evidence
+→ HTTP / runtime status
+
+Partial acceptance:
+ROUTE-PARTIAL-ACCEPTANCE
+→ CAP-PARTIAL-ACCEPTANCE
+→ VD-18 / RT-20
+→ proposal / approve / decline
+→ permission
+→ proposal endpoints
+→ proposal state machine
+→ outbox + notification evidence
+
+## 67.14. FAILURE SCENARIO REGISTRY — FJ-01…FJ-12
+
+| ID | Failure | Canonical design requirement |
+|---|---|---|
+| FJ-01 | Vendor SLA timeout | working-calendar timeout, reservation release, reliability event, notification, ops/field follow-up |
+| FJ-02 | Partial acceptance | proposal → approve/decline; quantity/amount/reservation reconciliation |
+| FJ-03 | Vendor rejection | child order isolated; siblings continue independently |
+| FJ-04 | Stale basket | version conflict + revalidation |
+| FJ-05 | Expired allocation | expiry block + reservation release + recalculation |
+| FJ-06 | Inventory race condition | row locking / no oversell / deterministic error |
+| FJ-07 | Delivery refusal | handoff/POD refusal → delivery exception → ops recovery |
+| FJ-08 | Invalid delivery OTP attempts | rate limit + lock + invalidation; separate from login OTP |
+| FJ-09 | Unverified direct payment proof | payment evidence failure + support escalation |
+| FJ-10 | Post-delivery dispute | order remains delivered; dispute projection changes independently |
+| FJ-11 | Cross-tenant access | deny + audit + no data disclosure |
+| FJ-12 | Off-hours / holiday order | order accepted; SLA clock pauses until working calendar opens |
+
+Historical containment:
+- login OTP shown as 6-digit → superseded by D-018 4-digit login OTP
+- full Driver App → superseded by D-023 lightweight Delivery Handoff
+- EXPIRED_UNRESPONSIVE timeout wording → current timeout semantics are SUBMITTED → CANCELLED with VENDOR_TIMEOUT
+- nearest-vendor recommendation after rejection is not a guaranteed MVP requirement unless independently authorized
+- commission_rate = 0 in a pilot narrative does not become a permanent settlement promise; D-025 governs settlement copy
+
+## 67.15. ADMIN / RBAC / SECURITY CONTROL TREE
+
+Authorization chain:
+Organization
+→ Membership
+→ Base Role
+→ Delegated Permissions
+→ Effective Permission Set
+→ Client Surface
+
+Admin control plane:
+- admin roles
+- admin permissions
+- ADMIN / OPS / SUPPORT / FINANCE / FIELD / ANALYTICS job functions
+- audit logs
+- separation of duties
+- sensitive-action evidence
+
+Security controls:
+- auth
+- session lifecycle
+- OTP brute-force
+- refresh-token policy
+- tenant isolation
+- permission denial
+- file upload restrictions
+- PII handling
+- secrets
+- secure headers
+- CORS / CSRF strategy
+- sensitive-action audit
+- admin separation of duties
+
+Visibility ≠ Enabled ≠ Authorized ≠ Audited ≠ Irreversible.
+
+## 67.16. FRONTEND / DESIGN / RUNTIME EVIDENCE SEPARATION
+
+Current frontend tree contains:
+- authentication forms
+- notification list
+- field task list
+- support case list
+- retailer catalog / checkout / order views
+- vendor inventory / order queue / settlement list
+- API client
+- direction hook
+- shared types
+
+Therefore the canonical evidence ladder is:
+
+DESIGN_DEFINED
+→ PENPOT_BUILT
+→ PROTOTYPED
+→ FRONTEND_ROUTE_DEFINED
+→ FRONTEND_CODE_PRESENT
+→ HTTP_CONNECTED
+→ RUNTIME_VERIFIED
+→ PILOT_VERIFIED
+
+Presence of a component file is not proof of complete feature implementation.
+Presence of a Penpot frame is not proof of route readiness.
+A route test is not proof of deployed production readiness.
+
+## 67.17. OPERATIONAL READINESS / INFRASTRUCTURE EVIDENCE TREE
+
+Deployment:
+- Python runtime/package
+- Uvicorn/process model
+- reverse proxy / TLS
+- environment configuration
+- secret management
+- PostgreSQL deployment
+- worker + scheduler
+- migrations
+- health/readiness/liveness
+- staging/pilot environments
+- rollback
+
+Security:
+- HTTPS
+- JWT secret isolation
+- OTP provider secret isolation
+- rate limiting
+- brute-force controls
+- session revocation
+- refresh policy
+- CORS/CSRF strategy
+- secure headers
+- request/file controls
+- tenant isolation
+- authorization negative matrix
+- PII policy
+- dependency/security scanning
+- log redaction
+
+Observability:
+- structured logs
+- correlation ID
+- request/order/outbox/worker/provider traces
+- API latency/errors
+- checkout failures
+- order timeout
+- outbox backlog
+- notification failures
+- worker lag
+- payment mismatch
+- RMA aging
+- support SLA
+- DB saturation / slow queries
+- alert thresholds
+- incident runbook
+
+Backup / recovery:
+- PostgreSQL backup
+- encryption
+- restore drill
+- PITR if selected
+- migration backup/recovery
+- rollback
+- retention
+- audit retention
+- provider-response retention
+- pilot evidence export
+- staging refresh
+- data sanitization
+
+Checklist presence is not verification evidence.
+
+## 67.18. ANALYTICS / KPI LINEAGE REGISTRY
+
+New canonical measurement node:
+MET-KPI-LINEAGE
+
+Lineage:
+User/System Action
+→ Domain Event
+→ Source Entity/Table
+→ Event Properties
+→ Persona / Organization / Cohort
+→ Metric Calculation
+→ Dashboard / Export
+→ Evidence
+
+Pilot KPI anchors:
+- Activation Rate ≥35%
+- Repeat Order Rate >50% with at least 3 repeat orders within 30 days
+- Fill Rate >90%
+- Acceptance average <45 working minutes
+- Scanner inventory entry median ≤10 seconds
+- Scanner inventory entry P95 ≤20 seconds
+- Items per scan session target ≥50
+- Photo-assisted ID acceptable target ≥70%
+
+Additional measurement contract:
+- first assisted order
+- first independent order
+- reorder
+- checkout success/failure
+- vendor accept/reject
+- partial acceptance
+- timeout
+- delivery
+- dispute
+- RMA
+- support
+- referral
+- abandonment
+- vendor activation
+- retailer activation
+- catalog quality
+- inventory freshness
+- self-service
+- cost-to-serve
+- CAC realized
+- vendor continuation intent
+
+Required dimensions:
+persona, role, organization, surface, capability, journey, geography/pilot, release/wave, severity, cohort, timezone, device, theme where useful.
+
+## 67.19. RESEARCH / DECISION / BUG EVIDENCE BRIDGE
+
+| Evidence | Master Tree invariant |
+|---|---|
+| BUG-001 | every child order contains correct OrderItems |
+| BUG-002 | allocation line aggregation does not invent a child-order boundary |
+| BUG-003 | RMA completion preserves separation of duties |
+| BUG-004 | return quantities cannot exceed aggregate purchased/eligible quantity |
+| BUG-005 | unsupported events cannot remain silently pending |
+| BUG-006 | conflicting trusted payment evidence requires explicit reconciliation path |
+| BUG-007 | verification uses current schema / source of truth, never stale table-count assumptions |
+| BUG-008 | E2E evidence is tied to canonical application boundary |
+| OBS-003 | idempotency key scope includes payload identity |
+
+These are design invariants and QA evidence links, not merely historical notes.
+
+## 67.20. HISTORICAL CONFLICT CONTAINMENT REGISTER
+
+Known conflicts:
+- old target stack: NestJS / Next.js / React Native
+- current runtime authority: Python + FastAPI
+- old login OTP references: 6-digit
+- current login OTP: 4-digit
+- old full Driver App references
+- current MVP: lightweight Delivery Handoff
+- old timeout wording: EXPIRED_UNRESPONSIVE
+- current hard timeout behavior: SUBMITTED → CANCELLED with VENDOR_TIMEOUT
+- older settlement/commission wording that can imply guarantee
+- older migration/table-count claims
+
+Each conflict receives:
+HISTORICAL
+→ SUPERSEDED BY
+→ CURRENT AUTHORITY
+→ AFFECTED SURFACES
+→ QA / MIGRATION ACTION
+
+No historical doc may be used as a design requirement without revalidation.
+
+## 67.21. REPOSITORY SOURCE COVERAGE MAP
+
+| Repository area | Master Tree view(s) |
+|---|---|
+| 00_PROJECT_OVERVIEW | Outcome / Strategy / Governance |
+| 01_RESEARCH | Research / Evidence / Measurement |
+| 02_STRATEGY | Outcome / Capability / Value Stream |
+| 03_CUSTOMERS | Stakeholder / Actor / Persona |
+| 04_VALUE_PROPOSITION | Outcome / Capability / Experience |
+| 05_BUSINESS_MODEL | Business Capability / Value Stream / Finance |
+| 06_PRODUCT | Product / Experience / Journey / State / Requirements |
+| 07_ALGORITHMS | Domain / Decision / Algorithm / NFR |
+| 07_ANALYTICS | Measurement / Event Lineage |
+| 08_DATA | Domain / Data Governance / Entity |
+| 09_OPERATIONS | Service Blueprint / Operations / Recovery |
+| 10_GO_TO_MARKET | Onboarding / Field / Growth Experience |
+| 11_PILOT | Measurement / Operations / Evidence |
+| 12_ROADMAP | Release / Future / Deferred Scope |
+| 13_PRODUCT_DESIGN | Design System / IA / Screens / Prototype / QA |
+| POL_00_PROJECT_CONTROL | Authority / Traceability / Certification / Readiness |
+| migrations | Physical Data / Schema Evidence |
+| frontend | Implementation Evidence / Runtime Surface |
+| scripts | Verification / Runtime / Contract Evidence |
+| .github | CI / Automated Governance Evidence |
+
+## 67.22. MASTER TREE FITNESS FUNCTIONS — REPOSITORY CLOSURE EXTENSION
+
+15. Every canonical capability from the current Coverage Matrix resolves to a CAP node.
+16. Every design-relevant schema entity resolves to a canonical entity entry.
+17. Every documented HTTP endpoint resolves to a route-family or endpoint contract entry.
+18. No CONTRACT_ONLY endpoint is presented as live production route.
+19. Every committed PRD capability has at least one journey or screen mapping.
+20. Every FJ-01…FJ-12 failure scenario has UI/state/recovery coverage.
+21. Guided onboarding is represented as capability + journey + pattern + measurement.
+22. Every async side effect resolves to outbox/worker/provider evidence.
+23. Every MVP security checklist family resolves to a security/evidence node.
+24. Every pilot KPI resolves to an event lineage path and cohort/time policy.
+25. Every deferred capability is explicitly outside MVP.
+26. Every historical conflict has a superseding authority.
+27. Every current frontend feature has independent implementation evidence.
+28. Every resolved critical bug maps to a permanent product/design invariant.
+29. No documentation count is used as a proxy for system completeness.
+30. Coverage Pass cannot close while a new canonical source introduces an unmapped artifact.
+
+## 67.23. FINAL REPOSITORY AUDIT PASS LOG
+
+### Pass A — Authority / Capability / Data
+Checked:
+- source-of-truth hierarchy
+- decision amendments D-021…D-028
+- capability coverage matrix
+- domain/data schemas
+- identity and persona model
+- multi-vendor order / finance / catalog / notifications
+
+Result:
+DELTA FOUND → §67.2 / §67.4 / §67.5 / §67.9 added
+
+### Pass B — API / Route / Journey / Failure
+Checked:
+- 50-endpoint contract inventory
+- 21 implemented business routes
+- route coverage / AMBER semantics
+- FJ-01…FJ-12
+- partial acceptance / timeout / delivery / payment / dispute
+- user journeys and contradictory legacy wording
+
+Result:
+DELTA FOUND → §67.12 / §67.13 / §67.14 / §67.20 added
+
+### Pass C — Design / Operations / Analytics / Infrastructure
+Checked:
+- PRD guided onboarding
+- Penpot design completeness sources
+- daily inventory
+- field operations
+- vendor reliability
+- SLA calendar
+- event runtime
+- observability
+- deployment
+- backup/recovery
+- analytics/KPI lineage
+- frontend implementation tree
+
+Result:
+DELTA FOUND → §67.3 / §67.6 / §67.7 / §67.8 / §67.11 / §67.16 / §67.17 / §67.18 added
+
+### Pass D — Structural closure check
+Question set:
+1. Can every in-scope capability resolve to a CAP node?
+2. Can every critical data concept resolve to an entity?
+3. Can every route resolve to capability + screen + permission + state?
+4. Can every failure scenario resolve to recovery?
+5. Can every KPI resolve to event lineage?
+6. Can every deferred feature be identified?
+7. Can every historical conflict be prevented from becoming active architecture?
+8. Can Penpot completeness be distinguished from frontend/runtime completeness?
+9. Can every resolved critical bug be expressed as an invariant?
+
+Result:
+NO NEW ACTIONABLE DIMENSION FOUND IN THE CURRENT REVIEWED SOURCE SET.
+
+### Closure statement
+Repository Coverage Gate: CLOSED at the current source snapshot.
+
+This is closure of the audited source set, not a guarantee that future commits, new decisions, new migrations, new routes, new research findings or new Penpot changes cannot create new deltas.
