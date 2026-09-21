@@ -4,7 +4,7 @@
 **Version:** 1.1 (Canonical)  
 **Status:** `LOCKED / OFFICIAL GOVERNANCE CHARTER`  
 **Effective Milestone:** Sprint 0 & MVP v1.0  
-**Last Audit:** 2026-09-18  
+**Last Audit:** 2026-09-21  
 
 ---
 
