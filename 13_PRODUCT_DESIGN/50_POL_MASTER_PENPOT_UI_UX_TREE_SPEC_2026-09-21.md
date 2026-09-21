@@ -2657,3 +2657,2167 @@ Penpot باید یک representation بصری از این زنجیره باشد:
 **Primary next action:** Build / update Penpot from this tree, then update the tree with actual Penpot frame IDs and QA evidence.
 
 **Critical unresolved source conflicts:** OTP length representation, historical Driver App references, richer offline implications, and other stale Penpot wording must remain visible until canonicalized by the governing runtime/API contract.
+
+
+---
+
+# 36. DEEP AUDIT — SEMANTIC MODEL OF THE TREE
+
+## 36.1 نتیجه بازرسی ساختاری
+
+نسخه فعلی Tree از نظر «چه صفحه‌هایی لازم است؟» پایه خوبی دارد، اما برای تبدیل شدن به **Master Design Architecture** باید یک لایه دیگر به آن اضافه شود.
+
+درخت نباید فقط این باشد:
+
+`Surface → Screen → Section`
+
+بلکه باید این ساختار را داشته باشد:
+
+```
+POL
+└── Business Capability
+    ├── Actor / Role
+    ├── Surface / Client
+    ├── Experience
+    │   └── Screen
+    │       ├── Section
+    │       │   ├── Component
+    │       │   ├── Data
+    │       │   ├── Action
+    │       │   ├── UI State
+    │       │   └── Permission
+    │       ├── Domain State
+    │       ├── API Contract
+    │       ├── Domain Event
+    │       ├── Audit Event
+    │       ├── Notification
+    │       ├── Navigation
+    │       ├── Light/Dark
+    │       ├── Mobile/Desktop
+    │       └── QA
+    └── Cross-Surface Dependencies
+```
+
+این تفکیک ضروری است؛ زیرا یک «Role» با «Persona»، یک «Domain State» با «UI State»، و یک «Permission» با «Visibility» یک مفهوم نیست.
+
+---
+
+# 37. DEFINITIONS — معنی دقیق هر سطح
+
+## 37.1 Business Capability
+
+قابلیتی که سیستم باید برای کسب‌وکار فراهم کند.
+
+مثال:
+
+- Multi-Vendor Ordering
+- Financial Visibility
+- Vendor Discovery
+- Inventory Adjustment
+- Delivery Handoff
+- Delegated Access
+
+Capability پاسخ می‌دهد:
+
+> سیستم چه مسئله‌ای را حل می‌کند؟
+
+Capability مستقیماً UI نیست.
+
+---
+
+## 37.2 Actor
+
+یک موجودیتی که در یک flow عملیاتی عمل انجام می‌دهد.
+
+Actor می‌تواند باشد:
+
+- human user
+- organization member
+- operator
+- system worker
+- external provider
+
+مثال:
+
+`Vendor Owner` یک human actor است.
+
+`Notification Worker` یک system actor است.
+
+---
+
+## 37.3 Role
+
+Role مجموعه‌ای از اختیارات پایه یک Membership است.
+
+Roles canonical:
+
+- ADMIN_SUPER
+- OPS_AGENT
+- FIELD_ACTIVATOR
+- VENDOR_OWNER
+- VENDOR_STAFF
+- RETAILER_OWNER
+- RETAILER_STAFF
+
+Role تعیین می‌کند کاربر «در سازمان چه مسئولیتی دارد».
+
+Role به‌تنهایی نباید به‌عنوان authorization نهایی مدل شود.
+
+---
+
+## 37.4 Persona
+
+Persona از منظر طراحی تجربه تعریف می‌شود.
+
+مثال:
+
+- Retail Buyer
+- Vendor Operator
+- Operations Agent
+- Field Activator
+- Corporate Viewer
+
+Persona ممکن است چند Role را شامل شود.
+
+مثال:
+
+`Retailer Experience`
+
+می‌تواند:
+
+- RETAILER_OWNER
+- RETAILER_STAFF
+
+را پوشش دهد.
+
+---
+
+## 37.5 Surface
+
+محیط تعامل است.
+
+نمونه:
+
+- Retailer Mobile
+- Vendor Web
+- Operations Desktop
+- Android Field
+- Corporate Web
+
+Surface الزاماً معادل Role نیست.
+
+---
+
+## 37.6 Experience
+
+یک goal-oriented journey یا مجموعه flowهای مرتبط.
+
+مثال:
+
+`Vendor Order Acceptance Experience`
+
+ممکن است شامل:
+
+- Queue
+- Detail
+- Full Accept
+- Partial Accept
+- Reject
+- Timeline
+
+باشد.
+
+---
+
+## 37.7 Screen
+
+یک destination یا stateful interface مستقل.
+
+Screen باید ID یکتا داشته باشد.
+
+مثال:
+
+`VD-02`
+
+---
+
+## 37.8 Section
+
+یک بخش معنایی داخل Screen.
+
+مثال در Order Detail:
+
+- Header
+- Items
+- Payment
+- Invoice
+- Delivery
+- Timeline
+
+Section نباید صرفاً یک مستطیل بصری باشد.
+
+---
+
+## 37.9 Component
+
+یک building block reusable.
+
+مثال:
+
+- OrderGroup Card
+- Financial Activity Row
+- Permission Editor
+
+---
+
+## 37.10 Action
+
+یک فرمان کاربر یا system action.
+
+مثال:
+
+- Accept
+- Reject
+- Grant
+- Revoke
+- Verify
+- Retry
+- Approve
+
+هر Action باید:
+
+- actor
+- permission
+- precondition
+- validation
+- result
+- failure
+- audit
+
+داشته باشد.
+
+---
+
+## 37.11 UI State
+
+حالتی که صرفاً نحوه نمایش/تعامل interface را تعریف می‌کند.
+
+مثال:
+
+- Loading
+- Empty
+- Disabled
+- Modal Open
+- Validation Error
+
+---
+
+## 37.12 Domain State
+
+وضعیت واقعی موجودیت در business domain.
+
+مثال:
+
+`Order = ACCEPTED`
+
+یا:
+
+`Settlement = PENDING`
+
+UI State و Domain State نباید با هم قاطی شوند.
+
+---
+
+## 37.13 Permission
+
+مجوز اجرای یک capability/action است.
+
+مثال:
+
+`inventory.adjust`
+
+وجود permission به معنی visibility نیست.
+
+ممکن است UI یک action را برای کاربر نشان دهد ولی Backend آن را رد کند؛ طراحی باید این حالت را نیز مشخص کند.
+
+---
+
+## 37.14 Data Contract
+
+تعریف داده‌ای که Screen می‌خواند یا می‌نویسد.
+
+مثال:
+
+Financial Activity:
+
+- order_id
+- invoice_id
+- payment_status
+- refund_status
+- settlement_status
+
+---
+
+## 37.15 API Contract
+
+مسیر runtime که interface را به application boundary متصل می‌کند.
+
+باید مشخص شود:
+
+- method
+- route
+- request
+- response
+- auth
+- permission
+- errors
+- retryability
+
+---
+
+## 37.16 Domain Event
+
+رخدادی که business state تغییر کرده است.
+
+مثال:
+
+- order_created
+- order_accepted
+- product_match_confirmed
+- payment_verified
+
+---
+
+## 37.17 Audit Event
+
+ثبت امنیتی/حاکمیتی یک عمل.
+
+مثال:
+
+`permission.granted`
+
+با:
+
+- actor
+- target
+- permission
+- timestamp
+- reason
+
+---
+
+## 37.18 Notification
+
+پیامی که به actor اطلاع می‌دهد یک event یا change رخ داده است.
+
+مثال:
+
+Vendor partial acceptance proposal
+
+→ Retailer notification
+
+---
+
+## 37.19 Navigation Relationship
+
+نحوه انتقال کاربر بین nodes.
+
+هر رابطه باید type داشته باشد:
+
+- NAVIGATES_TO
+- OPENS
+- RETURNS_TO
+- DEEP_LINKS_TO
+- ESCALATES_TO
+
+---
+
+# 38. ROLE CATALOG — نقش دقیق هر Role
+
+## 38.1 ADMIN_SUPER
+
+### مأموریت
+Governance سطح پلتفرم.
+
+### مسئولیت
+- platform configuration
+- admin management
+- security audit
+- high-risk system actions
+- global controls
+
+### نباید
+- به‌عنوان نقش روزمره Vendor یا Retailer استفاده شود.
+- با delegation عادی سازمانی قابل تفویض باشد.
+
+### Surface
+Operations / Admin Web.
+
+### حساسیت
+CRITICAL.
+
+### Audit
+تمام تغییرات حساس.
+
+---
+
+## 38.2 OPS_AGENT
+
+### مأموریت
+اجرای عملیات روزانه POL.
+
+### مسئولیت
+- exceptions
+- disputes
+- support
+- catalog review
+- candidate product review
+- broadcast
+- operational intervention
+- reconciliation review
+
+### Surface
+Operations Web.
+
+### Primary queue
+Exception-first.
+
+---
+
+## 38.3 FIELD_ACTIVATOR
+
+### مأموریت
+فعال‌سازی و آموزش retailer.
+
+### مسئولیت
+- store onboarding
+- consent
+- assisted order
+- visit proof
+- follow-up
+- field tasks
+
+### عدم اختیار پیش‌فرض
+- مدیریت مالی
+- تغییر settlement
+- تغییر global roles
+- promotion of Master Product
+
+### Surface
+Android-first Field.
+
+---
+
+## 38.4 VENDOR_OWNER
+
+### مأموریت
+مدیریت تجاری و عملیاتی Vendor.
+
+### مسئولیت
+- catalog
+- price
+- inventory
+- order acceptance
+- fulfillment
+- staff
+- documents
+- settlement visibility
+
+### قابلیت delegation
+مدیریت اعضای سازمان و تفویض capabilityهای مجاز.
+
+---
+
+## 38.5 VENDOR_STAFF
+
+### مأموریت
+اجرای عملیات انبار و سفارش.
+
+### مسئولیت پایه
+- inventory.view
+- inventory.scan
+- order.view
+- order.fulfillment
+- delivery.dispatch
+
+### قابلیت‌های حساس
+- inventory.adjust
+- price.manage
+- delivery.handoff
+
+فقط در صورت delegation/authorization.
+
+---
+
+## 38.6 RETAILER_OWNER
+
+### مأموریت
+تصمیم‌گیری خرید B2B برای مغازه.
+
+### مسئولیت
+- search
+- compare
+- basket
+- checkout
+- order review
+- payment evidence where relevant
+- delivery confirmation
+- dispute
+- support
+- retailer staff management
+
+---
+
+## 38.7 RETAILER_STAFF
+
+### مأموریت
+اجرای خرید/تحویل روزمره به نمایندگی از مغازه.
+
+### مسئولیت پایه
+- view orders
+- follow delivery
+- receiver confirmation
+- quantity discrepancy reporting
+
+### عدم اختیار پیش‌فرض
+- organization-level governance
+- high-risk financial changes
+
+---
+
+# 39. GLOBAL FOUNDATIONS — توضیح ریزدانه
+
+## 39.1 Brand
+
+### Logo
+مسئول:
+
+- product identity
+- navigation anchor
+- authentication identity
+
+### Safe area
+حداقل فاصله اطراف mark.
+
+### Dark
+لوگو باید نسخه مناسب contrast داشته باشد.
+
+---
+
+## 39.2 Color
+
+Color token باید semantic باشد:
+
+```
+color.background.canvas
+color.surface.1
+color.surface.2
+color.text.primary
+color.text.secondary
+color.border.default
+color.action.primary
+color.status.success
+color.status.warning
+color.status.danger
+color.focus
+```
+
+هیچ Screen نباید مستقیماً HEX را در تعریف معنایی خود استفاده کند.
+
+---
+
+## 39.3 Typography
+
+### Vazirmatn
+فونت اصلی Persian UI.
+
+### نقش‌های typographic
+
+- Display
+- H1
+- H2
+- H3
+- Body
+- Body Compact
+- Label
+- Caption
+- Numeric
+- Mono-like data
+
+### داده‌های حساس به direction
+
+- SKU
+- barcode
+- invoice ID
+- tracking ID
+- phone
+- email
+- URL
+- IBAN
+
+باید direction مستقل داشته باشند.
+
+---
+
+## 39.4 Density
+
+### Retailer
+Low/Medium density.
+
+### Vendor
+Medium/High density.
+
+### Operations
+High density.
+
+### Corporate
+Low density.
+
+Density نباید فقط با کوچک کردن font حاصل شود.
+
+---
+
+# 40. COMPONENT SYSTEM — نقش هر خانواده
+
+## Navigation
+
+### App Bar
+مسئول:
+
+- identity
+- context
+- global actions
+- back/navigation
+
+### Context Switcher
+مسئول:
+
+- organization
+- active tenant
+- membership context
+
+### Bottom Navigation
+Mobile operational navigation.
+
+---
+
+## Input
+
+### Search
+مسئول discovery، نه query execution.
+
+### OTP
+مسئول authentication verification.
+
+### Quantity Stepper
+باید:
+
+- min
+- max
+- inventory constraint
+- MOQ
+- unit
+- validation
+
+را بشناسد.
+
+---
+
+## Commerce
+
+### Product Card
+نمایش:
+
+- master product identity
+- pack
+- commercial offer
+- availability
+
+### Vendor Offer Row
+رابط بین:
+
+Master Product → Vendor Product → Offer.
+
+### Basket Line
+باید تفاوت:
+
+requested quantity
+
+و
+
+allocated quantity
+
+را تحمل کند.
+
+---
+
+## Operational
+
+### Queue Row
+
+هر Row:
+
+`State → Reason → Age → Owner → Action`
+
+را منتقل می‌کند.
+
+### SLA Badge
+نباید صرفاً countdown تزئینی باشد.
+
+باید:
+
+- SLA basis
+- elapsed
+- remaining
+- breach
+
+را در صورت نیاز نشان دهد.
+
+---
+
+## Finance
+
+### Financial Activity Row
+
+هر row باید context داشته باشد:
+
+- type
+- amount
+- related object
+- status
+- timestamp
+
+### Settlement Status
+
+نباید به معنی custody یا guarantee باشد.
+
+---
+
+## Security
+
+### Permission Editor
+
+باید Effective Permission را نشان دهد، نه فقط checkbox خام.
+
+### Session Card
+
+باید:
+
+- device
+- client
+- last active
+- current session
+- revoke
+
+را داشته باشد.
+
+### Handoff Verification
+
+باید token را به delivery context متصل کند.
+
+---
+
+# 41. SHARED UX — نقش هر Pattern
+
+## SH-01 Navigation
+یک navigation grammar مشترک.
+
+## SH-02 Revalidation / Conflict
+
+زمانی استفاده می‌شود که client snapshot با canonical state متفاوت شده:
+
+- price changed
+- stock changed
+- basket version changed
+
+## SH-03 Notifications
+
+Notification باید:
+
+- source
+- severity
+- timestamp
+- unread
+- action
+
+داشته باشد.
+
+## SH-04 Evidence / POD
+
+Evidence باید:
+
+- type
+- source
+- uploader
+- timestamp
+- status
+- linked object
+
+داشته باشد.
+
+---
+
+# 42. STATE SYSTEM — تفکیک کامل
+
+## 42.1 Product
+
+### Domain states
+- active
+- inactive
+- candidate
+- archived
+
+### Availability
+- available
+- low
+- stale
+- unknown
+- unavailable
+
+این دو state dimension نباید یکی شوند.
+
+---
+
+## 42.2 Order
+
+### Lifecycle
+- pending
+- accepted
+- partially accepted
+- processing
+- shipped
+- delivered
+- cancelled
+
+### Dispute projection
+- none
+- open
+- investigating
+- resolved
+- closed
+
+Dispute state نباید lifecycle order را overwrite کند.
+
+---
+
+## 42.3 Payment
+
+- pending
+- initiated
+- success
+- failed
+- cancelled
+
+## 42.4 Settlement
+
+- pending
+- authorized
+- held
+- adjusted
+- reconciled
+
+### مهم
+Payment state ≠ Settlement state.
+
+---
+
+# 43. RETAILER — SCREEN-BY-SCREEN ROLE SPECIFICATION
+
+## RT-01 Authentication
+
+### Actor
+Unauthenticated user.
+
+### Role transition
+No membership → authenticated user → active organization membership.
+
+### Business outcome
+User can reach authorized Retailer surface.
+
+### Side effects
+- OTP challenge
+- session creation
+- organization context
+
+---
+
+## RT-02 Home
+
+### Actor
+Retailer Owner/Staff.
+
+### Job
+تشخیص next best operational action.
+
+### Reads
+- open orders
+- notifications
+- exceptions
+- recent purchases
+
+### Writes
+Usually none; navigation actions only.
+
+---
+
+## RT-06 Search
+
+### Actor
+Retailer Owner/Staff.
+
+### Job
+Find canonical product.
+
+### Reads
+- categories
+- products
+- vendor offers
+- inventory visibility
+
+### Actions
+- search
+- filter
+- scan
+- open product
+
+---
+
+## RT-17 Vendor Search
+
+### Actor
+Retailer.
+
+### Job
+Find a trusted/desired supplier.
+
+### Reads
+- vendor identity
+- catalog coverage
+- availability signal
+- commercial context
+
+### Side effects
+None until product selection/basket.
+
+---
+
+## RT-18 Vendor Storefront
+
+### Actor
+Retailer.
+
+### Job
+Browse one supplier's commercial catalog.
+
+### Reads
+- vendor
+- vendor products
+- price
+- inventory
+- packaging
+- MOQ/MOV
+
+### Critical UX boundary
+Do not make “Vendor” look like a social profile; it is a commercial operating surface.
+
+---
+
+## RT-07 Product Detail
+
+### Actor
+Retailer.
+
+### Job
+Choose a purchasable offer for a Master Product.
+
+### Reads
+Master Product + Vendor Offers.
+
+### Writes
+Basket mutation.
+
+---
+
+## RT-03 Basket
+
+### Actor
+Retailer.
+
+### Job
+Build requested purchase.
+
+### Critical logic
+Basket quantity is not yet Vendor commitment.
+
+---
+
+## RT-14 Allocation Review
+
+### Actor
+Retailer.
+
+### Job
+Understand system/vendor allocation before commitment.
+
+### Reads
+AllocationPlan.
+
+### Outcome
+Approve allocation or return to basket.
+
+---
+
+## RT-04 Checkout
+
+### Actor
+Retailer Owner, or authorized Retailer member.
+
+### Job
+Commit purchase.
+
+### Critical precondition
+Canonical revalidation before create.
+
+### Side effects
+OrderGroup + child Orders + downstream events.
+
+---
+
+## RT-15 OrderGroup
+
+### Actor
+Retailer.
+
+### Job
+Understand one purchase composed of multiple vendor contracts.
+
+### Primary relationship
+OrderGroup is aggregation, not vendor invoice.
+
+### Reads
+- OrderGroup
+- child orders
+- invoices
+- payments
+- deliveries
+- disputes
+- settlement visibility
+
+---
+
+## RT-08 Child Order
+
+### Actor
+Retailer.
+
+### Job
+Inspect one vendor contract.
+
+### Information hierarchy
+Vendor → Items → Commercial document → Fulfillment → Delivery → Finance → Issues.
+
+---
+
+## RT-20 Partial Acceptance
+
+### Actor
+Retailer Owner or authorized staff.
+
+### Job
+Approve/decline Vendor proposal.
+
+### Critical distinction
+This is not editing the original order silently.
+
+It is a proposal response.
+
+---
+
+## RT-16 Financial Activity
+
+### Actor
+Authorized retailer member.
+
+### Job
+Answer:
+
+> چه رویداد مالی‌ای برای سفارش من اتفاق افتاده و وضعیت آن چیست؟
+
+### Not allowed
+Question like:
+
+> موجودی پول من در POL چقدر است؟
+
+because MVP has no stored-value wallet.
+
+---
+
+## RT-05 Delivery
+
+### Actor
+Retailer.
+
+### Job
+Track fulfillment/delivery.
+
+### Side effects
+No financial mutation through tracking screen.
+
+---
+
+## RT-19 Handoff
+
+### Actor
+Authorized receiver.
+
+### Job
+Confirm physical handoff.
+
+### Security
+Restricted capability.
+
+### Side effect
+POD / delivery completion.
+
+---
+
+## RT-09 Returns/Disputes
+
+### Actor
+Retailer.
+
+### Job
+Open structured commercial case.
+
+### Critical separation
+Dispute ≠ order lifecycle state.
+
+---
+
+## RT-10 Reorder
+
+### Actor
+Retailer.
+
+### Job
+Reuse historical purchase intent without blindly replaying stale commercial values.
+
+---
+
+## RT-12 Account
+
+### Actor
+Authenticated member.
+
+### Job
+Manage identity/context/security.
+
+---
+
+## RT-13 Support
+
+### Actor
+All authorized retailer members.
+
+### Job
+Get help with context attached.
+
+---
+
+# 44. VENDOR — SCREEN-BY-SCREEN ROLE SPECIFICATION
+
+## VD-01 Inventory / Price
+
+### Actor
+Vendor Owner / authorized staff.
+
+### Job
+Keep sellable stock and price current.
+
+### Critical distinction
+Physical stock, reserved stock and sellable stock are different values.
+
+---
+
+## VD-02 Order Queue
+
+### Actor
+Vendor Owner / order-accept permission.
+
+### Job
+Decide within 120 working minutes.
+
+### Primary actions
+- accept
+- reject
+- propose partial acceptance
+
+### SLA
+Ahvaz working calendar.
+
+---
+
+## VD-03 Loading / Dispatch
+
+### Actor
+Vendor fulfillment staff.
+
+### Job
+Move accepted order through physical fulfillment.
+
+### State progression
+Accepted → Preparing → Ready → Dispatched.
+
+---
+
+## VD-04 Discrepancy
+
+### Actor
+Fulfillment staff.
+
+### Job
+Report expected vs actual quantities.
+
+---
+
+## VD-05 Catalog
+
+### Actor
+Vendor Owner / catalog.manage.
+
+### Job
+Maintain Vendor Product mapping to Master Product.
+
+---
+
+## VD-06 Reconciliation
+
+### Actor
+Vendor Owner / authorized finance member.
+
+### Job
+Compare commercial/financial evidence without implying POL custody.
+
+---
+
+## VD-07 Settings / Staff
+
+### Actor
+Vendor Owner.
+
+### Job
+Manage organization-level configuration.
+
+---
+
+## VD-14 Storefront Management
+
+### Actor
+Vendor Owner / delegated catalog owner.
+
+### Job
+Control public-to-retailer commercial representation.
+
+---
+
+## VD-15 Staff & Delegated Permissions
+
+### Actor
+Vendor Owner / membership.manage.
+
+### Job
+Configure effective capabilities.
+
+### Critical output
+Effective Permission Set.
+
+Not merely raw checkbox state.
+
+---
+
+## VD-16 Scanner
+
+### Actor
+Vendor Owner or authorized staff with inventory.scan.
+
+### Job
+Fast inventory/catalog interaction.
+
+### Special states
+- camera permission denied
+- no match
+- ambiguous
+- network degraded
+
+---
+
+## VD-17 Financial Activity
+
+### Actor
+Authorized vendor finance/owner.
+
+### Job
+Trace Vendor-side payment/refund/settlement activity.
+
+---
+
+## VD-18 Partial Acceptance
+
+### Actor
+Vendor with order acceptance/fulfillment authority.
+
+### Job
+Propose what can actually be fulfilled.
+
+### Side effect
+Creates proposal, not immediate order mutation until approved by allowed flow.
+
+---
+
+# 45. OPERATIONS — SCREEN-BY-SCREEN ROLE SPECIFICATION
+
+## OP-01 Exceptions
+
+### Actor
+OPS_AGENT.
+
+### Job
+Find work requiring intervention.
+
+### Universal model
+Severity → Reason → Age → Owner → Action.
+
+---
+
+## OP-02 Arbitration
+
+### Actor
+OPS_AGENT; restricted high-risk actions may require elevated admin capability.
+
+### Job
+Resolve disputes without corrupting underlying order lifecycle.
+
+---
+
+## OP-03 Reconciliation
+
+### Actor
+OPS financial/operations authority.
+
+### Job
+Resolve mismatches.
+
+---
+
+## OP-04 Pilot Analytics
+
+### Actor
+OPS / authorized management.
+
+### Job
+Operational decision support.
+
+### Not
+Decorative dashboard.
+
+---
+
+## OP-05 Support
+
+### Actor
+OPS_AGENT.
+
+### Job
+Resolve support cases using contextual evidence.
+
+---
+
+## OP-07 Risk
+
+### Actor
+OPS_AGENT / admin depending action.
+
+### Job
+See reliability/risk events and remediation.
+
+---
+
+## OP-08 Notifications
+
+### Actor
+Operations.
+
+### Job
+Inspect delivery status of notification attempts.
+
+---
+
+## OP-10 Admin
+
+### Actor
+ADMIN_SUPER / authorized OPS.
+
+### Job
+Context/configuration controls.
+
+---
+
+## OP-11 Permission Audit
+
+### Actor
+OPS/security-authorized actor.
+
+### Job
+Investigate who granted what, to whom, when and why.
+
+### Critical fields
+actor, target, permission, action, timestamp, reason, client.
+
+---
+
+## OP-12 Financial Investigation
+
+### Actor
+Authorized finance/operations.
+
+### Job
+Trace canonical records across domains.
+
+### Rule
+Read/trace, not alternate ledger creation.
+
+---
+
+## OP-13 Candidate Review
+
+### Actor
+OPS catalog authority.
+
+### Job
+Prevent unknown barcodes from becoming Master Product automatically.
+
+---
+
+## OP-14 Media Provenance
+
+### Actor
+OPS catalog/media authority.
+
+### Job
+Validate source/provenance/approval of images.
+
+---
+
+## OP-15 Handoff Exceptions
+
+### Actor
+OPS_AGENT.
+
+### Job
+Resolve restricted delivery surface failures.
+
+---
+
+# 46. FIELD ACTIVATOR — DETAILED ROLE
+
+## FA-01
+
+### Actor
+FIELD_ACTIVATOR.
+
+### Job
+Prioritize today's physical field work.
+
+### Data
+- task
+- retailer
+- location
+- due time
+- status
+
+---
+
+## FA-02
+
+### Actor
+FIELD_ACTIVATOR + Retailer.
+
+### Job
+Assist purchase without taking commercial ownership away from retailer.
+
+### Important
+The Field Activator is an assistant, not the commercial buyer unless the authorization model explicitly allows the action.
+
+---
+
+## FA-03
+
+### Actor
+FIELD_ACTIVATOR.
+
+### Job
+Collect only required onboarding data and consent.
+
+### Evidence
+Receipt/confirmation.
+
+---
+
+## FA-04
+
+### Actor
+FIELD_ACTIVATOR.
+
+### Job
+Record visit outcome and next action.
+
+---
+
+## FA-05
+
+### Actor
+FIELD_ACTIVATOR.
+
+### Job
+Preserve operational continuity during degraded connectivity.
+
+### MVP boundary
+No unverified rich offline transactional database.
+
+---
+
+# 47. CORPORATE — DETAILED AUDIENCE MODEL
+
+Corporate screens are not an operational Role.
+
+They are **external trust/audience experiences**.
+
+Possible audiences:
+
+- prospective retailer
+- prospective vendor
+- partner
+- investor
+- institutional stakeholder
+- legal/privacy reader
+
+Therefore the tree should treat Corporate as:
+
+`Audience Surface`
+
+not:
+
+`User Role`.
+
+---
+
+# 48. PROTOTYPE ROLE
+
+Prototype pages are not production surfaces.
+
+They are **verification artifacts**.
+
+Their job is to prove:
+
+- navigation
+- state transitions
+- critical interactions
+- happy path
+- failure path
+- role boundary
+- theme consistency
+
+A prototype screen can represent several production screens/states.
+
+---
+
+# 49. QA ROLE
+
+QA page is not a design gallery.
+
+It is the evidence layer.
+
+For every certified surface:
+
+```
+Capability
+→ Artifact
+→ Contract
+→ State
+→ Theme
+→ Responsive
+→ Permission
+→ Prototype
+→ Evidence
+→ Result
+```
+
+---
+
+# 50. CROSS-SURFACE RELATIONSHIP MATRIX
+
+## Product Discovery
+
+Retailer Search
+→ Product
+→ Vendor Offer
+→ Basket
+
+Vendor Search
+→ Vendor Storefront
+→ Catalog
+→ Product
+→ Basket
+
+## Order
+
+Basket
+→ Allocation
+→ Checkout
+→ OrderGroup
+→ Child Order
+
+## Finance
+
+Child Order
+→ Invoice
+→ Payment
+→ Refund
+→ Settlement Status
+
+OrderGroup
+→ Financial Activity aggregation
+
+## Delivery
+
+Child Order
+→ Delivery
+→ Handoff
+→ POD
+
+## Exception
+
+Any operational object
+→ Exception
+→ Support / Arbitration
+→ Audit
+
+## Security
+
+Membership
+→ Role
+→ Delegated Permission
+→ Client Capability
+→ Audit
+
+---
+
+# 51. SIDE-EFFECT MATRIX
+
+Every important action in the Tree should declare whether it:
+
+| Action | Reads | Writes | Domain Event | Audit | Notification |
+|---|---|---|---|---|---|
+| Search | Catalog | No | No | No | No |
+| Add to Basket | Product/Offer | Basket | Basket Updated | Usually no | No |
+| Checkout | Basket/Allocation | OrderGroup/Orders | Order Created | Yes where required | Vendor Order Notification |
+| Accept Order | Order | Order | Order Accepted | Yes | Retailer Notification |
+| Partial Proposal | Order | Proposal | Proposal Created | Yes | Retailer Notification |
+| Approve Partial | Proposal | Order/Proposal | Proposal Approved | Yes | Vendor Notification |
+| Grant Permission | Membership | Permission Grant | Permission Granted | Yes | Target Notification |
+| Revoke Permission | Membership | Permission Grant | Permission Revoked | Yes | Target Notification |
+| Scan | Catalog/Inventory | Depending flow | Barcode Scanned | Optional | No |
+| Candidate Approve | Candidate | Master Product | Product Match Confirmed | Yes | Relevant users |
+| Handoff Verify | Delivery | Delivery/POD | Delivery Completed | Yes | Retailer/Vendor |
+| Payment Evidence | Order/Invoice | Evidence | Payment Evidence Created | Yes | Authorized parties |
+
+This matrix is part of the design contract.
+
+---
+
+# 52. VISIBILITY VS AUTHORIZATION
+
+The Tree must explicitly distinguish:
+
+### Visible
+The user can see the UI element.
+
+### Enabled
+The user may attempt the action.
+
+### Authorized
+Backend permits the action.
+
+### Audited
+The action is recorded.
+
+### Irreversible
+The action has meaningful one-way consequence.
+
+Example:
+
+A Vendor Staff member may SEE an order.
+
+They may not be ENABLED to reject it.
+
+Or they may be enabled only if:
+
+`order.accept`
+
+is delegated.
+
+Frontend visibility is never sufficient security.
+
+---
+
+# 53. DOMAIN STATE VS UI STATE EXAMPLE
+
+For Vendor Order Queue:
+
+### Domain
+`order_status = PENDING`
+
+### UI
+- loading
+- loaded
+- filter active
+- modal open
+
+These are different axes.
+
+The design tree must never represent UI loading as a business order state.
+
+---
+
+# 54. PENPOT AUDIT FINDINGS
+
+## Finding 1 — OTP component conflict
+
+Current Penpot contains:
+
+`01 — Components / Form Inputs, Stepper & 5-Digit OTP`
+
+Current Technical Architecture describes 4-digit OTP.
+
+### Required action
+Rename/update the component to canonical runtime value after contract verification.
+
+---
+
+## Finding 2 — Existing screen grouping hides semantic boundaries
+
+Examples:
+
+- RT-12 & RT-13 combined
+- VD-07 contains Settings & Staff
+- CP-04 to CP-08 represented as a combined portal
+- OP-07 & OP-08 combined
+
+### Required action
+One physical Frame may still be acceptable for related views, but the Tree must map each logical experience separately.
+
+---
+
+## Finding 3 — State library is incomplete
+
+Existing States page contains:
+
+- product lifecycle
+- basket/revalidation
+- allocation
+- order lifecycle
+- RMA
+- settlement
+
+Missing explicit canonical patterns:
+
+- Financial Activity
+- Permission Lifecycle
+- Scanner Lifecycle
+- Handoff Lifecycle
+- Partial Acceptance
+- Candidate Product
+- Media Provenance
+- Session Security
+
+---
+
+## Finding 4 — Component page is incomplete against architecture
+
+Architecture now requires explicit reusable patterns for:
+
+- Financial Activity
+- Permission Matrix
+- Permission Editor
+- Scanner
+- Candidate Product
+- Provenance Badge
+- Handoff Verification
+- Session Card
+- Partial Acceptance
+
+These should exist as reusable component definitions, not be invented separately on each screen.
+
+---
+
+## Finding 5 — Design QA is stale
+
+Existing QA certification predates the complete Wave 01 delta.
+
+Therefore it must be considered:
+
+`REOPENED`
+
+until the new capabilities are audited.
+
+---
+
+## Finding 6 — Current Penpot top-level artifact hygiene
+
+The inspected export contains approximately:
+
+- 69 named top-level frames
+- 11 Root Frame placeholders
+- 6 generic top-level Text/Rectangle artifacts
+
+The generic artifacts must be reviewed and removed or mapped.
+
+---
+
+# 55. PENPOT CONSTRUCTION RULES — MICRO LEVEL
+
+When building a new screen:
+
+## Step 1
+Create canonical Frame name.
+
+Example:
+
+`RT-16 — Financial Activity`
+
+## Step 2
+Create screen shell.
+
+## Step 3
+Add information hierarchy.
+
+## Step 4
+Attach reusable components.
+
+## Step 5
+Add data examples.
+
+## Step 6
+Add interaction states.
+
+## Step 7
+Add dark variant.
+
+## Step 8
+Add mobile variant.
+
+## Step 9
+Map permissions.
+
+## Step 10
+Map API.
+
+## Step 11
+Connect prototype.
+
+## Step 12
+Record QA.
+
+A screen is incomplete if Steps 6–12 are missing.
+
+---
+
+# 56. DATA FIDELITY RULE
+
+Mock values in Penpot must resemble canonical domain values.
+
+Examples:
+
+### Order
+- order ID
+- vendor
+- status
+- amount
+- timestamp
+
+### Invoice
+- invoice ID
+- issuing Vendor
+- amount
+- state
+
+### Payment
+- method
+- amount
+- status
+- reference
+
+### Settlement
+- status
+- relevant party/context
+- adjustments where authorized
+
+Do not fabricate business claims in sample data.
+
+---
+
+# 57. DESIGNING FINANCIAL LANGUAGE
+
+Financial UX should distinguish:
+
+- مبلغ سفارش
+- مبلغ فاکتور
+- پرداخت
+- استرداد
+- وضعیت پرداخت
+- وضعیت تسویه
+- adjustment
+- dispute hold
+
+Never collapse all into one generic:
+
+`پرداخت شد`
+
+when the underlying states differ.
+
+---
+
+# 58. DESIGNING ORDER LANGUAGE
+
+Use:
+
+### Parent
+سفارش گروهی / OrderGroup
+
+### Child
+سفارش بنکداری / Vendor Order
+
+### Document
+فاکتور Vendor
+
+### Operational
+وضعیت آماده‌سازی / ارسال / تحویل
+
+### Financial
+وضعیت پرداخت / تسویه
+
+These are different concepts and deserve separate visual treatment.
+
+---
+
+# 59. DESIGNING PARTIAL ACCEPTANCE LANGUAGE
+
+Avoid presenting it as:
+
+«سفارش شما تغییر کرد»
+
+Prefer a proposal concept:
+
+«بنکدار امکان تأمین کامل این اقلام را ندارد و پیشنهاد پذیرش جزئی ارسال کرده است.»
+
+Then show:
+
+- requested
+- proposed
+- difference
+- reason
+- commercial impact
+- decision
+
+This preserves agency and traceability.
+
+---
+
+# 60. DESIGNING DELIVERY HANDOFF LANGUAGE
+
+Avoid implying:
+
+«POL مسئول تحویل تضمینی است.»
+
+Use operational wording:
+
+- آماده تحویل
+- در حال تأیید تحویل
+- تأیید هویت گیرنده
+- ثبت رسید تحویل
+- خطا در تأیید
+- نیاز به بررسی عملیات
+
+No financial guarantee is implied.
+
+---
+
+# 61. DESIGNING PERMISSION LANGUAGE
+
+Permission UX should explain:
+
+### Base Role
+The default responsibility.
+
+### Delegated Permission
+An additional capability explicitly granted.
+
+### Effective Access
+What the user can actually execute now.
+
+### Audit
+Who changed it.
+
+This prevents a confusing checkbox-only model.
+
+---
+
+# 62. DESIGNING SCANNER LANGUAGE
+
+### Exact
+«کالای متناظر پیدا شد.»
+
+### High Confidence
+«احتمال تطابق بالا است — تأیید کنید.»
+
+### Ambiguous
+«چند کالای مشابه پیدا شد.»
+
+### No Match
+«کالایی با این بارکد پیدا نشد.»
+
+Never say:
+
+«محصول ساخته شد»
+
+for a raw unknown barcode.
+
+---
+
+# 63. DESIGNING MEDIA PROVENANCE
+
+Each canonical image should have a small semantic label where relevant:
+
+- منبع سازنده
+- بارگذاری بنکدار
+- مالکیت/دارایی پُل
+- بارگذاری کاربر
+
+Approval:
+
+- در انتظار بررسی
+- تأییدشده
+- ردشده
+- مرجع خصوصی
+
+---
+
+# 64. RESPONSIVE DESIGN RESPONSIBILITY
+
+## Mobile
+
+Priority:
+- one primary action
+- compact hierarchy
+- touch
+- sticky action where necessary
+- scanning
+- quick confirmation
+
+## Desktop
+
+Priority:
+- inspection
+- comparison
+- tables
+- multi-record work
+- side context
+- audit detail
+
+Responsive behavior must be documented per screen rather than assumed globally.
+
+---
+
+# 65. FINAL SEMANTIC CHECKLIST FOR EVERY SCREEN
+
+Before marking a screen complete, answer all:
+
+### Why
+What problem does this screen solve?
+
+### Who
+Which actor uses it?
+
+### Role
+Which roles can act?
+
+### Scope
+Which organization/tenant context?
+
+### Reads
+Which data does it read?
+
+### Writes
+Which data can it modify?
+
+### Action
+What is the primary action?
+
+### Permission
+Which permission authorizes it?
+
+### Preconditions
+When can action execute?
+
+### Success
+What changes?
+
+### Failure
+What can fail?
+
+### Recovery
+How does user recover?
+
+### Audit
+What is logged?
+
+### Notification
+Who must be informed?
+
+### Navigation
+Where did user come from and where can they go?
+
+### Theme
+What changes in Dark?
+
+### Platform
+What differs on Android/Web?
+
+### Accessibility
+What must remain usable?
+
+### QA
+What evidence proves completion?
+
+Only after all are answered should the Screen be marked fully mapped.
+
+---
+
+# 66. NEXT TREE EXPANSION PRIORITY
+
+برای ادامه توسعه این سند، ترتیب دقیق باید این باشد:
+
+1. Retailer deep tree
+2. Vendor deep tree
+3. Operations deep tree
+4. Field deep tree
+5. Corporate deep tree
+6. Shared UX deep tree
+7. State matrix
+8. Permission matrix
+9. API/data matrix
+10. Penpot frame-to-tree ID mapping
+11. Prototype coverage
+12. QA evidence
+
+The current document now defines the semantic vocabulary needed for these expansions.
