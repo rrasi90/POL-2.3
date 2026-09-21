@@ -2,7 +2,7 @@
 ## Senior Design Engineering Operating System for POL Penpot Construction
 
 **Document ID:** `POL-DESIGN-AGENT-001`  
-**Version:** `1.2.0`  
+**Version:** `1.3.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE / DESIGN-EXECUTION CONTROL / RESEARCH-BACKED  
 **Applies to:** Penpot + MCP + AI Agent + POL Master Tree + GitHub design specifications
@@ -30,6 +30,26 @@ The source of truth is the combination of:
 - verification evidence
 
 ---
+
+# 0.5. Precision Commerce Visual Execution Layer
+
+All visual construction is governed by:
+
+`13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+
+For every applicable visual mutation the agent MUST:
+
+- identify the semantic token(s) being consumed;
+- identify the applicable density profile;
+- maintain Light + Night parity;
+- verify component states in both themes;
+- avoid raw color values where semantic tokens exist;
+- verify RTL/bidi behavior for Persian/mixed content;
+- capture separate visual evidence for Light and Night when the checkpoint is visual-critical.
+
+A Night artifact cannot be generated merely by applying an invert/filter operation to the Light artifact.
+
+The agent must treat a missing Night variant as an incomplete visual mutation unless the node is explicitly theme-not-applicable.
 
 # 1. Agent Failure Model
 
