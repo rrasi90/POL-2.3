@@ -1,7 +1,7 @@
 # POL — Executable Master Tree Schema & Closure Contract
 
 **Document ID:** `POL-DESIGN-SCHEMA-001`  
-**Version:** `1.0.0`  
+**Version:** `1.1.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE / MACHINE-CONSUMABLE DESIGN GOVERNANCE  
 **Repository:** `rrasi90/POL-2.3`  
@@ -233,7 +233,25 @@ A validator should fail closure when:
 10. a public claim has no authority source;
 11. a capability is marked closed while a mandatory closure dimension remains `OPEN` or `BLOCKED`;
 12. a CONTRACT_ONLY API is represented as runtime-verified;
-13. an offline/queued state is represented without canonical runtime support.
+13. an offline/queued state is represented without canonical runtime support;
+14. an applicable visual node has no theme parity declaration;
+15. an applicable visual node is marked visually closed from Light-only evidence;
+16. a visual node bypasses semantic token usage without a documented waiver;
+17. an invalid density profile is assigned to a surface;
+18. a Night theme is represented as a naive inversion/filter rather than semantic theme tokens.
+
+## 12. Precision Commerce visual contract
+
+For visual node types `SCR`, `SEC`, `CMP`, `PATTERN` and `PEN`, the node should resolve the following additional fields:
+
+- `visual_direction` = `PRECISION_COMMERCE`
+- `theme_coverage` = `LIGHT_AND_NIGHT` unless explicitly `THEME_NOT_APPLICABLE`
+- `density_profile` appropriate to the owning surface
+- `visual_token_refs` for semantic token traceability
+
+Visual closure must not be inferred from screenshot existence alone.
+
+Night theme is a first-class variant. It must preserve behavior and component anatomy while using the Night semantic token layer.
 
 ## 12. Scope rule
 
