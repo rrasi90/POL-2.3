@@ -1279,3 +1279,7 @@ Mandatory V3.2 preservation rules:
 20. Preserve strategic stakeholders and outcomes: Retailer, Vendor, Manufacturer, Visitor/Field Force, Operations, 3PL, Bank/Financial Partner; Visitor→POL substitution, self-service, price transparency, frictionless basket, supply anchor, asset-light model, anti-disintermediation, trust/data/transaction networks and future Manufacturer Intelligence.
 21. Distinguish non-UI product-critical artifacts such as pilot LOI, investor evidence pack, research evidence, KPI exports, SOPs and certification evidence from Penpot screens.
 22. Do not add a Penpot screen solely because a strategy document contains a concept; first resolve it to CAP, KPI, service blueprint, future capability or non-UI evidence artifact.
+
+
+23. Preserve the RTO / RPO readiness dimensions as explicit operational contract fields. Never invent the values; require an authoritative operations decision before treating them as targets.
+24. Keep the canonical source-reference list from Master Tree §67.29 aligned with any future source-of-truth changes.
