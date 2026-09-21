@@ -139,10 +139,22 @@ POL's canonical product visual direction is now **A — Precision Commerce**.
 The visual authority is:
 
 - `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+- `13_PRODUCT_DESIGN/57_POL_MASTER_TREE_DEEP_CRITICAL_AUDIT_2026-09-21.md`
 
 Required theme policy: **Light + Night are first-class variants for every applicable canonical screen, section, component, pattern and Penpot artifact.** Night is semantic theming, not color inversion.
 
 The visual system governs appearance, tokens, typography, shape, elevation, density, motion, RTL presentation and visual QA only. It does not override product/domain/API/permission/financial/MVP authorities.
+
+
+### Master Tree v4 Registry Upgrade — 2026-09-21
+
+The Master Tree is now Version 4.0.0 and adopts a registry-first control model:
+
+Canonical Node Registry → Federated Views → Relationship Graph → Closure Profiles → Evidence → Penpot Artifact Binding → Drift Control → Release Snapshot.
+
+This upgrade does not create new product capabilities. It strengthens canonicality, applicability-aware closure, many-to-many evidence/relationships, artifact identity, source health, agent source packets and executable fitness functions.
+
+Repeated screen IDs in derived sections are projections, not independent sources of truth.
 
 ## 7. Deep-Saturation Design Control — 2026-09-21
 
@@ -150,14 +162,14 @@ The five-pass design saturation audit is registered as a supporting design-contr
 
 - `13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
 
-The active Master Tree is now Version 3.6.0:
+The active Master Tree is now Version 4.0.0:
 
 - `13_PRODUCT_DESIGN/50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md`
 - `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
 - `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
 - `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
 
-The active agent execution protocol is now Version 1.3.0:
+The active agent execution protocol is now Version 1.4.0:
 
 - `13_PRODUCT_DESIGN/52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
 
