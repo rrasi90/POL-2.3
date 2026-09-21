@@ -2,9 +2,9 @@
 ## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Dark/Light
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `3.3.0`  
+**Version:** `3.4.0`  
 **Date:** 2026-09-21  
-**Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL / REPOSITORY-CLOSURE-AUDITED  
+**Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL / REPOSITORY-CLOSURE-AUDITED / FIVE-PASS-SATURATED-CONTROL-PLANE  
 **Repository:** `rrasi90/POL-2.3`  
 **Working Branch:** `product-architecture-evolution-2026-09-20`  
 **Primary Intent:** تبدیل معماری محصول، مستندات، APIها، مدل داده، نقش‌ها، state machineها و وضعیت فعلی Penpot به یک درخت واحد و قابل‌ردگیری برای ساخت/تکمیل طراحی.
@@ -7503,3 +7503,466 @@ Research-backed practices incorporated into the POL protocol:
 - workflow resumability
 
 The external evidence is treated as workflow guidance, not as product requirements. Product behavior continues to be governed by the POL repository Source of Truth and Decision Register.
+
+## 67.34. FIVE-PASS DEEP SATURATION — CONTROL-PLANE EXPANSION
+
+External research plus a repository-wide re-read found that the existing tree is already strong in product/domain coverage but still needs a control-plane overlay that makes agent execution, user action semantics, data freshness, evidence and verification mutually traceable.
+
+Canonical audit source:
+`13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`.
+
+Five independent passes were used:
+1. Agent reliability / Penpot mutation safety
+2. Product / IA / Service Blueprint / state execution
+3. Human factors / WCAG / Persian RTL / responsive / network resilience
+4. Design system / token / component / visual regression engineering
+5. Architecture / API / data / security / analytics / governance
+
+Rule: these additions are control and traceability contracts unless an upstream product/domain authority explicitly promotes them to product behavior.
+
+## 67.35. CONTEXT PACKAGE + EXECUTION IDENTITY CONTRACT
+
+The agent context must be externalized as a versioned package rather than relying on the prompt or chat transcript.
+
+Every wave receives a Context Package containing:
+- source-of-truth references and precedence order
+- relevant decision records
+- relevant domain/API/data contracts
+- active design node IDs
+- current repository branch and HEAD
+- Penpot file identity and revision
+- target page and node scope
+- accepted assumptions
+- open contradictions
+- acceptance criteria
+- explicit non-goals
+- evidence required to close the wave
+
+Context Package fields:
+`context_id`, `context_version`, `created_at`, `source_snapshot`, `repo_head`, `penpot_file_id`, `penpot_revision`, `scope_nodes`, `open_decisions`, `constraints`, `acceptance_contract`, `checksum`.
+
+Execution Identity must additionally record:
+`RUN_ID`, `WAVE_ID`, `STEP_SEQ`, `AGENT_RUNTIME_VERSION`, `MODEL_ID`, `SKILL_VERSION`, `WORKFLOW_VERSION`, `MCP_SERVER_ID`, `TOOL_VERSION`.
+
+Never resume a wave from conversational memory alone. Resume from the persisted ledger and revalidate the Context Package against the current repository and Penpot revision.
+
+## 67.36. SOURCE PRECEDENCE + TRUST BOUNDARY CONTRACT
+
+Source authority remains the existing POL hierarchy. The new rule is that every agent input also receives a trust class:
+
+`CANONICAL_AUTHORITY` → `DERIVED_PROJECT_ARTIFACT` → `RESEARCH_INPUT` → `UNTRUSTED_TOOL_OUTPUT` → `USER_CONTENT_OR_EXTERNAL_CONTENT`.
+
+Untrusted text, screenshots, imported design notes, tool-returned prose, external skills and generated suggestions must not silently override canonical decisions.
+
+Every contradiction must be classified before mutation:
+- authority conflict
+- stale-source conflict
+- scope conflict
+- terminology conflict
+- API capability uncertainty
+- Penpot runtime uncertainty
+- visual disagreement
+- product decision missing.
+
+No majority vote between agents resolves a product conflict. The result remains OPEN until the authoritative owner resolves it.
+
+## 67.37. CAPABILITY PROBE + ENVIRONMENT FINGERPRINT
+
+Before the first mutation of a wave, capture an environment fingerprint:
+- repository HEAD
+- Penpot version/revision
+- Penpot file identity
+- active page
+- plugin/MCP connection state
+- target MCP server
+- API/tool versions
+- font availability
+- current token library identity
+- existing component/library availability.
+
+Capability probes must record both:
+`DOCUMENTED_BEHAVIOR` and `OBSERVED_BEHAVIOR`.
+
+Observed behavior wins for immediate execution safety, but does not become a product contract. Any deviation remains in the Known API Limitation Registry until verified across a stable tool/runtime version.
+
+## 67.38. MUTATION INTENT + COMMAND CONTRACT
+
+Every mutating agent step must be represented as a command contract, even when the command is a visual edit.
+
+Command structure:
+
+`Intent → Preconditions → Authorization → Validation → Mutation → Expected State Transition → Domain/Design Event → Audit → Notification → Navigation → Postconditions → Evidence`.
+
+Required mutation fields:
+`mutation_intent_id`, `step_seq`, `target_nodes`, `preconditions`, `expected_delta`, `postconditions`, `replay_policy`, `rollback_reference`, `approval_required`.
+
+Business actions and design mutations are different command classes, but both must have explicit preconditions and postconditions.
+
+Examples of design postconditions:
+- token binding exists
+- component instance remains structurally linked where linkage is supported
+- child count changes by expected amount
+- page identity is correct
+- visual export contains the intended state
+- no duplicate canonical component was created.
+
+## 67.39. STATE / CONCURRENCY / FRESHNESS CONTRACT
+
+The state tree now gains a fourth dimension beside UI state, domain state and event state: execution freshness.
+
+Every critical stateful view must distinguish:
+- current
+- stale but viewable
+- stale and mutation-blocked
+- concurrently changed
+- already completed
+- expired
+- unavailable.
+
+For mutable resources, record a version, revision, timestamp, or equivalent canonical freshness mechanism when the upstream contract provides one.
+
+Required transition classes:
+- allowed transition
+- forbidden transition
+- stale-version rejection
+- concurrent-change recovery
+- duplicate/replay
+- already-applied action
+- expired action.
+
+A UI must never imply success merely because a command was locally accepted. Durable success requires the authoritative boundary to confirm the transition.
+
+## 67.40. DATA PROVENANCE + FRESHNESS CONTRACT
+
+Any decision-critical datum should have a provenance packet when the domain supports it:
+
+`value → owner/source → observed_at → valid_until or freshness class → confidence → transformation → stale policy`.
+
+Examples include:
+- inventory quantity and freshness
+- price and effective time
+- payment evidence and verification time
+- delivery status and confirmation source
+- candidate product identity and review source
+- media provenance.
+
+Provenance is not automatically exposed as raw technical metadata to the end user. It is a design contract for choosing the correct label, confidence indicator and recovery behavior.
+
+## 67.41. EVIDENCE / DIFF / BASELINE CONTRACT
+
+Verification must distinguish four evidence dimensions:
+
+1. Semantic diff — did meaning, state, content or rule mapping change?
+2. Structural diff — did the Penpot object tree, component linkage, tokens or page structure change as intended?
+3. Visual diff — did the rendered appearance change as intended?
+4. Runtime/design diff — did the frontend/runtime representation diverge from the approved design contract?
+
+Every important checkpoint records:
+`BASELINE_ID`, `RUN_ID`, `STEP_SEQ`, `BEFORE_HASH`, `AFTER_HASH`, `STRUCTURAL_EVIDENCE`, `VISUAL_EVIDENCE`, `SEMANTIC_REVIEW`, `APPROVAL_RECEIPT`.
+
+A baseline is immutable for the checkpoint it represents. A revised baseline must be created as a new version rather than silently replacing the evidence.
+
+## 67.42. EVALUATOR INDEPENDENCE + CIRCUIT BREAKER
+
+The agent that mutates the design must not be the only evaluator for high-risk changes.
+
+Critical checkpoints require one of:
+- independent evaluator agent
+- human reviewer
+- automated structural evaluator plus human visual approval.
+
+High-risk changes include:
+- shared token changes
+- component/variant restructuring
+- authorization visibility
+- financial language
+- delivery handoff security
+- state-machine interpretation
+- RTL foundation rules
+- cross-surface navigation changes.
+
+Circuit-breaker rules:
+- repeated identical failure
+- repeated rollback
+- unexpected object growth
+- unexpected page change
+- capability probe mismatch
+- verification evidence missing
+- concurrent mutation detected.
+
+When a circuit breaker opens: STOP → preserve evidence → classify → rollback or decision request → re-probe → resume only from a known-good checkpoint.
+
+## 67.43. TASK / OUTCOME / SERVICE BLUEPRINT CONTRACT
+
+Every high-risk Screen or Journey must define:
+- user job
+- decision being made
+- desired observable outcome
+- critical constraints
+- failure severity
+- maximum acceptable friction
+- recovery objective.
+
+Service-blueprint evidence should be linked for critical operational journeys:
+`Customer/User Action → Frontstage Evidence → Backstage Action → Support Process → System Dependency → Policy/SLA → Evidence`.
+
+This keeps Penpot from becoming only a frontstage illustration of a process whose operational dependencies remain invisible.
+
+## 67.44. DISCOVERY / SEARCH / TABLE / BULK CONTRACT
+
+Search must have explicit states:
+- initial
+- typing/loading
+- recent/history
+- exact result
+- partial result
+- typo correction
+- ambiguous result
+- zero result
+- restricted result
+- unavailable result
+- pagination/continuation where the canonical API supports it.
+
+Operational tables/queues must define:
+- sorting
+- filtering
+- pagination
+- density
+- column visibility
+- selection
+- bulk actions where authorized
+- partial success/failure
+- mobile transformation
+- keyboard behavior.
+
+Bulk mutation must include preview/selection summary and explicit partial-failure semantics. It must never be introduced only because a table contains many rows.
+
+## 67.45. ASYNC OPERATION + DEEP-LINK + NOTIFICATION LIFECYCLE
+
+Any operation whose result can arrive later must support a consistent lifecycle:
+`IDLE → SUBMITTING → PENDING → COMPLETED / FAILED / CANCELLED / EXPIRED / STALE`.
+
+User feedback must distinguish local submission from durable completion.
+
+Deep links must define:
+- valid target
+- invalid/malformed
+- expired
+- consumed
+- unauthorized
+- wrong organization/context
+- deleted target
+- fallback when the client surface is unavailable.
+
+Notification lifecycle must define:
+- event source
+- template
+- eligibility
+- dedup/grouping
+- channel
+- inbox/read state
+- delivery attempt
+- provider failure/retry
+- deep-link target resolution.
+
+## 67.46. ACCESSIBILITY / RTL / RESPONSIVE / NETWORK SEMANTIC CONTRACT
+
+Accessibility is upgraded from checklist to contract.
+
+Every critical component/screen records applicable evidence for:
+- programmatic name/role/value
+- status-message announcement
+- focus order and restoration
+- focus visibility / non-obscuration
+- keyboard/pointer operation
+- target-size behavior
+- error summary and field association
+- non-color state encoding.
+
+Persian/RTL contract:
+- language and direction are separately represented
+- RTL is the default product direction where applicable
+- SKU/barcode/phone/URL/IDs may use controlled LTR islands
+- numeric alignment and icon direction are explicit
+- long mixed-direction strings are mandatory test fixtures.
+
+Responsive contract extends beyond width:
+- 360/390 mobile
+- 768 tablet
+- 1024 compact desktop
+- 1440 primary desktop
+- orientation changes
+- text scaling/zoom
+- safe areas
+- keyboard/system insets
+- horizontal overflow policy.
+
+Network capability contract:
+- ONLINE
+- DEGRADED_READ
+- STALE_READ_ONLY
+- QUEUED_WRITE where explicitly supported
+- OFFLINE_FORBIDDEN.
+
+Never represent a write as queued or successful unless the canonical runtime actually supports durable queue semantics.
+
+## 67.47. TOKEN LIFECYCLE + COMPONENT MATURITY
+
+Design tokens now have an explicit lifecycle:
+`PROPOSED → ACTIVE → DEPRECATED → SUPERSEDED → RETIRED`.
+
+Token records should include:
+- semantic role
+- type
+- primitive/alias/composite relationship
+- themes
+- component usage
+- code mapping
+- owner
+- deprecated_by / superseded_by where applicable.
+
+Component maturity levels:
+`DRAFT → STRUCTURED → GOLDEN → SCREEN-USED → VERIFIED → DEPRECATED`.
+
+A Golden Component must have:
+- anatomy
+- variants
+- state matrix
+- content constraints
+- accessibility contract
+- responsive behavior
+- RTL/mixed-direction behavior
+- usage restrictions
+- representative fixtures
+- visual baseline
+- structural evidence.
+
+## 67.48. ANALYTICS TRACKING PLAN + RUNTIME CORRELATION
+
+Analytics is a separate measurement contract from domain events.
+
+Every critical analytics event should resolve:
+`MET → Event Name → Schema Version → Owner → Trigger → Required Properties → Source Client/Server → Privacy Class → Deduplication Rule → Validation → Deprecation State → KPI Lineage`.
+
+Cross-client parity requires the same semantic event even when Web and Android emit through different client implementations.
+
+Runtime evidence chain should support, where the underlying system exposes it:
+`Screen Action → Request/Correlation ID → Domain Command → Domain Event → Audit Event → Notification → Provider Attempt`.
+
+These identifiers are tracing/evidence mechanisms and should not be exposed as product UI merely because they exist technically.
+
+## 67.49. ARCHITECTURE / ADR / EXCEPTION / CHANGE-IMPACT CONTROL
+
+The federated tree now distinguishes:
+- static context/container/component architecture
+- dynamic interaction/runtime flow
+- deployment/environment topology
+- decision record.
+
+Decision records should capture:
+- context/problem
+- alternatives considered
+- selected direction
+- rationale
+- tradeoffs/consequences
+- confidence
+- owner
+- re-evaluation trigger.
+
+Exception/Waiver records must capture:
+- exception scope
+- reason
+- owner
+- start date
+- review/expiry condition
+- affected nodes
+- residual risk.
+
+Any change to a canonical source should produce a bounded impact set:
+`Source Change → Affected Capability/Entity/API/Screen/Component/State/Prototype/QA → Required Re-verification`.
+
+## 67.50. DEEP-SATURATION QUALITY GATE — VERSION 3.4
+
+The previous repository coverage gate remains valid, but it is extended with control-plane closure.
+
+### P0 closure targets
+- Context Package reproducible
+- execution identity recorded
+- capability probe observed
+- mutation intent defined
+- persistence proof available
+- semantic/structural/visual diff available
+- command contract mapped for critical actions
+- state/concurrency/freshness semantics mapped
+- deep-link/security lifecycle mapped
+- accessibility semantic contract mapped
+- RTL direction contract mapped
+- network capability contract mapped
+- API/UI contract depth mapped
+- critical analytics tracking plan mapped.
+
+### P1 closure targets
+- independent evaluator or equivalent high-risk review
+- service blueprint evidence
+- search/table/bulk contract
+- async operation contract
+- notification lifecycle
+- focus/announcement matrix
+- bidi stress corpus
+- responsive/device-state matrix
+- cache/queue security
+- token lifecycle
+- component maturity
+- field-level lineage
+- runtime correlation
+- ADR/exception/change-impact governance.
+
+### P2 closure targets
+- reusable benchmark screen corpus
+- agent performance/mutation telemetry
+- resume/recovery drills
+- long-term design-system drift reports.
+
+Closure rule:
+A control is closed only when its specification, owner, evidence type and lifecycle are explicit. A checklist item without evidence ownership is not considered closed.
+
+## 67.51. REVISED FIRST-BUILD CONTROL TREE
+
+From a blank Penpot file, the recommended order is now:
+
+`WAVE-00 Agent Preflight + Context Package`
+→ `WAVE-01 Foundations + RTL/A11Y/Network contracts`
+→ `WAVE-02 Golden Components + Token lifecycle`
+→ `WAVE-03 Shared UX + State/Command/Notification patterns`
+→ `WAVE-04 Golden Screens + Service/Task contracts`
+→ `WAVE-05 Retailer`
+→ `WAVE-06 Vendor`
+→ `WAVE-07 Operations`
+→ `WAVE-08 Field`
+→ `WAVE-09 Corporate`
+→ `WAVE-10 Prototypes / failure branches`
+→ `WAVE-11 QA / independent evaluation / regression`
+→ `WAVE-12 Design-to-Code / runtime evidence`.
+
+Retailer Home remains prohibited as a starting point unless the preceding foundations and controls are explicitly waived with an owner and expiry/review condition.
+
+## 67.52. RESEARCH TRACEABILITY — FIVE-PASS SATURATION
+
+Pass 1: Penpot AI Kit, Penpot MCP/API issue reports, MCP security and vibe-coding reliability → Agent context, atomic mutation, capability probes, trust boundary, persistence proof, diff/evaluator controls.
+
+Pass 2: Service blueprint and IA research plus POL journeys/states/API → task contracts, command contracts, state concurrency, discovery, async, notification and deep-link lifecycles.
+
+Pass 3: WCAG 2.2 and W3C bidirectional-text guidance plus current POL RTL/network requirements → semantic accessibility, direction metadata, bidi corpus, responsive/device and network capability contracts.
+
+Pass 4: Design Tokens Community Group plus Penpot design-system model → token lifecycle, component maturity, golden coverage, visual baseline and design-code token mapping.
+
+Pass 5: API/event/data/security/analytics/governance review plus MCP security and ADR practice → API/UI depth, provenance, correlation, analytics tracking plan, decision lifecycle, waivers and change impact.
+
+Full evidence register:
+`13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`.
+
+## 67.53. CURRENT-SNAPSHOT SATURATION STATEMENT
+
+For the current audited source snapshot, no additional product capability should be created merely to make the Master Tree appear more complete. The remaining additions are primarily control-plane, state, evidence, accessibility, resilience and governance contracts.
+
+This is a saturation statement for the current branch snapshot only. New commits, new product decisions, new APIs, new migrations, new research evidence or new Penpot changes must reopen the relevant closure gates through the existing Source of Truth process.
