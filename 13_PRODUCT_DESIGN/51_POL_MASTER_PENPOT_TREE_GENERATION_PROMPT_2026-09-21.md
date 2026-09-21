@@ -1,7 +1,7 @@
 # POL — Master Prompt for Generating / Updating the Penpot Product Design Tree
 
 **Prompt ID:** `POL-PROMPT-DESIGN-TREE-001`  
-**Version:** `2.1.0`  
+**Version:** `2.2.0`  
 **Date:** 2026-09-21  
 **Target Repository:** `rrasi90/POL-2.3`  
 **Target Branch:** `product-architecture-evolution-2026-09-20`
@@ -1349,3 +1349,27 @@ Additional hard rules:
 - Distinguish domain events, audit events and analytics events.
 - Distinguish design completeness from frontend/runtime/pilot verification.
 - A checkpoint without persistence proof is NOT complete.
+
+
+---
+
+# EXECUTABLE MASTER TREE REQUIREMENT — MANDATORY
+
+Use these as canonical machine-readable governance inputs:
+
+- `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
+- `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
+
+For every generated or updated canonical node:
+
+1. validate node identity/type/scope;
+2. validate source and decision references;
+3. validate relationships;
+4. validate actions and permissions;
+5. validate states and contracts;
+6. validate evidence;
+7. calculate multidimensional closure;
+8. calculate affected-node change impact;
+9. never infer closure from frame existence alone.
+
+Produce a Design Release Snapshot before declaring a wave complete.
