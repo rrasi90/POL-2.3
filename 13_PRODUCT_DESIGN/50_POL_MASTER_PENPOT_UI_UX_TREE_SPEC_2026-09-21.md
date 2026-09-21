@@ -3361,9 +3361,9 @@ Never declare 100% PASS merely because frames exist.
 
 ---
 
-# 21. PENPOT CURRENT → TARGET DELTA
+# 21. HISTORICAL PENPOT REFERENCE — NON-CONSTRUCTIONAL
 
-## Existing and retain
+## Historical artifacts to inspect only
 
 ### Retailer
 - RT-01 Authentication
@@ -3425,9 +3425,9 @@ Never declare 100% PASS merely because frames exist.
 
 ---
 
-# 22. REQUIRED NEW PENPOT BOARDS
+# 22. GREENFIELD REQUIRED PENPOT CONSTRUCTION TARGETS
 
-## P0
+## P0 — Build Targets
 
 ### Retailer
 - RT-15 — OrderGroup Detail
@@ -3824,7 +3824,7 @@ Historical Penpot artifacts must remain classified as evidence/historical unless
 
 **Interpretation:** This file is the canonical planning and traceability layer for the next Penpot completion wave. It does not claim that all listed screens already exist.
 
-**Primary next action:** Build / update Penpot from this tree, then update the tree with actual Penpot frame IDs and QA evidence.
+**Primary next action:** Create the empty target Penpot file, run WAVE-00 preflight, then construct it from `58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`; only after new artifacts persist should their exact IDs/revisions be written back into the Master Tree.
 
 **Critical unresolved source conflicts:** OTP length representation, historical Driver App references, richer offline implications, and other stale Penpot wording must remain visible until canonicalized by the governing runtime/API contract.
 
