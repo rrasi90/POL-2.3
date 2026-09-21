@@ -140,11 +140,23 @@ The visual authority is:
 
 - `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
 - `13_PRODUCT_DESIGN/57_POL_MASTER_TREE_DEEP_CRITICAL_AUDIT_2026-09-21.md`
+- `13_PRODUCT_DESIGN/58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`
 
 Required theme policy: **Light + Night are first-class variants for every applicable canonical screen, section, component, pattern and Penpot artifact.** Night is semantic theming, not color inversion.
 
 The visual system governs appearance, tokens, typography, shape, elevation, density, motion, RTL presentation and visual QA only. It does not override product/domain/API/permission/financial/MVP authorities.
 
+
+
+### Greenfield Penpot Build Mode — 2026-09-21
+
+The current design execution target is a completely new, empty Penpot file.
+
+`BUILD_MODE = GREENFIELD_EMPTY_FILE`
+
+Historical Penpot is evidence only. Construction begins from WAVE-00 empty-file preflight and proceeds dependency-first:
+
+Foundations → Components → Patterns → Golden Screens → Product Surfaces → Prototypes → QA.
 
 ### Master Tree v4 Registry Upgrade — 2026-09-21
 
@@ -162,14 +174,14 @@ The five-pass design saturation audit is registered as a supporting design-contr
 
 - `13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
 
-The active Master Tree is now Version 4.0.0:
+The active Master Tree is now Version 4.1.0:
 
 - `13_PRODUCT_DESIGN/50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md`
 - `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
 - `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
 - `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
 
-The active agent execution protocol is now Version 1.4.0:
+The active agent execution protocol is now Version 1.5.0:
 
 - `13_PRODUCT_DESIGN/52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
 
