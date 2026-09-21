@@ -2,12 +2,12 @@
 ## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Light/Night
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `3.6.0`  
+**Version:** `4.0.0`  
 **Date:** 2026-09-21  
-**Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL / REPOSITORY-CLOSURE-AUDITED / FIVE-PASS-SATURATED-CONTROL-PLANE  
+**Status:** ACTIVE MASTER ARCHITECTURE / CANONICAL REGISTRY KERNEL / FEDERATED VIEW MODEL / PENPOT BUILD SOURCE / TRACEABILITY MODEL / DRIFT-CONTROLLED / AGENT-EXECUTION READY  
 **Repository:** `rrasi90/POL-2.3`  
 **Working Branch:** `product-architecture-evolution-2026-09-20`  
-**Primary Intent:** تبدیل معماری محصول، مستندات، APIها، مدل داده، نقش‌ها، state machineها و وضعیت فعلی Penpot به یک درخت واحد و قابل‌ردگیری برای ساخت/تکمیل طراحی؛ با **Precision Commerce** به‌عنوان زبان بصری canonical و با پوشش هم‌سطح Light + Night.
+**Primary Intent:** تبدیل حقیقت محصول، معماری، دامنه، تجربه، طراحی، Penpot، frontend و شواهد را به یک Canonical Node Registry + Federated Views + Traceability Graph برای ساخت، اجرای agentic، QA و کنترل drift؛ با Precision Commerce و پوشش هم‌سطح Light + Night.
 
 ---
 
@@ -60,6 +60,50 @@ POL
 13. Prototype coverage
 14. QA coverage
 15. Missing / Open Decision
+
+---
+
+
+# 2.0. MASTER TREE v4 KERNEL — REQUIRED INTERPRETATION
+
+Version 4.0 changes the Master Tree from a large narrative tree into a canonical registry with federated views.
+
+The document continues to contain detailed product, screen, state, design and QA views because those views are useful to humans. However, only canonical node records are authoritative.
+
+Core rule:
+
+CANONICAL NODE REGISTRY
+  ├── Experience / IA views
+  ├── Journey / Flow views
+  ├── Domain / API views
+  ├── Design System views
+  ├── Penpot / Frontend artifact views
+  └── Evidence / QA / Pilot views
+
+The same ID may appear in multiple views, but it still represents one node.
+
+Node identity tuple:
+
+NODE_ID + TYPE + CANONICALITY + AUTHORITY + SCOPE + LIFECYCLE
+
+Governance rule:
+
+A screen heading, Penpot frame, screenshot, frontend route or API endpoint is not automatically a canonical node. It becomes one only when it has an explicit node identity and source authority.
+
+v4 mandatory concepts:
+
+- canonicality
+- source health
+- alias/supersession
+- applicability-aware closure profiles
+- many-to-many evidence
+- many-to-many relationship edges
+- exact artifact bindings
+- maturity separate from lifecycle
+- change-impact records
+- release snapshots
+- executable fitness functions
+- bounded agent source packets
 
 ---
 
@@ -635,9 +679,34 @@ NODE
 ├── Priority
 ├── Lifecycle Status
 └── Open Questions
+├── Canonicality
+├── Authority Status
+├── Alias Of
+├── Supersedes
+├── View Memberships
+├── Closure Profile
+├── Maturity Level
+├── Source Health
+├── Penpot Artifact Binding
+├── Evidence Records
+└── Change Impact Records
 ```
 
 This becomes the atomic record for the Master Tree.
+
+### v4 identity rule
+
+One logical node has exactly one canonical identity record.
+
+All repeated appearances elsewhere in this document MUST be classified as VIEW_PROJECTION, DERIVED_INDEX, EVIDENCE_RECORD or HISTORICAL_REFERENCE.
+
+They are not second canonical definitions.
+
+### Canonical precedence
+
+CANONICAL_NODE > VIEW_PROJECTION > DERIVED_INDEX > EXPLANATORY_TEXT
+
+A lower class can summarize a higher class but cannot override it.
 
 ---
 
@@ -1318,7 +1387,7 @@ Foundations
 
 ---
 
-# 5. LIGHT / DARK THEME CONTRACT
+# 5. LIGHT / NIGHT THEME CONTRACT
 
 Dark mode is not a separate visual product.
 
@@ -1354,7 +1423,7 @@ unless explicitly marked:
 | Info | Info | Info-Dark | Color + icon/text |
 | Focus | Focus | Focus-Dark | Keyboard/touch visible |
 
-## 5.3 Dark-mode rules
+## 5.3 Night-mode rules
 
 Dark mode must preserve:
 
@@ -4555,7 +4624,7 @@ Payment state ≠ Settlement state.
 
 ---
 
-# 43. RETAILER — SCREEN-BY-SCREEN ROLE SPECIFICATION
+# 43. DERIVED ROLE / SCREEN SEMANTIC PROJECTION — NON-AUTHORITATIVE
 
 ## RT-01 Authentication
 
@@ -8055,7 +8124,7 @@ GTM pitch language, pilot negotiation language and historical examples cannot be
 
 ---
 
-## 67.57. EXECUTABLE MASTER TREE — VERSION 3.6
+## 67.57. EXECUTABLE MASTER TREE — VERSION 4.0
 
 The human-readable Master Tree is now paired with:
 
@@ -8112,6 +8181,324 @@ Every Design Release should produce an immutable snapshot containing:
 - approval record
 
 A release snapshot is the unit of comparison for future design drift.
+
+
+## 67.65. MASTER TREE v4.0 — CANONICAL REGISTRY KERNEL
+
+### 67.65.1 Canonicality classes
+
+Every node MUST resolve to exactly one canonicality class:
+
+- CANONICAL
+- DERIVED
+- VIEW_PROJECTION
+- ALIAS
+- HISTORICAL
+- EXPERIMENTAL
+
+Only CANONICAL nodes can serve as active authority.
+
+### 67.65.2 Alias and supersession rules
+
+An ALIAS MUST resolve to exactly one canonical node.
+
+A SUPERSEDED or HISTORICAL node MUST retain the replacement node/decision where one exists, the reason for supersession, the effective date/revision, and downstream impact status.
+
+A historical document may remain in the repository without remaining an active product requirement.
+
+### 67.65.3 View projection rule
+
+Repeated logical screen definitions are projections, not independent nodes.
+
+Example: RT-15 OrderGroup Detail may appear in the Retailer surface tree, semantic role view, journey view, prototype view, QA view and Penpot artifact view. All references resolve to the same canonical node ID.
+
+A projection may add view-specific information but may not redefine canonical behavior.
+
+---
+
+## 67.66. CLOSURE PROFILE SYSTEM
+
+The Master Tree's closure dimensions are the global universe of closure evidence. They are NOT universally applicable to every node type.
+
+Each node MUST declare a closure profile.
+
+Required profiles include:
+
+- CAPABILITY_PROFILE
+- SCREEN_PROFILE
+- SECTION_PROFILE
+- COMPONENT_PROFILE
+- PATTERN_PROFILE
+- ACTION_PROFILE
+- STATE_PROFILE
+- PERMISSION_PROFILE
+- ENTITY_PROFILE
+- API_PROFILE
+- EVENT_PROFILE
+- ANALYTICS_PROFILE
+- QA_PROFILE
+- CLAIM_PROFILE
+- PENPOT_ARTIFACT_PROFILE
+- NON_UI_COMMAND_PROFILE
+- RESEARCH_PROFILE
+- RELEASE_PROFILE
+
+A closure dimension may be NOT_APPLICABLE, OPEN, DEFINED, VERIFIED, BLOCKED or WAIVED.
+
+The validator must distinguish NOT_APPLICABLE from NOT_DONE.
+
+---
+
+## 67.67. EVIDENCE IS A COLLECTION
+
+Evidence is many-to-many.
+
+A node may have multiple evidence records and one evidence record may support multiple dimensions.
+
+Every evidence record should declare:
+
+- evidence_id
+- dimension
+- evidence_type
+- reference
+- captured_revision
+- captured_at
+- evaluator
+- scope
+- result
+- notes
+
+A screenshot may provide VISUAL evidence. It does not automatically provide API, permission, runtime or pilot evidence.
+
+---
+
+## 67.68. RELATIONSHIPS ARE A GRAPH
+
+Every node may have zero-to-many relationship edges.
+
+Canonical edge types include:
+
+CONTAINS, BELONGS_TO, NAVIGATES_TO, OPENS, DEPENDS_ON, READS_FROM, WRITES_TO, TRIGGERS, PROJECTS, DERIVES_FROM, AUTHORIZED_BY, AUDITED_BY, NOTIFIES, ESCALATES_TO, RECOVERS_TO, IMPLEMENTS, VALIDATED_BY, SUPERSEDES, ALIASES, BINDS_TO_ARTIFACT, VERIFIED_BY.
+
+No relationship is inferred from textual proximity alone.
+
+---
+
+## 67.69. EXACT PENPOT ARTIFACT BINDING
+
+For a Penpot-backed node, the binding record SHOULD resolve:
+
+- Penpot file identity
+- page identity
+- board/frame identity
+- component identity where applicable
+- variant identity where applicable
+- Penpot revision
+- export/screenshot reference
+- persistence status
+- verification status
+
+A tool success response is not persistence proof.
+
+A screenshot without a stable artifact binding is evidence, not identity.
+
+---
+
+## 67.70. SOURCE HEALTH + DRIFT REGISTRY
+
+Every source authority used by an active node should be classified as:
+
+- ACTIVE_CANONICAL
+- ACTIVE_SUPPORTING
+- REVIEW_REQUIRED
+- STALE
+- HISTORICAL
+- SUPERSEDED
+- CONFLICTED
+- EXPERIMENTAL
+
+### Current audited drift examples
+
+| Source | Current audit interpretation | Action |
+|---|---|---|
+| DECISION_REGISTER.md | ACTIVE_CANONICAL | primary decision authority |
+| CURRENT_SOURCE_OF_TRUTH.md | ACTIVE_CANONICAL | governance authority |
+| 50 Master Tree | ACTIVE_CANONICAL | design registry authority |
+| 56 Precision Commerce Visual System | ACTIVE_CANONICAL | visual authority |
+| 54/55 executable schema pair | ACTIVE_CANONICAL | structural contract |
+| CONTRADICTION_LOG.md | HISTORICAL + ACTIVE CONFLICT LEDGER | preserve history; do not use stale state as active behavior |
+| PENPOT_COMPLETION_MATRIX.md | REVIEW_REQUIRED | contains stale visual/SLA assertions identified by current audit |
+| FINAL_TRACEABILITY_MATRIX.md | REVIEW_REQUIRED | contains historical runtime/queue wording that must not override current D-019/worker authority |
+| 25/28/32/38 visual-token documents | SUPERSEDED_WHERE_CONFLICTED | 56 is current Precision Commerce visual authority |
+
+This table is a governance interpretation, not a deletion instruction. Historical artifacts remain preserved for traceability.
+
+---
+
+## 67.71. NODE MATURITY VS LIFECYCLE
+
+Lifecycle answers: What phase is this node in?
+
+Maturity answers: How much of the intended system truth has actually been demonstrated?
+
+Canonical maturity ladder:
+
+L0_CONCEPT → L1_SPECIFIED → L2_MAPPED → L3_DESIGNED → L4_PROTOTYPED → L5_CONTRACTED → L6_IMPLEMENTED → L7_VERIFIED → L8_PILOT_OBSERVED → L9_SUPERSEDED_OR_DEPRECATED
+
+A Penpot frame alone cannot establish L7 or L8.
+
+---
+
+## 67.72. RELEASE SNAPSHOT V4
+
+A Design Release Snapshot is mandatory before a major Penpot release is called closed.
+
+Required fields:
+
+- Master Tree version
+- node schema version
+- repository HEAD
+- Penpot file/revision
+- token baseline
+- component baseline
+- screen registry hash/count
+- closure matrix summary
+- open P0/P1 defects
+- waivers
+- contradiction ledger status
+- source-health summary
+- evidence manifest
+- change-impact summary
+- approval record
+
+The snapshot is immutable after approval.
+
+---
+
+## 67.73. EXECUTABLE FITNESS FUNCTIONS
+
+The following checks should become CI/agent validators:
+
+1. FT-01 Orphan Node — active canonical node lacks an authority path.
+2. FT-02 Orphan Artifact — Penpot artifact cannot resolve to a classified node.
+3. FT-03 Protected Action — protected action lacks permission mapping.
+4. FT-04 Theme Parity — applicable production visual node lacks Night.
+5. FT-05 Stale Source — active source changed without re-verification set.
+6. FT-06 Contract Drift — UI action maturity is incompatible with API route status.
+7. FT-07 State Drift — UI state lacks canonical domain/integration interpretation.
+8. FT-08 Alias Collision — alias resolves to multiple active canonical nodes.
+9. FT-09 Token Violation — raw undeclared visual values bypass semantic tokens.
+10. FT-10 Historical Leakage — superseded/historical source is sole active authority.
+11. FT-11 Claim Without Authority — financial/legal/guarantee copy lacks current claim source.
+12. FT-12 Unsupported Offline — persistent offline write behavior lacks canonical runtime support.
+
+A fitness function should produce a diagnostic failure record, not silently mutate the design.
+
+---
+
+## 67.74. AGENT SOURCE PACKET V4
+
+Agent context MUST be bounded.
+
+For one node, the preferred packet is:
+
+1. authority source
+2. active decisions
+3. node record
+4. applicable domain/API/data sources
+5. current Penpot artifact binding
+6. known contradictions
+7. closure profile
+8. acceptance criteria
+9. evidence required
+10. change-impact set
+
+The full 8,000+ line Master Tree must not be loaded by default for a small mutation.
+
+---
+
+## 67.75. CANONICAL SCREEN IDENTITY RULE
+
+Current audit found that 47 of approximately 58 screen IDs appear more than once in the Master Tree.
+
+This is now classified as projection duplication, not as multiple canonical screens.
+
+For all screen IDs:
+
+- first canonical identity is resolved from the active surface tree / registry
+- repeated references are projections
+- conflicting repeated definitions create a validation failure
+- screen IDs cannot be repurposed silently
+- aliases must use explicit ALIAS_OF relationships
+
+Historical IDs remain queryable for traceability.
+
+---
+
+## 67.76. VISUAL SYSTEM V4 INTEGRATION
+
+Precision Commerce is a first-class design-system authority.
+
+Visual closure now resolves:
+
+Visual Direction → Primitive Token → Semantic Token → Component Token → Pattern → Screen → Theme Variant → Evidence
+
+Canonical themes:
+
+- LIGHT
+- NIGHT
+
+Legacy textual references to DARK are treated as aliases and must not create a second theme system.
+
+Density remains contextual:
+
+- D1_SPACIOUS_COMMERCE
+- D2_BALANCED_OPERATIONS
+- D3_DENSE_COMMAND
+- CORPORATE_EDITORIAL
+- FIELD_PRACTICAL
+
+---
+
+## 67.77. NEW CANONICAL NODE TYPES — V4
+
+The machine-readable registry may use these additional types where applicable:
+
+- ANL — Analytics Event
+- NFR — Non-Functional Requirement
+- HYP — Hypothesis
+- EVIDENCE — Evidence Node
+- RELEASE — Release Slice
+- STORY — Implementation/User Story Slice
+- TERM — Canonical Terminology Node
+- COPY — UI Copy Contract
+- CHANGE — Source/Architecture Change
+- WAIVER — Temporary Controlled Deviation
+
+These types do not automatically create product capabilities.
+
+---
+
+## 67.78. V4 DEFINITION OF DONE
+
+The Master Tree itself is considered v4-complete only when:
+
+- canonicality is explicit
+- all repeated screen entries are classified as projections or aliases
+- closure profiles exist
+- evidence is multidimensional
+- relationship cardinality is modeled
+- Penpot artifact identity is explicit
+- source health exists
+- release snapshot exists
+- fitness functions are defined
+- schema validation reflects these contracts
+- agent source packets can be generated deterministically
+- Light/Night Precision Commerce is integrated as a first-class visual authority
+
+This is a governance closure, not a claim that all product screens are already built.
+
+---
 
 ## 67.60. PRECISION COMMERCE VISUAL DIRECTION — CANONICAL
 
