@@ -606,7 +606,7 @@ Example:
 
 This distinction matters because a component should normally not depend directly on a primitive color.
 
-The Design Tokens Community Group's 2025.10 specification provides a stable exchange format for interoperable tokens; the current specification explicitly supports aliases, groups and context/modifiers such as light/dark themes. urlcite_PLACEHOLDER_DTCG
+The Design Tokens Community Group's 2025.10 specification provides a stable exchange format for interoperable tokens; the current specification explicitly supports aliases, groups and context/modifiers such as light/dark themes. https://www.designtokens.org/TR/2025.10/format/
 
 POL should use that interoperability direction for future Penpot ↔ frontend token exchange, while still keeping POL's own semantic naming authoritative.
 
@@ -1190,19 +1190,19 @@ That is the architecture required before using the Master Tree as the long-lived
 
 ### Penpot AI Kit
 
-Penpot's current AI Kit explicitly treats AI design work as structured Penpot editing with real components, tokens, system rules and iterative control rather than flat image generation. url:https://github.com/penpot/penpot-ai-kit
+Penpot's current AI Kit explicitly treats AI design work as structured Penpot editing with real components, tokens, system rules and iterative control rather than flat image generation. https://github.com/penpot/penpot-ai-kit
 
 ### Design Tokens Community Group
 
-The Design Tokens Community Group's current stable 2025.10 format provides an interoperability layer for design-token exchange, including aliases and context/modifier concepts relevant to theme-aware systems. url:https://www.designtokens.org/TR/2025.10/format/
+The Design Tokens Community Group's current stable 2025.10 format provides an interoperability layer for design-token exchange, including aliases and context/modifier concepts relevant to theme-aware systems. https://www.designtokens.org/TR/2025.10/format/
 
 ### WCAG 2.2
 
-WCAG 2.2 remains the relevant accessibility baseline; its reflow requirement explicitly covers usable presentation down to a 320 CSS-pixel equivalent viewport at 400% zoom for applicable content. url:https://www.w3.org/TR/wcag/
+WCAG 2.2 remains the relevant accessibility baseline; its reflow requirement explicitly covers usable presentation down to a 320 CSS-pixel equivalent viewport at 400% zoom for applicable content. https://www.w3.org/TR/wcag/
 
 ### Architecture fitness functions
 
-Fitness functions are useful for shifting architectural governance from periodic inspection toward executable checks that continuously evaluate implementation against stated design objectives. url:https://martinfowler.com/articles/fitness-functions-data-products.html
+Fitness functions are useful for shifting architectural governance from periodic inspection toward executable checks that continuously evaluate implementation against stated design objectives. https://martinfowler.com/articles/fitness-functions-data-products.html
 
 ---
 
