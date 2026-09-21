@@ -41,7 +41,7 @@ DECISION AUTHORITY
 | **Database Schema & Migrations** | `migrations/001_*.sql` through `migrations/031_*.sql`, `08_DATA/Data_Schema.md`, `POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST_2026-09-16.md` | PostgreSQL 18 DDL, constraints, indexes, triggers and foreign keys. | The numbered migration chain is the physical schema authority. |
 | **API Contracts & DTOs** | `06_PRODUCT/API_Contracts.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX_CORRECTIONS_2026-09-16.md`, `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md` | REST/JSON contracts and application-boundary commands. | Correction overlay supersedes conflicting legacy terminology. |
 | **Allocation Engine Algorithm** | `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` | Deterministic multi-vendor allocation, MOV/MOQ and ranking. | Governs allocation implementation. |
-| **Brand & Design System** | `POL_00_PROJECT_CONTROL/BRAND_ARCHITECTURE.md`, `13_PRODUCT_DESIGN/` | Brand hierarchy, design system, interaction patterns and visual language. | Design may not override product/engineering decisions. |
+| **Brand & Design System** | `POL_00_PROJECT_CONTROL/BRAND_ARCHITECTURE.md`, `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`, `13_PRODUCT_DESIGN/50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` | Brand hierarchy, Precision Commerce visual direction, design tokens, interaction patterns, Light/Night visual language and design QA. | Design may not override product/engineering decisions. |
 | **Operations, Fulfillment & Logistics** | `09_OPERATIONS/Fulfillment.md`, `09_OPERATIONS/Payments_and_Settlement.md`, `09_OPERATIONS/Support_and_Disputes.md` | Field SOPs, logistics, direct settlement and support/dispute operations. | Governs operational workflows. |
 | **Async Workers & Event Runtime** | `POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md`, `08_DATA/Event_Architecture.md` | Canonical PostgreSQL 18 transactional outbox + Python worker execution model. | Supersedes BullMQ/Redis Streams as the MVP event transport. |
 | **Pilot Definition & Metrics** | `11_PILOT/Pilot_Strategy.md`, `11_PILOT/KPIs.md`, `11_PILOT/Success_Criteria.md` | Ahvaz pilot parameters and Gate 1 telemetry. | Governs pilot validation. |
@@ -132,19 +132,32 @@ These directions refine presentation, UX and implementation sequencing without o
 
 ---
 
+### Precision Commerce Visual Direction — 2026-09-21
+
+POL's canonical product visual direction is now **A — Precision Commerce**.
+
+The visual authority is:
+
+- `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+
+Required theme policy: **Light + Night are first-class variants for every applicable canonical screen, section, component, pattern and Penpot artifact.** Night is semantic theming, not color inversion.
+
+The visual system governs appearance, tokens, typography, shape, elevation, density, motion, RTL presentation and visual QA only. It does not override product/domain/API/permission/financial/MVP authorities.
+
 ## 7. Deep-Saturation Design Control — 2026-09-21
 
 The five-pass design saturation audit is registered as a supporting design-control artifact:
 
 - `13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
 
-The active Master Tree is now Version 3.5.0:
+The active Master Tree is now Version 3.6.0:
 
 - `13_PRODUCT_DESIGN/50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md`
 - `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
 - `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
+- `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
 
-The active agent execution protocol is now Version 1.1.0:
+The active agent execution protocol is now Version 1.3.0:
 
 - `13_PRODUCT_DESIGN/52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
 
