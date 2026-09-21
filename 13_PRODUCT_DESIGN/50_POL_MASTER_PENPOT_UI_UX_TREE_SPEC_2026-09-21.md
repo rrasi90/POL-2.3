@@ -7260,3 +7260,31 @@ The following repository terms are canonical aliases and must remain traceable t
 - RTO / RPO → Backup / Recovery / Data Operations readiness contract
 
 These aliases do not automatically create additional MVP screens. They create traceable strategy, capability, KPI, service-blueprint or future-scope nodes.
+
+
+## 67.29. CANONICAL SOURCE-REFERENCE CLOSURE
+
+The repository-wide closure packet explicitly binds the Master Tree to the following source authorities:
+
+- POL_00_PROJECT_CONTROL/DECISION_REGISTER.md
+- 06_PRODUCT/MVP_Definition.md
+- 06_PRODUCT/PRD.md
+- 06_PRODUCT/Roles_and_Permissions.md
+- 06_PRODUCT/Order_Lifecycle.md
+- 08_DATA/DOMAIN_MODEL.md
+- 08_DATA/Data_Schema.md
+- 06_PRODUCT/API_Contracts.md
+- POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md
+- POL_00_PROJECT_CONTROL/ROUTE_COVERAGE_MATRIX.md
+- POL_00_PROJECT_CONTROL/API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md
+- 06_PRODUCT/User_Journeys.md
+- 08_DATA/Event_Architecture.md
+- 09_OPERATIONS/Fulfillment.md
+- 09_OPERATIONS/Payments_and_Settlement.md
+- 09_OPERATIONS/Support_and_Disputes.md
+- 10_GO_TO_MARKET/Onboarding.md
+- 11_PILOT/KPIs.md
+
+Operational evidence sources additionally include the MVP execution contracts for deployment, security, observability, backup/recovery and analytics measurement.
+
+RTO and RPO are readiness-contract dimensions; they are not assumed values unless an authoritative operational decision supplies them.
