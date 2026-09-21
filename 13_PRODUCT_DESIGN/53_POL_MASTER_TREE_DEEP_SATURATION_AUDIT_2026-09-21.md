@@ -322,3 +322,11 @@ Every public/high-risk copy block should resolve:
 CLAIM_ID → TEXT → SOURCE → AUTHORITY → VALID_TIME → AUDIENCE → SURFACE → RISK → REVIEW_OWNER.
 
 Claims such as cheapest vendor, absolute reliability ranking, guaranteed transport coordination, permanent commission promises or unsupported fulfillment guarantees must not become canonical UI language without a current authoritative source.
+
+## Supersession note — 2026-09-21
+
+This five-pass saturation audit remains valid as a supporting evidence artifact. The next governing review is:
+
+13_PRODUCT_DESIGN/57_POL_MASTER_TREE_DEEP_CRITICAL_AUDIT_2026-09-21.md
+
+Master Tree v4.0 and the v4 executable schema supersede this document wherever later registry/closure rules are more precise.
