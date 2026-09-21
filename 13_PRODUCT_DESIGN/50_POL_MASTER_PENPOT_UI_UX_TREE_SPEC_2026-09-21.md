@@ -2,7 +2,7 @@
 ## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Light/Night
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `4.1.0`  
+**Version:** `4.2.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE MASTER ARCHITECTURE / CANONICAL REGISTRY KERNEL / GREENFIELD BLANK-FILE BUILD SOURCE / FEDERATED VIEW MODEL / PENPOT BUILD SOURCE / TRACEABILITY MODEL / DRIFT-CONTROLLED / AGENT-EXECUTION READY  
 **Repository:** `rrasi90/POL-2.3`  
@@ -8808,4 +8808,81 @@ The current historical Penpot snapshot is retained only for audit/history. No "r
 The greenfield file includes `P99 — Agent QA & Golden Evals` for golden components, golden screens, structural probes, persistence probes and visual evaluation evidence.
 
 This page is not a product surface and must not leak into runtime navigation.
+
+
+
+
+## 67.80. DESIGN APPROVAL → ENGINEERING HANDOFF CONTROL PLANE
+
+Penpot approval is a design milestone, not an implementation milestone.
+
+The Master Tree now distinguishes:
+
+DESIGN_DEFINED
+→ PENPOT_BUILT
+→ DESIGN_REVIEWED
+→ DESIGN_APPROVED
+→ ENGINEERING_MAPPED
+→ ENGINEERING_READY
+→ IMPLEMENTATION_IN_PROGRESS
+→ IMPLEMENTED
+→ RUNTIME_VERIFIED
+→ PILOT_VERIFIED
+
+### Engineering-ready rule
+
+A Screen/Pattern/Component cannot be marked ENGINEERING_READY unless the applicable handoff contract exists for:
+
+- identity and user outcome;
+- layout/responsive rules;
+- Precision Commerce token references;
+- Light + Night;
+- component/variant mapping;
+- actions;
+- permissions;
+- UI/domain state transitions;
+- data source/freshness/tenant scope;
+- API/ApplicationBoundary status;
+- request/response/error behavior;
+- navigation/deep-link behavior;
+- analytics;
+- platform mapping;
+- accessibility/RTL;
+- network/recovery behavior;
+- test expectations.
+
+### Runtime-status integrity
+
+The Master Tree MUST preserve the distinction between:
+
+- HTTP_IMPLEMENTED;
+- BOUNDARY_READY / NOT_YET_HTTP;
+- CONTRACT_ONLY;
+- DOMAIN_VERIFIED_ONLY.
+
+A Penpot frame must never upgrade an API or runtime status.
+
+### Component-to-code rule
+
+Canonical visual components must resolve:
+
+Penpot Component → Component Contract → Frontend Component → Test Fixture
+
+### Token-to-code rule
+
+Canonical visual tokens must resolve:
+
+Primitive → Semantic → Component Token → Web/Android Token Implementation
+
+### Full-app readiness rule
+
+The product is not application-ready until the approved Design Release has corresponding Web + Android implementation, runtime verification and applicable pilot evidence.
+
+Authoritative handoff contract:
+
+13_PRODUCT_DESIGN/59_POL_DESIGN_TO_ENGINEERING_HANDOFF_AND_BUILD_READINESS_2026-09-21.md
+
+Final audit:
+
+13_PRODUCT_DESIGN/60_POL_FINAL_DESIGN_TO_BUILD_READINESS_AUDIT_2026-09-21.md
 
