@@ -1,10 +1,10 @@
 # POL — Master Product / UI / UX Tree & Penpot Build Specification
-## Canonical Master Product / Experience / Service / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Dark/Light
+## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Dark/Light
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `2.0.0`  
+**Version:** `3.0.0`  
 **Date:** 2026-09-21  
-**Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL  
+**Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL / GITHUB-AUDITED  
 **Repository:** `rrasi90/POL-2.3`  
 **Working Branch:** `product-architecture-evolution-2026-09-20`  
 **Primary Intent:** تبدیل معماری محصول، مستندات، APIها، مدل داده، نقش‌ها، state machineها و وضعیت فعلی Penpot به یک درخت واحد و قابل‌ردگیری برای ساخت/تکمیل طراحی.
@@ -5858,3 +5858,258 @@ Only after all are answered should the Screen be marked fully mapped.
 19. Architecture Decision / contradiction ledger
 
 The current document now defines the semantic vocabulary and the multi-view methodology needed for these expansions.
+
+
+---
+
+# 2.6. GITHUB + PENPOT DEEP AUDIT — VERSION 3 EXPANSION
+
+## 2.6.1 Authority Registry
+Version 3 is based on direct comparison with the active POL architecture branch, current Penpot, frontend route/contract map, product/design specifications, and governance decisions.
+
+Mandatory authority classes:
+Governance: CURRENT_SOURCE_OF_TRUTH, DECISION_REGISTER, PRODUCT_ARCHITECTURE_EVOLUTION_WAVE_01, BRAND_ARCHITECTURE.
+Product: PRD, MVP_Definition, Roles_and_Permissions, USER_PROFILE_UX_SPEC, Technical_Architecture_Spec, API_Contracts, Order_Lifecycle.
+Domain/Data: DOMAIN_MODEL, Data_Schema, MULTI_VENDOR_ORDERING_MODEL, CATALOG_PRODUCT_MASTER, INVENTORY_MODEL, PRODUCT_MEDIA_MODEL, IDENTITY_AND_MEMBERSHIP, Master_SKU_Import_Audit, Event_Architecture.
+Operations: Fulfillment, Payments_and_Settlement, Support_and_Disputes, notification domain/event matrix, SLA/work-calendar definitions, Vendor Operations.
+Design/Implementation: Navigation IA, Vendor UX, Design Decision Register, screen specifications, frontend route contract map, current Penpot.
+Pilot/Evidence: Pilot Strategy, KPIs, Success Criteria, research assumptions and evidence register.
+
+Rule: an active source-of-truth domain with no Master Tree mapping is a traceability gap.
+
+## 2.6.2 GitHub audit — overlooked capabilities
+| Area | Evidence | Current Tree | Required upgrade |
+|---|---|---|---|
+| Vendor Referral | D-016, referral service, Ops referral route | Partial | First-class acquisition/attribution capability |
+| Universal User Profile | D-017 + profile UX/model | Too shallow | UserProfile → MembershipProfile → Persona Profile |
+| Notifications | notification domain + route map | Partial | Inbox, delivery, preference, template and mandatory-event model |
+| Broadcasts | GAP-004 | Missing | Admin/Ops broadcast capability |
+| Feedback/Suggestions | capability matrix | Missing | Shared feedback + Ops inbox |
+| Vendor Reliability | capability matrix | Partial | Vendor health + reliability-event tree |
+| Daily Inventory Confirmation | capability matrix + Vendor UX | Partial | First-class operational journey |
+| Vendor Customers | Vendor UX/navigation | Partial | Customer relationship/history surface |
+| Vendor Onboarding | GAP-014 | Missing | Explicit onboarding state machine |
+| Admin Users | frontend route map | Missing | User directory + admin actions |
+| Admin Organizations | frontend route map | Missing | Organization/tenant management |
+| Ops Vendors/Retailers | Ops navigation | Partial | Operational directories and context |
+| Pilot Analytics | PRD + Pilot docs | Partial | KPI/event/cohort/experiment tree |
+| SLA Calendar | GAP-009 | Too shallow | Working calendar + timer semantics |
+| Payment attempts | Payments spec | Too shallow | Method/attempt/evidence/verification/refund tree |
+| Settlement adjustments | Payments spec | Partial | Adjustment lineage and dispute linkage |
+| Invoice integrity | data/payments | Partial | Immutable invoice/document lineage |
+| Product identity lifecycle | capability matrix/catalog master | Partial | Merge/archive/snapshot governance |
+| Multi-barcode identifiers | PRD | Missing detail | Identifier hierarchy and matching semantics |
+| Catalog import/quarantine | Master SKU audit | Missing | Reference → quarantine → candidate → canonical |
+| Field Task domain | GAP-013 | Partial | Type/owner/territory/due/evidence/outcome |
+| Operator personas | profile model | Missing | ADMIN/OPS/SUPPORT/FINANCE/FIELD/ANALYTICS |
+| Vendor job functions | profile model | Partial | SALES/WAREHOUSE/OPERATIONS/FINANCE/STAFF |
+| Brand family | BRAND_ARCHITECTURE | Missing | Corporate/Market/Vendor product identities |
+| External integrations | Technical Architecture | Partial | SMS, Maps, Push, Storage |
+| Outbox/worker runtime | source-of-truth docs | Too shallow | Application boundary → outbox → worker |
+| Correlation ID | GAP-012 | Missing | End-to-end operational trace |
+| Deployment | Technical Architecture | Missing | Environment/deployment view |
+| Security/privacy | IAM/security docs | Partial | Dedicated cross-cutting view |
+| Accessibility | UX-008/WCAG | Partial | Evidence-backed accessibility tree |
+| Localization/i18n | Persian/RTL rules | Partial | Locale/content/date/currency/direction model |
+| Content/terminology | Brand/design docs | Partial | Canonical naming and copy registry |
+| Release slicing | Product/engineering | Missing | User Story Map / walking skeleton |
+| Research/hypotheses | PRD/evidence | Missing | Opportunity/evidence/experiment tree |
+| Decision confidence | ADR practice | Partial | Rationale/alternatives/consequences/confidence |
+| NFR/resilience | PRD NFR | Partial | Measurable quality-attribute view |
+
+## 2.6.3 Canonical ID separation
+Logical product identifiers must be distinct from historical Penpot board names.
+
+Use these ID classes:
+CAP = Business Capability; EXP = Experience; JRN = Journey; FLOW = Flow; SCR = Logical Screen; SEC = Section; CMP = Component; ACT = Action; STATE = State; PERM = Permission; ENT = Entity; API = Contract; EVT = Domain Event; AUD = Audit Event; NTF = Notification; PEN = Penpot Artifact; ROUTE = Frontend Route; ADR = Decision; QA = Evidence; MET = Measurement.
+
+Historical IDs such as RT-15 or VD-07 may remain aliases. They must not be used as the sole canonical identifier.
+
+IMPORTANT CONFLICT: Vendor UX documentation assigns V-07 to Daily Inventory Confirmation, while the historical Penpot inventory uses VD-07 for Settings/Staff. The Master Tree must treat these as logical IDs vs artifact IDs and explicitly map the alias.
+
+## 2.6.4 Federated Master Tree — 16 coordinated views
+1. Outcome / Strategy / Capability
+2. Stakeholder / Ecosystem
+3. Information Architecture
+4. Experience / Journey / Flow
+5. Service Blueprint / Value Stream
+6. Domain / Bounded Context
+7. Data / Information Governance
+8. System / Software / Deployment
+9. Design System / Brand / Theme
+10. State / Event / Policy
+11. IAM / Security / Privacy
+12. Content / Localization / Accessibility
+13. Measurement / Research / Evidence
+14. Release / User Story Map
+15. Quality Attributes / NFR / Resilience
+16. Traceability / Governance / QA
+
+These are views over one product model, not independent specifications.
+
+## 2.6.5 Stakeholder / Ecosystem view
+POL
+├── Retailer: Owner, Staff, Receiver
+├── Vendor: Owner, Sales, Warehouse, Operations, Finance, Staff
+├── POL Operations: Admin, Ops, Support, Finance, Field, Analytics
+├── Corporate/Governance
+└── External: Carrier/Local Hub, SMS, Map, Push, Object Storage
+
+The C4 system-context approach supports explicitly showing people/actors and external systems around the product boundary.
+
+## 2.6.6 Business capability and value-stream view
+Outcome → Capability → Value Stream → Process → Role → Service → Initiative/Wave.
+
+POL value streams:
+Acquire Retailer → Activate Retailer → Discover Supply → Build Basket → Allocate → Commit Order → Vendor Fulfill → Dispatch → Deliver → Reconcile → Resolve Exception → Reorder → Retain/Reactivate.
+
+Capability must be distinct from Screen. A capability can exist across several surfaces.
+
+## 2.6.7 Data governance view
+Every data node must declare: source of truth, owner, read/write model, freshness, snapshot semantics, mutability, retention, sensitivity/PII, access policy, audit policy and downstream projections.
+
+Core POL data invariants:
+Order snapshots are immutable.
+Financial Activity is a read model, not a wallet.
+Imported reference data is not live vendor truth until verified.
+Master Product and Vendor SKU remain separate.
+Media provenance is preserved.
+
+## 2.6.8 IAM / Security / Privacy view
+User → Authentication → Session/Device → Organization → Membership → Role → Delegated Permission → Effective Authorization → Resource Scope → Audit.
+
+Privacy adds: PII classification, consent, retention, export/deletion policy and sensitive-field handling.
+
+Use OWASP ASVS 5.0 as a technical security verification reference and NIST Privacy Framework as a privacy-risk reference.
+
+## 2.6.9 Content / Localization / Accessibility view
+Content nodes:
+Naming, terminology, empty/error/success copy, financial copy, trust/legal copy.
+
+Localization nodes:
+fa-IR, required English, RTL/LTR, numerals, dates, timezones, Toman/Rial display, units and mixed-direction identifiers.
+
+Accessibility nodes:
+Perceivable, Operable, Understandable, Robust, plus focus, target size, status messages, keyboard/touch, screen readers, motion and contrast.
+
+WCAG 2.2 is the baseline reference for the accessibility evidence tree.
+
+## 2.6.10 Measurement / Research / Evidence view
+Outcome → KPI → Hypothesis → Assumption → Evidence → Experiment → Result → Decision.
+
+Required POL measurement domains:
+Activation, first independent order, repeat order, fill rate, acceptance average, acceptance timeout, partial acceptance, rejection/timeout, delivery completion, dispute rate, referral attribution, support resolution, scan-to-match time, NO_MATCH rate, candidate-review time, notification delivery success, reconciliation mismatch.
+
+KPI ≠ feature completion. Real pilot evidence is a separate maturity level.
+
+## 2.6.11 Release / User Story Map view
+Release → User Outcome → Activity → Step → Capability/Story → Design/API/Frontend/Backend/Prototype/QA.
+
+Use end-to-end walking-skeleton slices. Do not define a release as a cluster of unrelated screens.
+
+## 2.6.12 Quality / NFR / Resilience view
+Quality dimensions: Performance, Reliability, Network Degradation, Offline Preservation, Security, Privacy, Accessibility, Observability, Data Integrity.
+
+Every NFR must have threshold, measurement method, environment, owner, evidence and failure behavior.
+
+Known POL scanner UX target: matched-item entry median ≤10 seconds and P95 ≤20 seconds.
+
+## 2.6.13 Traceability packet
+Every major capability must have a trace packet:
+Requirement → Decision/ADR → Capability → Domain → Data → API → Permission → Penpot → Prototype → Frontend → Test → QA Evidence → Pilot Evidence.
+
+## 2.6.14 Maturity model
+L0 Concept
+L1 Specified
+L2 Mapped
+L3 Designed
+L4 Prototyped
+L5 Contracted
+L6 Implemented
+L7 Verified
+L8 Pilot Observed
+L9 Superseded/Deprecated
+
+A Penpot frame can prove L3 at most. L7 requires QA/test evidence. L8 requires real pilot evidence.
+
+## 2.6.15 Evidence levels
+SOURCE_VERIFIED; RUNTIME_VERIFIED; DESIGN_VERIFIED; TEST_VERIFIED; PILOT_VERIFIED; INFERRED; OPEN_DECISION.
+
+## 2.6.16 SLA semantics
+Acceptance KPI and acceptance timeout are different metrics.
+PRD target: average acceptance under 45 working minutes.
+Canonical hard timeout: 120 working minutes respecting the Ahvaz working calendar.
+The Master Tree must never present 45 minutes as a timeout or 120 minutes as the average KPI.
+
+## 2.6.17 POL-specific capability additions
+Vendor Referral: source vendor, code/link, redemption, first-touch attribution, timestamp, linked retailer, first order, reporting, audit. MVP excludes reward wallet/credit.
+Universal Profile: user profile + membership profile + persona profile + security + notification preferences.
+Operator job functions: ADMIN, OPS, SUPPORT, FINANCE, FIELD, ANALYTICS.
+Vendor job functions: SALES, WAREHOUSE, OPERATIONS, FINANCE, STAFF.
+Vendor Onboarding: LEAD → DOCS_PENDING → UNDER_REVIEW → VERIFY_PENDING → APPROVED → ACTIVE.
+Inventory reservation: ACTIVE → CONSUMED / RELEASED / EXPIRED.
+Catalog import: IMPORTED_REFERENCE → QUARANTINED → CANDIDATE → REVIEW → VERIFIED → CANONICAL.
+Support, Dispute/RMA and Feedback/Suggestion remain distinct domains.
+Field task: type, territory, assignee, due, state, evidence, outcome, next action.
+
+## 2.6.18 Notification architecture
+Event → Recipient Resolution → Template → Channel → Delivery Attempt → Retry → Failure/Success → Read State.
+Channels: INBOX, PUSH, SMS.
+Also model preferences, mandatory-event policy, broadcasts and deep links.
+
+## 2.6.19 Financial architecture deepening
+Financial Activity → Order Amount → Vendor Invoice → Payment/Attempts/Evidence → Refund → Settlement/Gross/Adjustment/Net → Audit/Event.
+Payment ≠ Settlement. Invoice ≠ Order. Financial Activity ≠ Wallet.
+
+## 2.6.20 Master Product deepening
+Stable ID, canonical name, category, brand, packaging, identifier set, lifecycle, merge history, archive history, media provenance.
+Identifiers include EAN-13, EAN-8, UPC-A, GTIN-14, Iran Code and Vendor SKU/internal barcode.
+Historical order snapshots remain immutable after product metadata changes.
+
+## 2.6.21 Navigation/profile additions
+Retailer navigation: Home, Buy/Search, Orders, Basket, Account; secondary categories, reorder, saved lists, support, notifications.
+Vendor navigation: Dashboard, Orders, Inventory, Catalog & Price, Customers, Daily Inventory Confirmation, Referral, Settlements/Documents, Staff/Access, Profile.
+Ops navigation: Overview, Orders, Vendors, Retailers, Fulfillment Exceptions, Support, Returns/RMA, Reconciliation, Risk/Reliability, Notifications, Pilot Analytics.
+Field navigation: Today, Customers/Leads, Activation, Assisted Order, Follow-up, Problems, Account.
+
+## 2.6.22 Architecture references used for this upgrade
+Information Architecture: https://www.nngroup.com/articles/information-architecture-sitemaps/
+User Journeys / Flows: https://www.nngroup.com/articles/user-journeys-vs-user-flows/
+Service Blueprint: https://www.ontario.ca/page/service-blueprints
+C4: https://c4model.com/
+ArchiMate: https://archimate-community.pages.opengroup.org/workgroups/archimate-101/
+DDD: https://martinfowler.com/bliki/BoundedContext.html
+Atomic Design: https://atomicdesign.bradfrost.com/chapter-2/
+Design Tokens: https://www.w3.org/community/design-tokens
+ADR: https://martinfowler.com/bliki/ArchitectureDecisionRecord.html
+Opportunity Solution Trees: https://www.producttalk.org/opportunity-solution-trees/
+Story Mapping: https://jpattonassociates.com/the-new-backlog/
+WCAG 2.2: https://www.w3.org/TR/wcag/
+OWASP ASVS: https://owasp.org/projects/asvs
+NIST Privacy Framework: https://www.nist.gov/privacy-framework
+
+## 2.6.23 Validation questions for every canonical node
+1. Which outcome?
+2. Which capability?
+3. Which value stream?
+4. Which actor/persona?
+5. Which role?
+6. Which organization scope?
+7. Where in IA?
+8. Which journey/flow?
+9. What frontstage experience?
+10. What backstage work?
+11. Which domain context?
+12. Which data?
+13. Which API/runtime contract?
+14. Which permission?
+15. What state transition?
+16. What event/audit/notification?
+17. Which component/token?
+18. Which Light/Dark/Mobile/Desktop rules?
+19. How measured?
+20. Which release slice?
+21. What QA evidence?
+22. What pilot evidence?
+
+If an item is not applicable, mark N/A explicitly; never silently omit it.
