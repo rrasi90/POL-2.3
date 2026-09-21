@@ -9,12 +9,14 @@ Use this skill whenever the requested work modifies POL design artifacts, fronte
 
 ## Required preflight
 
-1. Verify the Git branch is `research-hardening-2026-09-14`.
+1. Resolve the target branch/ref from `POL_00_PROJECT_CONTROL/CURRENT_SOURCE_OF_TRUTH.md` and the orchestration task; never assume a historical hardcoded branch.
 2. Fetch remote refs and verify the working HEAD.
 3. Read the relevant canonical decision and contract files before editing.
-4. Read `13_PRODUCT_DESIGN/23_ANTIGRAVITY_FAILURE_MODES_AND_AGENT_OPERATING_PROTOCOL_2026-09-16.md`.
-5. Declare a batch objective and file scope.
-6. List acceptance criteria.
+4. Read `13_PRODUCT_DESIGN/23_ANTIGRAVITY_FAILURE_MODES_AND_AGENT_OPERATING_PROTOCOL_2026-09-16.md` and `13_PRODUCT_DESIGN/52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`.
+5. Read `13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md` when the batch touches Master Tree, Penpot, shared UX, states, components or agent execution.
+6. Build the Context Package and record RUN_ID/WAVE_ID.
+7. Declare a batch objective and file scope.
+8. List acceptance criteria.
 
 ## Execution loop
 
@@ -95,3 +97,27 @@ Parallel read-only reviews are allowed. Do not run concurrent edits against the 
 ## Stop
 
 Stop instead of guessing when an unresolved business decision materially affects the batch or when verification cannot establish the intended result.
+
+
+## Deep-saturation execution
+
+For each mutating step, record:
+- mutation intent;
+- preconditions;
+- expected structural delta;
+- postconditions;
+- rollback reference;
+- evidence required.
+
+Verify:
+- persistence with a fresh read;
+- semantic correctness;
+- structural correctness;
+- visual correctness;
+- applicable accessibility/RTL/responsive/network behavior.
+
+Do not resume from chat memory after context truncation. Resume from the persisted RUN ledger and revalidate the current Penpot/repository revision.
+
+For high-risk changes, require an independent evaluator or human approval.
+
+Stop and open a circuit breaker when repeated failures, concurrent mutation, capability mismatch, unexpected object growth, page drift or missing evidence occurs.
