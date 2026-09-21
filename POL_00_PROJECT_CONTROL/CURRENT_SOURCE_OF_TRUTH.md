@@ -138,9 +138,11 @@ The five-pass design saturation audit is registered as a supporting design-contr
 
 - `13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
 
-The active Master Tree is now Version 3.4.0:
+The active Master Tree is now Version 3.5.0:
 
 - `13_PRODUCT_DESIGN/50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md`
+- `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
+- `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
 
 The active agent execution protocol is now Version 1.1.0:
 
@@ -149,3 +151,14 @@ The active agent execution protocol is now Version 1.1.0:
 The Master Tree saturation layer adds control-plane requirements for context packaging, execution identity, trust boundaries, mutation intent, persistence proof, semantic/structural/visual evidence, state freshness, task/command contracts, accessibility/RTL/network semantics, token/component lifecycle, analytics tracking governance and change-impact controls.
 
 These controls govern how design work is safely constructed and verified. They do not create new product capabilities and do not override product, domain, database, API or operations authorities.
+
+
+### Executable Master Tree — 2026-09-21
+
+The human-readable Master Tree and its executable schema are now registered as the active design-control pair:
+
+- Human semantic authority: `13_PRODUCT_DESIGN/50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md`
+- Machine-readable structural authority: `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
+- Closure/validation rules: `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
+
+The executable schema constrains structure and evidence reporting; it does not override product/domain/API authority.
