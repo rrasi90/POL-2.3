@@ -104,6 +104,13 @@ No visual artifact becomes canonical until the corresponding written requirement
 4. Generated local artifacts must not be committed to the repository.
 5. Production-readiness claims must distinguish domain verification from HTTP/auth/provider/UI/observability/deployment/recovery implementation.
 
+### Agentic Design Execution — 2026-09-21
+
+For AI-agent-driven Penpot construction, the execution control authority is:
+`13_PRODUCT_DESIGN/52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
+
+It governs agent behavior during design construction: preflight, capability probing, atomic mutations, checkpoints, visual/structural verification, approvals, resumability, rollback, and evidence separation. It does not override product decisions or domain/API authority.
+
 ### Product Architecture Evolution — 2026-09-20
 
 The current product-design authority now also includes:
