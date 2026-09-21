@@ -242,6 +242,8 @@ A validator should fail closure when:
 
 ## 12. Precision Commerce visual contract
 
+Canonical visual authority: `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`.
+
 For visual node types `SCR`, `SEC`, `CMP`, `PATTERN` and `PEN`, the node should resolve the following additional fields:
 
 - `visual_direction` = `PRECISION_COMMERCE`
