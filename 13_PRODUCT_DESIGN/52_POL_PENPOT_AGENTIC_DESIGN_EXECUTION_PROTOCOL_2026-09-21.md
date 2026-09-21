@@ -2,7 +2,7 @@
 ## Senior Design Engineering Operating System for POL Penpot Construction
 
 **Document ID:** `POL-DESIGN-AGENT-001`  
-**Version:** `1.1.0`  
+**Version:** `1.2.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE / DESIGN-EXECUTION CONTROL / RESEARCH-BACKED  
 **Applies to:** Penpot + MCP + AI Agent + POL Master Tree + GitHub design specifications
@@ -1197,3 +1197,32 @@ This amendment is grounded in:
 The complete five-pass audit is:
 
 13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md
+
+
+---
+
+# 33. Executable Master Tree Integration — v1.2
+
+The agent must treat the Master Tree executable schema as the structural contract for node-level work:
+
+`13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
+
+Before changing a canonical node, load the bounded source packet and validate required fields.
+
+A mutation cannot advance a closure dimension unless the corresponding evidence record exists.
+
+For every critical node:
+
+Context Package
+→ Schema validation
+→ Capability probe
+→ Mutation Intent
+→ Preconditions
+→ Mutation
+→ Persistence Proof
+→ Evidence
+→ Closure update
+→ Change Impact
+→ Approval
+
+Design release snapshots must preserve the exact Master Tree/schema/Penpot/repository revisions used for approval.
