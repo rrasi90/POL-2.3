@@ -1,10 +1,10 @@
 # POL — Master Product / UI / UX Tree & Penpot Build Specification
-## Canonical Product Design Tree — GitHub × Penpot × Product Architecture × API × Permissions × Data × States × Dark/Light
+## Canonical Master Product / Experience / Service / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Dark/Light
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `1.0.0`  
+**Version:** `2.0.0`  
 **Date:** 2026-09-21  
-**Status:** ACTIVE DESIGN BLUEPRINT / PENPOT BUILD SOURCE  
+**Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL  
 **Repository:** `rrasi90/POL-2.3`  
 **Working Branch:** `product-architecture-evolution-2026-09-20`  
 **Primary Intent:** تبدیل معماری محصول، مستندات، APIها، مدل داده، نقش‌ها، state machineها و وضعیت فعلی Penpot به یک درخت واحد و قابل‌ردگیری برای ساخت/تکمیل طراحی.
@@ -148,6 +148,1036 @@ Every contradiction must be registered under:
 This prevents old Penpot content from silently becoming product behavior.
 
 ---
+
+
+# 2.5. RESEARCH-BASED MASTER TREE MODEL — VERSION 2
+
+## 2.5.1 Core finding
+
+Research across information architecture, service blueprinting, software architecture, enterprise architecture, design systems, domain-driven design, product discovery, and architecture decision records leads to one important conclusion:
+
+**A complex product should not force all architecture into one literal tree.**
+
+A sitemap is only one part of information architecture; it describes content/page hierarchy, while IA also includes nomenclature and navigation relationships. citeturn246897search13
+
+Service blueprints model relationships between customer actions, frontstage actions, backstage actions, support processes, and touchpoints. citeturn927249search2turn927249search5
+
+C4 explicitly uses hierarchical abstractions, while also providing dynamic and deployment diagrams because one hierarchy cannot explain every architectural relationship. citeturn701494search0
+
+ArchiMate similarly separates architectural concerns across motivation/strategy and core business, application, and technology layers. citeturn701494search2
+
+Atomic Design models UI decomposition from atoms through molecules, organisms, templates, and pages. citeturn701494search10
+
+Opportunity Solution Trees connect desired outcomes to opportunities, solutions, and experiments; they are useful for product discovery but are not a substitute for product architecture. citeturn701494search4
+
+Domain-driven design uses bounded contexts to keep models internally consistent and explicit about relationships between parts of a large domain. citeturn701494search1turn193883search7
+
+Design tokens are now standardized by the Design Tokens Community Group as a cross-tool representation of reusable design decisions and theming. citeturn193883search1turn193883search4
+
+Architecture Decision Records preserve context, decision, status, and consequences instead of silently rewriting history when an architectural decision changes. citeturn246897search0turn246897search4
+
+### Conclusion
+
+POL Master Tree therefore becomes a **Master Tree Federation**:
+
+```
+                           POL MASTER ARCHITECTURE
+                                      │
+             ┌────────────────────────┼────────────────────────┐
+             │                        │                        │
+        STRATEGY TREE            EXPERIENCE TREE           SERVICE TREE
+             │                        │                        │
+      Outcome / Capability     Journey / Task / Flow    Frontstage / Backstage
+             │                        │                        │
+             └────────────────────────┼────────────────────────┘
+                                      │
+                               PRODUCT TREE
+                                      │
+                  Persona / Surface / Experience / Screen
+                                      │
+                               DESIGN SYSTEM TREE
+                                      │
+                     Tokens / Components / Patterns
+                                      │
+                                DOMAIN TREE
+                                      │
+                    Bounded Context / Entity / State
+                                      │
+                              SYSTEM TREE
+                                      │
+                   Application / API / Data / Event
+                                      │
+                              TRACEABILITY TREE
+                                      │
+             Requirement / Decision / Artifact / Test / Evidence
+```
+
+These are **views of one product**, not separate products.
+
+---
+
+## 2.5.2 The nine canonical views
+
+### View 1 — Outcome / Strategy Tree
+
+Answers:
+
+> چرا این capability وجود دارد؟
+
+Hierarchy:
+
+```
+Outcome
+└── Opportunity / Need
+    └── Capability
+        └── Product Initiative
+            └── Release / Wave
+```
+
+For POL:
+
+```
+Pilot Success
+├── Retailer adoption
+├── Vendor participation
+├── Order completion
+├── Operational reliability
+├── Financial transparency
+└── Repeat usage
+```
+
+This view must never be used to justify a UI screen directly. It explains why the product capability exists.
+
+---
+
+### View 2 — Experience / Information Architecture Tree
+
+Answers:
+
+> کاربر چه چیزی را کجا پیدا می‌کند و چگونه در محصول حرکت می‌کند؟
+
+Hierarchy:
+
+```
+Surface
+└── Experience
+    └── Page / Destination
+        └── Screen
+            └── Section
+```
+
+But it also contains **cross-links**:
+
+- navigates to
+- opens
+- deep-links to
+- returns to
+- contextualizes
+
+This is the actual IA/navigation tree.
+
+A tree test can be applied to this layer because tree testing evaluates whether users can find target destinations in a proposed information hierarchy. citeturn246897search12
+
+---
+
+### View 3 — Journey / Flow Tree
+
+Answers:
+
+> کاربر برای رسیدن به یک outcome چه مسیری را طی می‌کند؟
+
+Hierarchy:
+
+```
+Journey
+├── Phase
+│   ├── Goal
+│   ├── User action
+│   ├── Decision
+│   ├── Screen
+│   ├── State
+│   └── Outcome
+```
+
+Journey and Flow must not be merged.
+
+A journey is broader and can span time/channels; a user flow focuses on a specific task inside a product. citeturn927249search0turn927249search8
+
+For POL:
+
+```
+Retail Purchase Journey
+├── Discover
+├── Compare
+├── Build Basket
+├── Allocate
+├── Commit
+├── Vendor Fulfillment
+├── Delivery
+├── Financial Confirmation
+└── Reorder / Dispute
+```
+
+---
+
+### View 4 — Service Blueprint Tree
+
+Answers:
+
+> پشت این تجربه چه افراد، فرآیندها، سیستم‌ها و عملیات‌هایی لازم هستند؟
+
+Hierarchy:
+
+```
+Service Scenario
+├── Customer / User Action
+├── Frontstage Interaction
+├── Backstage Action
+├── Support Process
+├── System / Tool
+├── Evidence
+└── Failure / Recovery
+```
+
+For POL this is critical because a screen can look correct while the actual service cannot fulfill it.
+
+Example:
+
+```
+Retailer confirms Delivery
+├── Frontstage
+│   └── Handoff Verification
+├── Backstage
+│   ├── Validate Token
+│   ├── Verify Delivery Context
+│   ├── Write POD
+│   └── Transition Delivery
+├── Support
+│   └── Delivery Exception Queue
+└── Evidence
+    └── Delivery Audit Event
+```
+
+Service blueprinting is specifically useful for mapping service components, people, processes, and touchpoints and for exposing service weaknesses or redundancies. citeturn927249search2turn927249search6
+
+---
+
+### View 5 — Domain Tree
+
+Answers:
+
+> سیستم از نظر business domain چه مفاهیم و boundaryهایی دارد؟
+
+Hierarchy:
+
+```
+Domain
+└── Subdomain
+    └── Bounded Context
+        ├── Aggregate
+        ├── Entity
+        ├── Value Object
+        ├── State
+        ├── Command
+        ├── Domain Event
+        └── Business Rule
+```
+
+For POL, candidate bounded contexts include:
+
+- Identity & Membership
+- Catalog
+- Vendor Catalog
+- Inventory
+- Basket & Allocation
+- Orders
+- Billing / Invoices
+- Payments
+- Settlement / Reconciliation
+- Delivery
+- Disputes / Returns
+- Support
+- Notifications
+- Media
+- Product Identity / Candidate Governance
+
+The model must preserve terminology boundaries; the same business word must not silently mean different things in different contexts. DDD bounded contexts provide the explicit boundary for that consistency. citeturn701494search1turn193883search7
+
+---
+
+### View 6 — System / Architecture Tree
+
+Answers:
+
+> UI چگونه به سیستم واقعی متصل می‌شود؟
+
+Hierarchy:
+
+```
+System
+├── Client
+│   ├── Android
+│   ├── Mobile Web
+│   ├── Vendor Web
+│   └── Ops Web
+├── Application Boundary
+├── Module
+├── API
+├── Data Store
+├── Worker / Event Processor
+├── External Integration
+└── Deployment
+```
+
+C4 is the primary inspiration for keeping architecture views hierarchical but allowing supporting dynamic/deployment views where necessary. citeturn701494search0
+
+---
+
+### View 7 — Design System Tree
+
+Answers:
+
+> UI از چه building blockهایی ساخته می‌شود؟
+
+Hierarchy:
+
+```
+Design System
+├── Tokens
+│   ├── Color
+│   ├── Typography
+│   ├── Spacing
+│   ├── Radius
+│   ├── Elevation
+│   └── Motion
+├── Primitives
+├── Components
+├── Patterns / Recipes
+├── Templates
+└── Screens
+```
+
+Atomic Design supports decomposition from atoms to molecules, organisms, templates, and pages. citeturn701494search10
+
+POL should additionally distinguish reusable **design-system components** from product-specific **recipes/compositions**. Brad Frost explicitly distinguishes context-agnostic design-system components from recipes that are consistent product compositions but are too specific to live as universal components. citeturn701494search9
+
+Design tokens should remain semantically named and exportable/interoperable across Penpot and code. DTCG defines design tokens as reusable design decisions and provides a vendor-neutral format for sharing them across tools and products. citeturn193883search0turn193883search4
+
+---
+
+### View 8 — State / Event Tree
+
+Answers:
+
+> چه اتفاقی می‌افتد، چه stateای تغییر می‌کند و چه چیزی باید به کاربر نشان داده شود؟
+
+Hierarchy:
+
+```
+Capability
+├── Command
+│   ├── Preconditions
+│   ├── Validation
+│   ├── Success
+│   └── Failure
+├── Domain State Transition
+├── Domain Event
+├── Projection / Read Model
+├── Notification
+├── Audit Event
+└── Recovery
+```
+
+This view must distinguish:
+
+- Domain state
+- UI state
+- Integration state
+- Audit state
+- Notification state
+
+Never collapse them into a single generic status.
+
+EventStorming is useful as a source technique because it models what is happening in the domain through domain events and creates a shared model between domain experts and engineering. citeturn701494search120
+
+---
+
+### View 9 — Traceability / Governance Tree
+
+Answers:
+
+> هر تصمیم و طراحی از کجا آمده و چگونه اثبات می‌شود؟
+
+Hierarchy:
+
+```
+Requirement / Outcome
+└── Product Decision
+    ├── Context
+    ├── Decision
+    ├── Consequences
+    └── Source
+        └── Design Artifact
+            ├── Penpot Frame
+            ├── Component
+            ├── Prototype
+            ├── Frontend Route
+            ├── API Contract
+            └── Test / QA Evidence
+```
+
+Architectural decisions should retain their context and consequences; later changes should supersede rather than silently erase earlier decisions. citeturn246897search0turn246897search4
+
+---
+
+## 2.5.3 Master Tree is a graph, not only a tree
+
+The **tree** describes containment.
+
+The **graph** describes relationships.
+
+Therefore the canonical representation must support:
+
+```
+CONTAINS
+BELONGS_TO
+NAVIGATES_TO
+OPENS
+DEPENDS_ON
+READS_FROM
+WRITES_TO
+TRIGGERS
+PROJECTS
+DERIVES_FROM
+AUTHORIZED_BY
+AUDITED_BY
+NOTIFIES
+ESCALATES_TO
+RECOVERS_TO
+IMPLEMENTS
+VALIDATED_BY
+SUPERSEDES
+```
+
+### Rule
+
+Never add arbitrary visual branches simply because two concepts are related.
+
+Use the appropriate edge.
+
+Example:
+
+```
+RT-16 Financial Activity
+    ──READS_FROM──> Payment
+    ──READS_FROM──> Refund
+    ──READS_FROM──> Invoice
+    ──READS_FROM──> Settlement Projection
+
+VD-15 Permission Editor
+    ──AUTHORIZED_BY──> membership.manage
+    ──WRITES_TO──> delegated_permission_grant
+    ──AUDITED_BY──> Permission Audit Event
+```
+
+---
+
+# 2.5.4 New Master Node Contract
+
+Every canonical node in POL should now have this metadata:
+
+```
+NODE
+├── ID
+├── Type
+├── Name
+├── Parent
+├── View
+├── Persona / Actor
+├── Role
+├── Organization Scope
+├── Business Capability
+├── User Outcome
+├── Goal
+├── Preconditions
+├── Inputs
+├── Outputs
+├── Children
+├── Relationships
+├── Domain Context
+├── Entities
+├── Commands
+├── Domain Events
+├── API Contract
+├── Permissions
+├── UI States
+├── Domain States
+├── Error States
+├── Recovery
+├── Notifications
+├── Audit
+├── Design Tokens
+├── Components
+├── Light Theme
+├── Dark Theme
+├── Mobile
+├── Desktop
+├── Prototype
+├── Frontend Mapping
+├── Penpot Artifact
+├── QA Evidence
+├── Source
+├── Decision / ADR
+├── Priority
+├── Lifecycle Status
+└── Open Questions
+```
+
+This becomes the atomic record for the Master Tree.
+
+---
+
+# 2.5.5 Capability-to-Penpot Traceability
+
+The canonical path is now:
+
+```
+Outcome
+→ Opportunity
+→ Capability
+→ Domain
+→ Role
+→ Experience
+→ Journey / Flow
+→ Screen
+→ Section
+→ Component
+→ Action
+→ API
+→ State Transition
+→ Event
+→ Audit
+→ Notification
+→ Prototype
+→ QA
+→ Penpot Artifact
+→ Frontend Implementation
+```
+
+A screen that cannot be traced upward to a capability or downward to a supported runtime contract is:
+
+`UNMAPPED`
+
+A capability that has no screen/interaction where a UI is needed is:
+
+`DESIGN GAP`
+
+A UI action without a supporting runtime contract is:
+
+`CONTRACT GAP`
+
+An architecture decision with no recorded rationale is:
+
+`GOVERNANCE GAP`
+
+---
+
+# 2.5.6 Two independent trees must never be confused
+
+## The Information Tree
+
+Optimizes:
+
+- findability
+- navigation
+- grouping
+- labels
+- hierarchy
+
+## The Business/Domain Tree
+
+Optimizes:
+
+- business consistency
+- boundaries
+- state
+- ownership
+- rules
+- transactions
+
+They overlap but are not identical.
+
+For example:
+
+**Invoice** may live under:
+
+`Retailer → Order → Invoice`
+
+in the information architecture.
+
+But in the domain:
+
+`Order → Billing Context → Invoice Aggregate`
+
+Therefore Penpot must follow the user's mental model while the traceability layer preserves the domain model.
+
+This distinction is foundational for POL.
+
+---
+
+# 2.5.7 One screen may belong to multiple views
+
+Example:
+
+`RT-15 OrderGroup Detail`
+
+### IA view
+Retailer → Orders → OrderGroup
+
+### Journey view
+Checkout → Order Confirmation → Tracking
+
+### Service view
+Retailer interaction + Vendor fulfillment + Operations exceptions
+
+### Domain view
+OrderGroup → Orders → Invoices
+
+### System view
+GET OrderGroup → aggregation/read model → client
+
+### Design-system view
+OrderGroup Header + Vendor Order Card + Invoice Card + Timeline
+
+### QA view
+Permission + states + responsive + dark + prototype
+
+The screen itself remains one artifact.
+
+---
+
+# 2.5.8 Introduce explicit ownership
+
+Every Master Tree node must declare an owner.
+
+Possible ownership:
+
+- Product
+- Design
+- Engineering
+- Operations
+- Security
+- Finance
+- Catalog
+- Field
+- Legal/Trust
+
+Example:
+
+```
+Financial Activity
+Owner:
+Product + Finance + Engineering
+
+Permission Audit
+Owner:
+Security + Operations
+
+Media Provenance
+Owner:
+Catalog Governance + Operations
+```
+
+Ownership clarifies who can change the contract.
+
+---
+
+# 2.5.9 Introduce lifecycle states for design nodes
+
+Every node should have:
+
+```
+PROPOSED
+→ DISCOVERY
+→ SPECIFIED
+→ DESIGNING
+→ DESIGNED
+→ PROTOTYPED
+→ QA
+→ IMPLEMENTATION_READY
+→ IMPLEMENTED
+→ VERIFIED
+→ DEPRECATED
+→ SUPERSEDED
+```
+
+A node must not be called COMPLETE if only the Penpot frame exists.
+
+---
+
+# 2.5.10 Introduce confidence and evidence
+
+Each node should carry:
+
+### Evidence level
+
+- SOURCE_VERIFIED
+- RUNTIME_VERIFIED
+- DESIGN_VERIFIED
+- INFERRED
+- OPEN_DECISION
+
+### Evidence references
+
+- GitHub file
+- API route
+- test
+- Penpot frame
+- design review
+- product decision
+- external research
+
+This prevents accidental promotion of assumptions into canonical behavior.
+
+---
+
+# 2.5.11 Introduce scope dimensions
+
+Every capability/screen must carry independent scopes:
+
+```
+MVP
+P1
+P2
+FUTURE
+DEFERRED
+OUT_OF_SCOPE
+```
+
+Do not mix roadmap priority with implementation status.
+
+A feature can be:
+
+`MVP + SPEC_ONLY`
+
+or:
+
+`P2 + PRODUCTION_IMPLEMENTED`
+
+These dimensions must remain separate.
+
+---
+
+# 2.5.12 Introduce invariants
+
+Every major subtree must declare invariants.
+
+Examples for POL:
+
+### Finance
+- no MVP custody
+- Financial Activity is a read model
+- Payment ≠ Settlement
+- Invoice ≠ Order
+
+### Security
+- deny by default
+- server-side authorization
+- no client-only security
+- handoff token ≠ session
+
+### Catalog
+- Master Product ≠ Vendor SKU
+- unknown barcode ≠ auto-created Master Product
+
+### Commerce
+- OrderGroup ≠ Vendor Invoice
+- sibling child orders remain isolated
+
+### Delivery
+- no full Driver App in MVP
+
+### Clients
+- Web and Android share authorization boundary
+
+Invariants should be visible near each subtree and referenced by QA.
+
+---
+
+# 2.5.13 Introduce ambiguity and contradiction handling
+
+Every conflict must now have:
+
+```
+CONFLICT
+├── ID
+├── Topic
+├── Source A
+├── Source B
+├── Impact
+├── Current Working Interpretation
+├── Decision Owner
+├── Decision Needed By
+├── Status
+├── Superseding Decision
+└── Affected Penpot Nodes
+```
+
+This is stronger than a simple contradiction table.
+
+---
+
+# 2.5.14 Introduce decision records
+
+For durable architecture choices, record:
+
+- Status
+- Context
+- Decision
+- Consequences
+- Supersedes / Superseded by
+
+Do not rewrite history when the decision changes.
+
+---
+
+# 2.5.15 Master Tree quality metrics
+
+The tree itself should be measurable.
+
+## Coverage
+
+`Mapped Capabilities / Total Capabilities`
+
+## Screen Coverage
+
+`Capabilities requiring UI with mapped screens / total`
+
+## State Coverage
+
+`Mapped states / expected states`
+
+## Permission Coverage
+
+`Protected actions with explicit permissions / total protected actions`
+
+## Contract Coverage
+
+`UI actions with verified API/domain contract / total actions`
+
+## Theme Coverage
+
+`Screens with Light + Dark / production screens`
+
+## Prototype Coverage
+
+`Critical journeys prototyped / critical journeys`
+
+## QA Coverage
+
+`Artifacts with evidence-backed QA / production artifacts`
+
+## Traceability Integrity
+
+`Nodes with complete upward + downward trace / total canonical nodes`
+
+---
+
+# 2.5.16 New Master Tree scorecard
+
+Never use a subjective “design quality score”.
+
+Use factual coverage indicators:
+
+| Dimension | Measurement |
+|---|---|
+| IA Coverage | navigation destinations mapped |
+| Capability Coverage | capabilities mapped |
+| Domain Coverage | contexts/entities mapped |
+| Flow Coverage | critical journeys mapped |
+| State Coverage | state transitions mapped |
+| Permission Coverage | protected actions mapped |
+| API Coverage | UI actions mapped to contracts |
+| Service Coverage | frontstage/backstage mapped |
+| Component Coverage | reusable UI mapped |
+| Theme Coverage | Light/Dark mapped |
+| Responsive Coverage | mobile/desktop mapped |
+| Prototype Coverage | critical journeys mapped |
+| QA Coverage | evidence-backed verification |
+| Decision Coverage | significant decisions recorded |
+
+---
+
+# 2.5.17 Recommended POL Master Tree visual layers
+
+Do not force these into one unreadable canvas.
+
+Penpot should contain separate navigable boards:
+
+### Layer A — Master Overview
+One-screen executive tree.
+
+### Layer B — Experience Map
+Persona → Journey → Screen.
+
+### Layer C — Information Architecture
+Surface → Page → Screen → Section.
+
+### Layer D — Service Blueprint
+User → Frontstage → Backstage → Support.
+
+### Layer E — Domain Map
+Bounded Context → Entity → State → Event.
+
+### Layer F — System Map
+Client → Application → API → Data → Worker → External System.
+
+### Layer G — Design System
+Token → Primitive → Component → Recipe → Template → Screen.
+
+### Layer H — Permission Matrix
+Role → Permission → Action → Surface.
+
+### Layer I — State Matrix
+Domain State → UI State → Event → Recovery.
+
+### Layer J — Traceability
+Requirement → Decision → Penpot → API → Frontend → QA.
+
+This approach keeps each diagram legible while preserving cross-links between them.
+
+---
+
+# 2.5.18 Why this is a better model for POL
+
+POL is not a simple content website.
+
+It combines:
+
+- marketplace discovery
+- organizational permissions
+- multi-vendor commerce
+- operational workflows
+- financial visibility
+- delivery operations
+- catalog governance
+- field operations
+- audit/security
+- Android + Web clients
+- shared design system
+
+Therefore a pure sitemap cannot represent the product adequately.
+
+The upgraded Master Tree becomes a **federated architecture model** whose primary job is traceability.
+
+It tells a designer:
+
+> Where should this exist?
+
+It tells Product:
+
+> Why should this exist?
+
+It tells Operations:
+
+> Who does what?
+
+It tells Engineering:
+
+> Which domain/API/state supports it?
+
+It tells Security:
+
+> Who is authorized?
+
+It tells the service team:
+
+> What happens backstage?
+
+It tells QA:
+
+> What evidence proves it works?
+
+It tells Penpot:
+
+> Which artifact must exist?
+
+It tells Frontend:
+
+> What should be implemented from the canonical design?
+
+---
+
+# 2.5.19 Research source catalog
+
+The Master Tree methodology is informed by the following public frameworks and references:
+
+1. Nielsen Norman Group — Information Architecture vs. Sitemaps  
+https://www.nngroup.com/articles/information-architecture-sitemaps/
+
+2. Nielsen Norman Group — Site Map Usability / Tree Testing  
+https://www.nngroup.com/reports/site-map-usability/  
+https://www.nngroup.com/articles/navigation-ia-tests/
+
+3. Nielsen Norman Group — User Journeys vs. User Flows  
+https://www.nngroup.com/articles/
+
+4. Nielsen Norman Group — Service Blueprinting  
+https://www.nngroup.com/articles/service-blueprints-definition/  
+https://www.nngroup.com/articles/service-blueprinting-practice/
+
+5. C4 Model — Software Architecture Visualization  
+https://c4model.com/
+
+6. ArchiMate 101 / The Open Group  
+https://archimate-community.pages.opengroup.org/workgroups/archimate-101/
+
+7. Martin Fowler — Bounded Context  
+https://martinfowler.com/bliki/BoundedContext.html
+
+8. Ubiquitous Language — Why language is per context  
+https://www.ubiquitouslanguage.org/understand/language-is-per-context/
+
+9. EventStorming — Domain Event Modeling  
+https://en.wikipedia.org/wiki/Event_storming  
+(Use the project’s domain documentation for canonical POL event names.)
+
+10. Brad Frost — Atomic Design  
+https://atomicdesign.bradfrost.com/chapter-2/
+
+11. Brad Frost — Components, Recipes, Snowflakes  
+https://bradfrost.com/blog/post/design-system-components-recipes-and-snowflakes/
+
+12. Design Tokens Community Group / W3C  
+https://www.w3.org/community/design-tokens  
+https://www.designtokens.org/
+
+13. Teresa Torres — Opportunity Solution Trees  
+https://www.producttalk.org/opportunity-solution-tree/
+
+14. Architecture Decision Records / Nygard-style practice  
+https://docs.publishing.service.gov.uk/repos/govuk_publishing_components/adr/0001-record-architecture-decisions.html
+
+---
+
+# 2.5.20 New definition of the Master Tree
+
+The Master Tree is now formally defined as:
+
+> **A versioned, evidence-backed, federated hierarchy-and-relationship model that connects product outcomes, information architecture, user journeys, service operations, domain architecture, system architecture, design-system composition, permissions, states, decisions, Penpot artifacts, implementation contracts, prototypes, and QA evidence.**
+
+It is therefore **not**:
+
+- only a sitemap
+- only a UX flow
+- only a design-system tree
+- only an architecture diagram
+- only an entity tree
+- only a roadmap
+- only a Penpot page inventory
+
+It is the **traceability spine** connecting all of them.
+
 
 # 3. MASTER PRODUCT TREE
 
@@ -4805,19 +5835,26 @@ Only after all are answered should the Screen be marked fully mapped.
 
 # 66. NEXT TREE EXPANSION PRIORITY
 
-برای ادامه توسعه این سند، ترتیب دقیق باید این باشد:
+برای ادامه توسعه این سند، ترتیب پیشنهادی اکنون بر اساس Master Tree Federation است:
 
-1. Retailer deep tree
-2. Vendor deep tree
-3. Operations deep tree
-4. Field deep tree
-5. Corporate deep tree
-6. Shared UX deep tree
-7. State matrix
-8. Permission matrix
-9. API/data matrix
-10. Penpot frame-to-tree ID mapping
-11. Prototype coverage
-12. QA evidence
+1. Master Overview
+2. Outcome / Capability map
+3. Information Architecture
+4. Experience / Journey / Flow
+5. Service Blueprint
+6. Retailer deep tree
+7. Vendor deep tree
+8. Operations deep tree
+9. Field deep tree
+10. Corporate / external audience tree
+11. Domain / Bounded Context map
+12. State / Event map
+13. Permission / Authorization map
+14. API / Data map
+15. Design System / Token / Component map
+16. Penpot frame-to-tree IDs
+17. Prototype coverage
+18. QA evidence
+19. Architecture Decision / contradiction ledger
 
-The current document now defines the semantic vocabulary needed for these expansions.
+The current document now defines the semantic vocabulary and the multi-view methodology needed for these expansions.
