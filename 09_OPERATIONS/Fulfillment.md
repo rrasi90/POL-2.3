@@ -68,3 +68,58 @@
 ### ۵. نقش تیم فعال‌ساز میدانی در نظارت بر تحویل (Field Operations Support)
 * در پایلوت ۳ ماهه اهواز، یک نفر از اعضای تیم عملیات میدانی پُل در پایانه باربری شهرک بنکداران مستقر است.
 * وظیفه او بررسی میدانی کیفیت بارگیری، نظارت بر رفتار رانندگان، و مداخله سریع در صورت بروز تأخیر یا گم‌شدن آدرس سوپرمارکت‌ها است.
+
+
+---
+
+## 2026-09-20 Product Architecture Amendment — Lightweight Delivery Handoff
+
+### ۶. Delivery Handoff Surface
+
+The MVP does not require a full Driver App.
+
+The delivery flow is extended with a restricted handoff surface:
+
+**Dispatch → Handoff Link → Delivery Task → Receiver Confirmation → POD**
+
+The handoff page should expose only the operational information required to complete delivery:
+
+- delivery/order reference
+- store/recipient
+- delivery address and map action
+- driver/carrier identity when registered by the vendor
+- checklist / shortage or damage capture where permitted
+- final confirmation
+
+### ۷. Security contract
+
+A delivery handoff token is a restricted capability token, not an authenticated user session.
+
+It must be:
+
+- opaque
+- server generated
+- cryptographically random
+- high entropy
+- short lived
+- rate limited
+- invalidated after completion
+- HTTPS only
+- served with no-store caching
+- protected from referrer leakage
+- unable on its own to alter financial state
+
+Where the delivery link is insufficient to establish receiver authority, the flow must require the existing retailer/authorized receiver confirmation or delivery OTP.
+
+### ۸. Android / Web parity
+
+The same delivery domain is available through both clients:
+
+- Web for authorized management/operations workflows
+- Android for authorized field/warehouse/delivery tasks
+
+The authorization boundary is shared; only the interaction model differs.
+
+### ۹. MVP scope guardrail
+
+Do not introduce a full driver account, driver organization, fleet-management application, or independent driver settlement model in this wave.

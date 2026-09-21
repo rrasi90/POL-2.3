@@ -115,3 +115,60 @@ Every canonical screen maps to: route → persona → context → data → comma
 | `field` | `{ tasks, currentTask }` | `/field/*` | polling (30s) |
 | `notifications` | `{ items, preferences }` | `/notifications` | push notification |
 | `support` | `{ cases, currentCase }` | `/support/*` | real-time (WebSocket future) |
+
+
+---
+
+## 2026-09-20 Product Architecture Amendment — New Client Surfaces
+
+### Authentication correction
+
+The canonical authentication OTP is **4 digits**, not 6 digits.
+
+### Cross-client policy
+
+Every canonical persona is supported by both Web and Android clients.
+
+The clients share:
+
+- FastAPI boundary
+- identity and membership
+- role and delegated permissions
+- domain commands
+- API contracts
+- event semantics
+
+### Planned / design-ready screens
+
+These are product-architecture additions; they are not claims that every route is already implemented.
+
+| Surface | Web | Android | Access |
+|---|:---:|:---:|---|
+| Vendor Search | ✅ | ✅ | authorized retailer personas |
+| Vendor Storefront | ✅ | ✅ | authorized retailer personas |
+| Financial Activity | ✅ | ✅ | permission-based |
+| Multi-vendor Order Detail with invoice breakdown | ✅ | ✅ | order viewers |
+| Delivery Handoff | ✅ | ✅ | delivery permissions |
+| Permission Management | ✅ | ✅ | organization managers / authorized ops |
+| Barcode Scanner | optional | ✅ | inventory.scan |
+| Catalog Candidate Review | ✅ | ✅ | catalog permissions |
+| Media Provenance / Source Review | ✅ | ✅ | catalog/admin permissions |
+
+### Vendor-first discovery
+
+Retailers can enter the commerce flow from either:
+
+**Product → Vendor Offer → Basket**
+
+or
+
+**Vendor → Storefront → Vendor Catalog → Basket**
+
+These are alternate discovery paths over the same canonical catalog/inventory model.
+
+### Role vs Permission
+
+The role determines baseline persona behavior. Delegated permissions determine capability access for the individual membership.
+
+Client-side route visibility must not be treated as authorization; the backend is authoritative.
+

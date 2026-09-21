@@ -61,3 +61,24 @@ Home → For Retailers → For Vendors → How POL Works → Pilot/Ahvaz → Abo
 - Profile switcher is explicit when the user has multiple memberships.
 - Do not expose an organization switcher that changes tenant without re-resolving authenticated membership context.
 - Deep links from notifications should land on the underlying task/state, not on a generic dashboard.
+
+
+---
+
+## 2026-09-20 Cross-Client Navigation Contract
+
+تمام personaهای کانونیکال باید از Web و Android client پشتیبانی شوند.
+
+Web و Android navigation از همان permission resolution استفاده می‌کنند، اما layout و task prioritization می‌تواند متفاوت باشد.
+
+Vendor navigation در هر دو client شامل قابلیت‌های مجاز زیر است:
+- داشبورد
+- سفارش‌ها
+- موجودی
+- کاتالوگ و قیمت
+- معرفی بنکدار
+- تسویه/اسناد
+- کارکنان و دسترسی‌ها
+- پروفایل
+
+Android باید quick actions مانند scan, pick, dispatch و delivery handoff را برجسته کند؛ Web باید search, bulk actions, reporting و reconciliation را برجسته کند.

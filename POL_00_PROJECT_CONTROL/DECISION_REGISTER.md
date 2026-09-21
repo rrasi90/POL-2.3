@@ -3,7 +3,7 @@
 **Document ID:** `POL-DEC-001`  
 **Status:** `LOCKED / CANONICAL`  
 **Governance Level:** Lead Product Architect / Founder Approved  
-**Last Audit:** 2026-09-18 (Governance reconciliation against current PR/CI lineage)  
+**Last Audit:** 2026-09-20 (Governance reconciliation against current PR/CI lineage)  
 **Cross-Reference:** `01_RESEARCH/Assumptions_and_Hypotheses.md` (RES-REG-001)  
 
 ---
@@ -286,3 +286,37 @@ Modifications to any decision in this register require:
 1. Documented failure or disconfirmation of the underlying hypothesis via pilot telemetry in `01_RESEARCH/Evidence_Register.md`.
 2. Architecture review between Lead Architect and Lead Engineer.
 3. Formal version increment of this document with signed Git commit.
+
+
+---
+
+# 3. Product Architecture Amendments — 2026-09-20
+
+The following founder-directed amendments extend D-001 through D-020. They are adopted product directions and implementation contracts; they do not silently change the already-certified production runtime or financial-custody model.
+
+| Decision ID | Direction | Canonical Rule |
+|:---:|:---|:---|
+| D-021 | Financial Activity / Future Wallet | MVP exposes payment, refund, order amount, invoice amount, payment status and authorized settlement visibility through existing financial records. POL does not hold a user stored-value balance in MVP. Future Wallet must be a separate ledger/accounting domain. |
+| D-022 | Unified Order / Multi-Invoice UX | A single retailer checkout may produce multiple vendor child orders and invoices. The UI must present the parent order first and expose vendor-specific invoices beneath it. Existing D-014/D-010 entity separation remains authoritative. |
+| D-023 | MVP Delivery Handoff | No full Driver App is required for MVP. Delivery uses a restricted, short-lived handoff surface/link plus retailer or authorized-receiver confirmation/POD. The link is not an authenticated user session and cannot independently change financial state. |
+| D-024 | Vendor Discovery | POL supports both product-first discovery and vendor-first discovery. Vendor storefronts are a first-class read/order surface over canonical Vendor, Product and Inventory data. |
+| D-025 | Settlement Language | UI/marketing copy must not promise permanent direct settlement guarantees by POL. Canonical neutral wording: «پرداخت و تسویه طبق شرایط ثبت‌شده سفارش و طرفین معامله انجام می‌شود.» |
+| D-026 | Dual Client / Delegated Permissions | Every persona is supported on both Web and Android. Role gives baseline responsibilities; organization managers may grant/revoke allowed delegated permissions within platform boundaries. Authorization remains server-side, organization-scoped and deny-by-default. |
+| D-027 | Product Media Provenance | Master Product identity remains separate from Vendor SKU. Product media must preserve source/provenance metadata and must not embed unverified intellectual-property/right claims. Manufacturer-source import is an ingestion workflow, not an assumption of unrestricted rights. |
+| D-028 | Barcode Scanner | Barcode scanning is a first-class operational capability for eligible users, primarily on Android. Unknown scans create catalog candidates; scanning cannot bypass Master Product governance. |
+
+## D-026 — Authorization Model Clarification
+
+The target authorization chain is:
+
+Organization -> Membership -> Role -> Delegated Permissions -> Client Surface
+
+Client UI visibility is never sufficient for authorization. All protected resources and commands remain server-authorized using the active organization membership context. Web and Android consume the same authorization boundary.
+
+## D-023 — Delivery Security Boundary
+
+Delivery handoff links must use server-generated high-entropy opaque tokens, short expiry, rate limiting and invalidation after completion. A delivery link is a restricted operational capability, not a reusable authentication/session token.
+
+## D-021 — Wallet Boundary
+
+The absence of a stored-value Wallet in MVP is deliberate. Existing payments/refunds/invoices/settlements remain operational records and are not reinterpreted as wallet balance. Any future wallet must be introduced through a separately approved financial ledger design.

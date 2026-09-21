@@ -1,10 +1,10 @@
 # POL CURRENT SOURCE OF TRUTH & REPOSITORY GOVERNANCE
 
 **Document ID:** `POL-GOV-001`  
-**Version:** 1.1 (Canonical)  
+**Version:** 1.2 (Canonical)  
 **Status:** `LOCKED / OFFICIAL GOVERNANCE CHARTER`  
 **Effective Milestone:** Sprint 0 & MVP v1.0  
-**Last Audit:** 2026-09-18  
+**Last Audit:** 2026-09-21  
 
 ---
 
@@ -22,18 +22,26 @@ DECISION AUTHORITY
         └── PRODUCT DESIGN
                  │
                  ▼
-        Figma / Penpot / Frontend
+        Design Artifacts / Frontend / Mobile / Backend
 ```
 
 `DECISION_REGISTER.md` is the highest repository-level product authority. Design artifacts may refine presentation and interaction but may not change business rules, authorization rules, financial custody rules, or MVP scope.
 
 ---
 
+
+### Tool-Agnostic Execution Law
+
+The Master Product / Experience / Delivery Tree is tool-neutral. No design, coding, AI-agent, documentation or QA product is a source of product truth merely by being used in execution. Canonical requirements, business rules, domain/API contracts, state machines, permissions, acceptance criteria and release gates remain invariant when an execution tool is replaced.
+
+Canonical design/build authority:
+`13_PRODUCT_DESIGN/50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` — **Master Tree v4.3.0**, interpreted as the tool-agnostic product/design/delivery registry.
+
 ## 2. Canonical Authorities by Domain
 
 | Domain | Authoritative Canonical File(s) | Scope & Responsibility | Precedence Rule |
 |:---|:---|:---|:---|
-| **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-020. | Absolute precedence. |
+| **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-028; later amendments supersede earlier decisions explicitly. | Absolute precedence. |
 | **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md` | Feature matrix, core flows, boundaries and MVP inclusions/exclusions. | Must conform to D-001–D-020. |
 | **Identity & Access Management** | `06_PRODUCT/Roles_and_Permissions.md`, `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md` | Identity, tenant membership, authorization, persona context and UX preferences. | `organization_memberships.role` is authorization SSoT; `users.role` is legacy/deprecated. |
 | **Order Lifecycle & State Transitions** | `06_PRODUCT/Order_Lifecycle.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | OrderGroup, child Orders, Delivery and exception state machines. | Governs backend workflows and UI state mapping. |
@@ -41,7 +49,7 @@ DECISION AUTHORITY
 | **Database Schema & Migrations** | `migrations/001_*.sql` through `migrations/031_*.sql`, `08_DATA/Data_Schema.md`, `POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST_2026-09-16.md` | PostgreSQL 18 DDL, constraints, indexes, triggers and foreign keys. | The numbered migration chain is the physical schema authority. |
 | **API Contracts & DTOs** | `06_PRODUCT/API_Contracts.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX_CORRECTIONS_2026-09-16.md`, `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md` | REST/JSON contracts and application-boundary commands. | Correction overlay supersedes conflicting legacy terminology. |
 | **Allocation Engine Algorithm** | `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` | Deterministic multi-vendor allocation, MOV/MOQ and ranking. | Governs allocation implementation. |
-| **Brand & Design System** | `POL_00_PROJECT_CONTROL/BRAND_ARCHITECTURE.md`, `13_PRODUCT_DESIGN/` | Brand hierarchy, design system, interaction patterns and visual language. | Design may not override product/engineering decisions. |
+| **Brand & Design System** | `POL_00_PROJECT_CONTROL/BRAND_ARCHITECTURE.md`, `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`, `13_PRODUCT_DESIGN/50_POL_MASTER_design tool_UI_UX_TREE_SPEC_2026-09-21.md` | Brand hierarchy, Precision Commerce visual direction, design tokens, interaction patterns, Light/Night visual language and design QA. | Design may not override product/engineering decisions. |
 | **Operations, Fulfillment & Logistics** | `09_OPERATIONS/Fulfillment.md`, `09_OPERATIONS/Payments_and_Settlement.md`, `09_OPERATIONS/Support_and_Disputes.md` | Field SOPs, logistics, direct settlement and support/dispute operations. | Governs operational workflows. |
 | **Async Workers & Event Runtime** | `POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md`, `08_DATA/Event_Architecture.md` | Canonical PostgreSQL 18 transactional outbox + Python worker execution model. | Supersedes BullMQ/Redis Streams as the MVP event transport. |
 | **Pilot Definition & Metrics** | `11_PILOT/Pilot_Strategy.md`, `11_PILOT/KPIs.md`, `11_PILOT/Success_Criteria.md` | Ahvaz pilot parameters and Gate 1 telemetry. | Governs pilot validation. |
@@ -103,3 +111,109 @@ No visual artifact becomes canonical until the corresponding written requirement
 3. Code, migrations, tests and design artifacts must be traceable to current canonical documents.
 4. Generated local artifacts must not be committed to the repository.
 5. Production-readiness claims must distinguish domain verification from HTTP/auth/provider/UI/observability/deployment/recovery implementation.
+
+### Agentic Design Execution — 2026-09-21
+
+For AI-agent-driven design tool construction, the execution control authority is:
+`13_PRODUCT_DESIGN/52_POL_design tool_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
+
+It governs agent behavior during design construction: preflight, capability probing, atomic mutations, checkpoints, visual/structural verification, approvals, resumability, rollback, and evidence separation. It does not override product decisions or domain/API authority.
+
+### Product Architecture Evolution — 2026-09-20
+
+The current product-design authority now also includes:
+
+- POL_00_PROJECT_CONTROL/PRODUCT_EVOLUTION/PRODUCT_ARCHITECTURE_EVOLUTION_WAVE_01_2026-09-20.md
+
+This document records the adopted product-architecture direction for:
+- Financial Activity without MVP stored-value Wallet
+- Multi-vendor OrderGroup -> vendor Orders -> vendor Invoices visibility
+- Lightweight Delivery Handoff without a full Driver App
+- Product-first and Vendor-first discovery
+- Neutral settlement wording
+- Web + Android for every persona with delegated permissions
+- Barcode scanning as a first-class operational capability
+- Master SKU and product-media provenance
+
+These directions refine presentation, UX and implementation sequencing without overriding D-001 through D-020 or the canonical PostgreSQL/Python/FastAPI architecture. The Decision Register amendments D-021 through D-028 are the governing product decisions for this wave.
+
+
+---
+
+### Precision Commerce Visual Direction — 2026-09-21
+
+POL's canonical product visual direction is now **A — Precision Commerce**.
+
+The visual authority is:
+
+- `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+- `13_PRODUCT_DESIGN/57_POL_MASTER_TREE_DEEP_CRITICAL_AUDIT_2026-09-21.md`
+- `13_PRODUCT_DESIGN/58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`
+- `13_PRODUCT_DESIGN/59_POL_DESIGN_TO_ENGINEERING_HANDOFF_AND_BUILD_READINESS_2026-09-21.md`
+- `13_PRODUCT_DESIGN/60_POL_FINAL_DESIGN_TO_BUILD_READINESS_AUDIT_2026-09-21.md`
+
+Required theme policy: **Light + Night are first-class variants for every applicable canonical screen, section, component, pattern and design tool artifact.** Night is semantic theming, not color inversion.
+
+The visual system governs appearance, tokens, typography, shape, elevation, density, motion, RTL presentation and visual QA only. It does not override product/domain/API/permission/financial/MVP authorities.
+
+
+
+
+### Design Approval → Engineering Readiness — 2026-09-21
+
+The project now explicitly separates DESIGN_APPROVED from ENGINEERING_READY.
+
+design tool approval certifies the design layer only. Engineering readiness additionally requires action, permission, state, data, API, error/recovery, analytics, platform and test mappings.
+
+Current full-app implementation remains incomplete: Web is partial and Android source is not yet present. These are engineering workstreams, not claims of design failure.
+### Greenfield design tool Build Mode — 2026-09-21
+
+The current design execution target is a completely new, empty design tool file.
+
+`BUILD_MODE = GREENFIELD_EMPTY_FILE`
+
+Historical design tool is evidence only. Construction begins from WAVE-00 empty-file preflight and proceeds dependency-first:
+
+Foundations → Components → Patterns → Golden Screens → Product Surfaces → Prototypes → QA.
+
+### Master Tree v4 Registry Upgrade — 2026-09-21
+
+The Master Tree is now Version 4.0.0 and adopts a registry-first control model:
+
+Canonical Node Registry → Federated Views → Relationship Graph → Closure Profiles → Evidence → design tool Artifact Binding → Drift Control → Release Snapshot.
+
+This upgrade does not create new product capabilities. It strengthens canonicality, applicability-aware closure, many-to-many evidence/relationships, artifact identity, source health, agent source packets and executable fitness functions.
+
+Repeated screen IDs in derived sections are projections, not independent sources of truth.
+
+## 7. Deep-Saturation Design Control — 2026-09-21
+
+The five-pass design saturation audit is registered as a supporting design-control artifact:
+
+- `13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
+
+The active Master Tree is now Version 4.3.0:
+
+- `13_PRODUCT_DESIGN/50_POL_MASTER_design tool_UI_UX_TREE_SPEC_2026-09-21.md`
+- `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
+- `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
+- `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+
+The active agent execution protocol is now Version 1.5.0:
+
+- `13_PRODUCT_DESIGN/52_POL_design tool_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
+
+The Master Tree saturation layer adds control-plane requirements for context packaging, execution identity, trust boundaries, mutation intent, persistence proof, semantic/structural/visual evidence, state freshness, task/command contracts, accessibility/RTL/network semantics, token/component lifecycle, analytics tracking governance and change-impact controls.
+
+These controls govern how design work is safely constructed and verified. They do not create new product capabilities and do not override product, domain, database, API or operations authorities.
+
+
+### Executable Master Tree — 2026-09-21
+
+The human-readable Master Tree and its executable schema are now registered as the active design-control pair:
+
+- Human semantic authority: `13_PRODUCT_DESIGN/50_POL_MASTER_design tool_UI_UX_TREE_SPEC_2026-09-21.md`
+- Machine-readable structural authority: `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
+- Closure/validation rules: `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
+
+The executable schema constrains structure and evidence reporting; it does not override product/domain/API authority.

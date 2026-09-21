@@ -69,3 +69,23 @@ Use one design system with persona-specific landing pages:
 - Staff: scoped operational tasks.
 
 Cartona publicly describes inventory visibility, order processing and tailored app solutions for retailers, wholesalers and sales teams; POL should adopt the separation of work surfaces while keeping a shared operational data model. citeturn449708view0
+
+
+---
+
+## 2026-09-20 Dual-Client Vendor Contract
+
+همه personaهای سازمان بنکداری از Web و Android پشتیبانی می‌شوند.
+
+### Owner
+- Web: management, catalog, pricing, finance, staff permissions, reporting
+- Android: quick operational review, approvals, inventory oversight and exception actions
+
+### Warehouse / Operations
+- Web: queue review and bulk operations
+- Android: scan, picking, packing, dispatch and exception capture
+
+### Sales / Other Staff
+دسترسی بر اساس membership role و delegated permissions تعیین می‌شود. قابلیت‌هایی که کاربر در Web می‌بیند باید از همان authorization boundary در Android نیز تبعیت کنند.
+
+Vendor Storefront مدیریت و نمایش خود را روی همان canonical Vendor/Product/Inventory model انجام می‌دهد.

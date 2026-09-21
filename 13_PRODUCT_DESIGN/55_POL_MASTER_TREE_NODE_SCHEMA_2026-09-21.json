@@ -1,0 +1,953 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "POL-DESIGN-SCHEMA-002",
+  "title": "POL Master Tree v4 Canonical Node Registry Contract",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "name",
+    "lifecycle_status",
+    "priority_scope",
+    "source_refs",
+    "closure",
+    "canonicality",
+    "authority",
+    "closure_profile",
+    "maturity_level"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "CAP",
+        "OUTCOME",
+        "STAKEHOLDER",
+        "ACTOR",
+        "ROLE",
+        "PERSONA",
+        "SURFACE",
+        "EXP",
+        "JRN",
+        "FLOW",
+        "SCR",
+        "SEC",
+        "CMP",
+        "PATTERN",
+        "ACT",
+        "STATE",
+        "PERM",
+        "ENT",
+        "API",
+        "EVT",
+        "ANL",
+        "AUD",
+        "NTF",
+        "MET",
+        "NFR",
+        "HYP",
+        "EVIDENCE",
+        "ADR",
+        "CLAIM",
+        "TERM",
+        "COPY",
+        "RELEASE",
+        "STORY",
+        "QA",
+        "CHANGE",
+        "WAIVER",
+        "PEN",
+        "NON_UI_COMMAND"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lifecycle_status": {
+      "type": "string",
+      "enum": [
+        "PROPOSED",
+        "DISCOVERY",
+        "SPECIFIED",
+        "DESIGNING",
+        "DESIGNED",
+        "PROTOTYPED",
+        "QA",
+        "IMPLEMENTATION_READY",
+        "IMPLEMENTED",
+        "VERIFIED",
+        "DEPRECATED",
+        "SUPERSEDED"
+      ]
+    },
+    "priority_scope": {
+      "type": "string",
+      "enum": [
+        "MVP",
+        "P1",
+        "P2",
+        "FUTURE",
+        "DEFERRED",
+        "OUT_OF_SCOPE"
+      ]
+    },
+    "parent_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "capability_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "decision_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "owner": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "outcome": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/action"
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "preconditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "state_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "contract_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "relationship_edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "edge_id",
+          "type",
+          "target"
+        ],
+        "properties": {
+          "edge_id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "source_context": {
+            "type": "string"
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "evidence_level": {
+      "type": "string",
+      "enum": [
+        "SOURCE_VERIFIED",
+        "DESIGN_VERIFIED",
+        "STRUCTURAL_VERIFIED",
+        "VISUAL_VERIFIED",
+        "RUNTIME_VERIFIED",
+        "PILOT_VERIFIED",
+        "INFERRED",
+        "OPEN_DECISION"
+      ]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "closure": {
+      "$ref": "#/$defs/closure"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "change_impact": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "target",
+          "impact_level",
+          "reverification_required"
+        ],
+        "properties": {
+          "target": {
+            "type": "string"
+          },
+          "impact_level": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ]
+          },
+          "reverification_required": {
+            "type": "boolean"
+          },
+          "reverification_scope": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "owner": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "visual_direction": {
+      "type": "string",
+      "enum": [
+        "PRECISION_COMMERCE"
+      ]
+    },
+    "theme_coverage": {
+      "type": "object",
+      "properties": {
+        "light": {
+          "type": "boolean"
+        },
+        "night": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "LIGHT_AND_NIGHT",
+            "THEME_NOT_APPLICABLE"
+          ]
+        },
+        "not_applicable_reason": {
+          "type": "string"
+        }
+      }
+    },
+    "density_profile": {
+      "type": "string",
+      "enum": [
+        "D1_SPACIOUS_COMMERCE",
+        "D2_BALANCED_OPERATIONS",
+        "D3_DENSE_COMMAND",
+        "CORPORATE_EDITORIAL",
+        "FIELD_PRACTICAL"
+      ]
+    },
+    "visual_token_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "canonicality": {
+      "type": "string",
+      "enum": [
+        "CANONICAL",
+        "DERIVED",
+        "VIEW_PROJECTION",
+        "ALIAS",
+        "HISTORICAL",
+        "EXPERIMENTAL"
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACTIVE_CANONICAL",
+            "ACTIVE_SUPPORTING",
+            "REVIEW_REQUIRED",
+            "STALE",
+            "HISTORICAL",
+            "SUPERSEDED",
+            "CONFLICTED",
+            "EXPERIMENTAL"
+          ]
+        },
+        "source_precedence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "authority_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "effective_from": {
+          "type": "string"
+        },
+        "effective_until": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "alias_of": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 1
+    },
+    "supersedes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "view_memberships": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "closure_profile": {
+      "type": "string",
+      "enum": [
+        "CAPABILITY_PROFILE",
+        "SCREEN_PROFILE",
+        "SECTION_PROFILE",
+        "COMPONENT_PROFILE",
+        "PATTERN_PROFILE",
+        "ACTION_PROFILE",
+        "STATE_PROFILE",
+        "PERMISSION_PROFILE",
+        "ENTITY_PROFILE",
+        "API_PROFILE",
+        "EVENT_PROFILE",
+        "ANALYTICS_PROFILE",
+        "QA_PROFILE",
+        "CLAIM_PROFILE",
+        "PENPOT_ARTIFACT_PROFILE",
+        "NON_UI_COMMAND_PROFILE",
+        "RESEARCH_PROFILE",
+        "RELEASE_PROFILE"
+      ]
+    },
+    "maturity_level": {
+      "type": "string",
+      "enum": [
+        "L0_CONCEPT",
+        "L1_SPECIFIED",
+        "L2_MAPPED",
+        "L3_DESIGNED",
+        "L4_PROTOTYPED",
+        "L5_CONTRACTED",
+        "L6_IMPLEMENTED",
+        "L7_VERIFIED",
+        "L8_PILOT_OBSERVED",
+        "L9_SUPERSEDED_OR_DEPRECATED"
+      ]
+    },
+    "source_health": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACTIVE_CANONICAL",
+            "ACTIVE_SUPPORTING",
+            "REVIEW_REQUIRED",
+            "STALE",
+            "HISTORICAL",
+            "SUPERSEDED",
+            "CONFLICTED",
+            "EXPERIMENTAL"
+          ]
+        },
+        "checked_at": {
+          "type": "string"
+        },
+        "stale_policy": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "artifact_bindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "artifact_type",
+          "status"
+        ],
+        "properties": {
+          "artifact_type": {
+            "type": "string",
+            "enum": [
+              "PENPOT_FILE",
+              "PENPOT_PAGE",
+              "PENPOT_BOARD",
+              "PENPOT_FRAME",
+              "PENPOT_COMPONENT",
+              "PENPOT_VARIANT",
+              "PENPOT_EXPORT",
+              "FRONTEND_ROUTE",
+              "FRONTEND_COMPONENT"
+            ]
+          },
+          "artifact_id": {
+            "type": "string"
+          },
+          "page_id": {
+            "type": "string"
+          },
+          "file_id": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "hash": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "BOUND",
+              "PERSISTENCE_PENDING",
+              "VERIFIED",
+              "STALE",
+              "BROKEN",
+              "HISTORICAL"
+            ]
+          },
+          "captured_at": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "evidence_records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "dimension",
+          "evidence_type",
+          "reference",
+          "result"
+        ],
+        "properties": {
+          "evidence_id": {
+            "type": "string"
+          },
+          "dimension": {
+            "type": "string"
+          },
+          "evidence_type": {
+            "type": "string",
+            "enum": [
+              "SOURCE",
+              "DECISION",
+              "DESIGN",
+              "STRUCTURAL",
+              "VISUAL",
+              "RUNTIME",
+              "PILOT",
+              "RESEARCH",
+              "TEST",
+              "PENPOT_PERSISTENCE"
+            ]
+          },
+          "reference": {
+            "type": "string"
+          },
+          "captured_revision": {
+            "type": "string"
+          },
+          "captured_at": {
+            "type": "string"
+          },
+          "evaluator": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "PASS",
+              "FAIL",
+              "OPEN",
+              "BLOCKED",
+              "WAIVED"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tracking_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "terms_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "nfr_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "release_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "action": {
+      "type": "object",
+      "required": [
+        "action_id",
+        "name"
+      ],
+      "properties": {
+        "action_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "command_contract": {
+          "$ref": "#/$defs/command"
+        }
+      }
+    },
+    "command": {
+      "type": "object",
+      "required": [
+        "intent_id",
+        "preconditions",
+        "postconditions"
+      ],
+      "properties": {
+        "intent_id": {
+          "type": "string"
+        },
+        "preconditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "permission_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "expected_state_transition": {
+          "type": "string"
+        },
+        "idempotency_policy": {
+          "type": "string"
+        },
+        "concurrency_policy": {
+          "type": "string"
+        },
+        "postconditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "audit_required": {
+          "type": "boolean"
+        },
+        "notification_effects": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "navigation_effect": {
+          "type": "string"
+        },
+        "rollback_reference": {
+          "type": "string"
+        }
+      }
+    },
+    "closure": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "enum": [
+          "NOT_APPLICABLE",
+          "OPEN",
+          "DEFINED",
+          "VERIFIED",
+          "BLOCKED",
+          "WAIVED"
+        ]
+      },
+      "properties": {
+        "CAPABILITY_PRESENT": {
+          "type": "string"
+        },
+        "OUTCOME": {
+          "type": "string"
+        },
+        "JOURNEY": {
+          "type": "string"
+        },
+        "SCREEN_OR_PATTERN": {
+          "type": "string"
+        },
+        "STATES": {
+          "type": "string"
+        },
+        "ACTION": {
+          "type": "string"
+        },
+        "PERMISSION": {
+          "type": "string"
+        },
+        "DATA": {
+          "type": "string"
+        },
+        "API_BOUNDARY": {
+          "type": "string"
+        },
+        "EVENT_AUDIT_NOTIFICATION": {
+          "type": "string"
+        },
+        "PROTOTYPE": {
+          "type": "string"
+        },
+        "A11Y": {
+          "type": "string"
+        },
+        "RTL": {
+          "type": "string"
+        },
+        "RESPONSIVE": {
+          "type": "string"
+        },
+        "NETWORK": {
+          "type": "string"
+        },
+        "VISUAL": {
+          "type": "string"
+        },
+        "STRUCTURAL": {
+          "type": "string"
+        },
+        "RUNTIME": {
+          "type": "string"
+        },
+        "PILOT": {
+          "type": "string"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "evidence_id",
+        "evidence_type",
+        "reference",
+        "result"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string"
+        },
+        "evidence_type": {
+          "type": "string",
+          "enum": [
+            "SOURCE",
+            "DECISION",
+            "DESIGN",
+            "STRUCTURAL",
+            "VISUAL",
+            "RUNTIME",
+            "PILOT",
+            "RESEARCH"
+          ]
+        },
+        "reference": {
+          "type": "string"
+        },
+        "captured_revision": {
+          "type": "string"
+        },
+        "captured_at": {
+          "type": "string"
+        },
+        "evaluator": {
+          "type": "string"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "FAIL",
+            "OPEN",
+            "BLOCKED",
+            "WAIVED"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "dimension": {
+          "type": "string"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "owner": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "observed_at": {
+          "type": "string"
+        },
+        "valid_until": {
+          "type": "string"
+        },
+        "freshness_class": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "transformation": {
+          "type": "string"
+        },
+        "stale_policy": {
+          "type": "string"
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": [
+        "edge_id",
+        "type",
+        "target"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "edge_id": {
+          "type": "string"
+        }
+      }
+    },
+    "impact": {
+      "type": "object",
+      "required": [
+        "target",
+        "impact_level",
+        "reverification_required"
+      ],
+      "properties": {
+        "target": {
+          "type": "string"
+        },
+        "impact_level": {
+          "type": "string",
+          "enum": [
+            "NONE",
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+          ]
+        },
+        "reverification_required": {
+          "type": "boolean"
+        },
+        "reverification_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "owner": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "canonicality": {
+            "const": "ALIAS"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "alias_of"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": [
+              "SCR",
+              "SEC",
+              "CMP",
+              "PATTERN",
+              "PEN"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "visual_direction",
+          "theme_coverage",
+          "density_profile",
+          "visual_token_refs",
+          "artifact_bindings"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": [
+              "ACT",
+              "NON_UI_COMMAND"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "actions"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "API"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "contract_refs"
+        ]
+      }
+    }
+  ]
+}

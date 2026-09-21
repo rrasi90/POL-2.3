@@ -49,9 +49,20 @@
 44. `43_DESIGN_QA_PROTOCOL_V3_2026-09-16.md`
 45. `44_DESIGN_PIPELINE_MASTER_INDEX_V3_2026-09-16.md`
 46. `45_REPOSITORY_WIDE_DESIGN_COMPLETENESS_AUDIT_2026-09-16.md`
-47. `46_DESIGN_CLOSURE_BACKLOG_AND_CONFLICT_RESOLUTION_2026-09-16.md`
-48. `47_PROJECT_WIDE_BUG_AUDIT_2026-09-16.md`
-49. `48_PENPOT_CANONICAL_COMPLETION_AND_MULTI_DIMENSIONAL_AUDIT_2026-09-20.md`
+47. `47_PROJECT_WIDE_BUG_AUDIT_2026-09-16.md`
+48. `50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md`
+49. `51_POL_MASTER_PENPOT_TREE_GENERATION_PROMPT_2026-09-21.md` — Version 3.1.0
+50. `52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
+51. `53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
+52. `54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md` — Version 2.1.0
+53. `55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
+54. `56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md` — Version 2.0.0
+
+## Current visual direction
+
+**A — Precision Commerce**  
+Canonical visual system: `56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`  
+Theme policy: **Light + Night for every applicable canonical UI node**.
 
 ## Agent operating assets
 
@@ -59,13 +70,37 @@
 - `.agents/skills/pol-batch-execution/SKILL.md` — bounded design/frontend execution protocol.
 
 ## Official design pipeline
-`Research → Principle → Token → Component → Pattern → Screen → Prototype → QA → Handoff`
+`Research → Visual Direction → Principle → Token → Component → Pattern → Screen → Light/Night Prototype → QA → Handoff`
 
 ## Operational index
 `44_DESIGN_PIPELINE_MASTER_INDEX_V3_2026-09-16.md`
 
+## Master Tree v4
+
+The current Master Tree is a canonical registry with federated views. Repeated screen IDs are projections, not duplicate authorities. Canonicality, closure profiles, artifact bindings, evidence collections and source-health governance are mandatory for v4.
+
+Deep critical audit: `57_POL_MASTER_TREE_DEEP_CRITICAL_AUDIT_2026-09-21.md`
+`58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md` — Version 1.0.0
+
+## Current Master Tree
+`50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` — Version 4.2.0
+
+## Executable Master Tree Schema
+`54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
+
+## Machine-readable Node Schema
+`55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
+
+The human-readable Master Tree and executable schema are co-equal design-control artifacts: the human document defines semantics; the JSON schema defines machine-checkable structure.
+
+## Agent execution protocol
+`52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md` — Version 1.5.0
+
+## Latest deep saturation audit
+`53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
+
 ## Latest repository-wide design audit
-`48_PENPOT_CANONICAL_COMPLETION_AND_MULTI_DIMENSIONAL_AUDIT_2026-09-20.md`
+`45_REPOSITORY_WIDE_DESIGN_COMPLETENESS_AUDIT_2026-09-16.md`
 
 ## Execution rule
 `Repository Sync → Repository Audit → Specification Completion → Readiness Gate → Page/Section Completion → Agent Safety Gate → Written Design Source of Truth → Figma/Penpot Prototype → Mock-First Frontend → Production Backend Integration`
@@ -78,3 +113,17 @@ A screen is not considered complete because it exists. It is complete only when:
 `Canonical requirement → research principle → token → component → pattern → screen → state/failure branches → prototype → accessibility/content/contract QA → verified artifact`.
 
 No visual artifact becomes a canonical product requirement until the corresponding written decision is recorded here or in the governing product/engineering documents.
+
+
+## Greenfield build mode
+
+Current target mode: **GREENFIELD_EMPTY_FILE**
+
+The Master Tree is optimized for constructing a completely new Penpot file from zero. Historical Penpot artifacts are evidence only.
+
+Build profile: `58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`
+
+
+## Engineering handoff
+- 59_POL_DESIGN_TO_ENGINEERING_HANDOFF_AND_BUILD_READINESS_2026-09-21.md — Design Approval → Engineering Ready contract
+- 60_POL_FINAL_DESIGN_TO_BUILD_READINESS_AUDIT_2026-09-21.md — final pre-Penpot-approval audit

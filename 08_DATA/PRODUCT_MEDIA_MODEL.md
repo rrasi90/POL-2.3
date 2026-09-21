@@ -94,3 +94,38 @@ CREATE INDEX idx_product_media_primary ON product_media(product_id, is_primary) 
   - نسخه سبک لیست (`thumbnail` - ابعاد ۱۵۰x۱۵۰ با حجم کمتر از ۲۰ کیلوبایت).
   - نسخه جزئیات کالا (`detail` - ابعاد ۶۰۰x۶۰۰ با حجم کمتر از ۱۰۰ کیلوبایت).
 * **آپلود تاب‌آور (Resumable Upload):** در شرایط قطعی مکرر اینترنت در مناطق حاشیه‌ای اهواز، کلاینت از مکانیزم آپلود چندبخشی (Chunked/Resumable) استفاده می‌کند.
+
+
+---
+
+## ۶. Manufacturer Source Import & Provenance — Amendment 2026-09-20
+
+برای پشتیبانی از واردسازی ساده تصاویر سازنده بدون وابستگی runtime به وب‌سایت خارجی، product_media باید در صورت استفاده از منبع خارجی، متادیتای provenance کافی داشته باشد.
+
+پیشنهاد مفهومی:
+
+- source_url
+- source_type
+- source_provenance
+- rights_status
+- import_method
+- imported_at
+- verified_at
+- verified_by_user_id
+
+### MVP import method
+
+OPERATOR_ASSISTED
+
+یعنی اپراتور مجاز منبع سازنده را ثبت و تصویر مجاز را وارد pipeline می‌کند؛ POL تصویر را در storage داخلی مدیریت می‌کند.
+
+### ممنوع
+
+- hotlink کردن مستقیم تصویر سازنده از داخل کلاینت POL به‌عنوان asset canonical
+- crawler عمومی برای جمع‌آوری خودکار تصاویر
+- ثبت تصویر بدون provenance
+- تبدیل «publicly visible» به «rights cleared»
+
+### هدف آینده
+
+در صورت وجود API/feed رسمی یا مجوز قراردادی، import method می‌تواند به AUTHORIZED_API ارتقا یابد، بدون تغییر در هویت Master Product.

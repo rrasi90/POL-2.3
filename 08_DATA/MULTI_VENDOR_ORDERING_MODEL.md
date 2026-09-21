@@ -212,3 +212,50 @@ This multi-vendor model uses the exact relational schema defined in `migrations/
   - `status VARCHAR(30) NOT NULL CHECK (status IN ('ALLOCATED', 'UNFULFILLED'))`, `vendor_id UUID NULL REFERENCES vendors(id)`.
 
 Zero DDL schema alterations are required; the canonical database architecture was already designed multi-vendor ready from inception.
+
+
+---
+
+## 2026-09-20 Product Architecture Amendment — OrderGroup / Invoice / Financial Activity
+
+### A. Unified buyer order, vendor child orders, and invoices
+
+The existing OrderGroup model remains canonical.
+
+A retailer checkout creates one parent OrderGroup and one or more vendor child Orders. The financial document visible to the retailer is therefore a set of vendor-specific invoices beneath one unified purchase.
+
+Canonical relationship:
+
+**Retailer Checkout → OrderGroup → Vendor Orders → Vendor Invoices**
+
+The UI must never imply that a multi-vendor checkout produces a single legally/commercially identical vendor invoice.
+
+### B. Required retailer visibility
+
+OrderGroup detail should expose:
+
+- total requested amount
+- vendor count
+- child order count
+- invoice count
+- invoice amount per vendor
+- payment status per vendor order/invoice
+- fulfillment status per vendor order
+- delivery status per vendor order
+- dispute status where applicable
+
+The financial history screen should aggregate existing canonical payment, refund, invoice and settlement records without creating a second source of truth.
+
+### C. Financial activity is a read model, not a wallet
+
+A Financial Activity view may combine:
+
+**Payment → Refund → Order Amount → Invoice Amount → Payment Status → Authorized Settlement Status**
+
+This is visibility only. It must not introduce a stored-value customer balance.
+
+### D. Future wallet boundary
+
+Any future stored-value wallet must be modeled as a separate financial ledger/account domain. Payments and refunds remain transaction records and must not be reinterpreted as wallet entries.
+
+No schema change is required for this amendment.
