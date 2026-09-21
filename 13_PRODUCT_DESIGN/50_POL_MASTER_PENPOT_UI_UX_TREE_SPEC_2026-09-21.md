@@ -7966,3 +7966,85 @@ Full evidence register:
 For the current audited source snapshot, no additional product capability should be created merely to make the Master Tree appear more complete. The remaining additions are primarily control-plane, state, evidence, accessibility, resilience and governance contracts.
 
 This is a saturation statement for the current branch snapshot only. New commits, new product decisions, new APIs, new migrations, new research evidence or new Penpot changes must reopen the relevant closure gates through the existing Source of Truth process.
+---
+## 67.54. CAPABILITY → SCREEN / WORKFLOW CLOSURE — SECOND-ORDER AUDIT
+
+The Capability Coverage Matrix is not by itself proof of a complete user experience. A capability may be registered while its user-facing or operator-facing workflow remains implicit.
+
+### Shared
+- SH-05 — Universal Feedback Entry
+  - contextual feedback from the current surface
+  - friction-minimized required input
+  - automatically captured client context
+  - tenant-scoped visibility
+  - attachment/error states
+  - closed-loop notification after response
+
+### Operations / Admin
+- OP-16 — Feedback Triage & Reply
+- OP-17 — Broadcast Composer & Dispatch
+- OP-18 — User & Membership Directory
+- OP-19 — Organization / Tenant Directory
+- OP-20 — Vendor / Retailer Operational Directory
+- OP-21 — Vendor Onboarding & Activation
+- OP-22 — Category Administration
+- OP-23 — Vendor Reliability Review
+- OP-24 — Product Identity Merge / Archive Review
+- OP-25 — Payment Evidence / Verification
+- OP-26 — Invoice Integrity / Document Review
+- OP-27 — SLA Calendar / Override Review
+- OP-28 — Notification Preference & Delivery Control
+
+These are closure targets, not a declaration that all are immediately navigational MVP screens. Each must be classified as USER_FACING_SCREEN, SHARED_PATTERN, OPS_WORKFLOW, ADMIN_WORKFLOW or NON_UI_COMMAND before Penpot construction.
+
+### Claim / Promise Contract
+Public and high-risk operational copy must resolve:
+CLAIM_ID → TEXT → SOURCE → AUTHORITY → VALID_TIME → AUDIENCE → SURFACE → RISK → REVIEW_OWNER.
+
+Examples that must not be silently canonicalized from legacy or GTM material:
+- cheapest vendor
+- absolute reliability ranking
+- guaranteed transport coordination
+- permanent zero-commission or settlement promises
+- unsupported fulfillment guarantees
+
+### Multidimensional closure vector
+A capability is not closed merely because it exists in the registry.
+
+CAP → OUTCOME → JOURNEY → SCREEN/PATTERN/NON_UI → STATES → ACT → PERM → DATA → API/BOUNDARY → EVENT/AUDIT/NOTIFICATION → PROTOTYPE → A11Y/RTL/RESP/NETWORK → QA EVIDENCE.
+
+## 67.55. PRESENCE VS CLOSURE RULE
+
+The following are deliberately different statuses:
+
+- CAPABILITY_PRESENT
+- SCREEN_DEFINED
+- STATE_COMPLETE
+- PERMISSION_COMPLETE
+- CONTRACT_MAPPED
+- PROTOTYPED
+- ACCESSIBILITY_VERIFIED
+- RTL_VERIFIED
+- RESPONSIVE_VERIFIED
+- NETWORK_VERIFIED
+- VISUAL_VERIFIED
+- STRUCTURAL_VERIFIED
+- RUNTIME_VERIFIED
+- PILOT_VERIFIED.
+
+A node may advance on one axis without falsely advancing the others.
+
+## 67.56. GTM / PLAYBOOK / UI-COPY BOUNDARY
+
+The repository contains operating playbooks and acquisition material that are valuable evidence but are not automatically UI requirements.
+
+Every design source is classified as one of:
+- PRODUCT_BEHAVIOR
+- ENGINEERING_CONTRACT
+- OPERATING_PLAYBOOK
+- GTM_PITCH
+- RESEARCH_EVIDENCE
+- UI_COPY
+- HISTORICAL_REFERENCE.
+
+GTM pitch language, pilot negotiation language and historical examples cannot become canonical UI copy without an approved current source and a Claim/Promise Contract.
