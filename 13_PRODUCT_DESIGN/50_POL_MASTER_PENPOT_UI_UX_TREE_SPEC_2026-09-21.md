@@ -7242,3 +7242,21 @@ Some repository artifacts are product-critical but are not application screens:
 - audit/certification evidence
 
 These belong in Measurement / Research / Governance / Operations views and must not be forced into the Penpot screen tree.
+
+
+## 67.28. EXACT STRATEGIC TERMINOLOGY + RESILIENCE ALIASES
+
+The following repository terms are canonical aliases and must remain traceable to the existing strategy/outcome nodes:
+
+- Phygital / O2O strategy → Outcome / Experience / Field-Transition view
+- Frictionless Basket Assembly → CAP-ALLOCATION + CAP-REVALIDATION-CHECKOUT + Retailer core loop
+- Network Effects → Strategy / Measurement / Expansion view
+- Financial Network → Finance / Trust / Future infrastructure view
+- Data Network → Data / Measurement / Manufacturer Intelligence view
+- Trust Network → Reliability / Dispute / Support / Evidence view
+- Transaction Network → Commerce / OrderGroup / Analytics view
+- Manufacturer Intelligence → deferred/future capability unless separately activated
+- Visitor → POL Substitution → primary pilot outcome
+- RTO / RPO → Backup / Recovery / Data Operations readiness contract
+
+These aliases do not automatically create additional MVP screens. They create traceable strategy, capability, KPI, service-blueprint or future-scope nodes.
