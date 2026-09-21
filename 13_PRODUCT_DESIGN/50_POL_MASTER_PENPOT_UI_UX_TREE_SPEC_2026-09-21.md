@@ -1,5 +1,5 @@
 # POL — Master Product / UI / UX Tree & Penpot Build Specification
-## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Dark/Light
+## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Light/Night
 
 **Document ID:** `POL-DESIGN-TREE-001`  
 **Version:** `3.6.0`  
