@@ -54,9 +54,9 @@
 49. `51_POL_MASTER_PENPOT_TREE_GENERATION_PROMPT_2026-09-21.md`
 50. `52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
 51. `53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
-52. `54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md` — Version 1.1.0
+52. `54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md` — Version 2.0.0
 53. `55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
-54. `56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+54. `56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md` — Version 2.0.0
 
 ## Current visual direction
 
@@ -75,8 +75,14 @@ Theme policy: **Light + Night for every applicable canonical UI node**.
 ## Operational index
 `44_DESIGN_PIPELINE_MASTER_INDEX_V3_2026-09-16.md`
 
+## Master Tree v4
+
+The current Master Tree is a canonical registry with federated views. Repeated screen IDs are projections, not duplicate authorities. Canonicality, closure profiles, artifact bindings, evidence collections and source-health governance are mandatory for v4.
+
+Deep critical audit: `57_POL_MASTER_TREE_DEEP_CRITICAL_AUDIT_2026-09-21.md`
+
 ## Current Master Tree
-`50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` — Version 3.6.0
+`50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` — Version 4.0.0
 
 ## Executable Master Tree Schema
 `54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
@@ -87,7 +93,7 @@ Theme policy: **Light + Night for every applicable canonical UI node**.
 The human-readable Master Tree and executable schema are co-equal design-control artifacts: the human document defines semantics; the JSON schema defines machine-checkable structure.
 
 ## Agent execution protocol
-`52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md` — Version 1.3.0
+`52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md` — Version 1.4.0
 
 ## Latest deep saturation audit
 `53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
