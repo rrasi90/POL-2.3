@@ -1,7 +1,7 @@
 # POL — Precision Commerce Visual Design System
 
 **Document ID:** `POL-DESIGN-VISUAL-001`  
-**Version:** `1.0.0`  
+**Version:** `2.0.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE / CANONICAL VISUAL DIRECTION / LIGHT+NIGHT / PENPOT BUILD SOURCE  
 **Repository:** `rrasi90/POL-2.3`  
@@ -10,6 +10,30 @@
 **Visual Direction:** **A — Precision Commerce**
 
 ---
+
+
+## 0.5 Token tier architecture
+
+Precision Commerce uses four visual abstraction tiers:
+
+1. Primitive tokens — raw palette, type scale, spacing scale, radius and elevation primitives.
+2. Semantic tokens — role-based meaning such as canvas, surface, text, brand, success, warning and focus.
+3. Component tokens — component-specific assignments such as button background, input border and card surface.
+4. Pattern tokens/rules — composition-level decisions used by repeatable product patterns.
+
+A component should normally consume semantic/component tokens rather than raw primitive values.
+
+## 0.6 Interoperability
+
+The visual system SHOULD remain exportable to a vendor-neutral token exchange format compatible with DTCG 2025.10.
+
+The exchange format does not become the product authority. POL semantic token names and the Master Tree remain authoritative.
+
+## 0.7 Visual authority
+
+This document is the canonical visual authority for the Precision Commerce direction.
+
+Older visual documents remain preserved for traceability. Where they conflict with this document, the current registered visual authority wins.
 
 # 0. Visual decision
 
