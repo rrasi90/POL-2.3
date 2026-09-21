@@ -1283,3 +1283,34 @@ Mandatory V3.2 preservation rules:
 
 23. Preserve the RTO / RPO readiness dimensions as explicit operational contract fields. Never invent the values; require an authoritative operations decision before treating them as targets.
 24. Keep the canonical source-reference list from Master Tree §67.29 aligned with any future source-of-truth changes.
+
+
+## AGENTIC PENPOT EXECUTION LAYER — MANDATORY
+
+Also read:
+- 13_PRODUCT_DESIGN/52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md
+
+The agent must operate using:
+READ → RESTATE → PROBE → PLAN → ONE MUTATION → STRUCTURE VERIFY → VISUAL VERIFY → AUDIT → CHECKPOINT → RECORD → NEXT
+
+Mandatory:
+1. Create/resume RUN_ID before mutation.
+2. Load Penpot MCP guidance before acting.
+3. Perform read-only structure/token/component discovery before writing.
+4. Probe any uncertain Penpot API capability before relying on it.
+5. Never one-shot an entire screen, library, page or product.
+6. Treat page switching as a separate operation and verify currentPage before mutation.
+7. Never assume a cloned library component is a live linked instance.
+8. Never hardcode a governed visual value when a token exists.
+9. Default to Suggest → Apply-with-review for structural changes.
+10. Never parallelize mutations on the same Penpot file.
+11. Verify persistence in a fresh read after important writes.
+12. Export and visually inspect every meaningful checkpoint.
+13. Maximum two self-fix iterations per visual checkpoint; then stop and report defects.
+14. Maintain rollback checkpoint and mutation change budget per wave.
+15. After context truncation, reconstruct state from RUN_ID + Penpot structure; never continue from chat memory alone.
+16. Record evidence separately for Design Defined, Penpot Built, Prototyped, Frontend Code Present, HTTP Connected, Runtime Verified, Pilot Verified.
+17. Use the dedicated \`99 Agent QA & Golden Evals\` page for golden components, golden screens, probes, audits and visual evidence.
+18. Start a blank-file project with WAVE-00 Agent Preflight, then Foundations, Golden Components, Shared UX and Golden Screens before product screens.
+19. Do not interpret a successful MCP/tool return as proof of persisted design state.
+20. Do not let the agent modify business rules while resolving a visual or structural defect; open a contradiction/decision instead.
