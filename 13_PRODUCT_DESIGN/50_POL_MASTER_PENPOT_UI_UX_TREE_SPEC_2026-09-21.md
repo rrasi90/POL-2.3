@@ -1,13 +1,13 @@
-# POL — Master Product / UI / UX Tree & Penpot Build Specification
-## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Light/Night
+# POL — Master Product / Experience / Delivery Control Tree Specification
+## Canonical Master Product / Experience / Service / Domain / System / Delivery Tree — GitHub × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Light/Night
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `4.2.0`  
+**Version:** `4.3.0`  
 **Date:** 2026-09-21  
-**Status:** ACTIVE MASTER ARCHITECTURE / CANONICAL REGISTRY KERNEL / GREENFIELD BLANK-FILE BUILD SOURCE / FEDERATED VIEW MODEL / PENPOT BUILD SOURCE / TRACEABILITY MODEL / DRIFT-CONTROLLED / AGENT-EXECUTION READY  
+**Status:** ACTIVE MASTER ARCHITECTURE / CANONICAL REGISTRY KERNEL / TOOL-AGNOSTIC / MULTI-CHANNEL BUILD SOURCE / FEDERATED VIEW MODEL / TRACEABILITY MODEL / DRIFT-CONTROLLED / AGENT-EXECUTION READY  
 **Repository:** `rrasi90/POL-2.3`  
 **Working Branch:** `product-architecture-evolution-2026-09-20`  
-**Primary Intent:** تبدیل حقیقت محصول، معماری، دامنه، تجربه، طراحی، Penpot، frontend و شواهد را به یک Canonical Node Registry + Federated Views + Traceability Graph که بتواند یک فایل Penpot کاملاً خالی را از صفر به یک سیستم طراحی قابل‌اجرا تبدیل کند؛ با Precision Commerce و پوشش هم‌سطح Light + Night.
+**Primary Intent:** تبدیل حقیقت محصول، معماری، دامنه، تجربه، طراحی، frontend، backend، اپلیکیشن‌ها، ابزارهای اجرا و شواهد را به یک Canonical Node Registry + Federated Views + Traceability Graph؛ به‌گونه‌ای که ابزار اجرایی، محل ساخت یا Agent قابل تعویض باشد اما خروجی، قراردادها، رفتار، کیفیت و معیارهای پذیرش ثابت بماند؛ با Precision Commerce و پوشش هم‌سطح Light + Night.
 
 ---
 
@@ -77,7 +77,7 @@ CANONICAL NODE REGISTRY
   ├── Journey / Flow views
   ├── Domain / API views
   ├── Design System views
-  ├── Penpot / Frontend artifact views
+  ├── Design Artifact / Frontend Artifact views
   └── Evidence / QA / Pilot views
 
 The same ID may appear in multiple views, but it still represents one node.
@@ -88,7 +88,7 @@ NODE_ID + TYPE + CANONICALITY + AUTHORITY + SCOPE + LIFECYCLE
 
 Governance rule:
 
-A screen heading, Penpot frame, screenshot, frontend route or API endpoint is not automatically a canonical node. It becomes one only when it has an explicit node identity and source authority.
+A screen heading, design artifact, screenshot, frontend route or API endpoint is not automatically a canonical node. It becomes one only when it has an explicit node identity and source authority.
 
 v4 mandatory concepts:
 
@@ -107,31 +107,134 @@ v4 mandatory concepts:
 
 ---
 
-# 0.5. GREENFIELD BUILD MODE — CANONICAL
+# 0.5. TOOL-AGNOSTIC BUILD MODE — CANONICAL
 
-The Master Tree is currently optimized for a **completely new and empty Penpot file**.
+### Core axiom
 
-### Non-negotiable rule
+**The Master Tree specifies the product truth and the required result, never a mandatory implementation tool.**
 
-**Historical Penpot is evidence, not baseline.**
+The canonical system must remain executable through interchangeable channels such as:
+- design tools;
+- code editors / IDEs;
+- AI agents and coding harnesses;
+- frontend frameworks;
+- native/mobile stacks;
+- documentation systems;
+- test/QA systems;
+- import/export or migration pipelines.
 
-The new file MUST NOT be constructed by copying or repairing the historical Penpot file. Current repository truth defines the target; the old Penpot only informs historical intent and contradiction discovery.
+A tool may accelerate execution, but it MUST NOT become the source of product truth.
 
-### Construction order
+### Tool substitution contract
 
-`WAVE-00 Empty Preflight → WAVE-01 Foundations → WAVE-02 Golden Components → WAVE-03 Shared Patterns → WAVE-04 Golden Screens → WAVE-05 Retailer → WAVE-06 Vendor → WAVE-07 Operations → WAVE-08 Field + Corporate → WAVE-09 Prototypes → WAVE-10 QA + Release`
+`Required Result = Canonical Specification + Applicable Contracts + Validation Evidence`
+
+Changing the tool MUST NOT change:
+- business behavior;
+- information architecture;
+- domain model;
+- permissions;
+- state machine;
+- API/application contracts;
+- data semantics;
+- accessibility requirements;
+- responsive/platform behavior;
+- acceptance criteria;
+- release gates.
+
+Only the execution adapter may change.
+
+### Canonical build sequence
+
+`WAVE-00 Environment/Capability Preflight → WAVE-01 Foundations → WAVE-02 Golden Components → WAVE-03 Shared Patterns → WAVE-04 Golden Experiences → WAVE-05 Retailer → WAVE-06 Vendor → WAVE-07 Operations → WAVE-08 Field + Corporate → WAVE-09 Prototypes/Flows → WAVE-10 QA + Release → ENGINEERING IMPLEMENTATION WAVES`
+
+The sequence expresses dependency order, not a mandatory software product.
 
 ### Dependency rule
 
-A missing shared foundation/component/pattern blocks downstream screen construction until it is created and verified centrally. Screen-level invention must not silently compensate for missing global primitives.
+A missing shared foundation, component, pattern, contract, or runtime prerequisite blocks downstream work until the dependency is created and verified centrally. Local invention must not silently compensate for a missing canonical dependency.
 
-### Blank-file source precedence
+### Source precedence for any tool
 
-`Current Product/Architecture Decisions → Domain/API/Data → Master Tree → Executable Schema → Precision Commerce Visual System → Current Design Contracts → Historical Penpot/Evidence`
+`Current Product/Architecture Decisions → Domain/API/Data Contracts → Master Tree → Executable Schema → Visual/Interaction System → Active Delivery Contracts → Current Artifact Evidence → Historical Artifacts`
 
-### Canonical greenfield profile
+Historical artifacts may inform intent or contradiction discovery, but they cannot become active authority merely because a tool can import or display them.
 
-`13_PRODUCT_DESIGN/58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`
+### Artifact neutrality
+
+A design board, source file, component library, generated screen, screenshot, prototype, code route, notebook, document, or agent output is an **artifact**, not automatically a canonical node.
+
+Canonical identity exists independently of where the artifact is stored.
+
+
+# 0.6. TOOL-AGNOSTIC RESULT CONTRACT — NEW CANONICAL LAW
+
+## 0.6.1 Canonical truth vs execution tool
+
+The Master Tree has one authoritative responsibility:
+
+> **Define what the product is, what it must do, what evidence is required, and what “done” means.**
+
+It does NOT define:
+- which design application must be used;
+- which IDE must be used;
+- which AI model must be used;
+- which agent harness must be used;
+- which frontend/mobile implementation tool must be used;
+- which documentation or QA product must be used.
+
+## 0.6.2 Canonical implementation chain
+
+`Intent → Requirement → Decision → Capability → Domain Model → Experience → Artifact Contract → Implementation → Verification → Release`
+
+No tool is a canonical layer in this chain.
+
+## 0.6.3 Equivalent-output rule
+
+An implementation produced by Tool A and an implementation produced by Tool B are equivalent when they satisfy the same canonical acceptance profile.
+
+Therefore:
+- screenshot equivalence alone is insufficient;
+- code equivalence is not required;
+- file-format equivalence is not required;
+- vendor/tool metadata equivalence is irrelevant.
+
+What matters is semantic, behavioral, structural, visual, accessibility, performance, security, and runtime compliance where applicable.
+
+## 0.6.4 Adapter registry
+
+The Master Tree may register one or more adapters per execution channel:
+
+`ADAPTER_ID → TOOL_TYPE → INPUT_SCHEMA → OUTPUT_ARTIFACTS → CAPABILITIES → LIMITATIONS → VERIFICATION_METHODS`
+
+Adapter records are non-canonical implementation metadata.
+
+## 0.6.5 No single-tool lock-in
+
+No active canonical node may depend on a tool-specific file format, proprietary UI structure, or tool-local state unless:
+1. the requirement itself is tool-specific; and
+2. the dependency is explicitly classified as an implementation constraint.
+
+A canonical product requirement must always have a tool-independent representation.
+
+## 0.6.6 Migration / replacement rule
+
+When a tool is replaced:
+1. canonical nodes remain unchanged;
+2. contracts remain unchanged;
+3. existing evidence is reclassified as historical where necessary;
+4. a new adapter is registered;
+5. required artifacts are regenerated or migrated;
+6. the same validation suite is rerun;
+7. release status is recalculated.
+
+Tool replacement is therefore a controlled implementation change, not a product redesign.
+
+## 0.6.7 Agent portability
+
+Any AI agent/harness may execute a node when its source packet and capability profile satisfy the node contract.
+
+The Master Tree MUST NOT encode one specific agent's internal prompt format as canonical product truth.
 
 # 1. SOURCE SNAPSHOT
 
@@ -175,31 +278,26 @@ P2:
 
 ---
 
-## 1.2 Penpot
+## 1.2 Historical design artifacts
 
-Current Penpot export inspected:
+Any previously produced design workspace/export is classified as **HISTORICAL / EVIDENCE ONLY** unless an explicit active artifact binding says otherwise.
 
-- File: `New File 1`
-- Penpot export version: `penpot/2.18.0-RC5`
-- Revision: `116`
-- Export modified: `2026-09-20T09:27:01.434350Z`
-- 11 design pages
+Historical artifacts may be used for:
+- intent discovery;
+- contradiction detection;
+- terminology recovery;
+- visual research;
+- migration planning.
 
-Pages:
+They are NOT:
+- the source of product truth;
+- the source of domain/API semantics;
+- the source of permission logic;
+- the source of runtime behavior;
+- a mandatory implementation baseline.
 
-1. `00 — Foundations`
-2. `01 — Components`
-3. `02 — Shared UX`
-4. `03 — States & Patterns`
-5. `04 — Retailer`
-6. `05 — Vendor`
-7. `06 — Operations`
-8. `07 — Field Activator`
-9. `08 — Corporate`
-10. `09 — Prototypes & Flows`
-11. `10 — Design QA`
+The active implementation channel must start from the canonical contracts and produce independently verifiable artifacts.
 
-The inspected export contains approximately 75 meaningful top-level design frames/boards plus a small number of generic `Text` / `Rectangle` artifacts that should not be treated as canonical screens.
 
 ---
 
@@ -207,7 +305,7 @@ The inspected export contains approximately 75 meaningful top-level design frame
 
 When sources disagree:
 
-**Architecture / adopted Product Evolution > API / data contract > explicit design specification > current Penpot artifact**
+**Architecture / adopted Product Evolution > API / data contract > explicit design specification > current design artifact**
 
 But a contradiction must NOT be silently erased.
 
@@ -215,7 +313,7 @@ Every contradiction must be registered under:
 
 **CONFLICT / DECISION REQUIRED**
 
-This prevents old Penpot content from silently becoming product behavior.
+This prevents old design tool content from silently becoming product behavior.
 
 ---
 
@@ -531,7 +629,7 @@ Atomic Design supports decomposition from atoms to molecules, organisms, templat
 
 POL should additionally distinguish reusable **design-system components** from product-specific **recipes/compositions**. Brad Frost explicitly distinguishes context-agnostic design-system components from recipes that are consistent product compositions but are too specific to live as universal components. citeturn701494search9
 
-Design tokens should remain semantically named and exportable/interoperable across Penpot and code. DTCG defines design tokens as reusable design decisions and provides a vendor-neutral format for sharing them across tools and products. citeturn193883search0turn193883search4
+Design tokens should remain semantically named and exportable/interoperable across design tool and code. DTCG defines design tokens as reusable design decisions and provides a vendor-neutral format for sharing them across tools and products. citeturn193883search0turn193883search4
 
 ---
 
@@ -588,7 +686,7 @@ Requirement / Outcome
     ├── Consequences
     └── Source
         └── Design Artifact
-            ├── Penpot Frame
+            ├── design tool Frame
             ├── Component
             ├── Prototype
             ├── Frontend Route
@@ -698,7 +796,7 @@ NODE
 ├── Desktop
 ├── Prototype
 ├── Frontend Mapping
-├── Penpot Artifact
+├── design tool Artifact
 ├── QA Evidence
 ├── Source
 ├── Decision / ADR
@@ -713,7 +811,7 @@ NODE
 ├── Closure Profile
 ├── Maturity Level
 ├── Source Health
-├── Penpot Artifact Binding
+├── design tool Artifact Binding
 ├── Evidence Records
 └── Change Impact Records
 ```
@@ -736,7 +834,7 @@ A lower class can summarize a higher class but cannot override it.
 
 ---
 
-# 2.5.5 Capability-to-Penpot Traceability
+# 2.5.5 Capability-to-design tool Traceability
 
 The canonical path is now:
 
@@ -759,7 +857,7 @@ Outcome
 → Notification
 → Prototype
 → QA
-→ Penpot Artifact
+→ design tool Artifact
 → Frontend Implementation
 ```
 
@@ -818,7 +916,7 @@ But in the domain:
 
 `Order → Billing Context → Invoice Aggregate`
 
-Therefore Penpot must follow the user's mental model while the traceability layer preserves the domain model.
+Therefore design tool must follow the user's mental model while the traceability layer preserves the domain model.
 
 This distinction is foundational for POL.
 
@@ -910,7 +1008,7 @@ PROPOSED
 → SUPERSEDED
 ```
 
-A node must not be called COMPLETE if only the Penpot frame exists.
+A node must not be called COMPLETE if only the design artifact exists.
 
 ---
 
@@ -931,7 +1029,7 @@ Each node should carry:
 - GitHub file
 - API route
 - test
-- Penpot frame
+- design artifact
 - design review
 - product decision
 - external research
@@ -998,7 +1096,6 @@ Examples for POL:
 
 ### Clients
 - Web and Android share authorization boundary
-
 Invariants should be visible near each subtree and referenced by QA.
 
 ---
@@ -1019,7 +1116,7 @@ CONFLICT
 ├── Decision Needed By
 ├── Status
 ├── Superseding Decision
-└── Affected Penpot Nodes
+└── Affected design tool Nodes
 ```
 
 This is stronger than a simple contradiction table.
@@ -1111,7 +1208,7 @@ Use factual coverage indicators:
 
 Do not force these into one unreadable canvas.
 
-Penpot should contain separate navigable boards:
+design tool should contain separate navigable boards:
 
 ### Layer A — Master Overview
 One-screen executive tree.
@@ -1141,7 +1238,7 @@ Role → Permission → Action → Surface.
 Domain State → UI State → Event → Recovery.
 
 ### Layer J — Traceability
-Requirement → Decision → Penpot → API → Frontend → QA.
+Requirement → Decision → design tool → API → Frontend → QA.
 
 This approach keeps each diagram legible while preserving cross-links between them.
 
@@ -1197,7 +1294,7 @@ It tells QA:
 
 > What evidence proves it works?
 
-It tells Penpot:
+It tells design tool:
 
 > Which artifact must exist?
 
@@ -1263,7 +1360,7 @@ https://docs.publishing.service.gov.uk/repos/govuk_publishing_components/adr/000
 
 The Master Tree is now formally defined as:
 
-> **A versioned, evidence-backed, federated hierarchy-and-relationship model that connects product outcomes, information architecture, user journeys, service operations, domain architecture, system architecture, design-system composition, permissions, states, decisions, Penpot artifacts, implementation contracts, prototypes, and QA evidence.**
+> **A versioned, evidence-backed, federated hierarchy-and-relationship model that connects product outcomes, information architecture, user journeys, service operations, domain architecture, system architecture, design-system composition, permissions, states, decisions, design artifacts, implementation contracts, prototypes, and QA evidence.**
 
 It is therefore **not**:
 
@@ -1273,7 +1370,7 @@ It is therefore **not**:
 - only an architecture diagram
 - only an entity tree
 - only a roadmap
-- only a Penpot page inventory
+- only a design tool page inventory
 
 It is the **traceability spine** connecting all of them.
 
@@ -1350,7 +1447,7 @@ flowchart TD
 
 ## 4.1 Foundations
 
-Existing Penpot foundation areas include:
+Existing design tool foundation areas include:
 
 - Brand Identity & Official Logos
 - Semantic Color Tokens & Roles
@@ -1658,7 +1755,7 @@ Unauthenticated until verification; after login, scope by active membership.
 Light + Night.
 
 ### Conflict
-Technical Architecture currently specifies a **4-digit OTP**. Older retailer design specs/Penpot artifacts contain 6-digit / 5-box variants. Target new canonical design must use the current backend/auth contract; do not preserve an older OTP shape silently.
+Technical Architecture currently specifies a **4-digit OTP**. Older retailer design specs/design artifacts contain 6-digit / 5-box variants. Target new canonical design must use the current backend/auth contract; do not preserve an older OTP shape silently.
 
 ---
 
@@ -1997,8 +2094,7 @@ Retailer proposal review when Vendor cannot fulfill the full requested quantity.
 - operational issue
 - other
 
-### Relationships
-Vendor Partial Acceptance Proposal → Notification → RT-20 → Approve/Decline → Order state/timeline.
+### RelationshipsVendor Partial Acceptance Proposal → Notification → RT-20 → Approve/Decline → Order state/timeline.
 
 ### API dependency
 - GET/POST partial-acceptance-proposals
@@ -2243,7 +2339,7 @@ Table:
 Canonical vendor acceptance timeout:
 **120 working minutes / 2 hours**, respecting the Ahvaz working calendar.
 
-Any 30-minute Penpot copy is stale and must be corrected.
+Any 30-minute design tool copy is stale and must be corrected.
 
 ---
 
@@ -2997,7 +3093,6 @@ Global States
 - PENDING_REVIEW
 
 ## Media States
-
 - UPLOADING
 - ACTIVE
 - PENDING
@@ -3361,7 +3456,7 @@ Never declare 100% PASS merely because frames exist.
 
 ---
 
-# 21. HISTORICAL PENPOT REFERENCE — NON-CONSTRUCTIONAL
+# 21. HISTORICAL design tool REFERENCE — NON-CONSTRUCTIONAL
 
 ## Historical artifacts to inspect only
 
@@ -3425,7 +3520,7 @@ Never declare 100% PASS merely because frames exist.
 
 ---
 
-# 22. GREENFIELD REQUIRED PENPOT CONSTRUCTION TARGETS
+# 22. GREENFIELD REQUIRED design tool CONSTRUCTION TARGETS
 
 ## P0 — Build Targets
 
@@ -3469,12 +3564,12 @@ Never declare 100% PASS merely because frames exist.
 
 | Topic | Existing Source | Current Canonical Direction | Design Action |
 |---|---|---|---|
-| Vendor acceptance | Penpot contains 30m | 120 working minutes / 2h | Replace all stale 30m references |
-| OTP | Older Penpot/spec has 5/6-box OTP | Technical auth contract states 4-digit | Canonicalize design to auth contract; keep conflict recorded until verified |
-| Settlement | Penpot contains guarantee-like wording | Neutral settlement visibility | Replace guarantee language |
+| Vendor acceptance | design tool contains 30m | 120 working minutes / 2h | Replace all stale 30m references |
+| OTP | Older design tool/spec has 5/6-box OTP | Technical auth contract states 4-digit | Canonicalize design to auth contract; keep conflict recorded until verified |
+| Settlement | design tool contains guarantee-like wording | Neutral settlement visibility | Replace guarantee language |
 | Driver | Some older architecture/test references mention Driver App | Wave 01 explicitly says no full Driver App in MVP | Keep lightweight handoff surface only |
 | Offline | FA-05 implies richer offline flow | Rich offline sync is P2 | Constrain MVP to preserved input/retry/sync feedback |
-| QA | Existing Penpot QA claims all pages passed | New architecture introduces uncovered capabilities | Reopen QA |
+| QA | Existing design tool QA claims all pages passed | New architecture introduces uncovered capabilities | Reopen QA |
 | Small text | Many 9–11px samples | Use larger UI text by default | Review and justify exceptions |
 | RTL | Many Persian text nodes structurally use LTR paragraph flags | Mixed-direction correctness required | Visual QA all mixed data |
 
@@ -3482,7 +3577,7 @@ Never declare 100% PASS merely because frames exist.
 
 # 24. SCREEN RECORD SCHEMA
 
-Every future Penpot screen in this project must be documented with this record:
+Every future design tool screen in this project must be documented with this record:
 
 ```
 SCREEN
@@ -3509,7 +3604,7 @@ SCREEN
 ├── Desktop behavior
 ├── Accessibility
 ├── Prototype coverage
-├── Existing Penpot board
+├── Existing design tool board
 ├── Required new board
 ├── Frontend route / contract
 ├── QA status
@@ -3605,7 +3700,7 @@ This makes the tree more useful than a flat sitemap.
 
 ---
 
-# 29. WHAT PENPOT MUST NEVER BECOME
+# 29. WHAT design tool MUST NEVER BECOME
 
 Do not let the design accidentally become:
 
@@ -3623,9 +3718,9 @@ Do not let the design accidentally become:
 
 ---
 
-# 30. FINAL BUILD ORDER FOR PENPOT — GREENFIELD
+# 30. FINAL BUILD ORDER FOR design tool — GREENFIELD
 
-The following is the **construction order for an empty Penpot file**. It supersedes any migration-oriented interpretation of the earlier build order.
+The following is the **construction order for an empty design workspace**. It supersedes any migration-oriented interpretation of the earlier build order.
 
 ## WAVE-00 — Empty File Preflight
 1. Verify target file identity.
@@ -3755,15 +3850,15 @@ Core transaction و failure branches قابل تست باشند.
 
 این فایل باید به‌عنوان **درخت مادر طراحی POL** در نظر گرفته شود.
 
-Penpot نباید فقط مجموعه‌ای از mockupها باشد.
+design tool نباید فقط مجموعه‌ای از mockupها باشد.
 
-Penpot باید یک representation بصری از این زنجیره باشد:
+design tool باید یک representation بصری از این زنجیره باشد:
 
 **Business Capability → Persona → Surface → Screen → Section → Component → State → Action → Permission → Data → API → Domain Event → Audit → Prototype → QA**
 
-بنابراین، هر چیزی که در این زنجیره وجود دارد اما در Penpot نمایش داده نشده، یک **Design Gap** است.
+بنابراین، هر چیزی که در این زنجیره وجود دارد اما در design tool نمایش داده نشده، یک **Design Gap** است.
 
-و هر چیزی که در Penpot وجود دارد اما در این زنجیره جای واقعی ندارد، یک **Unsupported / Unmapped Artifact** است.
+و هر چیزی که در design tool وجود دارد اما در این زنجیره جای واقعی ندارد، یک **Unsupported / Unmapped Artifact** است.
 
 ---
 
@@ -3784,7 +3879,7 @@ Penpot باید یک representation بصری از این زنجیره باشد:
 11. prototype را update کن.
 12. QA را reopen کن.
 
-هیچ feature جدیدی نباید مستقیماً و بدون به‌روزرسانی این tree وارد Penpot شود.
+هیچ feature جدیدی نباید مستقیماً و بدون به‌روزرسانی این tree وارد design tool شود.
 
 ---
 
@@ -3810,23 +3905,23 @@ Penpot باید یک representation بصری از این زنجیره باشد:
 
 # 35.5. GREENFIELD BUILD STATUS
 
-This Master Tree is optimized for a **new, empty Penpot file**.
+This Master Tree is optimized for a **new, empty design tool file**.
 
-It does not certify that the target Penpot file is already built.
+It does not certify that the target design tool file is already built.
 
 The build must begin at WAVE-00 and advance only through persisted, evidenced checkpoints.
 
-Historical Penpot artifacts must remain classified as evidence/historical unless explicitly rebound to a current canonical node after verification.
+Historical design artifacts must remain classified as evidence/historical unless explicitly rebound to a current canonical node after verification.
 
 # 35. DOCUMENT STATUS
 
 **Status:** Active.
 
-**Interpretation:** This file is the canonical planning and traceability layer for the next Penpot completion wave. It does not claim that all listed screens already exist.
+**Interpretation:** This file is the canonical planning and traceability layer for the next design tool completion wave. It does not claim that all listed screens already exist.
 
-**Primary next action:** Create the empty target Penpot file, run WAVE-00 preflight, then construct it from `58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`; only after new artifacts persist should their exact IDs/revisions be written back into the Master Tree.
+**Primary next action:** Create the empty target design tool file, run WAVE-00 preflight, then construct it from `58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`; only after new artifacts persist should their exact IDs/revisions be written back into the Master Tree.
 
-**Critical unresolved source conflicts:** OTP length representation, historical Driver App references, richer offline implications, and other stale Penpot wording must remain visible until canonicalized by the governing runtime/API contract.
+**Critical unresolved source conflicts:** OTP length representation, historical Driver App references, richer offline implications, and other stale design tool wording must remain visible until canonicalized by the governing runtime/API contract.
 
 
 ---
@@ -3998,7 +4093,6 @@ Surface الزاماً معادل Role نیست.
 باشد.
 
 ---
-
 ## 37.7 Screen
 
 یک destination یا stateful interface مستقل.
@@ -4997,7 +5091,6 @@ Get help with context attached.
 # 44. VENDOR — SCREEN-BY-SCREEN ROLE SPECIFICATION
 
 ## VD-01 Inventory / Price
-
 ### Actor
 Vendor Owner / authorized staff.
 
@@ -5559,11 +5652,11 @@ The design tree must never represent UI loading as a business order state.
 
 ---
 
-# 54. PENPOT AUDIT FINDINGS
+# 54. design tool AUDIT FINDINGS
 
 ## Finding 1 — OTP component conflict
 
-Current Penpot contains:
+Current design tool contains:
 
 `01 — Components / Form Inputs, Stepper & 5-Digit OTP`
 
@@ -5642,7 +5735,7 @@ until the new capabilities are audited.
 
 ---
 
-## Finding 6 — Current Penpot top-level artifact hygiene
+## Finding 6 — Current design tool top-level artifact hygiene
 
 The inspected export contains approximately:
 
@@ -5654,7 +5747,7 @@ The generic artifacts must be reviewed and removed or mapped.
 
 ---
 
-# 55. PENPOT CONSTRUCTION RULES — MICRO LEVEL
+# 55. design tool CONSTRUCTION RULES — MICRO LEVEL
 
 When building a new screen:
 
@@ -5704,7 +5797,7 @@ A screen is incomplete if Steps 6–12 are missing.
 
 # 56. DATA FIDELITY RULE
 
-Mock values in Penpot must resemble canonical domain values.
+Mock values in design tool must resemble canonical domain values.
 
 Examples:
 
@@ -5992,27 +6085,26 @@ Only after all are answered should the Screen be marked fully mapped.
 13. Permission / Authorization map
 14. API / Data map
 15. Design System / Token / Component map
-16. Penpot frame-to-tree IDs
+16. design artifact-to-tree IDs
 17. Prototype coverage
 18. QA evidence
 19. Architecture Decision / contradiction ledger
 
 The current document now defines the semantic vocabulary and the multi-view methodology needed for these expansions.
 
-
 ---
 
-# 2.6. GITHUB + PENPOT DEEP AUDIT — VERSION 3 EXPANSION
+# 2.6. GITHUB + design tool DEEP AUDIT — VERSION 3 EXPANSION
 
 ## 2.6.1 Authority Registry
-Version 3 is based on direct comparison with the active POL architecture branch, current Penpot, frontend route/contract map, product/design specifications, and governance decisions.
+Version 3 is based on direct comparison with the active POL architecture branch, current design artifact, frontend route/contract map, product/design specifications, and governance decisions.
 
 Mandatory authority classes:
 Governance: CURRENT_SOURCE_OF_TRUTH, DECISION_REGISTER, PRODUCT_ARCHITECTURE_EVOLUTION_WAVE_01, BRAND_ARCHITECTURE.
 Product: PRD, MVP_Definition, Roles_and_Permissions, USER_PROFILE_UX_SPEC, Technical_Architecture_Spec, API_Contracts, Order_Lifecycle.
 Domain/Data: DOMAIN_MODEL, Data_Schema, MULTI_VENDOR_ORDERING_MODEL, CATALOG_PRODUCT_MASTER, INVENTORY_MODEL, PRODUCT_MEDIA_MODEL, IDENTITY_AND_MEMBERSHIP, Master_SKU_Import_Audit, Event_Architecture.
 Operations: Fulfillment, Payments_and_Settlement, Support_and_Disputes, notification domain/event matrix, SLA/work-calendar definitions, Vendor Operations.
-Design/Implementation: Navigation IA, Vendor UX, Design Decision Register, screen specifications, frontend route contract map, current Penpot.
+Design/Implementation: Navigation IA, Vendor UX, Design Decision Register, screen specifications, frontend route contract map, current design artifact.
 Pilot/Evidence: Pilot Strategy, KPIs, Success Criteria, research assumptions and evidence register.
 
 Rule: an active source-of-truth domain with no Master Tree mapping is a traceability gap.
@@ -6058,14 +6150,14 @@ Rule: an active source-of-truth domain with no Master Tree mapping is a traceabi
 | NFR/resilience | PRD NFR | Partial | Measurable quality-attribute view |
 
 ## 2.6.3 Canonical ID separation
-Logical product identifiers must be distinct from historical Penpot board names.
+Logical product identifiers must be distinct from historical design tool board names.
 
 Use these ID classes:
-CAP = Business Capability; EXP = Experience; JRN = Journey; FLOW = Flow; SCR = Logical Screen; SEC = Section; CMP = Component; ACT = Action; STATE = State; PERM = Permission; ENT = Entity; API = Contract; EVT = Domain Event; AUD = Audit Event; NTF = Notification; PEN = Penpot Artifact; ROUTE = Frontend Route; ADR = Decision; QA = Evidence; MET = Measurement.
+CAP = Business Capability; EXP = Experience; JRN = Journey; FLOW = Flow; SCR = Logical Screen; SEC = Section; CMP = Component; ACT = Action; STATE = State; PERM = Permission; ENT = Entity; API = Contract; EVT = Domain Event; AUD = Audit Event; NTF = Notification; PEN = design tool Artifact; ROUTE = Frontend Route; ADR = Decision; QA = Evidence; MET = Measurement.
 
 Historical IDs such as RT-15 or VD-07 may remain aliases. They must not be used as the sole canonical identifier.
 
-IMPORTANT CONFLICT: Vendor UX documentation assigns V-07 to Daily Inventory Confirmation, while the historical Penpot inventory uses VD-07 for Settings/Staff. The Master Tree must treat these as logical IDs vs artifact IDs and explicitly map the alias.
+IMPORTANT CONFLICT: Vendor UX documentation assigns V-07 to Daily Inventory Confirmation, while the historical design tool inventory uses VD-07 for Settings/Staff. The Master Tree must treat these as logical IDs vs artifact IDs and explicitly map the alias.
 
 ## 2.6.4 Federated Master Tree — 16 coordinated views
 1. Outcome / Strategy / Capability
@@ -6156,7 +6248,7 @@ Known POL scanner UX target: matched-item entry median ≤10 seconds and P95 ≤
 
 ## 2.6.13 Traceability packet
 Every major capability must have a trace packet:
-Requirement → Decision/ADR → Capability → Domain → Data → API → Permission → Penpot → Prototype → Frontend → Test → QA Evidence → Pilot Evidence.
+Requirement → Decision/ADR → Capability → Domain → Data → API → Permission → design tool → Prototype → Frontend → Test → QA Evidence → Pilot Evidence.
 
 ## 2.6.14 Maturity model
 L0 Concept
@@ -6170,7 +6262,7 @@ L7 Verified
 L8 Pilot Observed
 L9 Superseded/Deprecated
 
-A Penpot frame can prove L3 at most. L7 requires QA/test evidence. L8 requires real pilot evidence.
+A design artifact can prove L3 at most. L7 requires QA/test evidence. L8 requires real pilot evidence.
 
 ## 2.6.15 Evidence levels
 SOURCE_VERIFIED; RUNTIME_VERIFIED; DESIGN_VERIFIED; TEST_VERIFIED; PILOT_VERIFIED; INFERRED; OPEN_DECISION.
@@ -6276,7 +6368,7 @@ Nasa's bidirectional traceability guidance shows that forward and backward traci
 **A1 Capability Traceability Coverage** = mapped in-scope capabilities / total in-scope capabilities × 100.
 Mapped means the capability has outcome, owner, actor/persona, relevant view, domain relation and required experience/design destination.
 Recommended POL operating threshold: Green ≥95%, Amber 85–94%, Red <85%. These are internal operating targets, not universal standards.
-**A2 Penpot Design Coverage** = UI-requiring capabilities with canonical Penpot artifact / UI-requiring capabilities ×100.
+**A2 design tool Design Coverage** = UI-requiring capabilities with canonical design artifact / UI-requiring capabilities ×100.
 **A3 API/Runtime Contract Coverage** = UI actions with verified API/domain contract / UI actions requiring backend behavior ×100.
 **A4 Permission Coverage** = protected actions with explicit permission mapping / protected actions ×100. P0 protected actions target 100%.
 **A5 State Coverage** = documented/implemented required states / expected states ×100, reported separately for domain, UI, error and recovery states.
@@ -6286,11 +6378,11 @@ Recommended POL operating threshold: Green ≥95%, Amber 85–94%, Red <85%. The
 **B2 Backward Traceability Coverage** = canonical artifacts with valid upstream source / canonical artifacts ×100.
 **B3 Orphan Node Rate** = orphan canonical nodes / canonical nodes ×100. Target for critical production nodes: 0%.
 **B4 Orphan Edge Rate** = invalid relationship edges / total relationship edges ×100.
-**B5 Unmapped Artifact Rate** = production Penpot artifacts without logical IDs / production artifacts ×100.
+**B5 Unmapped Artifact Rate** = production design artifacts without logical IDs / production artifacts ×100.
 
 ### C — Freshness & Drift
 **C1 Source Freshness** = affected nodes updated after their source-of-truth changed / affected nodes ×100.
-**C2 Stale Design Rate** = production Penpot nodes whose source changed without design update / production Penpot nodes ×100.
+**C2 Stale Design Rate** = production design tool nodes whose source changed without design update / production design tool nodes ×100.
 **C3 Decision Staleness Rate** = active decisions with overdue review or unresolved downstream conflict / active decisions ×100.
 **C4 Architecture Drift Rate** = checked artifacts violating canonical architectural rules / checked artifacts ×100.
 **C5 Contradiction Density** = open source/design conflicts per 100 canonical capabilities, segmented by P0/P1/P2.
@@ -6394,7 +6486,7 @@ Recommended POL operating threshold: Green ≥95%, Amber 85–94%, Red <85%. The
 Targets above are proposed POL operating thresholds, not universal industry standards. They should be baselined after the first real audit and then adjusted by risk.
 
 ## 2.7.5 Anti-KPIs — do not use as primary health metrics
-- raw number of Penpot frames
+- raw number of design artifacts
 - raw number of components
 - raw GitHub commit count
 - number of pages alone
@@ -6986,7 +7078,7 @@ DESIGN_DEFINED
 → PILOT_VERIFIED
 
 Presence of a component file is not proof of complete feature implementation.
-Presence of a Penpot frame is not proof of route readiness.
+Presence of a design artifact is not proof of route readiness.
 A route test is not proof of deployed production readiness.
 
 ## 67.17. OPERATIONAL READINESS / INFRASTRUCTURE EVIDENCE TREE
@@ -6997,8 +7089,7 @@ Deployment:
 - reverse proxy / TLS
 - environment configuration
 - secret management
-- PostgreSQL deployment
-- worker + scheduler
+- PostgreSQL deployment- worker + scheduler
 - migrations
 - health/readiness/liveness
 - staging/pilot environments
@@ -7217,7 +7308,7 @@ DELTA FOUND → §67.12 / §67.13 / §67.14 / §67.20 added
 ### Pass C — Design / Operations / Analytics / Infrastructure
 Checked:
 - PRD guided onboarding
-- Penpot design completeness sources
+- design tool design completeness sources
 - daily inventory
 - field operations
 - vendor reliability
@@ -7241,7 +7332,7 @@ Question set:
 5. Can every KPI resolve to event lineage?
 6. Can every deferred feature be identified?
 7. Can every historical conflict be prevented from becoming active architecture?
-8. Can Penpot completeness be distinguished from frontend/runtime completeness?
+8. Can design tool completeness be distinguished from frontend/runtime completeness?
 9. Can every resolved critical bug be expressed as an invariant?
 
 Result:
@@ -7250,7 +7341,7 @@ NO NEW ACTIONABLE DIMENSION FOUND IN THE CURRENT REVIEWED SOURCE SET.
 ### Closure statement
 Repository Coverage Gate: CLOSED at the current source snapshot.
 
-This is closure of the audited source set, not a guarantee that future commits, new decisions, new migrations, new routes, new research findings or new Penpot changes cannot create new deltas.
+This is closure of the audited source set, not a guarantee that future commits, new decisions, new migrations, new routes, new research findings or new design tool changes cannot create new deltas.
 
 
 ## 67.24. EXACT CAPABILITY LABEL RECONCILIATION
@@ -7381,7 +7472,7 @@ Some repository artifacts are product-critical but are not application screens:
 - deployment/readiness evidence
 - audit/certification evidence
 
-These belong in Measurement / Research / Governance / Operations views and must not be forced into the Penpot screen tree.
+These belong in Measurement / Research / Governance / Operations views and must not be forced into the design tool screen tree.
 
 
 ## 67.28. EXACT STRATEGIC TERMINOLOGY + RESILIENCE ALIASES
@@ -7430,7 +7521,7 @@ Operational evidence sources additionally include the MVP execution contracts fo
 RTO and RPO are readiness-contract dimensions; they are not assumed values unless an authoritative operational decision supplies them.
 
 
-## 67.30. AGENTIC PENPOT DESIGN OPERATING SYSTEM — VERSION 1
+## 67.30. AGENTIC design tool DESIGN OPERATING SYSTEM — VERSION 1
 
 Repository and external research identified a missing layer above the screen tree: the operating system for an AI agent that constructs the design.
 
@@ -7500,7 +7591,7 @@ Failure loop:
 - Never assume API parity with Figma/HTML/CSS.
 - Never silently fake linked component instances.
 - Never hardcode a governed visual value.
-- Never mutate the same Penpot file concurrently from multiple agents.
+- Never mutate the same design tool file concurrently from multiple agents.
 - Never resume from chat memory after context truncation.
 - Never interpret a successful tool return as persistence proof.
 - Never mark a screen complete without structural + visual evidence.
@@ -7540,7 +7631,7 @@ Every wave must have:
 
 ### Definition of Done extension
 
-A screen is not considered complete merely because it exists in Penpot.
+A screen is not considered complete merely because it exists in design tool.
 
 The screen must have:
 - canonical identity
@@ -7567,9 +7658,9 @@ The screen must have:
 
 External research on vibe coding identifies recurring context gaps, asynchronous learning, trust erosion and error-expanding spirals. POL therefore treats context externalization, incremental work and verification as architecture, not prompting style.
 
-Penpot-specific MCP reports also show real API edge cases around large execute calls, page switching, library component instancing and token/property application. These are represented as operational constraints, not informal advice.
+tool-specific MCP reports also show real API edge cases around large execute calls, page switching, library component instancing and token/property application. These are represented as operational constraints, not informal advice.
  
-## 67.31. WHAT WAS MISSING FROM A "START FROM ZERO" PENPOT BUILD
+## 67.31. WHAT WAS MISSING FROM A "START FROM ZERO" design tool BUILD
 
 The previous Master Tree described the product extremely well, but starting from zero with an agent exposed these missing execution primitives:
 
@@ -7585,7 +7676,7 @@ The previous Master Tree described the product extremely well, but starting from
 9. Rollback Contract
 10. Mutation Change Budget
 11. Concurrent-agent Ownership Lock
-12. Known Penpot API Limitation Registry
+12. Known design tool API Limitation Registry
 
 ### P1
 13. Dedicated Agent QA page
@@ -7608,7 +7699,7 @@ These are now part of the Master Tree rather than external working notes.
 
 ## 67.32. FIRST-BUILD CONTROL TREE
 
-From a blank Penpot file, the order is now:
+From a blank design tool file, the order is now:
 
 \`WAVE-00 Agent Preflight\`
 → \`WAVE-01 Foundations\`
@@ -7652,7 +7743,7 @@ Canonical audit source:
 `13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`.
 
 Five independent passes were used:
-1. Agent reliability / Penpot mutation safety
+1. Agent reliability / design tool mutation safety
 2. Product / IA / Service Blueprint / state execution
 3. Human factors / WCAG / Persian RTL / responsive / network resilience
 4. Design system / token / component / visual regression engineering
@@ -7670,7 +7761,7 @@ Every wave receives a Context Package containing:
 - relevant domain/API/data contracts
 - active design node IDs
 - current repository branch and HEAD
-- Penpot file identity and revision
+- design workspace identity and revision
 - target page and node scope
 - accepted assumptions
 - open contradictions
@@ -7684,7 +7775,7 @@ Context Package fields:
 Execution Identity must additionally record:
 `RUN_ID`, `WAVE_ID`, `STEP_SEQ`, `AGENT_RUNTIME_VERSION`, `MODEL_ID`, `SKILL_VERSION`, `WORKFLOW_VERSION`, `MCP_SERVER_ID`, `TOOL_VERSION`.
 
-Never resume a wave from conversational memory alone. Resume from the persisted ledger and revalidate the Context Package against the current repository and Penpot revision.
+Never resume a wave from conversational memory alone. Resume from the persisted ledger and revalidate the Context Package against the current repository and design workspace revision.
 
 ## 67.36. SOURCE PRECEDENCE + TRUST BOUNDARY CONTRACT
 
@@ -7700,7 +7791,7 @@ Every contradiction must be classified before mutation:
 - scope conflict
 - terminology conflict
 - API capability uncertainty
-- Penpot runtime uncertainty
+- design tool runtime uncertainty
 - visual disagreement
 - product decision missing.
 
@@ -7710,8 +7801,8 @@ No majority vote between agents resolves a product conflict. The result remains 
 
 Before the first mutation of a wave, capture an environment fingerprint:
 - repository HEAD
-- Penpot version/revision
-- Penpot file identity
+- design tool version/revision
+- design workspace identity
 - active page
 - plugin/MCP connection state
 - target MCP server
@@ -7793,7 +7884,7 @@ Provenance is not automatically exposed as raw technical metadata to the end use
 Verification must distinguish four evidence dimensions:
 
 1. Semantic diff — did meaning, state, content or rule mapping change?
-2. Structural diff — did the Penpot object tree, component linkage, tokens or page structure change as intended?
+2. Structural diff — did the design tool object tree, component linkage, tokens or page structure change as intended?
 3. Visual diff — did the rendered appearance change as intended?
 4. Runtime/design diff — did the frontend/runtime representation diverge from the approved design contract?
 
@@ -7846,7 +7937,7 @@ Every high-risk Screen or Journey must define:
 Service-blueprint evidence should be linked for critical operational journeys:
 `Customer/User Action → Frontstage Evidence → Backstage Action → Support Process → System Dependency → Policy/SLA → Evidence`.
 
-This keeps Penpot from becoming only a frontstage illustration of a process whose operational dependencies remain invisible.
+This keeps design tool from becoming only a frontstage illustration of a process whose operational dependencies remain invisible.
 
 ## 67.44. DISCOVERY / SEARCH / TABLE / BULK CONTRACT
 
@@ -7998,7 +8089,6 @@ The federated tree now distinguishes:
 - dynamic interaction/runtime flow
 - deployment/environment topology
 - decision record.
-
 Decision records should capture:
 - context/problem
 - alternatives considered
@@ -8068,7 +8158,7 @@ A control is closed only when its specification, owner, evidence type and lifecy
 
 ## 67.51. REVISED FIRST-BUILD CONTROL TREE
 
-From a blank Penpot file, the recommended order is now:
+From a blank design tool file, the recommended order is now:
 
 `WAVE-00 Agent Preflight + Context Package`
 → `WAVE-01 Foundations + RTL/A11Y/Network contracts`
@@ -8088,13 +8178,13 @@ Retailer Home remains prohibited as a starting point unless the preceding founda
 
 ## 67.52. RESEARCH TRACEABILITY — FIVE-PASS SATURATION
 
-Pass 1: Penpot AI Kit, Penpot MCP/API issue reports, MCP security and vibe-coding reliability → Agent context, atomic mutation, capability probes, trust boundary, persistence proof, diff/evaluator controls.
+Pass 1: design tool AI Kit, design tool MCP/API issue reports, MCP security and vibe-coding reliability → Agent context, atomic mutation, capability probes, trust boundary, persistence proof, diff/evaluator controls.
 
 Pass 2: Service blueprint and IA research plus POL journeys/states/API → task contracts, command contracts, state concurrency, discovery, async, notification and deep-link lifecycles.
 
 Pass 3: WCAG 2.2 and W3C bidirectional-text guidance plus current POL RTL/network requirements → semantic accessibility, direction metadata, bidi corpus, responsive/device and network capability contracts.
 
-Pass 4: Design Tokens Community Group plus Penpot design-system model → token lifecycle, component maturity, golden coverage, visual baseline and design-code token mapping.
+Pass 4: Design Tokens Community Group plus design tool design-system model → token lifecycle, component maturity, golden coverage, visual baseline and design-code token mapping.
 
 Pass 5: API/event/data/security/analytics/governance review plus MCP security and ADR practice → API/UI depth, provenance, correlation, analytics tracking plan, decision lifecycle, waivers and change impact.
 
@@ -8105,7 +8195,7 @@ Full evidence register:
 
 For the current audited source snapshot, no additional product capability should be created merely to make the Master Tree appear more complete. The remaining additions are primarily control-plane, state, evidence, accessibility, resilience and governance contracts.
 
-This is a saturation statement for the current branch snapshot only. New commits, new product decisions, new APIs, new migrations, new research evidence or new Penpot changes must reopen the relevant closure gates through the existing Source of Truth process.
+This is a saturation statement for the current branch snapshot only. New commits, new product decisions, new APIs, new migrations, new research evidence or new design tool changes must reopen the relevant closure gates through the existing Source of Truth process.
 ---
 ## 67.54. CAPABILITY → SCREEN / WORKFLOW CLOSURE — SECOND-ORDER AUDIT
 
@@ -8135,7 +8225,7 @@ The Capability Coverage Matrix is not by itself proof of a complete user experie
 - OP-27 — SLA Calendar / Override Review
 - OP-28 — Notification Preference & Delivery Control
 
-These are closure targets, not a declaration that all are immediately navigational MVP screens. Each must be classified as USER_FACING_SCREEN, SHARED_PATTERN, OPS_WORKFLOW, ADMIN_WORKFLOW or NON_UI_COMMAND before Penpot construction.
+These are closure targets, not a declaration that all are immediately navigational MVP screens. Each must be classified as USER_FACING_SCREEN, SHARED_PATTERN, OPS_WORKFLOW, ADMIN_WORKFLOW or NON_UI_COMMAND before design tool construction.
 
 ### Claim / Promise Contract
 Public and high-risk operational copy must resolve:
@@ -8219,7 +8309,7 @@ The validator must fail closure when:
 - a critical write lacks preconditions/postconditions;
 - expected state transition is undefined;
 - recovery is missing on a critical failure path;
-- Penpot persistence is unproven;
+- design tool persistence is unproven;
 - a critical checkpoint lacks semantic/structural/visual evidence;
 - a waived dimension lacks a waiver;
 - source impact is known but re-verification is not assigned;
@@ -8237,7 +8327,7 @@ Every Design Release should produce an immutable snapshot containing:
 - Master Tree version
 - executable schema version
 - repository HEAD
-- Penpot file/revision
+- design workspace/revision
 - token/component baseline
 - closure matrix summary
 - open defects
@@ -8250,7 +8340,7 @@ Every Design Release should produce an immutable snapshot containing:
 A release snapshot is the unit of comparison for future design drift.
 
 
-## 67.65. MASTER TREE v4.0 — CANONICAL REGISTRY KERNEL
+## 67.65. MASTER TREE v4.3 — CANONICAL REGISTRY KERNEL
 
 ### 67.65.1 Canonicality classes
 
@@ -8277,7 +8367,7 @@ A historical document may remain in the repository without remaining an active p
 
 Repeated logical screen definitions are projections, not independent nodes.
 
-Example: RT-15 OrderGroup Detail may appear in the Retailer surface tree, semantic role view, journey view, prototype view, QA view and Penpot artifact view. All references resolve to the same canonical node ID.
+Example: RT-15 OrderGroup Detail may appear in the Retailer surface tree, semantic role view, journey view, prototype view, QA view and design artifact view. All references resolve to the same canonical node ID.
 
 A projection may add view-specific information but may not redefine canonical behavior.
 
@@ -8351,16 +8441,16 @@ No relationship is inferred from textual proximity alone.
 
 ---
 
-## 67.69. EXACT PENPOT ARTIFACT BINDING
+## 67.69. EXACT design tool ARTIFACT BINDING
 
-For a Penpot-backed node, the binding record SHOULD resolve:
+For a artifact-backed node, the binding record SHOULD resolve:
 
-- Penpot file identity
+- design workspace identity
 - page identity
 - board/frame identity
 - component identity where applicable
 - variant identity where applicable
-- Penpot revision
+- design workspace revision
 - export/screenshot reference
 - persistence status
 - verification status
@@ -8412,20 +8502,20 @@ Canonical maturity ladder:
 
 L0_CONCEPT → L1_SPECIFIED → L2_MAPPED → L3_DESIGNED → L4_PROTOTYPED → L5_CONTRACTED → L6_IMPLEMENTED → L7_VERIFIED → L8_PILOT_OBSERVED → L9_SUPERSEDED_OR_DEPRECATED
 
-A Penpot frame alone cannot establish L7 or L8.
+A design artifact alone cannot establish L7 or L8.
 
 ---
 
 ## 67.72. RELEASE SNAPSHOT V4
 
-A Design Release Snapshot is mandatory before a major Penpot release is called closed.
+A Design Release Snapshot is mandatory before a major design tool release is called closed.
 
 Required fields:
 
 - Master Tree version
 - node schema version
 - repository HEAD
-- Penpot file/revision
+- design workspace/revision
 - token baseline
 - component baseline
 - screen registry hash/count
@@ -8447,7 +8537,7 @@ The snapshot is immutable after approval.
 The following checks should become CI/agent validators:
 
 1. FT-01 Orphan Node — active canonical node lacks an authority path.
-2. FT-02 Orphan Artifact — Penpot artifact cannot resolve to a classified node.
+2. FT-02 Orphan Artifact — design artifact cannot resolve to a classified node.
 3. FT-03 Protected Action — protected action lacks permission mapping.
 4. FT-04 Theme Parity — applicable production visual node lacks Night.
 5. FT-05 Stale Source — active source changed without re-verification set.
@@ -8473,7 +8563,7 @@ For one node, the preferred packet is:
 2. active decisions
 3. node record
 4. applicable domain/API/data sources
-5. current Penpot artifact binding
+5. current design artifact binding
 6. known contradictions
 7. closure profile
 8. acceptance criteria
@@ -8555,7 +8645,7 @@ The Master Tree itself is considered v4-complete only when:
 - closure profiles exist
 - evidence is multidimensional
 - relationship cardinality is modeled
-- Penpot artifact identity is explicit
+- design artifact identity is explicit
 - source health exists
 - release snapshot exists
 - fitness functions are defined
@@ -8622,7 +8712,7 @@ A screen/component cannot be marked `VISUAL_VERIFIED` when the applicable Night 
 
 Night is a semantic theme, not a color inversion. Components retain the same anatomy, semantics, states, interactions, permissions and content hierarchy while consuming Night semantic tokens.
 
-### Required coverage across the Penpot page model
+### Required coverage across the design tool page model
 
 1. 00 — Foundations
 2. 01 — Components
@@ -8716,7 +8806,7 @@ Packet order:
 2. applicable decisions
 3. node-specific product/domain/API/data sources
 4. Master Tree node contract
-5. current Penpot structure
+5. current current artifact structure
 6. known API limitations
 7. current open contradictions
 8. acceptance criteria
@@ -8726,95 +8816,100 @@ Packet order:
 This reduces context overload and makes source precedence explicit.
 
 
-## 67.79. GREENFIELD EMPTY-FILE BUILD CONTRACT — VERSION 4.1
+## 67.79. TOOL-AGNOSTIC EMPTY-WORKSPACE BUILD CONTRACT — VERSION 4.3
 
 ### 67.79.1 Build mode
 
-`BUILD_MODE = GREENFIELD_EMPTY_FILE`
+`BUILD_MODE = TOOL_AGNOSTIC_GREENFIELD`
 
-This is the default execution mode for the current Master Tree unless an explicit migration profile is registered.
+The default execution mode is a clean implementation workspace unless an explicit migration profile is registered.
 
-### 67.79.2 Penpot baseline policy
+### 67.79.2 Workspace baseline policy
 
-The target Penpot file starts from an empty-state verification.
+Every execution channel MUST establish its initial state before mutation:
+- workspace/project identity;
+- current revision or commit;
+- observable artifact counts;
+- available libraries/dependencies;
+- tool/agent capability probe;
+- repository HEAD;
+- Master Tree version;
+- executable schema version;
+- applicable acceptance profile.
 
-Historical Penpot is:
+A historical artifact is evidence, not the target baseline.
 
-- evidence;
-- contradiction source;
-- naming/history reference;
-- visual research material.
+### 67.79.3 Canonical workspace outputs
 
-Historical Penpot is NOT:
+The implementation channel must converge to the canonical product outputs:
+- Foundations;
+- Components;
+- Shared UX;
+- States & Patterns;
+- Product surfaces;
+- Prototypes / Flows;
+- QA evidence;
+- Release snapshot.
 
-- component source of truth;
-- token source of truth;
-- page architecture source of truth;
-- screen implementation baseline.
-
-### 67.79.3 Required page architecture
-
-The new file must converge to:
-
-`P00 Foundations`
-`P01 Components`
-`P02 Shared UX`
-`P03 States & Patterns`
-`P04 Retailer`
-`P05 Vendor`
-`P06 Operations`
-`P07 Field Activator`
-`P08 Corporate`
-`P09 Prototypes & Flows`
-`P10 Design QA`
-`P99 Agent QA & Golden Evals`
+These are logical outputs, not mandatory pages, files, or frames.
 
 ### 67.79.4 Dependency-first construction
 
 The build graph is:
 
-`Foundations → Components → Patterns → Golden Screens → Product Screens → Prototypes → QA`
+`Foundations → Components → Patterns → Golden Experiences → Product Surfaces → Prototypes/Flows → QA → Release`
 
-A downstream screen cannot be declared structurally complete if it introduces an unregistered global dependency.
+A downstream output cannot be declared complete when it invents an unregistered global dependency.
 
-### 67.79.5 Greenfield artifact maturity
+### 67.79.5 Artifact maturity
 
-A new Penpot artifact advances independently through:
+Every implementation artifact advances independently through:
 
-`PLANNED → CREATED → PERSISTED → STRUCTURALLY_VERIFIED → VISUALLY_VERIFIED`
+`PLANNED → CREATED → PERSISTED → STRUCTURALLY_VERIFIED → BEHAVIORALLY_VERIFIED → VISUALLY_VERIFIED → RELEASE_BOUND`
 
-No stage may be skipped in evidence.
+For non-visual artifacts, only applicable stages are required.
 
-### 67.79.6 Empty-file first checkpoint
+### 67.79.6 Tool capability probe
 
-Before the first mutation, record:
+Before mutation, the agent/operator MUST determine whether the chosen channel supports:
+- deterministic creation/editing;
+- reusable components or code abstractions;
+- variants/state modeling;
+- token/variable management;
+- export/import;
+- persistence;
+- revision history;
+- structural inspection;
+- automated or semi-automated validation.
 
-- Penpot file identity;
-- initial revision;
-- page count;
-- meaningful object count;
-- token/component observability;
-- repository HEAD;
-- Master Tree version;
-- build profile version;
-- agent capability probe result.
+Unsupported capabilities must be recorded as explicit gaps; they must not be simulated as completed.
 
-### 67.79.7 Current Penpot is not the target baseline
+### 67.79.7 Tool adapter principle
 
-The current historical Penpot snapshot is retained only for audit/history. No "retain existing" step should appear in the greenfield construction order.
+Each execution channel SHALL expose an adapter contract:
 
-### 67.79.8 Dedicated agent-evaluation page
+`Tool Input → Canonical Artifact Model → Deterministic Mutation → Verification Evidence`
 
-The greenfield file includes `P99 — Agent QA & Golden Evals` for golden components, golden screens, structural probes, persistence probes and visual evaluation evidence.
+The adapter is disposable. The canonical artifact model is not.
 
-This page is not a product surface and must not leak into runtime navigation.
+### 67.79.8 Interchangeability gate
 
+Two different tools are equivalent for a given task only when both can satisfy the same:
+- canonical node bindings;
+- component/variant contracts;
+- token semantics;
+- states and transitions;
+- responsive/platform rules;
+- accessibility/RTL requirements;
+- evidence requirements;
+- release acceptance criteria.
 
+Similarity of screenshots or source files is not sufficient.
 
 
 ## 67.80. DESIGN APPROVAL → ENGINEERING HANDOFF CONTROL PLANE
 
-Penpot approval is a design milestone, not an implementation milestone.
+Design approval is a product-design milestone, not an implementation milestone.
 
 The Master Tree now distinguishes:
 
@@ -8860,13 +8955,13 @@ The Master Tree MUST preserve the distinction between:
 - CONTRACT_ONLY;
 - DOMAIN_VERIFIED_ONLY.
 
-A Penpot frame must never upgrade an API or runtime status.
+A design artifact must never upgrade an API or runtime status.
 
 ### Component-to-code rule
 
 Canonical visual components must resolve:
 
-Penpot Component → Component Contract → Frontend Component → Test Fixture
+Design Component Artifact → Component Contract → Frontend Component → Test Fixture
 
 ### Token-to-code rule
 
@@ -8885,4 +8980,3 @@ Authoritative handoff contract:
 Final audit:
 
 13_PRODUCT_DESIGN/60_POL_FINAL_DESIGN_TO_BUILD_READINESS_AUDIT_2026-09-21.md
-
