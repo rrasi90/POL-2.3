@@ -2,7 +2,7 @@
 ## Senior Design Engineering Operating System for POL Penpot Construction
 
 **Document ID:** `POL-DESIGN-AGENT-001`  
-**Version:** `1.3.0`  
+**Version:** `1.4.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE / DESIGN-EXECUTION CONTROL / RESEARCH-BACKED  
 **Applies to:** Penpot + MCP + AI Agent + POL Master Tree + GitHub design specifications
@@ -50,6 +50,28 @@ For every applicable visual mutation the agent MUST:
 A Night artifact cannot be generated merely by applying an invert/filter operation to the Light artifact.
 
 The agent must treat a missing Night variant as an incomplete visual mutation unless the node is explicitly theme-not-applicable.
+
+
+# MASTER TREE V4 EXECUTION BOUNDARY
+
+The agent operates on the Master Tree as a canonical registry, not as a free-form document.
+
+Before mutation:
+
+1. resolve canonical node identity;
+2. resolve source authority and source health;
+3. resolve closure profile;
+4. resolve current artifact binding;
+5. resolve change-impact set;
+6. define mutation intent;
+7. apply one logical mutation;
+8. prove persistence;
+9. verify semantic, structural and visual evidence;
+10. update evidence and maturity separately from lifecycle.
+
+Repeated IDs in derived views are references, not new nodes.
+
+A historical or superseded source must never silently become the active design authority.
 
 # 1. Agent Failure Model
 
