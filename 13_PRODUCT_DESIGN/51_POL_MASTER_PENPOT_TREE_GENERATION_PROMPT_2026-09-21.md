@@ -1,7 +1,7 @@
 # POL — Master Prompt for Generating / Updating the Penpot Product Design Tree
 
 **Prompt ID:** `POL-PROMPT-DESIGN-TREE-001`  
-**Version:** `2.3.0`  
+**Version:** `3.0.0`  
 **Date:** 2026-09-21  
 **Target Repository:** `rrasi90/POL-2.3`  
 **Target Branch:** `product-architecture-evolution-2026-09-20`
@@ -61,6 +61,36 @@ Mandatory rules:
 8. Validate RTL/bidi, content stress and accessibility independently in both themes.
 9. A visual checkpoint is incomplete until both applicable theme variants are structurally persisted and visually inspected.
 10. Do not change product/domain/API/permission/financial semantics to satisfy visual preferences.
+
+
+# MASTER TREE V4 REGISTRY OPERATING CONTRACT
+
+Before generating or modifying any design node, treat Master Tree v4 as a canonical registry with federated views.
+
+Mandatory distinctions:
+
+- canonical node vs view projection;
+- lifecycle vs maturity;
+- semantic truth vs Penpot artifact;
+- source authority vs historical evidence;
+- domain event vs analytics event;
+- capability presence vs design/runtime closure;
+- Light/Night theme vs legacy Dark alias.
+
+For every visual node, resolve:
+
+Visual Direction = PRECISION_COMMERCE
+Theme Coverage = LIGHT_AND_NIGHT unless documented not-applicable
+Density Profile = surface-appropriate
+Visual Token References = semantic tokens
+Artifact Binding = exact Penpot artifact/revision where available
+Closure Profile = node-type-specific
+
+Never treat repeated screen IDs as separate canonical nodes.
+
+Never let a derived view override a canonical node.
+
+Never infer closure from frame existence, screenshot existence or successful tool output alone.
 
 # 1. AUTHORITATIVE SOURCES
 
@@ -1406,3 +1436,39 @@ For every generated or updated canonical node:
 9. never infer closure from frame existence alone.
 
 Produce a Design Release Snapshot before declaring a wave complete.
+
+
+## V4 CANONICAL NODE SOURCE PACKET
+
+For every mutation, load a bounded packet:
+
+1. active authority source;
+2. applicable decisions;
+3. canonical node record;
+4. applicable product/domain/API/data sources;
+5. current Penpot artifact binding;
+6. active contradictions;
+7. closure profile;
+8. acceptance criteria;
+9. evidence requirements;
+10. change-impact set.
+
+The full Master Tree is a reference registry, not the default prompt context for every small change.
+
+## V4 FITNESS FUNCTION GATES
+
+Before declaring closure, check:
+
+FT-01 orphan node
+FT-02 orphan artifact
+FT-03 protected action
+FT-04 theme parity
+FT-05 stale source
+FT-06 contract drift
+FT-07 state drift
+FT-08 alias collision
+FT-09 token violation
+FT-10 historical leakage
+FT-11 claim without authority
+FT-12 unsupported offline behavior
+
