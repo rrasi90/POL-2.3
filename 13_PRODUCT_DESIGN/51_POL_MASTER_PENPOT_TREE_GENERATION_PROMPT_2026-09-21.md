@@ -1,7 +1,7 @@
 # POL — Master Prompt for Generating / Updating the Penpot Product Design Tree
 
 **Prompt ID:** `POL-PROMPT-DESIGN-TREE-001`  
-**Version:** `3.0.0`  
+**Version:** `3.1.0`  
 **Date:** 2026-09-21  
 **Target Repository:** `rrasi90/POL-2.3`  
 **Target Branch:** `product-architecture-evolution-2026-09-20`
@@ -91,6 +91,32 @@ Never treat repeated screen IDs as separate canonical nodes.
 Never let a derived view override a canonical node.
 
 Never infer closure from frame existence, screenshot existence or successful tool output alone.
+
+
+# GREENFIELD EMPTY-FILE MODE — MANDATORY
+
+The target Penpot file is completely new and empty.
+
+Do NOT perform migration, cleanup, redesign, or repair of a historical Penpot file.
+
+Historical Penpot is evidence only.
+
+Before the first design mutation:
+
+1. verify file identity and actual empty state;
+2. record initial revision and structural counts;
+3. create RUN_ID and WAVE_ID=WAVE-00;
+4. probe Penpot capabilities;
+5. load the Greenfield Build Profile:
+   `13_PRODUCT_DESIGN/58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`.
+
+Construction order is dependency-first:
+
+`Foundations → Components → Shared Patterns → Golden Screens → Product Surfaces → Prototypes → QA`
+
+The agent must not jump directly to broad product screens because a missing shared dependency discovered later would force uncontrolled rework.
+
+No historical frame, token, component, page or prototype may be copied into the blank file unless explicitly re-authorized as a current artifact by the canonical Master Tree.
 
 # 1. AUTHORITATIVE SOURCES
 
@@ -1362,7 +1388,7 @@ Mandatory:
 15. After context truncation, reconstruct state from RUN_ID + Penpot structure; never continue from chat memory alone.
 16. Record evidence separately for Design Defined, Penpot Built, Prototyped, Frontend Code Present, HTTP Connected, Runtime Verified, Pilot Verified.
 17. Use the dedicated \`99 Agent QA & Golden Evals\` page for golden components, golden screens, probes, audits and visual evidence.
-18. Start a blank-file project with WAVE-00 Agent Preflight, then Foundations, Golden Components, Shared UX and Golden Screens before product screens.
+18. Start a blank-file project with WAVE-00 Agent Preflight, then Foundations, Golden Components, Shared UX, States & Patterns and Golden Screens before product screens. Treat the historical Penpot file as evidence only.
 19. Do not interpret a successful MCP/tool return as proof of persisted design state.
 20. Do not let the agent modify business rules while resolving a visual or structural defect; open a contradiction/decision instead.
 
