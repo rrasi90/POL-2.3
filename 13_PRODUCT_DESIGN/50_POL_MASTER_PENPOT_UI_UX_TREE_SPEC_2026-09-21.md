@@ -2,12 +2,12 @@
 ## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Dark/Light
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `3.5.0`  
+**Version:** `3.6.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL / REPOSITORY-CLOSURE-AUDITED / FIVE-PASS-SATURATED-CONTROL-PLANE  
 **Repository:** `rrasi90/POL-2.3`  
 **Working Branch:** `product-architecture-evolution-2026-09-20`  
-**Primary Intent:** تبدیل معماری محصول، مستندات، APIها، مدل داده، نقش‌ها، state machineها و وضعیت فعلی Penpot به یک درخت واحد و قابل‌ردگیری برای ساخت/تکمیل طراحی.
+**Primary Intent:** تبدیل معماری محصول، مستندات، APIها، مدل داده، نقش‌ها، state machineها و وضعیت فعلی Penpot به یک درخت واحد و قابل‌ردگیری برای ساخت/تکمیل طراحی؛ با **Precision Commerce** به‌عنوان زبان بصری canonical و با پوشش هم‌سطح Light + Night.
 
 ---
 
@@ -618,8 +618,12 @@ NODE
 ├── Audit
 ├── Design Tokens
 ├── Components
+├── Visual Direction
+├── Theme Coverage
 ├── Light Theme
-├── Dark Theme
+├── Night Theme
+├── Density Profile
+├── Visual Token Refs
 ├── Mobile
 ├── Desktop
 ├── Prototype
@@ -8051,7 +8055,7 @@ GTM pitch language, pilot negotiation language and historical examples cannot be
 
 ---
 
-## 67.57. EXECUTABLE MASTER TREE — VERSION 3.5
+## 67.57. EXECUTABLE MASTER TREE — VERSION 3.6
 
 The human-readable Master Tree is now paired with:
 
@@ -8108,6 +8112,145 @@ Every Design Release should produce an immutable snapshot containing:
 - approval record
 
 A release snapshot is the unit of comparison for future design drift.
+
+## 67.60. PRECISION COMMERCE VISUAL DIRECTION — CANONICAL
+
+The canonical POL visual direction is now:
+
+**A — Precision Commerce**
+
+Full visual authority:
+
+- `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+
+The direction governs the presentation layer only. It may not change product/domain/API/permission/financial/MVP truth.
+
+### Required visual DNA
+
+- Professional
+- Precise
+- Reliable
+- Modern
+- Clear
+- Calm
+- Commerce-native
+
+### Required system layers
+
+`Color → Typography → Spacing → Shape → Border → Elevation → Iconography → Imagery → Density → Motion → Responsive → RTL → Theme → QA`
+
+### Explicitly disallowed as default POL language
+
+- arbitrary per-screen colors;
+- mixed-radius systems;
+- strong decorative shadows;
+- uncontrolled gradients;
+- glass-heavy UI;
+- pill-shaped containers used as a default layout primitive;
+- decorative illustration that competes with product/price/action hierarchy.
+
+---
+
+## 67.61. LIGHT + NIGHT THEME CLOSURE
+
+Light and Night are equal first-class design variants.
+
+For every canonical UI node of type:
+
+`SCR | SEC | CMP | PATTERN | PEN`
+
+Theme coverage MUST resolve to one of:
+
+- `LIGHT_AND_NIGHT`
+- `THEME_NOT_APPLICABLE` with an explicit documented reason.
+
+A screen/component cannot be marked `VISUAL_VERIFIED` when the applicable Night variant is missing.
+
+Night is a semantic theme, not a color inversion. Components retain the same anatomy, semantics, states, interactions, permissions and content hierarchy while consuming Night semantic tokens.
+
+### Required coverage across the Penpot page model
+
+1. 00 — Foundations
+2. 01 — Components
+3. 02 — Shared UX
+4. 03 — States & Patterns
+5. 04 — Retailer
+6. 05 — Vendor
+7. 06 — Operations
+8. 07 — Field Activator
+9. 08 — Corporate
+10. 09 — Prototypes & Flows
+11. 10 — Design QA
+
+Every applicable page must contain or reference both theme variants.
+
+---
+
+## 67.62. VISUAL DENSITY CONTRACT
+
+POL uses one visual language with context-sensitive density:
+
+- `D1_SPACIOUS_COMMERCE` — Retailer
+- `D2_BALANCED_OPERATIONS` — Vendor / general Web
+- `D3_DENSE_COMMAND` — Operations
+- `CORPORATE_EDITORIAL` — Corporate
+- `FIELD_PRACTICAL` — Field Activator
+
+Density may change whitespace, row height and information-per-viewport, but may not change core color semantics, typography family, icon language, radius philosophy or brand identity.
+
+---
+
+## 67.63. GOLDEN VISUAL REFERENCE SET
+
+The Precision Commerce reference set is:
+
+- Retailer Home
+- Product Search / Results
+- Product Detail
+- Vendor Storefront
+- Basket
+- Checkout
+- OrderGroup Detail
+- Financial Activity
+- Vendor Dashboard
+- Vendor Catalog
+- Operations Queue
+- Operations Financial Investigation
+- Delivery Handoff
+- Permission Editor
+- Scanner
+- Corporate Landing
+
+Each golden screen requires, where applicable:
+
+- Light
+- Night
+- Mobile
+- Desktop
+- critical UI states
+- visual evidence
+- structural evidence
+
+These golden screens are reference implementations for future screen construction and visual QA; they do not create new business capabilities.
+
+---
+
+## 67.64. VISUAL-TOKEN CONSUMPTION RULE
+
+Canonical components should consume semantic design tokens rather than raw color/spacing/radius values.
+
+Theme aliases MUST resolve through:
+
+`pol.theme.light.*`
+`pol.theme.night.*`
+
+while foundations remain shared.
+
+Raw values belong at the primitive/token layer only.
+
+Any component that bypasses semantic tokens requires an explicit visual waiver and a bounded migration target.
+
+---
 
 ## 67.59. AGENT-CONSUMABLE SOURCE PACKET
 
