@@ -1,7 +1,7 @@
 # POL — Executable Master Tree Schema & Closure Contract
 
 **Document ID:** `POL-DESIGN-SCHEMA-001`  
-**Version:** `1.1.0`  
+**Version:** `2.0.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE / MACHINE-CONSUMABLE DESIGN GOVERNANCE  
 **Repository:** `rrasi90/POL-2.3`  
@@ -22,13 +22,13 @@ This document defines the canonical record shape for:
 - change impact
 - claims/promises
 
-The human-readable Master Tree remains the semantic authority. This schema exists so an agent, validator or CI job can detect incomplete closure instead of inferring completeness from prose.
+The human-readable Master Tree remains the semantic authority. In v4 this document defines the registry kernel so an agent, validator or CI job can detect canonicality, source drift, closure applicability, graph integrity and artifact drift instead of inferring completeness from prose.
 
 ## 2. Canonical node record
 
 Every canonical node should resolve to the following conceptual structure:
 
-`NODE_ID + NODE_TYPE + AUTHORITY + OWNERSHIP + SCOPE + RELATIONSHIPS + CONTRACTS + STATES + EVIDENCE + CLOSURE`
+`NODE_ID + NODE_TYPE + CANONICALITY + AUTHORITY + OWNERSHIP + SCOPE + RELATIONSHIPS + CONTRACTS + STATES + ARTIFACTS + EVIDENCE + CLOSURE`
 
 ### Mandatory identity
 
@@ -262,3 +262,120 @@ This schema does not create new product capabilities.
 It only makes existing product/design/engineering truth explicit and machine-checkable.
 
 For POL, the authoritative business behavior remains the Repository Source of Truth and Decision Register.
+
+
+
+## 13. Master Tree v4 registry contract
+
+### 13.1 Canonicality
+
+Allowed values:
+
+- CANONICAL
+- DERIVED
+- VIEW_PROJECTION
+- ALIAS
+- HISTORICAL
+- EXPERIMENTAL
+
+Only CANONICAL nodes can act as active authority.
+
+### 13.2 Source health
+
+Allowed values:
+
+ACTIVE_CANONICAL, ACTIVE_SUPPORTING, REVIEW_REQUIRED, STALE, HISTORICAL, SUPERSEDED, CONFLICTED, EXPERIMENTAL.
+
+Source health is separate from lifecycle.
+
+### 13.3 Aliases and supersession
+
+An ALIAS resolves to exactly one canonical node.
+
+Superseded nodes retain replacement references and downstream impact.
+
+### 13.4 Closure profiles
+
+The closure vector is global, but applicability is node-type specific.
+
+Every canonical node receives a closure profile that declares which closure dimensions are mandatory, optional or not applicable.
+
+The validator must never interpret NOT_APPLICABLE as a failure.
+
+### 13.5 Evidence cardinality
+
+Evidence is a collection.
+
+A node may have zero-to-many evidence records.
+
+Each record resolves:
+
+dimension, evidence_type, reference, revision, timestamp, evaluator, scope and result.
+
+### 13.6 Relationship cardinality
+
+Relationship edges are a collection.
+
+A node may have zero-to-many typed edges.
+
+No edge may be inferred from textual proximity alone.
+
+### 13.7 Artifact binding
+
+Penpot-backed nodes require explicit artifact bindings when artifact identity is material.
+
+At minimum the binding should preserve:
+
+Penpot file → page → frame/component/variant → revision → persistence status → verification evidence.
+
+### 13.8 Maturity
+
+Maturity and lifecycle are independent:
+
+L0_CONCEPT → L1_SPECIFIED → L2_MAPPED → L3_DESIGNED → L4_PROTOTYPED → L5_CONTRACTED → L6_IMPLEMENTED → L7_VERIFIED → L8_PILOT_OBSERVED → L9_SUPERSEDED_OR_DEPRECATED.
+
+A Penpot frame alone cannot establish runtime or pilot maturity.
+
+### 13.9 Visual contract
+
+For SCR, SEC, CMP, PATTERN and PEN nodes, the machine contract requires:
+
+visual_direction = PRECISION_COMMERCE
+
+theme_coverage = LIGHT_AND_NIGHT unless explicitly theme-not-applicable
+
+density_profile = surface-appropriate profile
+
+visual_token_refs = semantic token references
+
+artifact_bindings = persisted Penpot evidence where applicable.
+
+### 13.10 Fitness functions
+
+The v4 validator should support at least:
+
+FT-01 Orphan Node
+FT-02 Orphan Artifact
+FT-03 Protected Action
+FT-04 Theme Parity
+FT-05 Stale Source
+FT-06 Contract Drift
+FT-07 State Drift
+FT-08 Alias Collision
+FT-09 Token Violation
+FT-10 Historical Leakage
+FT-11 Claim Without Authority
+FT-12 Unsupported Offline
+
+### 13.11 Token interoperability
+
+POL semantic token governance should remain compatible with the Design Tokens Community Group 2025.10 exchange format for future tool/code interoperability.
+
+The external token format is an interchange mechanism; POL semantic names and authority remain project-owned.
+
+### 13.12 Release snapshot
+
+A design release must bind:
+
+Master Tree version + node schema version + repository HEAD + Penpot revision + token baseline + component baseline + closure summary + open defects + waivers + contradiction state + evidence manifest + approval record.
+
