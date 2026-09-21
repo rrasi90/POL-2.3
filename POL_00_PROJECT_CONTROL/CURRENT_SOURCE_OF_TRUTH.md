@@ -141,6 +141,8 @@ The visual authority is:
 - `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
 - `13_PRODUCT_DESIGN/57_POL_MASTER_TREE_DEEP_CRITICAL_AUDIT_2026-09-21.md`
 - `13_PRODUCT_DESIGN/58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`
+- `13_PRODUCT_DESIGN/59_POL_DESIGN_TO_ENGINEERING_HANDOFF_AND_BUILD_READINESS_2026-09-21.md`
+- `13_PRODUCT_DESIGN/60_POL_FINAL_DESIGN_TO_BUILD_READINESS_AUDIT_2026-09-21.md`
 
 Required theme policy: **Light + Night are first-class variants for every applicable canonical screen, section, component, pattern and Penpot artifact.** Night is semantic theming, not color inversion.
 
@@ -148,6 +150,14 @@ The visual system governs appearance, tokens, typography, shape, elevation, dens
 
 
 
+
+### Design Approval → Engineering Readiness — 2026-09-21
+
+The project now explicitly separates DESIGN_APPROVED from ENGINEERING_READY.
+
+Penpot approval certifies the design layer only. Engineering readiness additionally requires action, permission, state, data, API, error/recovery, analytics, platform and test mappings.
+
+Current full-app implementation remains incomplete: Web is partial and Android source is not yet present. These are engineering workstreams, not claims of design failure.
 ### Greenfield Penpot Build Mode — 2026-09-21
 
 The current design execution target is a completely new, empty Penpot file.
@@ -174,7 +184,7 @@ The five-pass design saturation audit is registered as a supporting design-contr
 
 - `13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
 
-The active Master Tree is now Version 4.1.0:
+The active Master Tree is now Version 4.2.0:
 
 - `13_PRODUCT_DESIGN/50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md`
 - `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
