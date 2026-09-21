@@ -54,6 +54,8 @@
 49. `51_POL_MASTER_PENPOT_TREE_GENERATION_PROMPT_2026-09-21.md`
 50. `52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
 51. `53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
+52. `54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
+53. `55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
 
 ## Agent operating assets
 
@@ -67,7 +69,15 @@
 `44_DESIGN_PIPELINE_MASTER_INDEX_V3_2026-09-16.md`
 
 ## Current Master Tree
-`50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` — Version 3.4.0
+`50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` — Version 3.5.0
+
+## Executable Master Tree Schema
+`54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
+
+## Machine-readable Node Schema
+`55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
+
+The human-readable Master Tree and executable schema are co-equal design-control artifacts: the human document defines semantics; the JSON schema defines machine-checkable structure.
 
 ## Agent execution protocol
 `52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md` — Version 1.1.0
