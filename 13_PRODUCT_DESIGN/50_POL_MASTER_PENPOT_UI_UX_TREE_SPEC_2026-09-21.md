@@ -2,7 +2,7 @@
 ## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Dark/Light
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `3.4.0`  
+**Version:** `3.5.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL / REPOSITORY-CLOSURE-AUDITED / FIVE-PASS-SATURATED-CONTROL-PLANE  
 **Repository:** `rrasi90/POL-2.3`  
@@ -8048,3 +8048,82 @@ Every design source is classified as one of:
 - HISTORICAL_REFERENCE.
 
 GTM pitch language, pilot negotiation language and historical examples cannot become canonical UI copy without an approved current source and a Claim/Promise Contract.
+
+---
+
+## 67.57. EXECUTABLE MASTER TREE — VERSION 3.5
+
+The human-readable Master Tree is now paired with:
+
+- `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
+- `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
+
+### Purpose
+
+The schema converts the Master Tree from documentation into a machine-checkable contract.
+
+The validator-facing model is:
+
+`NODE → IDENTITY → AUTHORITY → OWNERSHIP → SCOPE → RELATIONSHIPS → CONTRACTS → STATES → EVIDENCE → CLOSURE`
+
+### Canonical closure vector
+
+`CAPABILITY → OUTCOME → JOURNEY → SCREEN/PATTERN/NON_UI → STATES → ACTION → PERMISSION → DATA → API/BOUNDARY → EVENT/AUDIT/NOTIFICATION → PROTOTYPE → A11Y → RTL → RESPONSIVE → NETWORK → VISUAL → STRUCTURAL → RUNTIME → PILOT`
+
+### Machine validation rules
+
+The validator must fail closure when:
+
+- source authority is missing;
+- a protected action has no permission;
+- a critical write lacks preconditions/postconditions;
+- expected state transition is undefined;
+- recovery is missing on a critical failure path;
+- Penpot persistence is unproven;
+- a critical checkpoint lacks semantic/structural/visual evidence;
+- a waived dimension lacks a waiver;
+- source impact is known but re-verification is not assigned;
+- a public claim has no authoritative source;
+- a capability is closed while a mandatory closure dimension remains OPEN/BLOCKED;
+- CONTRACT_ONLY is represented as runtime verified;
+- unsupported offline/queued behavior is represented as available.
+
+The JSON schema is machine-readable governance, not a new product capability specification.
+
+## 67.58. DESIGN RELEASE SNAPSHOT CONTRACT
+
+Every Design Release should produce an immutable snapshot containing:
+
+- Master Tree version
+- executable schema version
+- repository HEAD
+- Penpot file/revision
+- token/component baseline
+- closure matrix summary
+- open defects
+- waivers
+- contradiction register
+- evidence manifest
+- change-impact summary
+- approval record
+
+A release snapshot is the unit of comparison for future design drift.
+
+## 67.59. AGENT-CONSUMABLE SOURCE PACKET
+
+A design agent should consume a bounded source packet, not the entire repository by default.
+
+Packet order:
+
+1. Source of Truth
+2. applicable decisions
+3. node-specific product/domain/API/data sources
+4. Master Tree node contract
+5. current Penpot structure
+6. known API limitations
+7. current open contradictions
+8. acceptance criteria
+9. executable node schema
+10. evidence required for closure
+
+This reduces context overload and makes source precedence explicit.
