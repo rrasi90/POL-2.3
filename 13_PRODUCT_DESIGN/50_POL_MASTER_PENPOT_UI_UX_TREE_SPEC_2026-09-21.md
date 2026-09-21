@@ -2,7 +2,7 @@
 ## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Dark/Light
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `3.0.0`  
+**Version:** `3.1.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL / GITHUB-AUDITED  
 **Repository:** `rrasi90/POL-2.3`  
