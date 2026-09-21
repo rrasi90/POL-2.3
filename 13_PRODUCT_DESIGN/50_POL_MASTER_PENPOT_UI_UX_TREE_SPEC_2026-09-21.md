@@ -7181,14 +7181,6 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 | 48 | GET `/api/v1/profile/completion` | HTTP_IMPLEMENTED | `profile_completion` |
 | 49 | PUT `/api/v1/membership/profile` | HTTP_IMPLEMENTED | `profile_membership_update` |
 | 50 | GET `/api/v1/profile/context` | HTTP_IMPLEMENTED / SHARED BOUNDARY | `profile_get` |
-| 1 | Catalog/search/category HTTP | 13–15 | undefined |
-| 2 | Pricing/inventory HTTP | 16–18 | undefined |
-| 3 | Order query/timeline + fulfillment/delivery/POD | 20–25 | undefined |
-| 4 | Payment evidence, invoice, settlement, reconciliation | 26–29 | undefined |
-| 5 | Dispute/RMA + support | 30–31 | undefined |
-| 6 | Notification/inbox/provider HTTP | 32–33 | undefined |
-| 7 | Ops/admin/referral/onboarding | 34–35 | undefined |
-| 8 | Analytics/KPI telemetry | 36–37 | undefined |
 
 Endpoint governance:
 - 21 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED.
