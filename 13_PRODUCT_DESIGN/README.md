@@ -54,8 +54,15 @@
 49. `51_POL_MASTER_PENPOT_TREE_GENERATION_PROMPT_2026-09-21.md`
 50. `52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
 51. `53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
-52. `54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
+52. `54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md` — Version 1.1.0
 53. `55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
+54. `56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+
+## Current visual direction
+
+**A — Precision Commerce**  
+Canonical visual system: `56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`  
+Theme policy: **Light + Night for every applicable canonical UI node**.
 
 ## Agent operating assets
 
@@ -63,13 +70,13 @@
 - `.agents/skills/pol-batch-execution/SKILL.md` — bounded design/frontend execution protocol.
 
 ## Official design pipeline
-`Research → Principle → Token → Component → Pattern → Screen → Prototype → QA → Handoff`
+`Research → Visual Direction → Principle → Token → Component → Pattern → Screen → Light/Night Prototype → QA → Handoff`
 
 ## Operational index
 `44_DESIGN_PIPELINE_MASTER_INDEX_V3_2026-09-16.md`
 
 ## Current Master Tree
-`50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` — Version 3.5.0
+`50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` — Version 3.6.0
 
 ## Executable Master Tree Schema
 `54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
@@ -80,7 +87,7 @@
 The human-readable Master Tree and executable schema are co-equal design-control artifacts: the human document defines semantics; the JSON schema defines machine-checkable structure.
 
 ## Agent execution protocol
-`52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md` — Version 1.1.0
+`52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md` — Version 1.3.0
 
 ## Latest deep saturation audit
 `53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
