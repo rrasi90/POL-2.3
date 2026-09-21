@@ -6113,3 +6113,204 @@ NIST Privacy Framework: https://www.nist.gov/privacy-framework
 22. What pilot evidence?
 
 If an item is not applicable, mark N/A explicitly; never silently omit it.
+
+
+---
+
+# 2.7. MASTER TREE KPI & HEALTH MODEL — VERSION 3.1
+
+## 2.7.1 Why the Master Tree needs its own KPIs
+A healthy Master Tree is not defined by node count or number of screens. It must measure scope coverage, bidirectional traceability, orphan artifacts, findability, hierarchy health, design-system reuse, state/permission completeness, service handoffs, drift, freshness, governance and evidence.
+Nasa's bidirectional traceability guidance shows that forward and backward tracing can reveal missing/incomplete functionality and extra/orphan design or software elements. NN/g's tree-testing research uses success rate, directness, time and first-click/path analysis for information architecture. Design-system measurement commonly includes component usage/reuse, adoption, consistency and design-to-code parity. Architecture fitness functions encode architectural intent so drift can be caught continuously.
+
+## 2.7.2 KPI principles
+1. Do not use a single composite Master Tree score.
+2. Coverage is not correctness.
+3. Measure both forward and backward traceability.
+4. Separate structural health metrics from user-behavior metrics.
+5. Every KPI must lead to a diagnostic or action.
+
+## 2.7.3 KPI CATALOG
+
+### A — Scope & Coverage
+**A1 Capability Traceability Coverage** = mapped in-scope capabilities / total in-scope capabilities × 100.
+Mapped means the capability has outcome, owner, actor/persona, relevant view, domain relation and required experience/design destination.
+Recommended POL operating threshold: Green ≥95%, Amber 85–94%, Red <85%. These are internal operating targets, not universal standards.
+**A2 Penpot Design Coverage** = UI-requiring capabilities with canonical Penpot artifact / UI-requiring capabilities ×100.
+**A3 API/Runtime Contract Coverage** = UI actions with verified API/domain contract / UI actions requiring backend behavior ×100.
+**A4 Permission Coverage** = protected actions with explicit permission mapping / protected actions ×100. P0 protected actions target 100%.
+**A5 State Coverage** = documented/implemented required states / expected states ×100, reported separately for domain, UI, error and recovery states.
+
+### B — Bidirectional Traceability
+**B1 Forward Traceability Coverage** = source nodes with valid downstream artifacts / source nodes in scope ×100.
+**B2 Backward Traceability Coverage** = canonical artifacts with valid upstream source / canonical artifacts ×100.
+**B3 Orphan Node Rate** = orphan canonical nodes / canonical nodes ×100. Target for critical production nodes: 0%.
+**B4 Orphan Edge Rate** = invalid relationship edges / total relationship edges ×100.
+**B5 Unmapped Artifact Rate** = production Penpot artifacts without logical IDs / production artifacts ×100.
+
+### C — Freshness & Drift
+**C1 Source Freshness** = affected nodes updated after their source-of-truth changed / affected nodes ×100.
+**C2 Stale Design Rate** = production Penpot nodes whose source changed without design update / production Penpot nodes ×100.
+**C3 Decision Staleness Rate** = active decisions with overdue review or unresolved downstream conflict / active decisions ×100.
+**C4 Architecture Drift Rate** = checked artifacts violating canonical architectural rules / checked artifacts ×100.
+**C5 Contradiction Density** = open source/design conflicts per 100 canonical capabilities, segmented by P0/P1/P2.
+**C6 Mean Time to Resolve Design Contradiction** = average elapsed time from conflict creation to recorded decision.
+
+### D — Information Architecture / Findability
+**D1 Tree-Test Success Rate** = tasks ending at the correct destination / total tree-test tasks ×100.
+**D2 Directness Rate** = successful tasks completed without backtracking / successful tasks ×100.
+**D3 Time-on-Tree** = median and P95 time to locate the target.
+**D4 First-Click Accuracy** = tasks whose first top-level choice is correct / total tasks ×100.
+**D5 Navigation Depth** = median, P95 and max depth to critical destinations.
+**D6 Polyhierarchy Rate** = important nodes intentionally exposed in more than one valid IA location / important nodes ×100.
+
+### E — Tree / Graph Structural Health
+**E1 Maximum Tree Depth** by IA, journey, design-system, domain and permission view.
+**E2 Branching Factor** = average and P95 number of children per parent.
+**E3 Leaf Concentration** = leaf nodes concentrated at the deepest levels / all leaf nodes ×100.
+**E4 Cross-Link Density** = typed cross-view edges / canonical nodes.
+**E5 Dependency Cycle Count** = cycles in graphs where cycles violate the intended architecture.
+**E6 High Fan-Out Node Count** = nodes whose outgoing dependencies exceed an agreed risk threshold.
+**E7 High Fan-In Node Count** = nodes with unusually high downstream dependence; interpret as either valuable shared primitive or blast-radius risk.
+
+### F — Design System Health
+**F1 Component Reuse Rate** = eligible UI instances using approved system components / eligible repeated UI instances ×100.
+**F2 Token Coverage** = measurable style decisions using approved semantic tokens / measurable style decisions ×100; split into color, type, spacing, radius, elevation and motion.
+**F3 Local Component Exception Rate** = local one-off components / total UI components ×100.
+**F4 Detach/Override Rate** = component instances detached or heavily overridden / component instances ×100.
+**F5 Design-Code Parity** = canonical design components/patterns with verified code counterpart / implemented canonical components ×100.
+**F6 Design-System Adoption** = production surfaces using shared system / production surfaces ×100.
+**F7 Time to First Use** = median time from token/component publication to first production use.
+**F8 Design Debt QA Hours** = time spent correcting visual inconsistencies in QA.
+
+### G — State / Interaction Health
+**G1 Critical State Coverage** = critical interactions with complete state matrix / critical interactions ×100.
+**G2 Transition Coverage** = valid state transitions documented/tested / expected valid transitions ×100.
+**G3 Failure-Path Coverage** = critical flows with tested failure/recovery branch / critical flows ×100.
+**G4 Recovery Completion Rate** = failed task attempts successfully recovered / failed attempts ×100.
+
+### H — Service Blueprint Health
+**H1 Frontstage/Backstage Coverage** = critical journey stages with mapped backstage/support work / critical journey stages ×100.
+**H2 Service Handoff Coverage** = critical handoffs with owner, input, output and SLA / critical handoffs ×100.
+**H3 Unowned Handoff Rate** = critical handoffs without responsible owner / critical handoffs ×100. P0 target: 0%.
+**H4 Failure-Recovery Coverage** = service stages with failure and recovery mapping / stages requiring recovery ×100.
+
+### I — Security / IAM Health
+**I1 Protected Action Permission Coverage** = protected actions with explicit permissions / protected actions ×100.
+**I2 Unauthorized Path Coverage** = protected flows with defined 401/403/expired-session/tenant-boundary behavior / protected flows ×100.
+**I3 Tenant Isolation Trace Coverage** = tenant-scoped resources with explicit scope mapping / tenant-scoped resources ×100.
+**I4 Audit Coverage** = sensitive actions with audit-event mapping / sensitive actions ×100.
+
+### J — Accessibility / Theme / Localization
+**J1 Dark Theme Coverage** = production screens with validated dark variant / production screens ×100.
+**J2 RTL/Mixed-Direction Coverage** = applicable production screens with validated Persian + mixed-direction behavior / applicable screens ×100.
+**J3 Accessibility Evidence Coverage** = production screens with current accessibility evidence / production screens ×100.
+**J4 Open Accessibility Violation Rate** = open accessibility findings / audited screens. Track automated and human review separately; automated conformance alone is not sufficient.
+
+### K — Governance / Change Management
+**K1 Source-of-Truth Coverage** = canonical domains with explicit authoritative source / canonical domains ×100.
+**K2 Decision Traceability Coverage** = active decisions linked to affected capabilities/artifacts / active decisions ×100.
+**K3 Supersession Integrity** = superseded decisions with explicit replacement and downstream impact map / superseded decisions ×100.
+**K4 Review Currency** = active nodes reviewed within required review interval / active nodes ×100.
+**K5 Change Impact Coverage** = source changes with identified downstream impact / source changes ×100.
+**K6 Mean Change Propagation Time** = median elapsed time from source change to downstream acknowledgment/update.
+
+### L — Content / Terminology Quality
+**L1 Terminology Consistency** = canonical terms used correctly / audited terminology usages ×100.
+**L2 Copy Contract Coverage** = production states with approved user-facing copy / states requiring copy ×100.
+**L3 Unsupported Claim Rate** = user-facing claims without evidence/source / audited claims. Target 0 for financial/legal/guarantee claims.
+
+### M — Measurement / Analytics Readiness
+**M1 Critical Capability Instrumentation Coverage** = critical capabilities with defined analytics events/properties / critical capabilities ×100.
+**M2 Event-to-KPI Traceability** = KPI definitions linked to measurable events/properties / product KPIs ×100.
+**M3 Analytics Orphan Event Rate** = instrumented events with no mapped product KPI/use / instrumented events ×100.
+
+### N — Implementation / Delivery Health
+**N1 Design-to-Development Handoff Time** = median time from Design Ready to Frontend Start.
+**N2 Design Clarification Rate** = implementation tasks needing clarification after handoff / implementation tasks ×100.
+**N3 Design Rework Rate** = design artifacts materially changed after engineering discovery / implemented design artifacts ×100.
+**N4 Escaped Design Defect Rate** = production defects attributable to design/specification gaps / releases.
+**N5 Change Blast Radius** = median and P95 downstream nodes affected by a source/design change.
+
+## 2.7.4 Core Master Tree Health Set
+| KPI | Purpose | Proposed POL operating target |
+|---|---|---|
+| Capability Traceability Coverage | Scope completeness | ≥95% |
+| Backward Traceability Coverage | Prevent extra/orphan artifacts | ≥98% |
+| Orphan Node Rate | Structural hygiene | 0% critical |
+| Source Freshness | Drift prevention | ≥95% |
+| Open P0 Contradictions | Governance | 0 |
+| Critical State Coverage | Behavioral completeness | 100% |
+| Protected Action Permission Coverage | Security | 100% |
+| Critical Failure-Path Coverage | Recovery readiness | 100% |
+| Component Reuse Rate | Design-system health | ≥80% eligible UI |
+| Token Coverage | Visual consistency | ≥90% measurable values |
+| Design-Code Parity | Handoff integrity | ≥95% |
+| Dark Theme Coverage | Theme completeness | 100% production screens |
+| Accessibility Evidence Coverage | Inclusive QA | 100% production screens |
+| Analytics Instrumentation Coverage | Measurement readiness | 100% critical capabilities |
+| Change Impact Coverage | Change safety | ≥95% |
+
+Targets above are proposed POL operating thresholds, not universal industry standards. They should be baselined after the first real audit and then adjusted by risk.
+
+## 2.7.5 Anti-KPIs — do not use as primary health metrics
+- raw number of Penpot frames
+- raw number of components
+- raw GitHub commit count
+- number of pages alone
+- total design-system components published
+- documentation page views without task context
+- a single subjective quality score
+- NPS as a proxy for architecture health
+- completion percentage without an explicit completion definition.
+
+## 2.7.6 KPI ownership
+Product owns outcome/capability/measurement metrics; Design owns IA/components/content/theme/accessibility; Engineering owns API/runtime/dependency/drift; Security owns IAM/audit/privacy; Operations owns service/SLA/exception/recovery; QA owns state/accessibility/evidence; Pilot/Analytics owns behavior and outcome evidence.
+
+## 2.7.7 KPI cadence
+Continuous/CI: broken edges, orphan IDs, dependency cycles, token violations, component drift, API mapping gaps.
+Per design wave: capability, state, permission, dark/RTL, prototype and decision coverage.
+Per release: design-code parity, clarification rate, escaped design defects, release-slice traceability.
+Pilot/monthly: tree-test success/directness, recovery completion, adoption and operational/user outcome metrics.
+
+## 2.7.8 KPI data contract
+KPI → ID → Definition → Formula → Unit → Population → Scope → Source → Owner → Cadence → Target → Alert Threshold → Baseline → Current Value → Trend → Evidence → Segments → Drilldowns → Action Trigger → Last Updated.
+
+## 2.7.9 KPI segmentation
+Segment by persona, role, organization type, client, surface, capability, journey, pilot/geography, release/wave, severity and P0/P1/P2. Use device/theme segmentation where technically useful.
+
+## 2.7.10 Monthly Master Tree health review
+1. What became stale?
+2. What became orphaned?
+3. Which new capability lacks design?
+4. Which design artifact lacks a source?
+5. Which protected action lacks a permission?
+6. Which mutation lacks an API/domain command?
+7. Which state lacks recovery?
+8. Which service handoff lacks ownership/SLA?
+9. Which component is being duplicated?
+10. Which token is being overridden?
+11. Which dark/RTL/accessibility surface is incomplete?
+12. Which KPI is not instrumented?
+13. Which decision changed but failed to propagate?
+14. Which node has growing blast radius?
+15. Which research result invalidated a design assumption?
+
+## 2.7.11 Recommended Master Tree fitness functions
+1. Every in-scope CAP has an authoritative source.
+2. Every production SCR maps to a CAP/requirement.
+3. Every protected ACT maps to a PERM.
+4. Every UI mutation maps to a canonical API/command.
+5. Every P0 workflow has failure and recovery coverage.
+6. Every production screen has Light/Dark status.
+7. Every applicable Persian screen has RTL/mixed-direction evidence.
+8. Every canonical CMP resolves to one governed source component.
+9. No canonical relationship references a deleted ID.
+10. No prohibited dependency cycle exists.
+11. Every superseded ADR references its replacement.
+12. No active financial/legal screen contains unsupported guarantee claims.
+13. No unknown barcode path auto-creates a canonical Master Product.
+14. No MVP design artifact introduces P2-only Wallet, Full Driver App or rich offline transaction behavior.
+
+## 2.7.12 Interpretation
+A KPI is a signal, not a verdict. High fan-in can be a healthy shared primitive or a blast-radius risk. Low component reuse can reveal a real product-specific need or a missing library variant. High tree depth can reflect useful hierarchy or poor information architecture. Alerts must create diagnostic queues, not automatic redesign decisions.
