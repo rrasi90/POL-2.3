@@ -1226,3 +1226,48 @@ Do not use raw frame count, component count, page count, Git commit count, docum
 
 ## Fitness functions
 Where possible convert critical rules into continuous checks: no orphan production screens; every protected action has a permission; every mutation has an API/command; every P0 flow has failure/recovery; every production screen declares Light/Dark; applicable Persian screens declare RTL evidence; canonical components have one governed source; no broken relationship IDs; no prohibited dependency cycles; no unsupported financial/guarantee claims; unknown barcodes never auto-promote; P2 Wallet/Driver App/rich offline concepts are not activated in MVP.
+
+
+---
+
+## REPOSITORY-WIDE CLOSURE REQUIREMENTS — MASTER TREE V3.2
+
+Before generating or editing any Penpot artifact, the agent must read and reconcile:
+- 13_PRODUCT_DESIGN/50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md
+- POL_00_PROJECT_CONTROL/CURRENT_SOURCE_OF_TRUTH.md
+- POL_00_PROJECT_CONTROL/DECISION_REGISTER.md
+- POL_00_PROJECT_CONTROL/CAPABILITY_COVERAGE_MATRIX.md
+- POL_00_PROJECT_CONTROL/ROUTE_COVERAGE_MATRIX.md
+- POL_00_PROJECT_CONTROL/API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md
+- POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md
+- POL_00_PROJECT_CONTROL/FINAL_TRACEABILITY_MATRIX.md
+- 06_PRODUCT/PRD.md
+- 06_PRODUCT/User_Journeys.md
+- 08_DATA/DOMAIN_MODEL.md
+- 08_DATA/Data_Schema.md
+- 08_DATA/Event_Architecture.md
+- 09_OPERATIONS/Fulfillment.md
+- 09_OPERATIONS/Payments_and_Settlement.md
+- 09_OPERATIONS/Support_and_Disputes.md
+- 10_GO_TO_MARKET/Onboarding.md
+- 11_PILOT/KPIs.md
+- 13_PRODUCT_DESIGN/47_PROJECT_WIDE_BUG_AUDIT_2026-09-16.md
+
+Mandatory V3.2 preservation rules:
+1. Every capability in the current Capability Coverage Matrix must map to a CAP node, including Feedback, Vendor Reliability, SLA Calendar, Admin RBAC and Product Identity Lifecycle.
+2. Post-MVP capabilities must remain explicitly deferred: Credit/BNPL and Dynamic Route Optimization.
+3. Guided In-App Onboarding must be represented as capability + journey + flow + pattern + states + analytics events.
+4. Design-relevant database entities must resolve to the canonical entity registry. Do not confuse conceptual UX labels with database authority.
+5. Every documented API endpoint must resolve to a route family and must retain its route status. CONTRACT_ONLY is never HTTP_IMPLEMENTED.
+6. The current route inventory reports 21 business HTTP routes, 2 operational transport routes and 50 documented business endpoint specifications. Preserve this evidence distinction.
+7. Every FJ-01 through FJ-12 failure scenario must resolve to UI state, domain state, permission, recovery and evidence.
+8. Preserve current authority over historical user-journey contradictions: login OTP is 4-digit; MVP has no full Driver App; vendor timeout is SUBMITTED → CANCELLED with VENDOR_TIMEOUT; settlement wording remains neutral.
+9. Model daily inventory confirmation, field task types, vendor reliability events and SLA working-calendar semantics explicitly.
+10. Model transactional outbox + Python worker + correlation ID + idempotency + retry/dead-letter/provider-attempt traceability.
+11. Distinguish Design Defined, Penpot Built, Prototyped, Frontend Code Present, HTTP Connected, Runtime Verified and Pilot Verified.
+12. Do not turn checklist presence into completion evidence.
+13. Keep pilot KPI lineage explicit: action → event → source entity → metric → cohort/timezone → evidence.
+14. Keep resolved bug invariants traceable to screens, state transitions and QA.
+15. Every historical/legacy document or stale stack reference must be contained and must not override CURRENT_SOURCE_OF_TRUTH or DECISION_REGISTER.
+16. Do not claim that adding a frame to Penpot makes a route, API, runtime, or pilot capability complete.
+17. After every design wave, re-run the repository closure questions in Master Tree §67.22 and update the audit state in §67.23.
