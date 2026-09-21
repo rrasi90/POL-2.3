@@ -83,7 +83,7 @@ Deep critical audit: `57_POL_MASTER_TREE_DEEP_CRITICAL_AUDIT_2026-09-21.md`
 `58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md` — Version 1.0.0
 
 ## Current Master Tree
-`50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` — Version 4.1.0
+`50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` — Version 4.2.0
 
 ## Executable Master Tree Schema
 `54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
@@ -122,3 +122,8 @@ Current target mode: **GREENFIELD_EMPTY_FILE**
 The Master Tree is optimized for constructing a completely new Penpot file from zero. Historical Penpot artifacts are evidence only.
 
 Build profile: `58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`
+
+
+## Engineering handoff
+- 59_POL_DESIGN_TO_ENGINEERING_HANDOFF_AND_BUILD_READINESS_2026-09-21.md — Design Approval → Engineering Ready contract
+- 60_POL_FINAL_DESIGN_TO_BUILD_READINESS_AUDIT_2026-09-21.md — final pre-Penpot-approval audit
