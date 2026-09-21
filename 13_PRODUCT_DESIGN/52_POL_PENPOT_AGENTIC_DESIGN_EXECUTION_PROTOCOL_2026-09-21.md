@@ -1268,3 +1268,23 @@ Context Package
 → Approval
 
 Design release snapshots must preserve the exact Master Tree/schema/Penpot/repository revisions used for approval.
+
+
+### 33.5 v4 fitness-function execution
+
+The agent must treat the following as diagnostic gates where applicable:
+
+FT-01 Orphan Node
+FT-02 Orphan Artifact
+FT-03 Protected Action
+FT-04 Theme Parity
+FT-05 Stale Source
+FT-06 Contract Drift
+FT-07 State Drift
+FT-08 Alias Collision
+FT-09 Token Violation
+FT-10 Historical Leakage
+FT-11 Claim Without Authority
+FT-12 Unsupported Offline
+
+A failing fitness function blocks closure of the affected node until the defect is repaired, explicitly waived, or proven not applicable.
