@@ -1123,3 +1123,71 @@ Use factual coverage metrics only:
 
 Never produce a subjective overall "design score".
 
+
+---
+
+# V3 MASTER TREE EXECUTION ADDENDUM
+
+Before generating or updating the Master Tree, perform a GitHub gap audit against:
+CURRENT_SOURCE_OF_TRUTH, DECISION_REGISTER, PRD, MVP_Definition, Roles_and_Permissions, User Profile model/UX, API contracts, Order Lifecycle, Domain Model, Data Schema, Catalog Master, Inventory, Media, Event Architecture, Fulfillment, Payments/Settlement, Support/Disputes, Navigation IA, Vendor UX, Design Decision Register, Frontend Route Contract Map, Pilot Strategy/KPIs/Success Criteria, and the current Penpot export.
+
+Do not treat the Penpot frame list as the product architecture.
+
+## FEDERATED VIEWS — REQUIRED
+1. Outcome / Strategy / Capability
+2. Stakeholder / Ecosystem
+3. Information Architecture
+4. Experience / Journey / Flow
+5. Service Blueprint / Value Stream
+6. Domain / Bounded Context
+7. Data / Information Governance
+8. System / Software / Deployment
+9. Design System / Brand / Theme
+10. State / Event / Policy
+11. IAM / Security / Privacy
+12. Content / Localization / Accessibility
+13. Measurement / Research / Evidence
+14. Release / User Story Map
+15. Quality Attributes / NFR / Resilience
+16. Traceability / Governance / QA
+
+## CANONICAL ID LAYERS
+CAP, EXP, JRN, FLOW, SCR, SEC, CMP, ACT, STATE, PERM, ENT, API, EVT, AUD, NTF, PEN, ROUTE, ADR, QA, MET.
+Historical Penpot IDs may be aliases but may not be the sole canonical IDs.
+
+## REQUIRED GAP AUDIT
+Explicitly check for Vendor Referral, User Profile/Persona Context, Notifications/Preferences/Broadcasts, Feedback/Suggestions, Vendor Reliability, Daily Inventory Confirmation, Vendor Customers, Vendor Onboarding, Admin Users, Admin Organizations, Ops Vendor/Retailer directories, Pilot Analytics, SLA Calendar, Payment Attempts/Evidence/Refunds, Settlement Adjustments, Invoice immutability, Product Identity lifecycle/merge, multi-barcode identifiers, catalog quarantine, Field Task semantics, operator personas, Vendor job functions, Brand families, external integrations, Outbox/Workers, Correlation ID, Deployment, Security/Privacy, Accessibility, Localization, Content/Terminology, Release slicing, Research/Evidence, Decision confidence, and NFR/Resilience.
+
+## COMPLETENESS
+Use L0 Concept, L1 Specified, L2 Mapped, L3 Designed, L4 Prototyped, L5 Contracted, L6 Implemented, L7 Verified, L8 Pilot Observed, L9 Superseded/Deprecated.
+A Penpot frame alone cannot prove beyond L3.
+
+## EVIDENCE
+Each node must declare SOURCE_VERIFIED, RUNTIME_VERIFIED, DESIGN_VERIFIED, TEST_VERIFIED, PILOT_VERIFIED, INFERRED, or OPEN_DECISION.
+
+## NODE VALIDATION
+For every major node answer: outcome, capability, value stream, actor/persona, role, organization scope, IA location, journey/flow, frontstage, backstage, domain context, data, API/runtime contract, permission, state transition, event/audit/notification, component/token, Light/Dark/Mobile/Desktop, measurement, release slice, QA evidence, pilot evidence.
+
+## CRITICAL POL RULES
+Acceptance KPI (<45 working minutes average) is different from the hard acceptance timeout (120 working minutes).
+Financial Activity is not a wallet.
+Payment is not Settlement.
+Invoice is not Order.
+Master Product is not Vendor SKU.
+Unknown barcode never auto-promotes to canonical Master Product.
+Delivery Handoff token is not an authentication session and cannot independently change financial state.
+Full Driver App is not MVP.
+Rich offline sync is P2.
+Web and Android share the same authorization boundary.
+Support, Dispute/RMA and Feedback are separate domains.
+Imported catalog reference data is not live vendor truth until verified.
+
+## DESIGN-SYSTEM REQUIREMENT
+Design-system components must remain reusable and context-agnostic; product-specific compositions should be represented as recipes/patterns/templates rather than duplicated global components.
+Tokens must support semantic naming, aliases/references, theme/brand/platform mapping, accessibility variants and code mapping.
+
+## SERVICE-BLUEPRINT REQUIREMENT
+For each critical journey include physical/digital evidence, customer action, frontstage, backstage, support process/system, owner, SLA, failure and recovery.
+
+## RELEASE REQUIREMENT
+Use end-to-end walking-skeleton slices. Do not call a release complete because several related screens were designed in isolation.
