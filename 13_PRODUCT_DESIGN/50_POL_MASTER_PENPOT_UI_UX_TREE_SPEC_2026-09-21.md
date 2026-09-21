@@ -2,7 +2,7 @@
 ## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Dark/Light
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `3.2.0`  
+**Version:** `3.3.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE MASTER ARCHITECTURE / PENPOT BUILD SOURCE / TRACEABILITY MODEL / REPOSITORY-CLOSURE-AUDITED  
 **Repository:** `rrasi90/POL-2.3`  
@@ -7288,3 +7288,218 @@ The repository-wide closure packet explicitly binds the Master Tree to the follo
 Operational evidence sources additionally include the MVP execution contracts for deployment, security, observability, backup/recovery and analytics measurement.
 
 RTO and RPO are readiness-contract dimensions; they are not assumed values unless an authoritative operational decision supplies them.
+
+
+## 67.30. AGENTIC PENPOT DESIGN OPERATING SYSTEM — VERSION 1
+
+Repository and external research identified a missing layer above the screen tree: the operating system for an AI agent that constructs the design.
+
+Canonical protocol:
+\`13_PRODUCT_DESIGN/52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md\`
+
+### Why this layer is required
+
+A Master Tree can describe WHAT must exist, but it does not by itself control HOW an agent should safely construct and verify it.
+
+The agent layer must control:
+- context
+- tool discovery
+- API capability probing
+- mutation size
+- approval boundaries
+- checkpoints
+- visual verification
+- structural verification
+- state persistence
+- resumability
+- rollback
+- evaluation
+- design/code evidence separation
+
+### Canonical agent loop
+
+\`READ → RESTATE → PROBE → PLAN → MUTATE ONE STEP → STRUCTURE VERIFY → VISUAL VERIFY → AUDIT → CHECKPOINT → RECORD → NEXT\`
+
+Failure loop:
+
+\`STOP → CLASSIFY → ROLLBACK/FIX → REVERIFY\`
+
+### Required agent layers
+
+1. Instructions
+2. Skills
+3. Workflows
+4. Policies
+5. Evidence / State
+6. Evals
+
+### Mandatory execution artifacts
+
+- RUN_ID ledger
+- current wave record
+- node record
+- capability probe report
+- golden component evals
+- golden screen evals
+- visual regression exports
+- token audit
+- accessibility audit
+- RTL audit
+- responsive matrix
+- drift report
+- open-defect queue
+- approval checkpoints
+- known API limitation registry
+
+### Critical agent safety rules
+
+- Never one-shot a screen, library or whole product.
+- One logical mutation per execution call.
+- Verify after each mutation.
+- Page switching is a separate transaction.
+- Never assume API parity with Figma/HTML/CSS.
+- Never silently fake linked component instances.
+- Never hardcode a governed visual value.
+- Never mutate the same Penpot file concurrently from multiple agents.
+- Never resume from chat memory after context truncation.
+- Never interpret a successful tool return as persistence proof.
+- Never mark a screen complete without structural + visual evidence.
+
+### NEW REQUIRED QA PAGE
+
+\`99 Agent QA & Golden Evals\`
+
+This page is not a product surface. It is the agent-control and design-verification surface.
+
+Required sections:
+- RUN ledger snapshot
+- API capability probes
+- golden components
+- golden screens
+- visual regression exports
+- token audit
+- accessibility audit
+- RTL audit
+- responsive audit
+- drift report
+- defects
+- approvals
+- known API limitations
+
+### Design wave gates
+
+Every wave must have:
+- one objective
+- bounded scope
+- named nodes
+- component dependencies
+- evidence contract
+- exit criteria
+- change budget
+- rollback path
+
+### Definition of Done extension
+
+A screen is not considered complete merely because it exists in Penpot.
+
+The screen must have:
+- canonical identity
+- requirement source
+- capability mapping
+- route mapping
+- role/persona
+- permission
+- states
+- recovery
+- governed tokens
+- governed components
+- Light/Dark
+- RTL where applicable
+- responsive behavior
+- accessibility evidence
+- prototype evidence where required
+- structural verification
+- visual verification
+- evidence record
+- lifecycle update
+
+### Agent reliability finding
+
+External research on vibe coding identifies recurring context gaps, asynchronous learning, trust erosion and error-expanding spirals. POL therefore treats context externalization, incremental work and verification as architecture, not prompting style.
+
+Penpot-specific MCP reports also show real API edge cases around large execute calls, page switching, library component instancing and token/property application. These are represented as operational constraints, not informal advice.
+ 
+## 67.31. WHAT WAS MISSING FROM A "START FROM ZERO" PENPOT BUILD
+
+The previous Master Tree described the product extremely well, but starting from zero with an agent exposed these missing execution primitives:
+
+### P0
+1. Agent Operating System
+2. RUN/Resume Ledger
+3. Capability Probe Layer
+4. Atomic Mutation Rule
+5. Structural + Visual Checkpoint
+6. Golden Component Evaluation
+7. Golden Screen Evaluation
+8. Safe-set / Approval Matrix
+9. Rollback Contract
+10. Mutation Change Budget
+11. Concurrent-agent Ownership Lock
+12. Known Penpot API Limitation Registry
+
+### P1
+13. Dedicated Agent QA page
+14. Visual regression evidence
+15. Design-wave checkpoints
+16. Screen Brief contract
+17. explicit distinction between tool success and persistence verification
+18. Design/code synchronization gate
+19. defect classification before redesign
+20. research-to-workflow evidence mapping
+
+### P2
+21. automated eval corpus
+22. repeatable benchmark screens
+23. agent performance metrics
+24. mutation failure telemetry
+25. resume/recovery drills
+
+These are now part of the Master Tree rather than external working notes.
+
+## 67.32. FIRST-BUILD CONTROL TREE
+
+From a blank Penpot file, the order is now:
+
+\`WAVE-00 Agent Preflight\`
+→ \`WAVE-01 Foundations\`
+→ \`WAVE-02 Golden Components\`
+→ \`WAVE-03 Shared UX\`
+→ \`WAVE-04 Golden Screens\`
+→ \`WAVE-05 Retailer\`
+→ \`WAVE-06 Vendor\`
+→ \`WAVE-07 Operations\`
+→ \`WAVE-08 Field\`
+→ \`WAVE-09 Corporate\`
+→ \`WAVE-10 Prototypes\`
+→ \`WAVE-11 QA\`
+→ \`WAVE-12 Design-to-Code\`
+
+Starting directly with Retailer Home is prohibited unless WAVE-00 through WAVE-03 are explicitly waived and documented.
+
+## 67.33. AGENT-RESEARCH TRACEABILITY
+
+Research-backed practices incorporated into the POL protocol:
+
+- Layered instructions/skills/workflows/policies/evals
+- read-only discovery before mutation
+- incremental mutation
+- explicit human approval boundary
+- persistent run state
+- visual self-review
+- token-first design
+- no parallel mutation on one file
+- API signature verification
+- explicit brief + measurable acceptance criteria
+- workflow resumability
+
+The external evidence is treated as workflow guidance, not as product requirements. Product behavior continues to be governed by the POL repository Source of Truth and Decision Register.
