@@ -2,12 +2,12 @@
 ## Canonical Master Product / Experience / Service / Domain / System / Design Tree — GitHub × Penpot × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Light/Night
 
 **Document ID:** `POL-DESIGN-TREE-001`  
-**Version:** `4.0.0`  
+**Version:** `4.1.0`  
 **Date:** 2026-09-21  
-**Status:** ACTIVE MASTER ARCHITECTURE / CANONICAL REGISTRY KERNEL / FEDERATED VIEW MODEL / PENPOT BUILD SOURCE / TRACEABILITY MODEL / DRIFT-CONTROLLED / AGENT-EXECUTION READY  
+**Status:** ACTIVE MASTER ARCHITECTURE / CANONICAL REGISTRY KERNEL / GREENFIELD BLANK-FILE BUILD SOURCE / FEDERATED VIEW MODEL / PENPOT BUILD SOURCE / TRACEABILITY MODEL / DRIFT-CONTROLLED / AGENT-EXECUTION READY  
 **Repository:** `rrasi90/POL-2.3`  
 **Working Branch:** `product-architecture-evolution-2026-09-20`  
-**Primary Intent:** تبدیل حقیقت محصول، معماری، دامنه، تجربه، طراحی، Penpot، frontend و شواهد را به یک Canonical Node Registry + Federated Views + Traceability Graph برای ساخت، اجرای agentic، QA و کنترل drift؛ با Precision Commerce و پوشش هم‌سطح Light + Night.
+**Primary Intent:** تبدیل حقیقت محصول، معماری، دامنه، تجربه، طراحی، Penpot، frontend و شواهد را به یک Canonical Node Registry + Federated Views + Traceability Graph که بتواند یک فایل Penpot کاملاً خالی را از صفر به یک سیستم طراحی قابل‌اجرا تبدیل کند؛ با Precision Commerce و پوشش هم‌سطح Light + Night.
 
 ---
 
@@ -55,7 +55,7 @@ POL
 8. Permission
 9. API / Domain dependency
 10. Navigation relationship
-11. Light/Dark behavior
+11. Light/Night behavior
 12. Mobile/Desktop behavior
 13. Prototype coverage
 14. QA coverage
@@ -106,6 +106,32 @@ v4 mandatory concepts:
 - bounded agent source packets
 
 ---
+
+# 0.5. GREENFIELD BUILD MODE — CANONICAL
+
+The Master Tree is currently optimized for a **completely new and empty Penpot file**.
+
+### Non-negotiable rule
+
+**Historical Penpot is evidence, not baseline.**
+
+The new file MUST NOT be constructed by copying or repairing the historical Penpot file. Current repository truth defines the target; the old Penpot only informs historical intent and contradiction discovery.
+
+### Construction order
+
+`WAVE-00 Empty Preflight → WAVE-01 Foundations → WAVE-02 Golden Components → WAVE-03 Shared Patterns → WAVE-04 Golden Screens → WAVE-05 Retailer → WAVE-06 Vendor → WAVE-07 Operations → WAVE-08 Field + Corporate → WAVE-09 Prototypes → WAVE-10 QA + Release`
+
+### Dependency rule
+
+A missing shared foundation/component/pattern blocks downstream screen construction until it is created and verified centrally. Screen-level invention must not silently compensate for missing global primitives.
+
+### Blank-file source precedence
+
+`Current Product/Architecture Decisions → Domain/API/Data → Master Tree → Executable Schema → Precision Commerce Visual System → Current Design Contracts → Historical Penpot/Evidence`
+
+### Canonical greenfield profile
+
+`13_PRODUCT_DESIGN/58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`
 
 # 1. SOURCE SNAPSHOT
 
@@ -3597,54 +3623,85 @@ Do not let the design accidentally become:
 
 ---
 
-# 30. FINAL BUILD ORDER FOR PENPOT
+# 30. FINAL BUILD ORDER FOR PENPOT — GREENFIELD
 
-## Wave A — Canonicalize existing foundations
-1. Foundations
-2. Dark semantic tokens
-3. RTL/mixed-direction rules
-4. Components
-5. Shared UX
-6. States
+The following is the **construction order for an empty Penpot file**. It supersedes any interpretation of the previous "canonicalize existing foundations" order.
 
-## Wave B — P0 capability additions
-7. RT-15 OrderGroup
-8. RT-16 Financial Activity
-9. RT-17 Vendor Search
-10. RT-18 Vendor Storefront
-11. RT-19 Delivery Handoff
-12. RT-20 Partial Acceptance
-13. VD-14 Storefront Management
-14. VD-15 Permissions
-15. VD-16 Scanner
-16. VD-17 Financial Activity
-17. VD-18 Partial Acceptance
-18. OP-11 Permission Audit
-19. OP-12 Financial Investigation
-20. OP-13 Candidate Review
-21. OP-14 Media Provenance
-22. OP-15 Handoff Exceptions
+## WAVE-00 — Empty File Preflight
+1. Verify target file identity.
+2. Verify actual empty state.
+3. Record initial revision and structural counts.
+4. Run capability probe.
+5. Create RUN_ID / WAVE_ID.
+6. Do not build product screens.
 
-## Wave C — Integration
-23. update prototypes
-24. update navigation
-25. update notifications
-26. update account/security
-27. update delivery state
-28. update financial traceability
+## WAVE-01 — Foundations
+1. Primitive tokens.
+2. Semantic Light tokens.
+3. Semantic Night tokens.
+4. Typography.
+5. Spacing.
+6. Radius / borders / elevation.
+7. Motion.
+8. Density.
+9. Grid/layout.
+10. Iconography.
+11. RTL/Bidi specimens.
+12. Content-stress specimens.
 
-## Wave D — QA
-29. Light QA
-30. Dark QA
-31. RTL QA
-32. Mobile QA
-33. Desktop QA
-34. API traceability
-35. permission traceability
-36. prototype QA
-37. unresolved contradiction review
+## WAVE-02 — Golden Components
+Build reusable components and variants before broad screen work.
 
----
+Priority families:
+Button, Input, Search, Filter, Select, Chip, Badge, Card, Row, Table, Navigation, Modal, Bottom Sheet, Alert, Toast, Skeleton, Empty, Error, Confirmation, Timeline, Financial Activity, Permission Matrix, Permission Editor, Scanner, Handoff, Provenance, Candidate, Partial Acceptance, Session and Media.
+
+## WAVE-03 — Shared Patterns
+Build shared UX patterns only from approved components.
+
+Required patterns include:
+Navigation, context switching, search, filters, list/table, queue, financial activity, audit, permission, candidate review, media provenance, handoff, partial acceptance, notification/inbox, loading, empty/error/recovery.
+
+## WAVE-04 — Golden Screens
+Build the minimum reference set before all product surfaces:
+
+- Retailer Home
+- Product Search
+- Product Detail
+- Vendor Storefront
+- Basket
+- Checkout
+- OrderGroup Detail
+- Vendor Order Queue
+- Operations Exceptions
+- Financial Activity
+- Permission Editor
+- Scanner
+- Delivery Handoff
+- Corporate Landing
+
+Every applicable Golden Screen requires Light + Night and the appropriate mobile/desktop coverage.
+
+## WAVE-05 — Retailer
+Auth → Home → Search → Vendor Search → Vendor Storefront → Product Detail → Basket → Allocation → Checkout → OrderGroup → Partial Acceptance → Financial Activity → Delivery → Handoff → Returns/Disputes → History → Account/Support.
+
+## WAVE-06 — Vendor
+Inventory/Price → Order Queue → Partial Acceptance → Loading/Dispatch → Discrepancy → Catalog → Storefront Management → Staff/Permissions → Scanner → Financial Activity → Documents/Invoices → Referral → Customers → Reconciliation.
+
+## WAVE-07 — Operations
+Exceptions → Arbitration → Reconciliation → Pilot Analytics → Support → Risk → Notifications → Admin → Permission Audit → Financial Investigation → Candidate Review → Media Provenance → Handoff Exceptions.
+
+## WAVE-08 — Field + Corporate
+Field Task/Route → Assisted Order → Merchant Consent → Follow-up/Proof → operational recovery; then Corporate surfaces.
+
+## WAVE-09 — Prototypes & Flows
+Build end-to-end walking skeletons plus critical failure/recovery branches only after screens and shared patterns exist.
+
+## WAVE-10 — Design QA + Release
+Run semantic, structural, visual, accessibility, RTL, responsive, network, prototype, traceability and persistence checks. Then create the Design Release Snapshot.
+
+### Greenfield anti-pattern
+
+Do not use a "screen-first" strategy and repair the design system afterward.
 
 # 31. DEFINITION OF DONE
 
@@ -3681,7 +3738,7 @@ Media provenance قابل مشاهده باشد.
 Web و Android parity در capability داشته باشند، نه الزاماً layout یکسان.
 
 ### Theme
-Light و Dark از semantic tokens استفاده کنند.
+Light و Night از semantic tokens استفاده کنند.
 
 ### RTL
 Persian و mixed-direction data صحیح باشند.
@@ -3750,6 +3807,16 @@ Penpot باید یک representation بصری از این زنجیره باشد:
 - `08_DATA/PRODUCT_MEDIA_MODEL.md`
 
 ---
+
+# 35.5. GREENFIELD BUILD STATUS
+
+This Master Tree is optimized for a **new, empty Penpot file**.
+
+It does not certify that the target Penpot file is already built.
+
+The build must begin at WAVE-00 and advance only through persisted, evidenced checkpoints.
+
+Historical Penpot artifacts must remain classified as evidence/historical unless explicitly rebound to a current canonical node after verification.
 
 # 35. DOCUMENT STATUS
 
@@ -8657,3 +8724,88 @@ Packet order:
 10. evidence required for closure
 
 This reduces context overload and makes source precedence explicit.
+
+
+## 67.79. GREENFIELD EMPTY-FILE BUILD CONTRACT — VERSION 4.1
+
+### 67.79.1 Build mode
+
+`BUILD_MODE = GREENFIELD_EMPTY_FILE`
+
+This is the default execution mode for the current Master Tree unless an explicit migration profile is registered.
+
+### 67.79.2 Penpot baseline policy
+
+The target Penpot file starts from an empty-state verification.
+
+Historical Penpot is:
+
+- evidence;
+- contradiction source;
+- naming/history reference;
+- visual research material.
+
+Historical Penpot is NOT:
+
+- component source of truth;
+- token source of truth;
+- page architecture source of truth;
+- screen implementation baseline.
+
+### 67.79.3 Required page architecture
+
+The new file must converge to:
+
+`P00 Foundations`
+`P01 Components`
+`P02 Shared UX`
+`P03 States & Patterns`
+`P04 Retailer`
+`P05 Vendor`
+`P06 Operations`
+`P07 Field Activator`
+`P08 Corporate`
+`P09 Prototypes & Flows`
+`P10 Design QA`
+`P99 Agent QA & Golden Evals`
+
+### 67.79.4 Dependency-first construction
+
+The build graph is:
+
+`Foundations → Components → Patterns → Golden Screens → Product Screens → Prototypes → QA`
+
+A downstream screen cannot be declared structurally complete if it introduces an unregistered global dependency.
+
+### 67.79.5 Greenfield artifact maturity
+
+A new Penpot artifact advances independently through:
+
+`PLANNED → CREATED → PERSISTED → STRUCTURALLY_VERIFIED → VISUALLY_VERIFIED`
+
+No stage may be skipped in evidence.
+
+### 67.79.6 Empty-file first checkpoint
+
+Before the first mutation, record:
+
+- Penpot file identity;
+- initial revision;
+- page count;
+- meaningful object count;
+- token/component observability;
+- repository HEAD;
+- Master Tree version;
+- build profile version;
+- agent capability probe result.
+
+### 67.79.7 Current Penpot is not the target baseline
+
+The current historical Penpot snapshot is retained only for audit/history. No "retain existing" step should appear in the greenfield construction order.
+
+### 67.79.8 Dedicated agent-evaluation page
+
+The greenfield file includes `P99 — Agent QA & Golden Evals` for golden components, golden screens, structural probes, persistence probes and visual evaluation evidence.
+
+This page is not a product surface and must not leak into runtime navigation.
+
