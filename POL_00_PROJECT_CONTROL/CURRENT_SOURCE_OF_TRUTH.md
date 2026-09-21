@@ -33,7 +33,7 @@ DECISION AUTHORITY
 
 | Domain | Authoritative Canonical File(s) | Scope & Responsibility | Precedence Rule |
 |:---|:---|:---|:---|
-| **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-020. | Absolute precedence. |
+| **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-028; later amendments supersede earlier decisions explicitly. | Absolute precedence. |
 | **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md` | Feature matrix, core flows, boundaries and MVP inclusions/exclusions. | Must conform to D-001–D-020. |
 | **Identity & Access Management** | `06_PRODUCT/Roles_and_Permissions.md`, `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md` | Identity, tenant membership, authorization, persona context and UX preferences. | `organization_memberships.role` is authorization SSoT; `users.role` is legacy/deprecated. |
 | **Order Lifecycle & State Transitions** | `06_PRODUCT/Order_Lifecycle.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | OrderGroup, child Orders, Delivery and exception state machines. | Governs backend workflows and UI state mapping. |
@@ -128,3 +128,24 @@ This document records the adopted product-architecture direction for:
 - Master SKU and product-media provenance
 
 These directions refine presentation, UX and implementation sequencing without overriding D-001 through D-020 or the canonical PostgreSQL/Python/FastAPI architecture. The Decision Register amendments D-021 through D-028 are the governing product decisions for this wave.
+
+
+---
+
+## 7. Deep-Saturation Design Control — 2026-09-21
+
+The five-pass design saturation audit is registered as a supporting design-control artifact:
+
+- `13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
+
+The active Master Tree is now Version 3.4.0:
+
+- `13_PRODUCT_DESIGN/50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md`
+
+The active agent execution protocol is now Version 1.1.0:
+
+- `13_PRODUCT_DESIGN/52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
+
+The Master Tree saturation layer adds control-plane requirements for context packaging, execution identity, trust boundaries, mutation intent, persistence proof, semantic/structural/visual evidence, state freshness, task/command contracts, accessibility/RTL/network semantics, token/component lifecycle, analytics tracking governance and change-impact controls.
+
+These controls govern how design work is safely constructed and verified. They do not create new product capabilities and do not override product, domain, database, API or operations authorities.
