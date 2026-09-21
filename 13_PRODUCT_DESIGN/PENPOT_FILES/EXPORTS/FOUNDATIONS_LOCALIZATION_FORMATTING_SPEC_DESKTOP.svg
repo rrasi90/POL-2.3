@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320">
+  <!-- POL Foundations - Blueprint section 3 - Localization and formatting -->
+  <rect width="1280" height="320" fill="#16181D"/>
+  <text x="40" y="56" font-family="Vazirmatn, Tahoma, sans-serif" font-size="24" fill="#FFFFFF">08 — Localization &amp; Formatting Rules</text>
+  <text x="40" y="88" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" fill="#8FA0B8">Toman / Jalali / Persian digits / phone (Blueprint §3)</text>
+  <g font-family="Vazirmatn, Tahoma, sans-serif" font-size="13">
+    <text x="40" y="136" fill="#6EE7B7">Currency</text>
+    <text x="400" y="136" fill="#C7CEDA" direction="rtl">فقط تومان، بدون اعشار، برچسب تومان، جداکننده هزارگان فارسی</text>
+    <text x="40" y="170" fill="#6EE7B7">Numerals</text>
+    <text x="400" y="170" fill="#C7CEDA" direction="rtl">ارقام فارسی در متن کاربر؛ ارقام لاتین در کد، شناسه و رمز یک‌بار‌مصرف</text>
+    <text x="40" y="204" fill="#6EE7B7">Dates</text>
+    <text x="400" y="204" fill="#C7CEDA" direction="rtl">تاریخ جلالی اصلی (YYYY/MM/DD)؛ میلادی به‌صورت ثانویه در راهنمای ابزار</text>
+    <text x="40" y="238" fill="#6EE7B7">Phone</text>
+    <text x="400" y="238" fill="#C7CEDA" direction="rtl">نمایش ۰۹XX XXX XXXX؛ ذخیره‌سازی E.164 با پیش‌شماره ۹۸+</text>
+    <text x="40" y="272" fill="#6EE7B7">Mixed direction</text>
+    <text x="400" y="272" fill="#C7CEDA" direction="rtl">نام کالای لاتین داخل جمله فارسی جداسازی شود (bdi)</text>
+  </g>
+</svg>

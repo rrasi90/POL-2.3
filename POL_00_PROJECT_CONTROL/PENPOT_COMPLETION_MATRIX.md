@@ -1,7 +1,13 @@
 # POL Penpot Completion Matrix
 
-**Status:** CANONICAL SCREEN COMPLETION LEDGER  
-**Last Updated:** 2026-09-16  
+**Status:** REOPENED LEDGER — SUPERSEDED BY `13_PRODUCT_DESIGN/49_WAVE_01_PENPOT_ALIGNMENT_AUDIT_AND_REOPENED_QA_2026-09-20.md`  
+**Last Updated:** 2026-09-16 (ledger content retained as historical record only)
+
+> **REOPENED 2026-09-20 — do not treat the status column below as current.**
+> This ledger asserts `PASSED` for screens that did not exist in Penpot at its date of issue, and it records superseded contracts:
+> a 5-box OTP (canonical login OTP is **4 digits**, per `DECISION_REGISTER.md` D-018) and a **30-minute** vendor acceptance timer
+> (canonical is **120 working minutes** under the Ahvaz working calendar, per `PLATFORM_COMPLETION_GAP_REGISTER.md` GAP-009).
+> Current status, contradiction register and evidence standards live in document 49.
 
 | Surface | Screen | State | Penpot Page / Board | Design QA | Contract Mapped | Frontend Mapped | Status | Evidence / Notes |
 |---|---|---|---|---|---|---|---|---|

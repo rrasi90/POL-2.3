@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320">
+  <!-- POL Foundations - Blueprint section 3 - Motion and accessibility -->
+  <rect width="1280" height="320" fill="#16181D"/>
+  <text x="40" y="56" font-family="Vazirmatn, Tahoma, sans-serif" font-size="24" fill="#FFFFFF">09 — Motion &amp; Accessibility Principles</text>
+  <text x="40" y="88" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" fill="#8FA0B8">Motion timing + WCAG-oriented rules (Blueprint §3)</text>
+  <g font-family="Vazirmatn, Tahoma, sans-serif" font-size="13">
+    <text x="40" y="136" fill="#6EE7B7">Durations</text>
+    <text x="400" y="136" fill="#C7CEDA">120ms micro / 200ms standard / 320ms page</text>
+    <text x="40" y="170" fill="#6EE7B7">Easing</text>
+    <text x="400" y="170" fill="#C7CEDA">cubic-bezier(0.2, 0, 0, 1); reduced-motion = crossfade only</text>
+    <text x="40" y="204" fill="#6EE7B7">Contrast</text>
+    <text x="400" y="204" fill="#C7CEDA">WCAG AA: 4.5:1 body text, 3:1 large text and UI icons</text>
+    <text x="40" y="238" fill="#6EE7B7">Focus</text>
+    <text x="400" y="238" fill="#C7CEDA">visible focus on all interactive elements</text>
+    <text x="40" y="272" fill="#6EE7B7">Non-color cues</text>
+    <text x="400" y="272" fill="#C7CEDA">error states use icon + text, never color alone</text>
+  </g>
+</svg>

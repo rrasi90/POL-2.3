@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320">
+  <!-- POL Foundations - Blueprint section 3 - Content rules and operational status language -->
+  <rect width="1280" height="320" fill="#16181D"/>
+  <text x="40" y="56" font-family="Vazirmatn, Tahoma, sans-serif" font-size="24" fill="#FFFFFF">10 — Content Rules &amp; Operational Status Language</text>
+  <text x="40" y="88" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" fill="#8FA0B8">Persian-first copy + status vocabulary (Blueprint §3)</text>
+  <g font-family="Vazirmatn, Tahoma, sans-serif" font-size="13">
+    <text x="40" y="136" fill="#6EE7B7">Copy policy</text>
+    <text x="400" y="136" fill="#C7CEDA" direction="rtl">فارسی‌محور؛ بدون وعده تضمین قیمت، زمان تحویل یا موجودی</text>
+    <text x="40" y="170" fill="#6EE7B7">Product status</text>
+    <text x="400" y="170" fill="#C7CEDA" direction="rtl">فعال / ناموجود / موجودی نامشخص / قدیمی / مسدود</text>
+    <text x="40" y="204" fill="#6EE7B7">Price status</text>
+    <text x="400" y="204" fill="#C7CEDA" direction="rtl">تغییر قیمت / قیمت آتی / قیمت ویژه فروشنده</text>
+    <text x="40" y="238" fill="#6EE7B7">Settlement language</text>
+    <text x="400" y="238" fill="#C7CEDA" direction="rtl">تسویه مستقیم غیرحسابتی — هرگز کیف پول، امانی یا نگه‌داری وجه</text>
+    <text x="40" y="272" fill="#6EE7B7">Data density</text>
+    <text x="400" y="272" fill="#C7CEDA">queue rows: 56px desktop / 64px mobile</text>
+  </g>
+</svg>

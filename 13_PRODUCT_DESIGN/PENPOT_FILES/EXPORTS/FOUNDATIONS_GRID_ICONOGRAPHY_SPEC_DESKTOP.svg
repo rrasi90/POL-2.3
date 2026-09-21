@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320">
+  <!-- POL Foundations - Blueprint section 3 - Iconography, Grid and Breakpoints -->
+  <rect width="1280" height="320" fill="#16181D"/>
+  <text x="40" y="56" font-family="Vazirmatn, Tahoma, sans-serif" font-size="24" fill="#FFFFFF">07 — Iconography, Grid &amp; Breakpoints</text>
+  <text x="40" y="88" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" fill="#8FA0B8">Canonical responsive + icon system rules (Blueprint §3)</text>
+  <g font-family="Vazirmatn, Tahoma, sans-serif" font-size="13">
+    <text x="40" y="136" fill="#6EE7B7">Icon grid</text>
+    <text x="400" y="136" fill="#C7CEDA">24px icon box, 2px stroke, rounded caps, mirrored arrows in RTL</text>
+    <text x="40" y="170" fill="#6EE7B7">Mobile 390</text>
+    <text x="400" y="170" fill="#C7CEDA">4 columns, 16px gutter, 16px margin</text>
+    <text x="40" y="204" fill="#6EE7B7">Tablet 860</text>
+    <text x="400" y="204" fill="#C7CEDA">8 columns, 20px gutter, 24px margin</text>
+    <text x="40" y="238" fill="#6EE7B7">Desktop 1200/1440</text>
+    <text x="400" y="238" fill="#C7CEDA">12 columns, 24px gutter, 32px margin</text>
+    <text x="40" y="272" fill="#6EE7B7">Touch target</text>
+    <text x="400" y="272" fill="#C7CEDA">min 44x44px; focus ring 2px, 2px offset</text>
+  </g>
+</svg>
