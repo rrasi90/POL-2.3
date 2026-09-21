@@ -3625,7 +3625,7 @@ Do not let the design accidentally become:
 
 # 30. FINAL BUILD ORDER FOR PENPOT — GREENFIELD
 
-The following is the **construction order for an empty Penpot file**. It supersedes any interpretation of the previous "canonicalize existing foundations" order.
+The following is the **construction order for an empty Penpot file**. It supersedes any migration-oriented interpretation of the earlier build order.
 
 ## WAVE-00 — Empty File Preflight
 1. Verify target file identity.
