@@ -1,7 +1,7 @@
 # POL — Master Prompt for Generating / Updating the Penpot Product Design Tree
 
 **Prompt ID:** `POL-PROMPT-DESIGN-TREE-001`  
-**Version:** `2.2.0`  
+**Version:** `2.3.0`  
 **Date:** 2026-09-21  
 **Target Repository:** `rrasi90/POL-2.3`  
 **Target Branch:** `product-architecture-evolution-2026-09-20`
@@ -40,6 +40,27 @@ Your task is to maintain one canonical, hierarchical **Product Design Tree** tha
 The resulting tree is the specification for what must exist in Penpot and what each Penpot artifact means.
 
 ---
+
+# VISUAL DIRECTION LOCK — PRECISION COMMERCE
+
+The canonical POL visual direction is **A — Precision Commerce** and is governed by:
+
+`13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+
+Every generated or materially updated canonical UI node MUST consume this visual system.
+
+Mandatory rules:
+
+1. Use semantic design tokens; avoid arbitrary raw colors.
+2. Build **Light + Night** as first-class variants for every applicable Screen, Section, Component, Pattern and Penpot artifact.
+3. Night must not be produced by naive color inversion; use the canonical Night semantic token layer.
+4. Preserve the same component anatomy, behavior, state semantics, permissions and information hierarchy across themes.
+5. Use the canonical radius, spacing, typography, border and elevation system.
+6. Select the correct density profile: Retailer = D1, Vendor/general Web = D2, Operations = D3, Corporate = Corporate Editorial, Field = Field Practical.
+7. Keep semantic colors meaningful: primary/action blue is not a substitute for success/warning/danger.
+8. Validate RTL/bidi, content stress and accessibility independently in both themes.
+9. A visual checkpoint is incomplete until both applicable theme variants are structurally persisted and visually inspected.
+10. Do not change product/domain/API/permission/financial semantics to satisfy visual preferences.
 
 # 1. AUTHORITATIVE SOURCES
 
@@ -1352,6 +1373,18 @@ Additional hard rules:
 
 
 ---
+
+
+## THEME PARITY REQUIREMENT — MANDATORY
+
+For node types `SCR`, `SEC`, `CMP`, `PATTERN` and `PEN`, the generated node record must explicitly resolve:
+
+- `visual_direction = PRECISION_COMMERCE`
+- `theme_coverage = LIGHT_AND_NIGHT` unless a documented `THEME_NOT_APPLICABLE` reason exists
+- `density_profile` according to surface/context
+- semantic `visual_token_refs`
+
+Never mark visual closure from Light-only evidence when Night is applicable.
 
 # EXECUTABLE MASTER TREE REQUIREMENT — MANDATORY
 
