@@ -1040,7 +1040,7 @@ The tree itself should be measurable.
 
 ## Theme Coverage
 
-`Screens with Light + Dark / production screens`
+`Screens with Light + Night / production screens`
 
 ## Prototype Coverage
 
@@ -1331,7 +1331,7 @@ Existing Penpot foundation areas include:
 - Persian Typography & Numeric Scales
 - Spacing, Elevation & Radius System
 - RTL & Commercial Invariants
-- Dark Mode Semantic Tokens & Surface Elevation
+- Night Mode Semantic Tokens & Surface Elevation
 
 ### Required canonical foundation layers
 
@@ -1389,7 +1389,7 @@ Foundations
 
 # 5. LIGHT / NIGHT THEME CONTRACT
 
-Dark mode is not a separate visual product.
+Night mode is not a separate visual product.
 
 It is the same information architecture and component behavior with semantic token substitution.
 
@@ -1425,7 +1425,7 @@ unless explicitly marked:
 
 ## 5.3 Night-mode rules
 
-Dark mode must preserve:
+Night mode must preserve:
 
 - hierarchy
 - spacing
@@ -1435,7 +1435,7 @@ Dark mode must preserve:
 - interaction patterns
 - content density
 
-Dark mode must NOT mean:
+Night mode must NOT mean:
 
 - simply inverting colors
 - lowering contrast
@@ -1629,7 +1629,7 @@ Retailer
 Unauthenticated until verification; after login, scope by active membership.
 
 ### Theme
-Light + Dark.
+Light + Night.
 
 ### Conflict
 Technical Architecture currently specifies a **4-digit OTP**. Older retailer design specs/Penpot artifacts contain 6-digit / 5-box variants. Target new canonical design must use the current backend/auth contract; do not preserve an older OTP shape silently.
@@ -2876,7 +2876,7 @@ Must cover:
 - network degradation
 - support escalation
 
-## FL-03 — Failure Branches / Dark Mode
+## FL-03 — Failure Branches / Night Mode
 
 All critical failures must be visible in dark mode without semantic loss.
 
@@ -3312,7 +3312,7 @@ Design QA
 ├── LTR / Mixed Direction
 ├── Accessibility
 ├── Light Mode
-├── Dark Mode
+├── Night Mode
 ├── Responsive
 │   ├── Mobile
 │   ├── Tablet
@@ -3395,7 +3395,7 @@ Never declare 100% PASS merely because frames exist.
 ### QA
 - QA-01 Master Certification
 - QA-02 Craft Standards
-- QA-03 Dark Mode Audit
+- QA-03 Night Mode Audit
 
 ---
 
@@ -3478,7 +3478,7 @@ SCREEN
 ├── Validation rules
 ├── Error / recovery
 ├── Light theme
-├── Dark theme
+├── Night theme
 ├── Mobile behavior
 ├── Desktop behavior
 ├── Accessibility
@@ -6275,7 +6275,7 @@ Recommended POL operating threshold: Green ≥95%, Amber 85–94%, Red <85%. The
 **I4 Audit Coverage** = sensitive actions with audit-event mapping / sensitive actions ×100.
 
 ### J — Accessibility / Theme / Localization
-**J1 Dark Theme Coverage** = production screens with validated dark variant / production screens ×100.
+**J1 Night Theme Coverage** = production screens with validated dark variant / production screens ×100.
 **J2 RTL/Mixed-Direction Coverage** = applicable production screens with validated Persian + mixed-direction behavior / applicable screens ×100.
 **J3 Accessibility Evidence Coverage** = production screens with current accessibility evidence / production screens ×100.
 **J4 Open Accessibility Violation Rate** = open accessibility findings / audited screens. Track automated and human review separately; automated conformance alone is not sufficient.
@@ -6319,7 +6319,7 @@ Recommended POL operating threshold: Green ≥95%, Amber 85–94%, Red <85%. The
 | Component Reuse Rate | Design-system health | ≥80% eligible UI |
 | Token Coverage | Visual consistency | ≥90% measurable values |
 | Design-Code Parity | Handoff integrity | ≥95% |
-| Dark Theme Coverage | Theme completeness | 100% production screens |
+| Night Theme Coverage | Theme completeness | 100% production screens |
 | Accessibility Evidence Coverage | Inclusive QA | 100% production screens |
 | Analytics Instrumentation Coverage | Measurement readiness | 100% critical capabilities |
 | Change Impact Coverage | Change safety | ≥95% |
