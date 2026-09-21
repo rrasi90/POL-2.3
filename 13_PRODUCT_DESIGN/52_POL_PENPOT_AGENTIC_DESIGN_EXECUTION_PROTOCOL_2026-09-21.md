@@ -2,7 +2,7 @@
 ## Senior Design Engineering Operating System for POL Penpot Construction
 
 **Document ID:** `POL-DESIGN-AGENT-001`  
-**Version:** `1.4.0`  
+**Version:** `1.5.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE / DESIGN-EXECUTION CONTROL / RESEARCH-BACKED  
 **Applies to:** Penpot + MCP + AI Agent + POL Master Tree + GitHub design specifications
@@ -72,6 +72,32 @@ Before mutation:
 Repeated IDs in derived views are references, not new nodes.
 
 A historical or superseded source must never silently become the active design authority.
+
+
+# GREENFIELD EMPTY-FILE EXECUTION MODE
+
+Current POL Penpot execution is greenfield.
+
+WAVE-00 MUST establish a verified empty baseline before any component or screen mutation.
+
+The agent must not:
+
+- inspect a historical Penpot export and treat it as the target structure;
+- copy existing frames into the new file;
+- reuse old components without canonical re-registration;
+- import old tokens without current source verification;
+- optimize for visual similarity to the historical file.
+
+The agent must:
+
+- create foundations first;
+- create canonical reusable components next;
+- create shared patterns next;
+- create golden screens next;
+- create product surfaces after the dependency graph is stable;
+- preserve exact artifact identity and revision evidence.
+
+If a product screen requires a missing global primitive, pause the downstream mutation and repair the dependency in the correct upstream wave.
 
 # 1. Agent Failure Model
 
