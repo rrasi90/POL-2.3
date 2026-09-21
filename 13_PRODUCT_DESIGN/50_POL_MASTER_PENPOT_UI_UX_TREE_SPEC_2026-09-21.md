@@ -7111,3 +7111,89 @@ NO NEW ACTIONABLE DIMENSION FOUND IN THE CURRENT REVIEWED SOURCE SET.
 Repository Coverage Gate: CLOSED at the current source snapshot.
 
 This is closure of the audited source set, not a guarantee that future commits, new decisions, new migrations, new routes, new research findings or new Penpot changes cannot create new deltas.
+
+
+## 67.24. EXACT CAPABILITY LABEL RECONCILIATION
+
+To preserve both canonical semantics and source wording, the following exact Capability Coverage Matrix labels are registered as aliases of the CAP nodes already defined:
+
+- "Order Group & Multi-Vendor Splitting" → CAP-ORDER-GROUP
+- "Fulfillment & Dispatch Engine" → CAP-FULFILLMENT
+- "Dynamic Route Optimization for Dispatches" → CAP-ROUTE-OPTIMIZATION
+
+The last item is explicitly POST-MVP / PLANNED_POST_MVP. Its presence in the tree is a deferred-scope record, not a build requirement.
+
+## 67.25. EXACT 50-ENDPOINT CONTRACT LEDGER
+
+Source authority: POL_00_PROJECT_CONTROL/API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md.
+
+The endpoint ledger is intentionally exact. Method, normalized path, status and current boundary owner must remain independently traceable. Contract-only does not mean missing product capability; it means the HTTP application boundary is not yet live.
+
+| # | Canonical endpoint | Status | Current owner/path |
+|---:|---|---|---|
+| 1 | GET `/api/v1/products/search` | CONTRACT_ONLY | catalog applicationization |
+| 2 | POST `/api/v1/products/match-barcode` | CONTRACT_ONLY | catalog applicationization |
+| 3 | POST `/api/v1/product-candidates` | CONTRACT_ONLY | catalog applicationization |
+| 4 | POST `/api/v1/vendors/inventory/continuous-scan` | CONTRACT_ONLY | vendor catalog/inventory |
+| 5 | POST `/api/v1/vendors/inventory/publish` | CONTRACT_ONLY | vendor catalog/inventory |
+| 6 | POST `/api/v1/baskets` | HTTP_IMPLEMENTED | `basket_create` |
+| 7 | POST `/api/v1/baskets/{id}/items` | HTTP_IMPLEMENTED | `basket_add_item` |
+| 8 | POST `/api/v1/baskets/{id}/allocation-preview` | HTTP_IMPLEMENTED | `basket_allocation_preview` |
+| 9 | POST `/api/v1/orders` | HTTP_IMPLEMENTED | `checkout_from_allocation_plan` |
+| 10 | POST `/api/v1/orders/{id}/accept` | HTTP_IMPLEMENTED | `vendor_order_accept` |
+| 11 | POST `/api/v1/orders/{id}/reject` | HTTP_IMPLEMENTED | `vendor_order_reject` |
+| 12 | POST `/api/v1/orders/{id}/partial-acceptance-proposals` | HTTP_IMPLEMENTED | `vendor_partial_acceptance_propose` |
+| 13 | POST `/api/v1/orders/{id}/partial-acceptance-proposals/{proposal_id}/approve` | HTTP_IMPLEMENTED | `retailer_partial_acceptance_approve` |
+| 14 | POST `/api/v1/orders/{id}/partial-acceptance-proposals/{proposal_id}/decline` | HTTP_IMPLEMENTED | `retailer_partial_acceptance_decline` |
+| 15 | POST `/api/v1/orders/{id}/dispatch` | CONTRACT_ONLY | dispatch/delivery runtime |
+| 16 | POST `/api/v1/orders/{id}/deliver` | CONTRACT_ONLY | proof-of-delivery boundary |
+| 17 | POST `/api/v1/orders/{id}/payments/direct-transfer` | CONTRACT_ONLY | payment evidence API |
+| 18 | POST `/api/v1/orders/{id}/payments/{payment_id}/verify` | CONTRACT_ONLY | payment evidence API |
+| 19 | POST `/api/v1/orders/{id}/disputes` | CONTRACT_ONLY | dispute/RMA HTTP |
+| 20 | PATCH `/api/v1/disputes/{id}/resolve` | CONTRACT_ONLY | dispute/RMA HTTP |
+| 21 | POST `/api/v1/auth/request-otp` | HTTP_IMPLEMENTED | authentication/session layer |
+| 22 | POST `/api/v1/auth/verify-otp` | HTTP_IMPLEMENTED | authentication/session layer |
+| 23 | POST `/api/v1/auth/refresh` | HTTP_IMPLEMENTED | authentication/session layer |
+| 24 | POST `/api/v1/auth/switch-organization` | HTTP_IMPLEMENTED | authentication/session layer |
+| 25 | DELETE `/api/v1/auth/sessions/current` | HTTP_IMPLEMENTED | authentication/session layer |
+| 26 | DELETE `/api/v1/auth/sessions/{id}` | HTTP_IMPLEMENTED | authentication/session layer |
+| 27 | POST `/api/v1/support/cases` | CONTRACT_ONLY | `support_create` exists internal-only |
+| 28 | POST `/api/v1/support/cases/{id}/messages` | CONTRACT_ONLY | `support_message` exists internal-only |
+| 29 | POST `/api/v1/support/cases/{id}/assign` | CONTRACT_ONLY | `support_assign` exists internal-only |
+| 30 | PATCH `/api/v1/support/cases/{id}/status` | CONTRACT_ONLY | `support_transition` exists internal-only |
+| 31 | GET `/api/v1/inbox/items` | CONTRACT_ONLY | notification HTTP |
+| 32 | PATCH `/api/v1/inbox/items/{id}/read` | CONTRACT_ONLY | notification HTTP |
+| 33 | PATCH `/api/v1/inbox/items/read-all` | CONTRACT_ONLY | notification HTTP |
+| 34 | GET `/api/v1/notifications/preferences` | CONTRACT_ONLY | notification HTTP |
+| 35 | PUT `/api/v1/notifications/preferences` | CONTRACT_ONLY | notification HTTP |
+| 36 | POST `/api/v1/admin/broadcasts` | CONTRACT_ONLY | admin/ops HTTP |
+| 37 | POST `/api/v1/admin/broadcasts/{id}/dispatch` | CONTRACT_ONLY | admin/ops HTTP |
+| 38 | GET `/api/v1/invoices` | CONTRACT_ONLY | invoice/settlement HTTP |
+| 39 | GET `/api/v1/invoices/{id}` | CONTRACT_ONLY | invoice/settlement HTTP |
+| 40 | GET `/api/v1/admin/exceptions/dashboard` | CONTRACT_ONLY | ops dashboard |
+| 41 | POST `/api/v1/admin/sla-overrides` | CONTRACT_ONLY | ops SLA boundary |
+| 42 | GET `/api/v1/admin/audit-logs` | CONTRACT_ONLY | audit HTTP |
+| 43 | GET `/api/v1/categories` | CONTRACT_ONLY | catalog HTTP |
+| 44 | POST `/api/v1/admin/categories` | CONTRACT_ONLY | catalog admin HTTP |
+| 45 | PATCH `/api/v1/admin/categories/{id}` | CONTRACT_ONLY | catalog admin HTTP |
+| 46 | GET `/api/v1/profile` | HTTP_IMPLEMENTED | `profile_get` |
+| 47 | PUT `/api/v1/profile` | HTTP_IMPLEMENTED | `profile_update` |
+| 48 | GET `/api/v1/profile/completion` | HTTP_IMPLEMENTED | `profile_completion` |
+| 49 | PUT `/api/v1/membership/profile` | HTTP_IMPLEMENTED | `profile_membership_update` |
+| 50 | GET `/api/v1/profile/context` | HTTP_IMPLEMENTED / SHARED BOUNDARY | `profile_get` |
+| 1 | Catalog/search/category HTTP | 13–15 | undefined |
+| 2 | Pricing/inventory HTTP | 16–18 | undefined |
+| 3 | Order query/timeline + fulfillment/delivery/POD | 20–25 | undefined |
+| 4 | Payment evidence, invoice, settlement, reconciliation | 26–29 | undefined |
+| 5 | Dispute/RMA + support | 30–31 | undefined |
+| 6 | Notification/inbox/provider HTTP | 32–33 | undefined |
+| 7 | Ops/admin/referral/onboarding | 34–35 | undefined |
+| 8 | Analytics/KPI telemetry | 36–37 | undefined |
+
+Endpoint governance:
+- 21 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED.
+- /healthz and /readyz are operational transport routes, not business endpoints.
+- BOUNDARY_READY / NOT_YET_HTTP methods are not production HTTP completion.
+- Path normalization may reconcile :id and {id}; this does not create a second endpoint.
+- Duplicate documentation examples must not create duplicate trace nodes.
+- Every endpoint must still resolve to CAP → SCR → ACT → PERM → STATE → QA → Evidence.
