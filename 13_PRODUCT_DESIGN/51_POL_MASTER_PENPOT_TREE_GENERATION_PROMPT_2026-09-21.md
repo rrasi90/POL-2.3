@@ -1191,3 +1191,38 @@ For each critical journey include physical/digital evidence, customer action, fr
 
 ## RELEASE REQUIREMENT
 Use end-to-end walking-skeleton slices. Do not call a release complete because several related screens were designed in isolation.
+
+
+---
+
+# V3.1 KPI / MASTER TREE HEALTH ADDENDUM
+
+The generation process MUST calculate or explicitly mark as N/A the Master Tree health dimensions below.
+
+## Required KPI families
+1. Scope & coverage: capability coverage, Penpot coverage, API/runtime coverage, permission coverage, state coverage.
+2. Bidirectional traceability: forward coverage, backward coverage, orphan node rate, orphan edge rate, unmapped artifact rate.
+3. Freshness/drift: source freshness, stale design rate, decision staleness, architecture drift, contradiction density, time-to-resolution.
+4. IA/findability: tree-test success, directness, time, first-click accuracy, navigation depth, polyhierarchy.
+5. Structural graph health: depth, branching factor, leaf concentration, cross-link density, prohibited cycles, fan-in, fan-out.
+6. Design system: component reuse, token coverage, local exceptions, detach/override rate, design-code parity, adoption, time-to-first-use, design QA hours.
+7. State/interaction: state coverage, transition coverage, failure-path coverage, recovery completion.
+8. Service: frontstage/backstage coverage, handoff ownership/SLA coverage, unowned handoff rate, recovery coverage.
+9. Security/IAM: protected action permission coverage, unauthorized-path coverage, tenant isolation trace, audit coverage.
+10. Accessibility/theme/localization: dark coverage, RTL/mixed-direction coverage, accessibility evidence, open violations.
+11. Governance: source-of-truth coverage, decision traceability, supersession integrity, review currency, change-impact coverage, propagation time.
+12. Content: terminology consistency, copy contract coverage, unsupported claim rate.
+13. Analytics: critical capability instrumentation, KPI-to-event traceability, orphan analytics events.
+14. Delivery: design-to-development handoff time, clarification rate, rework rate, escaped design defects, change blast radius.
+
+## Required Core Health Set
+Report at minimum: Capability Traceability Coverage; Backward Traceability Coverage; Orphan Node Rate; Source Freshness; Open P0 Contradictions; Critical State Coverage; Protected Action Permission Coverage; Critical Failure-Path Coverage; Component Reuse Rate; Token Coverage; Design-Code Parity; Dark Theme Coverage; Accessibility Evidence Coverage; Analytics Instrumentation Coverage; Change Impact Coverage.
+
+## KPI governance
+Do not invent universal industry targets. Label targets as POL operating thresholds unless supported by a cited standard/source. Keep baseline, current value, trend, source, owner, cadence, population, scope, formula, alert threshold and evidence.
+
+## Anti-KPI rule
+Do not use raw frame count, component count, page count, Git commit count, documentation views alone, or a single subjective quality score as primary Master Tree health measures.
+
+## Fitness functions
+Where possible convert critical rules into continuous checks: no orphan production screens; every protected action has a permission; every mutation has an API/command; every P0 flow has failure/recovery; every production screen declares Light/Dark; applicable Persian screens declare RTL evidence; canonical components have one governed source; no broken relationship IDs; no prohibited dependency cycles; no unsupported financial/guarantee claims; unknown barcodes never auto-promote; P2 Wallet/Driver App/rich offline concepts are not activated in MVP.
