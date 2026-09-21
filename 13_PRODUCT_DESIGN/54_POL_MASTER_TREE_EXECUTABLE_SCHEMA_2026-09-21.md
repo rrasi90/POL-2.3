@@ -1,7 +1,7 @@
 # POL — Executable Master Tree Schema & Closure Contract
 
 **Document ID:** `POL-DESIGN-SCHEMA-001`  
-**Version:** `2.0.0`  
+**Version:** `2.1.0`  
 **Date:** 2026-09-21  
 **Status:** ACTIVE / MACHINE-CONSUMABLE DESIGN GOVERNANCE  
 **Repository:** `rrasi90/POL-2.3`  
@@ -378,4 +378,21 @@ The external token format is an interchange mechanism; POL semantic names and au
 A design release must bind:
 
 Master Tree version + node schema version + repository HEAD + Penpot revision + token baseline + component baseline + closure summary + open defects + waivers + contradiction state + evidence manifest + approval record.
+
+
+
+
+## 14. Greenfield build profile contract
+
+The current target execution mode is:
+
+`GREENFIELD_EMPTY_FILE`
+
+The build profile is:
+
+`13_PRODUCT_DESIGN/58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`
+
+A design release in greenfield mode must not use the historical Penpot snapshot as its artifact baseline.
+
+The first artifact evidence record is the empty-file preflight. Subsequent evidence must prove incremental persistence through the required dependency-first waves.
 
