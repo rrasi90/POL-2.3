@@ -1271,3 +1271,11 @@ Mandatory V3.2 preservation rules:
 15. Every historical/legacy document or stale stack reference must be contained and must not override CURRENT_SOURCE_OF_TRUTH or DECISION_REGISTER.
 16. Do not claim that adding a frame to Penpot makes a route, API, runtime, or pilot capability complete.
 17. After every design wave, re-run the repository closure questions in Master Tree §67.22 and update the audit state in §67.23.
+
+
+### V3.2+ exact coverage extensions
+18. Preserve the exact 50-endpoint contract ledger from Master Tree §67.25; method + normalized path + status are traceability data.
+19. Preserve exact source capability labels as aliases where wording differs from CAP node names.
+20. Preserve strategic stakeholders and outcomes: Retailer, Vendor, Manufacturer, Visitor/Field Force, Operations, 3PL, Bank/Financial Partner; Visitor→POL substitution, self-service, price transparency, frictionless basket, supply anchor, asset-light model, anti-disintermediation, trust/data/transaction networks and future Manufacturer Intelligence.
+21. Distinguish non-UI product-critical artifacts such as pilot LOI, investor evidence pack, research evidence, KPI exports, SOPs and certification evidence from Penpot screens.
+22. Do not add a Penpot screen solely because a strategy document contains a concept; first resolve it to CAP, KPI, service blueprint, future capability or non-UI evidence artifact.
