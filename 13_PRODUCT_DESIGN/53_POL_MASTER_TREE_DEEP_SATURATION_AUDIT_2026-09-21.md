@@ -270,3 +270,55 @@ https://adr.github.io/
 Master Tree v3.4.0 should absorb the P0 controls immediately, because they are prerequisites for trustworthy agent-driven construction. P1 controls should be present before the corresponding design waves reach high-risk operational flows. P2 controls are cumulative evaluation infrastructure and may follow the first verified product build.
 
 Most importantly, the next design step should not be 'generate more screens'. It should be to make the Master Tree itself executable as a controlled contract: a deterministic source packet enters a bounded wave, one command is executed, the resulting Penpot state is proven, semantic/structural/visual diffs are evaluated, and a human-readable evidence record makes the change resumable and reversible.
+---
+
+# 8. Capability-to-Screen Closure Audit — second-order finding
+
+The capability matrix contains MVP capabilities that are semantically registered in the Master Tree but are not all represented by an explicit first-class screen/workflow node.
+
+This is different from route coverage. A backend capability can remain application-boundary-only while the product still needs a defined user-facing workflow. Conversely, some commands are internal and do not require a UI.
+
+| Proposed node | Capability / source | Closure status | Required design treatment |
+|---|---|---|---|
+| SH-05 | Universal Feedback Box | GAP | Contextual feedback entry + contextual metadata capture |
+| OP-16 | Feedback Triage & Reply | GAP | Admin/ops queue, filtering, assignment, reply, resolution, closed-loop notification |
+| OP-17 | Broadcast Composer & Dispatch | GAP | Draft → audience review → dispatch → delivery status → audit |
+| OP-18 | User & Membership Directory | GAP | organization-scoped user lookup, membership state, role/effective access context |
+| OP-19 | Organization / Tenant Directory | GAP | org status, context, membership relationship, safe admin actions |
+| OP-20 | Vendor/Retailer Operational Directory | GAP | searchable operational context for Ops without duplicating customer-owned views |
+| OP-21 | Vendor Onboarding & Activation | GAP | lead → qualification → LOI → data intake → training → activation state |
+| OP-22 | Category Administration | GAP | category tree edit/review, safe publish, audit, impact warning |
+| OP-23 | Vendor Reliability Review | PARTIAL | observed-vs-declared evidence, event history, no unsupported public score semantics |
+| OP-24 | Product Identity Merge / Archive Review | PARTIAL | candidate → review → merge/split/archive → snapshot → rollback evidence |
+| OP-25 | Payment Evidence / Verification | GAP | evidence submission/review, verified/unverified/mismatch, audit and escalation |
+| OP-26 | Invoice Integrity / Document Review | PARTIAL | invoice provenance, access control, immutable commercial-document history |
+| OP-27 | Operational SLA Calendar / Override Review | PARTIAL | working calendar, remaining time, pause, override, reason, audit |
+| OP-28 | Notification Preference & Delivery Control | PARTIAL | mandatory vs optional events, preference, delivery state and failure recovery |
+
+Important scope rule:
+These nodes are not a declaration that every listed API must become a public navigation item. Each node must first be classified as USER_FACING_SCREEN, SHARED_PATTERN, OPS_WORKFLOW, ADMIN_WORKFLOW or NON_UI_COMMAND.
+
+# 9. Fifth-pass saturation refinement — distinction between presence and closure
+
+A source may be covered in one dimension while open in another:
+
+Capability Present ≠ Screen Defined ≠ State Defined ≠ Permission Defined ≠ API Connected ≠ Prototype Verified ≠ Accessibility Verified ≠ Runtime Verified.
+
+The Master Tree closure model is therefore upgraded from single-axis coverage to multidimensional closure.
+
+For each CAP, the minimum closure vector is:
+
+CAP → OUTCOME → JOURNEY → SCREEN/PATTERN/NON_UI → STATES → ACT → PERM → DATA → API/BOUNDARY → EVENT/AUDIT/NOTIFICATION → PROTOTYPE → A11Y/RTL/RESP/NETWORK → QA EVIDENCE.
+
+# 10. Additional product/design research notes that should remain explicit
+
+The legacy onboarding playbook contains a five-minute assisted onboarding sequence and marketing-style explanatory copy. Preserve the operational onboarding journey, but do not import its marketing claims as unverified UI promises.
+
+The vendor-acquisition playbook likewise contains pilot-specific negotiation language. It is GTM evidence, not automatically product behavior or permanent UI copy.
+
+Every design source should be classified as PRODUCT_BEHAVIOR, ENGINEERING_CONTRACT, OPERATING_PLAYBOOK, GTM_PITCH, RESEARCH_EVIDENCE, UI_COPY or HISTORICAL_REFERENCE.
+
+Every public/high-risk copy block should resolve:
+CLAIM_ID → TEXT → SOURCE → AUTHORITY → VALID_TIME → AUDIENCE → SURFACE → RISK → REVIEW_OWNER.
+
+Claims such as cheapest vendor, absolute reliability ranking, guaranteed transport coordination, permanent commission promises or unsupported fulfillment guarantees must not become canonical UI language without a current authoritative source.
