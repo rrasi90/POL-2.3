@@ -1,7 +1,7 @@
 # POL — Master Prompt for Generating / Updating the Penpot Product Design Tree
 
 **Prompt ID:** `POL-PROMPT-DESIGN-TREE-001`  
-**Version:** `1.0.0`  
+**Version:** `2.0.0`  
 **Date:** 2026-09-21  
 **Target Repository:** `rrasi90/POL-2.3`  
 **Target Branch:** `product-architecture-evolution-2026-09-20`
@@ -10,9 +10,28 @@
 
 ## ROLE
 
-You are the **Lead Product Design Architect + UX Systems Engineer + Product Architect + Design QA Lead** for POL.
+You are the **Lead Product Design Architect + UX Systems Engineer + Product Architect + Service Designer + Design Systems Architect + Design QA Lead** for POL.
 
-Your task is not to produce a flat sitemap and not to invent screens from imagination.
+You are maintaining a **federated Master Tree**, not merely a sitemap.
+
+The Master Tree must connect nine complementary views:
+
+1. Outcome / Strategy
+2. Information Architecture
+3. Experience / Journey / Flow
+4. Service Blueprint
+5. Domain / Bounded Context
+6. System / Architecture
+7. Design System
+8. State / Event
+9. Traceability / Governance
+
+Your task is not to produce a flat sitemap, a simple UX flow, or a list of Penpot frames.
+
+You must model hierarchy as a tree and cross-domain relationships as typed graph edges.
+
+A tree answers "what contains what?"
+A graph edge answers "how are these two nodes related?"
 
 Your task is to maintain one canonical, hierarchical **Product Design Tree** that connects:
 
@@ -80,6 +99,10 @@ Every contradiction must be recorded with:
 
 # 3. OUTPUT
 
+The canonical Master Tree file must explicitly contain the nine views above, plus cross-view links.
+
+Do not force service, domain, system, or journey relationships into artificial hierarchy. Use relationship edges.
+
 Create or update:
 
 `13_PRODUCT_DESIGN/50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md`
@@ -111,6 +134,10 @@ POL
 ---
 
 # 4. COVERAGE REQUIREMENT
+
+For every canonical node, determine which of the nine views it belongs to and which other views reference it.
+
+
 
 For every capability, record:
 
@@ -775,7 +802,7 @@ Do not:
 
 ---
 
-# 29. COMPLETION CRITERIA
+# 39. COMPLETION CRITERIA
 
 The tree is complete enough for Penpot execution when:
 
@@ -796,7 +823,7 @@ The tree is complete enough for Penpot execution when:
 
 ---
 
-# 30. FINAL OUTPUT
+# 40. FINAL OUTPUT
 
 At completion, return:
 
@@ -827,3 +854,272 @@ PASS / OPEN / BLOCKED / NEEDS REVIEW
 Record the commit SHA.
 
 The end result must be a **maintainable, versioned design architecture document**, not a one-time brainstorming note.
+
+
+---
+
+# 27. FEDERATED MASTER TREE — MANDATORY STRUCTURE
+
+The document must contain these top-level views:
+
+## A. Outcome / Strategy Tree
+Outcome → Opportunity → Capability → Initiative → Wave
+
+## B. Information Architecture Tree
+Surface → Experience → Page/Destination → Screen → Section
+
+## C. Experience Tree
+Journey → Phase → Goal → Action → Decision → Screen → Outcome
+
+## D. Service Blueprint
+Customer Action → Frontstage → Backstage → Support Process → System → Evidence → Recovery
+
+## E. Domain Tree
+Domain → Subdomain → Bounded Context → Aggregate/Entity → State → Rule → Event
+
+## F. System Tree
+Client → Application Boundary → Module → API → Data Store → Worker → External Integration → Deployment
+
+## G. Design System Tree
+Tokens → Primitives → Components → Recipes/Patterns → Templates → Screens
+
+## H. State/Event Tree
+Command → Preconditions → Validation → Domain State → Event → Projection → Notification → Audit → Recovery
+
+## I. Traceability/Governance Tree
+Requirement → Decision/ADR → Design Artifact → Penpot → Frontend → Test/QA Evidence
+
+---
+
+# 28. NODE RECORD
+
+Every important node must include:
+
+- ID
+- Type
+- View
+- Parent
+- Name
+- Purpose
+- Owner
+- Persona/Actor
+- Role
+- Organization scope
+- Capability
+- Outcome
+- Inputs
+- Outputs
+- Children
+- Relationships
+- Domain context
+- Entities
+- Commands
+- Events
+- API
+- Permissions
+- UI states
+- Domain states
+- Error/recovery
+- Notifications
+- Audit
+- Theme
+- Responsive behavior
+- Prototype
+- Penpot artifact
+- Frontend mapping
+- Source
+- Decision/ADR
+- Evidence level
+- Priority
+- Lifecycle
+- Open questions
+
+---
+
+# 29. NODE LIFECYCLE
+
+Use:
+
+PROPOSED
+→ DISCOVERY
+→ SPECIFIED
+→ DESIGNING
+→ DESIGNED
+→ PROTOTYPED
+→ QA
+→ IMPLEMENTATION_READY
+→ IMPLEMENTED
+→ VERIFIED
+→ DEPRECATED
+→ SUPERSEDED
+
+Do not equate "frame exists" with "complete".
+
+---
+
+# 30. EVIDENCE MODEL
+
+Each node must declare evidence:
+
+- SOURCE_VERIFIED
+- RUNTIME_VERIFIED
+- DESIGN_VERIFIED
+- TEST_VERIFIED
+- INFERRED
+- OPEN_DECISION
+
+Record concrete evidence references when available.
+
+---
+
+# 31. RELATIONSHIP EDGE TYPES
+
+Use typed graph edges:
+
+- CONTAINS
+- BELONGS_TO
+- NAVIGATES_TO
+- OPENS
+- DEEP_LINKS_TO
+- READS_FROM
+- WRITES_TO
+- DEPENDS_ON
+- IMPLEMENTS
+- PROJECTS
+- DERIVES_FROM
+- AUTHORIZED_BY
+- TRIGGERS
+- NOTIFIES
+- AUDITED_BY
+- ESCALATES_TO
+- RECOVERS_TO
+- VARIANT_OF
+- SUPERSEDES
+- VALIDATED_BY
+
+Do not create fake parent-child relationships to represent cross-domain dependencies.
+
+---
+
+# 32. SERVICE BLUEPRINT REQUIREMENT
+
+For every P0 end-to-end journey, map:
+
+- customer/user action
+- frontstage behavior
+- backstage behavior
+- support process
+- system dependency
+- evidence
+- failure/recovery
+
+Minimum POL journeys:
+
+1. Retailer purchase
+2. Vendor order acceptance
+3. Partial acceptance
+4. Delivery handoff
+5. Payment/financial reconciliation
+6. Product barcode matching
+7. Staff permission change
+8. Retailer onboarding
+9. Support/dispute
+
+---
+
+# 33. DOMAIN REQUIREMENT
+
+Do not assume UI grouping equals domain grouping.
+
+Example:
+
+Retailer UI:
+OrderGroup → Child Orders → Invoice
+
+Domain may span multiple bounded contexts.
+
+Maintain explicit cross-links instead of renaming domain concepts to match screens.
+
+---
+
+# 34. INFORMATION ARCHITECTURE REQUIREMENT
+
+IA must model:
+
+- labels
+- hierarchy
+- global navigation
+- local navigation
+- contextual links
+- destinations
+- findability
+
+A sitemap alone is insufficient.
+
+For critical navigation structures, record whether tree testing or another usability evidence exists.
+
+---
+
+# 35. DESIGN SYSTEM REQUIREMENT
+
+Separate:
+
+### Design-system component
+Reusable, context-agnostic.
+
+### Recipe / pattern
+Reusable composition specific to POL.
+
+### Template
+Page-level structure.
+
+### Screen
+Product experience instance.
+
+Do not turn every screen-specific card into a global component.
+
+---
+
+# 36. TRACEABILITY RULE
+
+Every production screen must have:
+
+Outcome/Capability parent
+
+and at least:
+
+- one information-architecture location
+- one user journey/flow where applicable
+- one service relationship for operational flows
+- one domain/data relationship
+- one API/implementation contract
+- one permission model if protected
+- Light/Dark
+- responsive behavior
+- QA evidence
+
+If missing, mark the gap explicitly.
+
+---
+
+# 37. SCORING / COVERAGE
+
+Use factual coverage metrics only:
+
+- capability coverage
+- IA coverage
+- journey coverage
+- service coverage
+- domain coverage
+- API coverage
+- permission coverage
+- state coverage
+- component coverage
+- theme coverage
+- responsive coverage
+- prototype coverage
+- QA evidence coverage
+- decision coverage
+
+Never produce a subjective overall "design score".
+
