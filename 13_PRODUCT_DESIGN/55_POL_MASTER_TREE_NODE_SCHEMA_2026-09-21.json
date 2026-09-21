@@ -185,6 +185,49 @@
       "items": {
         "$ref": "#/$defs/impact"
       }
+    },
+    "visual_direction": {
+      "type": "string",
+      "enum": [
+        "PRECISION_COMMERCE"
+      ]
+    },
+    "theme_coverage": {
+      "type": "object",
+      "properties": {
+        "light": {
+          "type": "boolean"
+        },
+        "night": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "LIGHT_AND_NIGHT",
+            "THEME_NOT_APPLICABLE"
+          ]
+        },
+        "not_applicable_reason": {
+          "type": "string"
+        }
+      }
+    },
+    "density_profile": {
+      "type": "string",
+      "enum": [
+        "D1_SPACIOUS_COMMERCE",
+        "D2_BALANCED_OPERATIONS",
+        "D3_DENSE_COMMAND",
+        "CORPORATE_EDITORIAL",
+        "FIELD_PRACTICAL"
+      ]
+    },
+    "visual_token_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "$defs": {
