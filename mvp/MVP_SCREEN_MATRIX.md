@@ -15,10 +15,19 @@
 |----|-------|------------------------|--------------|------------------------|--------|--------|
 | SH-AUTH-01 | Login phone + OTP request | `/auth/login` | PUBLIC_ANON → all | POST `/auth/request-otp` | route map §1; D-018; doc 22 §3.1 | PENDING |
 | SH-AUTH-02 | Verify OTP (4-digit) | `/auth/verify` | PUBLIC_ANON → all | POST `/auth/verify-otp` | D-018; route map (OTP digits → 4) | PENDING |
-| SH-AUTH-03 | Refresh (implicit) | (client) | all | POST `/auth/refresh` | route map §1 | PENDING |
-| SH-PROFILE-01 | Account / profile | `/profile` | authenticated | GET/PUT `/profile`, GET `/profile/context` | route map; R-13; V-12 | PENDING |
-| SH-NOTIF-01 | Notifications inbox | `/notifications` | authenticated | GET `/notifications` | route map (path conflict G-004) | PENDING |
-| SH-NOTIF-02 | Notification preferences | `/notifications/preferences` | authenticated | GET/PUT `/notifications/preferences` | route map | PENDING |
+| SH-AUTH-03 | Refresh (implicit) | (client) | all | POST `/auth/refresh` | route map §1 | IMPLEMENTED |
+| SH-PROFILE-01 | Account / profile | `/profile` | authenticated | GET/PUT `/profile`, GET `/profile/context` | route map; R-13; V-12 | IMPLEMENTED |
+| SH-NOTIF-01 | Notifications inbox | `/notifications` | authenticated | GET `/notifications` | route map (path conflict G-004) | IMPLEMENTED |
+| SH-NOTIF-02 | Notification preferences | `/notifications/preferences` | authenticated | GET/PUT `/notifications/preferences` | route map | IMPLEMENTED |
+
+### §A evidence — Phase 2 Module 1 (QA cycle 1, 2026-09-22)
+
+| ID | Implementation | Verification |
+|----|----------------|--------------|
+| SH-AUTH-03 | `packages/api-client/src/index.ts` (onRefresh on 401 → single retry); `apps/web/src/lib/auth/api.ts` (POST `/api/v1/auth/refresh` with store refresh_token, in-flight dedup, clear on failure) | `cd mvp && npm run typecheck` → exit 0; `cd mvp && npm run build` → exit 0 |
+| SH-PROFILE-01 | `apps/web/src/app/(dashboard)/profile/page.tsx` (GET/PUT `/api/v1/profile`, GET `/api/v1/profile/context`, mobile/role/org, logout) | `cd mvp && npm run typecheck` → exit 0; `cd mvp && npm run build` → exit 0 |
+| SH-NOTIF-01 | `apps/web/src/app/(dashboard)/notifications/page.tsx` (GET `/api/v1/notifications`, skeleton/empty/error+retry, offset load-more, unread only if payload has `read`/`is_read`; no mark-read — no REAL route) | `cd mvp && npm run typecheck` → exit 0; `cd mvp && npm run build` → exit 0 |
+| SH-NOTIF-02 | `apps/web/src/app/(dashboard)/notifications/preferences/page.tsx` (GET/PUT `/api/v1/notifications/preferences`, per-row PUSH/SMS switches, optimistic revert + error) | `cd mvp && npm run typecheck` → exit 0; `cd mvp && npm run build` → exit 0 |
 
 ---
 
@@ -131,10 +140,10 @@
 
 | Family | Count | PENDING | IMPLEMENTED | VERIFIED | GAP | BLOCKED | N/A |
 |--------|------:|--------:|------------:|---------:|----:|--------:|----:|
-| Shared/Auth | 6 | 6 | 0 | 0 | 0 | 0 | 0 |
+| Shared/Auth | 6 | 2 | 4 | 0 | 0 | 0 | 0 |
 | Retailer | 20 | 20 | 0 | 0 | 0 | 0 | 0 |
 | Vendor | 16 | 16 | 0 | 0 | 0 | 0 | 0 |
 | Ops | 13 | 13 | 0 | 0 | 0 | 0 | 0 |
 | Field | 5 | 5 | 0 | 0 | 0 | 0 | 0 |
 | Corporate | 8 | 8 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | **68** | **68** | **0** | **0** | **0** | **0** | **0** |
+| **Total** | **68** | **64** | **4** | **0** | **0** | **0** | **0** |

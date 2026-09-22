@@ -4,6 +4,8 @@ export interface ApiClientOptions {
   baseUrl: string;
   getAccessToken?: () => string | null | undefined;
   onUnauthorized?: () => void;
+  /** SH-AUTH-03: invoked once on 401; return true to retry with the refreshed token. */
+  onRefresh?: () => Promise<boolean>;
 }
 
 export class ApiError extends Error {
@@ -25,6 +27,7 @@ export function createApiClient(opts: ApiClientOptions) {
     path: string,
     body?: unknown,
     init?: RequestInit,
+    retried = false,
   ): Promise<T> {
     const headers = new Headers(init?.headers);
     headers.set("Content-Type", "application/json");
@@ -38,6 +41,11 @@ export function createApiClient(opts: ApiClientOptions) {
       body: body === undefined ? undefined : JSON.stringify(body),
     });
 
+    if (res.status === 401 && !retried && opts.onRefresh) {
+      const refreshed = await opts.onRefresh();
+      if (refreshed) return request<T>(method, path, body, init, true);
+    }
+
     let payload: ApiResponse<T>;
     try {
       payload = (await res.json()) as ApiResponse<T>;
@@ -49,6 +57,10 @@ export function createApiClient(opts: ApiClientOptions) {
       const err = payload.error;
       if (res.status === 401) opts.onUnauthorized?.();
       throw new ApiError(err.code, err.message, err.details, res.status);
+    }
+    if (res.status === 401) {
+      opts.onUnauthorized?.();
+      throw new ApiError("UNAUTHORIZED", "Unauthorized", {}, res.status);
     }
     return payload.data;
   }

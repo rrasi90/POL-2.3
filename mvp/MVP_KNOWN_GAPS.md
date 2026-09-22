@@ -32,11 +32,13 @@
 - **Build:** use REAL `/notifications`; mark contract inbox as non-HTTP until backend aligns.
 - **Status:** CONFLICT
 
-## G-005 — Notification read field name (CONFLICT — verify at wire time)
+## G-005 — Notification read field name (CONFLICT — RESOLVED at wire time)
 
 - **Some Phase C UI:** `is_read` vs type/backend `read`
 - **Action:** when wiring, read `notifications.py` response model; use backend field only.
-- **Status:** CONFLICT (pending verify cycle)
+- **Wire-time verification (2026-09-22):** `notifications_list` projects only `id, event_name, title, body, priority, created_at` — neither `read` nor `is_read` is returned; no mark-read HTTP route exists (`GET /notifications`, `GET/PUT /notifications/preferences` only).
+- **Build:** UI reads `is_read`/`read` via optional fields and shows the unread badge only if a boolean is present (absent on current backend); no mark-read control invented.
+- **Status:** RESOLVED for MVP — no unread surface until backend projects a read field.
 
 ## G-006 — Corporate routes absent from route map (GAP)
 
