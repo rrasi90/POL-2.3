@@ -126,15 +126,15 @@ HTTP may also set `X-Correlation-ID`.
 | GET | `/orders/group/{order_group_id}/orders` |
 | POST | `/orders/{order_id}/accept` |
 | POST | `/orders/{order_id}/reject` |
-| POST | `/orders/{order_id}/partial-acceptance-proposals` |
-| POST | `/orders/{order_id}/partial-acceptance-proposals/{proposal_id}/approve` |
-| POST | `/orders/{order_id}/partial-acceptance-proposals/{proposal_id}/decline` |
+| POST | `/orders/{order_id}/partial-acceptance-proposals` | Idempotency-Key UUIDv4 required |
+| POST | `/orders/{order_id}/partial-acceptance-proposals/{proposal_id}/approve` | R-09C; no GET list → G-021 |
+| POST | `/orders/{order_id}/partial-acceptance-proposals/{proposal_id}/decline` | optional `{reason≤1000}` |
 | POST | `/orders/{order_id}/preparing` |
 | POST | `/orders/{order_id}/ready` |
 | POST | `/orders/{order_id}/dispatch` |
-| POST | `/orders/{order_id}/deliver` |
-| GET | `/orders/{order_id}/delivery` |
-| GET | `/orders/{order_id}/delivery/proof` |
+| POST | `/orders/{order_id}/deliver` | DeliveryConfirmRequest; otp pattern 6-digit → G-022 |
+| GET | `/orders/{order_id}/delivery` | R-09D |
+| GET | `/orders/{order_id}/delivery/proof` | R-09E; may return `{message:"No proof…"}` |
 | POST/GET | `/orders/{order_id}/delivery-exceptions` |
 | GET/PATCH | `/orders/delivery-exceptions/{exception_id}` (+ `/resolve`, `/escalate`) |
 | POST/GET | `/orders/{order_id}/payments/evidence` |

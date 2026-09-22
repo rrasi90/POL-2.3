@@ -128,6 +128,18 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 - Marketing screens need no auth; no API required for C-01…08 static content.
 - **Status:** GAP (by design — static)
 
+## G-021 — No GET list for partial-acceptance proposals (GAP)
+
+- **Sources:** `orders.py` has POST create + approve/decline only; no `GET .../partial-acceptance-proposals`.
+- **Build:** R-09C derives open proposals from `GET /orders/{id}/timeline` `event_data.proposal_id` on `ORDER_PARTIAL_ACCEPTANCE_PROPOSED`, closed on later APPROVED/DECLINED events. If backend later adds a list GET, switch to it.
+- **Status:** GAP (documented workaround; no invented endpoint)
+
+## G-022 — Delivery OTP schema vs D-018 (CONFLICT)
+
+- **Sources:** `DeliveryConfirmRequest.otp_code` pattern `^\d{6}$` vs **D-018** 4-digit OTP (`OTP_CODE_LENGTH = 4`).
+- **Resolution:** login OTP remains 4-digit (G-001 / D-018). Delivery confirm UI accepts 6 digits to match **live** FastAPI schema so the request can succeed; do not invent a 4-digit field the server rejects. Backend should align pattern to D-018 before e2e verify.
+- **Status:** CONFLICT (documented; UI follows wire schema for delivery only)
+
 ---
 
 ## How to add

@@ -49,9 +49,9 @@
 | R-08 | Checkout / confirmation | `/retailer/checkout` | RETAILER_* | POST `/orders` | doc 22 L316–325; MT RT-04 | IMPLEMENTED |
 | R-09 | Order group detail | `/retailer/orders/group/[id]` | RETAILER_* | GET `/orders/group/{id}`, `/orders/group/{id}/orders` | doc 22 L327–341; MT RT-15; D-022 | IMPLEMENTED |
 | R-09B | Child order detail | `/retailer/orders/[id]` | RETAILER_* | GET `/orders/{id}`, items, timeline | doc 22; MT RT-08 | IMPLEMENTED |
-| R-09C | Partial acceptance review | (order detail) | RETAILER_OWNER | approve/decline partial proposals | MT RT-20 | PENDING |
-| R-09D | Delivery tracking | (order detail) | RETAILER_* | GET `/orders/{id}/delivery` | MT RT-05 | PENDING |
-| R-09E | Handoff / receiver confirm | (order or link) | receiver | GET delivery/proof; confirm patterns | MT RT-19; D-023 | PENDING |
+| R-09C | Partial acceptance review | (order detail) | RETAILER_OWNER | POST approve/decline partial proposals (derive `proposal_id` from timeline `event_data`) | MT RT-20 | IMPLEMENTED |
+| R-09D | Delivery tracking | (order detail) | RETAILER_* | GET `/orders/{id}/delivery` | MT RT-05 | IMPLEMENTED |
+| R-09E | Handoff / receiver confirm | (order or link) | receiver | GET delivery/proof; POST `/orders/{id}/deliver` | MT RT-19; D-023 | IMPLEMENTED |
 | R-10 | Reorder / history | `/retailer/orders` | RETAILER_* | GET `/orders` | doc 22 L343–349; MT RT-10 | IMPLEMENTED |
 | R-11 | Returns / disputes | `/retailer/orders/[id]/returns` | RETAILER_OWNER | POST/GET `/orders/{id}/returns`, disputes | doc 22 L351–353; MT RT-09 | IMPLEMENTED |
 | R-12 | Support | `/retailer/support` | RETAILER_* | `/support/cases*` | doc 22 L355–363; MT RT-13 | IMPLEMENTED |
@@ -69,6 +69,10 @@
 | R-07/08 | `retailer/checkout/page.tsx` (allocation-preview + POST orders) | typecheck/build exit 0 |
 | R-09 | `retailer/orders/group/[id]/page.tsx` | typecheck/build exit 0 |
 | R-09B | `retailer/orders/[id]/page.tsx` | typecheck/build exit 0 |
+| R-09C | `retailer/orders/[id]/page.tsx` partial-acceptance panel (approve/decline; proposal_id from timeline event_data) | typecheck/build exit 0 |
+| R-09D | same file delivery panel (GET `/orders/{id}/delivery`) | typecheck/build exit 0 |
+| R-09E | same file handoff/proof + POST `/deliver` (OTP 6-digit schema → G-022) | typecheck/build exit 0 |
+| R-09C/D/E | same order detail: derive proposals from timeline; GET delivery + proof; POST approve/decline/deliver | typecheck/build exit 0 |
 | R-11 | `retailer/orders/[id]/returns/page.tsx` | typecheck/build exit 0 |
 | R-12 | `retailer/support/page.tsx` | typecheck/build exit 0 |
 | R-16 | `retailer/finance/page.tsx` (wallet note D-021) | typecheck/build exit 0 |
@@ -119,7 +123,7 @@
 |----|-------|-------|------|--------------|--------|--------|
 | O-01 | Overview (queues first) | `/ops` | OPS_AGENT | exceptions dashboard, queues | doc 22 L479–486; MT OP-04 | IMPLEMENTED |
 | O-02 | Unified queues | `/ops/queues` | OPS_AGENT | orders/support/rma/recon lists | doc 22 L488–499; MT OP-01 | IMPLEMENTED |
-| O-03 | Object detail shell | `/ops/[type]/[id]` | OPS_AGENT | per object | doc 22 L501–508; MT OP-02 | PENDING |
+| O-03 | Object detail shell | `/ops/[type]/[id]` | OPS_AGENT | per object (orders/support/recon/returns) | doc 22 L501–508; MT OP-02 | IMPLEMENTED |
 | O-04 | RMA / dispute workbench | `/ops/rma` | OPS_AGENT | returns/disputes (per-order) + GAP global list G-013 | doc 22 L510–516 | IMPLEMENTED |
 | O-05 | Support workbench | `/ops/support` | OPS_AGENT | `/support/cases*` | doc 22 L518–524; MT OP-05 | IMPLEMENTED |
 | O-06 | Reconciliation | `/ops/reconciliation` | OPS_AGENT | `/finance/reconciliation*` | doc 22 L526–530; MT OP-03; G-015 | IMPLEMENTED |
@@ -138,7 +142,7 @@
 | O-01/02/04/05/06/08/10 | `ops/page.tsx`, `queues`, `rma`, `support`, `reconciliation`, `notifications`, `ops/admin` | typecheck/build exit 0 |
 | O-10B | `admin/users/page.tsx`, `admin/orgs/page.tsx` (GAP stubs) | status GAP (G-007) |
 | O-07/09/OP-11/OP-13 | GAP shells | status GAP |
-| O-03 | not yet a dedicated dynamic shell | PENDING |
+| O-03 | `ops/[type]/[id]/page.tsx` (generic detail shell) | typecheck/build exit 0 |
 
 ---
 
@@ -195,12 +199,12 @@
 | Family | Count | PENDING | IMPLEMENTED | VERIFIED | GAP | BLOCKED | N/A |
 |--------|------:|--------:|------------:|---------:|----:|--------:|----:|
 | Shared/Auth | 6 | 0 | 6 | 0 | 0 | 0 | 0 |
-| Retailer | 20 | 3 | 16 | 0 | 1 | 0 | 0 |
+| Retailer | 20 | 0 | 19 | 0 | 1 | 0 | 0 |
 | Vendor | 16 | 0 | 13 | 0 | 2 | 0 | 1 |
-| Ops | 13 | 1 | 7 | 0 | 5 | 0 | 0 |
+| Ops | 13 | 0 | 8 | 0 | 5 | 0 | 0 |
 | Field | 5 | 0 | 5 | 0 | 0 | 0 | 0 |
 | Corporate | 8 | 0 | 8 | 0 | 0 | 0 | 0 |
-| **Total** | **68** | **4** | **55** | **0** | **8** | **0** | **1** |
+| **Total** | **68** | **0** | **59** | **0** | **8** | **0** | **1** |
 
 **Cycle 1 (2026-09-22):** typecheck exit 0; `next build` exit 0 (50 routes).  
-**Open PENDING:** R-09C/09D/09E (partial-accept approve UI + delivery panel), O-03 ops object detail shell.
+**Cycle 2 (2026-09-22):** closed R-09C/D/E + O-03 → IMPLEMENTED; typecheck exit 0; `next build` exit 0 (50 routes incl. `/ops/[type]/[id]`). Still `IMPLEMENTED` not `VERIFIED` until live FastAPI e2e. Need 1 more cycle (≥3) per module.

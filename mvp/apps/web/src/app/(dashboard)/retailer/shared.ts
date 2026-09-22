@@ -2,8 +2,14 @@ import type { StatusTone } from "@pol/ui";
 
 export const orderStatusTone: Record<string, StatusTone> = {
   PENDING: "warning",
+  CREATED: "neutral",
+  SUBMITTED: "info",
   ACCEPTED: "info",
+  PARTIALLY_ACCEPTED: "warning",
   PROCESSING: "info",
+  PREPARING: "info",
+  READY: "info",
+  DISPATCHED: "info",
   SHIPPED: "info",
   DELIVERED: "success",
   CANCELLED: "danger",
@@ -12,8 +18,14 @@ export const orderStatusTone: Record<string, StatusTone> = {
 
 export const orderStatusLabel: Record<string, string> = {
   PENDING: "در انتظار پذیرش",
+  CREATED: "ایجادشده",
+  SUBMITTED: "ثبت‌شده",
   ACCEPTED: "پذیرفته‌شده",
+  PARTIALLY_ACCEPTED: "پذیرش جزئی",
   PROCESSING: "در حال آماده‌سازی",
+  PREPARING: "در حال آماده‌سازی",
+  READY: "آماده ارسال",
+  DISPATCHED: "ارسال‌شده",
   SHIPPED: "ارسال‌شده",
   DELIVERED: "تحویل‌شده",
   CANCELLED: "لغوشده",

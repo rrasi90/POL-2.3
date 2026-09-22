@@ -14,7 +14,7 @@
 | 0 | Discovery & Artifacts | **DONE** (2026-09-22) |
 | — | BUILD GATE 0 | **PASS** |
 | 1 | Foundation + Design System | **DONE** (2026-09-22) |
-| 2 | Web MVP | **IN PROGRESS** — all family modules coded; 4 PENDING screens + module QA cycles |
+| 2 | Web MVP | **IN PROGRESS** — all screens coded (0 PENDING); module QA cycles 2–3 remain |
 | 3 | Android MVP (Expo) | PENDING |
 | 4 | Global QA + Regression | PENDING |
 | 5 | Delivery + Final Audit | PENDING |
@@ -24,16 +24,16 @@
 - [x] `MVP_SCREEN_MATRIX.md`: 68 screens, id/route/role/source  
 - [x] Every route sourced or GAP/PROPOSED (corporate → G-006)  
 - [x] Every API dependency in `MVP_API_MAP.md` (REAL / CONTRACT / MOCK / GAP)  
-- [x] Unresolved conflicts in `MVP_KNOWN_GAPS.md` (G-001…G-020)  
+- [x] Unresolved conflicts in `MVP_KNOWN_GAPS.md` (G-001…G-022)  
 - [x] Out-of-scope explicit in this file §2  
 - [x] `mvp/` skeleton: workspaces + packages + `apps/web` **typecheck EXIT 0 + next build EXIT 0**
 
 ### Phase 2 module order (each to module DoD before next)
 
 1. Auth / Profile / Notifications — **DONE** (cycle 1 typecheck/build)  
-2. Retailer loop (R-01…R-13 + RT-17/18/20/16/19) — **coded** (R-09C/D/E PENDING; R-03B GAP)  
+2. Retailer loop (R-01…R-13 + RT-17/18/20/16/19) — **coded** (R-09C/D/E closed; R-03B GAP)  
 3. Vendor loop (V-01…V-12 + VD-14…18) — **coded** (V-09/11 GAP; V-16 N/A web)  
-4. Ops (O-01…O-10 + OP-11…15 where in scope) — **coded** (O-03 PENDING; O-07/09/OP-11/13/O-10B GAP)  
+4. Ops (O-01…O-10 + OP-11…15 where in scope) — **coded** (O-03 closed; O-07/09/OP-11/13/O-10B GAP)  
 5. Field web parity (F-01…F-05) — **DONE**  
 6. Corporate (C-01…C-08, PUBLIC_ANON) — **DONE**  
 
@@ -89,7 +89,8 @@ mvp/
 | Cycle | Date | Screens total | VERIFIED | IMPLEMENTED | GAP | BLOCKED_EXTERNAL | N/A | PENDING | Notes |
 |-------|------|---------------|----------|-------------|-----|------------------|-----|---------|-------|
 | Gate 0 | 2026-09-22 | 68 | 0 | 0 | 0 | 0 | 0 | 68 | artifacts + skeleton; typecheck/build green |
-| Phase 2 web | 2026-09-22 | 68 | 0 | 55 | 8 | 0 | 1 | 4 | typecheck EXIT 0; next build EXIT 0 (50 routes); no live e2e |
+| Phase 2 web (c1) | 2026-09-22 | 68 | 0 | 55 | 8 | 0 | 1 | 4 | typecheck EXIT 0; next build EXIT 0 (50 routes); no live e2e |
+| Phase 2 close PENDING (c2) | 2026-09-22 | 68 | 0 | 59 | 8 | 0 | 1 | 0 | R-09C/D/E + O-03 IMPLEMENTED; typecheck + next build EXIT 0 (50 routes incl. `/ops/[type]/[id]`) |
 
 Axes (per screen): Screen · Route · Role · API · State · Responsive/RTL · A11y · Test  
 
@@ -105,6 +106,7 @@ Axes (per screen): Screen · Route · Role · API · State · Responsive/RTL · 
 | Phase 2 Retailer | 1 | 2026-09-22 | typecheck/build green; 16/20 IMPLEMENTED | §B evidence in matrix |
 | Phase 2 Vendor | 1 | 2026-09-22 | typecheck/build green; 13/16 IMPLEMENTED | §C evidence in matrix |
 | Phase 2 Ops/Field/Corp | 1 | 2026-09-22 | typecheck/build green | §D/E/F evidence in matrix |
+| Phase 2 close R-09C/D/E+O-03 | 2 | 2026-09-22 | typecheck/build green; 0 PENDING | new panels in order detail + O-03 shell; matrix §B/§D |
 
 Rules: min 3 cycles/module; no identical failed check without new evidence; 2 identical blockers → GAP/BLOCKED_EXTERNAL.
 
@@ -125,7 +127,7 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 
 ### Phase 2
 - [ ] All web families module-DoD (min 3 QA cycles/module — cycle 1 only so far)
-- [ ] Close PENDING: R-09C/D/E, O-03
+- [x] Close PENDING: R-09C/D/E, O-03
 - [ ] Final typecheck/build + matrix VERIFIED evidence after cycles 2–3
 
 ### Phase 3
