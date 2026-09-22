@@ -34,6 +34,17 @@ export default function HomePage() {
           <span>OTP چهاررقمی (D-018)</span>
           <span>بدون Driver App — تحویل با لینک (D-023)</span>
         </div>
+        <nav aria-label="پیوندهای شرکتی" className="mt-8 flex flex-wrap gap-4 text-[13px]">
+          <Link href="/about" className="text-[var(--pol-light-brand-primary)] hover:underline">
+            درباره ما
+          </Link>
+          <Link href="/contact" className="text-[var(--pol-light-brand-primary)] hover:underline">
+            تماس
+          </Link>
+          <Link href="/legal" className="text-[var(--pol-light-brand-primary)] hover:underline">
+            قوانین
+          </Link>
+        </nav>
       </div>
     </main>
   );

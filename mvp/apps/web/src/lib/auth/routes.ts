@@ -2,7 +2,7 @@ import type { Role } from "@pol/types";
 
 /** Role → default home path (route map + matrix). Server remains authoritative. */
 export const roleHome: Record<Role, string> = {
-  ADMIN_SUPER: "/ops/admin",
+  ADMIN_SUPER: "/admin",
   OPS_AGENT: "/ops",
   FIELD_ACTIVATOR: "/field",
   VENDOR_OWNER: "/vendor",

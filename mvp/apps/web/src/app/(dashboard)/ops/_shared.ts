@@ -1,0 +1,239 @@
+import type { StatusTone } from "@pol/ui";
+
+export type LoadState = "loading" | "error" | "ready";
+
+export const cardCls = [
+  "rounded-[12px] border border-[var(--pol-light-border-subtle)]",
+  "bg-[var(--pol-light-surface-default)] p-4",
+].join(" ");
+
+export const linkCardCls = [
+  cardCls,
+  "transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-subtle)]",
+].join(" ");
+
+export const inputCls = [
+  "h-10 w-full rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3",
+  "text-[14px] leading-[22px] text-[var(--pol-light-text-primary)]",
+  "placeholder:text-[var(--pol-light-text-muted)]",
+  "transition-[border-color,box-shadow] duration-[160ms]",
+  "focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)] focus:border-transparent",
+  "disabled:opacity-50 disabled:bg-[var(--pol-light-surface-subtle)]",
+].join(" ");
+
+export const orderStatusTone: Record<string, StatusTone> = {
+  CREATED: "neutral",
+  SUBMITTED: "info",
+  ACCEPTED: "info",
+  PARTIALLY_ACCEPTED: "warning",
+  REJECTED: "danger",
+  PREPARING: "info",
+  READY: "info",
+  DISPATCHED: "info",
+  DELIVERED: "success",
+  CANCELLED: "danger",
+};
+
+export const orderStatusLabel: Record<string, string> = {
+  CREATED: "ایجادشده",
+  SUBMITTED: "ثبت‌شده",
+  ACCEPTED: "پذیرفته‌شده",
+  PARTIALLY_ACCEPTED: "پذیرش جزئی",
+  REJECTED: "ردشده",
+  PREPARING: "در حال آماده‌سازی",
+  READY: "آماده ارسال",
+  DISPATCHED: "ارسال‌شده",
+  DELIVERED: "تحویل‌شده",
+  CANCELLED: "لغوشده",
+};
+
+export const disputeStatusTone: Record<string, StatusTone> = {
+  NONE: "neutral",
+  OPEN: "danger",
+  UNDER_REVIEW: "warning",
+  RESOLVED_ADJUSTED: "success",
+  RESOLVED_REJECTED: "success",
+  CLOSED: "neutral",
+};
+
+export const disputeStatusLabel: Record<string, string> = {
+  NONE: "بدون اختلاف",
+  OPEN: "اختلاف باز",
+  UNDER_REVIEW: "در حال بررسی",
+  RESOLVED_ADJUSTED: "حل‌شده (تأثیرخورده)",
+  RESOLVED_REJECTED: "حل‌شده (ردشده)",
+  CLOSED: "بسته",
+};
+
+export const supportStatusTone: Record<string, StatusTone> = {
+  OPEN: "info",
+  IN_PROGRESS: "warning",
+  WAITING_ON_USER: "warning",
+  RESOLVED: "success",
+  CLOSED: "neutral",
+};
+
+export const supportStatusLabel: Record<string, string> = {
+  OPEN: "باز",
+  IN_PROGRESS: "در حال بررسی",
+  WAITING_ON_USER: "در انتظار کاربر",
+  RESOLVED: "حل‌شده",
+  CLOSED: "بسته",
+};
+
+export const supportPriorityTone: Record<string, StatusTone> = {
+  URGENT: "danger",
+  HIGH: "warning",
+  NORMAL: "info",
+  LOW: "neutral",
+};
+
+export const supportPriorityLabel: Record<string, string> = {
+  URGENT: "فوری",
+  HIGH: "زیاد",
+  NORMAL: "عادی",
+  LOW: "کم",
+};
+
+export const supportTypeLabel: Record<string, string> = {
+  GENERAL: "عمومی",
+  ORDER_INQUIRY: "پیگیری سفارش",
+  PAYMENT_ASSISTANCE: "کمک پرداخت",
+  DELIVERY_DELAY: "تأخیر تحویل",
+  ACCOUNT_ISSUE: "مشکل حساب",
+  CATALOG_SUGGESTION: "پیشنهاد کاتالوگ",
+  INVOICE_INQUIRY: "پیگیری فاکتور",
+};
+
+export const supportTransitions: Record<string, string[]> = {
+  OPEN: ["IN_PROGRESS", "WAITING_ON_USER", "RESOLVED", "CLOSED"],
+  IN_PROGRESS: ["WAITING_ON_USER", "RESOLVED", "CLOSED"],
+  WAITING_ON_USER: ["IN_PROGRESS", "RESOLVED", "CLOSED"],
+  RESOLVED: ["CLOSED", "IN_PROGRESS"],
+  CLOSED: [],
+};
+
+export const reconStatusTone: Record<string, StatusTone> = {
+  OPEN: "danger",
+  MATCHED: "success",
+  PARTIALLY_MATCHED: "warning",
+  MISMATCH: "danger",
+  RESOLVED: "success",
+  CANCELLED: "neutral",
+};
+
+export const reconStatusLabel: Record<string, string> = {
+  OPEN: "باز",
+  MATCHED: "مطابق",
+  PARTIALLY_MATCHED: "مطابق جزئی",
+  MISMATCH: "عدم تطابق",
+  RESOLVED: "تسویه‌شده",
+  CANCELLED: "لغوشده",
+};
+
+export const notificationPriorityTone: Record<string, StatusTone> = {
+  CRITICAL: "danger",
+  HIGH: "warning",
+  NORMAL: "info",
+  LOW: "neutral",
+};
+
+export const notificationPriorityLabel: Record<string, string> = {
+  CRITICAL: "بحرانی",
+  HIGH: "زیاد",
+  NORMAL: "عادی",
+  LOW: "کم",
+};
+
+export function formatDateTime(iso: unknown): string {
+  if (typeof iso !== "string" || !iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("fa-IR", { dateStyle: "medium", timeStyle: "short" });
+}
+
+export function formatToman(value: unknown): string {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return "—";
+  return `${n.toLocaleString("fa-IR")} تومان`;
+}
+
+export function ageLabel(iso: unknown): string {
+  if (typeof iso !== "string" || !iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const diffMs = Date.now() - d.getTime();
+  if (diffMs < 0) return "—";
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "هم‌اکنون";
+  if (minutes < 60) return `${minutes.toLocaleString("fa-IR")} دقیقه`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours.toLocaleString("fa-IR")} ساعت`;
+  const days = Math.floor(hours / 24);
+  return `${days.toLocaleString("fa-IR")} روز`;
+}
+
+export function ageTone(iso: unknown, warnHours = 24, dangerHours = 72): StatusTone {
+  if (typeof iso !== "string" || !iso) return "neutral";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "neutral";
+  const hours = (Date.now() - d.getTime()) / 3600000;
+  if (hours >= dangerHours) return "danger";
+  if (hours >= warnHours) return "warning";
+  return "info";
+}
+
+export function nextActionForOrder(status: unknown, dispute: unknown): string {
+  if (typeof dispute === "string" && dispute !== "NONE" && dispute !== "CLOSED")
+    return "بررسی اختلاف";
+  switch (status) {
+    case "CREATED":
+    case "SUBMITTED":
+      return "پیگیری پذیرش";
+    case "PARTIALLY_ACCEPTED":
+      return "بررسی پذیرش جزئی";
+    case "REJECTED":
+      return "بازبینی رد";
+    case "PREPARING":
+      return "پیگیری آماده‌سازی";
+    case "READY":
+      return "هماهنگی ارسال";
+    case "DISPATCHED":
+      return "پیگیری تحویل";
+    case "CANCELLED":
+      return "بستن پرونده";
+    default:
+      return "—" as string;
+  }
+}
+
+export function itemsOf<T>(raw: unknown, ...keys: string[]): T[] {
+  if (Array.isArray(raw)) return raw as T[];
+  if (raw && typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    for (const key of [...keys, "items", "data"]) {
+      const hit = obj[key];
+      if (Array.isArray(hit)) return hit as T[];
+      if (hit && typeof hit === "object" && !Array.isArray(hit)) {
+        const nested = hit as Record<string, unknown>;
+        for (const k2 of [...keys, "items", "data"]) {
+          if (Array.isArray(nested[k2])) return nested[k2] as T[];
+        }
+        if (Array.isArray(nested.data)) return nested.data as T[];
+      }
+    }
+  }
+  return [];
+}
+
+export function str(v: unknown, fallback = "—"): string {
+  if (typeof v === "string" && v.trim() !== "") return v;
+  if (typeof v === "number") return String(v);
+  return fallback;
+}
+
+export function idOf(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (typeof v === "number") return String(v);
+  return "";
+}
