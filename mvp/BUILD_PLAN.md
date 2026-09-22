@@ -14,7 +14,7 @@
 | 0 | Discovery & Artifacts | **DONE** (2026-09-22) |
 | — | BUILD GATE 0 | **PASS** |
 | 1 | Foundation + Design System | **DONE** (2026-09-22) |
-| 2 | Web MVP | **IN PROGRESS** — all screens coded (0 PENDING); module QA cycles 2–3 remain |
+| 2 | Web MVP | **DONE (impl)** — all 68 screens coded (0 PENDING); 3 QA cycles green; VERIFIED awaits live e2e |
 | 3 | Android MVP (Expo) | PENDING |
 | 4 | Global QA + Regression | PENDING |
 | 5 | Delivery + Final Audit | PENDING |
@@ -91,6 +91,7 @@ mvp/
 | Gate 0 | 2026-09-22 | 68 | 0 | 0 | 0 | 0 | 0 | 68 | artifacts + skeleton; typecheck/build green |
 | Phase 2 web (c1) | 2026-09-22 | 68 | 0 | 55 | 8 | 0 | 1 | 4 | typecheck EXIT 0; next build EXIT 0 (50 routes); no live e2e |
 | Phase 2 close PENDING (c2) | 2026-09-22 | 68 | 0 | 59 | 8 | 0 | 1 | 0 | R-09C/D/E + O-03 IMPLEMENTED; typecheck + next build EXIT 0 (50 routes incl. `/ops/[type]/[id]`) |
+| Phase 2 module DoD (c3) | 2026-09-22 | 68 | 0 | 59 | 8 | 0 | 1 | 0 | eslint 0 errors; typecheck 0; next build 0 (50 routes); ≥3 cycles/module |
 
 Axes (per screen): Screen · Route · Role · API · State · Responsive/RTL · A11y · Test  
 
@@ -107,6 +108,7 @@ Axes (per screen): Screen · Route · Role · API · State · Responsive/RTL · 
 | Phase 2 Vendor | 1 | 2026-09-22 | typecheck/build green; 13/16 IMPLEMENTED | §C evidence in matrix |
 | Phase 2 Ops/Field/Corp | 1 | 2026-09-22 | typecheck/build green | §D/E/F evidence in matrix |
 | Phase 2 close R-09C/D/E+O-03 | 2 | 2026-09-22 | typecheck/build green; 0 PENDING | new panels in order detail + O-03 shell; matrix §B/§D |
+| Phase 2 module DoD (all) | 3 | 2026-09-22 | eslint 0 err / typecheck 0 / build 0 (50 routes) | eslint.config.mjs + eslint-config-next; 17 warnings (unused + window.location) |
 
 Rules: min 3 cycles/module; no identical failed check without new evidence; 2 identical blockers → GAP/BLOCKED_EXTERNAL.
 
@@ -126,9 +128,9 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] Shell + middleware role gates  
 
 ### Phase 2
-- [ ] All web families module-DoD (min 3 QA cycles/module — cycle 1 only so far)
+- [x] All web families module-DoD (min 3 QA cycles/module — cycles 1–3 green)
 - [x] Close PENDING: R-09C/D/E, O-03
-- [ ] Final typecheck/build + matrix VERIFIED evidence after cycles 2–3
+- [x] Final typecheck/build + matrix evidence after cycles 2–3 (VERIFIED still blocked on live e2e)
 
 ### Phase 3
 - [ ] Expo scaffold + functional parity matrix  
