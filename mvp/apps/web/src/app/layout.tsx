@@ -1,17 +1,29 @@
 import type { Metadata } from "next";
+import { Vazirmatn } from "next/font/google";
+import { SessionCookieSync } from "@/lib/auth/session-cookie-sync";
 import "./globals.css";
 
+const vazirmatn = Vazirmatn({
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-vazirmatn",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "POL",
-  description: "POL B2B FMCG — MVP",
+  title: "POL — بازار عمده‌فروشی",
+  description: "پلتفرم B2B FMCG — MVP",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fa" dir="rtl">
-      <body>{children}</body>
+    <html lang="fa" dir="rtl" suppressHydrationWarning>
+      <body className={`${vazirmatn.variable} font-sans antialiased`}>
+        <SessionCookieSync />
+        {children}
+      </body>
     </html>
   );
 }

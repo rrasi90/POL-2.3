@@ -1,18 +1,96 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Vazirmatn", "IRANSans", system-ui, sans-serif;
-  --color-brand-primary: #2563eb;
-  --color-brand-hover: #1d4ed8;
-  --color-brand-active: #1e40af;
+  --font-sans: var(--font-vazirmatn), "Vazirmatn", system-ui, sans-serif;
 }
 
-html {
-  font-family: var(--font-sans);
+/* Precision Commerce Light (doc 56 §3.1) */
+:root,
+html[data-theme="light"] {
+  --pol-light-bg-canvas: #f7f9fc;
+  --pol-light-surface-default: #ffffff;
+  --pol-light-surface-subtle: #f1f5f9;
+  --pol-light-surface-elevated: #ffffff;
+  --pol-light-border-subtle: #e2e8f0;
+  --pol-light-border-strong: #cbd5e1;
+  --pol-light-text-primary: #0f172a;
+  --pol-light-text-secondary: #475569;
+  --pol-light-text-muted: #64748b;
+  --pol-light-text-disabled: #94a3b8;
+  --pol-light-brand-primary: #2563eb;
+  --pol-light-brand-hover: #1d4ed8;
+  --pol-light-brand-active: #1e40af;
+  --pol-light-brand-accent: #4f46e5;
+  --pol-light-semantic-success: #15803d;
+  --pol-light-semantic-warning: #b45309;
+  --pol-light-semantic-danger: #b91c1c;
+  --pol-light-semantic-info: #1d4ed8;
+  --pol-light-focus-ring: #2563eb;
+  color-scheme: light;
+}
+
+/* Precision Commerce Night (doc 56 §3.2) */
+html[data-theme="night"] {
+  --pol-night-bg-canvas: #0f141c;
+  --pol-night-surface-default: #151c27;
+  --pol-night-surface-subtle: #1b2431;
+  --pol-night-surface-elevated: #202a38;
+  --pol-night-border-subtle: #2a3646;
+  --pol-night-border-strong: #3a4a5f;
+  --pol-night-text-primary: #f8fafc;
+  --pol-night-text-secondary: #cbd5e1;
+  --pol-night-text-muted: #94a3b8;
+  --pol-night-text-disabled: #64748b;
+  --pol-night-brand-primary: #60a5fa;
+  --pol-night-brand-hover: #93c5fd;
+  --pol-night-brand-active: #3b82f6;
+  --pol-night-brand-accent: #818cf8;
+  --pol-night-semantic-success: #4ade80;
+  --pol-night-semantic-warning: #fbbf24;
+  --pol-night-semantic-danger: #f87171;
+  --pol-night-semantic-info: #60a5fa;
+  --pol-night-focus-ring: #93c5fd;
+  color-scheme: night;
+}
+
+/* Night mode maps semantic roles used by components (which read --pol-light-*) */
+html[data-theme="night"] {
+  --pol-light-bg-canvas: var(--pol-night-bg-canvas);
+  --pol-light-surface-default: var(--pol-night-surface-default);
+  --pol-light-surface-subtle: var(--pol-night-surface-subtle);
+  --pol-light-surface-elevated: var(--pol-night-surface-elevated);
+  --pol-light-border-subtle: var(--pol-night-border-subtle);
+  --pol-light-border-strong: var(--pol-night-border-strong);
+  --pol-light-text-primary: var(--pol-night-text-primary);
+  --pol-light-text-secondary: var(--pol-night-text-secondary);
+  --pol-light-text-muted: var(--pol-night-text-muted);
+  --pol-light-text-disabled: var(--pol-night-text-disabled);
+  --pol-light-brand-primary: var(--pol-night-brand-primary);
+  --pol-light-brand-hover: var(--pol-night-brand-hover);
+  --pol-light-brand-active: var(--pol-night-brand-active);
+  --pol-light-brand-accent: var(--pol-night-brand-accent);
+  --pol-light-semantic-success: var(--pol-night-semantic-success);
+  --pol-light-semantic-warning: var(--pol-night-semantic-warning);
+  --pol-light-semantic-danger: var(--pol-night-semantic-danger);
+  --pol-light-semantic-info: var(--pol-night-semantic-info);
+  --pol-light-focus-ring: var(--pol-night-focus-ring);
 }
 
 html,
 body {
   margin: 0;
   padding: 0;
+  background: var(--pol-light-bg-canvas);
+  color: var(--pol-light-text-primary);
+}
+
+/* Reduced motion (doc 56 §11) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
