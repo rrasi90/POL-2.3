@@ -61,6 +61,8 @@ See `BUILD_PLAN.md` §11 defect log (full table). Highlights:
 
 ## 4. GitHub discrepancies
 
+This section contains historical reconciliation evidence and is not the current branch state.
+
 | Item | Before | After |
 |------|--------|-------|
 | `origin/main` vs local | ahead 3, then ahead 1 | **0 / 0** at `dbcfb59` |
@@ -93,7 +95,7 @@ Untracked (intentionally not committed): `docker-compose.yml`, `monitoring/`, `f
 | Web typecheck + build | EXIT 0 (50 routes) |
 | Workspace typecheck (historical baseline) | EXIT 0; current mobile changes require new CI evidence |
 | Migration chain | contiguous 001–031; PG18.4; 95 tables (`pol` + `pol_test`) |
-| CI | **Current HEAD `ad88ca0`: backend verification run 35884012589 SUCCESS; mobile verification run 35884012647 SUCCESS** |
+| CI | **Code commit `f8ef267e6666a03b483afdd8618585ed82086014`: backend verification run 35893284312 SUCCESS; mobile Cycle 3 verification run 35893284378 SUCCESS** |
 | Live services | API healthz 200; Web 200 |
 
 ---
