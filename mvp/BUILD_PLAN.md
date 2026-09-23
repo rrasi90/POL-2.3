@@ -271,13 +271,15 @@ MVP is DONE only when **all** hold:
 5. [x] GitHub reconcile: `git push` main; CI **35837588088 success** on `dbcfb59`.  
 6. [x] Independent second-pass audit; fix D-015/016/017 + hierarchy docs — **DONE** (`verify_repository_consistency` PASS 8/8). Full regression **497/497 PASSED**.  
 7. [x] Phase 3 Field-first Expo screens (F-01…F-05) + parity matrix `src/__tests__/parity.md` — **DONE** (typecheck green); retailer/vendor/ops parity still open.  
-8. [ ] WAVE-02 when OpenPencil up; else keep BLOCKED_EXTERNAL.  
+8. [ ] WAVE-02 when OpenPencil is available; otherwise keep BLOCKED_EXTERNAL.  
 9. [ ] Phase 5 final report — **REOPENED** living report; update only after current DoD evidence.  
-10. [ ] Close remaining live e2e: basket POST → allocation → checkout → order lifecycle (Phase 4).  
-11. [ ] Verify current mobile head in .github/workflows/pol-mvp-mobile.yml; fix any type/config failures.  
-12. [ ] Run mobile QA cycle 2: typecheck + Expo config/export; update parity evidence.  
-13. [ ] Implement/verify remaining mobile parity screens; add barcode contract surface only after contract evidence is sufficient.  
-14. [ ] Run mobile QA cycle 3 and then reopen Global QA regression + delivery only when all DoD conditions hold.
+10. [ ] Verify current mobile workflow at `.github/workflows/pol-mvp-mobile.yml`; fix any type/config/export failures.  
+11. [ ] Run mobile QA cycle 1 from current HEAD: typecheck + Expo config + Android export; record fresh evidence.  
+12. [ ] Run mobile QA cycle 2: functional/error/state-transition verification.  
+13. [ ] Complete supported mobile parity; keep V-09/V-11 and D-028 as GAP/CONTRACT where authoritative APIs/contracts are absent.  
+14. [ ] Run mobile QA cycle 3: regression + cross-module consistency + Night visual verification where executable.  
+15. [ ] Execute live basket → allocation → checkout → order lifecycle E2E and checkout idempotency replay.  
+16. [ ] Run fresh full regression and reconcile all delivery documents before final DoD.
 
 ---
 
