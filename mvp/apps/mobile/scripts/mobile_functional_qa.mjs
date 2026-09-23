@@ -39,6 +39,7 @@ const checks = [
   ["Vendor exposes finance parity against REAL invoices API", () => read("screens/VendorMobileScreen.tsx").includes("/api/v1/invoices") && read("screens/VendorMobileScreen.tsx").includes('tab === "finance"')],
   ["Vendor exposes referral attribution against REAL referrals API", () => read("screens/VendorMobileScreen.tsx").includes("/api/v1/referrals") && read("screens/VendorMobileScreen.tsx").includes('tab === "referrals"')],
   ["Shared account exposes REAL notification preferences GET/PUT", () => { const s = read("screens/AccountMobileScreen.tsx"); return s.includes("/api/v1/notifications/preferences") && s.includes("api.put"); }],
+  ["Ops exposes REAL support and notification read surfaces", () => { const s = read("screens/OpsMobileScreen.tsx"); return s.includes("SupportMobileScreen") && s.includes("/api/v1/notifications"); }],
 ];
 
 let failed = 0;
