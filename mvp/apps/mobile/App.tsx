@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
-import { SafeAreaView, StyleSheet } from "react-native";
+import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { getToken, healthz } from "./src/api";
 import { AssistedOrderScreen } from "./src/screens/AssistedOrderScreen";
 import { FieldTaskDetailScreen } from "./src/screens/FieldTaskDetailScreen";
@@ -9,13 +9,14 @@ import { LoginScreen } from "./src/screens/LoginScreen";
 import { OpsMobileScreen } from "./src/screens/OpsMobileScreen";
 import { RetailerMobileScreen } from "./src/screens/RetailerMobileScreen";
 import { VendorMobileScreen } from "./src/screens/VendorMobileScreen";
-import { colors } from "./src/theme";
+import { colors, getThemeMode, setThemeMode, type ThemeMode } from "./src/theme";
 import type { Role, Route } from "./src/types";
 
 export default function App(): React.ReactNode {
   const [route, setRoute] = useState<Route>({ name: "login" });
   const [role, setRole] = useState<Role | null>(null);
   const [booted, setBooted] = useState(false);
+  const [themeMode, setThemeModeState] = useState<ThemeMode>(getThemeMode());
 
   const refresh = useCallback(() => {
     void healthz().finally(() => setBooted(true));
@@ -24,6 +25,12 @@ export default function App(): React.ReactNode {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  function toggleTheme(): void {
+    const next = themeMode === "light" ? "night" : "light";
+    setThemeMode(next);
+    setThemeModeState(next);
+  }
 
   function onAuthed(nextRole: Role): void {
     setRole(nextRole);
@@ -50,6 +57,11 @@ export default function App(): React.ReactNode {
 
   return (
     <SafeAreaView style={styles.root}>
+      <View style={styles.themeBar}>
+        <Pressable accessibilityRole="button" onPress={toggleTheme} style={styles.themeButton}>
+          <Text style={styles.themeText}>{themeMode === "light" ? "حالت شب" : "حالت روز"}</Text>
+        </Pressable>
+      </View>
       {route.name === "field" ? (
         <FieldTaskListScreen
           onOpenTask={(taskId) => setRoute({ name: "task", taskId })}
@@ -75,4 +87,7 @@ export default function App(): React.ReactNode {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
+  themeBar: { alignItems: "flex-start", paddingHorizontal: 12, paddingTop: 8 },
+  themeButton: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  themeText: { color: colors.text, fontSize: 11, fontWeight: "600" },
 });
