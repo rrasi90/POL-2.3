@@ -3,20 +3,20 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { healthz, isOnline, subscribeOnline } from "../api";
 import { colors, spacing } from "../theme";
 
-/** F-05 weak network / offline banner — connection status + retry (MVP boundary). */
 export function OfflineBanner(): React.ReactNode {
   const [online, setOnline] = useState(isOnline());
+
   useEffect(() => subscribeOnline(setOnline), []);
+
   if (online) return null;
+
   return (
     <View style={styles.banner} accessibilityRole="alert">
-      <Text style={styles.title}>آفلاین — F-05</Text>
-      <Text style={styles.body}>اتصال شبکه قطع است. تغییرات هنگام اتصال مجدد همگام‌سازی می‌شوند.</Text>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => void healthz()}
-        style={styles.retry}
-      >
+      <Text style={styles.title}>اتصال شبکه در دسترس نیست</Text>
+      <Text style={styles.body}>
+        درخواست ناموفق بوده است. اتصال را بررسی کنید و دوباره تلاش کنید.
+      </Text>
+      <Pressable accessibilityRole="button" onPress={() => void healthz()} style={styles.retry}>
         <Text style={styles.retryText}>تلاش مجدد</Text>
       </Pressable>
     </View>
