@@ -39,7 +39,7 @@ jobs:
       - name: Functional state-transition QA
         run: npm run qa:functional --workspace @pol/mobile
 
-      - name: Expo config validation
+      - name: Regression cross-module QA\n        run: npm run qa:regression --workspace @pol/mobile\n\n      - name: Expo config validation
         working-directory: mvp/apps/mobile
         run: npx expo config --type public
 
