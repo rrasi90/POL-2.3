@@ -24,7 +24,7 @@
 | 8 | Global QA + regression | **CURRENT GREEN / OPEN FINAL E2E** | Backend run `35893284312` SUCCESS and mobile run `35893284378` SUCCESS on commit `f8ef267e6666a03b483afdd8618585ed82086014`. Final live basket→allocation→checkout→order E2E and idempotency replay remain open. |
 | 9 | Structural audit | **DONE** (2026-09-23) | `python artifacts/structural_audit.py` → EXIT 0: window_loc=0, console_log=0, fake_success=0 (biz_calc hits all backend). |
 | 10 | Anti-vibe-coding audit | **DONE** (2026-09-23) | same checklist green; rules file restored to `.agents/rules/00-pol-canonical-safety.md`. |
-| 11 | GitHub reconciliation | **DONE (2026-09-23)** | Current HEAD `ad88ca0` has fresh backend verification CI **SUCCESS** (run 35884012589) and mobile verification CI **SUCCESS** (run 35884012647). |
+| 11 | GitHub reconciliation | **DONE (2026-09-23)** | Current code commit `f8ef267e6666a03b483afdd8618585ed82086014` has fresh backend verification CI **SUCCESS** (run 35893284312) and mobile Cycle 3 verification CI **SUCCESS** (run 35893284378). |
 | 12 | Independent 2nd-pass audit | **DONE** | `verify_repository_consistency.py` PASS 8/8 EXIT 0 (D-015/016/017 + hierarchy restored). |
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
 | 14 | Regression | **GREEN (2026-09-23)** | Backend run `35893284312` SUCCESS and Mobile Cycle 3 run `35893284378` SUCCESS on current commit `f8ef267`. Live basket→checkout E2E remains separate/open. |
@@ -40,7 +40,7 @@
 | 0 | Discovery & Artifacts | **DONE** (2026-09-22) · BUILD GATE 0 **PASS** |
 | 1 | Foundation + Design System | **DONE** (2026-09-22) |
 | 2 | Web MVP | **DONE (impl + partial e2e)** — 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
-| 3 | Android MVP (Expo) | **PARTIAL (Field-first DONE)** — F-01…F-05 + parity; retailer/vendor/ops parity + cycles 2–3 open |
+| 3 | Android MVP (Expo) | **PARTIAL (Field-first DONE)** — F-01…F-05 + supported retailer/vendor/ops parity; mobile QA Cycles 1–3 evidenced green; remaining local visual/live-E2E gates stay open |
 | 4 | Global QA + Regression | **REOPENED** — historical 497/497 and prior CI evidence remain recorded, but current mobile changes require fresh CI + regression |
 | 5 | Delivery + Final Audit | **REOPENED** — living report; final DoD is not satisfied while Phase 3/mobile and live checkout gates remain open |
 
