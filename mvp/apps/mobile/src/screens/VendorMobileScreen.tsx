@@ -7,6 +7,8 @@ import { colors, spacing } from "../theme";
 
 type Order = { id: string; order_number?: string | null; order_status?: string | null; total_amount_toman?: number | string | null };
 type Inv = { id: string; vendor_product_id?: string | null; product_name?: string | null; stock_quantity?: number | null; available_quantity?: number | null; reserved_quantity?: number | null };
+type Invoice = { id: string; invoice_number?: string | null; status?: string | null; total_amount_toman?: number | string | null; issued_at?: string | null };
+type Referral = { id: string; status?: string | null; referral_code?: string | null; referred_organization_id?: string | null };
 type Settlement = { id: string; settlement_number?: string | null; status?: string | null; amount_toman?: number | string | null };
 type Daily = { status?: string | null; lines?: Array<{ id: string; product_id?: string | null; product_name?: string | null; expected_quantity?: number | null; confirmed_quantity?: number | null }> };
 
@@ -22,10 +24,12 @@ function money(v: number | string | null | undefined): string {
   return Number.isFinite(n) ? n.toLocaleString("fa-IR") + " تومان" : "—";
 }
 export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" | "VENDOR_STAFF">; onOpenOrder: (orderId: string) => void }): React.ReactNode {
-  const [tab, setTab] = useState<"orders" | "inventory" | "daily" | "settlements">("orders");
+  const [tab, setTab] = useState<"orders" | "inventory" | "daily" | "settlements" | "finance" | "referrals">("orders");
   const [orders, setOrders] = useState<Order[]>([]);
   const [inventory, setInventory] = useState<Inv[]>([]);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [referrals, setReferrals] = useState<Referral[]>([]);
   const [daily, setDaily] = useState<Daily | null>(null);
   const [dailyDate, setDailyDate] = useState(new Date().toISOString().slice(0, 10));
   const [dailyEdits, setDailyEdits] = useState<Record<string, string>>({});
@@ -44,6 +48,8 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
     const d = await api.get<unknown>("/api/v1/vendors/settlements");
     setSettlements(rows<Settlement>(d, "settlements"));
   }, []);
+  const loadInvoices = useCallback(async () => { const d = await api.get<unknown>("/api/v1/invoices?limit=50&offset=0"); setInvoices(rows<Invoice>(d, "invoices")); }, []);
+  const loadReferrals = useCallback(async () => { const d = await api.get<unknown>("/api/v1/referrals?limit=50&offset=0"); setReferrals(rows<Referral>(d, "referrals")); }, []);
   const loadDaily = useCallback(async () => {
     const d = await api.get<Daily>("/api/v1/inventory/daily/" + dailyDate);
     setDaily(d);
@@ -54,9 +60,9 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
 
   useEffect(() => {
     setLoading(true); setError(null);
-    const p = tab === "orders" ? loadOrders() : tab === "inventory" ? loadInventory() : tab === "daily" ? loadDaily() : loadSettlements();
+    const p = tab === "orders" ? loadOrders() : tab === "inventory" ? loadInventory() : tab === "daily" ? loadDaily() : tab === "settlements" ? loadSettlements() : tab === "finance" ? loadInvoices() : loadReferrals();
     void p.catch((e) => setError(e instanceof Error ? e.message : "بارگذاری ناموفق بود")).finally(() => setLoading(false));
-  }, [tab, loadOrders, loadInventory, loadDaily, loadSettlements]);
+  }, [tab, loadOrders, loadInventory, loadDaily, loadSettlements, loadInvoices, loadReferrals]);
 
   async function action(orderId: string, actionName: "accept" | "reject" | "preparing" | "ready" | "dispatch"): Promise<void> {
     setLoading(true); setError(null);
@@ -90,6 +96,8 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
         <Btn label="موجودی" onPress={() => setTab("inventory")} tone={tab === "inventory" ? "primary" : "ghost"} />
         <Btn label="روزانه" onPress={() => setTab("daily")} tone={tab === "daily" ? "primary" : "ghost"} />
         <Btn label="تسویه" onPress={() => setTab("settlements")} tone={tab === "settlements" ? "primary" : "ghost"} />
+        <Btn label="مالی" onPress={() => setTab("finance")} tone={tab === "finance" ? "primary" : "ghost"} />
+        <Btn label="ارجاع‌ها" onPress={() => setTab("referrals")} tone={tab === "referrals" ? "primary" : "ghost"} />
       </View>
       <ErrorBox message={error} />
       {loading && <Text style={styles.meta}>در حال بارگذاری…</Text>}
