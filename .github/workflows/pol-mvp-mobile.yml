@@ -39,3 +39,6 @@ jobs:
       - name: Expo config validation
         working-directory: mvp/apps/mobile
         run: npx expo config --type public
+
+      - name: Expo Android export
+        run: npm run build --workspace @pol/mobile
