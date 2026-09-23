@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const root = path.resolve(process.cwd(), "apps/mobile/src");
+const root = path.resolve(process.cwd(), "src");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 const checks = [
