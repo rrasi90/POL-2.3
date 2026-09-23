@@ -15,9 +15,9 @@
 | 0 | Discovery & Artifacts | **DONE** | `MVP_SCREEN_MATRIX.md`, `MVP_API_MAP.md`, `MVP_KNOWN_GAPS.md`, BUILD GATE 0 checklist |
 | 1 | Foundation + Design System | **DONE** | packages typecheck/build green; tokens Light+Night; shell + middleware role gates |
 | 2 | Web MVP | **DONE (impl + partial e2e)** | 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
-| 3 | Android MVP (Expo) | **IN PROGRESS** | Field F-01…F-05 plus role-aware Retailer/Vendor/Ops parity, Order Detail, vendor search/storefront, support, return/dispute, and shared profile/notifications; API headers + mobile CI added; mobile QA cycle 2 now has 23/23 deterministic functional/state-transition/parity checks green; supported REAL-API parity was expanded for retailer finance, vendor finance/referrals, shared notification preferences and Ops support/notifications; remaining unsupported contracts, barcode D-028, Night verification and cycle 3 remain open |
-| 4 | Global QA + Regression | **IN PROGRESS / CURRENT CI GREEN** | Fresh current-HEAD backend verification run **35884012589 SUCCESS**; fresh mobile verification run **35884012647 SUCCESS**. Live basket→allocation→checkout→order E2E + idempotency replay remain open. |
-| 5 | Delivery + Final Audit | **REOPENED** | delivery report retained as a living report until Phase 3 and open live e2e gates close |
+| 3 | Android MVP (Expo) | **IN PROGRESS** | Supported parity is implemented and mobile QA Cycles 1–3 are evidenced. Cycle 3 closed on run `35893284378`: typecheck, functional QA 23/23, regression QA 11/11, Expo config validation and Android export all SUCCESS. Remaining: unsupported contracts/barcode D-028, Night visual verification, and final live checkout gates. |
+| 4 | Global QA + Regression | **CURRENT CI GREEN / FINAL E2E OPEN** | Backend run `35893284312` SUCCESS and Mobile run `35893284378` SUCCESS on commit `f8ef267e`. Live basket→allocation→checkout→order E2E + idempotency replay remain open. |
+| 5 | Delivery + Final Audit | **REOPENED** | Phase 3 mobile verification is now through Cycle 3; delivery remains open for Night visual verification, live checkout/idempotency E2E, and final reconciliation. |
 
 ---
 
@@ -33,7 +33,7 @@
 | OP-11 | Delegated permissions | **GAP** | no permission-list HTTP |
 | Refresh-token rotation | Stage 10 policy | **OPEN** | do not invent |
 | Invoice timing | on ACCEPTED default | **OPEN** | confirm before finance e2e |
-| Phase 3 remaining | Retailer/Vendor/Ops mobile parity; barcode D-028; ≥3 QA cycles | **OPEN** | next Android work |
+| Phase 3 remaining | Barcode D-028/unsupported contracts; Night visual verification | **OPEN** | mobile QA Cycles 1–3 are green; execute remaining visual/contract gates |
 | Phase 4 remaining | Live basket POST → allocation → checkout → order lifecycle e2e | **OPEN** | click-through when ready |
 | WAVE-02 | OpenPencil MCP design board | **BLOCKED_EXTERNAL** | start OpenPencil app (B-02) |
 
@@ -114,7 +114,7 @@ No other external blockers claimed.
 
 ## 8. Current audit state — 2026-09-23
 
-The repository has been re-audited against the remaining execution gates. Documentation status has been reconciled so that historical green evidence is not treated as current verification. Mobile functional/state-transition/parity QA cycle 2 is now evidenced by **23/23 deterministic checks PASS** in the latest mobile CI run; the following remain OPEN and require executable evidence: mobile QA cycle 3, Night visual verification, live basket → allocation → checkout → order lifecycle E2E, checkout idempotency replay. Current mobile CI cycle 1 and fresh full backend regression are evidenced by runs 35884012647 and 35884012589; mobile QA cycle 2 is evidenced by run 35886815013. V-09/V-11 and D-028 remain GAP/CONTRACT where authoritative HTTP contracts are absent. OpenPencil WAVE-02 remains BLOCKED_EXTERNAL if MCP `:7600` is unavailable.
+The repository has been re-audited against the remaining execution gates. Documentation status has been reconciled so that historical green evidence is not treated as current verification. Mobile QA Cycles 1–3 are now evidenced by current CI: Cycle 1 run `35884012647`; Cycle 2 run `35886815013` with **23/23 deterministic checks PASS**; Cycle 3 run `35893284378` with **11/11 regression checks PASS**, plus typecheck, Expo config validation and Android export green. Backend verification on the same current commit is run `35893284312` SUCCESS. Remaining executable gates are Night visual verification, live basket → allocation → checkout → order lifecycle E2E, and checkout idempotency replay. V-09/V-11 and D-028 remain GAP/CONTRACT where authoritative HTTP contracts are absent. OpenPencil WAVE-02 remains BLOCKED_EXTERNAL if MCP `:7600` is unavailable.
 
 No current test/build result is claimed from this audit because the available GitHub integration can modify/read repository content but does not provide a local project runtime for executing the commands.
 
@@ -130,4 +130,4 @@ No current test/build result is claimed from this audit because the available Gi
 
 ---
 
-*Phase 5 delivery artifacts exist, but final DoD is intentionally reopened while current mobile verification, live basket→checkout/order lifecycle evidence, idempotency replay, fresh regression and final reconciliation remain open. Continue the master loop until the DoD gates are actually evidenced.*
+*Phase 5 delivery artifacts remain open because Night visual verification, live basket→checkout/order lifecycle evidence, idempotency replay, and final reconciliation are not yet evidenced. Mobile QA Cycle 3 and current backend verification are green on commit `f8ef267e`.*
