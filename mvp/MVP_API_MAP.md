@@ -132,7 +132,7 @@ HTTP may also set `X-Correlation-ID`.
 | POST | `/orders/{order_id}/preparing` |
 | POST | `/orders/{order_id}/ready` |
 | POST | `/orders/{order_id}/dispatch` |
-| POST | `/orders/{order_id}/deliver` | DeliveryConfirmRequest; otp pattern 6-digit → G-022 |
+| POST | `/orders/{order_id}/deliver` | DeliveryConfirmRequest; otp pattern `^\d{4}$` (D-018; G-022 RESOLVED) |
 | GET | `/orders/{order_id}/delivery` | R-09D |
 | GET | `/orders/{order_id}/delivery/proof` | R-09E; may return `{message:"No proof…"}` |
 | POST/GET | `/orders/{order_id}/delivery-exceptions` |

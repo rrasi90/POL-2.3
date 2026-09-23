@@ -61,7 +61,7 @@ def _create_session(cur, user_id, org_id):
     return session_id
 
 
-def _seed_dispatched(suffix, otp="123456"):
+def _seed_dispatched(suffix, otp="1234"):
     conn = _db()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -119,27 +119,27 @@ def client():
 
 class TestOTPVerification:
     def test_deliver_with_correct_otp(self, client):
-        data = _seed_dispatched(uuid4().hex[:8], "123456")
+        data = _seed_dispatched(uuid4().hex[:8], "1234")
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "otp_code": "123456"},
+            json={"recipient_name": "Reza", "otp_code": "1234"},
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["otp_verified"] is True
 
     def test_deliver_with_wrong_otp(self, client):
-        data = _seed_dispatched(uuid4().hex[:8], "123456")
+        data = _seed_dispatched(uuid4().hex[:8], "1234")
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "otp_code": "999999"},
+            json={"recipient_name": "Reza", "otp_code": "9999"},
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["otp_verified"] is False
 
     def test_deliver_without_otp(self, client):
-        data = _seed_dispatched(uuid4().hex[:8], "123456")
+        data = _seed_dispatched(uuid4().hex[:8], "1234")
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},

@@ -12,6 +12,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
+from scripts.operational_config import OTP_CODE_LENGTH
 from scripts.operational_policies import AllocationIntegrityError
 
 VALID_FULFILLMENT_TRANSITIONS = {
@@ -129,11 +130,11 @@ def dispatch_order(cur, *, user_id, organization_id, order_id, driver_name=None,
     _verify_vendor_actor(cur, user_id, organization_id, order["vendor_id"])
 
     delivery_id = str(uuid4())
-    otp = f"{uuid4().int % 1000000:06d}"
+    otp = f"{uuid4().int % (10 ** OTP_CODE_LENGTH):0{OTP_CODE_LENGTH}d}"
     cur.execute(
-        "INSERT INTO deliveries (id, order_id, vendor_id, delivery_status, driver_name, vehicle_plate, driver_phone, dispatched_at, created_at) "
-        "VALUES (%s, %s, %s, 'IN_TRANSIT', %s, %s, %s, now(), now())",
-        (delivery_id, order_id, order["vendor_id"], driver_name, vehicle_plate, driver_phone),
+        "INSERT INTO deliveries (id, order_id, vendor_id, delivery_status, driver_name, vehicle_plate, driver_phone, delivery_otp, dispatched_at, created_at) "
+        "VALUES (%s, %s, %s, 'IN_TRANSIT', %s, %s, %s, %s, now(), now())",
+        (delivery_id, order_id, order["vendor_id"], driver_name, vehicle_plate, driver_phone, otp),
     )
     cur.execute(
         "UPDATE orders SET order_status = 'DISPATCHED', updated_at = now() WHERE id = %s",

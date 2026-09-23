@@ -136,9 +136,9 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 
 ## G-022 — Delivery OTP schema vs D-018 (CONFLICT)
 
-- **Sources:** `DeliveryConfirmRequest.otp_code` pattern `^\d{6}$` vs **D-018** 4-digit OTP (`OTP_CODE_LENGTH = 4`).
-- **Resolution:** login OTP remains 4-digit (G-001 / D-018). Delivery confirm UI accepts 6 digits to match **live** FastAPI schema so the request can succeed; do not invent a 4-digit field the server rejects. Backend should align pattern to D-018 before e2e verify.
-- **Status:** CONFLICT (documented; UI follows wire schema for delivery only)
+- **Sources:** `DeliveryConfirmRequest.otp_code` pattern was `^\d{6}$` vs **D-018** 4-digit OTP (`OTP_CODE_LENGTH = 4`).
+- **Resolution:** **RESOLVED (2026-09-23).** Backend aligned end-to-end: schema pattern `^\d{4}$`; `fulfillment_service.dispatch_order` generates via `OTP_CODE_LENGTH` and **persists** `delivery_otp` (was generated-but-not-saved); web R-09E OTP input `maxLength={4}`; POD tests use 4-digit codes. Migration `030` column stays `VARCHAR(6)` for historical rows; comment updated to D-018 4-digit.
+- **Status:** RESOLVED
 
 ---
 

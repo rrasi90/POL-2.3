@@ -783,7 +783,7 @@ export default function RetailerOrderDetailPage() {
             </h3>
             <p className="text-[12px] text-[var(--pol-light-text-muted)]">
               POST /orders/{`{id}`}/deliver — فقط فیلدهای خالی ارسال نمی‌شوند. الگوی OTP
-              بک‌اند فعلی ۶ رقمی است (تعارض با D-018 → G-021).
+              بک‌اند ۴ رقمی است (D-018 / G-022 RESOLVED).
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field
@@ -799,8 +799,8 @@ export default function RetailerOrderDetailPage() {
                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={6}
-                hint="الگوی بک‌اند: ۶ رقم"
+                maxLength={4}
+                hint="الگوی بک‌اند: ۴ رقم (D-018)"
               />
             </div>
             <Field

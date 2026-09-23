@@ -73,7 +73,7 @@
 | R-09B | `retailer/orders/[id]/page.tsx` | typecheck/build exit 0 |
 | R-09C | `retailer/orders/[id]/page.tsx` partial-acceptance panel (approve/decline; proposal_id from timeline event_data) | typecheck/build exit 0 |
 | R-09D | same file delivery panel (GET `/orders/{id}/delivery`) | typecheck/build exit 0 |
-| R-09E | same file handoff/proof + POST `/deliver` (OTP 6-digit schema → G-022) | typecheck/build exit 0 |
+| R-09E | same file handoff/proof + POST `/deliver` (OTP 4-digit schema; G-022 RESOLVED) | typecheck/build exit 0 |
 | R-09C/D/E | same order detail: derive proposals from timeline; GET delivery + proof; POST approve/decline/deliver | typecheck/build exit 0 |
 | R-11 | `retailer/orders/[id]/returns/page.tsx` | typecheck/build exit 0 |
 | R-12 | `retailer/support/page.tsx` | typecheck/build exit 0 |

@@ -183,6 +183,15 @@ class TestDispatch:
         assert result["order_status"] == "DISPATCHED"
         assert "delivery_id" in result
         assert "delivery_otp" in result
+        otp = result["delivery_otp"]
+        assert isinstance(otp, str) and len(otp) == 4 and otp.isdigit()
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/deliver",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"recipient_name": "Reza", "otp_code": otp},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["otp_verified"] is True
 
     def test_dispatch_from_preparing_rejected(self, client):
         data = _seed_order_with_status(uuid4().hex[:8], "ACCEPTED")
