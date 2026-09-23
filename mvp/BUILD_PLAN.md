@@ -24,10 +24,10 @@
 | 8 | Global QA + regression | **REOPENED** | Historical backend/web suite was green, but current Phase 3 mobile changes still require fresh CI + 3 QA cycles + regression. Do not reuse stale green evidence as current DoD proof. |
 | 9 | Structural audit | **DONE** (2026-09-23) | `python artifacts/structural_audit.py` → EXIT 0: window_loc=0, console_log=0, fake_success=0 (biz_calc hits all backend). |
 | 10 | Anti-vibe-coding audit | **DONE** (2026-09-23) | same checklist green; rules file restored to `.agents/rules/00-pol-canonical-safety.md`. |
-| 11 | GitHub reconciliation | **REOPENED** | `main` has advanced beyond the last known green backend CI evidence; current HEAD requires fresh CI evidence. |
+| 11 | GitHub reconciliation | **DONE (2026-09-23)** | Current HEAD `ad88ca0` has fresh backend verification CI **SUCCESS** (run 35884012589) and mobile verification CI **SUCCESS** (run 35884012647). |
 | 12 | Independent 2nd-pass audit | **DONE** | `verify_repository_consistency.py` PASS 8/8 EXIT 0 (D-015/016/017 + hierarchy restored). |
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
-| 14 | Regression | **REOPENED** | 497/497 is historical evidence from the pre-current-mobile-change baseline. Re-run the full regression after current Phase 3 changes and live checkout verification. |
+| 14 | Regression | **CURRENT BACKEND REGRESSION GREEN (2026-09-23)** | Fresh current-HEAD verification suite completed successfully in run 35884012589; uploaded `pol-test-results` artifact. Live basket→checkout E2E remains separate/open. |
 | 15 | Repeat until DoD | **OPEN** | DoD = §8; open gaps in `MVP_KNOWN_GAPS.md` + Phase 3 parity remain. |
 | 16 | Phase 5 delivery | **REOPENED** | Delivery report exists, but final delivery cannot close while Phase 3 mobile parity/verification remains open. |
 
@@ -213,12 +213,12 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [ ] ≥3 QA cycles (typecheck + Expo validation/export where feasible)  
 
 ### Phase 4 (Global QA)
-- [ ] Full pytest suite **fresh after current Phase 3 changes** — historical 497/497 remains evidence only  
+- [x] Full pytest/verification suite **fresh at current HEAD** — run 35884012589 SUCCESS; artifact `pol-test-results` SHA-256 `016c9dc96bb8e45dd1f89ae17f26d7efdc49809b8effac1d3edc9d92049ec839`  
 - [x] Web typecheck + lint + build (lint 0 errors, 15 warnings pre-existing)  
 - [x] Live e2e smoke — auth/profile/notif/catalog/orders/invoices/storefront/search/field/referrals/settlements/daily-inv (basket→checkout POST e2e still open)  
 - [x] Structural audit checklist green  
 - [x] Anti-vibe-coding audit green  
-- [ ] GitHub reconciliation + current CI — last known green backend evidence is `dbcfb59`; current HEAD requires fresh CI  
+- [x] GitHub reconciliation + current CI — current HEAD `ad88ca0c` backend run 35884012589 SUCCESS; mobile run 35884012647 SUCCESS  
 - [x] Independent second-pass audit (`verify_repository_consistency.py` PASS 8/8 EXIT=0; D-015/016/017 restored, hierarchy docs complete)  
 - [ ] Fix + re-regression until current DoD (open mobile/live-checkout gates remain)  
 
