@@ -4,6 +4,7 @@ import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
 import { colors, spacing } from "../theme";
+import { SupportMobileScreen } from "./SupportMobileScreen";
 
 type Dash = { delivery_exceptions?: { open_count?: number; escalated_count?: number }; disputes?: { open_disputes?: number }; support_cases?: { open_cases?: number } };
 type Order = { id: string; order_number?: string | null; order_status?: string | null; total_amount_toman?: number | string | null };
@@ -20,11 +21,12 @@ function list<T>(data: unknown, keys: string[]): T[] {
 function money(v: number | string | null | undefined): string { const n = Number(v); return Number.isFinite(n) ? n.toLocaleString("fa-IR") + " تومان" : "—"; }
 
 export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMIN_SUPER"> }): React.ReactNode {
-  const [tab, setTab] = useState<"overview" | "recon" | "audit">("overview");
+  const [tab, setTab] = useState<"overview" | "recon" | "audit" | "support" | "notifications">("overview");
   const [dash, setDash] = useState<Dash | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [recon, setRecon] = useState<Recon[]>([]);
   const [audit, setAudit] = useState<Audit[]>([]);
+  const [notifications, setNotifications] = useState<Array<{ id: string; title?: string | null; body?: string | null; priority?: string | null; created_at?: string | null }>>([]);
   const [error, setError] = useState<string | null>(null);
 
   async function loadOverview(): Promise<void> {
@@ -38,13 +40,14 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
     const d = await api.get<unknown>("/api/v1/finance/reconciliation?limit=50&offset=0");
     setRecon(list<Recon>(d, ["cases", "items"]));
   }
+  async function loadNotifications(): Promise<void> { const d = await api.get<unknown>("/api/v1/notifications?limit=50&offset=0"); setNotifications(list(d, ["items", "notifications", "data", "results"])); }
   async function loadAudit(): Promise<void> {
     const d = await api.get<unknown>("/api/v1/admin/audit-logs");
     setAudit(list<Audit>(d, ["logs", "items"]));
   }
   useEffect(() => {
     setError(null);
-    void (tab === "overview" ? loadOverview() : tab === "recon" ? loadRecon() : loadAudit()).catch((e) => setError(e instanceof Error ? e.message : "بارگذاری ناموفق بود"));
+    void (tab === "overview" ? loadOverview() : tab === "recon" ? loadRecon() : tab === "audit" ? loadAudit() : tab === "notifications" ? loadNotifications() : Promise.resolve()).catch((e) => setError(e instanceof Error ? e.message : "بارگذاری ناموفق بود"));
   }, [tab]);
 
   return (
@@ -55,8 +58,12 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
         <Btn label="نمای کلی" onPress={() => setTab("overview")} tone={tab === "overview" ? "primary" : "ghost"} />
         <Btn label="تطبیق مالی" onPress={() => setTab("recon")} tone={tab === "recon" ? "primary" : "ghost"} />
         {props.role === "ADMIN_SUPER" ? <Btn label="لاگ ممیزی" onPress={() => setTab("audit")} tone={tab === "audit" ? "primary" : "ghost"} /> : null}
+        <Btn label="پشتیبانی" onPress={() => setTab("support")} tone={tab === "support" ? "primary" : "ghost"} />
+        <Btn label="اعلان‌ها" onPress={() => setTab("notifications")} tone={tab === "notifications" ? "primary" : "ghost"} />
         <ErrorBox message={error} />
-        {tab === "overview" ? (
+        {tab === "support" ? <SupportMobileScreen role={props.role} /> : tab === "notifications" ? (
+          <ScrollView>{notifications.length === 0 ? <Empty title="اعلانی نیست" /> : notifications.map((n) => <Card key={n.id}><StatusChip label={n.priority || "NORMAL"} tone="info" /><Text style={styles.h2}>{n.title || "اعلان"}</Text><Text style={styles.meta}>{n.body || "—"}</Text><Text style={styles.meta}>{n.created_at || "—"}</Text></Card>)}</ScrollView>
+        ) : tab === "overview" ? (
           <>
             <Card><Text style={styles.h2}>O-01 استثناها</Text><Text style={styles.metric}>{String(dash?.delivery_exceptions?.open_count ?? 0)}</Text><Text style={styles.meta}>تحویل باز · ارتقا {String(dash?.delivery_exceptions?.escalated_count ?? 0)}</Text><Text style={styles.metric}>{String(dash?.disputes?.open_disputes ?? 0)}</Text><Text style={styles.meta}>اختلاف باز</Text><Text style={styles.metric}>{String(dash?.support_cases?.open_cases ?? 0)}</Text><Text style={styles.meta}>پرونده پشتیبانی باز</Text></Card>
             {orders.length === 0 ? <Empty title="صف سفارش خالی است" /> : orders.slice(0, 10).map((o) => <Card key={o.id}><StatusChip label={o.order_status || "—"} tone="info" /><Text style={styles.h2}>{o.order_number || o.id}</Text><Text style={styles.metric}>{money(o.total_amount_toman)}</Text></Card>)}
