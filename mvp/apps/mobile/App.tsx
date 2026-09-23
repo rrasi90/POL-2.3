@@ -1,21 +1,20 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import { SafeAreaView, StyleSheet } from "react-native";
-import { getToken, healthz, setToken } from "./src/api";
+import { getToken, healthz } from "./src/api";
 import { AssistedOrderScreen } from "./src/screens/AssistedOrderScreen";
 import { FieldTaskDetailScreen } from "./src/screens/FieldTaskDetailScreen";
 import { FieldTaskListScreen } from "./src/screens/FieldTaskListScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
+import { OpsMobileScreen } from "./src/screens/OpsMobileScreen";
+import { RetailerMobileScreen } from "./src/screens/RetailerMobileScreen";
+import { VendorMobileScreen } from "./src/screens/VendorMobileScreen";
 import { colors } from "./src/theme";
-import type { Route } from "./src/types";
+import type { Role, Route } from "./src/types";
 
-/**
- * Phase 3 Field-first Expo shell.
- * Screens: F-01 list, F-02/F-04 task detail, F-03 assisted order, F-05 offline banner.
- * No Driver App (D-023). Barcode = D-028 where inventory.scan (not Field MVP).
- */
 export default function App(): React.ReactNode {
   const [route, setRoute] = useState<Route>({ name: "login" });
+  const [role, setRole] = useState<Role | null>(null);
   const [booted, setBooted] = useState(false);
 
   const refresh = useCallback(() => {
@@ -24,45 +23,50 @@ export default function App(): React.ReactNode {
 
   useEffect(() => {
     refresh();
-    if (getToken()) setRoute({ name: "field" });
   }, [refresh]);
 
-  if (!booted) {
-    return <SafeAreaView style={styles.root} />;
+  function onAuthed(nextRole: Role): void {
+    setRole(nextRole);
+    setRoute(
+      nextRole === "FIELD_ACTIVATOR"
+        ? { name: "field" }
+        : { name: "workspace", role: nextRole },
+    );
+    refresh();
   }
 
-  if (!getToken() && route.name !== "login") {
+  if (!booted) return <SafeAreaView style={styles.root} />;
+
+  if (!getToken()) {
     return (
       <SafeAreaView style={styles.root}>
-        <LoginScreen
-          onAuthed={() => {
-            setRoute({ name: "field" });
-            refresh();
-          }}
-        />
+        <LoginScreen onAuthed={onAuthed} />
         <StatusBar style="dark" />
       </SafeAreaView>
     );
   }
 
+  const currentRole = route.name === "workspace" ? route.role : role;
+
   return (
     <SafeAreaView style={styles.root}>
-      {route.name === "login" ? (
-        <LoginScreen
-          onAuthed={() => {
-            setRoute({ name: "field" });
-            refresh();
-          }}
-        />
-      ) : route.name === "field" ? (
+      {route.name === "field" ? (
         <FieldTaskListScreen
           onOpenTask={(taskId) => setRoute({ name: "task", taskId })}
           onAssistedOrder={() => setRoute({ name: "assisted" })}
         />
       ) : route.name === "task" ? (
         <FieldTaskDetailScreen taskId={route.taskId} onBack={() => setRoute({ name: "field" })} />
-      ) : (
+      ) : route.name === "assisted" ? (
         <AssistedOrderScreen onBack={() => setRoute({ name: "field" })} />
+      ) : currentRole === "RETAILER_OWNER" || currentRole === "RETAILER_STAFF" ? (
+        <RetailerMobileScreen role={currentRole} />
+      ) : currentRole === "VENDOR_OWNER" || currentRole === "VENDOR_STAFF" ? (
+        <VendorMobileScreen role={currentRole} />
+      ) : currentRole === "OPS_AGENT" || currentRole === "ADMIN_SUPER" ? (
+        <OpsMobileScreen role={currentRole} />
+      ) : (
+        <LoginScreen onAuthed={onAuthed} />
       )}
       <StatusBar style="dark" />
     </SafeAreaView>
