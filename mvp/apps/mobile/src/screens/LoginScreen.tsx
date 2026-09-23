@@ -1,12 +1,13 @@
 import React, { useState } from "react";
+import { StyleSheet, Text } from "react-native";
 import { api, setToken } from "../api";
 import { Btn, Card, ErrorBox, Input, Screen, Title } from "../components/ui";
 import { colors, spacing } from "../theme";
-import type { OtpRequest, VerifyResult } from "../types";
-import { StyleSheet, Text } from "react-native";
+import type { OtpRequest, Role, VerifyResult } from "../types";
+import { normalizeRole } from "../types";
 
-/** SH-AUTH OTP login — 4-digit code (D-018). */
-export function LoginScreen(props: { onAuthed: () => void }): React.ReactNode {
+/** SH-AUTH-01/02 — 4-digit OTP login. Role comes only from the backend response. */
+export function LoginScreen(props: { onAuthed: (role: Role) => void }): React.ReactNode {
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -19,10 +20,14 @@ export function LoginScreen(props: { onAuthed: () => void }): React.ReactNode {
     setLoading(true);
     try {
       const data = await api.post<OtpRequest>("/api/v1/auth/request-otp", {
-        mobile_number: phone,
+        mobile_number: phone.trim(),
       });
       setInfo(
-        `کد ۴ رقمی تا ${data.expires_in_seconds} ثانیه معتبر است (ارسال مجدد هر ${data.resend_interval_seconds} ثانیه).`,
+        "کد ۴ رقمی تا " +
+          data.expires_in_seconds +
+          " ثانیه معتبر است؛ ارسال مجدد هر " +
+          data.resend_interval_seconds +
+          " ثانیه.",
       );
       setStep("otp");
     } catch (err) {
@@ -41,11 +46,16 @@ export function LoginScreen(props: { onAuthed: () => void }): React.ReactNode {
     setLoading(true);
     try {
       const data = await api.post<VerifyResult>("/api/v1/auth/verify-otp", {
-        mobile_number: phone,
+        mobile_number: phone.trim(),
         otp_code: otp,
       });
+      const role = normalizeRole(data.current_organization?.role ?? data.role);
+      if (!role) {
+        setError("نقش کاربر از پاسخ معتبر بک‌اند قابل تعیین نیست.");
+        return;
+      }
       setToken(data.access_token);
-      props.onAuthed();
+      props.onAuthed(role);
     } catch (err) {
       setError(err instanceof Error ? err.message : "تأیید کد ناموفق بود");
     } finally {
@@ -60,6 +70,7 @@ export function LoginScreen(props: { onAuthed: () => void }): React.ReactNode {
         <Text style={styles.sub}>OTP چهاررقمی (D-018) — بدون رمز عبور.</Text>
         <ErrorBox message={error} />
         {info && step === "otp" ? <Text style={styles.info}>{info}</Text> : null}
+
         {step === "phone" ? (
           <>
             <Input
