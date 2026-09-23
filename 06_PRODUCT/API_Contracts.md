@@ -11,7 +11,7 @@
 * **آدرس پایه (Base URL):** `https://api.polmarket.ir/api/v1`
 * **فرمت انتقال داده:** `application/json` با کاراکترست `utf-8`.
 * **احراز هویت:** هدر استاندارد `Authorization: Bearer <JWT_ACCESS_TOKEN>`.
-* **کلید هم‌توانی (Idempotency):** تمامی درخواست‌های جهش داده (`POST` و `PATCH`) حساس به دوباره‌فرستادن (مانند ثبت سفارش یا پرداخت) مستلزم ارسال هدر `Idempotency-Key: <UUIDv4>` هستند. سرور نتیجه را به مدت ۲۴ ساعت در Redis کش می‌کند.
+* **کلید هم‌توانی (Idempotency):** درخواست‌های جهش داده‌ای که ایجاد اثر خارجیِ قابل‌تکرار دارند (مانند ثبت سفارش، درخواست مرجوعی و تخصیص referral) باید idempotency contract مشخص داشته باشند. در مسیرهایی که چنین قرارداد canonicalای تعریف نشده، transport نباید یک هدر idempotency صوری اضافه کند. Checkout از کلید و fingerprint در پایگاه‌داده استفاده می‌کند؛ Redis به‌عنوان SSoT اجرای checkout نیست.
 * **الگوی استاندارد پاسخ خطا (Error Response Schema):**
 ```json
 {
@@ -155,17 +155,38 @@
 
 ## ۴. اندپوینت‌های سبد خرید و پیش‌نمایش تخصیص (Commerce APIs)
 
+### ۴.۰. ایجاد سبد خرید (`POST /baskets`)
+* **مجوز:** کاربر احراز هویت‌شده با عضویت فعال در یک سازمان خرده‌فروشی (`RETAILER_OWNER`, `RETAILER_STAFF`).
+* **بدنه درخواست:** ندارد.
+* **پاسخ موفق (201 Created):**
+```json
+{
+  "success": true,
+  "data": {
+    "basket_id": "7f17b810-9dad-11d1-80b4-00c04fd430cc",
+    "version": 1,
+    "status": "OPEN"
+  }
+}
+```
+> شناسه خرده‌فروش از `ApplicationContext` و عضویت فعال استخراج می‌شود و از کلاینت دریافت نمی‌شود.
+
 ### ۴.۱. افزودن قلم به سبد خرید (`POST /baskets/:id/items`)
 * **بدنه درخواست:**
 ```json
 {
   "product_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
   "requested_quantity": 10,
-  "requested_unit": "CARTON"
+  "pack_quantity": 4,
+  "expected_version": 1
 }
 ```
+* **قفل همزمانی:** `expected_version` باید با نسخه فعلی سبد برابر باشد؛ در صورت mismatch، تغییر اعمال نمی‌شود و درخواست رد می‌شود.
 
 ### ۴.۲. پیش‌نمایش و تولید برنامه تخصیص سبد (`POST /baskets/:id/allocation-preview`)
+* **مجوز:** کاربر خرده‌فروش احراز هویت‌شده در tenant فعال.
+* **رفتار کانونیکال:** اجرای Allocation Engine روی snapshot نسخه فعلی سبد و ذخیره `allocation_plan` و `allocation_items` کانونیکال. برنامه ایجادشده با lifecycle فعلی `CONFIRMED` ذخیره می‌شود تا مستقیماً برای `POST /orders` قابل checkout باشد؛ این مسیر پرداخت را اجرا نمی‌کند.
+
 * **معماری مرجع:** منطبق با تصمیم مصوب **D-014 (Multi-Vendor Basket in MVP)**.
 * **هدف:** ارزیابی بهینه موجودی، قیمت و حداقل سفارش بنکداران شهرک و تولید پیش‌فاکتور تخصیص چندبنکدار.
 * **قاعده تخصیص:** در سطح قلم کالا (Line-Item) با کمینه‌سازی خردشدگی سبد؛ عدم شکست تیراژ یک قلم میان چند بنکدار.
@@ -226,7 +247,9 @@
   "preferred_payment_method": "POS_DRIVER"
 }
 ```
-* **پاسخ موفق (201 Created):** ایجاد گروه سفارش والد (`order_groups`) و سفارش‌های فرزند مستقل (`orders`) به ازای هر بنکدار با وضعیت `PENDING`.
+
+> **Transport boundary note (Batch 6C-3):** `preferred_payment_method` is accepted as part of the checkout request contract, but the current canonical order schema does not persist a checkout-level payment-method preference. Payment execution/evidence is a separate downstream capability; the HTTP transport must not invent a new persistence field or execute payment as part of checkout.
+* **پاسخ موفق (201 Created):** ایجاد گروه سفارش والد (`order_groups`) و سفارش‌های فرزند مستقل (`orders`) به ازای هر بنکدار با وضعیت `SUBMITTED` (وضعیت کانونی مطابق `Order_Lifecycle.md` و قید DDL جدول `orders`؛ وضعیت `PENDING` منسوخ است).
 ```json
 {
   "success": true,
@@ -237,13 +260,13 @@
     {
       "order_id": "ord_1a_uuid",
       "vendor_id": "1a27b810-9dad-11d1-80b4-00c04fd430cd",
-      "order_status": "PENDING",
+      "order_status": "SUBMITTED",
       "subtotal_toman": 6000000
     },
     {
       "order_id": "ord_2b_uuid",
       "vendor_id": "2b38c921-8ebe-22e2-91c5-11d15fe541de",
-      "order_status": "PENDING",
+      "order_status": "SUBMITTED",
       "subtotal_toman": 8000000
     }
   ]
@@ -251,10 +274,35 @@
 ```
 
 ### ۵.۲. پذیرش کامل سفارش توسط بنکدار (`POST /orders/:id/accept`)
-* **انتقال وضعیت مجاز:** `SUBMITTED -> ACCEPTED`.
-* **پیامد:** رزرو قطعی موجودی در `vendor_inventory` و انتشار رویداد `order_accepted`.
+* **مجوز:** بنکدار مقصد در سازمان فعال (VENDOR_OWNER, VENDOR_STAFF). شناسه بنکدار و tenant از ApplicationContext استخراج می‌شود و از کلاینت دریافت نمی‌شود.
+* **بدنه درخواست:** ندارد.
+* **انتقال وضعیت:** فقط SUBMITTED -> ACCEPTED.
+* **پیامد کانونیکال:** همه reservationهای فعال سفارش به CONSUMED منتقل می‌شوند، reserved_quantity به همان میزان کاهش و physical_quantity کسر می‌شود، accepted_quantity اقلام برابر مقدار سفارش می‌شود و برای اعضای فعال سازمان خرده‌فروش رویداد ORDER_ACCEPTED در outbox ایجاد می‌شود.
+* **اعلام وضعیت غیرمجاز:** اگر سفارش در وضعیت دیگری باشد، درخواست رد می‌شود و mutation جزئی باقی نمی‌ماند.
+* **پاسخ موفق (200 OK):** شامل order_id, order_number, order_group_id, order_status, total_amount_toman, accepted_item_count, reservation_count.
 
-### ۵.۳. پذیرش با کسری موجودی (`POST /orders/:id/partial-accept`)
+### ۵.۳. رد کامل سفارش توسط بنکدار (`POST /orders/:id/reject`)
+* **مجوز:** بنکدار مقصد در سازمان فعال (`VENDOR_OWNER`, `VENDOR_STAFF`). شناسه بنکدار و tenant از `ApplicationContext` استخراج می‌شود.
+* **بدنه درخواست:**
+```json
+{
+  "reason": "Out of physical stock"
+}
+```
+* **انتقال وضعیت:** فقط `SUBMITTED -> REJECTED`.
+* **پیامد کانونیکال:** همه reservationهای فعال سفارش به `RELEASED` منتقل می‌شوند و `reserved_quantity` به همان میزان کاهش می‌یابد؛ موجودی فیزیکی تغییر نمی‌کند؛ `rejection_reason` روی سفارش ثبت می‌شود و برای اعضای فعال سازمان خرده‌فروش رویداد `ORDER_REJECTED` در outbox ایجاد می‌شود.
+* **اعلام وضعیت غیرمجاز:** اگر سفارش در وضعیت دیگری باشد، درخواست رد می‌شود و mutation جزئی باقی نمی‌ماند.
+* **پاسخ موفق (200 OK):** شامل `order_id`, `order_number`, `order_group_id`, `order_status`, `total_amount_toman`, `rejection_reason`, `released_reservation_count`.
+
+### ۵.۴. پذیرش با کسری موجودی — پروتکل دوطرفه
+
+پذیرش ناقص مستقیماً توسط بنکدار وضعیت سفارش را تغییر نمی‌دهد. این capability یک پروتکل سه‌مرحله‌ای دارد:
+
+**مرحله ۱ — پیشنهاد بنکدار**
+`POST /api/v1/orders/:id/partial-acceptance-proposals`
+
+* **مجوز:** بنکدار مقصد در سازمان فعال (`VENDOR_OWNER`, `VENDOR_STAFF`).
+* **Idempotency:** هدر `Idempotency-Key` باید UUIDv4 باشد.
 * **بدنه درخواست:**
 ```json
 {
@@ -263,9 +311,42 @@
   ]
 }
 ```
-* **انتقال وضعیت مجاز:** `SUBMITTED -> PARTIALLY_ACCEPTED`.
+* اقلام ذکرنشده در proposal، در زمان approval با مقدار کامل سفارش پذیرفته می‌شوند.
+* حداقل یک قلم باید کاهش مقدار داشته باشد و برای هر قلم کاهش‌یافته `reason` الزامی است.
+* ایجاد proposal فقط proposal و اقلام proposal را ثبت و رویداد `ORDER_PARTIAL_ACCEPTANCE_PROPOSED` را در outbox ایجاد می‌کند؛ سفارش همچنان `SUBMITTED` و موجودی بدون تغییر باقی می‌ماند.
+* در هر سفارش فقط یک proposal با وضعیت `PENDING` می‌تواند وجود داشته باشد.
 
-### ۵.۴. اعلام خروج و بارگیری وانت (`POST /orders/:id/dispatch`)
+**مرحله ۲ — تایید خرده‌فروش**
+`POST /api/v1/orders/:id/partial-acceptance-proposals/:proposal_id/approve`
+
+* **مجوز:** خرده‌فروش مقصد (`RETAILER_OWNER`, `RETAILER_STAFF`) در سازمان فعال.
+* **انتقال وضعیت:** فقط `SUBMITTED -> PARTIALLY_ACCEPTED`.
+* **پیامد:** `accepted_quantity` هر قلم از proposal اعمال می‌شود؛ اقلام کاهش‌یافته `SHORTAGE` می‌گیرند؛ `order_items.total_line_amount_toman`، مبلغ `orders` و مبلغ `order_groups` با مقدار پذیرفته‌شده بازمحاسبه می‌شوند.
+* **رزرو انبار:** مقدار رزروشده کامل از `reserved_quantity` آزاد و مقدار پذیرفته‌شده از `physical_quantity` کسر می‌شود. `inventory_reservations.status` به `CONSUMED` می‌رود و `consumed_quantity` مقدار واقعی مصرف‌شده را ثبت می‌کند؛ بخش آزادشده از `quantity - consumed_quantity` قابل محاسبه است.
+* **خروجی:** رویداد `ORDER_PARTIALLY_ACCEPTED` برای اعضای فعال سازمان خرده‌فروش و بنکدار در outbox ثبت می‌شود.
+* بدون تایید خرده‌فروش هیچ تغییر وضعیت سفارش، مبلغ یا موجودی انجام نمی‌شود.
+
+**مرحله ۳ — رد پیشنهاد توسط خرده‌فروش**
+`POST /api/v1/orders/:id/partial-acceptance-proposals/:proposal_id/decline`
+
+* **مجوز:** خرده‌فروش مقصد (`RETAILER_OWNER`, `RETAILER_STAFF`).
+* **بدنه اختیاری:**
+```json
+{ "reason": "Need full quantity" }
+```
+* proposal به `DECLINED` می‌رود؛ سفارش، مبلغ و موجودی بدون تغییر می‌مانند و رویداد `ORDER_PARTIAL_ACCEPTANCE_DECLINED` برای اعضای فعال بنکدار ایجاد می‌شود.
+* پس از رد، در صورت باقی‌ماندن سفارش در `SUBMITTED`، proposal جدید با Idempotency-Key جدید مجاز است.
+
+**محدودیت متقابل:** تا وقتی proposal در وضعیت `PENDING` است، full accept و full reject همان سفارش مجاز نیستند.
+
+### ۵.۵. تایم‌اوت سیستمی تایید بنکدار (Worker)
+* **محرک:** worker زمانی که `vendor_acceptance_deadline_at` سپری شده باشد.
+* **انتقال وضعیت:** فقط `SUBMITTED -> CANCELLED` با `cancellation_reason = VENDOR_TIMEOUT`.
+* **شرط زمانی:** دقیقاً ۲ ساعت کاری بر اساس تقویم `AHVAZ_WHOLESALE`; شنبه تا پنج‌شنبه ۰۸:۰۰ تا ۱۸:۰۰، جمعه و تعطیلات فعال در `operational_holidays` خارج از SLA هستند.
+* **پیامد:** reservationهای `ACTIVE` آزاد می‌شوند؛ `reserved_quantity` کاهش می‌یابد؛ موجودی فیزیکی تغییر نمی‌کند؛ proposal ناقصِ `PENDING` غیرقابل‌اجرا شده و `DECLINED` با دلیل `VENDOR_TIMEOUT` می‌شود.
+* **رویداد و عملیات:** `ORDER_CANCELLED` برای اعضای فعال خرده‌فروش در outbox؛ رکورد `ACCEPTANCE_LATE` با اثر `-0.25` در `vendor_reliability_events`; taskهای `VENDOR_TIMEOUT` برای کاربران فعال `FIELD_ACTIVATOR`/`OPS_ADMIN`/`SUPER_ADMIN`.
+
+### ۵.۶. اعلام خروج و بارگیری وانت (`POST /orders/:id/dispatch`)
 * **انتقال وضعیت مجاز:** `READY -> DISPATCHED`.
 * **بدنه درخواست:**
 ```json
@@ -277,11 +358,11 @@
 }
 ```
 
-### ۵.۵. تایید تحویل در مقصد (`POST /orders/:id/deliver`)
+### ۵.۶. تایید تحویل در مقصد (`POST /orders/:id/deliver`)
 * **انتقال وضعیت مجاز:** `DISPATCHED -> DELIVERED`.
 * **هدر/فیلد تایید:** کد تایید تحویل (OTP) یا امضای الکترونیک سوپرمارکت‌دار.
 
-### ۵.۶. ثبت فیش واریز / شواهد پرداخت مستقیم (`POST /orders/:id/payments/direct-transfer`)
+### ۵.۷. ثبت فیش واریز / شواهد پرداخت مستقیم (`POST /orders/:id/payments/direct-transfer`)
 * **معماری مرجع:** منطبق با مدل **NON_CUSTODIAL_DIRECT (Zero Escrow - عدم نگهداری وجوه توسط پلتفرم)**.
 * **مجوز:** خریدار (`RETAILER_OWNER`, `RETAILER_STAFF`).
 * **بدنه درخواست:**
@@ -303,7 +384,7 @@
   * `REFUNDED`: استرداد مستقیم در صورت فسخ.
 * **پاسخ موفق (201 Created):** ایجاد رکورد در جدول `payments` با `custody_model = 'NON_CUSTODIAL_DIRECT'` و وضعیت `PENDING`.
 
-### ۵.۷. تأیید وصول وجه توسط بنکدار (`POST /orders/:id/payments/:payment_id/verify`)
+### ۵.۸. تأیید وصول وجه توسط بنکدار (`POST /orders/:id/payments/:payment_id/verify`)
 * **مجوز:** بنکدار مقصد (`VENDOR_OWNER`).
 * **پیامد:**
   * تغییر وضعیت پرداخت به `payment_status = 'SUCCESS'`, ثبت `verified_by = user.id` و `verified_at = now()`.
@@ -341,8 +422,10 @@
 
 ## ۷. اندپوینت‌های احراز هویت، سازمان و مدیریت سشن‌ها (Identity & Auth APIs)
 
+> **HTTP transport base path:** `/api/v1`. مسیرهای زیر در این بخش به‌صورت نسبی نسبت به این prefix نوشته شده‌اند. اولین transport implementation در `scripts/api/` قرار دارد.
+
 ### ۷.۱. درخواست رمز یک‌بار مصرف (`POST /auth/request-otp`)
-* **مجوز:** عمومی (Rate Limited: حداکثر ۳ بار در هر ۱۰ دقیقه به ازای هر شماره).
+* **مجوز:** عمومی (محدودیت تعداد درخواست: حداکثر ۳ بار در هر ۵ دقیقه به ازای هر شماره تلفن و آی‌پی — اعمال D-018 فقط برای اهداف `LOGIN` و `REGISTER`؛ اهداف `ORDER_CONFIRMATION` و `DELIVERY_CONFIRM` خارج از سیاست فعلی D-018 هستند).
 * **بدنه درخواست:**
 ```json
 {
@@ -369,7 +452,7 @@
 ```json
 {
   "mobile_number": "+989161112233",
-  "otp_code": "482910",
+  "otp_code": "7341",
   "device_info": {
     "device_type": "MOBILE_ANDROID",
     "fcm_token": "fcm_dK9sL2...",
@@ -383,8 +466,9 @@
   "success": true,
   "data": {
     "access_token": "eyJhbGciOiJIUzI1Ni...",
+    "refresh_token": "a1B2c3D4e5F6g7H8i9J0...",
     "token_type": "Bearer",
-    "expires_in": 86400,
+    "expires_in": 900,
     "user": {
       "id": "b2c140a3-f04b-4c22-9218-c2fa5342a781",
       "mobile_number": "+989161112233",
@@ -408,7 +492,62 @@
 }
 ```
 
-### ۷.۳. سوئیچ بین سازمان‌ها (`POST /auth/switch-organization`)
+### ۷.۳. تازه‌سازی توکن دسترسی (`POST /auth/refresh`)
+* **مجوز:** عمومی (نیاز به refresh_token معتبر).
+* **بدنه درخواست:**
+```json
+{
+  "refresh_token": "a1B2c3D4e5F6g7H8i9J0..."
+}
+```
+* **پاسخ موفق (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1Ni...",
+    "token_type": "Bearer",
+    "expires_in": 900
+  }
+}
+```
+* **پاسخ خطا (401):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_REFRESH_TOKEN",
+    "message": "Refresh token is invalid or expired.",
+    "details": {},
+    "timestamp": "2026-09-18T12:00:00Z"
+  }
+}
+```
+```json
+{
+  "success": false,
+  "error": {
+    "code": "SESSION_EXPIRED",
+    "message": "Session has expired. Please re-authenticate.",
+    "details": {},
+    "timestamp": "2026-09-18T12:00:00Z"
+  }
+}
+```
+```json
+{
+  "success": false,
+  "error": {
+    "code": "SESSION_REVOKED",
+    "message": "Session has been revoked.",
+    "details": {},
+    "timestamp": "2026-09-18T12:00:00Z"
+  }
+}
+```
+* **Governance note (D-018):** refresh-token rotation policy هنوز تصمیم‌گیری نشده است. رفتار فعلی implementation این است که refresh token را rotate نمی‌کند و همان token را در طول refresh-session معتبر مصرف می‌کند؛ این جمله صرفاً وضعیت runtime فعلی است و به‌عنوان policy نهایی تلقی نمی‌شود.
+
+### ۷.۴. سوئیچ بین سازمان‌ها (`POST /auth/switch-organization`)
 * **مجوز:** کاربر احراز هویت شده دارای بیش از یک عضویت فعال.
 * **بدنه درخواست:**
 ```json
@@ -416,9 +555,24 @@
   "target_organization_id": "7d91e843-c03b-4191-87aa-29775089c93a"
 }
 ```
-* **پاسخ موفق (200 OK):** توکن JWT جدید با ادعای `org_id` و `role` سازمان مقصد صادر می‌شود.
+* **پاسخ موفق (200 OK):** توکن JWT جدید با ادعای `org_id` و `role` سازمان مقصد صادر می‌شود. در implementation فعلی refresh token تغییر نمی‌کند؛ rotation policy طبق D-018 هنوز TBD است.
+```json
+{
+  "success": true,
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1Ni...",
+    "token_type": "Bearer",
+    "expires_in": 900,
+    "session": {
+      "id": "uuid",
+      "active_organization_id": "target_org_uuid",
+      "status": "ACTIVE"
+    }
+  }
+}
+```
 
-### ۷.۴. خروج از حساب و ابطال سشن (`DELETE /auth/sessions/current` و `DELETE /auth/sessions/:id`)
+### ۷.۵. خروج از حساب و ابطال سشن (`DELETE /auth/sessions/current` و `DELETE /auth/sessions/:id`)
 * **پاسخ موفق (200 OK):** سشن در جدول `user_sessions` به وضعیت `status = 'REVOKED'` و `revoked_at = now()` درمی‌آید.
 
 ---
@@ -584,3 +738,70 @@
 
 ### ۱۳.۲. ایجاد یا ویرایش دسته‌بندی (`POST /admin/categories` و `PATCH /admin/categories/:id`)
 * **مجوز:** منحصراً مدیر ارشد یا مدیر کاتالوگ (`OPS_ADMIN`).
+
+---
+
+## ۱۴. اندپوینت‌های کانونیکال پروفایل کاربری، عضویت و بافت پرسونا (User Profile & Persona APIs — D-017)
+
+> **شفافیت وضعیت ران‌تایم (Runtime Deployment Status):**  
+> کلیه مدل‌های داده، مایگریشن‌های اسکیما (`017_canonical_user_profiles_and_persona_context.sql`) و سرویس‌های دامنه برای این اندپوینت‌ها در ماژول پایتون `scripts/user_profiles.py` پیاده‌سازی شده و تحت تست جامع با PostgreSQL 18 قرار دارند. در لایه گیت‌وی وب/HTTP، این اندپوینت‌ها در وضعیت `CONTRACT_SPECIFIED / NOT_YET_DEPLOYED_AT_HTTP` مستند شده‌اند.
+
+### ۱۴.۱. استعلام پروفایل فراگیر کاربر (`GET /api/v1/profile`)
+* **آدرس:** `GET https://api.polmarket.ir/api/v1/profile`
+* **احراز هویت:** `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+* **پاسخ موفق (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "full_name": "احمد رضایی",
+    "avatar_url": "https://storage.polmarket.ir/avatars/user_1.webp",
+    "preferred_language": "fa",
+    "timezone": "Asia/Tehran",
+    "created_at": "2026-09-14T08:00:00Z",
+    "updated_at": "2026-09-14T08:00:00Z"
+  }
+}
+```
+
+### ۱۴.۲. به‌روزرسانی پروفایل فراگیر کاربر (`PUT /api/v1/profile`)
+* **بدنه درخواست (Request Body):**
+```json
+{
+  "full_name": "احمد رضایی دهکردی",
+  "avatar_url": "https://storage.polmarket.ir/avatars/user_1_new.webp",
+  "preferred_language": "fa"
+}
+```
+* **پاسخ موفق (200 OK):** اطلاعات به‌روزرسانی‌شده پروفایل.
+
+### ۱۴.۳. استعلام درصد تکمیل پروفایل کاربر (`GET /api/v1/profile/completion`)
+* **پاسخ موفق (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "completion_percentage": 80,
+    "missing_fields": ["avatar_url"],
+    "is_complete": false
+  }
+}
+```
+
+### ۱۴.۴. مدیریت پروفایل عضویت در سازمان فعال (`GET` / `PUT /api/v1/membership/profile`)
+* **بدنه ویرایش (PUT Request Body):**
+```json
+{
+  "job_title": "مدیر فروش و تامین",
+  "notification_preferences": {
+    "sms_orders": true,
+    "push_inventory_alerts": true
+  }
+}
+```
+
+### ۱۴.۵. دریافت بافت ترکیبی پرسونا و تننت فعال (`GET /api/v1/profile/context`)
+* **پاسخ موفق (200 OK):** ساختار کامل ۵ لایه شامل اطلاعات کاربری، عضویت فعال، نقش سازمانی و پروفایل پرسونا (`retailer_profiles`، `wholesaler_profiles` یا `staff_profiles`).
+* **قاعده حاکمیت کلیم‌های JWT:** کلیم‌های JWT صرفاً یک کپی مشتق‌شده و کش‌شده از وضعیت دسترسی هستند؛ SSoT اعتبار و نقش همواره جدول `organization_memberships` است.

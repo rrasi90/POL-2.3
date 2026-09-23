@@ -32,12 +32,12 @@ flowchart TD
 
     subgraph Data & Storage Layer
         D1[(PostgreSQL 18 - Relational DB)]
-        D2[(Redis 7 - Cache & Session & Queue)]
+        D2[(Redis 7 - Optional Cache / Rate Limit / Session Acceleration)]
         D3[MinIO / S3 - Photo Storage / Invoices]
     end
 
     subgraph External Infrastructure Services
-        E1[Kavenegar / SMS Gateway - OTP & Alerts]
+        E1[Provider-Neutral SMS Gateway - OTP & Alerts]
         E2[Neshan / Balad Map API - Geocoding]
         E3[FCM / Push Notification Service]
     end
@@ -45,7 +45,7 @@ flowchart TD
     A1 & A2 & A3 & A4 --> B1
     B1 --> C1 & C2 & C3 & C4 & C5 & C6
     C1 & C2 & C3 & C4 & C5 & C6 --> D1
-    C1 & C3 & C4 --> D2
+    C1 & C4 --> D2
     C4 & C6 --> D3
     C1 & C4 --> E1
     C2 & C4 --> E2
@@ -58,15 +58,15 @@ flowchart TD
 
 | لایه معماری | فناوری منتخب | دلایل توجیهی و مزیت فنی |
 |---|---|---|
-| **محیط اجرایی بک‌اند (Runtime)** | **Node.js 20 LTS (TypeScript)** | اکوسیستم مدرن، هماهنگی کامل تایپ‌ها بین فرانت و بک، سرعت بالای اجرای رویدادمحور. |
-| **فریم‌ورک بک‌اند (Framework)** | **NestJS با آداپتور پرسرعت Fastify (معماری Modular Monolith)** | ساختار ماژولار سازمانی، تزریق وابستگی تمیز، نگهداری‌پذیری بالا در کنار بیشترین توان پردازشی I/O ناهمگام و کمترین تأخیر شبکه. |
+| **محیط اجرایی بک‌اند (Runtime)** | **Python** | D-019:uthoritative production backend runtime. Ecosystem maturity, psycopg2/asyncpg native PostgreSQL driver, asyncio-native I/O. No Node/Python dual runtime. Concrete interpreter version (≥3.11) enforced by `verify_environment.py` and CI. |
+| **فریم‌ورک بک‌اند (Framework)** | **FastAPI (thin transport adapter over modular monolith)** | D-020:uthoritative HTTP framework. Thin adapter layer over `authentication/session → ApplicationContext → POLApplicationBoundary → canonical domain service → PostgreSQL → outbox → worker`. Modular monolith maintained via Python module boundaries. |
 | **پایگاه داده اصلی (Database)** | **PostgreSQL 18** | پشتیبانی کامل از تراکنش‌های مالی ACID، جستجوی متنی فازی زبان فارسی با افزونه `pg_trgm`، ایندکس‌های B-Tree روی بارکدها و فیلدهای JSONB. |
-| **کش و نشست‌ها (Cache)** | **Redis 7** | کش کردن نتایج کاتالوگ بنکداران، نرخ‌گذاری پیامک (Rate Limiting) و مدیریت جلسات ورود. |
-| **موتور صف و پردازش رویدادها (Queue)** | **BullMQ بر بستر Redis 7** | اجرای صف‌های پردازش پس‌زمینه، ارسال پیامک، بازپردازش خطای DLQ و الگوی Transactional Outbox. |
+| **کش / Rate Limit** | **Redis 7 (Optional)** | در صورت استقرار، فقط برای cache / rate-limit / acceleration؛ canonical business state و outbox به Redis وابسته نیست. |
+| **موتور worker / event processing** | **Python workers + PostgreSQL Outbox** | Canonical per D-019/D-015: workers claim durable PostgreSQL work with `FOR UPDATE SKIP LOCKED` and leases; no BullMQ/Redis Streams dependency. See `POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md`. |
 | **ذخیره‌سازی فایل و تصاویر (Storage)** | **MinIO (فضای شی‌محور سازگار با پروتکل S3 ابری)** | ذخیره‌سازی ابری فایل‌های باینری تصاویر کالاها با ساختار کلیدهای پایدار (`products/{id}/canonical/{uuid}.webp`) و حذف EXIF. |
-| **فرانت‌اند وب و دسکتاپ (Web)** | **Next.js 14 (App Router) با استایل‌دهی Tailwind CSS** | ساختار فوق‌العاده سبک، رندر سریع سمت سرور (SSR) برای گوشی‌های ضعیف، و قابلیت PWA روی گوشی سوپرمارکت. |
+| **فرانت‌اند وب و دسکتاپ (Web)** | **Next.js 15 (App Router) با استایل‌دهی Tailwind CSS** | ساختار فوق‌العاده سبک، رندر سریع سمت سرور (SSR) برای گوشی‌های ضعیف، و قابلیت PWA روی گوشی سوپرمارکت. |
 | **اپلیکیشن موبایل (Mobile)** | **React Native با فریم‌ورک Expo** | اشتراک بیش از ۸۰٪ کدهای تجاری با نسخه وب؛ ماژول اسکنر دوربین برای اسکن پیوسته بارکد (Continuous Scan). |
-| **رصد و مانیتورینگ (Observability)** | **Pino JSON Logger به همراه متریک‌های Prometheus و داشبورد Grafana** | ثبت بلادرنگ خطاها، پایش زمان پاسخگویی APIها و مانیتورینگ سلامت صف‌های BullMQ. |
+| **رصد و مانیتورینگ (Observability)** | **Pino JSON Logger به همراه متریک‌های Prometheus و داشبورد Grafana** | ثبت بلادرنگ خطاها، پایش زمان پاسخگویی APIها و سلامت Python worker processes؛ deployment/process supervision remains a later deployment gate. |
 | **زیرساخت سرور و استقرار (Deployment)** | **Docker Compose روی سرورهای ابری داخل ایران (ابر آروان یا پارس‌پک)** | تضمین دسترسی ۱۰۰٪ پایدار درون کشور حتی در زمان اختلالات اینترنت بین‌الملل؛ استقرار ایزوله و مستقل. |
 
 ---
@@ -77,7 +77,7 @@ flowchart TD
 [ کاربر شماره موبایل وارد می‌کند ]
                │
                ▼
-[ تولید کد یکبارمصرف ۴ رقمی در Redis با انقضای ۱۲۰ ثانیه ]
+[ ایجاد چالش OTP چهاررقمی در PostgreSQL (otp_challenges) با انقضای ۱۲۰ ثانیه ]
                │
                ▼
 [ ارسال پیامک از طریق خط خدماتی (بدون مسدودی بلک‌لیست تبلیغاتی) ]
@@ -91,8 +91,13 @@ flowchart TD
   ۲. Refresh Token (عمر ۳۰ روز - HttpOnly Secure Cookie یا حافظه امن گوشی)
 ```
 
+**矿别 توکن‌ها (D-018 تفسیر رسمی):**
+- **Access Token:** JWT stateless با `exp` claim ۱۵ دقیقه‌ای. کتابخانه JWT در هر درخواست اعتبارسنجی می‌کند. عمر آن در `user_sessions.expires_at` ذخیره نمی‌شود.
+- **Refresh Session:** سشن سرور-ردیابی‌شده در `user_sessions`. فیلد `expires_at` برابر با **۳۰ روز** (عمر refresh token) است. `refresh_token_hash` متعلق به این سشن است.
+- **Refresh Token Rotation:** هنوز تصمیم‌گیری نشده (D-018).
+
 ### کنترل‌های امنیتی ضد تقلب:
-1. **محدودسازی ارسال پیامک (Rate Limiting):** حداکثر ۳ پیامک OTP در هر ۵ دقیقه به ازای هر شماره تلفن و آی‌پی.
+1. **محدودسازی ارسال پیامک (Rate Limiting):** حداکثر ۳ درخواست OTP در هر ۵ دقیقه به ازای هر شماره تلفن و آی‌پی؛ اجرای فعلی برای جلوگیری از race condition با PostgreSQL `pg_advisory_xact_lock` سریال‌سازی می‌شود و بر `LOGIN`/ `REGISTER` اعمال می‌شود.
 2. **مجوزهای مبتنی بر نقش (RBAC Guards):** هر کنترلر API با گارد امنیتی `@Roles('RETAILER')` یا `@Roles('WHOLESALER')` محافظت می‌شود.
 
 ---
@@ -102,9 +107,12 @@ flowchart TD
 تمام اندپوینت‌ها از ساختار استاندارد نسخه ۱ استفاده می‌کنند (`/api/v1/...`):
 
 ### ۴.۱. اندپوینت‌های احراز هویت (`/api/v1/auth`)
-* `POST /auth/otp/send` — ارسال کد تأیید ورود
-* `POST /auth/otp/verify` — اعتبارسنجی کد و بازگرداندن پروفایل و توکن JWT
-* `POST /auth/refresh` — تمدید توکن دسترسی
+* `POST /api/v1/auth/request-otp` — ایجاد چالش OTP ورود
+* `POST /api/v1/auth/verify-otp` — اعتبارسنجی OTP و صدور access/refresh token
+* `POST /api/v1/auth/refresh` — تمدید access token با refresh session
+* `POST /api/v1/auth/switch-organization` — تغییر tenant فعال و صدور JWT جدید
+* `DELETE /api/v1/auth/sessions/current` — ابطال سشن جاری
+* `DELETE /api/v1/auth/sessions/{id}` — ابطال یک سشن متعلق به کاربر احراز‌شده
 
 ### ۴.۲. اندپوینت‌های کاتالوگ، بارکد و تطبیق کالا (`/api/v1/catalog`)
 * `GET /categories` — درخت دسته‌بندی اقلام با آیکون‌ها
@@ -133,6 +141,14 @@ flowchart TD
 * `POST /orders/{id}/dispute` — ثبت گزارش مغایرت تجاری، خرابی یا کسری توسط سوپرمارکت (`dispute_status = OPEN`)
 * `PATCH /orders/{id}/dispute` — بررسی و بستن پرونده مغایرت تجاری توسط پشتیبانی پُل
 
+### ۴.۶. سرویس‌های پروفایل، بافت پرسونا و معرفی همکاران (`/api/v1/profile` و `/api/v1/referrals`)
+* **وضعیت ران‌تایم:** سرویس‌های دامنه در ماژول‌های پایتون `scripts/user_profiles.py` و `scripts/vendor_referral.py` بر بستر PostgreSQL 18 عملیاتی و اعتبارسنجی شده‌اند. استقرار در لایه HTTP در وضعیت `CONTRACT_SPECIFIED / NOT_YET_DEPLOYED_AT_HTTP` قرار دارد.
+* `GET /profile` — دریافت پروفایل انسانی فراگیر یکتا (`user_profiles`)
+* `PUT /profile` — به‌روزرسانی مشخصات فردی، تصویر آواتار و زبان ترجیحی
+* `GET /profile/completion` — محاسبه درصد تکمیل اطلاعات کاربری
+* `GET /profile/context` — استخراج بافت مرکب ۵ لایه (هویت + سازمان + نقش + پرسونای عملیاتی)
+* `POST /referrals/redeem` — ثبت انتساب معرف بنکدار برای سوپرمارکت (D-016 بدون پاداش نقدی)
+
 ---
 
 ## ۵. پایپ‌لاین ذخیره‌سازی رسانه و موتور جستجوی کاتالوگ (Media Pipeline & Search Engine)
@@ -143,7 +159,7 @@ flowchart LR
     B -->|2. Generate S3 Presigned PUT| A
     A -->|3. Upload Compressed WebP| C[(MinIO / S3 Object Storage)]
     A -->|4. Confirm Upload| B
-    B -->|5. BullMQ Job| D[Image Processing Worker]
+    B -->|5. Python Worker Job| D[Python Image Processing Worker]
     D -->|Generate 150x150 WebP Thumbnail| C
     D -->|Register in media_assets & product_media| E[(PostgreSQL 18)]
 ```

@@ -7,7 +7,9 @@
 
 **Evidence fields required for VERIFIED:** source · route · API source · implementation path · verification command/result · last QA cycle · status.
 
-**QA note (2026-09-22):** typecheck EXIT 0 + `next build` EXIT 0 for Phase 2 web modules (auth/retailer/ops/field/corporate + vendor). Runtime e2e against live FastAPI not run in this cycle → status `IMPLEMENTED` (not `VERIFIED`).
+**QA note (2026-09-22):** typecheck EXIT 0 + `next build` EXIT 0 for Phase 2 web modules (auth/retailer/ops/field/corporate + vendor). Runtime e2e against live FastAPI not run in that cycle → status `IMPLEMENTED`.
+
+**QA note cycle 5 (2026-09-23):** live FastAPI `:8000` (DB `pol`, 95 tables) + Next `:3001` up. 19 screens promoted to `VERIFIED` — authenticated API smoke 200 + static route 200 + structural audit EXIT 0 (see §Live-evidence). Remaining IMPLEMENTED screens still lack full click-through e2e (Phase 4).
 
 ---
 
@@ -15,12 +17,12 @@
 
 | ID | Title | Route (canonical/prop) | Role/context | Primary APIs (API_MAP) | Source | Status |
 |----|-------|------------------------|--------------|------------------------|--------|--------|
-| SH-AUTH-01 | Login phone + OTP request | `/auth/login` | PUBLIC_ANON → all | POST `/auth/request-otp` | route map §1; D-018; doc 22 §3.1 | IMPLEMENTED |
-| SH-AUTH-02 | Verify OTP (4-digit) | `/auth/login` (step) | PUBLIC_ANON → all | POST `/auth/verify-otp` | D-018; route map (OTP digits → 4) | IMPLEMENTED |
-| SH-AUTH-03 | Refresh (implicit) | (client) | all | POST `/auth/refresh` | route map §1 | IMPLEMENTED |
-| SH-PROFILE-01 | Account / profile | `/profile` | authenticated | GET/PUT `/profile`, GET `/profile/context` | route map; R-13; V-12 | IMPLEMENTED |
-| SH-NOTIF-01 | Notifications inbox | `/notifications` | authenticated | GET `/notifications` | route map (path conflict G-004) | IMPLEMENTED |
-| SH-NOTIF-02 | Notification preferences | `/notifications/preferences` | authenticated | GET/PUT `/notifications/preferences` | route map | IMPLEMENTED |
+| SH-AUTH-01 | Login phone + OTP request | `/auth/login` | PUBLIC_ANON → all | POST `/auth/request-otp` | route map §1; D-018; doc 22 §3.1 | VERIFIED |
+| SH-AUTH-02 | Verify OTP (4-digit) | `/auth/login` (step) | PUBLIC_ANON → all | POST `/auth/verify-otp` | D-018; route map (OTP digits → 4) | VERIFIED |
+| SH-AUTH-03 | Refresh (implicit) | (client) | all | POST `/auth/refresh` | route map §1 | VERIFIED |
+| SH-PROFILE-01 | Account / profile | `/profile` | authenticated | GET/PUT `/profile`, GET `/profile/context` | route map; R-13; V-12 | VERIFIED |
+| SH-NOTIF-01 | Notifications inbox | `/notifications` | authenticated | GET `/notifications` | route map (path conflict G-004) | VERIFIED |
+| SH-NOTIF-02 | Notification preferences | `/notifications/preferences` | authenticated | GET/PUT `/notifications/preferences` | route map | VERIFIED |
 
 ### §A evidence — Phase 2 Module 1 + web build (QA cycle 1, 2026-09-22)
 
@@ -39,8 +41,8 @@
 | ID | Title | Route | Role | Primary APIs | Source | Status |
 |----|-------|-------|------|--------------|--------|--------|
 | R-01 | Onboarding / activation | `/auth/*` progressive | RETAILER_OWNER | auth + profile context | doc 22 L222–233; doc 30 R-01A–G; MT RT-01 | IMPLEMENTED |
-| R-02 | Home / operational hub | `/retailer` | RETAILER_OWNER/STAFF | GET `/orders` (actions), profile | doc 22 L235–244; MT RT-02 | IMPLEMENTED |
-| R-03 | Search / catalog | `/retailer/catalog` | RETAILER_* | GET `/catalog/search`, `/catalog/categories`, GET `/search` | doc 22 L246–260; MT RT-06 | IMPLEMENTED |
+| R-02 | Home / operational hub | `/retailer` | RETAILER_OWNER/STAFF | GET `/orders` (actions), profile | doc 22 L235–244; MT RT-02 | VERIFIED |
+| R-03 | Search / catalog | `/retailer/catalog` | RETAILER_* | GET `/catalog/search`, `/catalog/categories`, GET `/search` | doc 22 L246–260; MT RT-06 | VERIFIED |
 | R-03B | Barcode / SKU entry | (in catalog) | RETAILER_* (+scan perm) | POST `products/match-barcode` **CONTRACT** → MOCK/GAP | D-028; amendment | GAP |
 | R-04 | Product detail | `/retailer/catalog/[id]` | RETAILER_* | GET `/catalog/products/{id}`, `/vendors`, compare-* | doc 22 L262–275; MT RT-07 | IMPLEMENTED |
 | R-05 | Vendor comparison | (in product) | RETAILER_* | compare-prices, compare-inventory | doc 22 L277–289; MT RT-07 | IMPLEMENTED |
@@ -52,13 +54,13 @@
 | R-09C | Partial acceptance review | (order detail) | RETAILER_OWNER | POST approve/decline partial proposals (derive `proposal_id` from timeline `event_data`) | MT RT-20 | IMPLEMENTED |
 | R-09D | Delivery tracking | (order detail) | RETAILER_* | GET `/orders/{id}/delivery` | MT RT-05 | IMPLEMENTED |
 | R-09E | Handoff / receiver confirm | (order or link) | receiver | GET delivery/proof; POST `/orders/{id}/deliver` | MT RT-19; D-023 | IMPLEMENTED |
-| R-10 | Reorder / history | `/retailer/orders` | RETAILER_* | GET `/orders` | doc 22 L343–349; MT RT-10 | IMPLEMENTED |
+| R-10 | Reorder / history | `/retailer/orders` | RETAILER_* | GET `/orders` | doc 22 L343–349; MT RT-10 | VERIFIED |
 | R-11 | Returns / disputes | `/retailer/orders/[id]/returns` | RETAILER_OWNER | POST/GET `/orders/{id}/returns`, disputes | doc 22 L351–353; MT RT-09 | IMPLEMENTED |
 | R-12 | Support | `/retailer/support` | RETAILER_* | `/support/cases*` | doc 22 L355–363; MT RT-13 | IMPLEMENTED |
 | R-13 | Account | `/profile` (+ org) | RETAILER_* | profile/context; staff mgmt → GAP G-010 | doc 22 L365–373; MT RT-12 | IMPLEMENTED |
-| R-16 | Financial activity | `/retailer/finance` | RETAILER_OWNER | GET `/invoices` (D-021 no wallet) | MT RT-16; D-021 | IMPLEMENTED |
-| R-17 | Vendor search | `/retailer/vendors` | RETAILER_* | GET `/storefront/vendors` | MT RT-17; D-024 | IMPLEMENTED |
-| R-18 | Vendor storefront | `/retailer/vendors/[id]` | RETAILER_* | GET storefront vendor + products | MT RT-18; D-024 | IMPLEMENTED |
+| R-16 | Financial activity | `/retailer/finance` | RETAILER_OWNER | GET `/invoices` (D-021 no wallet) | MT RT-16; D-021 | VERIFIED |
+| R-17 | Vendor search | `/retailer/vendors` | RETAILER_* | GET `/storefront/vendors` | MT RT-17; D-024 | VERIFIED |
+| R-18 | Vendor storefront | `/retailer/vendors/[id]` | RETAILER_* | GET storefront vendor + products | MT RT-18; D-024 | VERIFIED |
 
 ### §B evidence — Retailer module (QA cycle 1, 2026-09-22)
 
@@ -88,16 +90,16 @@
 | V-01 | Dashboard (queue-first) | `/vendor` | VENDOR_* | GET `/orders` (filters), inventory stale | doc 22 L377–387 | IMPLEMENTED |
 | V-02 | Orders queue | `/vendor/orders` | VENDOR_* | GET `/orders` | doc 22 L389–399; MT VD-02 | IMPLEMENTED |
 | V-03 | Order detail + accept/reject/partial | `/vendor/orders/[id]` | VENDOR_* | accept/reject/partial HTTP | doc 22 L401–410; MT VD-02/18 | IMPLEMENTED |
-| V-04 | Catalog | `/vendor/catalog` | VENDOR_* | `/catalog/vendors/products*` | doc 22 L412–420; MT VD-05 | IMPLEMENTED |
+| V-04 | Catalog | `/vendor/catalog` | VENDOR_* | `/catalog/vendors/products*` | doc 22 L412–420; MT VD-05 | VERIFIED |
 | V-05 | Pricing | `/vendor/catalog/[id]/prices` | VENDOR_* | prices current/set | doc 22 L422–426 | IMPLEMENTED |
 | V-06 | Inventory | `/vendor/inventory` | VENDOR_* | inventory GET/PATCH | doc 22 L428–435; MT VD-01 | IMPLEMENTED |
-| V-07 | Daily inventory confirmation | `/vendor/inventory/daily` | VENDOR_* | inventory/daily/* | doc 22 L437–441 | IMPLEMENTED |
-| V-08 | Referral (attribution only) | `/vendor/referrals` | VENDOR_* | `/referrals*` | doc 22 L443–449; D-016 | IMPLEMENTED |
+| V-07 | Daily inventory confirmation | `/vendor/inventory/daily` | VENDOR_* | inventory/daily/* | doc 22 L437–441 | VERIFIED |
+| V-08 | Referral (attribution only) | `/vendor/referrals` | VENDOR_* | `/referrals*` | doc 22 L443–449; D-016 | VERIFIED |
 | V-09 | Customers | `/vendor/customers` | VENDOR_* | **none** → GAP G-009 | doc 22 L451–455; MT VD-09 | GAP |
-| V-10 | Reconciliation / documents | `/vendor/settlements` | VENDOR_OWNER | `/vendors/settlements`, invoices | doc 22 L457–461; MT VD-06/10/13 | IMPLEMENTED |
+| V-10 | Reconciliation / documents | `/vendor/settlements` | VENDOR_OWNER | `/vendors/settlements`, invoices | doc 22 L457–461; MT VD-06/10/13 | VERIFIED |
 | V-11 | Staff / access | `/vendor/staff` | VENDOR_OWNER | **none** → GAP G-010 | doc 22 L463–468; MT VD-07/15 | GAP |
-| V-12 | Vendor profile | `/profile` vendor ctx | VENDOR_* | profile/context | doc 22 L470–475; MT VD-12 | IMPLEMENTED |
-| V-14 | Storefront management | `/vendor/storefront` | VENDOR_OWNER | storefront read; write → GAP | MT VD-14; D-024 | IMPLEMENTED |
+| V-12 | Vendor profile | `/profile` vendor ctx | VENDOR_* | profile/context | doc 22 L470–475; MT VD-12 | VERIFIED |
+| V-14 | Storefront management | `/vendor/storefront` | VENDOR_OWNER | storefront read; write → GAP | MT VD-14; D-024 | VERIFIED |
 | V-16 | Barcode / continuous scan | (mobile) | VENDOR_STAFF + inv.scan | match-barcode, continuous-scan **CONTRACT** | MT VD-16; D-028 | NOT_APPLICABLE |
 | V-17 | Financial activity | `/vendor/finance` | VENDOR_OWNER | settlements/invoices D-021 | MT VD-17 | IMPLEMENTED |
 
@@ -150,7 +152,7 @@
 
 | ID | Title | Route | Role | Primary APIs | Source | Status |
 |----|-------|-------|------|--------------|--------|--------|
-| F-01 | Today / task list | `/field` | FIELD_ACTIVATOR | GET `/field/tasks` | doc 22 L564–567; MT FA-01 | IMPLEMENTED |
+| F-01 | Today / task list | `/field` | FIELD_ACTIVATOR | GET `/field/tasks` | doc 22 L564–567; MT FA-01 | VERIFIED |
 | F-02 | Retailer activation | `/field/tasks/[id]` activation | FIELD_ACTIVATOR | PATCH task; profile create patterns | doc 22 L569–576; MT FA-02 | IMPLEMENTED |
 | F-03 | Assisted order | (link into retailer flows) | FIELD_ACTIVATOR | baskets + orders as retailer ctx | doc 22 L578–584; MT FA-03 | IMPLEMENTED |
 | F-04 | Follow-up | task detail notes | FIELD_ACTIVATOR | PATCH `/field/tasks/{id}` | doc 22 L586–590; MT FA-04 | IMPLEMENTED |
@@ -186,6 +188,36 @@
 
 ---
 
+### §Live-evidence — QA cycle 5 (2026-09-23) — live FastAPI + Next smoke
+
+**Commands:** API smoke script against `http://127.0.0.1:8000/api/v1/*` (retailer `+989160007777` / vendor `+989160008888`, OTP `1234`, tokens in `artifacts/auth_verify.json` + `artifacts/auth_vendor.json`, evidence `artifacts/live_api_evidence_c5.json`) · Next route GETs on `:3001` · `python artifacts/structural_audit.py` → EXIT 0 · route crawl `artifacts/route_crawl_3001.json` 47/47 HTTP 200.
+
+| ID | Route (:3001) | API source (live) | Result | Cycle |
+|----|---------------|-------------------|--------|-------|
+| SH-AUTH-01 | GET `/auth/login` 200 | POST `/auth/request-otp` 200 PENDING | PASS | 5 |
+| SH-AUTH-02 | (login step) | POST `/auth/verify-otp` 200 → 393-char access token | PASS | 5 |
+| SH-AUTH-03 | (client implicit) | POST `/auth/refresh` 200 → new token pair | PASS | 5 |
+| SH-PROFILE-01 | GET `/profile` 200 | GET `/profile`, `/profile/context`, `/profile/completion` 200 (88%) | PASS | 5 |
+| SH-NOTIF-01 | GET `/notifications` 200 | GET `/notifications` 200 | PASS | 5 |
+| SH-NOTIF-02 | GET `/notifications/preferences` 200 | GET+PUT `/notifications/preferences` 200 (PUSH) | PASS | 5 |
+| R-02 | GET `/retailer` 200 | GET `/orders?limit=3` 200 + profile context 200 | PASS | 5 |
+| R-03 | GET `/retailer/catalog` 200 | GET `/catalog/search?q=وروغ` 200 + `/catalog/categories` 200 + `/search` 200 | PASS | 5 |
+| R-10 | GET `/retailer/orders` 200 | GET `/orders?limit=3` 200 | PASS | 5 |
+| R-16 | GET `/retailer/finance` 200 | GET `/invoices` 200 | PASS | 5 |
+| R-17 | GET `/retailer/vendors` 200 | GET `/storefront/vendors` 200 `{items,total,page,page_size}` | PASS | 5 |
+| R-18 | GET `/retailer/vendors` 200 (list+detail client) | GET `/storefront/vendors/{id}` 200 + `.../products` 200 (seeded catalog) | PASS | 5 |
+| V-04 | GET `/vendor/catalog` 200 | GET `/catalog/vendors/products` 200 (vendor token) | PASS | 5 |
+| V-07 | GET `/vendor/inventory/daily` 200 | GET `/inventory/daily/2026-09-23` 200 (PENDING confirmation) | PASS | 5 |
+| V-08 | GET `/vendor/referrals` 200 | GET `/referrals` 200 | PASS | 5 |
+| V-10 | GET `/vendor/settlements` 200 | GET `/vendors/settlements` 200 | PASS | 5 |
+| V-12 | `/profile` vendor ctx (SH-PROFILE-01 route) | GET `/profile/context` + `/profile` 200 (vendor token) | PASS | 5 |
+| V-14 | GET `/vendor/storefront` 200 | storefront read 200 (write remains GAP D-024) | PASS | 5 |
+| F-01 | GET `/field` 200 | GET `/field/tasks` 200 | PASS | 5 |
+
+Non-admin RBAC spot-check: retailer token → GET `/admin/audit-logs` **403** (expected). Structural audit: `window_loc=0 console_log=0 fake_success=0`.
+
+---
+
 ## G. Platform notes
 
 - **Web:** all families above (Phase 2).  
@@ -198,14 +230,16 @@
 
 | Family | Count | PENDING | IMPLEMENTED | VERIFIED | GAP | BLOCKED | N/A |
 |--------|------:|--------:|------------:|---------:|----:|--------:|----:|
-| Shared/Auth | 6 | 0 | 6 | 0 | 0 | 0 | 0 |
-| Retailer | 20 | 0 | 19 | 0 | 1 | 0 | 0 |
-| Vendor | 16 | 0 | 13 | 0 | 2 | 0 | 1 |
+| Shared/Auth | 6 | 0 | 0 | 6 | 0 | 0 | 0 |
+| Retailer | 20 | 0 | 13 | 6 | 1 | 0 | 0 |
+| Vendor | 16 | 0 | 7 | 6 | 2 | 0 | 1 |
 | Ops | 13 | 0 | 8 | 0 | 5 | 0 | 0 |
-| Field | 5 | 0 | 5 | 0 | 0 | 0 | 0 |
+| Field | 5 | 0 | 4 | 1 | 0 | 0 | 0 |
 | Corporate | 8 | 0 | 8 | 0 | 0 | 0 | 0 |
-| **Total** | **68** | **0** | **59** | **0** | **8** | **0** | **1** |
+| **Total** | **68** | **0** | **40** | **19** | **8** | **0** | **1** |
 
 **Cycle 1 (2026-09-22):** typecheck exit 0; `next build` exit 0 (50 routes).  
 **Cycle 2 (2026-09-22):** closed R-09C/D/E + O-03 → IMPLEMENTED; typecheck exit 0; `next build` exit 0 (50 routes incl. `/ops/[type]/[id]`).  
 **Cycle 3 (2026-09-22):** eslint exit 0 (0 errors / 17 warnings); typecheck exit 0; `next build` exit 0 (50 routes). Module DoD cycle min (≥3) met for Phase 2 web. Still `IMPLEMENTED` not `VERIFIED` until live FastAPI e2e.
+**Cycle 4 (2026-09-23):** infra regression — pytest suite green at gate count; typecheck/lint/build/structural audit green (no status flips).
+**Cycle 5 (2026-09-23):** live e2e smoke — FastAPI `:8000` on `pol` 95 tables + Next `:3001`; 19 screens → `VERIFIED` (40 IMP / 19 VER / 8 GAP / 1 N/A); see §Live-evidence. Structural audit EXIT 0.
