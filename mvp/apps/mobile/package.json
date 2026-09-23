@@ -19,7 +19,8 @@
     "android": "expo start --android",
     "start": "expo start",
     "build": "expo export --platform android --output-dir ./dist",
-    "qa:functional": "node scripts/mobile_functional_qa.mjs"
+    "qa:functional": "node scripts/mobile_functional_qa.mjs",
+    "qa:regression": "node scripts/mobile_regression_qa.mjs"
   },
   "private": true
 }
