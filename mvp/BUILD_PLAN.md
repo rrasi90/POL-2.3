@@ -3,7 +3,7 @@
 **Contract:** Master Build Instruction (repo root session) + master loop (DISCOVER→PLAN→BUILD→TEST→RECONCILE→AUDIT→FIX→…→DELIVERY)  
 **Root:** `mvp/`  
 **Authorized branch:** `main`  
-**Updated:** 2026-09-23 · post-audit reconciliation; current verification gates reopened  
+**Updated:** 2026-09-23 · Stage 6 mobile QA Cycle 3 closed; remaining executable gates are Night visual verification and live basket→checkout/idempotency E2E  
 **Authority hierarchy:** `DECISION_REGISTER.md` (D-001…D-028 on branch) → CURRENT_SOURCE_OF_TRUTH → this file → module evidence files.
 
 **Rule:** NOT DONE = KEEP WORKING. Do not stop to ask which track. Isolate external deps as `BLOCKED_EXTERNAL` and continue everything else. Later-discovered defects in earlier phases ⇒ reopen, root-cause fix, retest, return.
@@ -19,17 +19,17 @@
 | 3 | Phase 0 + GATE 0 | **DONE** | Artifacts + skeleton; typecheck/build green. |
 | 4 | Phase 1 foundation + design system | **DONE** | tokens, ui package, shell, middleware role gates. |
 | 5 | Full Web MVP | **DONE (impl + partial e2e)** | 68 screens cycle 5: **40 IMPLEMENTED, 19 VERIFIED, 8 GAP, 1 N/A**; typecheck/lint/build green; live API+route smoke for SH-AUTH/PROFILE/NOTIF, R-02/03/10/16/17/18, V-04/07/08/10/12/14, F-01. |
-| 6 | Phase 3 Android | **IN PROGRESS** | Field F-01…F-05 plus first Retailer/Vendor/Ops parity surfaces are implemented; role-aware auth routing, API headers and Light/Night token foundation added. Mobile QA cycle 2 is now evidenced by 23/23 deterministic functional/state-transition/parity checks; supported REAL-API parity was expanded for retailer finance, vendor finance/referrals, shared notification preferences, and Ops support/notifications. Cycle 3, barcode D-028 and unsupported canonical screens remain open. |
+| 6 | Phase 3 Android | **IN PROGRESS** | Supported mobile parity is implemented and QA Cycles 1–3 are evidenced. Cycle 3 closed on mobile run `35893284378` with typecheck, 23/23 functional QA, 11/11 regression QA, Expo config validation and Android export all green. Remaining: Night visual verification, barcode D-028/unsupported contracts, and final live checkout gates. |
 | 7 | OpenPencil WAVE-02 | **BLOCKED_EXTERNAL** | MCP `:7600` not listening (app not running). WAVE-01 evidence on disk. |
-| 8 | Global QA + regression | **REOPENED** | Historical backend/web suite was green, but current Phase 3 mobile changes still require fresh CI + 3 QA cycles + regression. Do not reuse stale green evidence as current DoD proof. |
+| 8 | Global QA + regression | **CURRENT GREEN / OPEN FINAL E2E** | Backend run `35893284312` SUCCESS and mobile run `35893284378` SUCCESS on commit `f8ef267e6666a03b483afdd8618585ed82086014`. Final live basket→allocation→checkout→order E2E and idempotency replay remain open. |
 | 9 | Structural audit | **DONE** (2026-09-23) | `python artifacts/structural_audit.py` → EXIT 0: window_loc=0, console_log=0, fake_success=0 (biz_calc hits all backend). |
 | 10 | Anti-vibe-coding audit | **DONE** (2026-09-23) | same checklist green; rules file restored to `.agents/rules/00-pol-canonical-safety.md`. |
 | 11 | GitHub reconciliation | **DONE (2026-09-23)** | Current HEAD `ad88ca0` has fresh backend verification CI **SUCCESS** (run 35884012589) and mobile verification CI **SUCCESS** (run 35884012647). |
 | 12 | Independent 2nd-pass audit | **DONE** | `verify_repository_consistency.py` PASS 8/8 EXIT 0 (D-015/016/017 + hierarchy restored). |
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
-| 14 | Regression | **CURRENT BACKEND REGRESSION GREEN (2026-09-23)** | Fresh backend verification remains evidenced by run 35884012589; later mobile-only parity changes are separately verified by the latest mobile CI. Live basket→checkout E2E remains separate/open. |
+| 14 | Regression | **GREEN (2026-09-23)** | Backend run `35893284312` SUCCESS and Mobile Cycle 3 run `35893284378` SUCCESS on current commit `f8ef267`. Live basket→checkout E2E remains separate/open. |
 | 15 | Repeat until DoD | **OPEN** | DoD = §8; open gaps in `MVP_KNOWN_GAPS.md` + Phase 3 parity remain. |
-| 16 | Phase 5 delivery | **REOPENED** | Delivery report exists, but final delivery cannot close while Phase 3 mobile parity/verification remains open. |
+| 16 | Phase 5 delivery | **REOPENED** | Mobile verification through Cycle 3 is now closed; final delivery remains open for Night visual verification, live checkout/idempotency E2E, and final reconciliation. |
 
 ---
 
@@ -211,7 +211,7 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [ ] Barcode path = D-028 where inventory.scan; no Driver App  
 - [ ] Mobile Night theme visual verification per screen  
 - [x] Mobile QA cycle 2 — deterministic functional/error/state-transition/parity QA **23/23 PASS** (latest mobile run after parity expansion)  
-- [ ] ≥3 QA cycles (typecheck + Expo validation/export where feasible)  
+- [x] ≥3 mobile QA cycles evidenced: Cycle 1 run `35884012647`; Cycle 2 run `35886815013` (23/23); Cycle 3 run `35893284378` (11/11 regression + 23/23 functional + Expo config/export)  
 
 ### Phase 4 (Global QA)
 - [x] Full pytest/verification suite **fresh at current HEAD** — run 35884012589 SUCCESS; artifact `pol-test-results` SHA-256 `016c9dc96bb8e45dd1f89ae17f26d7efdc49809b8effac1d3edc9d92049ec839`  
@@ -221,7 +221,8 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] Anti-vibe-coding audit green  
 - [x] GitHub reconciliation + current CI — current HEAD `ad88ca0c` backend run 35884012589 SUCCESS; mobile run 35884012647 SUCCESS  
 - [x] Independent second-pass audit (`verify_repository_consistency.py` PASS 8/8 EXIT=0; D-015/016/017 restored, hierarchy docs complete)  
-- [ ] Fix + re-regression until current DoD (open mobile/live-checkout gates remain)  
+- [x] Mobile fix + re-regression closed: commit `f8ef267e` → mobile Cycle 3 11/11 and backend verification SUCCESS
+- [ ] Final executable gates: Night visual verification + live basket→allocation→checkout→order lifecycle E2E + checkout idempotency replay  
 
 ### Phase 5 (Delivery)
 - [x] Final screen/API coverage table — `MVP_SCREEN_MATRIX.md` §H + `MVP_API_MAP.md`  
@@ -278,7 +279,7 @@ MVP is DONE only when **all** hold:
 11. [ ] Run mobile QA cycle 1 from current HEAD: typecheck + Expo config + Android export; record fresh evidence.  
 12. [ ] Run mobile QA cycle 2: functional/error/state-transition verification.  
 13. [ ] Complete supported mobile parity; keep V-09/V-11 and D-028 as GAP/CONTRACT where authoritative APIs/contracts are absent.  
-14. [ ] Run mobile QA cycle 3: regression + cross-module consistency + Night visual verification where executable.  
+14. [x] Run mobile QA cycle 3: regression + cross-module consistency — **11/11 PASS** on run `35893284378`; Night visual verification remains separate/open.  
 15. [ ] Execute live basket → allocation → checkout → order lifecycle E2E and checkout idempotency replay.  
 16. [ ] Run fresh full regression and reconcile all delivery documents before final DoD.
 
