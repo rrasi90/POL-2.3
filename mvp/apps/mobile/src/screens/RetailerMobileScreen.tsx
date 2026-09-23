@@ -15,6 +15,7 @@ type Product = {
   default_pack_unit?: string | null;
   default_pack_quantity?: number | null;
 };
+type Invoice = { id: string; invoice_number?: string | null; status?: string | null; total_amount_toman?: number | string | null; issued_at?: string | null };
 type Order = { id: string; order_number?: string | null; order_status?: string | null; total_amount_toman?: number | string | null };
 type Vendor = { id: string; name?: string | null; display_name?: string | null; city?: string | null; description?: string | null; is_active?: boolean | null; product_count?: number | null };
 type VendorProduct = { id: string; product_id?: string | null; product_name?: string | null; name?: string | null; brand_name?: string | null; price_toman?: number | null; stock_quantity?: number | null; packaging_unit?: string | null; is_available?: boolean | null };
@@ -46,7 +47,7 @@ function keyV4(): string {
   });
 }
 export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNER" | "RETAILER_STAFF">; onOpenOrder: (orderId: string) => void }): React.ReactNode {
-  const [tab, setTab] = useState<"catalog" | "basket" | "orders" | "vendors" | "support">("catalog");
+  const [tab, setTab] = useState<"catalog" | "basket" | "orders" | "vendors" | "support" | "finance">("catalog");
   const [q, setQ] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [basket, setBasket] = useState<Array<Product & { quantity: number }>>([]);
@@ -59,6 +60,7 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [vendorProducts, setVendorProducts] = useState<VendorProduct[]>([]);
   const [checkout, setCheckout] = useState<Checkout | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -130,6 +132,13 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
     } catch (e) { setError(e instanceof Error ? e.message : "دریافت سفارش‌ها ناموفق بود"); }
   }
 
+  async function loadInvoices(): Promise<void> {
+    setLoading(true); setError(null);
+    try { const data = await api.get<unknown>("/api/v1/invoices?limit=50&offset=0"); setInvoices(rows<Invoice>(data, "invoices")); }
+    catch (e) { setError(e instanceof Error ? e.message : "دریافت صورتحساب‌ها ناموفق بود"); }
+    finally { setLoading(false); }
+  }
+
   async function loadVendors(): Promise<void> {
     setLoading(true);
     setError(null);
@@ -188,9 +197,14 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
         <Btn label="سفارش‌ها" onPress={() => { setTab("orders"); void loadOrders(); }} tone={tab === "orders" ? "primary" : "ghost"} />
         <Btn label="فروشندگان" onPress={() => { setTab("vendors"); void loadVendors(); }} tone={tab === "vendors" ? "primary" : "ghost"} />
         <Btn label="پشتیبانی" onPress={() => setTab("support")} tone={tab === "support" ? "primary" : "ghost"} />
+        <Btn label="مالی" onPress={() => { setTab("finance"); void loadInvoices(); }} tone={tab === "finance" ? "primary" : "ghost"} />
       </View>
       <ErrorBox message={error} />
-      {tab === "support" ? (
+      {tab === "finance" ? (
+        <ScrollView>
+          {invoices.length === 0 ? <Empty title="صورتحسابی نیست" /> : invoices.map((i) => <Card key={i.id}><StatusChip label={i.status || "—"} tone="info" /><Text style={styles.h2}>{i.invoice_number || i.id}</Text><Text style={styles.metric}>{money(i.total_amount_toman)}</Text><Text style={styles.meta}>{i.issued_at || "—"}</Text></Card>)}
+        </ScrollView>
+      ) : tab === "support" ? (
         <SupportMobileScreen role={props.role} />
       ) : tab === "vendors" ? (
         <ScrollView>
