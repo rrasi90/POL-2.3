@@ -196,6 +196,13 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] Final typecheck/build + matrix evidence  
 - [x] **Live e2e partial** → 19 screens VERIFIED (cycle 5); remaining IMPLEMENTED need click-through in Phase 4
 
+### Local execution handoff
+- [x] Created `mvp/LOCAL_EXECUTION_TRACKER.md` for gates requiring a local runtime/device or manual visual evidence.
+- [ ] LOCAL-01 Night visual verification
+- [ ] LOCAL-02 live basket → allocation → checkout → order E2E
+- [ ] LOCAL-03 checkout idempotency replay
+- [ ] LOCAL-04 device-level mobile smoke
+
 ### Phase 3 (Android)
 - [x] Expo scaffold + packages parity  
 - [x] Field-first screens (F-01…F-05) with request-failure-driven OfflineBanner + healthz retry  
@@ -279,8 +286,8 @@ MVP is DONE only when **all** hold:
 11. [ ] Run mobile QA cycle 1 from current HEAD: typecheck + Expo config + Android export; record fresh evidence.  
 12. [ ] Run mobile QA cycle 2: functional/error/state-transition verification.  
 13. [ ] Complete supported mobile parity; keep V-09/V-11 and D-028 as GAP/CONTRACT where authoritative APIs/contracts are absent.  
-14. [x] Run mobile QA cycle 3: regression + cross-module consistency — **11/11 PASS** on run `35893284378`; Night visual verification remains separate/open.  
-15. [ ] Execute live basket → allocation → checkout → order lifecycle E2E and checkout idempotency replay.  
+14. [x] Run mobile QA cycle 3: regression + cross-module consistency — **11/11 PASS** on run `35893284378`; Night visual verification is tracked in `mvp/LOCAL_EXECUTION_TRACKER.md`.  
+15. [ ] Execute LOCAL-02 + LOCAL-03 from `mvp/LOCAL_EXECUTION_TRACKER.md`: live basket → allocation → checkout → order lifecycle E2E + checkout idempotency replay.  
 16. [ ] Run fresh full regression and reconcile all delivery documents before final DoD.
 
 ---
