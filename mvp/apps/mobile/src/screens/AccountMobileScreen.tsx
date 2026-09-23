@@ -17,6 +17,7 @@ type Profile = {
   };
   membership?: { organization_id?: string; organization_name?: string | null; role?: string | null } | null;
 };
+type Preferences = { push_enabled?: boolean; sms_enabled?: boolean; email_enabled?: boolean };
 type Notification = {
   id: string;
   event_name?: string | null;
@@ -39,9 +40,10 @@ function notificationsOf(data: unknown): Notification[] {
 }
 
 export function AccountMobileScreen(props: { role: Role; onBack?: () => void }): React.ReactNode {
-  const [tab, setTab] = useState<"profile" | "notifications">("profile");
+  const [tab, setTab] = useState<"profile" | "notifications" | "preferences">("profile");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [preferences, setPreferences] = useState<Preferences>({});
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [timezone, setTimezone] = useState("Asia/Tehran");
@@ -70,6 +72,13 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void }):
     finally { setLoading(false); }
   }, []);
 
+  const loadPreferences = useCallback(async () => {
+    setLoading(true); setError(null);
+    try { const d = await api.get<Preferences>("/api/v1/notifications/preferences"); setPreferences(d || {}); }
+    catch (e) { setError(e instanceof Error ? e.message : "دریافت تنظیمات اعلان ناموفق بود"); }
+    finally { setLoading(false); }
+  }, []);
+
   const loadNotifications = useCallback(async () => {
     setLoading(true); setError(null);
     try {
@@ -83,7 +92,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void }):
     void (tab === "profile" ? loadProfile() : loadNotifications());
   }, [tab, loadProfile, loadNotifications]);
 
-  async function saveProfile(): Promise<void> {
+  async function savePreferences(): Promise<void> {\n    setLoading(true); setError(null); setNotice(null);\n    try { await api.put("/api/v1/notifications/preferences", preferences); setNotice("تنظیمات اعلان ذخیره شد."); await loadPreferences(); }\n    catch (e) { setError(e instanceof Error ? e.message : "ذخیره تنظیمات اعلان ناموفق بود"); }\n    finally { setLoading(false); }\n  }\n\n  async function saveProfile(): Promise<void> {
     if (!displayName.trim()) { setError("نام نمایشی الزامی است."); return; }
     setLoading(true); setError(null); setNotice(null);
     try {
@@ -108,6 +117,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void }):
         <View style={styles.tabs}>
           <Btn label="پروفایل" onPress={() => setTab("profile")} tone={tab === "profile" ? "primary" : "ghost"} />
           <Btn label="اعلان‌ها" onPress={() => setTab("notifications")} tone={tab === "notifications" ? "primary" : "ghost"} />
+          <Btn label="تنظیمات اعلان" onPress={() => setTab("preferences")} tone={tab === "preferences" ? "primary" : "ghost"} />
         </View>
         <ErrorBox message={error} />
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
@@ -122,6 +132,15 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void }):
             <Input label="منطقه زمانی" value={timezone} onChangeText={setTimezone} maxLength={100} />
             <Input label="شرح" value={bio} onChangeText={setBio} multiline numberOfLines={4} maxLength={2000} />
             <Btn label="ذخیره تغییرات" onPress={() => void saveProfile()} loading={loading} disabled={loading} />
+          </Card>
+        ) : tab === "preferences" ? (
+          <Card>
+            <Text style={styles.h2}>کانال‌های اعلان</Text>
+            <Text style={styles.meta}>این تنظیمات مستقیماً از API اعلان خوانده و ذخیره می‌شوند.</Text>
+            <Btn label={"Push: " + (preferences.push_enabled ? "فعال" : "غیرفعال")} onPress={() => setPreferences((p) => ({ ...p, push_enabled: !p.push_enabled }))} tone="ghost" />
+            <Btn label={"SMS: " + (preferences.sms_enabled ? "فعال" : "غیرفعال")} onPress={() => setPreferences((p) => ({ ...p, sms_enabled: !p.sms_enabled }))} tone="ghost" />
+            <Btn label={"Email: " + (preferences.email_enabled ? "فعال" : "غیرفعال")} onPress={() => setPreferences((p) => ({ ...p, email_enabled: !p.email_enabled }))} tone="ghost" />
+            <Btn label="ذخیره تنظیمات" onPress={() => void savePreferences()} loading={loading} disabled={loading} />
           </Card>
         ) : notifications.length === 0 ? (
           <Empty title="اعلانی وجود ندارد" description="در صورت ثبت اعلان، اینجا نمایش داده می‌شود." />
