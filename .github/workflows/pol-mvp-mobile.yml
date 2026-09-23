@@ -1,0 +1,41 @@
+name: POL MVP Mobile Verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mvp/**"
+      - ".github/workflows/pol-mvp-mobile.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "mvp/**"
+      - ".github/workflows/pol-mvp-mobile.yml"
+
+jobs:
+  mobile:
+    name: Expo mobile typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mvp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mvp/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck mobile
+        run: npm run typecheck --workspace @pol/mobile
+
+      - name: Expo config validation
+        working-directory: mvp/apps/mobile
+        run: npx expo config --type public
