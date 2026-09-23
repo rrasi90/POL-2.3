@@ -6,8 +6,8 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 | Family | Canonical IDs | Mobile implementation | APIs | Status |
 |---|---|---|---|---|
 | Shared/Auth | SH-AUTH-01/02 | src/screens/LoginScreen.tsx | POST /api/v1/auth/request-otp, POST /api/v1/auth/verify-otp | IMPLEMENTED |
-| Retailer | R-02, R-03, R-06, R-07, R-08, R-10 | src/screens/RetailerMobileScreen.tsx | catalog/search, baskets, allocation-preview, POST orders, orders list | IMPLEMENTED |
-| Vendor | V-01, V-02, V-03, V-06, V-07, V-10 | src/screens/VendorMobileScreen.tsx | orders actions, vendor products/inventory, daily inventory, settlements | IMPLEMENTED |
+| Retailer | R-02, R-03, R-06, R-07, R-08, R-10 | RetailerMobileScreen.tsx + OrderDetailMobileScreen.tsx | catalog/search, baskets, allocation-preview, POST orders, orders list, order detail/items/timeline, returns read | IMPLEMENTED |
+| Vendor | V-01, V-02, V-03, V-06, V-07, V-10 | VendorMobileScreen.tsx + OrderDetailMobileScreen.tsx | order queue/actions, partial acceptance, items/timeline, inventory, daily inventory, settlements | IMPLEMENTED |
 | Ops | O-01, O-02, O-06, O-10 | src/screens/OpsMobileScreen.tsx | exceptions dashboard, orders, reconciliation, audit logs | IMPLEMENTED (ADMIN_SUPER audit) |
 | Field | F-01…F-05 | FieldTaskList/Detail/AssistedOrderScreen.tsx + OfflineBanner | field tasks, healthz | IMPLEMENTED |
 | Barcode | R-03B / V-16 | no camera adapter yet | POST /api/v1/products/match-barcode is CONTRACT_ONLY | GAP / CONTRACT |
