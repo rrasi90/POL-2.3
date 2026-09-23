@@ -42,7 +42,7 @@ Canonical design/build authority:
 | Domain | Authoritative Canonical File(s) | Scope & Responsibility | Precedence Rule |
 |:---|:---|:---|:---|
 | **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-028; later amendments supersede earlier decisions explicitly. | Absolute precedence. |
-| **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md` | Feature matrix, core flows, boundaries and MVP inclusions/exclusions. | Must conform to D-001–D-020. |
+| **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md` | Feature matrix, core flows, boundaries and MVP inclusions/exclusions. | Must conform to the currently effective Decision Register, D-001–D-028; later explicit amendments supersede earlier decisions. |
 | **Identity & Access Management** | `06_PRODUCT/Roles_and_Permissions.md`, `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md` | Identity, tenant membership, authorization, persona context and UX preferences. | `organization_memberships.role` is authorization SSoT; `users.role` is legacy/deprecated. |
 | **Order Lifecycle & State Transitions** | `06_PRODUCT/Order_Lifecycle.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | OrderGroup, child Orders, Delivery and exception state machines. | Governs backend workflows and UI state mapping. |
 | **Domain Entities & Business Invariants** | `08_DATA/DOMAIN_MODEL.md` | Ubiquitous language, aggregates and invariants. | Governs domain service behavior. |
@@ -135,7 +135,7 @@ This document records the adopted product-architecture direction for:
 - Barcode scanning as a first-class operational capability
 - Master SKU and product-media provenance
 
-These directions refine presentation, UX and implementation sequencing without overriding D-001 through D-020 or the canonical PostgreSQL/Python/FastAPI architecture. The Decision Register amendments D-021 through D-028 are the governing product decisions for this wave.
+These directions refine presentation, UX and implementation sequencing without overriding the currently effective D-001 through D-028 decisions or the canonical PostgreSQL/Python/FastAPI architecture. The Decision Register amendments D-021 through D-028 are the governing product decisions for this wave.
 
 
 ---
