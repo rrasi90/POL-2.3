@@ -6,13 +6,13 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 | Family | Canonical IDs | Mobile implementation | APIs | Status |
 |---|---|---|---|---|
 | Shared/Auth | SH-AUTH-01/02 | src/screens/LoginScreen.tsx | POST /api/v1/auth/request-otp, POST /api/v1/auth/verify-otp | IMPLEMENTED |
-| Retailer | R-02, R-03, R-06, R-07, R-08, R-10 | RetailerMobileScreen.tsx + OrderDetailMobileScreen.tsx | catalog/search, baskets, allocation-preview, POST orders, orders list, order detail/items/timeline, returns read | IMPLEMENTED |
+| Retailer | R-02, R-03, R-06, R-07, R-08, R-10, R-11, R-12, R-17, R-18 | RetailerMobileScreen.tsx + OrderDetailMobileScreen.tsx + SupportMobileScreen.tsx | catalog/search, vendor search/storefront, basket/allocation/checkout, orders/detail/timeline, returns/disputes, support cases/messages | IMPLEMENTED |
 | Vendor | V-01, V-02, V-03, V-06, V-07, V-10 | VendorMobileScreen.tsx + OrderDetailMobileScreen.tsx | order queue/actions, partial acceptance, items/timeline, inventory, daily inventory, settlements | IMPLEMENTED |
 | Ops | O-01, O-02, O-06, O-10 | src/screens/OpsMobileScreen.tsx | exceptions dashboard, orders, reconciliation, audit logs | IMPLEMENTED (ADMIN_SUPER audit) |
 | Field | F-01…F-05 | FieldTaskList/Detail/AssistedOrderScreen.tsx + OfflineBanner | field tasks, healthz | IMPLEMENTED |
 | Barcode | R-03B / V-16 | no camera adapter yet | POST /api/v1/products/match-barcode is CONTRACT_ONLY | GAP / CONTRACT |
 | Vendor Customers/Staff | V-09 / V-11 | no CRUD invented | no authoritative HTTP contract | GAP |
-| Retailer order detail / returns / support | R-09…R-13 | existing web remains reference; mobile interaction not yet ported | routes available per API map | OPEN parity work |
+| Retailer order detail / returns / support | R-09…R-13 | order detail, return/dispute submission and support are implemented; remaining notifications/profile are shared | routes available per API map | IMPLEMENTED foundation |
 
 ## Mobile-wide rules
 
@@ -21,7 +21,7 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 - F-05 MVP is request-failure state + healthz retry. No rich offline sync is claimed.
 - Role is taken from backend membership context; client does not infer permissions.
 - Checkout uses the Idempotency-Key header.
-- Light/Night token sets exist centrally; full screen-by-screen Night verification remains a QA task until visual evidence is recorded.
+- Light/Night token sets exist centrally; profile/notifications are shared across authenticated roles; full screen-by-screen Night verification remains a QA task until visual evidence is recorded.
 - At least three Phase-3 QA cycles are required before claiming final mobile DoD.
 
 ## QA evidence
