@@ -109,7 +109,7 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
         ))}</ScrollView>
       ) : tab === "inventory" ? (
         <ScrollView>{inventory.length === 0 ? <Empty title="موجودی‌ای نیست" /> : inventory.map((r) => (
-          <Card key={r.id}><Text style={styles.h2}>{r.product_name || r.id}</Text><Text style={styles.meta}>در دسترس: {String(r.available_quantity ?? "—")} · رزرو: {String(r.reserved_quantity ?? "—")}</Text><Input label="موجودی" defaultValue={String(r.stock_quantity ?? 0)} keyboardType="numeric" onChangeText={(v) => void saveInventory(r, v)} /></Card>
+          <InventoryEditor key={r.id} row={r} onSave={saveInventory} />
         ))}</ScrollView>
       ) : tab === "daily" ? (
         <ScrollView>
@@ -124,6 +124,21 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
     </Screen>
   );
 }
+function InventoryEditor(props: { row: Inv; onSave: (row: Inv, raw: string) => Promise<void> }): React.ReactNode {
+  const [value, setValue] = useState(String(props.row.stock_quantity ?? 0));
+  useEffect(() => setValue(String(props.row.stock_quantity ?? 0)), [props.row.stock_quantity]);
+  return (
+    <Card>
+      <Text style={styles.h2}>{props.row.product_name || props.row.id}</Text>
+      <Text style={styles.meta}>
+        در دسترس: {String(props.row.available_quantity ?? "—")} · رزرو: {String(props.row.reserved_quantity ?? "—")}
+      </Text>
+      <Input label="موجودی" value={value} onChangeText={setValue} keyboardType="numeric" />
+      <Btn label="ذخیره" onPress={() => void props.onSave(props.row, value)} />
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
   tabs: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
   row: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
