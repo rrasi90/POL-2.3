@@ -12,10 +12,10 @@
 - **Resolution:** D-018 wins → **4-digit**. Route map note is stale.
 - **Action:** implement 4-digit; no further guess.
 
-## G-002 — Master Tree filename in SoT (CONFLICT — RESOLVED)
+## G-002 — Master Tree filename / legacy reference (CONFLICT — RESOLVED)
 
-- **SoT** names `50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_…`; actual file `50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_…` v4.3.0
-- **Resolution:** actual file + v4.3.0 is canonical.
+- **Legacy reference:** an older governance document used a superseded tool-specific Master Tree filename; the active file is `50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_…` v4.3.0.
+- **Resolution:** the active file + v4.3.0 is canonical; execution tooling is not product authority.
 
 ## G-003 — Catalog list path (CONFLICT)
 
