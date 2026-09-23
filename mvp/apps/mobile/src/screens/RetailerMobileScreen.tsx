@@ -45,7 +45,7 @@ function keyV4(): string {
     return n.toString(16);
   });
 }
-export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNER" | "RETAILER_STAFF"> }): React.ReactNode {
+export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNER" | "RETAILER_STAFF">; onOpenOrder: (orderId: string) => void }): React.ReactNode {
   const [tab, setTab] = useState<"catalog" | "basket" | "orders" | "vendors" | "support">("catalog");
   const [q, setQ] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
