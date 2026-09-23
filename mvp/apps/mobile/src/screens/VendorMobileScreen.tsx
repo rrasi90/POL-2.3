@@ -21,7 +21,7 @@ function money(v: number | string | null | undefined): string {
   const n = Number(v);
   return Number.isFinite(n) ? n.toLocaleString("fa-IR") + " تومان" : "—";
 }
-export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" | "VENDOR_STAFF"> }): React.ReactNode {
+export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" | "VENDOR_STAFF">; onOpenOrder: (orderId: string) => void }): React.ReactNode {
   const [tab, setTab] = useState<"orders" | "inventory" | "daily" | "settlements">("orders");
   const [orders, setOrders] = useState<Order[]>([]);
   const [inventory, setInventory] = useState<Inv[]>([]);
@@ -105,6 +105,7 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
               {o.order_status === "PREPARING" ? <Btn label="آماده ارسال" onPress={() => void action(o.id, "ready")} disabled={loading} /> : null}
               {o.order_status === "READY" ? <Btn label="ارسال" onPress={() => void action(o.id, "dispatch")} disabled={loading} /> : null}
             </View>
+            <Btn label="جزئیات سفارش" tone="ghost" onPress={() => props.onOpenOrder(o.id)} />
           </Card>
         ))}</ScrollView>
       ) : tab === "inventory" ? (
