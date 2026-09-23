@@ -3,7 +3,7 @@
 **Contract:** Master Build Instruction (repo root session) + master loop (DISCOVER→PLAN→BUILD→TEST→RECONCILE→AUDIT→FIX→…→DELIVERY)  
 **Root:** `mvp/`  
 **Authorized branch:** `main`  
-**Updated:** 2026-09-23  
+**Updated:** 2026-09-23 · mobile parity work continued  
 **Authority hierarchy:** `DECISION_REGISTER.md` (D-001…D-028 on branch) → CURRENT_SOURCE_OF_TRUTH → this file → module evidence files.
 
 **Rule:** NOT DONE = KEEP WORKING. Do not stop to ask which track. Isolate external deps as `BLOCKED_EXTERNAL` and continue everything else. Later-discovered defects in earlier phases ⇒ reopen, root-cause fix, retest, return.
@@ -19,7 +19,7 @@
 | 3 | Phase 0 + GATE 0 | **DONE** | Artifacts + skeleton; typecheck/build green. |
 | 4 | Phase 1 foundation + design system | **DONE** | tokens, ui package, shell, middleware role gates. |
 | 5 | Full Web MVP | **DONE (impl + partial e2e)** | 68 screens cycle 5: **40 IMPLEMENTED, 19 VERIFIED, 8 GAP, 1 N/A**; typecheck/lint/build green; live API+route smoke for SH-AUTH/PROFILE/NOTIF, R-02/03/10/16/17/18, V-04/07/08/10/12/14, F-01. |
-| 6 | Phase 3 Android | **PARTIAL (Field-first DONE)** | Expo scaffold + Field-first F-01…F-05 + OfflineBanner + `src/__tests__/parity.md`; workspace typecheck EXIT=0. Retailer/Vendor/Ops parity, barcode D-028, ≥3 QA cycles still open. |
+| 6 | Phase 3 Android | **IN PROGRESS** | Field F-01…F-05 plus first Retailer/Vendor/Ops parity surfaces are implemented; role-aware auth routing, API headers and Light/Night token foundation added. Mobile verification cycles, barcode D-028 and remaining screen parity are still open. |
 | 7 | OpenPencil WAVE-02 | **BLOCKED_EXTERNAL** | MCP `:7600` not listening (app not running). WAVE-01 evidence on disk. |
 | 8 | Global QA + regression | **DONE (local)** | Per-module ≥3 cycles done for web; structural + anti-vibe audits EXIT 0; full suite **497/497 PASSED** (210.67s). |
 | 9 | Structural audit | **DONE** (2026-09-23) | `python artifacts/structural_audit.py` → EXIT 0: window_loc=0, console_log=0, fake_success=0 (biz_calc hits all backend). |
@@ -29,7 +29,7 @@
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
 | 14 | Regression | **DONE** | suite **497/497 PASSED** in 210.67s → `artifacts/pol-test-results.json` `overall_status=PASSED`. |
 | 15 | Repeat until DoD | **OPEN** | DoD = §8; open gaps in `MVP_KNOWN_GAPS.md` + Phase 3 parity remain. |
-| 16 | Phase 5 delivery | **DONE** | `mvp/PHASE5_DELIVERY_REPORT.md` + commit `dbcfb59` + CI success. |
+| 16 | Phase 5 delivery | **REOPENED** | Delivery report exists, but final delivery cannot close while Phase 3 mobile parity/verification remains open. |
 
 ---
 
@@ -197,11 +197,15 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] **Live e2e partial** → 19 screens VERIFIED (cycle 5); remaining IMPLEMENTED need click-through in Phase 4
 
 ### Phase 3 (Android)
-- [x] Expo scaffold + packages parity (workspace typecheck EXIT=0)  
-- [x] Field-first screens (F-01…F-05) with weak-network OfflineBanner (F-05 offline = request-failure-driven banner + healthz retry; no NetInfo)  
-- [ ] Retailer/Vendor/Ops parity (functional, not pixel)  
+- [x] Expo scaffold + packages parity  
+- [x] Field-first screens (F-01…F-05) with request-failure-driven OfflineBanner + healthz retry  
+- [x] Retailer parity foundation: catalog → basket → allocation-preview → checkout → orders list  
+- [x] Vendor parity foundation: orders actions + inventory + daily confirmation + settlements  
+- [x] Ops parity foundation: overview + queues/read model + reconciliation + ADMIN_SUPER audit read  
+- [ ] Remaining mobile screen parity: order detail/returns/support/vendor storefront/customers/staff and other canonical screens  
 - [ ] Barcode path = D-028 where inventory.scan; no Driver App  
-- [ ] ≥3 QA cycles (typecheck/lint/build or expo export) — cycle 1 typecheck green  
+- [ ] Mobile Night theme visual verification per screen  
+- [ ] ≥3 QA cycles (typecheck + Expo validation/export where feasible)  
 
 ### Phase 4 (Global QA)
 - [x] Full pytest suite **497/497 PASSED** (210.67s, `artifacts/pol-test-results.json` overall_status PASSED)  
@@ -234,7 +238,7 @@ MVP is DONE only when **all** hold:
 4. Full backend pytest green; migration chain green; checkout only via `CanonicalCheckoutGateway`.  
 5. Structural + anti-vibe audits pass (no fake success, no hidden business rules in UI, no mock leakage).  
 6. GitHub: local main reconciled (pushed), CI green or failures explained with SHA.  
-7. Phase 3 Android scaffold + parity matrix for Field-first set (or formal scope exception with decision ID — none exists ⇒ must build).  
+7. Phase 3 Android must cover the applicable mobile parity matrix; Field-first is already implemented and the remaining role surfaces must reach verification before final DoD.  
 8. Phase 5 delivery report lists: done phases, remaining gaps, defects fixed, coverage, build/test status, external blockers only.
 
 ---
@@ -264,7 +268,11 @@ MVP is DONE only when **all** hold:
 7. [x] Phase 3 Field-first Expo screens (F-01…F-05) + parity matrix `src/__tests__/parity.md` — **DONE** (typecheck green); retailer/vendor/ops parity still open.  
 8. [ ] WAVE-02 when OpenPencil up; else keep BLOCKED_EXTERNAL.  
 9. [x] Phase 5 final report — **DONE** `mvp/PHASE5_DELIVERY_REPORT.md`.  
-10. [ ] Close remaining live e2e: basket POST → allocation → checkout → order lifecycle (Phase 4).
+10. [ ] Close remaining live e2e: basket POST → allocation → checkout → order lifecycle (Phase 4).  
+11. [ ] Verify current mobile head in .github/workflows/pol-mvp-mobile.yml; fix any type/config failures.  
+12. [ ] Run mobile QA cycle 2: typecheck + Expo config/export; update parity evidence.  
+13. [ ] Implement/verify remaining mobile parity screens; add barcode contract surface only after contract evidence is sufficient.  
+14. [ ] Run mobile QA cycle 3 and then reopen Global QA regression + delivery only when all DoD conditions hold.
 
 ---
 
