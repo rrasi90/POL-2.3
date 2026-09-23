@@ -65,6 +65,7 @@ jobs:
           PGPORT: 5432
           PGUSER: postgres
           POL_PG_PORT: 5432
+          POL_JWT_SECRET: ci-test-secret-not-for-production
         run: |
           python scripts/run_verification_suite.py
 

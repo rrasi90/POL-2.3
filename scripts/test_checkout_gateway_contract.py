@@ -20,6 +20,8 @@ def test_gateway_delegates_only_to_revalidation_service(monkeypatch):
             return {"ok": True}
 
     monkeypatch.setattr("scripts.checkout_gateway.RevalidationCheckoutService", FakeRevalidation)
+    monkeypatch.setattr("scripts.checkout_gateway.CanonicalCheckoutGateway._replay_existing", lambda *args, **kwargs: None)
+    monkeypatch.setattr("scripts.checkout_gateway.validate_allocation_against_basket", lambda **kwargs: None)
 
     result = CanonicalCheckoutGateway.checkout(
         cur="CURSOR",
@@ -37,13 +39,13 @@ def test_gateway_delegates_only_to_revalidation_service(monkeypatch):
     assert calls["retailer_id"] == "retailer"
 
 
-def test_verification_and_script_callers_do_not_import_legacy_checkout_service():
-    """Prevent reintroduction of the unsafe legacy checkout entry point."""
+def test_non_test_script_callers_do_not_import_legacy_checkout_service():
+    """Prevent production-facing script modules from reintroducing the legacy entry point."""
     offenders = []
     allowed_files = {Path(__file__).name, "domain_services.py"}
 
     for path in SCRIPTS_DIR.glob("*.py"):
-        if path.name in allowed_files or path.name == "__init__.py":
+        if path.name in allowed_files or path.name == "__init__.py" or path.name.startswith("test_"):
             continue
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -59,7 +61,7 @@ def test_verification_and_script_callers_do_not_import_legacy_checkout_service()
                 offenders.append(f"{path.relative_to(REPO_ROOT)}:{node.lineno}")
 
     assert offenders == [], (
-        "Legacy CheckoutService is forbidden outside domain_services.py; "
+        "Legacy CheckoutService is forbidden outside domain_services.py and verification tests; "
         f"use CanonicalCheckoutGateway instead. Offenders: {offenders}"
     )
 

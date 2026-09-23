@@ -1,3 +1,4 @@
-# POL B2B FMCG Platform - Development & Test Dependencies
+﻿# POL B2B FMCG Platform - Development & Test Dependencies
 -r requirements.txt
 pytest>=8.0.0
+httpx>=0.28,<1

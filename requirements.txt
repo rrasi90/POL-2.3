@@ -1,3 +1,7 @@
-# POL B2B FMCG Platform - Dependencies
+﻿# POL B2B FMCG Platform - Dependencies
 psycopg2-binary>=2.9.9
 python-dotenv>=1.0.0
+PyJWT>=2.13,<3
+requests>=2.32.0
+fastapi>=0.141,<0.142
+uvicorn>=0.53,<0.54

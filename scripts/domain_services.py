@@ -16,6 +16,9 @@ from datetime import datetime, timezone, timedelta
 import psycopg2
 from psycopg2.extras import RealDictCursor, Json
 
+import secrets
+import hashlib as _hashlib
+
 from scripts.operational_config import (
     RESERVATION_TTL_MINUTES,
     ALLOCATION_PLAN_TTL_MINUTES,
@@ -23,63 +26,242 @@ from scripts.operational_config import (
     DISPUTE_FILING_WINDOW_HOURS,
     PILOT_COMMISSION_RATE,
     PAYMENT_CUSTODY_MODEL,
-    OTP_MAX_ATTEMPTS
+    OTP_MAX_ATTEMPTS,
+    OTP_RATE_LIMIT_COUNT,
+    OTP_RATE_LIMIT_WINDOW_MINUTES,
+    OTP_LOCKOUT_MINUTES,
+    OTP_TTL_SECONDS,
+    SESSION_TTL_HOURS,
+    JWT_ACCESS_TTL_SECONDS,
 )
+from scripts.auth_boundary import (
+    encode_access_token,
+    decode_access_token,
+    validate_access_token,
+    AuthError,
+    InvalidRefreshTokenError,
+    SessionExpiredError,
+    SessionRevokedError,
+    OTPRateLimitError,
+    OTPLockoutError,
+    InvalidOTPError,
+    generate_refresh_token,
+    hash_token,
+    store_otp_hash,
+    verify_otp_hash,
+)
+
+# D-018 enforcement scope: rate-limit and lockout apply to LOGIN and REGISTER only.
+# ORDER_CONFIRMATION / DELIVERY_CONFIRM have separate domain scope (future policy TBD).
+_D018_ENFORCED_PURPOSES = {"LOGIN", "REGISTER"}
 
 class AuthService:
     @staticmethod
-    def request_otp(cur, phone_number: str, purpose: str = 'LOGIN') -> dict:
+    def request_otp(cur, phone_number: str, ip_address: str, purpose: str = 'LOGIN') -> dict:
+        """Request an OTP challenge. Enforces D-018 rate-limit and lockout.
+
+        Rate-limit scope: phone+IP, 3 requests per 5 minutes.
+        Lockout scope: phone only, 10 minutes after 5th failed attempt.
+        D-018 enforcement applies to LOGIN/REGISTER only.
+        """
+        if not ip_address or ip_address.strip() == "":
+            raise ValueError("IP address is required for OTP requests.")
+
+        # Advisory lock on deterministic hash of phone+IP for serialization
+        lock_key = int.from_bytes(
+            _hashlib.sha256(f"{phone_number}:{ip_address}".encode()).digest()[:8],
+            "big"
+        ) & 0x7FFFFFFFFFFFFFFF
+        cur.execute("SELECT pg_advisory_xact_lock(%s::bigint);", (lock_key,))
+
+        # D-018 purpose policy: rate-limit and lockout apply to LOGIN/REGISTER only
+        enforce = purpose in _D018_ENFORCED_PURPOSES
+
+        # 1. Lockout check (phone-scoped, no IP filter) — only for D-018 purposes
+        if enforce:
+            cur.execute("""
+                SELECT blocked_at FROM otp_challenges
+                WHERE phone_number = %s
+                  AND status = 'BLOCKED'
+                  AND blocked_at > now() - interval %s
+                ORDER BY blocked_at DESC LIMIT 1;
+            """, (phone_number, f"{OTP_LOCKOUT_MINUTES} minutes"))
+            locked = cur.fetchone()
+            if locked:
+                raise OTPLockoutError("Phone temporarily locked. Try again later.")
+
+        # 2. Rate-limit check (phone+IP scoped, no purpose filter) — only for D-018 purposes
+        if enforce:
+            cur.execute("""
+                SELECT count(*) AS cnt FROM otp_challenges
+                WHERE phone_number = %s
+                  AND ip_address = %s
+                  AND created_at > now() - interval %s;
+            """, (phone_number, ip_address, f"{OTP_RATE_LIMIT_WINDOW_MINUTES} minutes"))
+            row = cur.fetchone()
+            if row and row["cnt"] >= OTP_RATE_LIMIT_COUNT:
+                raise OTPRateLimitError("Rate limit exceeded. Max 3 OTP requests per 5 minutes per phone+IP.")
+
+        # 3. Generate OTP code
         otp_id = str(uuid.uuid4())
-        # Static mock code hash for test predictability
-        code = "123456"
-        code_hash = hashlib.sha256(code.encode()).hexdigest()
+        is_prod = os.getenv("ENVIRONMENT", "").lower() in ("prod", "production") or os.getenv("POL_ENV", "").lower() in ("prod", "production")
+        if is_prod:
+            code = f"{secrets.randbelow(10_000):04d}"
+        else:
+            code = "1234"
+
+        code_hash = store_otp_hash(code)
         cur.execute("""
-            INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, attempts_count, max_attempts, status, expires_at)
-            VALUES (%s, %s, %s, %s, 0, %s, 'PENDING', now() + interval '2 minutes')
+            INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
+            VALUES (%s, %s, %s, %s, %s, 0, %s, 'PENDING', now() + interval %s)
             RETURNING id, phone_number, status, expires_at;
-        """, (otp_id, phone_number, code_hash, purpose, OTP_MAX_ATTEMPTS))
-        return cur.fetchone()
+        """, (otp_id, phone_number, code_hash, purpose, ip_address, OTP_MAX_ATTEMPTS, f"{OTP_TTL_SECONDS} seconds"))
+        res = cur.fetchone()
+
+        if is_prod:
+            from scripts.provider_adapters import build_adapter, ProviderConfigurationError, ProviderTransientError
+            try:
+                adapter = build_adapter("SMS")
+                adapter.send(
+                    phone_number=phone_number,
+                    title="POL Verification Code",
+                    body=f"Your POL verification code is: {code}",
+                    idempotency_key=str(otp_id),
+                )
+            except ProviderConfigurationError:
+                raise RuntimeError("Production OTP delivery failed: SMS provider not configured. Set POL_SMS_ENDPOINT.")
+            except ProviderTransientError as exc:
+                raise RuntimeError(f"Production OTP delivery failed: provider transient error. {exc}") from exc
+        else:
+            if isinstance(res, dict):
+                res["test_code"] = code
+
+        return res
 
     @staticmethod
     def verify_otp(cur, phone_number: str, code: str, user_id: str, active_org_id: str) -> dict:
+        """Verify OTP and issue JWT + refresh token. Enforces D-018 brute-force defense.
+
+        On 5th failed attempt: status=BLOCKED, blocked_at=now().
+        On success: creates 30-day session, issues 15-min JWT + refresh token.
+        """
+        # Serialize verification on the active challenge so one OTP cannot
+        # be accepted successfully by concurrent requests.
         cur.execute("""
             SELECT * FROM otp_challenges
             WHERE phone_number = %s AND status = 'PENDING' AND expires_at > now()
-            ORDER BY created_at DESC LIMIT 1;
+            ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE;
         """, (phone_number,))
         challenge = cur.fetchone()
         if not challenge:
             raise ValueError("No pending OTP challenge found or code expired.")
 
-        code_hash = hashlib.sha256(code.encode()).hexdigest()
-        if challenge["code_hash"] != code_hash:
+        if not verify_otp_hash(code, challenge["code_hash"]):
             cur.execute("""
                 UPDATE otp_challenges
                 SET attempts_count = attempts_count + 1,
-                    status = CASE WHEN attempts_count + 1 >= max_attempts THEN 'BLOCKED' ELSE 'PENDING' END
+                    status = CASE WHEN attempts_count + 1 >= max_attempts THEN 'BLOCKED' ELSE 'PENDING' END,
+                    blocked_at = CASE WHEN attempts_count + 1 >= max_attempts THEN now() ELSE blocked_at END
                 WHERE id = %s
                 RETURNING attempts_count, status;
             """, (challenge["id"],))
             upd = cur.fetchone()
             if upd["status"] == "BLOCKED":
-                raise PermissionError("OTP attempts exceeded limit. Challenge BLOCKED.")
-            raise ValueError(f"Invalid OTP code. Attempt {upd['attempts_count']}/{challenge['max_attempts']}")
+                raise OTPLockoutError("OTP attempts exceeded limit. Phone locked for 10 minutes.")
+            raise InvalidOTPError(f"Invalid OTP code. Attempt {upd['attempts_count']}/{challenge['max_attempts']}")
 
         cur.execute("""
             UPDATE otp_challenges SET status = 'VERIFIED', verified_at = now() WHERE id = %s;
         """, (challenge["id"],))
 
+        # Create session (30-day refresh session)
         sess_id = str(uuid.uuid4())
-        tok_hash = f"tok_{uuid.uuid4().hex}"
+        refresh_token = generate_refresh_token()
+        refresh_hash = hash_token(refresh_token)
+
         cur.execute("""
-            INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at)
-            VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '24 hours')
+            SELECT role FROM organization_memberships
+            WHERE user_id = %s AND organization_id = %s AND status = 'ACTIVE';
+        """, (user_id, active_org_id))
+        mem = cur.fetchone()
+        if not mem:
+            raise PermissionError("User has no active membership in the selected organization.")
+        role = mem["role"]
+
+        # Issue access JWT
+        access_token = encode_access_token(user_id, sess_id, active_org_id, role)
+        token_hash = hash_token(access_token)
+
+        cur.execute("""
+            INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, refresh_token_hash, status, expires_at)
+            VALUES (%s, %s, %s, %s, %s, 'ACTIVE', now() + interval %s)
             RETURNING id, user_id, active_organization_id, status;
-        """, (sess_id, user_id, active_org_id, tok_hash))
-        return cur.fetchone()
+        """, (sess_id, user_id, active_org_id, token_hash, refresh_hash, f"{int(SESSION_TTL_HOURS * 3600)} seconds"))
+        session = cur.fetchone()
+
+        return {
+            "session": session,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_in": JWT_ACCESS_TTL_SECONDS,
+        }
+
+    @staticmethod
+    def refresh_access_token(cur, refresh_token: str) -> dict:
+        """Issue a new access JWT using a valid 30-day refresh session.
+
+        Refresh token is NOT rotated (rotation TBD per D-018).
+        """
+        token_hash = hash_token(refresh_token)
+        cur.execute("""
+            SELECT *
+            FROM user_sessions
+            WHERE refresh_token_hash = %s;
+        """, (token_hash,))
+        session = cur.fetchone()
+
+        if not session:
+            raise InvalidRefreshTokenError("Refresh token does not match an existing session.")
+        if session["status"] == "REVOKED":
+            raise SessionRevokedError("Refresh session has been revoked.")
+        if session["status"] == "EXPIRED" or session["expires_at"] <= datetime.now(timezone.utc):
+            raise SessionExpiredError("Refresh session has expired.")
+
+        cur.execute("""
+            SELECT role
+            FROM organization_memberships
+            WHERE user_id = %s
+              AND organization_id = %s
+              AND status = 'ACTIVE';
+        """, (session["user_id"], session["active_organization_id"]))
+        membership = cur.fetchone()
+        if not membership:
+            raise InvalidRefreshTokenError("Refresh session has no active organization membership.")
+
+        cur.execute("""
+            UPDATE user_sessions
+            SET last_activity_at = now()
+            WHERE id = %s;
+        """, (session["id"],))
+
+        access_token = encode_access_token(
+            str(session["user_id"]),
+            str(session["id"]),
+            str(session["active_organization_id"]),
+            membership["role"],
+        )
+
+        return {
+            "access_token": access_token,
+            "token_type": "Bearer",
+            "expires_in": JWT_ACCESS_TTL_SECONDS,
+        }
 
     @staticmethod
     def switch_organization(cur, user_id: str, target_org_id: str, session_id: str) -> dict:
+        """Switch active organization. Returns new JWT with updated org_id + role."""
         cur.execute("""
             SELECT role, status FROM organization_memberships
             WHERE user_id = %s AND organization_id = %s;
@@ -94,7 +276,14 @@ class AuthService:
             WHERE id = %s AND status = 'ACTIVE'
             RETURNING id, active_organization_id, status;
         """, (target_org_id, session_id))
-        return cur.fetchone()
+        session = cur.fetchone()
+
+        new_access_token = encode_access_token(user_id, session_id, target_org_id, mem["role"])
+
+        return {
+            "session": session,
+            "access_token": new_access_token,
+        }
 
     @staticmethod
     def revoke_session(cur, session_id: str) -> None:
@@ -103,6 +292,24 @@ class AuthService:
             SET status = 'REVOKED', revoked_at = now()
             WHERE id = %s;
         """, (session_id,))
+
+    @staticmethod
+    def revoke_all_sessions(cur, user_id: str) -> int:
+        cur.execute("""
+            UPDATE user_sessions
+            SET status = 'REVOKED', revoked_at = now()
+            WHERE user_id = %s AND status = 'ACTIVE';
+        """, (user_id,))
+        return cur.rowcount
+
+    @staticmethod
+    def cleanup_expired_sessions(cur) -> int:
+        cur.execute("""
+            UPDATE user_sessions
+            SET status = 'EXPIRED'
+            WHERE status = 'ACTIVE' AND expires_at <= now();
+        """)
+        return cur.rowcount
 
     @staticmethod
     def authorize_action(cur, user_id: str, active_org_id: str, allowed_roles: list) -> dict:
@@ -538,7 +745,6 @@ class DailyInventoryService:
         """, (vendor_id, confirmation_date, actor_user_id, source))
         conf = cur.fetchone()
 
-        # Update all vendor products in inventory to CONFIRMED_TODAY
         cur.execute("""
             UPDATE vendor_inventory vi
             SET last_confirmed_at = now(),
@@ -549,7 +755,6 @@ class DailyInventoryService:
               AND vp.vendor_id = %s;
         """, (vendor_id,))
 
-        # Log to reliability ledger
         ReliabilityLedgerService.record_event(
             cur, vendor_id=vendor_id, event_type='DAILY_CONFIRMATION_COMPLETED',
             impact_score=1.0, metadata={"mode": "NO_CHANGES", "source": source}
@@ -606,7 +811,6 @@ class DailyInventoryService:
                 WHERE vendor_product_id = %s;
             """, (decl_qty, vp_id))
 
-        # Mark all other items of this vendor as confirmed today
         cur.execute("""
             UPDATE vendor_inventory vi
             SET last_confirmed_at = now(),
@@ -626,11 +830,16 @@ class DailyInventoryService:
 
     @staticmethod
     def process_daily_reminders(cur, confirmation_date: str) -> list:
-        """Finds active vendors with PENDING status and queues deduplicated outbox reminders"""
+        """Queue deduplicated reminders for routable vendors without aborting the whole batch.
+
+        The DB trigger remains fail-closed for direct writes. This service performs
+        the same routing pre-check first so one malformed vendor cannot prevent
+        otherwise valid vendors from receiving their daily confirmation reminder.
+        """
         cur.execute("""
             SELECT v.id as vendor_id, v.user_id, v.organization_id, v.business_name
             FROM vendors v
-            LEFT JOIN daily_inventory_confirmations d 
+            LEFT JOIN daily_inventory_confirmations d
               ON v.id = d.vendor_id AND d.confirmation_date = %s
             WHERE d.status IS NULL OR d.status = 'PENDING';
         """, (confirmation_date,))
@@ -639,9 +848,45 @@ class DailyInventoryService:
         queued_events = []
         for v in pending_vendors:
             event_id = f"remind_inv_{v['vendor_id']}_{confirmation_date}"
-            # Check for existing event to prevent duplicate spamming
             cur.execute("SELECT id FROM outbox_events WHERE event_id = %s;", (event_id,))
             if cur.fetchone():
+                continue
+
+            cur.execute("""
+                SELECT r.user_id
+                FROM vendor_inventory_responsibilities r
+                WHERE r.vendor_id = %s
+                  AND r.responsibility_type = 'WAREHOUSE_INVENTORY'
+                  AND r.is_primary = TRUE
+                  AND r.effective_from <= now()
+                  AND (r.effective_until IS NULL OR r.effective_until > now())
+                LIMIT 1;
+            """, (v["vendor_id"],))
+            responsibility = cur.fetchone()
+
+            if not responsibility:
+                # Fail closed for this vendor but keep the daily job healthy.
+                # Log one operational routing exception per vendor/day.
+                cur.execute("""
+                    SELECT 1
+                    FROM vendor_reliability_events
+                    WHERE vendor_id = %s
+                      AND event_type = 'DAILY_CONFIRMATION_ROUTING_ERROR'
+                      AND metadata->>'confirmation_date' = %s
+                    LIMIT 1;
+                """, (v["vendor_id"], str(confirmation_date)))
+                if not cur.fetchone():
+                    ReliabilityLedgerService.record_event(
+                        cur,
+                        vendor_id=v["vendor_id"],
+                        event_type='DAILY_CONFIRMATION_ROUTING_ERROR',
+                        impact_score=-1.0,
+                        metadata={
+                            "confirmation_date": str(confirmation_date),
+                            "reason": "NO_PRIMARY_WAREHOUSE_RESPONSIBILITY",
+                            "source": "DAILY_REMINDER_SCHEDULER"
+                        }
+                    )
                 continue
 
             payload = {
@@ -720,7 +965,6 @@ class FeedbackService:
         ))
         fb = cur.fetchone()
 
-        # Emit outbox notification to admin team
         cur.execute("""
             INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status)
             VALUES (%s, %s, 'FEEDBACK_SUBMITTED', 'FEEDBACK', %s, %s, 'PENDING');
@@ -757,7 +1001,6 @@ class FeedbackService:
         """, (reply_text, feedback_id))
         fb = cur.fetchone()
 
-        # Notify user of admin response
         cur.execute("""
             INSERT INTO notifications (id, user_id, organization_id, event_name, title, body, priority)
             VALUES (%s, %s, %s, 'FEEDBACK_REPLIED', 'پاسخ به بازخورد شما', %s, 'NORMAL');
@@ -803,7 +1046,6 @@ class RevalidationCheckoutService:
     def revalidate_and_checkout(cur, basket_id: str, plan_id: str, retailer_id: str,
                                 idempotency_key: str, address_snapshot: dict,
                                 vendor_allocations: list) -> dict:
-        # 1. Basket & Plan validation
         cur.execute("""
             SELECT b.version, p.basket_version, p.expires_at, p.status
             FROM baskets b
@@ -818,13 +1060,11 @@ class RevalidationCheckoutService:
         if chk["expires_at"] < datetime.now(timezone.utc):
             raise ValueError("Allocation plan has expired (15-minute TTL exceeded).")
 
-        # 2. Revalidate price freshness and physical stock availability with locking
         for alloc in vendor_allocations:
             vp_id = alloc["vendor_product_id"]
             quoted_price = alloc["unit_price_toman"]
             req_qty = alloc["quantity"]
 
-            # Price check
             cur.execute("""
                 SELECT price_toman FROM vendor_prices
                 WHERE vendor_product_id = %s AND is_current = TRUE;
@@ -834,7 +1074,6 @@ class RevalidationCheckoutService:
                 actual = price_row["price_toman"] if price_row else "N/A"
                 raise ValueError(f"Price freshness failure for SKU {vp_id}: Quoted {quoted_price} vs Live {actual}")
 
-            # Physical stock check with row lock
             cur.execute("""
                 SELECT physical_quantity, reserved_quantity FROM vendor_inventory
                 WHERE vendor_product_id = %s
@@ -847,7 +1086,6 @@ class RevalidationCheckoutService:
             if avail < req_qty:
                 raise ValueError(f"Insufficient stock for SKU {vp_id}: Available {avail} < Requested {req_qty}")
 
-        # 3. Create OrderGroup and child Orders
         total_toman = sum(v["amount_toman"] for v in vendor_allocations)
         og_id = str(uuid.uuid4())
         cur.execute("""
@@ -878,7 +1116,6 @@ class RevalidationCheckoutService:
             ))
             child_orders.append(cur.fetchone())
 
-            # Atomic Reservation
             cur.execute("""
                 INSERT INTO inventory_reservations (
                     id, vendor_product_id, order_id, quantity, status, idempotency_key, expires_at
@@ -930,4 +1167,3 @@ class ReliabilityLedgerService:
         """, (vendor_id,))
         rows = cur.fetchall()
         return {r["event_type"]: {"count": r["count"], "total_impact": float(r["total_impact"] or 0.0)} for r in rows}
-

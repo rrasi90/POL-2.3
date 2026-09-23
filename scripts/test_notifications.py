@@ -18,7 +18,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 def get_connection():
-    ports = [5432, 5433]
+    import os
+    ports = [int(os.environ["POL_PG_PORT"])] if os.environ.get("POL_PG_PORT") else [5432, 5433]
     for p in ports:
         try:
             conn = psycopg2.connect(dbname="pol_test", user="postgres", host="127.0.0.1", port=p)
@@ -36,7 +37,6 @@ def test_notifications():
     print("================================================================")
 
     try:
-        # Setup test user
         user_id = str(uuid.uuid4())
         phone = f"+98916{uuid.uuid4().int % 10000000:07d}"
         cur.execute("""
@@ -44,7 +44,6 @@ def test_notifications():
             VALUES (%s, %s, 'Hossein Test User', 'RETAILER_OWNER');
         """, (user_id, phone))
 
-        # 1. Outbox Event to Notification Generation
         print("\n[TEST 1] Processing Transactional Outbox Event to Notification...")
         outbox_id = str(uuid.uuid4())
         event_payload = {
@@ -58,7 +57,6 @@ def test_notifications():
             VALUES (%s, %s, 'ORDER_SUBMITTED', 'ORDER', %s, %s, 'PENDING');
         """, (outbox_id, str(uuid.uuid4()), event_payload["order_id"], psycopg2.extras.Json(event_payload)))
 
-        # Worker processes outbox event into notification
         notif_id = str(uuid.uuid4())
         cur.execute("""
             INSERT INTO notifications (id, user_id, event_name, title, body, data_payload, priority)
@@ -70,7 +68,6 @@ def test_notifications():
         """, (outbox_id,))
         print("  [PASS] Outbox event processed and notification record created.")
 
-        # 2. Durable User Inbox Persistence
         print("\n[TEST 2] Verifying User Inbox Item Persistence...")
         inbox_id = str(uuid.uuid4())
         cur.execute("""
@@ -84,43 +81,38 @@ def test_notifications():
         assert inbox_item["category"] == "ORDERS"
         print("  [PASS] User inbox item created in unread state.")
 
-        # 3. Multi-Channel Delivery Records
         print("\n[TEST 3] Recording Channel Deliveries (INBOX, PUSH, SMS)...")
-        deliv_inbox = str(uuid.uuid4())
+        # INBOX is seeded by the canonical notification trigger. The test adds
+        # the two provider channels and verifies one row per channel.
         deliv_push = str(uuid.uuid4())
         deliv_sms = str(uuid.uuid4())
-
         cur.execute("""
             INSERT INTO notification_deliveries (id, notification_id, channel, provider, status, delivered_at) VALUES
-            (%s, %s, 'INBOX', 'INTERNAL', 'DELIVERED', now()),
             (%s, %s, 'PUSH', 'FIREBASE', 'SENT', now()),
             (%s, %s, 'SMS', 'KAVENEGAR', 'SENT', now());
-        """, (deliv_inbox, notif_id, deliv_push, notif_id, deliv_sms, notif_id))
+        """, (deliv_push, notif_id, deliv_sms, notif_id))
 
         cur.execute("SELECT count(*) as count FROM notification_deliveries WHERE notification_id = %s;", (notif_id,))
         assert cur.fetchone()["count"] == 3
         print("  [PASS] All 3 delivery records tracked for notification.")
 
-        # 4. User Notification Preference Enforcement
         print("\n[TEST 4] Testing User Preference Enforcement (Marketing Opt-Out vs Critical Bypass)...")
-        # User opts out of MARKETING SMS
         cur.execute("""
             INSERT INTO notification_preferences (user_id, category, push_enabled, sms_enabled)
             VALUES (%s, 'MARKETING', TRUE, FALSE);
         """, (user_id,))
 
-        # Simulate Marketing message
         mkt_notif_id = str(uuid.uuid4())
         cur.execute("""
             INSERT INTO notifications (id, user_id, event_name, title, body, priority)
             VALUES (%s, %s, 'MARKETING_PROMO', 'تخفیف ویژه آخر هفته', 'تخفیف ۵ درصدی بر روی روغن خوراکی', 'LOW');
         """, (mkt_notif_id, user_id))
 
-        # Check preferences: SMS is disabled for MARKETING
         cur.execute("""
             SELECT sms_enabled FROM notification_preferences WHERE user_id = %s AND category = 'MARKETING';
         """, (user_id,))
         pref = cur.fetchone()
+        assert pref["sms_enabled"] is False
 
         cur.execute("""
             INSERT INTO notification_deliveries (id, notification_id, channel, provider, status, failure_reason)
@@ -131,7 +123,6 @@ def test_notifications():
         assert cur.fetchone()["status"] == "SKIPPED"
         print("  [PASS] Marketing SMS correctly SKIPPED according to user preferences.")
 
-        # 5. Delivery Failure Decoupling
         print("\n[TEST 5] Testing External SMS Failure Decoupling...")
         fail_notif_id = str(uuid.uuid4())
         cur.execute("""
@@ -139,22 +130,19 @@ def test_notifications():
             VALUES (%s, %s, 'DELIVERY_DISPATCHED', 'بار شما بارگیری شد', 'راننده در مسیر فروشگاه شماست.', 'HIGH');
         """, (fail_notif_id, user_id))
 
-        # SMS provider returns 503 error
         cur.execute("""
             INSERT INTO notification_deliveries (id, notification_id, channel, provider, status, failure_reason, attempt_count)
             VALUES (%s, %s, 'SMS', 'KAVENEGAR', 'FAILED', 'HTTP 503 Gateway Timeout', 1);
         """, (str(uuid.uuid4()), fail_notif_id))
 
-        # Verify notification still exists and inbox item is intact
         cur.execute("SELECT title FROM notifications WHERE id = %s;", (fail_notif_id,))
         assert cur.fetchone()["title"] == "بار شما بارگیری شد"
         print("  [PASS] External SMS failure did not compromise notification integrity (Decoupled!).")
 
-        # 6. Mark Inbox Item as Read
         print("\n[TEST 6] Marking Inbox Item as Read...")
         cur.execute("""
-            UPDATE user_inbox_items 
-            SET is_read = TRUE, read_at = now() 
+            UPDATE user_inbox_items
+            SET is_read = TRUE, read_at = now()
             WHERE id = %s
             RETURNING is_read, read_at;
         """, (inbox_id,))
