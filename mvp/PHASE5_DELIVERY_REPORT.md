@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-23  
 **Branch:** `main`  
-**Head:** `1a6dd3bb9397ec057d6a78aff4126060c02cbc84` (current main head; mobile parity work in progress)  
+**Head:** `a4dcb2f4aa39b0ddf5e0a9269849cbedab7ce7c8` (current main head; Phase 3 mobile parity in progress) (current main head; mobile parity work in progress)  
 **Authority:** `DECISION_REGISTER.md` (D-001…D-028) → CURRENT_SOURCE_OF_TRUTH → `BUILD_PLAN.md` → module evidence  
 
 ---
@@ -14,7 +14,7 @@
 | 0 | Discovery & Artifacts | **DONE** | `MVP_SCREEN_MATRIX.md`, `MVP_API_MAP.md`, `MVP_KNOWN_GAPS.md`, BUILD GATE 0 checklist |
 | 1 | Foundation + Design System | **DONE** | packages typecheck/build green; tokens Light+Night; shell + middleware role gates |
 | 2 | Web MVP | **DONE (impl + partial e2e)** | 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
-| 3 | Android MVP (Expo) | **IN PROGRESS** | Field F-01…F-05 plus role-aware Retailer/Vendor/Ops parity foundations and Order Detail lifecycle; API headers + mobile CI added; remaining parity, barcode D-028, Night verification and 3 QA cycles remain open |
+| 3 | Android MVP (Expo) | **IN PROGRESS** | Field F-01…F-05 plus role-aware Retailer/Vendor/Ops parity, Order Detail, vendor search/storefront, support, return/dispute, and shared profile/notifications; API headers + mobile CI added; remaining unsupported contracts, barcode D-028, Night verification and 3 QA cycles remain open |
 | 4 | Global QA + Regression | **REOPENED** | suite **497/497 PASSED** (210.67s); structural + anti-vibe EXIT 0; `verify_repository_consistency` PASS 8/8; web lint 0 errors; web build EXIT=0; CI run [35837588088](https://github.com/rrasi90/POL-2.3/actions/runs/35837588088) **success** on `dbcfb59` |
 | 5 | Delivery + Final Audit | **REOPENED** | delivery report retained as a living report until Phase 3 and open live e2e gates close |
 
@@ -54,7 +54,7 @@ See `BUILD_PLAN.md` §11 defect log (full table). Highlights:
 - Restored `DECISION_REGISTER` D-016/D-017, `Assumptions` D-015/016/017, `CURRENT_SOURCE_OF_TRUTH` hierarchy `Basket → AllocationPlan → OrderGroup → Order → OrderItem`.
 - Transport tests client fixtures; payment verify RBAC `OPS_AGENT|VENDOR_OWNER`; legacy_imports gate preserved.
 - Web login `session.role` → `current_organization.role`.
-- Mobile: backend-derived role routing for all seven roles; local API client now supports contract headers including Idempotency-Key; F-05 OfflineBanner no longer claims offline sync; Light/Night token foundation preserved; Order Detail lifecycle added for Retailer/Vendor with timeline and Vendor partial-acceptance action.
+- Mobile: backend-derived role routing for all seven roles; local API client now supports contract headers including Idempotency-Key and PUT; F-05 OfflineBanner no longer claims offline sync; Light/Night token foundation preserved; Order Detail lifecycle, vendor search/storefront, support, return/dispute, and shared profile/notifications added.
 
 ---
 
