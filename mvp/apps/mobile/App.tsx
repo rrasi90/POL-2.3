@@ -7,6 +7,7 @@ import { FieldTaskDetailScreen } from "./src/screens/FieldTaskDetailScreen";
 import { FieldTaskListScreen } from "./src/screens/FieldTaskListScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { OpsMobileScreen } from "./src/screens/OpsMobileScreen";
+import { OrderDetailMobileScreen } from "./src/screens/OrderDetailMobileScreen";
 import { RetailerMobileScreen } from "./src/screens/RetailerMobileScreen";
 import { VendorMobileScreen } from "./src/screens/VendorMobileScreen";
 import { colors } from "./src/theme";
@@ -46,7 +47,8 @@ export default function App(): React.ReactNode {
     );
   }
 
-  const currentRole = route.name === "workspace" ? route.role : role;
+  const currentRole =
+    route.name === "workspace" || route.name === "order-detail" ? route.role : role;
 
   return (
     <SafeAreaView style={styles.root}>
@@ -59,10 +61,23 @@ export default function App(): React.ReactNode {
         <FieldTaskDetailScreen taskId={route.taskId} onBack={() => setRoute({ name: "field" })} />
       ) : route.name === "assisted" ? (
         <AssistedOrderScreen onBack={() => setRoute({ name: "field" })} />
+      ) : route.name === "order-detail" ? (
+        <OrderDetailMobileScreen
+          mode={route.role === "VENDOR_OWNER" || route.role === "VENDOR_STAFF" ? "vendor" : "retailer"}
+          role={route.role}
+          orderId={route.orderId}
+          onBack={() => setRoute({ name: "workspace", role: route.role })}
+        />
       ) : currentRole === "RETAILER_OWNER" || currentRole === "RETAILER_STAFF" ? (
-        <RetailerMobileScreen role={currentRole} />
+        <RetailerMobileScreen
+          role={currentRole}
+          onOpenOrder={(orderId) => setRoute({ name: "order-detail", orderId, role: currentRole })}
+        />
       ) : currentRole === "VENDOR_OWNER" || currentRole === "VENDOR_STAFF" ? (
-        <VendorMobileScreen role={currentRole} />
+        <VendorMobileScreen
+          role={currentRole}
+          onOpenOrder={(orderId) => setRoute({ name: "order-detail", orderId, role: currentRole })}
+        />
       ) : currentRole === "OPS_AGENT" || currentRole === "ADMIN_SUPER" ? (
         <OpsMobileScreen role={currentRole} />
       ) : (
