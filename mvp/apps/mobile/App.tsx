@@ -61,7 +61,14 @@ export default function App(): React.ReactNode {
         </SafeAreaView>
       ) : null}
       {route.name === "account" ? (
-        <AccountMobileScreen role={route.role} onBack={() => setRoute({ name: "workspace", role: route.role })} />
+        <AccountMobileScreen
+          role={route.role}
+          onBack={() =>
+            setRoute(route.role === "FIELD_ACTIVATOR"
+              ? { name: "field" }
+              : { name: "workspace", role: route.role })
+          }
+        />
       ) : route.name === "field" ? (
         <FieldTaskListScreen
           onOpenTask={(taskId) => setRoute({ name: "task", taskId })}
