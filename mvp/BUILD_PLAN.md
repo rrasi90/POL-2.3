@@ -206,7 +206,8 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] Retailer mobile vendor search/storefront (R-17/R-18) via real read endpoints
 - [x] Retailer mobile support cases + case messaging via real support endpoints
 - [x] Retailer mobile return/dispute submission via real order endpoints
-- [ ] Remaining mobile screen parity: account/profile/notifications and other canonical screens; vendor customers/staff remain GAP due missing authoritative HTTP  
+- [x] Shared mobile account/profile/notifications for authenticated roles via real profile/notifications endpoints
+- [ ] Remaining mobile screen parity: other canonical screens; vendor customers/staff remain GAP due missing authoritative HTTP  
 - [ ] Barcode path = D-028 where inventory.scan; no Driver App  
 - [ ] Mobile Night theme visual verification per screen  
 - [ ] ≥3 QA cycles (typecheck + Expo validation/export where feasible)  
