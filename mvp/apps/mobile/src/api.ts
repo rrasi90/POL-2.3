@@ -31,6 +31,10 @@ export function getToken(): string | null {
   return accessToken;
 }
 
+export function isOnline(): boolean {
+  return online;
+}
+
 export function subscribeOnline(fn: (v: boolean) => void): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
