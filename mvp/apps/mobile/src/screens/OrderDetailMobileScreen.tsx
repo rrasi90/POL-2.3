@@ -76,6 +76,11 @@ export function OrderDetailMobileScreen(props: {
   const [actionError, setActionError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
+  const [returnReason, setReturnReason] = useState("DAMAGED");
+  const [returnQuantity, setReturnQuantity] = useState("1");
+  const [returnNote, setReturnNote] = useState("");
+  const [disputeReason, setDisputeReason] = useState("");
+  const [disputeDescription, setDisputeDescription] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -123,6 +128,47 @@ export function OrderDetailMobileScreen(props: {
       await load();
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "عملیات سفارش ناموفق بود");
+    } finally {
+      setActing(null);
+    }
+  }
+
+  async function submitReturn(): Promise<void> {
+    const quantity = Number(returnQuantity);
+    if (!Number.isFinite(quantity) || quantity < 1) {
+      setActionError("تعداد مرجوعی باید حداقل ۱ باشد.");
+      return;
+    }
+    setActing("return");
+    setActionError(null);
+    try {
+      const body: Record<string, unknown> = { reason_code: returnReason, quantity };
+      if (returnNote.trim()) body.reason = returnNote.trim();
+      await api.post("/api/v1/orders/" + props.orderId + "/returns", body);
+      await load();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "ثبت مرجوعی ناموفق بود");
+    } finally {
+      setActing(null);
+    }
+  }
+
+  async function submitDispute(): Promise<void> {
+    if (!disputeReason.trim()) {
+      setActionError("دلیل اختلاف الزامی است.");
+      return;
+    }
+    setActing("dispute");
+    setActionError(null);
+    try {
+      const body: Record<string, string> = { reason: disputeReason.trim() };
+      if (disputeDescription.trim()) body.description = disputeDescription.trim();
+      await api.post("/api/v1/orders/" + props.orderId + "/disputes", body);
+      setDisputeReason("");
+      setDisputeDescription("");
+      await load();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "ثبت اختلاف ناموفق بود");
     } finally {
       setActing(null);
     }
@@ -218,7 +264,15 @@ export function OrderDetailMobileScreen(props: {
         {props.mode === "retailer" ? (
           <Card>
             <Text style={styles.h2}>بازگشت / اختلاف</Text>
-            {returns.length === 0 ? <Empty title="بازگشتی ثبت نشده" description="برای این سفارش مورد بازگشتی از API دریافت نشد." /> : returns.map((x) => (
+            <Input label="دلیل مرجوعی" value={returnReason} onChangeText={setReturnReason} />
+            <Input label="تعداد مرجوعی" value={returnQuantity} onChangeText={setReturnQuantity} keyboardType="numeric" />
+            <Input label="توضیح مرجوعی" value={returnNote} onChangeText={setReturnNote} multiline numberOfLines={3} maxLength={500} />
+            <Btn label="ثبت مرجوعی" onPress={() => void submitReturn()} loading={acting === "return"} disabled={acting !== null} />
+            <Text style={styles.meta}>کدهای قراردادی نمونه: DAMAGED، WRONG_ITEM، MISSING_ITEMS، QUALITY، EXPIRED، OTHER</Text>
+            <Input label="دلیل اختلاف" value={disputeReason} onChangeText={setDisputeReason} maxLength={200} />
+            <Input label="شرح اختلاف" value={disputeDescription} onChangeText={setDisputeDescription} multiline numberOfLines={3} maxLength={2000} />
+            <Btn label="ثبت اختلاف" tone="ghost" onPress={() => void submitDispute()} loading={acting === "dispute"} disabled={acting !== null || !disputeReason.trim()} />
+            {returns.length === 0 ? <Empty title="مرجوعی ثبت نشده" description="برای این سفارش مورد بازگشتی از API دریافت نشد." /> : returns.map((x) => (
               <View key={x.id} style={styles.item}>
                 <StatusChip label={x.status || "—"} tone="info" />
                 <Text style={styles.meta}>{x.issue_type || "—"}</Text>
