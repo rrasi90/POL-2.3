@@ -89,10 +89,17 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void }):
   }, []);
 
   useEffect(() => {
-    void (tab === "profile" ? loadProfile() : loadNotifications());
-  }, [tab, loadProfile, loadNotifications]);
+    void (tab === "profile" ? loadProfile() : tab === "notifications" ? loadNotifications() : loadPreferences());
+  }, [tab, loadProfile, loadNotifications, loadPreferences]);
 
-  async function savePreferences(): Promise<void> {\n    setLoading(true); setError(null); setNotice(null);\n    try { await api.put("/api/v1/notifications/preferences", preferences); setNotice("تنظیمات اعلان ذخیره شد."); await loadPreferences(); }\n    catch (e) { setError(e instanceof Error ? e.message : "ذخیره تنظیمات اعلان ناموفق بود"); }\n    finally { setLoading(false); }\n  }\n\n  async function saveProfile(): Promise<void> {
+  async function savePreferences(): Promise<void> {
+    setLoading(true); setError(null); setNotice(null);
+    try { await api.put("/api/v1/notifications/preferences", preferences); setNotice("تنظیمات اعلان ذخیره شد."); await loadPreferences(); }
+    catch (e) { setError(e instanceof Error ? e.message : "ذخیره تنظیمات اعلان ناموفق بود"); }
+    finally { setLoading(false); }
+  }
+
+  async function saveProfile(): Promise<void> {
     if (!displayName.trim()) { setError("نام نمایشی الزامی است."); return; }
     setLoading(true); setError(null); setNotice(null);
     try {
