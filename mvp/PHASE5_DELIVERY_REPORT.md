@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-23  
 **Branch:** `main`  
-**Head:** `dbcfb5927e85ebdfa324e2032614da214c2ca9fd` (synced with `origin/main`)  
+**Head:** `3c9bc4feaf68467e455d5636824416de861c3e28` (current main head; mobile parity work in progress)  
 **Authority:** `DECISION_REGISTER.md` (D-001…D-028) → CURRENT_SOURCE_OF_TRUTH → `BUILD_PLAN.md` → module evidence  
 
 ---
@@ -14,9 +14,9 @@
 | 0 | Discovery & Artifacts | **DONE** | `MVP_SCREEN_MATRIX.md`, `MVP_API_MAP.md`, `MVP_KNOWN_GAPS.md`, BUILD GATE 0 checklist |
 | 1 | Foundation + Design System | **DONE** | packages typecheck/build green; tokens Light+Night; shell + middleware role gates |
 | 2 | Web MVP | **DONE (impl + partial e2e)** | 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
-| 3 | Android MVP (Expo) | **PARTIAL — Field-first DONE** | Field F-01…F-05 screens + OfflineBanner + parity matrix; typecheck EXIT=0; retailer/vendor/ops parity still open; QA cycle 1 only |
-| 4 | Global QA + Regression | **DONE (local) + CI green** | suite **497/497 PASSED** (210.67s); structural + anti-vibe EXIT 0; `verify_repository_consistency` PASS 8/8; web lint 0 errors; web build EXIT=0; CI run [35837588088](https://github.com/rrasi90/POL-2.3/actions/runs/35837588088) **success** on `dbcfb59` |
-| 5 | Delivery + Final Audit | **DONE (this report)** | this file + BUILD_PLAN checkboxes + commit `dbcfb59` |
+| 3 | Android MVP (Expo) | **IN PROGRESS** | Field F-01…F-05 plus role-aware Retailer/Vendor/Ops parity foundations; API headers + mobile CI added; remaining parity, barcode D-028, Night verification and 3 QA cycles remain open |
+| 4 | Global QA + Regression | **REOPENED** | suite **497/497 PASSED** (210.67s); structural + anti-vibe EXIT 0; `verify_repository_consistency` PASS 8/8; web lint 0 errors; web build EXIT=0; CI run [35837588088](https://github.com/rrasi90/POL-2.3/actions/runs/35837588088) **success** on `dbcfb59` |
+| 5 | Delivery + Final Audit | **REOPENED** | delivery report retained as a living report until Phase 3 and open live e2e gates close |
 
 ---
 
@@ -38,7 +38,9 @@
 
 **Resolved this wave:** G-001, G-002, G-005, G-014?, G-022 (delivery OTP → D-018 4-digit end-to-end).
 
-**Screen coverage (unchanged cycle 5):** 68 total — **40 IMPLEMENTED / 19 VERIFIED / 8 GAP / 1 N/A / 0 PENDING**.
+**Web screen coverage (cycle 5 baseline):** 68 total — **40 IMPLEMENTED / 19 VERIFIED / 8 GAP / 1 N/A / 0 PENDING**.
+
+**Mobile implementation coverage:** Field F-01…F-05 + Retailer/Vendor/Ops foundation surfaces implemented; not promoted to VERIFIED pending mobile QA evidence.
 
 ---
 
@@ -52,6 +54,7 @@ See `BUILD_PLAN.md` §11 defect log (full table). Highlights:
 - Restored `DECISION_REGISTER` D-016/D-017, `Assumptions` D-015/016/017, `CURRENT_SOURCE_OF_TRUTH` hierarchy `Basket → AllocationPlan → OrderGroup → Order → OrderItem`.
 - Transport tests client fixtures; payment verify RBAC `OPS_AGENT|VENDOR_OWNER`; legacy_imports gate preserved.
 - Web login `session.role` → `current_organization.role`.
+- Mobile: backend-derived role routing for all seven roles; local API client now supports contract headers including Idempotency-Key; F-05 OfflineBanner no longer claims offline sync; Light/Night token foundation preserved.
 
 ---
 
@@ -87,9 +90,9 @@ Untracked (intentionally not committed): `docker-compose.yml`, `monitoring/`, `f
 | `structural_audit.py` | **EXIT 0** |
 | Web lint | **0 errors** (15 pre-existing warnings) |
 | Web typecheck + build | EXIT 0 (50 routes) |
-| Workspace typecheck (mobile+web+packages) | EXIT 0 |
+| Workspace typecheck (historical baseline) | EXIT 0; current mobile changes require new CI evidence |
 | Migration chain | contiguous 001–031; PG18.4; 95 tables (`pol` + `pol_test`) |
-| CI | **success** run 35837588088 on `dbcfb59` |
+| CI | prior backend run 35837588088 succeeded; current mobile workflow added, result pending |
 | Live services | API healthz 200; Web 200 |
 
 ---
@@ -114,8 +117,10 @@ No other external blockers claimed.
 - `f369704` docs: BUILD_PLAN + screen matrix QA cycle 5 + restore canonical docs  
 - `263226a` feat(mvp): Expo mobile scaffold + web retailer/login fixes  
 - `00245bf` fix(ci): align verify_environment with full migration chain (95 tables, 001-031)  
-- **`dbcfb59`** fix(G-022): align delivery OTP to D-018 4-digit + persist delivery_otp; restore D-015/016/017 hierarchy docs; Phase 3 Field screens  
+- `dbcfb59` fix(G-022): align delivery OTP to D-018 4-digit + persist delivery_otp; restore D-015/016/017 hierarchy docs; Phase 3 Field screens  
+- `3c9bc4f` fix(mobile): expose online state for OfflineBanner  
+- `24f1e16` ci(mobile): validate Expo Android export in CI
 
 ---
 
-*Phase 5 complete for current DoD scope. Open items are listed in §2 and remain tracked in `BUILD_PLAN.md` / `MVP_KNOWN_GAPS.md`.*
+*Phase 5 delivery artifacts exist, but final DoD is intentionally reopened while Phase 3 mobile parity/verification and the remaining live basket→checkout gate are open. Continue the master loop until §10 Global Stop is satisfied.*
