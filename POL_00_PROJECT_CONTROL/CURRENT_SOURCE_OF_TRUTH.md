@@ -4,7 +4,7 @@
 **Version:** 1.2 (Canonical)  
 **Status:** `LOCKED / OFFICIAL GOVERNANCE CHARTER`  
 **Effective Milestone:** Sprint 0 & MVP v1.0  
-**Last Audit:** 2026-09-21  
+**Last Audit:** 2026-09-23  
 
 ---
 
@@ -63,7 +63,7 @@ All active documents MUST represent the current architecture:
 
 - Current MVP basket model is **Multi-Vendor (`D-014`)**.
 
-**Repository-truth sync (2026-09-18):** Stage 04 audit-start PR #1 control-document HEAD was `4539c77a557290dc8476b6c29d3a7cfeab36feea`; subsequent control-only commits record the synchronized document changes. Latest completed full verification on the PR lineage is Run #365 (`35378830823`) with 212/212 pass on certified code head `5ac5974b2caf045f8020e3c8b48f889ed3ff94e9`. The PR remains open and unmerged.
+**Historical lineage note (2026-09-18):** Stage 04 audit-start PR #1 and its Run #365 evidence belong to an earlier certification lineage. They are retained for traceability only and are not current `main` verification evidence. Current verification must be established from the current `main` HEAD and current CI/runtime evidence.
 - Single-Vendor MVP is historical only (`D-003`).
 - Vendor count is open; no hardcoded `<=2` rule.
 - MVP payment remains `NON_CUSTODIAL_DIRECT`.
@@ -165,7 +165,7 @@ The project now explicitly separates DESIGN_APPROVED from ENGINEERING_READY.
 
 design tool approval certifies the design layer only. Engineering readiness additionally requires action, permission, state, data, API, error/recovery, analytics, platform and test mappings.
 
-Current full-app implementation remains incomplete: Web is partial and Android source is not yet present. These are engineering workstreams, not claims of design failure.
+Current implementation state is governed by `mvp/BUILD_PLAN.md`, `mvp/MVP_SCREEN_MATRIX.md` and current repository evidence: Web has a partial live-verified baseline; Android/Expo source exists and is in Phase 3 verification. Remaining mobile parity and verification gates must not be described as absent source. These are engineering workstreams, not claims of design failure.
 ### Greenfield design tool Build Mode — 2026-09-21
 
 The current design execution target is a completely new, empty design tool file.
