@@ -2,7 +2,8 @@
 
 **Date:** 2026-09-23  
 **Branch:** `main`  
-**Head:** `bee417407c23442042388b5fd5325299537d6b0c` (current main head; Phase 3 mobile parity in progress) (current main head; Phase 3 mobile parity in progress) (current main head; mobile parity work in progress)  
+**Report baseline:** `3e657a4a39880317a0c82938158c4c99d33e8600`  
+**Report policy:** this is a living delivery report; do not store a mutable "current HEAD" claim here. Repository HEAD is authoritative via Git.  
 **Authority:** `DECISION_REGISTER.md` (D-001…D-028) → CURRENT_SOURCE_OF_TRUTH → `BUILD_PLAN.md` → module evidence  
 
 ---
@@ -15,7 +16,7 @@
 | 1 | Foundation + Design System | **DONE** | packages typecheck/build green; tokens Light+Night; shell + middleware role gates |
 | 2 | Web MVP | **DONE (impl + partial e2e)** | 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
 | 3 | Android MVP (Expo) | **IN PROGRESS** | Field F-01…F-05 plus role-aware Retailer/Vendor/Ops parity, Order Detail, vendor search/storefront, support, return/dispute, and shared profile/notifications; API headers + mobile CI added; remaining unsupported contracts, barcode D-028, Night verification and 3 QA cycles remain open |
-| 4 | Global QA + Regression | **REOPENED** | suite **497/497 PASSED** (210.67s); structural + anti-vibe EXIT 0; `verify_repository_consistency` PASS 8/8; web lint 0 errors; web build EXIT=0; CI run [35837588088](https://github.com/rrasi90/POL-2.3/actions/runs/35837588088) **success** on `dbcfb59` |
+| 4 | Global QA + Regression | **REOPENED** | Historical suite **497/497 PASSED** (210.67s); structural + anti-vibe EXIT 0; `verify_repository_consistency` PASS 8/8. Fresh regression is required after current Phase 3 changes. |
 | 5 | Delivery + Final Audit | **REOPENED** | delivery report retained as a living report until Phase 3 and open live e2e gates close |
 
 ---
@@ -92,7 +93,7 @@ Untracked (intentionally not committed): `docker-compose.yml`, `monitoring/`, `f
 | Web typecheck + build | EXIT 0 (50 routes) |
 | Workspace typecheck (historical baseline) | EXIT 0; current mobile changes require new CI evidence |
 | Migration chain | contiguous 001–031; PG18.4; 95 tables (`pol` + `pol_test`) |
-| CI | prior backend run 35837588088 succeeded; current mobile workflow added, result pending |
+| CI | prior backend run 35837588088 succeeded; current mobile workflow requires fresh evidence for the current main state |
 | Live services | API healthz 200; Web 200 |
 
 ---
@@ -111,7 +112,13 @@ No other external blockers claimed.
 
 ---
 
-## 8. Commits (this delivery batch)
+## 8. Current audit state — 2026-09-23
+
+The repository has been re-audited against the remaining execution gates. Documentation status has been reconciled so that historical green evidence is not treated as current verification. The following remain OPEN and require executable evidence: current mobile CI, mobile QA cycles 1–3, Night visual verification, live basket → allocation → checkout → order lifecycle E2E, checkout idempotency replay, and fresh full regression. V-09/V-11 and D-028 remain GAP/CONTRACT where authoritative HTTP contracts are absent. OpenPencil WAVE-02 remains BLOCKED_EXTERNAL if MCP `:7600` is unavailable.
+
+No current test/build result is claimed from this audit because the available GitHub integration can modify/read repository content but does not provide a local project runtime for executing the commands.
+
+## 9. Historical commits (delivery batch)
 
 - `6c3953b` feat(backend): restore research-hardening source of truth and green 497-test suite  
 - `f369704` docs: BUILD_PLAN + screen matrix QA cycle 5 + restore canonical docs  
@@ -123,4 +130,4 @@ No other external blockers claimed.
 
 ---
 
-*Phase 5 delivery artifacts exist, but final DoD is intentionally reopened while Phase 3 mobile parity/verification and the remaining live basket→checkout gate are open. Continue the master loop until §10 Global Stop is satisfied.*
+*Phase 5 delivery artifacts exist, but final DoD is intentionally reopened while current mobile verification, live basket→checkout/order lifecycle evidence, idempotency replay, fresh regression and final reconciliation remain open. Continue the master loop until the DoD gates are actually evidenced.*
