@@ -3,10 +3,10 @@
 
 **Document ID:** `POL-DESIGN-TREE-001`  
 **Version:** `4.3.0`  
-**Date:** 2026-09-21  
+**Date:** 2026-09-23 · governance reconciliation; semantic specification remains v4.3.0  
 **Status:** ACTIVE MASTER ARCHITECTURE / CANONICAL REGISTRY KERNEL / TOOL-AGNOSTIC / MULTI-CHANNEL BUILD SOURCE / FEDERATED VIEW MODEL / TRACEABILITY MODEL / DRIFT-CONTROLLED / AGENT-EXECUTION READY  
 **Repository:** `rrasi90/POL-2.3`  
-**Working Branch:** `product-architecture-evolution-2026-09-20`  
+**Working Branch:** `main`  
 **Primary Intent:** تبدیل حقیقت محصول، معماری، دامنه، تجربه، طراحی، frontend، backend، اپلیکیشن‌ها، ابزارهای اجرا و شواهد را به یک Canonical Node Registry + Federated Views + Traceability Graph؛ به‌گونه‌ای که ابزار اجرایی، محل ساخت یا Agent قابل تعویض باشد اما خروجی، قراردادها، رفتار، کیفیت و معیارهای پذیرش ثابت بماند؛ با Precision Commerce و پوشش هم‌سطح Light + Night.
 
 ---
