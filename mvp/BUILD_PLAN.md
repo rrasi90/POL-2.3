@@ -19,7 +19,7 @@
 | 3 | Phase 0 + GATE 0 | **DONE** | Artifacts + skeleton; typecheck/build green. |
 | 4 | Phase 1 foundation + design system | **DONE** | tokens, ui package, shell, middleware role gates. |
 | 5 | Full Web MVP | **DONE (impl + partial e2e)** | 68 screens cycle 5: **40 IMPLEMENTED, 19 VERIFIED, 8 GAP, 1 N/A**; typecheck/lint/build green; live API+route smoke for SH-AUTH/PROFILE/NOTIF, R-02/03/10/16/17/18, V-04/07/08/10/12/14, F-01. |
-| 6 | Phase 3 Android | **IN PROGRESS** | Field F-01…F-05 plus first Retailer/Vendor/Ops parity surfaces are implemented; role-aware auth routing, API headers and Light/Night token foundation added. Mobile QA cycle 2 is now evidenced by 18/18 deterministic functional/state-transition checks; cycle 3, barcode D-028 and remaining screen parity are still open. |
+| 6 | Phase 3 Android | **IN PROGRESS** | Field F-01…F-05 plus first Retailer/Vendor/Ops parity surfaces are implemented; role-aware auth routing, API headers and Light/Night token foundation added. Mobile QA cycle 2 is now evidenced by 23/23 deterministic functional/state-transition/parity checks; supported REAL-API parity was expanded for retailer finance, vendor finance/referrals, shared notification preferences, and Ops support/notifications. Cycle 3, barcode D-028 and unsupported canonical screens remain open. |
 | 7 | OpenPencil WAVE-02 | **BLOCKED_EXTERNAL** | MCP `:7600` not listening (app not running). WAVE-01 evidence on disk. |
 | 8 | Global QA + regression | **REOPENED** | Historical backend/web suite was green, but current Phase 3 mobile changes still require fresh CI + 3 QA cycles + regression. Do not reuse stale green evidence as current DoD proof. |
 | 9 | Structural audit | **DONE** (2026-09-23) | `python artifacts/structural_audit.py` → EXIT 0: window_loc=0, console_log=0, fake_success=0 (biz_calc hits all backend). |
@@ -27,7 +27,7 @@
 | 11 | GitHub reconciliation | **DONE (2026-09-23)** | Current HEAD `ad88ca0` has fresh backend verification CI **SUCCESS** (run 35884012589) and mobile verification CI **SUCCESS** (run 35884012647). |
 | 12 | Independent 2nd-pass audit | **DONE** | `verify_repository_consistency.py` PASS 8/8 EXIT 0 (D-015/016/017 + hierarchy restored). |
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
-| 14 | Regression | **CURRENT BACKEND REGRESSION GREEN (2026-09-23)** | Fresh current-HEAD verification suite completed successfully in run 35884012589; uploaded `pol-test-results` artifact. Live basket→checkout E2E remains separate/open. Mobile QA cycle 2 is separately evidenced by mobile run 35886815013. |
+| 14 | Regression | **CURRENT BACKEND REGRESSION GREEN (2026-09-23)** | Fresh backend verification remains evidenced by run 35884012589; later mobile-only parity changes are separately verified by the latest mobile CI. Live basket→checkout E2E remains separate/open. |
 | 15 | Repeat until DoD | **OPEN** | DoD = §8; open gaps in `MVP_KNOWN_GAPS.md` + Phase 3 parity remain. |
 | 16 | Phase 5 delivery | **REOPENED** | Delivery report exists, but final delivery cannot close while Phase 3 mobile parity/verification remains open. |
 
@@ -207,10 +207,10 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] Retailer mobile support cases + case messaging via real support endpoints
 - [x] Retailer mobile return/dispute submission via real order endpoints
 - [x] Shared mobile account/profile/notifications for authenticated roles via real profile/notifications endpoints
-- [ ] Remaining mobile screen parity: other canonical screens; vendor customers/staff remain GAP due missing authoritative HTTP  
+- [x] Supported mobile parity expanded for REAL APIs: retailer finance (R-16), vendor finance/referrals (V-17/V-08), shared notification preferences (SH-NOTIF-02), Ops support/notifications (O-05/O-08); unsupported vendor customers/staff remain GAP  
 - [ ] Barcode path = D-028 where inventory.scan; no Driver App  
 - [ ] Mobile Night theme visual verification per screen  
-- [x] Mobile QA cycle 2 — deterministic functional/error/state-transition contract QA **18/18 PASS** (run 35886815013)  
+- [x] Mobile QA cycle 2 — deterministic functional/error/state-transition/parity QA **23/23 PASS** (latest mobile run after parity expansion)  
 - [ ] ≥3 QA cycles (typecheck + Expo validation/export where feasible)  
 
 ### Phase 4 (Global QA)
