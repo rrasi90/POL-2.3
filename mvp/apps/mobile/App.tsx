@@ -1,7 +1,8 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
-import { SafeAreaView, StyleSheet } from "react-native";
+import { Pressable, SafeAreaView, StyleSheet, Text } from "react-native";
 import { getToken, healthz } from "./src/api";
+import { AccountMobileScreen } from "./src/screens/AccountMobileScreen";
 import { AssistedOrderScreen } from "./src/screens/AssistedOrderScreen";
 import { FieldTaskDetailScreen } from "./src/screens/FieldTaskDetailScreen";
 import { FieldTaskListScreen } from "./src/screens/FieldTaskListScreen";
@@ -48,11 +49,20 @@ export default function App(): React.ReactNode {
   }
 
   const currentRole =
-    route.name === "workspace" || route.name === "order-detail" ? route.role : role;
+    route.name === "workspace" || route.name === "order-detail" || route.name === "account" ? route.role : role;
 
   return (
     <SafeAreaView style={styles.root}>
-      {route.name === "field" ? (
+      {currentRole && route.name !== "account" && route.name !== "order-detail" ? (
+        <SafeAreaView style={styles.accountBar}>
+          <Pressable accessibilityRole="button" onPress={() => setRoute({ name: "account", role: currentRole })} style={styles.accountButton}>
+            <Text style={styles.accountText}>حساب / اعلان‌ها</Text>
+          </Pressable>
+        </SafeAreaView>
+      ) : null}
+      {route.name === "account" ? (
+        <AccountMobileScreen role={route.role} />
+      ) : route.name === "field" ? (
         <FieldTaskListScreen
           onOpenTask={(taskId) => setRoute({ name: "task", taskId })}
           onAssistedOrder={() => setRoute({ name: "assisted" })}
@@ -90,4 +100,7 @@ export default function App(): React.ReactNode {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
+  accountBar: { backgroundColor: colors.bg, paddingHorizontal: 12, paddingTop: 6 },
+  accountButton: { alignSelf: "flex-start", borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  accountText: { color: colors.text, fontSize: 11, fontWeight: "600" },
 });
