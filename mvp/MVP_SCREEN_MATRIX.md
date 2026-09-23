@@ -243,3 +243,28 @@ Non-admin RBAC spot-check: retailer token → GET `/admin/audit-logs` **403** (e
 **Cycle 3 (2026-09-22):** eslint exit 0 (0 errors / 17 warnings); typecheck exit 0; `next build` exit 0 (50 routes). Module DoD cycle min (≥3) met for Phase 2 web. Still `IMPLEMENTED` not `VERIFIED` until live FastAPI e2e.
 **Cycle 4 (2026-09-23):** infra regression — pytest suite green at gate count; typecheck/lint/build/structural audit green (no status flips).
 **Cycle 5 (2026-09-23):** live e2e smoke — FastAPI `:8000` on `pol` 95 tables + Next `:3001`; 19 screens → `VERIFIED` (40 IMP / 19 VER / 8 GAP / 1 N/A); see §Live-evidence. Structural audit EXIT 0.
+
+
+## I. Phase 3 Android implementation evidence — 2026-09-23
+
+This section records mobile implementation evidence separately from the canonical screen status.
+A mobile implementation is not promoted to VERIFIED until its required QA/evidence is recorded.
+
+| Mobile surface | Canonical coverage | Implementation | Current status |
+|---|---|---|---|
+| Authentication | SH-AUTH-01/02 | apps/mobile/src/screens/LoginScreen.tsx | IMPLEMENTED |
+| Retailer commerce foundation | R-02/R-03/R-06/R-07/R-08/R-10 | apps/mobile/src/screens/RetailerMobileScreen.tsx | IMPLEMENTED |
+| Vendor operations foundation | V-01/V-02/V-03/V-06/V-07/V-10 | apps/mobile/src/screens/VendorMobileScreen.tsx | IMPLEMENTED |
+| Operations foundation | O-01/O-02/O-06/O-10 | apps/mobile/src/screens/OpsMobileScreen.tsx | IMPLEMENTED |
+| Field-first | F-01…F-05 | existing FieldTaskList/Detail/AssistedOrder screens + OfflineBanner | IMPLEMENTED |
+| Barcode | R-03B/V-16, D-028 | contract-only; camera/matching adapter not activated | GAP / CONTRACT |
+| Remaining mobile parity | order detail, returns, support, vendor storefront/customers/staff and other applicable screens | not yet ported | OPEN |
+
+Verification requirements:
+- .github/workflows/pol-mvp-mobile.yml
+- typecheck
+- Expo config validation
+- Android export
+- minimum 3 Phase-3 QA cycles
+- Night-theme visual verification
+- evidence update before VERIFIED
