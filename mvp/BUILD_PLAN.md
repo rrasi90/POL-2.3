@@ -202,7 +202,8 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] Retailer parity foundation: catalog → basket → allocation-preview → checkout → orders list  
 - [x] Vendor parity foundation: orders actions + inventory + daily confirmation + settlements  
 - [x] Ops parity foundation: overview + queues/read model + reconciliation + ADMIN_SUPER audit read  
-- [ ] Remaining mobile screen parity: order detail/returns/support/vendor storefront/customers/staff and other canonical screens  
+- [x] Mobile order detail foundation: order header/items/timeline; Vendor partial-acceptance action; Retailer return/dispute read path
+- [ ] Remaining mobile screen parity: support, vendor search/storefront, customers/staff, return/dispute write flow and other canonical screens  
 - [ ] Barcode path = D-028 where inventory.scan; no Driver App  
 - [ ] Mobile Night theme visual verification per screen  
 - [ ] ≥3 QA cycles (typecheck + Expo validation/export where feasible)  
