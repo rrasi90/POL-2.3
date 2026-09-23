@@ -110,7 +110,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void }):
           <Btn label="اعلان‌ها" onPress={() => setTab("notifications")} tone={tab === "notifications" ? "primary" : "ghost"} />
         </View>
         <ErrorBox message={error} />
-        {notice ? <Text accessibilityRole="status" style={styles.notice}>{notice}</Text> : null}
+        {notice ? <Text style={styles.notice}>{notice}</Text> : null}
         {tab === "profile" ? (
           <Card>
             <Text style={styles.h2}>اطلاعات حساب</Text>
