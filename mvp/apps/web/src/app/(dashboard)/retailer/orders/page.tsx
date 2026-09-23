@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Button,
   EmptyState,
@@ -41,6 +42,7 @@ const statusFilters = [
  * (current backend returns {orders,limit,offset}); offset/limit pagination.
  */
 export default function RetailerOrdersPage() {
+  const router = useRouter();
   const [items, setItems] = useState<OrderListItem[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -163,7 +165,7 @@ export default function RetailerOrdersPage() {
           actionLabel={status ? "حذف فیلتر" : "رفتن به کاتالوگ"}
           onAction={() => {
             if (status) setStatus("");
-            else window.location.href = "/retailer/catalog";
+            else router.push("/retailer/catalog");
           }}
         />
       ) : (

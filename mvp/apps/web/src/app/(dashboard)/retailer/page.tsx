@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button, EmptyState, ErrorState, Skeleton, StatusChip } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import { useBasketStore } from "@/lib/basket";
@@ -22,6 +23,7 @@ type LoadState = "loading" | "error" | "ready";
 const PAGE_LIMIT = 20;
 
 export default function RetailerHomePage() {
+  const router = useRouter();
   const lines = useBasketStore((s) => s.lines);
   const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [state, setState] = useState<LoadState>("loading");
@@ -190,7 +192,7 @@ export default function RetailerHomePage() {
               description="برای شروع خرید از کاتالوگ، کالا انتخاب کنید."
               actionLabel="رفتن به کاتالوگ"
               onAction={() => {
-                window.location.href = "/retailer/catalog";
+                router.push("/retailer/catalog");
               }}
             />
           </div>

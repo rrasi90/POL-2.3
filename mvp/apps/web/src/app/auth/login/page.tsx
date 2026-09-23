@@ -22,6 +22,7 @@ interface VerifyResult {
   role?: Role | string;
   organization_id?: string;
   profile?: { role?: Role | string; organization_id?: string };
+  current_organization?: { id?: string; role?: Role | string } | null;
 }
 
 function normalizeRole(raw: unknown): Role | null {
@@ -81,6 +82,7 @@ export default function LoginPage() {
       const role =
         normalizeRole(data.role) ??
         normalizeRole(data.profile?.role) ??
+        normalizeRole(data.current_organization?.role) ??
         null;
       setSession({
         accessToken: data.access_token,
@@ -88,7 +90,11 @@ export default function LoginPage() {
         user: {
           user_id: data.user?.user_id ?? data.user?.id ?? "",
           mobile_number: data.user?.mobile_number ?? phone,
-          organization_id: data.organization_id ?? data.profile?.organization_id ?? null,
+          organization_id:
+            data.organization_id ??
+            data.profile?.organization_id ??
+            data.current_organization?.id ??
+            null,
         },
         role,
       });

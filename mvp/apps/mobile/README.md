@@ -1,4 +1,4 @@
-# Expo app — Phase 3 (after Phase 2 web module DoD)
+﻿# @pol/mobile — Phase 3 Android (Expo)
 
 Package name: `@pol/mobile`
 
@@ -7,4 +7,5 @@ Package name: `@pol/mobile`
 - Barcode scan where `inventory.scan` (D-028)
 - No Driver App (D-023)
 
-Scaffold with Expo in Phase 3.
+## Scaffold
+Expo blank-typescript template (Phase 3 kickoff 2026-09-23).
