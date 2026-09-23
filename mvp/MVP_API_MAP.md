@@ -30,7 +30,7 @@ HTTP may also set `X-Correlation-ID`.
 
 **Pagination (where used):** follow response schema returned by the specific route (orders list uses `{data,total,offset,limit}` style per backend tests/queries — confirm per endpoint when wiring; do not assume beyond this note).
 
-**Auth:** `Authorization: Bearer <access_token>`; 15-min access / 30-day refresh (D-018).
+**Auth:** `Authorization: Bearer <access_token>`; 15-min access / 30-day refresh (D-018). Refresh-token rotation remains OPEN; current implementation reuses the stored refresh-token hash.
 
 ---
 
@@ -54,7 +54,7 @@ HTTP may also set `X-Correlation-ID`.
 |--------|------|-------|
 | POST | `/auth/request-otp` | OTP 4-digit D-018; returns otp_request_id, TTL |
 | POST | `/auth/verify-otp` | returns tokens + profile context |
-| POST | `/auth/refresh` | refresh_token rotation as implemented |
+| POST | `/auth/refresh` | issues a new access token; **refresh-token rotation is NOT implemented** (D-018 policy remains OPEN) |
 | POST | `/auth/switch-organization` | |
 | DELETE | `/auth/sessions/current` | |
 | DELETE | `/auth/sessions/{session_id}` | |
