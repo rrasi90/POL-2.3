@@ -34,7 +34,7 @@ const checks = [
   ["Support prevents empty message send", () => read("screens/SupportMobileScreen.tsx").includes('if (!selected || !message.trim()) return;')],
   ["Ops audit tab is restricted to ADMIN_SUPER", () => read("screens/OpsMobileScreen.tsx").includes('props.role === "ADMIN_SUPER"')],
   ["API propagates bearer authentication", () => read("api.ts").includes('headers.Authorization = "Bearer " + accessToken')],
-  ["API distinguishes network failures from API errors", () => read("api.ts").includes('"NETWORK"') && read("api.ts").includes("setOnline(false)")),
+  ["API distinguishes network failures from API errors", () => read("api.ts").includes('"NETWORK"') && read("api.ts").includes("setOnline(false)")],
 ];
 
 let failed = 0;
