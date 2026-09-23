@@ -18,7 +18,8 @@
     "web": "expo start --web",
     "android": "expo start --android",
     "start": "expo start",
-    "build": "expo export --platform android --output-dir ./dist"
+    "build": "expo export --platform android --output-dir ./dist",
+    "qa:functional": "node scripts/mobile_functional_qa.mjs"
   },
   "private": true
 }
