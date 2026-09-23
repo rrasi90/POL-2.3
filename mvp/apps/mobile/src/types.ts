@@ -1,3 +1,12 @@
+export type Role =
+  | "ADMIN_SUPER"
+  | "OPS_AGENT"
+  | "FIELD_ACTIVATOR"
+  | "VENDOR_OWNER"
+  | "VENDOR_STAFF"
+  | "RETAILER_OWNER"
+  | "RETAILER_STAFF";
+
 export interface FieldTask {
   id: string;
   task_type?: string | null;
@@ -28,4 +37,19 @@ export type Route =
   | { name: "login" }
   | { name: "field" }
   | { name: "task"; taskId: string }
-  | { name: "assisted" };
+  | { name: "assisted" }
+  | { name: "workspace"; role: Role };
+
+export const ALL_ROLES: Role[] = [
+  "ADMIN_SUPER",
+  "OPS_AGENT",
+  "FIELD_ACTIVATOR",
+  "VENDOR_OWNER",
+  "VENDOR_STAFF",
+  "RETAILER_OWNER",
+  "RETAILER_STAFF",
+];
+
+export function normalizeRole(value: string | undefined | null): Role | null {
+  return value && (ALL_ROLES as string[]).includes(value) ? (value as Role) : null;
+}
