@@ -3,10 +3,11 @@ import path from "node:path";
 
 const root = path.resolve(process.cwd(), "src");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const readMobile = (file) => fs.readFileSync(path.resolve(process.cwd(), file), "utf8");
 
 const checks = [
   ["All implemented mobile role families remain explicitly role-gated in App routing", () => {
-    const s = read("App.tsx");
+    const s = readMobile("App.tsx");
     return ["RETAILER_OWNER","RETAILER_STAFF","VENDOR_OWNER","VENDOR_STAFF","OPS_AGENT","ADMIN_SUPER","FIELD_ACTIVATOR"].every(r => s.includes(r)) &&
       s.includes("onAuthed(nextRole: Role)") && s.includes("setRole(nextRole)");
   }],
