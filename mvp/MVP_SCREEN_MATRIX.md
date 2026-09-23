@@ -268,3 +268,17 @@ Verification requirements:
 - minimum 3 Phase-3 QA cycles
 - Night-theme visual verification
 - evidence update before VERIFIED
+
+### I. Phase 3 Android coverage update — 2026-09-23
+
+| Capability | Mobile surface | Status |
+|---|---|---|
+| Shared profile | `AccountMobileScreen` → GET/PUT `/api/v1/profile` + profile context | IMPLEMENTED |
+| Shared notifications | `AccountMobileScreen` → GET `/api/v1/notifications` | IMPLEMENTED |
+| Retailer vendor search | `RetailerMobileScreen` → GET `/api/v1/storefront/vendors` | IMPLEMENTED |
+| Retailer vendor storefront | `RetailerMobileScreen` → GET `/api/v1/storefront/vendors/{id}` + products | IMPLEMENTED |
+| Retailer support | `SupportMobileScreen` → cases + messages | IMPLEMENTED |
+| Retailer returns/disputes | `OrderDetailMobileScreen` → POST returns/disputes | IMPLEMENTED |
+| Vendor customers/staff | no authoritative HTTP contract | GAP |
+| D-028 barcode | no authoritative mobile contract/runtime adapter | GAP / CONTRACT |
+| Mobile verification | CI + 3 QA cycles + Night visual evidence | OPEN |
