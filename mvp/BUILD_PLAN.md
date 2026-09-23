@@ -3,7 +3,7 @@
 **Contract:** Master Build Instruction (repo root session) + master loop (DISCOVER→PLAN→BUILD→TEST→RECONCILE→AUDIT→FIX→…→DELIVERY)  
 **Root:** `mvp/`  
 **Authorized branch:** `main`  
-**Updated:** 2026-09-23 · mobile parity work continued  
+**Updated:** 2026-09-23 · post-audit reconciliation; current verification gates reopened  
 **Authority hierarchy:** `DECISION_REGISTER.md` (D-001…D-028 on branch) → CURRENT_SOURCE_OF_TRUTH → this file → module evidence files.
 
 **Rule:** NOT DONE = KEEP WORKING. Do not stop to ask which track. Isolate external deps as `BLOCKED_EXTERNAL` and continue everything else. Later-discovered defects in earlier phases ⇒ reopen, root-cause fix, retest, return.
@@ -21,13 +21,13 @@
 | 5 | Full Web MVP | **DONE (impl + partial e2e)** | 68 screens cycle 5: **40 IMPLEMENTED, 19 VERIFIED, 8 GAP, 1 N/A**; typecheck/lint/build green; live API+route smoke for SH-AUTH/PROFILE/NOTIF, R-02/03/10/16/17/18, V-04/07/08/10/12/14, F-01. |
 | 6 | Phase 3 Android | **IN PROGRESS** | Field F-01…F-05 plus first Retailer/Vendor/Ops parity surfaces are implemented; role-aware auth routing, API headers and Light/Night token foundation added. Mobile verification cycles, barcode D-028 and remaining screen parity are still open. |
 | 7 | OpenPencil WAVE-02 | **BLOCKED_EXTERNAL** | MCP `:7600` not listening (app not running). WAVE-01 evidence on disk. |
-| 8 | Global QA + regression | **DONE (local)** | Per-module ≥3 cycles done for web; structural + anti-vibe audits EXIT 0; full suite **497/497 PASSED** (210.67s). |
+| 8 | Global QA + regression | **REOPENED** | Historical backend/web suite was green, but current Phase 3 mobile changes still require fresh CI + 3 QA cycles + regression. Do not reuse stale green evidence as current DoD proof. |
 | 9 | Structural audit | **DONE** (2026-09-23) | `python artifacts/structural_audit.py` → EXIT 0: window_loc=0, console_log=0, fake_success=0 (biz_calc hits all backend). |
 | 10 | Anti-vibe-coding audit | **DONE** (2026-09-23) | same checklist green; rules file restored to `.agents/rules/00-pol-canonical-safety.md`. |
-| 11 | GitHub reconciliation | **DONE** | `main` synced with `origin/main` at `dbcfb59`; CI run 35837588088 **success**. |
+| 11 | GitHub reconciliation | **REOPENED** | `main` has advanced beyond the last known green backend CI evidence; current HEAD requires fresh CI evidence. |
 | 12 | Independent 2nd-pass audit | **DONE** | `verify_repository_consistency.py` PASS 8/8 EXIT 0 (D-015/016/017 + hierarchy restored). |
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
-| 14 | Regression | **DONE** | suite **497/497 PASSED** in 210.67s → `artifacts/pol-test-results.json` `overall_status=PASSED`. |
+| 14 | Regression | **REOPENED** | 497/497 is historical evidence from the pre-current-mobile-change baseline. Re-run the full regression after current Phase 3 changes and live checkout verification. |
 | 15 | Repeat until DoD | **OPEN** | DoD = §8; open gaps in `MVP_KNOWN_GAPS.md` + Phase 3 parity remain. |
 | 16 | Phase 5 delivery | **REOPENED** | Delivery report exists, but final delivery cannot close while Phase 3 mobile parity/verification remains open. |
 
@@ -41,8 +41,8 @@
 | 1 | Foundation + Design System | **DONE** (2026-09-22) |
 | 2 | Web MVP | **DONE (impl + partial e2e)** — 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
 | 3 | Android MVP (Expo) | **PARTIAL (Field-first DONE)** — F-01…F-05 + parity; retailer/vendor/ops parity + cycles 2–3 open |
-| 4 | Global QA + Regression | **DONE (local + CI)** — 497/497; audits green; CI 35837588088 success |
-| 5 | Delivery + Final Audit | **DONE** — `PHASE5_DELIVERY_REPORT.md` |
+| 4 | Global QA + Regression | **REOPENED** — historical 497/497 and prior CI evidence remain recorded, but current mobile changes require fresh CI + regression |
+| 5 | Delivery + Final Audit | **REOPENED** — living report; final DoD is not satisfied while Phase 3/mobile and live checkout gates remain open |
 
 ### BUILD GATE 0 — checklist (Master Instruction §8)
 
@@ -213,14 +213,14 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [ ] ≥3 QA cycles (typecheck + Expo validation/export where feasible)  
 
 ### Phase 4 (Global QA)
-- [x] Full pytest suite **497/497 PASSED** (210.67s, `artifacts/pol-test-results.json` overall_status PASSED)  
+- [ ] Full pytest suite **fresh after current Phase 3 changes** — historical 497/497 remains evidence only  
 - [x] Web typecheck + lint + build (lint 0 errors, 15 warnings pre-existing)  
 - [x] Live e2e smoke — auth/profile/notif/catalog/orders/invoices/storefront/search/field/referrals/settlements/daily-inv (basket→checkout POST e2e still open)  
 - [x] Structural audit checklist green  
 - [x] Anti-vibe-coding audit green  
-- [x] GitHub reconciliation (push + CI) — `dbcfb59` pushed; CI **35837588088 success**  
+- [ ] GitHub reconciliation + current CI — last known green backend evidence is `dbcfb59`; current HEAD requires fresh CI  
 - [x] Independent second-pass audit (`verify_repository_consistency.py` PASS 8/8 EXIT=0; D-015/016/017 restored, hierarchy docs complete)  
-- [x] Fix + re-regression until DoD (local DoD met; open gaps tracked in GAPS)  
+- [ ] Fix + re-regression until current DoD (open mobile/live-checkout gates remain)  
 
 ### Phase 5 (Delivery)
 - [x] Final screen/API coverage table — `MVP_SCREEN_MATRIX.md` §H + `MVP_API_MAP.md`  
@@ -229,7 +229,7 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] GitHub discrepancy log — report §4  
 - [x] Build/test status — report §6  
 - [x] External blockers only in BLOCKED_EXTERNAL — report §7  
-- [x] Final report + commits — `mvp/PHASE5_DELIVERY_REPORT.md`, head `dbcfb59`  
+- [ ] Final report + commits — living report; update after current verification gates close  
 
 ---
 
@@ -272,7 +272,7 @@ MVP is DONE only when **all** hold:
 6. [x] Independent second-pass audit; fix D-015/016/017 + hierarchy docs — **DONE** (`verify_repository_consistency` PASS 8/8). Full regression **497/497 PASSED**.  
 7. [x] Phase 3 Field-first Expo screens (F-01…F-05) + parity matrix `src/__tests__/parity.md` — **DONE** (typecheck green); retailer/vendor/ops parity still open.  
 8. [ ] WAVE-02 when OpenPencil up; else keep BLOCKED_EXTERNAL.  
-9. [x] Phase 5 final report — **DONE** `mvp/PHASE5_DELIVERY_REPORT.md`.  
+9. [ ] Phase 5 final report — **REOPENED** living report; update only after current DoD evidence.  
 10. [ ] Close remaining live e2e: basket POST → allocation → checkout → order lifecycle (Phase 4).  
 11. [ ] Verify current mobile head in .github/workflows/pol-mvp-mobile.yml; fix any type/config failures.  
 12. [ ] Run mobile QA cycle 2: typecheck + Expo config/export; update parity evidence.  
