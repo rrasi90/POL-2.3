@@ -15,7 +15,7 @@
 | Step | Name | Status | Notes |
 |------|------|--------|-------|
 | 1 | Infra / DB | **DONE** (2026-09-23) | Host PostgreSQL 18 owns schema: `pol` (live API, 95 tables, migrations 001–031 applied) + `pol_test` (suite, 95 tables). Docker container `pol_test` = 0 tables (ignore). Full research suite collected 497 tests. |
-| 2 | Open decisions | **PARTIAL** | D-014/015/016/017/018/021–025 resolved from register. G-022 closed (delivery OTP 4-digit + persisted). Remaining: refresh-token rotation (Stage 10), invoice timing, storefront write fields, delegated permissions, Penpot MCP access → §2. |
+| 2 | Open decisions | **PARTIAL** | D-014/015/016/017/018/021–025 resolved from register. G-022 closed (delivery OTP 4-digit + persisted). Remaining: refresh-token rotation (Stage 10), invoice timing, storefront write fields, delegated permissions, design-tool MCP access → §2. |
 | 3 | Phase 0 + GATE 0 | **DONE** | Artifacts + skeleton; typecheck/build green. |
 | 4 | Phase 1 foundation + design system | **DONE** | tokens, ui package, shell, middleware role gates. |
 | 5 | Full Web MVP | **DONE (impl + partial e2e)** | 68 screens cycle 5: **40 IMPLEMENTED, 19 VERIFIED, 8 GAP, 1 N/A**; typecheck/lint/build green; live API+route smoke for SH-AUTH/PROFILE/NOTIF, R-02/03/10/16/17/18, V-04/07/08/10/12/14, F-01. |
@@ -75,7 +75,7 @@
 | Invoice timing | consolidated plan | **OPEN** | default: invoice on order ACCEPTED per existing finance routes; confirm before finance e2e |
 | Storefront write fields | D-024 | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
 | Delegated permissions | ops permissions | **OPEN** | OP-11 GAP; no fake CRUD |
-| Penpot / OpenPencil MCP | WAVE-02 | **BLOCKED_EXTERNAL** | start OpenPencil app or continue without design-board WAVE-02 |
+| Design-tool / OpenPencil MCP | WAVE-02 | **BLOCKED_EXTERNAL** | start OpenPencil app or continue without design-board WAVE-02 |
 | Catalog path `/products/search` vs `/catalog/search` | G-003 | **OPEN** | screens use REAL `/catalog/search`; contract parity = BLOCKED_EXTERNAL only if test demands literal path |
 | Inbox path | G-004 | **OPEN** | screens use REAL `/notifications` |
 | Delivery OTP 6 vs D-018 4 | G-022 | **RESOLVED** | schema `^\d{4}$`, generation via `OTP_CODE_LENGTH`, dispatch persists `delivery_otp`, UI `maxLength={4}` |
@@ -116,7 +116,7 @@ mvp/
 ├── MVP_API_MAP.md         # endpoint REAL/CONTRACT/MOCK/GAP authority
 ├── MVP_KNOWN_GAPS.md      # G-001…G-022
 ├── apps/web/              # Next.js 15 + TS + Tailwind v4
-├── apps/mobile/           # Expo (Phase 3) — README only
+├── apps/mobile/           # Expo (Phase 3) — implemented source + QA evidence
 └── packages/
     ├── tokens/ types/ api-client/ config/
     └── ui/
