@@ -1,0 +1,121 @@
+# POL MVP — Phase 5 Delivery Report
+
+**Date:** 2026-09-23  
+**Branch:** `main`  
+**Head:** `dbcfb5927e85ebdfa324e2032614da214c2ca9fd` (synced with `origin/main`)  
+**Authority:** `DECISION_REGISTER.md` (D-001…D-028) → CURRENT_SOURCE_OF_TRUTH → `BUILD_PLAN.md` → module evidence  
+
+---
+
+## 1. Phases done
+
+| Phase | Name | Status | Evidence |
+|-------|------|--------|----------|
+| 0 | Discovery & Artifacts | **DONE** | `MVP_SCREEN_MATRIX.md`, `MVP_API_MAP.md`, `MVP_KNOWN_GAPS.md`, BUILD GATE 0 checklist |
+| 1 | Foundation + Design System | **DONE** | packages typecheck/build green; tokens Light+Night; shell + middleware role gates |
+| 2 | Web MVP | **DONE (impl + partial e2e)** | 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
+| 3 | Android MVP (Expo) | **PARTIAL — Field-first DONE** | Field F-01…F-05 screens + OfflineBanner + parity matrix; typecheck EXIT=0; retailer/vendor/ops parity still open; QA cycle 1 only |
+| 4 | Global QA + Regression | **DONE (local) + CI green** | suite **497/497 PASSED** (210.67s); structural + anti-vibe EXIT 0; `verify_repository_consistency` PASS 8/8; web lint 0 errors; web build EXIT=0; CI run [35837588088](https://github.com/rrasi90/POL-2.3/actions/runs/35837588088) **success** on `dbcfb59` |
+| 5 | Delivery + Final Audit | **DONE (this report)** | this file + BUILD_PLAN checkboxes + commit `dbcfb59` |
+
+---
+
+## 2. Remaining gaps
+
+| ID | Gap | Status | Owner / next |
+|----|-----|--------|--------------|
+| G-003 | Catalog path `/products/search` vs real `/catalog/search` | **CONFLICT (documented)** | screens use REAL; literal contract parity = BLOCKED_EXTERNAL only if a test demands the path |
+| G-004 | Inbox path `/inbox/items` vs real `/notifications` | **CONFLICT (documented)** | screens use REAL `/notifications` |
+| G-007/008/009/010/011/012/013/015/017/019/020/021 | Ops/admin/staff/customers/analytics/permissions/basket-list/RMA-global/partial-acceptance-list/corporate-anon missing HTTP | **GAP** | shells only; no fake CRUD; wait for backend or keep GAP |
+| G-006 | Corporate routes proposed (not in route map) | **PROPOSED-G006** | static marketing screens |
+| G-024 | Storefront write fields (D-024) | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
+| OP-11 | Delegated permissions | **GAP** | no permission-list HTTP |
+| Refresh-token rotation | Stage 10 policy | **OPEN** | do not invent |
+| Invoice timing | on ACCEPTED default | **OPEN** | confirm before finance e2e |
+| Phase 3 remaining | Retailer/Vendor/Ops mobile parity; barcode D-028; ≥3 QA cycles | **OPEN** | next Android work |
+| Phase 4 remaining | Live basket POST → allocation → checkout → order lifecycle e2e | **OPEN** | click-through when ready |
+| WAVE-02 | OpenPencil MCP design board | **BLOCKED_EXTERNAL** | start OpenPencil app (B-02) |
+
+**Resolved this wave:** G-001, G-002, G-005, G-014?, G-022 (delivery OTP → D-018 4-digit end-to-end).
+
+**Screen coverage (unchanged cycle 5):** 68 total — **40 IMPLEMENTED / 19 VERIFIED / 8 GAP / 1 N/A / 0 PENDING**.
+
+---
+
+## 3. Structural + vibe defects fixed
+
+See `BUILD_PLAN.md` §11 defect log (full table). Highlights:
+
+- Restored missing `scripts/api/**`, 62 research modules/tests, `application_boundary` storefront/search methods → live 200s.
+- Decision drift: `OTP_CODE_LENGTH` 6→4 (D-018); login + delivery schemas `^\d{4}$`.
+- **G-022:** delivery OTP generated but **never persisted** on INSERT → fixed; schema/generation/UI aligned to D-018.
+- Restored `DECISION_REGISTER` D-016/D-017, `Assumptions` D-015/016/017, `CURRENT_SOURCE_OF_TRUTH` hierarchy `Basket → AllocationPlan → OrderGroup → Order → OrderItem`.
+- Transport tests client fixtures; payment verify RBAC `OPS_AGENT|VENDOR_OWNER`; legacy_imports gate preserved.
+- Web login `session.role` → `current_organization.role`.
+
+---
+
+## 4. GitHub discrepancies
+
+| Item | Before | After |
+|------|--------|-------|
+| `origin/main` vs local | ahead 3, then ahead 1 | **0 / 0** at `dbcfb59` |
+| CI | run 35833163192 failure (263226a), 35835229423 success (00245bf) | **35837588088 success** on `dbcfb59` |
+| Missing files on main vs research | `scripts/api/**`, ~62 research files, D-016/017 register rows, CST hierarchy | restored from `origin/research-hardening-2026-09-14` and committed |
+| Branches used | research-hardening + product-architecture-evolution as sources of truth | content merged into main commits |
+
+Untracked (intentionally not committed): `docker-compose.yml`, `monitoring/`, `fonts/`, `frontend/`, `driver-stamford-07020/`, `design_references/`, `research/runs/`, junk `POL`, helper `artifacts/*` scripts.
+
+---
+
+## 5. Final screen / API coverage
+
+- **Screens:** 68 — 40 IMP / 19 VER / 8 GAP / 1 N/A (`MVP_SCREEN_MATRIX.md` §H).
+- **APIs:** `MVP_API_MAP.md` — deliver OTP pattern `^\d{4}$` (G-022 RESOLVED); catalog/search/notifications use REAL paths; gaps documented.
+- **Live smoke:** FastAPI `:8000` healthz **200**, Next `:3001` **200**; 19 screens VERIFIED cycle 5; route crawl 47/47 previously.
+- **Mobile Field:** F-01…F-05 wired to real field routes + healthz offline banner (parity.md).
+
+---
+
+## 6. Build / test status
+
+| Check | Result |
+|-------|--------|
+| Full verification suite | **497/497 PASSED** in 210.67s — `artifacts/pol-test-results.json` `overall_status=PASSED` |
+| Targeted delivery/POD/field/hierarchy | 73/73 passed (pre-suite) |
+| `verify_repository_consistency` | **PASS 8 / FAIL 0**, EXIT 0 |
+| `structural_audit.py` | **EXIT 0** |
+| Web lint | **0 errors** (15 pre-existing warnings) |
+| Web typecheck + build | EXIT 0 (50 routes) |
+| Workspace typecheck (mobile+web+packages) | EXIT 0 |
+| Migration chain | contiguous 001–031; PG18.4; 95 tables (`pol` + `pol_test`) |
+| CI | **success** run 35837588088 on `dbcfb59` |
+| Live services | API healthz 200; Web 200 |
+
+---
+
+## 7. External blockers only (BLOCKED_EXTERNAL)
+
+| ID | Blocker | Note |
+|----|---------|------|
+| B-01 | Real metrics source for `driver-stamford-07020/collector.py` | no real feed |
+| B-02 | OpenPencil MCP `:7600` down | curl exit 28 / code 000; WAVE-02 blocked |
+| B-03 | SMS provider credentials | non-prod OTP static `"1234"` (D-018) |
+| B-07 | Grafana `:3000` vs Next | Next on `:3001` |
+| G-003/G-004 literal contract path parity | only if a test demands contract path over REAL |
+
+No other external blockers claimed.
+
+---
+
+## 8. Commits (this delivery batch)
+
+- `6c3953b` feat(backend): restore research-hardening source of truth and green 497-test suite  
+- `f369704` docs: BUILD_PLAN + screen matrix QA cycle 5 + restore canonical docs  
+- `263226a` feat(mvp): Expo mobile scaffold + web retailer/login fixes  
+- `00245bf` fix(ci): align verify_environment with full migration chain (95 tables, 001-031)  
+- **`dbcfb59`** fix(G-022): align delivery OTP to D-018 4-digit + persist delivery_otp; restore D-015/016/017 hierarchy docs; Phase 3 Field screens  
+
+---
+
+*Phase 5 complete for current DoD scope. Open items are listed in §2 and remain tracked in `BUILD_PLAN.md` / `MVP_KNOWN_GAPS.md`.*
