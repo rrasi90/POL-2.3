@@ -2,6 +2,10 @@ export type ApiEnvelope<T> =
   | { success: true; data: T }
   | { success: false; error: { code: string; message: string; details?: Record<string, unknown> } };
 
+export type RequestOptions = {
+  headers?: Record<string, string>;
+};
+
 export class ApiError extends Error {
   constructor(
     public readonly code: string,
@@ -27,10 +31,6 @@ export function getToken(): string | null {
   return accessToken;
 }
 
-export function isOnline(): boolean {
-  return online;
-}
-
 export function subscribeOnline(fn: (v: boolean) => void): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
@@ -42,43 +42,60 @@ function setOnline(v: boolean): void {
   listeners.forEach((fn) => fn(v));
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  options?: RequestOptions,
+): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options?.headers ?? {}),
+  };
+  if (accessToken) headers.Authorization = "Bearer " + accessToken;
+
   try {
-    const res = await fetch(`${BASE}${path}`, {
+    const res = await fetch(BASE + path, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     setOnline(true);
+
     let payload: ApiEnvelope<T>;
     try {
       payload = (await res.json()) as ApiEnvelope<T>;
     } catch {
       throw new ApiError("PARSE_ERROR", "Invalid JSON response", res.status);
     }
+
     if (payload.success === false) {
-      const err = payload.error;
-      throw new ApiError(err.code, err.message, res.status);
+      throw new ApiError(payload.error.code, payload.error.message, res.status);
     }
     return payload.data;
   } catch (err) {
     if (err instanceof ApiError) throw err;
     setOnline(false);
-    throw new ApiError("NETWORK", err instanceof Error ? err.message : "Network error", 0);
+    throw new ApiError(
+      "NETWORK",
+      err instanceof Error ? err.message : "Network error",
+      0,
+    );
   }
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>("GET", path),
-  post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
-  patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, body),
+  get: <T>(path: string, options?: RequestOptions) =>
+    request<T>("GET", path, undefined, options),
+  post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+    request<T>("POST", path, body, options),
+  patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+    request<T>("PATCH", path, body, options),
 };
 
 export async function healthz(): Promise<boolean> {
   try {
-    const res = await fetch(`${BASE}/healthz`, { method: "GET" });
+    const res = await fetch(BASE + "/healthz", { method: "GET" });
     setOnline(res.ok);
     return res.ok;
   } catch {
