@@ -187,6 +187,7 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
               <StatusChip label={o.order_status || "—"} tone={o.order_status === "DELIVERED" ? "ok" : "info"} />
               <Text style={styles.h2}>{o.order_number || o.id}</Text>
               <Text style={styles.metric}>{money(o.total_amount_toman)}</Text>
+              <Btn label="جزئیات سفارش" tone="ghost" onPress={() => props.onOpenOrder(o.id)} />
             </Card>
           ))}
         </ScrollView>
