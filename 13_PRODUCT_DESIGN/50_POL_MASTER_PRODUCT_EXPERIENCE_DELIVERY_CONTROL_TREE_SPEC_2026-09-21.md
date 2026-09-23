@@ -244,9 +244,11 @@ Canonical working repository:
 
 `rrasi90/POL-2.3`
 
-Architecture branch:
+Historical architecture branch:
 
 `product-architecture-evolution-2026-09-20`
+
+**Current execution branch:** `main`. The named architecture branch is retained only as historical source lineage; it is not the current implementation branch.
 
 Key architecture wave:
 
@@ -3336,7 +3338,8 @@ UI → API
 
 ## Catalog
 
-- Search → GET /api/v1/catalog/products/search
+- Search → GET /api/v1/catalog/search
+  - **Current HTTP authority:** `mvp/MVP_API_MAP.md` §3.4. The legacy `/catalog/products/search` wording in this Master Tree is superseded for live implementation.
 - Categories → GET /api/v1/catalog/categories
 - Barcode Match → POST /api/v1/catalog/products/match-barcode
 - Product Vendors → GET /api/v1/catalog/products/{id}/vendors
