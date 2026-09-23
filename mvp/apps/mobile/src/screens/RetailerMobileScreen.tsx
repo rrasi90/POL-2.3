@@ -15,6 +15,8 @@ type Product = {
   default_pack_quantity?: number | null;
 };
 type Order = { id: string; order_number?: string | null; order_status?: string | null; total_amount_toman?: number | string | null };
+type Vendor = { id: string; name?: string | null; display_name?: string | null; city?: string | null; description?: string | null; is_active?: boolean | null; product_count?: number | null };
+type VendorProduct = { id: string; product_id?: string | null; product_name?: string | null; name?: string | null; brand_name?: string | null; price_toman?: number | null; stock_quantity?: number | null; packaging_unit?: string | null; is_available?: boolean | null };
 type Allocation = {
   allocation_plan_id: string;
   vendor_count?: number;
@@ -43,7 +45,7 @@ function keyV4(): string {
   });
 }
 export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNER" | "RETAILER_STAFF"> }): React.ReactNode {
-  const [tab, setTab] = useState<"catalog" | "basket" | "orders">("catalog");
+  const [tab, setTab] = useState<"catalog" | "basket" | "orders" | "vendors">("catalog");
   const [q, setQ] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [basket, setBasket] = useState<Array<Product & { quantity: number }>>([]);
@@ -51,6 +53,10 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
   const [allocation, setAllocation] = useState<Allocation | null>(null);
   const [address, setAddress] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendorQuery, setVendorQuery] = useState("");
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [vendorProducts, setVendorProducts] = useState<VendorProduct[]>([]);
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -123,6 +129,47 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
     } catch (e) { setError(e instanceof Error ? e.message : "دریافت سفارش‌ها ناموفق بود"); }
   }
 
+  async function loadVendors(): Promise<void> {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.get<unknown>("/api/v1/storefront/vendors");
+      setVendors(rows<Vendor>(data, "items"));
+    } catch (e) { setError(e instanceof Error ? e.message : "دریافت فروشندگان ناموفق بود"); }
+    finally { setLoading(false); }
+  }
+
+  async function loadVendor(vendorId: string): Promise<void> {
+    setLoading(true);
+    setError(null);
+    try {
+      const [vendor, products] = await Promise.all([
+        api.get<Vendor>("/api/v1/storefront/vendors/" + vendorId),
+        api.get<unknown>("/api/v1/storefront/vendors/" + vendorId + "/products"),
+      ]);
+      setSelectedVendor(vendor);
+      setVendorProducts(rows<VendorProduct>(products, "items"));
+    } catch (e) { setError(e instanceof Error ? e.message : "دریافت ویترین ناموفق بود"); }
+    finally { setLoading(false); }
+  }
+
+  function addVendorProduct(item: VendorProduct): void {
+    if (!item.product_id) {
+      setError("شناسه Master Product از ویترین دریافت نشد؛ کالا به سبد اضافه نشد.");
+      return;
+    }
+    const product: Product = {
+      id: String(item.product_id),
+      canonical_name_fa: item.product_name || item.name || null,
+      brand_name: item.brand_name,
+      master_sku: null,
+      base_unit: null,
+      default_pack_unit: item.packaging_unit,
+      default_pack_quantity: null,
+    };
+    add(product);
+  }
+
   function add(item: Product): void {
     setBasket((prev) => {
       const found = prev.find((x) => x.id === item.id);
@@ -138,9 +185,60 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
         <Btn label="کاتالوگ" onPress={() => setTab("catalog")} tone={tab === "catalog" ? "primary" : "ghost"} />
         <Btn label={"سبد (" + basket.length + ")"} onPress={() => setTab("basket")} tone={tab === "basket" ? "primary" : "ghost"} />
         <Btn label="سفارش‌ها" onPress={() => { setTab("orders"); void loadOrders(); }} tone={tab === "orders" ? "primary" : "ghost"} />
+        <Btn label="فروشندگان" onPress={() => { setTab("vendors"); void loadVendors(); }} tone={tab === "vendors" ? "primary" : "ghost"} />
       </View>
       <ErrorBox message={error} />
-      {tab === "catalog" ? (
+      {tab === "vendors" ? (
+        <ScrollView>
+          <Input label="جستجوی فروشنده" placeholder="نام یا شهر…" value={vendorQuery} onChangeText={setVendorQuery} />
+          <Btn label="بارگذاری فروشندگان" onPress={() => void loadVendors()} loading={loading} />
+          {!selectedVendor ? (
+            <>
+              {vendors.filter((v) => {
+                const needle = vendorQuery.trim().toLowerCase();
+                if (!needle) return true;
+                return (v.name || v.display_name || "").toLowerCase().includes(needle)
+                  || (v.city || "").toLowerCase().includes(needle)
+                  || String(v.id).toLowerCase().includes(needle);
+              }).length === 0 ? <Empty title="فروشنده‌ای یافت نشد" /> :
+                vendors.filter((v) => {
+                  const needle = vendorQuery.trim().toLowerCase();
+                  if (!needle) return true;
+                  return (v.name || v.display_name || "").toLowerCase().includes(needle)
+                    || (v.city || "").toLowerCase().includes(needle)
+                    || String(v.id).toLowerCase().includes(needle);
+                }).map((v) => (
+                  <Card key={v.id}>
+                    <StatusChip label={v.is_active === false ? "غیرفعال" : "فعال"} tone={v.is_active === false ? "neutral" : "ok"} />
+                    <Text style={styles.h2}>{v.name || v.display_name || v.id}</Text>
+                    <Text style={styles.meta}>{v.city || "—"} · کالا: {String(v.product_count || 0)}</Text>
+                    <Btn label="باز کردن ویترین" onPress={() => void loadVendor(v.id)} loading={loading} />
+                  </Card>
+                ))}
+            </>
+          ) : (
+            <>
+              <Btn label="بازگشت به فهرست فروشندگان" tone="ghost" onPress={() => setSelectedVendor(null)} />
+              <Card>
+                <StatusChip label={selectedVendor.is_active === false ? "غیرفعال" : "فعال"} tone={selectedVendor.is_active === false ? "neutral" : "ok"} />
+                <Text style={styles.h2}>{selectedVendor.name || selectedVendor.display_name || selectedVendor.id}</Text>
+                <Text style={styles.meta}>{selectedVendor.city || "—"}</Text>
+                {selectedVendor.description ? <Text style={styles.body}>{selectedVendor.description}</Text> : null}
+              </Card>
+              {vendorProducts.length === 0 ? <Empty title="کالایی در ویترین نیست" /> : vendorProducts.map((p) => (
+                <Card key={p.id}>
+                  <StatusChip label={p.is_available === false ? "ناموجود" : "موجود"} tone={p.is_available === false ? "warn" : "ok"} />
+                  <Text style={styles.h2}>{p.product_name || p.name || p.id}</Text>
+                  <Text style={styles.meta}>{p.brand_name || ""} · {p.packaging_unit || ""}</Text>
+                  <Text style={styles.metric}>{money(p.price_toman)}</Text>
+                  <Text style={styles.meta}>موجودی: {String(p.stock_quantity ?? "—")}</Text>
+                  <Btn label="افزودن به سبد" onPress={() => addVendorProduct(p)} disabled={p.is_available === false} />
+                </Card>
+              ))}
+            </>
+          )}
+        </ScrollView>
+      ) : tab === "catalog" ? (
         <ScrollView>
           <Input label="جستجوی کاتالوگ" placeholder="نام کالا یا SKU…" value={q} onChangeText={setQ} />
           <Btn label="جستجو" onPress={() => void search()} loading={loading} disabled={!q.trim()} />
