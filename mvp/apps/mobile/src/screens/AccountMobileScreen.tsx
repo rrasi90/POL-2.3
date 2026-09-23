@@ -38,7 +38,7 @@ function notificationsOf(data: unknown): Notification[] {
   return [];
 }
 
-export function AccountMobileScreen(props: { role: Role }): React.ReactNode {
+export function AccountMobileScreen(props: { role: Role; onBack?: () => void }): React.ReactNode {
   const [tab, setTab] = useState<"profile" | "notifications">("profile");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -104,6 +104,7 @@ export function AccountMobileScreen(props: { role: Role }): React.ReactNode {
     <Screen>
       <ScrollView>
         <Title badge={props.role}>حساب کاربری</Title>
+        {props.onBack ? <Btn label="بازگشت" tone="ghost" onPress={props.onBack} /> : null}
         <View style={styles.tabs}>
           <Btn label="پروفایل" onPress={() => setTab("profile")} tone={tab === "profile" ? "primary" : "ghost"} />
           <Btn label="اعلان‌ها" onPress={() => setTab("notifications")} tone={tab === "notifications" ? "primary" : "ghost"} />
