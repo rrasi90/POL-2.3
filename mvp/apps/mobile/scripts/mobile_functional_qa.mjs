@@ -35,6 +35,10 @@ const checks = [
   ["Ops audit tab is restricted to ADMIN_SUPER", () => read("screens/OpsMobileScreen.tsx").includes('props.role === "ADMIN_SUPER"')],
   ["API propagates bearer authentication", () => read("api.ts").includes('headers.Authorization = "Bearer " + accessToken')],
   ["API distinguishes network failures from API errors", () => read("api.ts").includes('"NETWORK"') && read("api.ts").includes("setOnline(false)")],
+  ["Retailer exposes finance parity against REAL invoices API", () => read("screens/RetailerMobileScreen.tsx").includes("/api/v1/invoices") && read("screens/RetailerMobileScreen.tsx").includes('tab === "finance"')],
+  ["Vendor exposes finance parity against REAL invoices API", () => read("screens/VendorMobileScreen.tsx").includes("/api/v1/invoices") && read("screens/VendorMobileScreen.tsx").includes('tab === "finance"')],
+  ["Vendor exposes referral attribution against REAL referrals API", () => read("screens/VendorMobileScreen.tsx").includes("/api/v1/referrals") && read("screens/VendorMobileScreen.tsx").includes('tab === "referrals"')],
+  ["Shared account exposes REAL notification preferences GET/PUT", () => { const s = read("screens/AccountMobileScreen.tsx"); return s.includes("/api/v1/notifications/preferences") && s.includes("api.put"); }],
 ];
 
 let failed = 0;
