@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-23  
 **Branch:** `main`  
-**Head:** `a4dcb2f4aa39b0ddf5e0a9269849cbedab7ce7c8` (current main head; Phase 3 mobile parity in progress) (current main head; mobile parity work in progress)  
+**Head:** `bee417407c23442042388b5fd5325299537d6b0c` (current main head; Phase 3 mobile parity in progress) (current main head; Phase 3 mobile parity in progress) (current main head; mobile parity work in progress)  
 **Authority:** `DECISION_REGISTER.md` (D-001…D-028) → CURRENT_SOURCE_OF_TRUTH → `BUILD_PLAN.md` → module evidence  
 
 ---
