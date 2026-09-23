@@ -152,3 +152,10 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 ```
 
 Update SCREEN_MATRIX status + API_MAP when an entry changes.
+
+## Phase 3 / live-e2e execution notes — 2026-09-23
+
+- Mobile retailer/vendor/ops foundations are implemented but remain `IMPLEMENTED` until mobile CI + three QA cycles provide evidence; do not promote to `VERIFIED` yet.
+- D-028 barcode matching remains contract-only because the authoritative request/response schema and runtime camera adapter are not yet available; no invented payload or success behavior is allowed.
+- Mobile Night theme tokens exist, but screen-by-screen visual verification is still pending; no claim of full visual parity is made.
+- Live basket → allocation → checkout e2e remains pending in the local environment because the current catalog seed/search path and orderability criteria still need live verification. This is an execution task, not a reason to stop other work.
