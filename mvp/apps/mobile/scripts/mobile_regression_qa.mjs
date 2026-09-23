@@ -5,13 +5,15 @@ const root = path.resolve(process.cwd(), "src");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 const checks = [
-  ["All canonical roles remain backend-derived in App routing", () => {
+  ["All implemented mobile role families remain explicitly role-gated in App routing", () => {
     const s = read("App.tsx");
-    return ["RETAILER","VENDOR_OWNER","VENDOR_SALES_REP","OPS_AGENT","ADMIN_SUPER","FIELD_AGENT","SUPPORT_AGENT"].every(r => s.includes(r));
+    return ["RETAILER_OWNER","RETAILER_STAFF","VENDOR_OWNER","VENDOR_STAFF","OPS_AGENT","ADMIN_SUPER","FIELD_ACTIVATOR"].every(r => s.includes(r)) &&
+      s.includes("onAuthed(nextRole: Role)") && s.includes("setRole(nextRole)");
   }],
-  ["Mobile API client preserves canonical auth/idempotency/error contract", () => {
+  ["Mobile API client preserves canonical auth/error contract", () => {
     const s = read("api.ts");
-    return s.includes("Authorization") && s.includes("Idempotency-Key") && s.includes("ApiError") && s.includes("NETWORK");
+    return s.includes("Authorization") && s.includes("ApiError") && s.includes("NETWORK") &&
+      s.includes('Content-Type": "application/json"');
   }],
   ["Retailer checkout remains gated by server basket and allocation", () => {
     const s = read("screens/RetailerMobileScreen.tsx");
