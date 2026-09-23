@@ -10,7 +10,7 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 | Vendor | V-01, V-02, V-03, V-06, V-07, V-10 | VendorMobileScreen.tsx + OrderDetailMobileScreen.tsx | order queue/actions, partial acceptance, items/timeline, inventory, daily inventory, settlements | IMPLEMENTED |
 | Ops | O-01, O-02, O-06, O-10 | src/screens/OpsMobileScreen.tsx | exceptions dashboard, orders, reconciliation, audit logs | IMPLEMENTED (ADMIN_SUPER audit) |
 | Field | F-01…F-05 | FieldTaskList/Detail/AssistedOrderScreen.tsx + OfflineBanner | field tasks, healthz | IMPLEMENTED |
-| Barcode | R-03B / V-16 | no camera adapter yet | POST /api/v1/products/match-barcode is CONTRACT_ONLY | GAP / CONTRACT |
+| Barcode | R-03B / V-16 | no camera adapter yet | POST `/api/v1/products/match-barcode` is CONTRACT_ONLY in `mvp/MVP_API_MAP.md`; no runtime route is available | GAP / CONTRACT |
 | Vendor Customers/Staff | V-09 / V-11 | no CRUD invented | no authoritative HTTP contract | GAP |
 | Retailer order detail / returns / support | R-09…R-13 | order detail, return/dispute submission and support are implemented; remaining notifications/profile are shared | routes available per API map | IMPLEMENTED foundation |
 
@@ -26,6 +26,7 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 
 ## QA evidence
 
-- CI workflow: .github/workflows/pol-mvp-mobile.yml
-- Required checks: mobile typecheck + Expo config validation.
+- CI workflow: `.github/workflows/pol-mvp-mobile.yml`
+- Required checks currently wired: mobile typecheck + Expo config validation + Android export.
+- This is CI evidence only; functional mobile QA and visual Night verification remain separate gates.
 - Status must remain IMPLEMENTED until the corresponding CI/evidence row is recorded.
