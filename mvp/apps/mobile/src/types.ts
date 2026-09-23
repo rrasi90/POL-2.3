@@ -39,7 +39,8 @@ export type Route =
   | { name: "task"; taskId: string }
   | { name: "assisted" }
   | { name: "workspace"; role: Role }
-  | { name: "order-detail"; orderId: string; role: Role };
+  | { name: "order-detail"; orderId: string; role: Role }
+  | { name: "account"; role: Role };
 
 export const ALL_ROLES: Role[] = [
   "ADMIN_SUPER",
