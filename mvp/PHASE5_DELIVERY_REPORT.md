@@ -16,7 +16,7 @@
 | 1 | Foundation + Design System | **DONE** | packages typecheck/build green; tokens Light+Night; shell + middleware role gates |
 | 2 | Web MVP | **DONE (impl + partial e2e)** | 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
 | 3 | Android MVP (Expo) | **IN PROGRESS** | Field F-01…F-05 plus role-aware Retailer/Vendor/Ops parity, Order Detail, vendor search/storefront, support, return/dispute, and shared profile/notifications; API headers + mobile CI added; remaining unsupported contracts, barcode D-028, Night verification and 3 QA cycles remain open |
-| 4 | Global QA + Regression | **REOPENED** | Historical suite **497/497 PASSED** (210.67s); structural + anti-vibe EXIT 0; `verify_repository_consistency` PASS 8/8. Fresh regression is required after current Phase 3 changes. |
+| 4 | Global QA + Regression | **IN PROGRESS / CURRENT CI GREEN** | Fresh current-HEAD backend verification run **35884012589 SUCCESS**; fresh mobile verification run **35884012647 SUCCESS**. Live basket→allocation→checkout→order E2E + idempotency replay remain open. |
 | 5 | Delivery + Final Audit | **REOPENED** | delivery report retained as a living report until Phase 3 and open live e2e gates close |
 
 ---
@@ -93,7 +93,7 @@ Untracked (intentionally not committed): `docker-compose.yml`, `monitoring/`, `f
 | Web typecheck + build | EXIT 0 (50 routes) |
 | Workspace typecheck (historical baseline) | EXIT 0; current mobile changes require new CI evidence |
 | Migration chain | contiguous 001–031; PG18.4; 95 tables (`pol` + `pol_test`) |
-| CI | prior backend run 35837588088 succeeded; current mobile workflow requires fresh evidence for the current main state |
+| CI | **Current HEAD `ad88ca0`: backend verification run 35884012589 SUCCESS; mobile verification run 35884012647 SUCCESS** |
 | Live services | API healthz 200; Web 200 |
 
 ---
@@ -114,7 +114,7 @@ No other external blockers claimed.
 
 ## 8. Current audit state — 2026-09-23
 
-The repository has been re-audited against the remaining execution gates. Documentation status has been reconciled so that historical green evidence is not treated as current verification. The following remain OPEN and require executable evidence: current mobile CI, mobile QA cycles 1–3, Night visual verification, live basket → allocation → checkout → order lifecycle E2E, checkout idempotency replay, and fresh full regression. V-09/V-11 and D-028 remain GAP/CONTRACT where authoritative HTTP contracts are absent. OpenPencil WAVE-02 remains BLOCKED_EXTERNAL if MCP `:7600` is unavailable.
+The repository has been re-audited against the remaining execution gates. Documentation status has been reconciled so that historical green evidence is not treated as current verification. The following remain OPEN and require executable evidence: mobile functional QA cycles 2–3, Night visual verification, live basket → allocation → checkout → order lifecycle E2E, checkout idempotency replay. Current mobile CI cycle 1 and fresh full backend regression are now evidenced by runs 35884012647 and 35884012589. V-09/V-11 and D-028 remain GAP/CONTRACT where authoritative HTTP contracts are absent. OpenPencil WAVE-02 remains BLOCKED_EXTERNAL if MCP `:7600` is unavailable.
 
 No current test/build result is claimed from this audit because the available GitHub integration can modify/read repository content but does not provide a local project runtime for executing the commands.
 
