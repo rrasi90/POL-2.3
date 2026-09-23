@@ -4,6 +4,7 @@ import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
 import { colors, spacing } from "../theme";
+import { SupportMobileScreen } from "./SupportMobileScreen";
 
 type Product = {
   id: string;
@@ -45,7 +46,7 @@ function keyV4(): string {
   });
 }
 export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNER" | "RETAILER_STAFF"> }): React.ReactNode {
-  const [tab, setTab] = useState<"catalog" | "basket" | "orders" | "vendors">("catalog");
+  const [tab, setTab] = useState<"catalog" | "basket" | "orders" | "vendors" | "support">("catalog");
   const [q, setQ] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [basket, setBasket] = useState<Array<Product & { quantity: number }>>([]);
@@ -186,9 +187,12 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
         <Btn label={"سبد (" + basket.length + ")"} onPress={() => setTab("basket")} tone={tab === "basket" ? "primary" : "ghost"} />
         <Btn label="سفارش‌ها" onPress={() => { setTab("orders"); void loadOrders(); }} tone={tab === "orders" ? "primary" : "ghost"} />
         <Btn label="فروشندگان" onPress={() => { setTab("vendors"); void loadVendors(); }} tone={tab === "vendors" ? "primary" : "ghost"} />
+        <Btn label="پشتیبانی" onPress={() => setTab("support")} tone={tab === "support" ? "primary" : "ghost"} />
       </View>
       <ErrorBox message={error} />
-      {tab === "vendors" ? (
+      {tab === "support" ? (
+        <SupportMobileScreen role={props.role} />
+      ) : tab === "vendors" ? (
         <ScrollView>
           <Input label="جستجوی فروشنده" placeholder="نام یا شهر…" value={vendorQuery} onChangeText={setVendorQuery} />
           <Btn label="بارگذاری فروشندگان" onPress={() => void loadVendors()} loading={loading} />
