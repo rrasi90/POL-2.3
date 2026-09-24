@@ -46,6 +46,18 @@ const checks = [
     const p = fs.readFileSync(path.resolve(process.cwd(), "src/__tests__/parity.md"), "utf8");
     return p.includes("GAP / CONTRACT") && p.includes("match-barcode");
   }],
+  ["Night theme is runtime-wired rather than a static palette only", () => {
+    const theme = read("theme.ts");
+    const app = readMobile("App.tsx");
+    const account = read("screens/AccountMobileScreen.tsx");
+    return theme.includes("ThemeProvider") && app.includes("<ThemeProvider>") && account.includes('setMode("night")');
+  }],
+  ["F-03 catalog uses the required q parameter and canonical product fields", () => {
+    const s = read("screens/AssistedOrderScreen.tsx");
+    return s.includes("if (!q) {") && s.includes("canonical_name_fa") && s.includes("master_sku");
+  }],
+  ["Offline banner captures current connectivity after effect subscription", () => read("components/OfflineBanner.tsx").includes("setOnline(isOnline())")],
+  ["Login auth uses E.164 normalization", () => read("screens/LoginScreen.tsx").includes("toE164")],
   ["No Driver App is introduced into Phase 3 mobile source", () => {
     const p = fs.readFileSync(path.resolve(process.cwd(), "src/__tests__/parity.md"), "utf8");
     return p.includes("No Driver App (D-023)");
