@@ -81,7 +81,7 @@ export function ThemeProvider(props: { children: React.ReactNode }): React.React
     [mode, setMode],
   );
 
-  return <ThemeContext.Provider value={value}>{props.children}</ThemeContext.Provider>;
+  return React.createElement(ThemeContext.Provider, { value }, props.children);
 }
 
 export function useTheme(): ThemeContextValue {
