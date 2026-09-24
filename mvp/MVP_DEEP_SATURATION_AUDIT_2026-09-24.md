@@ -204,3 +204,12 @@ for every in-scope production capability.
 10. Re-run full regression.
 11. Perform final independent second pass.
 12. Only then update delivery DoD.
+### DSA-011 — Web access/refresh credentials persisted in localStorage
+Class: SECURITY GAP / P0 production-readiness review.
+mvp/apps/web/src/lib/auth/store.ts persists both accessToken and refreshToken in window.localStorage. This is not equivalent to an HttpOnly browser session and is readable by JavaScript executing in the origin.
+Required closure: select and document a browser credential architecture before production exposure. Do not replace localStorage with another JS-readable storage and mark the gap secure.
+
+### DSA-012 — Browser-to-API CORS policy remediated
+Class: IMPLEMENTED / VERIFICATION PENDING.
+The FastAPI transport now uses explicit environment-scoped CORS; production requires POL_CORS_ORIGINS and wildcard production CORS is rejected. A transport test covers an allowed localhost origin and a blocked external origin.
+Required closure: current backend CI must pass and deployment configuration must supply the intended production origins.
