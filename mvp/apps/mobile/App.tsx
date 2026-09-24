@@ -110,7 +110,7 @@ function AppContent(): React.ReactNode {
       ) : (
         <LoginScreen onAuthed={onAuthed} />
       )}
-      <StatusBar style="dark" />
+      <StatusBar style={mode === "night" ? "light" : "dark"} />
     </SafeAreaView>
   );
 }
