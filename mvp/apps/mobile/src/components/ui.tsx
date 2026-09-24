@@ -8,7 +8,7 @@ import {
   View,
   type TextInputProps,
 } from "react-native";
-import { colors, spacing } from "../theme";
+import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 
 export function Screen(props: { children: React.ReactNode }): React.ReactNode {
   return <View style={styles.screen}>{props.children}</View>;
@@ -72,8 +72,9 @@ export function Input(props: TextInputProps & { label: string; hint?: string }):
 
 export function StatusChip(props: { label: string; tone?: "neutral" | "warn" | "ok" | "info" }): React.ReactNode {
   const tone = props.tone ?? "neutral";
+  const { colors } = useTheme();
   const bg =
-    tone === "ok" ? "#ECFDF5" : tone === "warn" ? "#FFFBEB" : tone === "info" ? "#EFF6FF" : "#F1F5F9";
+    tone === "ok" ? colors.successBg : tone === "warn" ? colors.warningBg : tone === "info" ? colors.infoBg : colors.neutralBg;
   const fg =
     tone === "ok" ? colors.success : tone === "warn" ? colors.warning : tone === "info" ? colors.brand : colors.textSecondary;
   return (
@@ -101,7 +102,8 @@ export function Empty(props: { title: string; description?: string }): React.Rea
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg },
   titleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
   title: { fontSize: 22, fontWeight: "700", color: colors.text },
@@ -146,4 +148,5 @@ const styles = StyleSheet.create({
   errorText: { color: colors.danger, fontSize: 13 },
   emptyTitle: { fontSize: 15, fontWeight: "600", color: colors.text },
   emptyBody: { fontSize: 13, color: colors.textSecondary, marginTop: 6, lineHeight: 20 },
-});
+  });
+}
