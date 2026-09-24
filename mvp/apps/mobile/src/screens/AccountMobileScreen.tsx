@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
-import { colors, spacing } from "../theme";
+import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 
 type Profile = {
   user_profile?: {
@@ -40,6 +40,8 @@ function notificationsOf(data: unknown): Notification[] {
 }
 
 export function AccountMobileScreen(props: { role: Role; onBack?: () => void }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
+  const { mode, setMode } = useTheme();
   const [tab, setTab] = useState<"profile" | "notifications" | "preferences">("profile");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -131,6 +133,11 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void }):
         {tab === "profile" ? (
           <Card>
             <Text style={styles.h2}>اطلاعات حساب</Text>
+            <Text style={styles.meta}>پوسته نمایش: {mode === "night" ? "شب" : "روشن"}</Text>
+            <View style={styles.themeRow}>
+              <Btn label="روشن" onPress={() => setMode("light")} tone={mode === "light" ? "primary" : "ghost"} />
+              <Btn label="شب" onPress={() => setMode("night")} tone={mode === "night" ? "primary" : "ghost"} />
+            </View>
             <Text style={styles.meta}>نقش: {profile?.membership?.role || props.role}</Text>
             <Text style={styles.meta}>سازمان: {profile?.membership?.organization_name || profile?.membership?.organization_id || "—"}</Text>
             <Text style={styles.meta}>شماره: {profile?.user_profile?.phone_number || "—"}</Text>
@@ -172,11 +179,14 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void }):
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
+  themeRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
   tabs: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
   row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   h2: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 6 },
   body: { color: colors.text, fontSize: 13, lineHeight: 20 },
   meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18, marginBottom: 3 },
   notice: { color: colors.success, fontSize: 13, marginBottom: spacing.sm },
-});
+  });
+}
