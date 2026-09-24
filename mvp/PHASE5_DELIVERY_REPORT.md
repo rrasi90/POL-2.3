@@ -1,6 +1,6 @@
 # POL MVP — Phase 5 Delivery Report
 
-**Date:** 2026-09-23  
+**Date:** 2026-09-24  
 **Branch:** `main`  
 **Report baseline:** `3e657a4a39880317a0c82938158c4c99d33e8600`  
 **Report policy:** this is a living delivery report; do not store a mutable "current HEAD" claim here. Repository HEAD is authoritative via Git.  
@@ -12,6 +12,7 @@
 
 | Phase | Name | Status | Evidence |
 |-------|------|--------|----------|
+| DS | Deep Saturation Reconciliation | **COMPLETED / CONTROL ADDED** | `MVP_DEEP_SATURATION_AUDIT_2026-09-24.md`, `CROSS_CUTTING_STATE_ACTION_MATRIX.md`, CI green on merged commit `23976ac` |
 | 0 | Discovery & Artifacts | **DONE** | `MVP_SCREEN_MATRIX.md`, `MVP_API_MAP.md`, `MVP_KNOWN_GAPS.md`, BUILD GATE 0 checklist |
 | 1 | Foundation + Design System | **DONE** | packages typecheck/build green; tokens Light+Night; shell + middleware role gates |
 | 2 | Web MVP | **DONE (impl + partial e2e)** | 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
@@ -29,7 +30,9 @@
 | G-004 | Inbox path `/inbox/items` vs real `/notifications` | **CONFLICT (documented)** | screens use REAL `/notifications` |
 | G-007/008/009/010/011/012/013/015/017/019/020/021 | Ops/admin/staff/customers/analytics/permissions/basket-list/RMA-global/partial-acceptance-list/corporate-anon missing HTTP | **GAP** | shells only; no fake CRUD; wait for backend or keep GAP |
 | G-006 | Corporate routes proposed (not in route map) | **PROPOSED-G006** | static marketing screens |
-| G-024 | Storefront write fields (D-024) | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
+| G-029 | Web token persistence in localStorage | **GAP / OPEN** | browser credential architecture required before production |
+| G-030 | Browser-to-API CORS policy | **SOURCE REMEDIATED / VERIFY** | environment-scoped CORS + transport test merged in `23976ac` |
+| D-024 | Storefront write fields | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
 | OP-11 | Delegated permissions | **GAP** | no permission-list HTTP |
 | Refresh-token rotation | Stage 10 policy | **OPEN** | do not invent |
 | Invoice timing | on ACCEPTED default | **OPEN** | confirm before finance e2e |
@@ -37,7 +40,7 @@
 | Phase 4 remaining | Live basket POST → allocation → checkout → order lifecycle e2e | **OPEN** | click-through when ready |
 | WAVE-02 | OpenPencil MCP design board | **BLOCKED_EXTERNAL** | start OpenPencil app (B-02) |
 
-**Resolved this wave:** G-001, G-002, G-005, G-014?, G-022 (delivery OTP → D-018 4-digit end-to-end).
+**Resolved in current reconciliation:** G-001, G-002, G-005, G-022, G-023, G-024, G-025, G-026 (device/local retest PASS on 2026-09-24), plus mobile logout source remediation and API security-header/CORS hardening on audit branch merged as commit `23976ac`.
 
 **Web screen coverage (cycle 5 baseline):** 68 total — **40 IMPLEMENTED / 19 VERIFIED / 8 GAP / 1 N/A / 0 PENDING**.
 
