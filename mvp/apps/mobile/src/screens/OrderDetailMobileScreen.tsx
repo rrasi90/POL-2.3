@@ -62,12 +62,12 @@ function money(v: number | string | null | undefined): string {
 }
 
 export function OrderDetailMobileScreen(props: {
-  const styles = useThemedStyles(makeStyles);
   mode: Mode;
   role: Role;
   orderId: string;
   onBack: () => void;
 }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [timeline, setTimeline] = useState<Timeline[]>([]);
