@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
-import { colors, spacing } from "../theme";
+import { spacing, useThemedStyles, type Palette } from "../theme";
 
 type CaseRow = {
   id: string;
@@ -30,6 +30,7 @@ function rows<T>(data: unknown): T[] {
 }
 
 export function SupportMobileScreen(props: { role: Role; onBack?: () => void }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [selected, setSelected] = useState<CaseRow | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -150,7 +151,8 @@ export function SupportMobileScreen(props: { role: Role; onBack?: () => void }):
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   caseRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, marginTop: spacing.sm },
   message: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, marginTop: spacing.sm },
@@ -158,4 +160,5 @@ const styles = StyleSheet.create({
   h2: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 4 },
   body: { color: colors.text, fontSize: 13, lineHeight: 20 },
   meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18 },
-});
+  });
+}
