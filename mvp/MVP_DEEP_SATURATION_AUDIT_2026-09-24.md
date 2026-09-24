@@ -163,6 +163,14 @@ Class: QA GAP.
 Mobile Light/Night token infrastructure exists and recent device retest closed the earlier runtime wiring defect, but screen-by-screen visual verification remains a distinct gate.
 Required closure: verify every applicable mobile screen in both themes, including dialogs, keyboard states and error/empty/loading surfaces.
 
+### DSA-009 — Baseline API security response headers added
+Class: IMPLEMENTED / VERIFICATION PENDING.
+The FastAPI transport now emits X-Content-Type-Options, X-Frame-Options, Referrer-Policy and Permissions-Policy, while preserving X-Correlation-ID.
+A transport regression test was added. Fresh backend CI is the closure gate.
+
+### DSA-010 — Duplicate operational configuration constant removed
+Class: RESOLVED.
+`VENDOR_ACCEPTANCE_TIMEOUT_REASON` was declared twice in scripts/operational_config.py. The duplicate declaration was removed without changing its effective value.
 ### DSA-008 — Web/mobile security hardening needs runtime evidence
 Class: SECURITY VERIFICATION GAP.
 Repository search found strong identity/tenant test coverage, but this audit has not yet established fresh evidence for all of: secure client credential handling, HTTP security headers, enumeration resistance, rate limits beyond OTP, upload security and PII leakage in logs.
@@ -191,6 +199,8 @@ for every in-scope production capability.
 7. Execute accessibility/RTL/theme matrix.
 8. Execute observability/recovery verification.
 9. Reconcile all GAP/OPEN/CONFLICT registers.
+10. Re-run the full backend and mobile CI gates after each source remediation.
+11. Keep main untouched until the audit branch has a clean current CI evidence set.
 10. Re-run full regression.
 11. Perform final independent second pass.
 12. Only then update delivery DoD.
