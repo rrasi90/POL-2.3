@@ -184,3 +184,17 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - Finding: Authentication storage/test fixtures use E.164 (+...), while the mobile login UI accepted/displayed local 09... input without normalization.
 - Source remediation (2026-09-24): Mobile normalizes Iranian local numbers to E.164 before auth and backend OTP request/verification schemas now enforce the E.164 pattern.
 - Status: CONFLICT (RESOLVED in source); local authentication retest required.
+
+## G-029 — Web token persistence uses localStorage (SECURITY GAP — OPEN)
+
+- **Source finding (2026-09-24):** mvp/apps/web/src/lib/auth/store.ts persists both accessToken and refreshToken in window.localStorage under pol.auth.
+- **Risk:** bearer credentials stored in JavaScript-readable storage are exposed to any successful XSS execution in the origin.
+- **Required action:** choose a canonical browser session architecture, preferably server-managed HttpOnly/Secure/SameSite session credentials or an equivalent architecture explicitly approved by the security authority.
+- **Do not:** silently migrate to another browser storage mechanism and call it secure.
+- **Status:** GAP / OPEN.
+
+## G-030 — Browser-to-API CORS policy was not previously explicit (SOURCE REMEDIATED)
+
+- **Finding:** web API client uses a separate API base origin while FastAPI had no explicit CORS policy in the audited transport source.
+- **Source remediation (2026-09-24):** FastAPI now applies environment-scoped CORS with explicit local development origins, requires POL_CORS_ORIGINS in production, forbids wildcard production CORS, and has a transport test for allowed/blocked origins.
+- **Status:** SOURCE REMEDIATED / CI VERIFICATION REQUIRED.
