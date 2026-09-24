@@ -1,6 +1,9 @@
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { Appearance, StyleSheet } from "react-native";
+
 export type ThemeMode = "light" | "night";
 
-type Palette = {
+export type Palette = {
   bg: string;
   surface: string;
   border: string;
@@ -11,7 +14,11 @@ type Palette = {
   warning: string;
   warningBg: string;
   success: string;
+  successBg: string;
   danger: string;
+  dangerBg: string;
+  infoBg: string;
+  neutralBg: string;
 };
 
 const palettes: Record<ThemeMode, Palette> = {
@@ -26,7 +33,11 @@ const palettes: Record<ThemeMode, Palette> = {
     warning: "#B45309",
     warningBg: "#FFFBEB",
     success: "#047857",
+    successBg: "#ECFDF5",
     danger: "#B91C1C",
+    dangerBg: "#FEF2F2",
+    infoBg: "#EFF6FF",
+    neutralBg: "#F1F5F9",
   },
   night: {
     bg: "#0F141C",
@@ -39,11 +50,52 @@ const palettes: Record<ThemeMode, Palette> = {
     warning: "#FBBF24",
     warningBg: "#2A2415",
     success: "#4ADE80",
+    successBg: "#123321",
     danger: "#F87171",
+    dangerBg: "#3A171A",
+    infoBg: "#172A46",
+    neutralBg: "#202938",
   },
 };
 
-let activeMode: ThemeMode = "light";
+let activeMode: ThemeMode = Appearance.getColorScheme() === "dark" ? "night" : "light";
+
+type ThemeContextValue = {
+  mode: ThemeMode;
+  colors: Palette;
+  setMode: (mode: ThemeMode) => void;
+};
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+export function ThemeProvider(props: { children: React.ReactNode }): React.ReactNode {
+  const [mode, setModeState] = useState<ThemeMode>(activeMode);
+
+  const setMode = useCallback((next: ThemeMode) => {
+    activeMode = next;
+    setModeState(next);
+  }, []);
+
+  const value = useMemo<ThemeContextValue>(
+    () => ({ mode, colors: palettes[mode], setMode }),
+    [mode, setMode],
+  );
+
+  return <ThemeContext.Provider value={value}>{props.children}</ThemeContext.Provider>;
+}
+
+export function useTheme(): ThemeContextValue {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error("useTheme must be used inside ThemeProvider");
+  }
+  return context;
+}
+
+export function useThemedStyles<T>(factory: (colors: Palette) => T): T {
+  const { colors } = useTheme();
+  return useMemo(() => factory(colors), [colors, factory]);
+}
 
 export function setThemeMode(mode: ThemeMode): void {
   activeMode = mode;
@@ -53,7 +105,7 @@ export function getThemeMode(): ThemeMode {
   return activeMode;
 }
 
-/* Proxy keeps the existing colors property API while switching palettes centrally. */
+/* Backward-compatible dynamic palette access for code that reads colors directly. */
 export const colors = new Proxy({} as Palette, {
   get: (_target, property: string) => palettes[activeMode][property as keyof Palette],
 });
@@ -67,3 +119,5 @@ export const card = {
   borderRadius: 12,
   padding: spacing.lg,
 } as const;
+
+export const styleSheet = StyleSheet;
