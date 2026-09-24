@@ -221,3 +221,23 @@ For idempotency:
 `LOCAL-03 انجام شد — first=<result> replay=<result> duplicate_groups=<count>`
 
 The assistant will then perform the repository-side verification and reconciliation.
+
+
+---
+
+## 7. Source remediation batch — 2026-09-24
+
+Remote fixes applied for the locally reported findings:
+
+- G-023: F-03 no longer calls catalog search without q.
+- G-024: F-03 maps canonical_name_fa and master_sku.
+- G-025: runtime Light/Night theme wiring added across the mobile style system, system-aware initialization added, and explicit Light/Night controls added to Account.
+- G-026: supported Iranian local phone input is normalized to E.164 and backend OTP transport schemas now enforce E.164.
+
+Verification evidence after source changes:
+- Mobile CI run 35987850765 on commit 62870503e36a6f2c95929862f839e8bd8258e894 — SUCCESS.
+- Functional/state-transition QA: 28/28.
+- Regression/cross-module QA: 15/15.
+- Typecheck, Expo config validation, and Android export: PASS.
+
+LOCAL-01 Night and LOCAL-04 device smoke still require a fresh install/retest of the updated build; CI does not replace device visual evidence.
