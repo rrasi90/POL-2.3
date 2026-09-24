@@ -25,8 +25,8 @@ Every in-scope action must be evaluated for: Preconditions | Validation | Loadin
 | CC-05 | Switch organization | organization | membership | yes | yes | no | membership changed | request-safe | audit | context change optional | IMPLEMENTED | identity/membership runtime tests |
 | CC-06 | Search catalog | organization | catalog.read | yes | yes/retry | limited | stale catalog | n/a | optional | none | IMPLEMENTED | live smoke; pagination/search deep audit |
 | CC-07 | Add basket item | organization | basket.write | yes | yes/retry | policy needed | basket version | mutation-safe | domain event | optional | IMPLEMENTED | basket version test; offline policy audit |
-| CC-08 | Allocation preview | organization | checkout.read | yes | yes/retry | forbidden | inventory/MOQ/MOV changes | request-safe | event/audit | optional | IMPLEMENTED | allocation tests; live E2E open |
-| CC-09 | Create order / checkout | organization | checkout.write | yes | yes/retry | forbidden | revalidation | REQUIRED | audit/event | order notification | IMPLEMENTED | gateway/idempotency source; live replay open |
+| CC-08 | Allocation preview | organization | checkout.read | yes | yes/retry | forbidden | inventory/MOQ/MOV changes | request-safe | event/audit | optional | VERIFIED | LOCAL-02 live flow reached allocation preview |
+| CC-09 | Create order / checkout | organization | checkout.write | yes | yes/retry | forbidden | revalidation | REQUIRED | audit/event | order notification | VERIFIED | LOCAL-02 16/16 + LOCAL-03 12/12; current CI green |
 | CC-10 | Vendor accept order | organization | vendor.order.accept | yes | yes/retry | forbidden | state conflict | REQUIRED | audit | retailer notification | IMPLEMENTED | order state tests; live lifecycle open |
 | CC-11 | Partial acceptance approve | organization | retailer.order.approve | yes | yes/retry | forbidden | proposal closed/stale | REQUIRED | audit | vendor notification | IMPLEMENTED | timeline-derived proposal; edge-case audit |
 | CC-12 | Dispatch order | organization | vendor.delivery.dispatch | yes | yes/retry | forbidden | state conflict | REQUIRED | audit | delivery notification | IMPLEMENTED | delivery OTP persistence fixed; runtime E2E open |
@@ -47,7 +47,7 @@ Every in-scope action must be evaluated for: Preconditions | Validation | Loadin
 | CC-27 | Logout mobile | user/session | authenticated | yes | yes | no | already revoked | idempotent | session audit | security optional | IMPLEMENTED | source remediation on audit branch; device/CI verification pending |
 | CC-28 | Mobile 401 recovery | organization | authenticated | yes | retry once | no | refresh failure | safe retry | auth audit | session-expired UX | GAP | no refresh path in mobile api.ts; G-028; depends on refresh policy |
 | CC-29 | Mobile cold restart | user/session | authenticated | boot | boot error | n/a | stale session | n/a | auth event | none | CONFLICT | memory-only source vs device note; G-027 |
-| CC-30 | Mobile theme switch | user/device | authenticated | n/a | n/a | n/a | system mode | n/a | none | none | IMPLEMENTED | source remediation; screen-by-screen visual evidence open |
+| CC-30 | Mobile theme switch | user/device | authenticated | n/a | n/a | n/a | system mode | n/a | none | none | VERIFIED | LOCAL-01 Light/Night visual retest PASS; G-025 resolved |
 
 ## Closure rule
 A row is not VERIFIED merely because the API or screen exists. It must have current evidence for the behavior dimensions that matter to that action.
