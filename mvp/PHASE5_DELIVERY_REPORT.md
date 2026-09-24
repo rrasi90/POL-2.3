@@ -11,8 +11,8 @@
 ## 1. Phases done
 
 | Phase | Name | Status | Evidence |
-| 0 | Deep Saturation Reconciliation | **COMPLETED / CONTROL ADDED** | `MVP_DEEP_SATURATION_AUDIT_2026-09-24.md`, `CROSS_CUTTING_STATE_ACTION_MATRIX.md`, current CI green on merged commit `23976ac` |
 |-------|------|--------|----------|
+| DS | Deep Saturation Reconciliation | **COMPLETED / CONTROL ADDED** | `MVP_DEEP_SATURATION_AUDIT_2026-09-24.md`, `CROSS_CUTTING_STATE_ACTION_MATRIX.md`, CI green on merged commit `23976ac` |
 | 0 | Discovery & Artifacts | **DONE** | `MVP_SCREEN_MATRIX.md`, `MVP_API_MAP.md`, `MVP_KNOWN_GAPS.md`, BUILD GATE 0 checklist |
 | 1 | Foundation + Design System | **DONE** | packages typecheck/build green; tokens Light+Night; shell + middleware role gates |
 | 2 | Web MVP | **DONE (impl + partial e2e)** | 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
@@ -30,7 +30,9 @@
 | G-004 | Inbox path `/inbox/items` vs real `/notifications` | **CONFLICT (documented)** | screens use REAL `/notifications` |
 | G-007/008/009/010/011/012/013/015/017/019/020/021 | Ops/admin/staff/customers/analytics/permissions/basket-list/RMA-global/partial-acceptance-list/corporate-anon missing HTTP | **GAP** | shells only; no fake CRUD; wait for backend or keep GAP |
 | G-006 | Corporate routes proposed (not in route map) | **PROPOSED-G006** | static marketing screens |
-| G-024 | Storefront write fields (D-024) | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
+| G-029 | Web token persistence in localStorage | **GAP / OPEN** | browser credential architecture required before production |
+| G-030 | Browser-to-API CORS policy | **SOURCE REMEDIATED / VERIFY** | environment-scoped CORS + transport test merged in `23976ac` |
+| Storefront write fields (D-024) | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
 | OP-11 | Delegated permissions | **GAP** | no permission-list HTTP |
 | Refresh-token rotation | Stage 10 policy | **OPEN** | do not invent |
 | Invoice timing | on ACCEPTED default | **OPEN** | confirm before finance e2e |
