@@ -13,7 +13,7 @@ class APIBaseModel(BaseModel):
 
 
 class RequestOTPRequest(APIBaseModel):
-    mobile_number: str = Field(min_length=7, max_length=32)
+    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9]\d{7,14}$")
     client_fingerprint: str | None = Field(default=None, max_length=128)
 
 
