@@ -37,6 +37,11 @@ function AppContent(): React.ReactNode {
     refresh();
   }, [refresh]);
 
+  function onLogout(): void {
+    setRole(null);
+    setRoute({ name: "login" });
+  }
+
   function onAuthed(nextRole: Role): void {
     setRole(nextRole);
     setRoute(
@@ -73,6 +78,7 @@ function AppContent(): React.ReactNode {
       {route.name === "account" ? (
         <AccountMobileScreen
           role={route.role}
+          onLogout={onLogout}
           onBack={() =>
             setRoute(route.role === "FIELD_ACTIVATOR"
               ? { name: "field" }
