@@ -44,8 +44,8 @@ Every in-scope action must be evaluated for: Preconditions | Validation | Loadin
 | CC-24 | Payment verification | organization/order | finance.verify | yes | yes/retry | forbidden | duplicate/out-of-order | REQUIRED | financial audit | payment notification | IMPLEMENTED | payment RBAC/idempotency tests |
 | CC-25 | Settlement adjustment | organization/order | ops.finance.adjust | yes | yes/retry | forbidden | duplicate adjustment | REQUIRED | immutable financial audit | settlement notification | IMPLEMENTED | dispute/settlement tests |
 | CC-26 | Refund creation | organization/order | ops.finance.refund | yes | yes/retry | forbidden | refund > paid / duplicate | REQUIRED | immutable financial audit | refund notification | IMPLEMENTED | refund tests; end-to-end financial drill open |
-| CC-27 | Logout mobile | user/session | authenticated | yes | yes | no | already revoked | idempotent | session audit | security optional | GAP | no mobile surface; G-028 |
-| CC-28 | Mobile 401 recovery | organization | authenticated | yes | retry once | no | refresh failure | safe retry | auth audit | session-expired UX | GAP | no refresh path in mobile api.ts; G-028 |
+| CC-27 | Logout mobile | user/session | authenticated | yes | yes | no | already revoked | idempotent | session audit | security optional | IMPLEMENTED | source remediation on audit branch; device/CI verification pending |
+| CC-28 | Mobile 401 recovery | organization | authenticated | yes | retry once | no | refresh failure | safe retry | auth audit | session-expired UX | GAP | no refresh path in mobile api.ts; G-028; depends on refresh policy |
 | CC-29 | Mobile cold restart | user/session | authenticated | boot | boot error | n/a | stale session | n/a | auth event | none | CONFLICT | memory-only source vs device note; G-027 |
 | CC-30 | Mobile theme switch | user/device | authenticated | n/a | n/a | n/a | system mode | n/a | none | none | IMPLEMENTED | source remediation; screen-by-screen visual evidence open |
 
