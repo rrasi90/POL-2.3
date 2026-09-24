@@ -11,10 +11,12 @@ import {
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 
 export function Screen(props: { children: React.ReactNode }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   return <View style={styles.screen}>{props.children}</View>;
 }
 
 export function Title(props: { children: React.ReactNode; badge?: string }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.titleRow}>
       <Text style={styles.title}>{props.children}</Text>
@@ -28,6 +30,7 @@ export function Title(props: { children: React.ReactNode; badge?: string }): Rea
 }
 
 export function Card(props: { children: React.ReactNode }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   return <View style={styles.card}>{props.children}</View>;
 }
 
@@ -38,6 +41,8 @@ export function Btn(props: {
   loading?: boolean;
   tone?: "primary" | "ghost";
 }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const ghost = props.tone === "ghost";
   return (
     <Pressable
@@ -56,6 +61,8 @@ export function Btn(props: {
 }
 
 export function Input(props: TextInputProps & { label: string; hint?: string }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { label, hint, ...rest } = props;
   return (
     <View style={styles.field}>
@@ -71,8 +78,9 @@ export function Input(props: TextInputProps & { label: string; hint?: string }):
 }
 
 export function StatusChip(props: { label: string; tone?: "neutral" | "warn" | "ok" | "info" }): React.ReactNode {
-  const tone = props.tone ?? "neutral";
+  const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
+  const tone = props.tone ?? "neutral";
   const bg =
     tone === "ok" ? colors.successBg : tone === "warn" ? colors.warningBg : tone === "info" ? colors.infoBg : colors.neutralBg;
   const fg =
@@ -85,6 +93,7 @@ export function StatusChip(props: { label: string; tone?: "neutral" | "warn" | "
 }
 
 export function ErrorBox(props: { message: string | null }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   if (!props.message) return null;
   return (
     <View style={styles.error}>
@@ -94,6 +103,7 @@ export function ErrorBox(props: { message: string | null }): React.ReactNode {
 }
 
 export function Empty(props: { title: string; description?: string }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Card>
       <Text style={styles.emptyTitle}>{props.title}</Text>
@@ -104,49 +114,56 @@ export function Empty(props: { title: string; description?: string }): React.Rea
 
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
-  title: { fontSize: 22, fontWeight: "700", color: colors.text },
-  badge: { fontSize: 11, color: colors.textMuted },
-  card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  btn: {
-    backgroundColor: colors.brand,
-    borderRadius: 10,
-    minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  btnGhost: { backgroundColor: "transparent", borderWidth: 1, borderColor: colors.border },
-  btnDisabled: { opacity: 0.55 },
-  btnText: { color: "#fff", fontSize: 14, fontWeight: "600" },
-  btnTextGhost: { color: colors.brand },
-  field: { marginBottom: spacing.md },
-  label: { fontSize: 12, color: colors.textSecondary, marginBottom: 6, fontWeight: "500" },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: colors.text,
-    backgroundColor: colors.surface,
-  },
-  hint: { fontSize: 11, color: colors.textMuted, marginTop: 4 },
-  chip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, alignSelf: "flex-start" },
-  chipText: { fontSize: 11, fontWeight: "600" },
-  error: { backgroundColor: "#FEF2F2", borderColor: "#FECACA", borderWidth: 1, borderRadius: 10, padding: spacing.md, marginBottom: spacing.md },
-  errorText: { color: colors.danger, fontSize: 13 },
-  emptyTitle: { fontSize: 15, fontWeight: "600", color: colors.text },
-  emptyBody: { fontSize: 13, color: colors.textSecondary, marginTop: 6, lineHeight: 20 },
+    screen: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg },
+    titleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
+    title: { fontSize: 22, fontWeight: "700", color: colors.text },
+    badge: { fontSize: 11, color: colors.textMuted },
+    card: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    btn: {
+      backgroundColor: colors.brand,
+      borderRadius: 10,
+      minHeight: 44,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+    },
+    btnGhost: { backgroundColor: "transparent", borderWidth: 1, borderColor: colors.border },
+    btnDisabled: { opacity: 0.55 },
+    btnText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+    btnTextGhost: { color: colors.brand },
+    field: { marginBottom: spacing.md },
+    label: { fontSize: 12, color: colors.textSecondary, marginBottom: 6, fontWeight: "500" },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 10,
+      fontSize: 15,
+      color: colors.text,
+      backgroundColor: colors.surface,
+    },
+    hint: { fontSize: 11, color: colors.textMuted, marginTop: 4 },
+    chip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, alignSelf: "flex-start" },
+    chipText: { fontSize: 11, fontWeight: "600" },
+    error: {
+      backgroundColor: colors.dangerBg,
+      borderColor: colors.danger,
+      borderWidth: 1,
+      borderRadius: 10,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+    },
+    errorText: { color: colors.danger, fontSize: 13 },
+    emptyTitle: { fontSize: 15, fontWeight: "600", color: colors.text },
+    emptyBody: { fontSize: 13, color: colors.textSecondary, marginTop: 6, lineHeight: 20 },
   });
 }
