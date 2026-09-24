@@ -159,3 +159,28 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - D-028 barcode matching remains contract-only because the authoritative request/response schema and runtime camera adapter are not yet available; no invented payload or success behavior is allowed.
 - Mobile Night theme tokens exist, but screen-by-screen visual verification is still pending; no claim of full visual parity is made.
 - Live basket → allocation → checkout e2e remains pending in the local environment because the current catalog seed/search path and orderability criteria still need live verification. This is an execution task, not a reason to stop other work.
+
+
+## G-023 — Field assisted catalog empty-query request (GAP — SOURCE REMEDIATED, LOCAL RETEST REQUIRED)
+
+- Finding: F-03 AssistedOrderScreen previously issued GET /api/v1/catalog/search?limit=40 when the query was empty, while the authoritative route requires q with min_length=1.
+- Source remediation (2026-09-24): Mobile now short-circuits an empty query locally and never calls the route without q; the explicit search action reports that the query is required.
+- Status: GAP pending device/local re-verification.
+
+## G-024 — Field assisted catalog product field mapping (GAP — SOURCE REMEDIATED, LOCAL RETEST REQUIRED)
+
+- Finding: F-03 catalog rows could fall back to — because the API canonical fields are canonical_name_fa and master_sku, while the mobile adapter primarily expected name / sku.
+- Source remediation (2026-09-24): Mobile now prefers canonical_name_fa for display and master_sku for SKU fallback, while retaining compatibility fallbacks.
+- Status: GAP pending device/local re-verification.
+
+## G-025 — Mobile Night theme runtime wiring (GAP — SOURCE REMEDIATED, LOCAL VISUAL RETEST REQUIRED)
+
+- Finding: Night palette existed but runtime styles were created statically and there was no user-facing Light/Night control; changing system UI mode therefore did not update the rendered app.
+- Source remediation (2026-09-24): Added centralized runtime theme context, dynamic themed style factories for mobile screens/shared components, system-aware initial mode, and explicit Light/Night controls in Account. app.json now uses automatic interface style.
+- Status: GAP pending full screen-by-screen visual verification on emulator/device.
+
+## G-026 — Mobile phone input vs E.164 contract (CONFLICT — RESOLVED IN SOURCE, LOCAL RETEST REQUIRED)
+
+- Finding: Authentication storage/test fixtures use E.164 (+...), while the mobile login UI accepted/displayed local 09... input without normalization.
+- Source remediation (2026-09-24): Mobile normalizes Iranian local numbers to E.164 before auth and backend OTP request/verification schemas now enforce the E.164 pattern.
+- Status: CONFLICT (RESOLVED in source); local authentication retest required.
