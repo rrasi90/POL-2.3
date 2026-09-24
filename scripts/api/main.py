@@ -7,10 +7,12 @@ HTTP → authentication/session → ApplicationContext → POLApplicationBoundar
 
 from __future__ import annotations
 
+import os
 import re
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 
 from scripts.api.errors import (
@@ -71,6 +73,37 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
     )
 
+    environment = os.getenv("ENVIRONMENT", "").lower()
+    configured_origins = [
+        origin.strip()
+        for origin in os.getenv("POL_CORS_ORIGINS", "").split(",")
+        if origin.strip()
+    ]
+    if configured_origins:
+        cors_origins = configured_origins
+    elif environment in {"prod", "production"}:
+        raise RuntimeError("POL_CORS_ORIGINS must be configured in production.")
+    else:
+        cors_origins = [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001",
+        ]
+
+    if "*" in cors_origins:
+        if environment in {"prod", "production"}:
+            raise RuntimeError("Wildcard CORS is forbidden in production.")
+        cors_origins = [o for o in cors_origins if o != "*"]
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Correlation-ID"],
+        expose_headers=["X-Correlation-ID"],
+    )
     @app.middleware("http")
     async def correlation_middleware(request: Request, call_next):
         supplied = request.headers.get("X-Correlation-ID", "").strip()
@@ -78,6 +111,10 @@ def create_app() -> FastAPI:
         request.state.correlation_id = correlation_id
         response = await call_next(request)
         response.headers["X-Correlation-ID"] = correlation_id
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
         return response
 
     @app.get("/healthz", tags=["ops"])

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { api } from "../api";
+import { api, setToken } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
@@ -39,7 +39,7 @@ function notificationsOf(data: unknown): Notification[] {
   return [];
 }
 
-export function AccountMobileScreen(props: { role: Role; onBack?: () => void }): React.ReactNode {
+export function AccountMobileScreen(props: { role: Role; onBack?: () => void; onLogout?: () => void }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   const { mode, setMode } = useTheme();
   const [tab, setTab] = useState<"profile" | "notifications" | "preferences">("profile");
@@ -101,6 +101,17 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void }):
     finally { setLoading(false); }
   }
 
+  async function logout(): Promise<void> {
+    setLoading(true); setError(null); setNotice(null);
+    try {
+      await api.delete("/api/v1/auth/sessions/current");
+      setToken(null);
+      props.onLogout?.();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خروج از حساب ناموفق بود");
+    } finally { setLoading(false); }
+  }
+
   async function saveProfile(): Promise<void> {
     if (!displayName.trim()) { setError("نام نمایشی الزامی است."); return; }
     setLoading(true); setError(null); setNotice(null);
@@ -146,6 +157,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void }):
             <Input label="منطقه زمانی" value={timezone} onChangeText={setTimezone} maxLength={100} />
             <Input label="شرح" value={bio} onChangeText={setBio} multiline numberOfLines={4} maxLength={2000} />
             <Btn label="ذخیره تغییرات" onPress={() => void saveProfile()} loading={loading} disabled={loading} />
+            <Btn label="خروج از حساب" tone="ghost" onPress={() => void logout()} loading={loading} disabled={loading} />
           </Card>
         ) : tab === "preferences" ? (
           <Card>
