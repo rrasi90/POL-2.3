@@ -37,8 +37,7 @@ const checks = [
     const api = read("api.ts");
     const account = read("screens/AccountMobileScreen.tsx");
     const app = readMobile("App.tsx");
-    return api.includes("DELETE") && api.includes("/api/v1/auth/sessions/current") === false &&
-      api.includes("delete: <T>") && account.includes("/api/v1/auth/sessions/current") &&
+    return api.includes('request<T>("DELETE"') && api.includes("delete: <T>") && account.includes("/api/v1/auth/sessions/current") &&
       account.includes("setToken(null)") && app.includes("onLogout()");
   }],
   ["Shared account uses real profile/notification preference endpoints", () => {
