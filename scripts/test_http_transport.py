@@ -90,6 +90,30 @@ def _cleanup(phone, user_id):
         conn.close()
 
 
+def test_cors_is_scoped_to_known_web_origins(client):
+    response = client.options(
+        "/api/v1/profile",
+        headers={
+            "Origin": "http://localhost:3001",
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "Authorization",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "http://localhost:3001"
+    assert response.headers.get("access-control-allow-methods")
+
+    blocked = client.options(
+        "/api/v1/profile",
+        headers={
+            "Origin": "https://evil.example",
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "Authorization",
+        },
+    )
+    assert "access-control-allow-origin" not in blocked.headers
+
+
 def test_security_headers_present(client):
     response = client.get("/healthz")
     assert response.status_code == 200
