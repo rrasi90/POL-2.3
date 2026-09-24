@@ -37,10 +37,10 @@ function itemsOf(data: unknown): FieldTask[] {
 
 /** F-01 today/task list + F-03 assisted-order entry + F-05 offline banner. */
 export function FieldTaskListScreen(props: {
-  const styles = useThemedStyles(makeStyles);
   onOpenTask: (id: string) => void;
   onAssistedOrder: () => void;
 }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   const [tasks, setTasks] = useState<FieldTask[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
