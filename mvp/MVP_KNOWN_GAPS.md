@@ -185,6 +185,19 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - Source remediation (2026-09-24): Mobile normalizes Iranian local numbers to E.164 before auth and backend OTP request/verification schemas now enforce the E.164 pattern.
 - Status: RESOLVED — local authentication/device retest PASS (2026-09-24).
 
+## G-027 — Mobile session persistence after process restart (RESOLVED)
+
+- **Finding:** mobile access token source is held in module memory; source-level parity documentation previously required session survival across app restart.
+- **Resolution/evidence (2026-09-24):** LOCAL-04 device retest reports force-stop + relaunch remained authenticated on the rebuilt Android build. This closes the previously conflicting evidence for the MVP device flow.
+- **Status:** RESOLVED for current Android runtime evidence.
+
+## G-028 — Mobile 401 refresh/retry (GAP / OPEN)
+
+- **Finding:** mobile API client has no refresh-token exchange or single-retry path for HTTP 401.
+- **Dependency:** D-018 leaves refresh-token rotation policy explicitly undecided; implementation must not invent rotation/reuse-detection semantics.
+- **Required action:** after the refresh policy is explicitly decided, implement mobile refresh/retry and add replay/expiry runtime evidence.
+- **Status:** GAP / OPEN.
+
 ## G-029 — Web token persistence uses localStorage (SECURITY GAP — OPEN)
 
 - **Source finding (2026-09-24):** mvp/apps/web/src/lib/auth/store.ts persists both accessToken and refreshToken in window.localStorage under pol.auth.
