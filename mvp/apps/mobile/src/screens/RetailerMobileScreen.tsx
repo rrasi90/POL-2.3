@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
-import { colors, spacing } from "../theme";
+import { spacing, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 
 type Product = {
@@ -47,6 +47,7 @@ function keyV4(): string {
   });
 }
 export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNER" | "RETAILER_STAFF">; onOpenOrder: (orderId: string) => void }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   const [tab, setTab] = useState<"catalog" | "basket" | "orders" | "vendors" | "support" | "finance">("catalog");
   const [q, setQ] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
@@ -311,11 +312,13 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
     </Screen>
   );
 }
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   tabs: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap", marginBottom: spacing.md },
   row: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
   h2: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 4 },
   body: { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
   meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18 },
   metric: { color: colors.text, fontSize: 20, fontWeight: "700", marginVertical: spacing.sm },
-});
+  });
+}
