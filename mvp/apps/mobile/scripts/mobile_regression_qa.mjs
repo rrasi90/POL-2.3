@@ -33,6 +33,14 @@ const checks = [
     return s.includes("!subject.trim()") && s.includes("!message.trim()");
   }],
   ["Ops privileged audit surface remains ADMIN_SUPER-only", () => read("screens/OpsMobileScreen.tsx").includes('props.role === "ADMIN_SUPER"')],
+  ["Mobile logout revokes the current server session before clearing local auth", () => {
+    const api = read("api.ts");
+    const account = read("screens/AccountMobileScreen.tsx");
+    const app = readMobile("App.tsx");
+    return api.includes("DELETE") && api.includes("/api/v1/auth/sessions/current") === false &&
+      api.includes("delete: <T>") && account.includes("/api/v1/auth/sessions/current") &&
+      account.includes("setToken(null)") && app.includes("onLogout()");
+  }],
   ["Shared account uses real profile/notification preference endpoints", () => {
     const s = read("screens/AccountMobileScreen.tsx");
     return s.includes("/api/v1/notifications/preferences") && s.includes("api.put");
