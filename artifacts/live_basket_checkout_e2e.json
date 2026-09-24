@@ -1,0 +1,106 @@
+{
+  "passed": 16,
+  "failed": 0,
+  "results": [
+    {
+      "name": "healthz",
+      "status": 200,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "request_otp",
+      "status": 200,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "verify_otp",
+      "status": 200,
+      "ok": true,
+      "detail": "token_len=393"
+    },
+    {
+      "name": "profile_context",
+      "status": 200,
+      "ok": true,
+      "detail": "org=None"
+    },
+    {
+      "name": "catalog_search",
+      "status": 200,
+      "ok": true,
+      "detail": "n=1"
+    },
+    {
+      "name": "pick_product",
+      "status": 200,
+      "ok": true,
+      "detail": "product_id=4750bf3f-ef5f-414f-8a73-ae76a02fa83d"
+    },
+    {
+      "name": "basket_create",
+      "status": 201,
+      "ok": true,
+      "detail": "basket=9b628b66-6748-46be-aa11-b499ceba459b v=1"
+    },
+    {
+      "name": "basket_add_item",
+      "status": 200,
+      "ok": true,
+      "detail": "v=2 "
+    },
+    {
+      "name": "allocation_preview",
+      "status": 200,
+      "ok": true,
+      "detail": "plan=35965405-c51c-47d9-a87c-c517b9eccee1 vendors=1 total=1200000"
+    },
+    {
+      "name": "checkout",
+      "status": 201,
+      "ok": true,
+      "detail": "group=7fbc775e-106e-46dd-b95e-90b92a34347c children=1"
+    },
+    {
+      "name": "order_group_get",
+      "status": 200,
+      "ok": true,
+      "detail": "status=ACTIVE"
+    },
+    {
+      "name": "order_group_children",
+      "status": 200,
+      "ok": true,
+      "detail": "n=2"
+    },
+    {
+      "name": "order_detail",
+      "status": 200,
+      "ok": true,
+      "detail": "status=SUBMITTED"
+    },
+    {
+      "name": "order_items",
+      "status": 200,
+      "ok": true,
+      "detail": "n=2"
+    },
+    {
+      "name": "order_timeline",
+      "status": 200,
+      "ok": true,
+      "detail": "events=2"
+    },
+    {
+      "name": "orders_list",
+      "status": 200,
+      "ok": true,
+      "detail": "n=obj"
+    }
+  ],
+  "order_id": "476828f6-4dc9-4039-9761-9c1dca5f98a4",
+  "group_id": "7fbc775e-106e-46dd-b95e-90b92a34347c",
+  "plan_id": "35965405-c51c-47d9-a87c-c517b9eccee1",
+  "basket_id": "9b628b66-6748-46be-aa11-b499ceba459b"
+}

@@ -1,0 +1,93 @@
+{
+  "passed": 12,
+  "failed": 0,
+  "results": [
+    {
+      "name": "healthz",
+      "status": 200,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "request_otp",
+      "status": 200,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "verify_otp",
+      "status": 200,
+      "ok": true,
+      "detail": "token_len=393"
+    },
+    {
+      "name": "catalog_search",
+      "status": 200,
+      "ok": true,
+      "detail": "n=1"
+    },
+    {
+      "name": "basket_create",
+      "status": 201,
+      "ok": true,
+      "detail": "basket=dce93441-fe26-4582-8568-3cd65bc26a20"
+    },
+    {
+      "name": "basket_add_item",
+      "status": 200,
+      "ok": true,
+      "detail": "v=2"
+    },
+    {
+      "name": "allocation_preview",
+      "status": 200,
+      "ok": true,
+      "detail": "plan=ee515da2-ca29-48aa-9235-2495a5d7e3e0"
+    },
+    {
+      "name": "first_request",
+      "status": 201,
+      "ok": true,
+      "detail": "group=0efa5422-a698-4a42-9b3e-c3da1c01d820 children=1 idempotent_replay=False"
+    },
+    {
+      "name": "exact_replay",
+      "status": 201,
+      "ok": true,
+      "detail": "group=0efa5422-a698-4a42-9b3e-c3da1c01d820 idempotent_replay=True"
+    },
+    {
+      "name": "different_payload_same_key",
+      "status": 422,
+      "ok": true,
+      "detail": "rejected=True group=None err=INVALID_REQUEST"
+    },
+    {
+      "name": "duplicate_db_check",
+      "status": 200,
+      "ok": true,
+      "detail": "order_groups_with_key=1"
+    },
+    {
+      "name": "no_new_group_after_conflict",
+      "status": 200,
+      "ok": true,
+      "detail": "groups=1"
+    }
+  ],
+  "basket_id": "dce93441-fe26-4582-8568-3cd65bc26a20",
+  "allocation_plan_id": "ee515da2-ca29-48aa-9235-2495a5d7e3e0",
+  "order_group_id": "0efa5422-a698-4a42-9b3e-c3da1c01d820",
+  "child_order_ids": [
+    "5d962740-63ff-431d-b010-29bd3acc208f"
+  ],
+  "vendor_ids": [
+    "22184ef0-3781-42f8-9806-a595a8aa9361"
+  ],
+  "idempotency_key": "7c8066ec-11e9-4acc-8cd1-c21592044ced",
+  "FIRST REQUEST": "PASS",
+  "EXACT REPLAY": "PASS",
+  "DIFFERENT PAYLOAD SAME KEY": "PASS",
+  "DUPLICATE DB CHECK": "PASS",
+  "NO NEW GROUP AFTER CONFLICT": "PASS"
+}

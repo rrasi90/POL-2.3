@@ -30,3 +30,19 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 - Required checks currently wired: mobile typecheck + Expo config validation + Android export.
 - CI cycle 1 is evidenced by run `35884012647`. Functional/state-transition/parity QA cycle 2 is evidenced by run `35886815013` with **23/23 deterministic checks passing**; this remains contract/state coverage rather than device-level exploratory QA. Regression/cross-module QA cycle 3 is evidenced by run `35893284378` with **11/11 checks passing**, plus typecheck, Expo config validation and Android export. Visual Night verification remains a separate local gate.
 - Status must remain IMPLEMENTED until the corresponding CI/evidence row is recorded.
+
+## Local device notes (LOCAL-04, 2026-09-24, pre-remediation build)
+
+Run against APK `com.anonymous.polmobile` on emulator-5554 (AVD `POL_API_Emulator`) at commit `e7e6464`, **before** the G-023…G-026 source remediation batch:
+
+- Light theme PASS (`#F7F9FC` field list / assisted order / login).
+- Night FAIL under system `uimode night yes` (G-025 at the time).
+- Login requires E.164 `+989160007777`; raw `09160007777` rejected (G-026 at the time).
+- Session survives app restart.
+- F-01 empty state PASS; F-03 open PASS; back navigation PASS.
+- F-03 initial `GET /catalog/search?limit=40` without `q` → 422 (G-023); `q=Alpha` → 200 but UI showed `—` for `canonical_name_fa`/`master_sku` (G-024).
+- F-05 offline banner not observed under airplane mode without a failed fetch.
+
+Screenshots: `artifacts/screenshots/local01_*`, `local04_*`. Full run detail: `mvp/LOCAL_EXECUTION_TRACKER.md`.
+
+**Retest required** on the post-remediation build (remote G-023…G-026 = SOURCE REMEDIATED / LOCAL RETEST REQUIRED).

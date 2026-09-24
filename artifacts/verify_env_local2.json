@@ -1,0 +1,163 @@
+﻿{
+  "status": "PASS",
+  "all_passed": true,
+  "checks": {
+    "python_version": {
+      "check": "python_version",
+      "passed": true,
+      "detail": "3.11.15",
+      "requirement": ">= 3.11"
+    },
+    "python_dependencies": {
+      "check": "python_dependencies",
+      "passed": true,
+      "installed": {
+        "psycopg2": "2.9.13 (dt dec pq3 ext lo64)",
+        "pytest": "9.1.1"
+      },
+      "missing": []
+    },
+    "migration_files": {
+      "check": "migration_files",
+      "passed": true,
+      "directory": "C:\\Star\\pol\\2.4\\migrations",
+      "files": {
+        "001_initial_schema.sql": {
+          "exists": true,
+          "size_bytes": 32989
+        },
+        "002_platform_core_schema.sql": {
+          "exists": true,
+          "size_bytes": 16853
+        },
+        "003_contract_reconciliation.sql": {
+          "exists": true,
+          "size_bytes": 7102
+        },
+        "004_operational_intelligence.sql": {
+          "exists": true,
+          "size_bytes": 7654
+        },
+        "005_competitive_operational_hardening.sql": {
+          "exists": true,
+          "size_bytes": 13255
+        },
+        "006_temporal_price_transition.sql": {
+          "exists": true,
+          "size_bytes": 2077
+        },
+        "007_vendor_price_close_transition.sql": {
+          "exists": true,
+          "size_bytes": 1318
+        },
+        "008_integration_delivery_contract.sql": {
+          "exists": true,
+          "size_bytes": 6953
+        },
+        "009_canonical_operational_responsibility_and_notification_delivery.sql": {
+          "exists": true,
+          "size_bytes": 6992
+        },
+        "010_daily_confirmation_scheduler_contract.sql": {
+          "exists": true,
+          "size_bytes": 1420
+        },
+        "011_application_boundary_rma_reconciliation_provider_hardening.sql": {
+          "exists": true,
+          "size_bytes": 7684
+        },
+        "012_canonical_route_templates.sql": {
+          "exists": true,
+          "size_bytes": 598
+        },
+        "013_vendor_referral_mvp_and_integrity_fixes.sql": {
+          "exists": true,
+          "size_bytes": 3412
+        },
+        "014_vendor_inventory_responsibility_creation_guard.sql": {
+          "exists": true,
+          "size_bytes": 2326
+        },
+        "015_vendor_inventory_responsibility_unconditional_on_vendor_owner.sql": {
+          "exists": true,
+          "size_bytes": 2208
+        },
+        "016_daily_inventory_routing_exception_ledger.sql": {
+          "exists": true,
+          "size_bytes": 943
+        },
+        "017_canonical_user_profiles_and_persona_context.sql": {
+          "exists": true,
+          "size_bytes": 11298
+        },
+        "018_membership_profile_role_transition_guard.sql": {
+          "exists": true,
+          "size_bytes": 3700
+        },
+        "019_rma_refund_state_integrity.sql": {
+          "exists": true,
+          "size_bytes": 668
+        },
+        "020_repository_integrity_hardening.sql": {
+          "exists": true,
+          "size_bytes": 2963
+        },
+        "021_cross_entity_runtime_integrity.sql": {
+          "exists": true,
+          "size_bytes": 4400
+        },
+        "022_tenant_ownership_integrity.sql": {
+          "exists": true,
+          "size_bytes": 1938
+        },
+        "023_compatibility_and_tenant_guard_refinement.sql": {
+          "exists": true,
+          "size_bytes": 3732
+        },
+        "024_runtime_bug_fixes_and_audit_guards.sql": {
+          "exists": true,
+          "size_bytes": 1682
+        },
+        "025_refund_amount_and_order_group_template.sql": {
+          "exists": true,
+          "size_bytes": 705
+        },
+        "026_auth_otp_rate_limit_and_lockout.sql": {
+          "exists": true,
+          "size_bytes": 912
+        },
+        "027_partial_acceptance_two_party_contract.sql": {
+          "exists": true,
+          "size_bytes": 2858
+        },
+        "028_vendor_acceptance_timeout_canonical.sql": {
+          "exists": true,
+          "size_bytes": 1874
+        },
+        "029_order_timeline_events.sql": {
+          "exists": true,
+          "size_bytes": 1038
+        },
+        "030_delivery_otp_column.sql": {
+          "exists": true,
+          "size_bytes": 451
+        },
+        "031_delivery_exceptions.sql": {
+          "exists": true,
+          "size_bytes": 2383
+        }
+      }
+    },
+    "postgres_runtime": {
+      "check": "postgres_runtime",
+      "passed": true,
+      "connected_port": 5432,
+      "pg_version_raw": "PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35227, 64-bit",
+      "is_postgres_18": true,
+      "table_count": 95,
+      "expected_table_count": 95,
+      "missing_core_tables": [],
+      "trigger_verified": true
+    }
+  }
+}

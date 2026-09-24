@@ -5,9 +5,9 @@
 
 **Repository:** `rrasi90/POL-2.3`  
 **Branch:** `main`  
-**Last repository-verified commit:** `5494420ff350385a3d96fc1a7d63a95216a7aa8a` (latest main HEAD verified remotely)  
-**Code under verification:** `f8ef267e6666a03b483afdd8618585ed82086014`  
-**Latest main HEAD:** `5494420ff350385a3d96fc1a7d63a95216a7aa8a`
+**Latest main HEAD:** `723f346402cf0fbb7ef9af3a0c46fa6e299d5cd2` (verified locally 2026-09-24)  
+**Local verification baseline (pre-remediation device run):** `e7e6464730b7c1cec1ffbed2302da0b87e9e9f7e`  
+**Code under remediation verification:** `62870503e36a6f2c95929862f839e8bd8258e894` (mobile CI 35987850765)
 
 ---
 
@@ -36,111 +36,62 @@ Evidence:
 These require a running local environment/device/emulator and therefore cannot be honestly marked PASS from repository inspection alone.
 
 ### LOCAL-01 — Night Theme Visual Verification
-**STATUS: OPEN / LOCAL REQUIRED**
+**STATUS: LIGHT PASS / NIGHT FAIL (pre-remediation) — NIGHT RETEST REQUIRED (post-remediation)**
 
-What is already implemented:
-- `mvp/apps/mobile/src/theme.ts` contains independent `light` and `night` palettes.
-- Screens consume the centralized `colors.*` tokens.
-- No screen-by-screen visual evidence has yet been recorded.
-- Current `App.tsx` does not expose an end-user Light/Night toggle; `setThemeMode()` exists but is not currently wired into the app navigation/UI.
+Evidence (local run 2026-09-24 on `e7e6464` build):
+- Light: PASS — field list / assisted order / login bg `#F7F9FC`; screenshots `artifacts/screenshots/local01_light_*`, `local01_day_restored*`.
+- Night: FAIL on that build — system `cmd uimode night yes` did not change app colors (`artifacts/screenshots/local01_night_system_mode*.png`). Pre-remediation `theme.ts` was effectively light-only in runtime styles and `app.json` had `userInterfaceStyle: "light"`.
+- After source remediation (G-025): runtime Light/Night context + Account controls + `userInterfaceStyle: "automatic"`. **Full screen-by-screen Night visual gate still OPEN on the updated build** — CI does not replace device visual evidence.
 
-Local work:
-1. Start the Expo mobile app.
-2. Verify every applicable mobile screen in **Light** mode.
-3. Verify every applicable mobile screen in **Night** mode.
-4. Check:
-   - background/surface contrast
-   - primary/secondary/muted text contrast
-   - borders/dividers
-   - warning/success/danger states
-   - inputs and buttons
-   - empty/error/loading states
-   - scrolling content
-   - RTL/Farsi readability
-   - status bar/readability
-5. If Night mode needs an app-level toggle to make the visual gate executable, wire it without introducing a second theme system.
-6. Record screenshots or another reproducible visual evidence set.
-7. Report the result back for repository reconciliation.
-
-**Do not mark PASS merely because `theme.ts` contains a Night palette.**
+Do not mark Night PASS merely because a Night palette exists.
 
 ---
 
 ### LOCAL-02 — Live Basket → Allocation → Checkout → Order E2E
-**STATUS: OPEN / LOCAL API + DB REQUIRED**
+**STATUS: PASS 16/16 (2026-09-24)**
 
 Canonical flow:
 `Search → Product → Basket → Allocation Preview → Checkout → Order Group → Child Orders → Order Detail`
 
-Required environment:
-- PostgreSQL 18 with the canonical `pol` schema.
-- FastAPI on `:8000`.
-- Valid authenticated retailer session/token.
-- At least one product/vendor combination with allocatable inventory.
-
-Authoritative routes:
-- `GET /api/v1/catalog/search`
-- `POST /api/v1/baskets`
-- `POST /api/v1/baskets/{basket_id}/items`
-- `POST /api/v1/baskets/{basket_id}/allocation-preview`
-- `POST /api/v1/orders`
-- `GET /api/v1/orders`
-- `GET /api/v1/orders/{order_id}`
-- `GET /api/v1/orders/{order_id}/timeline`
-
-Checkout requirements:
-- `Idempotency-Key` must be UUIDv4.
-- Checkout payload must contain the authoritative allocation plan and delivery address.
-- Do not bypass `CanonicalCheckoutGateway`.
-
-Acceptance evidence:
-- Basket created.
-- Basket item added.
-- Allocation plan created.
-- Checkout returns an order group.
-- Child vendor orders exist.
-- Order list contains the resulting order(s).
-- Order detail/timeline resolves.
-- No duplicate order group is created by the normal request.
+Evidence:
+- `artifacts/live_basket_checkout_e2e.py` EXIT 0 → `artifacts/live_basket_checkout_e2e.json`
+- Order group `f7650c36-e925-48cf-96bd-facaf905ec94`; child orders `SUBMITTED`; timeline events = 2
+- Environment: API `:8000` healthz/readyz 200; PostgreSQL 18 `pol` 95 tables; Idempotency-Key UUIDv4; CanonicalCheckoutGateway not bypassed
+- Local run note: vendor MOV seed adjusted (test data only) so allocation was reachable
 
 ---
 
 ### LOCAL-03 — Checkout Idempotency Replay
-**STATUS: OPEN / LOCAL API + DB REQUIRED**
+**STATUS: PASS 12/12 (2026-09-24)**
 
-Use the **same**:
-- authenticated retailer
-- allocation plan
-- checkout payload
-- exact same UUIDv4 `Idempotency-Key`
-
-Expected behavior:
-1. First request creates the order group.
-2. Exact replay with the same key returns the existing checkout result.
-3. Replay must indicate `idempotent_replay: true` where exposed by the response contract.
-4. Database must not contain a second order group for that idempotency key.
-5. Reusing the same key with a materially different checkout payload must be rejected.
-
-Canonical implementation authority:
-`scripts/checkout_gateway.py`
+Evidence:
+- `artifacts/local03_idempotency_e2e.py` EXIT 0 → `artifacts/local03_idempotency_e2e.json`
+- First request 201 `idempotent_replay=false` → group `aff14467-0bf1-4c7d-85ed-6d58ca2590ef`
+- Exact replay same key 201 same group `idempotent_replay=true`
+- Same key + different payload → 422 `INVALID_REQUEST`
+- DB `order_groups` rows for that key = **1**
+- Canonical implementation authority: `scripts/checkout_gateway.py` (fingerprint persisted; API restarted after gateway change)
 
 ---
 
 ### LOCAL-04 — Device-level mobile smoke
-**STATUS: OPEN / RECOMMENDED**
+**STATUS: PARTIAL PASS (2026-09-24, pre-remediation build) — RETEST REQUIRED (post-remediation)**
 
-After the Night gate:
-- Launch the exported/buildable mobile app on emulator or physical Android device.
-- Verify login → role workspace.
-- Verify retailer catalog → basket → allocation → checkout.
-- Verify vendor order lifecycle.
-- Verify Ops surfaces.
-- Verify Field task flow.
-- Verify account/notification preferences.
-- Verify order detail.
-- Verify back navigation and error states.
+Environment: emulator-5554 (`POL_API_Emulator`), APK `com.anonymous.polmobile` via `expo prebuild` + `gradlew assembleDebug`, Metro `:8081` CI mode, adb reverse 8000/8081.
 
-This is exploratory/device-level evidence and is distinct from deterministic CI QA.
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Install / launch | PASS | adb install Success; `local01_boot_01*` |
+| Login OTP `+989160007777` / `1234` | PASS | `local04_success*`; raw `09160007777` failed (G-026 at the time) |
+| Session persists restart | PASS | force-stop + relaunch stays on field list |
+| F-01 empty | PASS | `local01_light_field_list*` |
+| F-03 open | PASS | `local04_f03_open*` |
+| F-03 without `q` | FAIL (G-023 pre-fix) | 422 `Request validation failed.` |
+| F-03 `q=Alpha` mapping | PARTIAL (G-024 pre-fix) | API 200; UI `—` for `canonical_name_fa`/`master_sku` |
+| F-05 offline banner | NOT OBSERVED | airplane mode; banner only after failed healthz fetch |
+| Back nav F-03 → list | PASS | `local04_back_list_final*` |
+
+Post-remediation retest still required for G-023…G-026 (see §7).
 
 ---
 
@@ -190,12 +141,12 @@ Latest backend evidence:
 
 ## 5. Execution order from here
 
-1. **LOCAL-01** — Night visual verification.
-2. **LOCAL-02** — live basket → allocation → checkout → order E2E.
-3. **LOCAL-03** — checkout idempotency replay.
-4. **LOCAL-04** — device-level mobile smoke.
+1. ~~**LOCAL-02**~~ **DONE** — live basket → allocation → checkout → order E2E (16/16).
+2. ~~**LOCAL-03**~~ **DONE** — checkout idempotency replay (12/12).
+3. **LOCAL-01 Night** — screen-by-screen visual on **post-remediation** build (runtime theme + Account toggle).
+4. **LOCAL-04 retest** — device smoke on **post-remediation** build (G-023…G-026).
 5. Assistant re-checks evidence and reconciles repository documents.
-6. Final global regression.
+6. Final global regression (local suite already **497/497** on pre-remediation tree — re-run after any source merge).
 7. Final Delivery DoD audit.
 
 **Important:** Completing a local item does not itself close the stage. The assistant must verify the reported evidence and update the authoritative project documents.
@@ -241,3 +192,22 @@ Verification evidence after source changes:
 - Typecheck, Expo config validation, and Android export: PASS.
 
 LOCAL-01 Night and LOCAL-04 device smoke still require a fresh install/retest of the updated build; CI does not replace device visual evidence.
+
+---
+
+## 8. Local verification evidence — 2026-09-24 (pre-remediation baseline)
+
+Recorded on `e7e6464` before applying stash → pull to `723f346`. Stash kept as backup: `local-verification-before-723f346`.
+
+| Gate | Result | Artifact |
+|------|--------|----------|
+| Environment verify | PASS | `artifacts/verify_env_local3.json` |
+| Full suite | **497/497 PASSED** 165.05s EXIT 0 | `artifacts/pol-test-results.json`, `artifacts/suite_final.log` |
+| LOCAL-02 | PASS 16/16 | `artifacts/live_basket_checkout_e2e.{py,json}` |
+| LOCAL-03 | PASS 12/12 | `artifacts/local03_idempotency_e2e.{py,json}` |
+| LOCAL-01 | LIGHT PASS / NIGHT FAIL | `artifacts/screenshots/local01_*` |
+| LOCAL-04 | PARTIAL PASS | `artifacts/screenshots/local04_*` |
+| Mobile typecheck / expo config / expo export | EXIT 0 | local session logs |
+| qa:functional / qa:regression | **not run on this baseline** (scripts absent at `e7e6464`; present on `723f346`) | — |
+
+Environment (local Windows): Windows 11; Node v24.18.0 / npm 12.0.1; Python 3.11.15; Git 2.55; PostgreSQL 18.4 service `postgresql-x64-18` (`pol` + `pol_test` 95 tables); JAVA_HOME Android Studio JBR; Android SDK platform-tools 37.0.1, platforms 35+36, build-tools 35+36, NDK 27.1.12297006, emulator 37.1.11; AVD `POL_API_Emulator` (Pixel 6, API 35); API `:8000` via `artifacts/start_api.bat`.
