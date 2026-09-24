@@ -11,6 +11,7 @@
 ## 1. Phases done
 
 | Phase | Name | Status | Evidence |
+| 0 | Deep Saturation Reconciliation | **COMPLETED / CONTROL ADDED** | `MVP_DEEP_SATURATION_AUDIT_2026-09-24.md`, `CROSS_CUTTING_STATE_ACTION_MATRIX.md`, current CI green on merged commit `23976ac` |
 |-------|------|--------|----------|
 | 0 | Discovery & Artifacts | **DONE** | `MVP_SCREEN_MATRIX.md`, `MVP_API_MAP.md`, `MVP_KNOWN_GAPS.md`, BUILD GATE 0 checklist |
 | 1 | Foundation + Design System | **DONE** | packages typecheck/build green; tokens Light+Night; shell + middleware role gates |
@@ -37,7 +38,7 @@
 | Phase 4 remaining | Live basket POST → allocation → checkout → order lifecycle e2e | **OPEN** | click-through when ready |
 | WAVE-02 | OpenPencil MCP design board | **BLOCKED_EXTERNAL** | start OpenPencil app (B-02) |
 
-**Resolved this wave:** G-001, G-002, G-005, G-014?, G-022 (delivery OTP → D-018 4-digit end-to-end).
+**Resolved in current reconciliation:** G-001, G-002, G-005, G-022, G-023, G-024, G-025, G-026 (device/local retest PASS on 2026-09-24), plus mobile logout source remediation and API security-header/CORS hardening on audit branch merged as commit `23976ac`.
 
 **Web screen coverage (cycle 5 baseline):** 68 total — **40 IMPLEMENTED / 19 VERIFIED / 8 GAP / 1 N/A / 0 PENDING**.
 
