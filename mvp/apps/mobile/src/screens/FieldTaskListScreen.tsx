@@ -3,7 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
-import { colors, spacing } from "../theme";
+import { spacing, useThemedStyles, type Palette } from "../theme";
 import type { FieldTask } from "../types";
 
 const statusLabel: Record<string, string> = {
@@ -37,6 +37,7 @@ function itemsOf(data: unknown): FieldTask[] {
 
 /** F-01 today/task list + F-03 assisted-order entry + F-05 offline banner. */
 export function FieldTaskListScreen(props: {
+  const styles = useThemedStyles(makeStyles);
   onOpenTask: (id: string) => void;
   onAssistedOrder: () => void;
 }): React.ReactNode {
@@ -121,11 +122,13 @@ export function FieldTaskListScreen(props: {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   actions: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md, flexWrap: "wrap" },
   section: { fontSize: 15, fontWeight: "600", color: colors.text, marginBottom: spacing.sm },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" },
   type: { fontSize: 13, color: colors.textSecondary, flexShrink: 1 },
   notes: { fontSize: 13, color: colors.textSecondary, marginTop: spacing.sm, lineHeight: 20 },
   meta: { fontSize: 11, color: colors.textMuted, marginTop: spacing.xs },
-});
+  });
+}
