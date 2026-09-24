@@ -5,8 +5,8 @@
 
 **Repository:** `rrasi90/POL-2.3`  
 **Branch:** `main`  
-**Latest main HEAD:** `723f346402cf0fbb7ef9af3a0c46fa6e299d5cd2` (verified locally 2026-09-24)  
-**Local verification baseline (pre-remediation device run):** `e7e6464730b7c1cec1ffbed2302da0b87e9e9f7e`  
+**Latest main HEAD:** `723f346402cf0fbb7ef9af3a0c46fa6e299d5cd2` (verified locally 2026-09-24)
+**Local verification baseline (pre-remediation device run):** `e7e6464730b7c1cec1ffbed2302da0b87e9e9f7e`
 **Code under remediation verification:** `62870503e36a6f2c95929862f839e8bd8258e894` (mobile CI 35987850765)
 
 ---
@@ -36,14 +36,15 @@ Evidence:
 These require a running local environment/device/emulator and therefore cannot be honestly marked PASS from repository inspection alone.
 
 ### LOCAL-01 — Night Theme Visual Verification
-**STATUS: LIGHT PASS / NIGHT FAIL (pre-remediation) — NIGHT RETEST REQUIRED (post-remediation)**
+**STATUS: PASS (post-remediation retest 2026-09-24)**
 
-Evidence (local run 2026-09-24 on `e7e6464` build):
-- Light: PASS — field list / assisted order / login bg `#F7F9FC`; screenshots `artifacts/screenshots/local01_light_*`, `local01_day_restored*`.
-- Night: FAIL on that build — system `cmd uimode night yes` did not change app colors (`artifacts/screenshots/local01_night_system_mode*.png`). Pre-remediation `theme.ts` was effectively light-only in runtime styles and `app.json` had `userInterfaceStyle: "light"`.
-- After source remediation (G-025): runtime Light/Night context + Account controls + `userInterfaceStyle: "automatic"`. **Full screen-by-screen Night visual gate still OPEN on the updated build** — CI does not replace device visual evidence.
+Evidence (post-remediation build, emulator-5554, Account theme toggle):
+- Light: PASS — `پوسته نمایش: روشن`, center RGB (255,255,255), avgBrightness 240.9 → `artifacts/screenshots/retest_local01_light.png`.
+- Night: PASS — `پوسته نمایش: شب`, bg RGB (15,20,28)=`#0F141C`, avgBrightness 41.6 → `artifacts/screenshots/retest_local01_night.png`.
+- Toggle path: حساب → تنظیمات → روشن/شب (`AccountMobileScreen.tsx`).
+- G-025 verified on the same run (`retest_g025_account*.png`, `retest_g025_theme_screen.png`).
 
-Do not mark Night PASS merely because a Night palette exists.
+Pre-remediation baseline (`e7e6464`): Light PASS / Night FAIL under system `uimode night only` — superseded by this retest.
 
 ---
 
@@ -75,23 +76,27 @@ Evidence:
 ---
 
 ### LOCAL-04 — Device-level mobile smoke
-**STATUS: PARTIAL PASS (2026-09-24, pre-remediation build) — RETEST REQUIRED (post-remediation)**
+**STATUS: PASS (post-remediation retest 2026-09-24)**
 
-Environment: emulator-5554 (`POL_API_Emulator`), APK `com.anonymous.polmobile` via `expo prebuild` + `gradlew assembleDebug`, Metro `:8081` CI mode, adb reverse 8000/8081.
+Environment: emulator-5554 (`POL_API_Emulator`), rebuilt debug APK `com.anonymous.polmobile` (`app-debug.apk` 135,989,353 bytes, installed post-remediation), Metro `:8081` (`--host lan`, workspace `mvp/apps/mobile`), adb reverse 8000/8081, API `:8000` with `POL_JWT_SECRET`.
 
 | Check | Result | Evidence |
 |-------|--------|----------|
-| Install / launch | PASS | adb install Success; `local01_boot_01*` |
-| Login OTP `+989160007777` / `1234` | PASS | `local04_success*`; raw `09160007777` failed (G-026 at the time) |
-| Session persists restart | PASS | force-stop + relaunch stays on field list |
-| F-01 empty | PASS | `local01_light_field_list*` |
-| F-03 open | PASS | `local04_f03_open*` |
-| F-03 without `q` | FAIL (G-023 pre-fix) | 422 `Request validation failed.` |
-| F-03 `q=Alpha` mapping | PARTIAL (G-024 pre-fix) | API 200; UI `—` for `canonical_name_fa`/`master_sku` |
-| F-05 offline banner | NOT OBSERVED | airplane mode; banner only after failed healthz fetch |
-| Back nav F-03 → list | PASS | `local04_back_list_final*` |
+| Install / launch | PASS | adb install + launch; `retest_00_boot.png`, `retest_boot2.png` |
+| G-026 local phone → E.164 | PASS | typed `09160007777` → OTP stored `+989160007777\|VERIFIED`; `retest_g026_typed.png`, `retest_g026_after_send.png`, `retest_g026_logged_in.png` |
+| Login OTP verify (retailer) | PASS | role `RETAILER_OWNER` on device; HTTP verify-otp `data.access_token` |
+| FIELD_ACTIVATOR login | PASS | `+989160009999` / `1234` → field home; `retest_field_phone_typed.png`, `retest_field_logged_in.png`, `retest_field_home.png` |
+| Session persists restart | PASS | force-stop + relaunch stays authenticated |
+| LOCAL-01 / G-025 Night toggle | PASS | Account روشن/شب; `#0F141C` vs `#FFFFFF`; `retest_local01_night.png`, `retest_local01_light.png` |
+| F-01 field task list | PASS | 2× `FIRST_ORDER_ASSIST` tasks; `retest_field_home.png` |
+| F-03 open | PASS | `retest_g023_assisted_open.png` |
+| G-023 F-03 empty `q` | PASS | client guard: error `عبارت جستجو الزامی است.` + empty state; **no 422, no `/catalog/search` call**; `retest_g023_empty_search.png`, `retest_ui_g023.xml` |
+| G-024 F-03 name mapping | PASS | `q=SKU-ALPHA-LIVE` → UI `Alpha Live Product` + SKU (not `—`); `retest_g024_product.png`, `retest_ui_g024_result.xml` |
+| Catalog HTTP (authed) | PASS | `GET /api/v1/catalog/search?q=SKU-ALPHA-LIVE` → 200 `canonical_name_fa=Alpha Live Product` |
+| Back nav F-03 → list | PASS | بازگشت → field task list |
+| F-05 offline banner | NOT OBSERVED | not required for this retest gate |
 
-Post-remediation retest still required for G-023…G-026 (see §7).
+G-023…G-026 retest complete on the post-remediation build.
 
 ---
 
@@ -143,9 +148,9 @@ Latest backend evidence:
 
 1. ~~**LOCAL-02**~~ **DONE** — live basket → allocation → checkout → order E2E (16/16).
 2. ~~**LOCAL-03**~~ **DONE** — checkout idempotency replay (12/12).
-3. **LOCAL-01 Night** — screen-by-screen visual on **post-remediation** build (runtime theme + Account toggle).
-4. **LOCAL-04 retest** — device smoke on **post-remediation** build (G-023…G-026).
-5. Assistant re-checks evidence and reconciles repository documents.
+3. ~~**LOCAL-01 Night**~~ **DONE** — PASS on post-remediation build (runtime theme + Account toggle; see §2 LOCAL-01).
+4. ~~**LOCAL-04 retest**~~ **DONE** — PASS on post-remediation build (G-023…G-026; see §2 LOCAL-04).
+5. ~~Assistant re-checks evidence and reconciles repository documents.~~ **DONE** — retest evidence recorded in this commit.
 6. Final global regression (local suite already **497/497** on pre-remediation tree — re-run after any source merge).
 7. Final Delivery DoD audit.
 
@@ -191,11 +196,31 @@ Verification evidence after source changes:
 - Regression/cross-module QA: 15/15.
 - Typecheck, Expo config validation, and Android export: PASS.
 
-LOCAL-01 Night and LOCAL-04 device smoke still require a fresh install/retest of the updated build; CI does not replace device visual evidence.
+LOCAL-01 Night and LOCAL-04 device smoke: **RETESTED PASS 2026-09-24** on the rebuilt APK (see §2). CI does not replace device visual evidence; device evidence is now recorded.
 
 ---
 
-## 8. Local verification evidence — 2026-09-24 (pre-remediation baseline)
+## 8. Post-remediation device retest — 2026-09-24
+
+Build: debug APK rebuilt after stash→pull→reapply; Metro virtual-entry bundle verified (`toE164`, G-023 guard, ThemeProvider, accountButton present).
+
+| Gate | Pre-remediation | Post-remediation retest | Key evidence |
+|------|-----------------|-------------------------|--------------|
+| LOCAL-01 Night | FAIL | **PASS** | `retest_local01_night.png` `#0F141C`; `retest_local01_light.png` `#FFFFFF` |
+| G-023 empty F-03 search | FAIL (422) | **PASS** (client guard, no API call) | `retest_g023_empty_search.png`, `retest_ui_g023.xml` |
+| G-024 name mapping | PARTIAL (`—`) | **PASS** (`Alpha Live Product`) | `retest_g024_product.png`, `retest_ui_g024_result.xml` |
+| G-025 theme toggle | FAIL | **PASS** (Account روشن/شب) | `retest_g025_theme_screen.png`, `retest_local01_*` |
+| G-026 local phone → E.164 | FAIL | **PASS** (`09160007777` → `+989160007777`) | `retest_g026_typed.png`, OTP row VERIFIED |
+
+Environment notes for this run:
+- API started with `POL_JWT_SECRET` (`artifacts/start_api_retest.bat` pattern); healthz/readyz 200.
+- Catalog search requires bearer token (401 without); authed retailer/field OTP verify returns `data.access_token`.
+- Metro monorepo: working bundle URL `/.expo/.virtual-metro-entry.bundle?platform=android&dev=true&minify=false`.
+- Stash `stash@{0}: local-verification-before-723f346` retained as backup (never popped).
+
+---
+
+## 9. Local verification evidence — 2026-09-24 (pre-remediation baseline)
 
 Recorded on `e7e6464` before applying stash → pull to `723f346`. Stash kept as backup: `local-verification-before-723f346`.
 

@@ -45,4 +45,21 @@ Run against APK `com.anonymous.polmobile` on emulator-5554 (AVD `POL_API_Emulato
 
 Screenshots: `artifacts/screenshots/local01_*`, `local04_*`. Full run detail: `mvp/LOCAL_EXECUTION_TRACKER.md`.
 
-**Retest required** on the post-remediation build (remote G-023…G-026 = SOURCE REMEDIATED / LOCAL RETEST REQUIRED).
+**Retest completed** on the post-remediation build (2026-09-24) — see section below.
+
+## Local device retest (post-remediation, 2026-09-24)
+
+Run against rebuilt debug APK `com.anonymous.polmobile` on emulator-5554 after source remediation G-023…G-026:
+
+- Light theme PASS (Account toggle روشن; white center `#FFFFFF`).
+- Night theme PASS (Account toggle شب; bg `#0F141C`) — G-025 closed on device.
+- Login accepts local `09160007777` / `09160009999`; backend stores E.164 `+989160007777` / `+989160009999` — G-026 closed.
+- FIELD_ACTIVATOR device login PASS; F-01 task list shows seeded `FIRST_ORDER_ASSIST` tasks.
+- F-03 open PASS; back navigation PASS.
+- F-03 empty search: client-side guard shows `عبارت جستجو الزامی است.` + empty state; **no 422 and no catalog request** — G-023 closed.
+- F-03 `q=SKU-ALPHA-LIVE`: UI renders `Alpha Live Product` (+ SKU line), not `—` — G-024 closed.
+- Session survives app restart.
+
+Screenshots: `artifacts/screenshots/retest_*`. UI dumps: `artifacts/retest_ui_g023.xml`, `retest_ui_g024_result.xml`. Full run detail: `mvp/LOCAL_EXECUTION_TRACKER.md` §2 and §8.
+
+Remote status for G-023…G-026: **SOURCE REMEDIATED / LOCAL RETEST PASS**.
