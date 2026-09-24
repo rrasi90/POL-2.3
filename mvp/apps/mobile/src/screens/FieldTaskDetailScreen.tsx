@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text } from "react-native";
 import { api } from "../api";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { Btn, Card, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
-import { colors, spacing } from "../theme";
+import { spacing, useThemedStyles, type Palette } from "../theme";
 import type { FieldTask } from "../types";
 
 const statusLabel: Record<string, string> = {
@@ -21,6 +21,7 @@ const statusOptions = ["", "PENDING", "IN_PROGRESS", "ASSIGNED", "COMPLETED", "C
 
 /** F-02 activation detail + F-04 follow-up notes/status PATCH. */
 export function FieldTaskDetailScreen(props: { taskId: string; onBack: () => void }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   const [task, setTask] = useState<FieldTask | null>(null);
   const [status, setStatus] = useState("");
   const [notes, setNotes] = useState("");
@@ -122,11 +123,13 @@ export function FieldTaskDetailScreen(props: { taskId: string; onBack: () => voi
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   saved: { color: colors.success, fontSize: 13, marginBottom: spacing.sm },
   type: { fontSize: 14, color: colors.text, marginTop: spacing.sm, fontWeight: "600" },
   meta: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
   h2: { fontSize: 15, fontWeight: "600", color: colors.text },
   hint: { fontSize: 11, color: colors.textMuted, marginTop: 4, marginBottom: spacing.md },
   textarea: { minHeight: 96, textAlignVertical: "top" },
-});
+  });
+}
