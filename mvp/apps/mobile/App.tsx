@@ -11,10 +11,20 @@ import { OpsMobileScreen } from "./src/screens/OpsMobileScreen";
 import { OrderDetailMobileScreen } from "./src/screens/OrderDetailMobileScreen";
 import { RetailerMobileScreen } from "./src/screens/RetailerMobileScreen";
 import { VendorMobileScreen } from "./src/screens/VendorMobileScreen";
-import { colors } from "./src/theme";
+import { ThemeProvider, useTheme, useThemedStyles } from "./src/theme";
 import type { Role, Route } from "./src/types";
 
 export default function App(): React.ReactNode {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+function AppContent(): React.ReactNode {
+  const { mode } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [route, setRoute] = useState<Route>({ name: "login" });
   const [role, setRole] = useState<Role | null>(null);
   const [booted, setBooted] = useState(false);
@@ -43,7 +53,7 @@ export default function App(): React.ReactNode {
     return (
       <SafeAreaView style={styles.root}>
         <LoginScreen onAuthed={onAuthed} />
-        <StatusBar style="dark" />
+        <StatusBar style={mode === "night" ? "light" : "dark"} />
       </SafeAreaView>
     );
   }
@@ -105,9 +115,10 @@ export default function App(): React.ReactNode {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+function makeStyles(colors: { bg: string; surface: string; border: string; text: string }) {
+  return StyleSheet.create({  root: { flex: 1, backgroundColor: colors.bg },
   accountBar: { backgroundColor: colors.bg, paddingHorizontal: 12, paddingTop: 6 },
   accountButton: { alignSelf: "flex-start", borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   accountText: { color: colors.text, fontSize: 11, fontWeight: "600" },
-});
+  });
+}
