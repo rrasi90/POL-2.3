@@ -16,9 +16,9 @@
 | 0 | Discovery & Artifacts | **DONE** | `MVP_SCREEN_MATRIX.md`, `MVP_API_MAP.md`, `MVP_KNOWN_GAPS.md`, BUILD GATE 0 checklist |
 | 1 | Foundation + Design System | **DONE** | packages typecheck/build green; tokens Light+Night; shell + middleware role gates |
 | 2 | Web MVP | **DONE (impl + partial e2e)** | 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
-| 3 | Android MVP (Expo) | **IN PROGRESS** | Supported parity is implemented and mobile QA Cycles 1–3 are evidenced. Cycle 3 closed on run `35893284378`: typecheck, functional QA 23/23, regression QA 11/11, Expo config validation and Android export all SUCCESS. Remaining: unsupported contracts/barcode D-028, Night visual verification, and final live checkout gates. |
-| 4 | Global QA + Regression | **CURRENT CI GREEN / FINAL E2E OPEN** | Backend run `35893284312` SUCCESS and Mobile run `35893284378` SUCCESS on commit `f8ef267e`. Live basket→allocation→checkout→order E2E + idempotency replay remain open. |
-| 5 | Delivery + Final Audit | **REOPENED** | Phase 3 mobile verification is now through Cycle 3; delivery remains open for Night visual verification, live checkout/idempotency E2E, and final reconciliation. |
+| 3 | Android MVP (Expo) | **CLOSED for supported scope** | Mobile QA Cycles 1–3 green; local device retest LOCAL-04 PASS; LOCAL-01 Night PASS. Remaining only unsupported D-028/barcode contract. |
+| 4 | Global QA + Regression | **CLOSED for executable gates** | Current-main backend run `36008777666` SUCCESS; mobile run `36008777681` SUCCESS. LOCAL-02 live checkout 16/16 and LOCAL-03 idempotency 12/12 are recorded in `mvp/LOCAL_EXECUTION_TRACKER.md`. |
+| 5 | Delivery + Final Audit | **CURRENT / FINAL RECONCILIATION** | LOCAL-01/02/03/04 are PASS; current-main CI is green. Remaining closure items are policy/contract gaps and external blockers, not the core checkout execution gates. |
 
 ---
 
@@ -36,8 +36,8 @@
 | OP-11 | Delegated permissions | **GAP** | no permission-list HTTP |
 | Refresh-token rotation | Stage 10 policy | **OPEN** | do not invent |
 | Invoice timing | on ACCEPTED default | **OPEN** | confirm before finance e2e |
-| Phase 3 remaining | Barcode D-028/unsupported contracts; Night visual verification | **OPEN** | mobile QA Cycles 1–3 are green; execute remaining visual/contract gates |
-| Phase 4 remaining | Live basket POST → allocation → checkout → order lifecycle e2e | **OPEN** | click-through when ready |
+| Phase 3 remaining | Barcode D-028/unsupported contracts | **OPEN** | D-028 remains GAP/CONTRACT; no runtime adapter invented |
+| Phase 4 remaining | Live basket POST → allocation → checkout → order lifecycle e2e | **RESOLVED** | LOCAL-02 PASS 16/16; current-main CI also green |
 | WAVE-02 | OpenPencil MCP design board | **BLOCKED_EXTERNAL** | start OpenPencil app (B-02) |
 
 **Resolved in current reconciliation:** G-001, G-002, G-005, G-022, G-023, G-024, G-025, G-026 (device/local retest PASS on 2026-09-24), plus mobile logout source remediation and API security-header/CORS hardening on audit branch merged as commit `23976ac`.
@@ -117,9 +117,9 @@ No other external blockers claimed.
 
 ---
 
-## 8. Current audit state — 2026-09-23
+## 8. Current audit state — 2026-09-24
 
-The repository has been re-audited against the remaining execution gates. Documentation status has been reconciled so that historical green evidence is not treated as current verification. Current `main` CI is now re-verified after PR #8. Mobile QA Cycles 1–3 are now evidenced by current CI: Cycle 1 run `35884012647`; Cycle 2 run `35886815013` with **23/23 deterministic checks PASS**; Cycle 3 run `35893284378` with **11/11 regression checks PASS**, plus typecheck, Expo config validation and Android export green. Backend verification on the same current commit is run `35893284312` SUCCESS. Remaining executable gates are Night visual verification, live basket → allocation → checkout → order lifecycle E2E, and checkout idempotency replay. V-09/V-11 and D-028 remain GAP/CONTRACT where authoritative HTTP contracts are absent. OpenPencil WAVE-02 remains BLOCKED_EXTERNAL if MCP `:7600` is unavailable.
+The repository has been re-audited against the remaining execution gates. Documentation status has been reconciled so that historical green evidence is not treated as current verification. Current `main` CI is now re-verified after PR #8. Mobile QA Cycles 1–3 are now evidenced by current CI: Cycle 1 run `35884012647`; Cycle 2 run `35886815013` with **23/23 deterministic checks PASS**; Cycle 3 run `35893284378` with **11/11 regression checks PASS**, plus typecheck, Expo config validation and Android export green. Backend verification on the same current commit is run `35893284312` SUCCESS. LOCAL-01 Night visual verification, LOCAL-02 live checkout E2E, LOCAL-03 idempotency replay, and LOCAL-04 device smoke are now evidenced PASS on 2026-09-24. Remaining closure items are D-028/barcode contract, V-09/V-11 missing authoritative HTTP, refresh-token rotation policy, invoice timing, G-029 browser credential architecture, and OpenPencil WAVE-02 external availability. V-09/V-11 and D-028 remain GAP/CONTRACT where authoritative HTTP contracts are absent. OpenPencil WAVE-02 remains BLOCKED_EXTERNAL if MCP `:7600` is unavailable.
 
 Current main verification: backend run `36008777666` SUCCESS and mobile run `36008777681` SUCCESS on `dbcfb9a974af53772a461db4e3f64afef70350e1`.
 
@@ -135,4 +135,4 @@ Current main verification: backend run `36008777666` SUCCESS and mobile run `360
 
 ---
 
-*Phase 5 delivery artifacts remain open because Night visual verification, live basket→checkout/order lifecycle evidence, idempotency replay, and final reconciliation are not yet evidenced. G-030 CORS transport hardening is now closed by current-main CI evidence. Mobile QA Cycle 3 and current backend verification are green on commit `f8ef267e`.*
+*Phase 5 delivery artifacts are in final reconciliation. LOCAL-01/02/03/04 are PASS; current-main CI is green. Remaining items are explicit policy/contract/external blockers and must not be silently invented. G-030 CORS transport hardening is now closed by current-main CI evidence. Mobile QA Cycle 3 and current backend verification are green on commit `f8ef267e`.*
