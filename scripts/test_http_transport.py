@@ -90,6 +90,16 @@ def _cleanup(phone, user_id):
         conn.close()
 
 
+def test_security_headers_present(client):
+    response = client.get("/healthz")
+    assert response.status_code == 200
+    assert response.headers.get("X-Content-Type-Options") == "nosniff"
+    assert response.headers.get("X-Frame-Options") == "DENY"
+    assert response.headers.get("Referrer-Policy") == "no-referrer"
+    assert response.headers.get("Permissions-Policy") == "camera=(), microphone=(), geolocation=()"
+    assert response.headers.get("X-Correlation-ID")
+
+
 def test_health_and_readiness(client):
     response = client.get("/healthz")
     assert response.status_code == 200
