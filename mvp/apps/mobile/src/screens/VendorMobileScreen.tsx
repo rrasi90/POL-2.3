@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
-import { colors, spacing } from "../theme";
+import { spacing, useThemedStyles, type Palette } from "../theme";
 
 type Order = { id: string; order_number?: string | null; order_status?: string | null; total_amount_toman?: number | string | null };
 type Inv = { id: string; vendor_product_id?: string | null; product_name?: string | null; stock_quantity?: number | null; available_quantity?: number | null; reserved_quantity?: number | null };
@@ -24,6 +24,7 @@ function money(v: number | string | null | undefined): string {
   return Number.isFinite(n) ? n.toLocaleString("fa-IR") + " تومان" : "—";
 }
 export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" | "VENDOR_STAFF">; onOpenOrder: (orderId: string) => void }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   const [tab, setTab] = useState<"orders" | "inventory" | "daily" | "settlements" | "finance" | "referrals">("orders");
   const [orders, setOrders] = useState<Order[]>([]);
   const [inventory, setInventory] = useState<Inv[]>([]);
@@ -134,6 +135,7 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
   );
 }
 function InventoryEditor(props: { row: Inv; onSave: (row: Inv, raw: string) => Promise<void> }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   const [value, setValue] = useState(String(props.row.stock_quantity ?? 0));
   useEffect(() => setValue(String(props.row.stock_quantity ?? 0)), [props.row.stock_quantity]);
   return (
@@ -148,10 +150,12 @@ function InventoryEditor(props: { row: Inv; onSave: (row: Inv, raw: string) => P
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   tabs: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
   row: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
   h2: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 4 },
   meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18 },
   metric: { color: colors.text, fontSize: 20, fontWeight: "700", marginVertical: spacing.sm },
-});
+  });
+}
