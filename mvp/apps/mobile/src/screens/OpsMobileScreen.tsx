@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
-import { colors, spacing } from "../theme";
+import { spacing, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 
 type Dash = { delivery_exceptions?: { open_count?: number; escalated_count?: number }; disputes?: { open_disputes?: number }; support_cases?: { open_cases?: number } };
@@ -21,6 +21,7 @@ function list<T>(data: unknown, keys: string[]): T[] {
 function money(v: number | string | null | undefined): string { const n = Number(v); return Number.isFinite(n) ? n.toLocaleString("fa-IR") + " تومان" : "—"; }
 
 export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMIN_SUPER"> }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   const [tab, setTab] = useState<"overview" | "recon" | "audit" | "support" | "notifications">("overview");
   const [dash, setDash] = useState<Dash | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -77,9 +78,11 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
     </Screen>
   );
 }
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   note: { color: colors.textSecondary, fontSize: 12, lineHeight: 18, marginBottom: spacing.md },
   h2: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 4 },
   meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18 },
   metric: { color: colors.text, fontSize: 20, fontWeight: "700", marginVertical: spacing.sm },
-});
+  });
+}
