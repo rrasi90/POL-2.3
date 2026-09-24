@@ -193,8 +193,8 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Do not:** silently migrate to another browser storage mechanism and call it secure.
 - **Status:** GAP / OPEN.
 
-## G-030 — Browser-to-API CORS policy was not previously explicit (SOURCE REMEDIATED)
+## G-030 — Browser-to-API CORS policy was not previously explicit (RESOLVED)
 
 - **Finding:** web API client uses a separate API base origin while FastAPI had no explicit CORS policy in the audited transport source.
 - **Source remediation (2026-09-24):** FastAPI now applies environment-scoped CORS with explicit local development origins, requires POL_CORS_ORIGINS in production, forbids wildcard production CORS, and has a transport test for allowed/blocked origins.
-- **Status:** SOURCE REMEDIATED / CI VERIFICATION REQUIRED.
+- **Status:** RESOLVED — current `main` CI verified on 2026-09-24 (backend verification run `36008777666`; mobile verification run `36008777681`).
