@@ -138,11 +138,10 @@ Class: GAP / P1, dependent on auth policy.
 The audited mobile API client sends the bearer token but does not implement the web client's documented refresh-and-single-retry lifecycle.
 Required closure: after the existing refresh-token-rotation decision is closed, implement the canonical mobile lifecycle.
 
-### DSA-003 — Mobile explicit logout/revocation surface is absent
-Class: GAP / P1.
-The audited Account screen has profile, notifications, preferences and theme controls, but no logout/revoke-session action.
-Backend session revocation contracts already exist.
-Required closure: implement after auth policy reconciliation.
+### DSA-003 — Mobile explicit logout/revocation surface was absent; source remediation applied
+Class: IMPLEMENTED / UNVERIFIED.
+The audited Account screen initially had no logout/revoke-session action. A source remediation was applied on this audit branch: the mobile API client now exposes DELETE /api/v1/auth/sessions/current, Account exposes an explicit خروج از حساب action, and App returns to the login route after successful revocation.
+Required closure: fresh mobile typecheck + functional regression + device logout/revocation test.
 
 ### DSA-004 — Cross-cutting state coverage must become an executable matrix
 Class: GOVERNANCE GAP / P1.
