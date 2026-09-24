@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24  
 **Branch:** `main`  
-**Report baseline:** `3e657a4a39880317a0c82938158c4c99d33e8600`  
+**Report baseline:** current `main` = `dbcfb9a974af53772a461db4e3f64afef70350e1` (2026-09-24)  
 **Report policy:** this is a living delivery report; do not store a mutable "current HEAD" claim here. Repository HEAD is authoritative via Git.  
 **Authority:** `DECISION_REGISTER.md` (D-001…D-028) → CURRENT_SOURCE_OF_TRUTH → `BUILD_PLAN.md` → module evidence  
 
@@ -31,7 +31,7 @@
 | G-007/008/009/010/011/012/013/015/017/019/020/021 | Ops/admin/staff/customers/analytics/permissions/basket-list/RMA-global/partial-acceptance-list/corporate-anon missing HTTP | **GAP** | shells only; no fake CRUD; wait for backend or keep GAP |
 | G-006 | Corporate routes proposed (not in route map) | **PROPOSED-G006** | static marketing screens |
 | G-029 | Web token persistence in localStorage | **GAP / OPEN** | browser credential architecture required before production |
-| G-030 | Browser-to-API CORS policy | **SOURCE REMEDIATED / VERIFY** | environment-scoped CORS + transport test merged in `23976ac` |
+| G-030 | Browser-to-API CORS policy | **RESOLVED** | environment-scoped CORS + transport tests; current main backend CI run `36008777666` SUCCESS |
 | D-024 | Storefront write fields | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
 | OP-11 | Delegated permissions | **GAP** | no permission-list HTTP |
 | Refresh-token rotation | Stage 10 policy | **OPEN** | do not invent |
@@ -119,9 +119,9 @@ No other external blockers claimed.
 
 ## 8. Current audit state — 2026-09-23
 
-The repository has been re-audited against the remaining execution gates. Documentation status has been reconciled so that historical green evidence is not treated as current verification. Mobile QA Cycles 1–3 are now evidenced by current CI: Cycle 1 run `35884012647`; Cycle 2 run `35886815013` with **23/23 deterministic checks PASS**; Cycle 3 run `35893284378` with **11/11 regression checks PASS**, plus typecheck, Expo config validation and Android export green. Backend verification on the same current commit is run `35893284312` SUCCESS. Remaining executable gates are Night visual verification, live basket → allocation → checkout → order lifecycle E2E, and checkout idempotency replay. V-09/V-11 and D-028 remain GAP/CONTRACT where authoritative HTTP contracts are absent. OpenPencil WAVE-02 remains BLOCKED_EXTERNAL if MCP `:7600` is unavailable.
+The repository has been re-audited against the remaining execution gates. Documentation status has been reconciled so that historical green evidence is not treated as current verification. Current `main` CI is now re-verified after PR #8. Mobile QA Cycles 1–3 are now evidenced by current CI: Cycle 1 run `35884012647`; Cycle 2 run `35886815013` with **23/23 deterministic checks PASS**; Cycle 3 run `35893284378` with **11/11 regression checks PASS**, plus typecheck, Expo config validation and Android export green. Backend verification on the same current commit is run `35893284312` SUCCESS. Remaining executable gates are Night visual verification, live basket → allocation → checkout → order lifecycle E2E, and checkout idempotency replay. V-09/V-11 and D-028 remain GAP/CONTRACT where authoritative HTTP contracts are absent. OpenPencil WAVE-02 remains BLOCKED_EXTERNAL if MCP `:7600` is unavailable.
 
-No current test/build result is claimed from this audit because the available GitHub integration can modify/read repository content but does not provide a local project runtime for executing the commands.
+Current main verification: backend run `36008777666` SUCCESS and mobile run `36008777681` SUCCESS on `dbcfb9a974af53772a461db4e3f64afef70350e1`.
 
 ## 9. Historical commits (delivery batch)
 
@@ -135,4 +135,4 @@ No current test/build result is claimed from this audit because the available Gi
 
 ---
 
-*Phase 5 delivery artifacts remain open because Night visual verification, live basket→checkout/order lifecycle evidence, idempotency replay, and final reconciliation are not yet evidenced. Mobile QA Cycle 3 and current backend verification are green on commit `f8ef267e`.*
+*Phase 5 delivery artifacts remain open because Night visual verification, live basket→checkout/order lifecycle evidence, idempotency replay, and final reconciliation are not yet evidenced. G-030 CORS transport hardening is now closed by current-main CI evidence. Mobile QA Cycle 3 and current backend verification are green on commit `f8ef267e`.*
