@@ -1,6 +1,6 @@
 # POL MVP — Phase 5 Delivery Report
 
-**Date:** 2026-09-23  
+**Date:** 2026-09-24  
 **Branch:** `main`  
 **Report baseline:** `3e657a4a39880317a0c82938158c4c99d33e8600`  
 **Report policy:** this is a living delivery report; do not store a mutable "current HEAD" claim here. Repository HEAD is authoritative via Git.  
@@ -32,7 +32,7 @@
 | G-006 | Corporate routes proposed (not in route map) | **PROPOSED-G006** | static marketing screens |
 | G-029 | Web token persistence in localStorage | **GAP / OPEN** | browser credential architecture required before production |
 | G-030 | Browser-to-API CORS policy | **SOURCE REMEDIATED / VERIFY** | environment-scoped CORS + transport test merged in `23976ac` |
-| Storefront write fields (D-024) | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
+| D-024 | Storefront write fields | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
 | OP-11 | Delegated permissions | **GAP** | no permission-list HTTP |
 | Refresh-token rotation | Stage 10 policy | **OPEN** | do not invent |
 | Invoice timing | on ACCEPTED default | **OPEN** | confirm before finance e2e |
