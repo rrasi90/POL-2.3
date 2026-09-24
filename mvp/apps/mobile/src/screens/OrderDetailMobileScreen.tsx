@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
-import { colors, spacing } from "../theme";
+import { spacing, useThemedStyles, type Palette } from "../theme";
 import type { Role } from "../types";
 
 type Mode = "retailer" | "vendor";
@@ -62,6 +62,7 @@ function money(v: number | string | null | undefined): string {
 }
 
 export function OrderDetailMobileScreen(props: {
+  const styles = useThemedStyles(makeStyles);
   mode: Mode;
   role: Role;
   orderId: string;
@@ -297,7 +298,8 @@ export function OrderDetailMobileScreen(props: {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   item: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, marginTop: spacing.sm },
@@ -305,4 +307,5 @@ const styles = StyleSheet.create({
   body: { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
   meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18 },
   metric: { color: colors.text, fontSize: 20, fontWeight: "700", marginVertical: spacing.sm },
-});
+  });
+}
