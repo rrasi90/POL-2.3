@@ -3,15 +3,21 @@ import { FlatList, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
-import { colors, spacing } from "../theme";
+import { spacing, useThemedStyles, type Palette } from "../theme";
 import { getToken } from "../api";
 
 interface CatalogItem {
   id?: string;
-  sku?: string;
-  name?: string;
-  title?: string;
-  price_toman?: number;
+  master_sku?: string | null;
+  canonical_name_fa?: string | null;
+  brand_name?: string | null;
+  base_unit?: string | null;
+  default_pack_unit?: string | null;
+  default_pack_quantity?: number | null;
+  sku?: string | null;
+  name?: string | null;
+  title?: string | null;
+  price_toman?: number | null;
 }
 
 function itemsOf(data: unknown): CatalogItem[] {
@@ -30,6 +36,7 @@ function itemsOf(data: unknown): CatalogItem[] {
  * Basket/checkout remains retailer web flows (D-014 multi-vendor).
  */
 export function AssistedOrderScreen(props: { onBack: () => void }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +48,12 @@ export function AssistedOrderScreen(props: { onBack: () => void }): React.ReactN
     setError(null);
     try {
       const q = query.trim();
-      const path = q
-        ? `/api/v1/catalog/search?q=${encodeURIComponent(q)}&limit=40`
-        : "/api/v1/catalog/search?limit=40";
-      const data = await api.get<unknown>(path);
+      // The authoritative catalog route requires q; never issue a contract-invalid empty search.
+      if (!q) {
+        setItems([]);
+        return;
+      }
+      const data = await api.get<unknown>(`/api/v1/catalog/search?q=${encodeURIComponent(q)}&limit=40`);
       setItems(itemsOf(data));
     } catch (err) {
       setError(err instanceof Error ? err.message : "دریافت کاتالوگ ناموفق بود");
@@ -78,7 +87,18 @@ export function AssistedOrderScreen(props: { onBack: () => void }): React.ReactN
         autoCapitalize="none"
       />
       <View style={styles.actions}>
-        <Btn label="جستجو" onPress={() => void load()} loading={loading} />
+        <Btn
+          label="جستجو"
+          onPress={() => {
+            if (!query.trim()) {
+              setError("عبارت جستجو الزامی است.");
+              setItems([]);
+              return;
+            }
+            void load();
+          }}
+          loading={loading}
+        />
       </View>
       {items.length === 0 ? (
         <Empty title="کالایی یافت نشد" description="عبارت دیگری امتحان کنید یا آفلاین را بررسی کنید." />
@@ -90,13 +110,13 @@ export function AssistedOrderScreen(props: { onBack: () => void }): React.ReactN
             <Card>
               <View style={styles.row}>
                 <Text style={styles.name} numberOfLines={2}>
-                  {item.name ?? item.title ?? item.sku ?? "—"}
+                  {item.canonical_name_fa ?? item.name ?? item.title ?? item.master_sku ?? item.sku ?? "—"}
                 </Text>
                 {item.price_toman != null ? (
                   <StatusChip label={`${item.price_toman.toLocaleString("fa-IR")} تومان`} tone="info" />
                 ) : null}
               </View>
-              {item.sku ? (
+              {(item.master_sku ?? item.sku) ? (
                 <Text style={styles.sku} numberOfLines={1}>
                   {item.sku}
                 </Text>
@@ -109,10 +129,12 @@ export function AssistedOrderScreen(props: { onBack: () => void }): React.ReactN
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   actions: { marginBottom: spacing.md },
   note: { fontSize: 13, color: colors.textSecondary, lineHeight: 20 },
   row: { flexDirection: "row", gap: spacing.sm, alignItems: "flex-start", justifyContent: "space-between" },
   name: { flex: 1, fontSize: 14, color: colors.text, fontWeight: "500" },
   sku: { fontSize: 11, color: colors.textMuted, marginTop: 4, direction: "ltr" },
-});
+  });
+}
