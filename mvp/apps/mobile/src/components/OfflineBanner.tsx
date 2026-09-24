@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { healthz, isOnline, subscribeOnline } from "../api";
-import { colors, spacing } from "../theme";
+import { spacing, useThemedStyles, type Palette } from "../theme";
 
 export function OfflineBanner(): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
   const [online, setOnline] = useState(isOnline());
 
-  useEffect(() => subscribeOnline(setOnline), []);
+  useEffect(() => {
+    const unsubscribe = subscribeOnline(setOnline);
+    // Capture a state transition that may occur before the subscription effect runs.
+    setOnline(isOnline());
+    return unsubscribe;
+  }, []);
 
   if (online) return null;
 
@@ -23,7 +29,8 @@ export function OfflineBanner(): React.ReactNode {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
   banner: {
     backgroundColor: colors.warningBg,
     borderColor: colors.warning,
@@ -43,4 +50,5 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs + 2,
   },
   retryText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-});
+  });
+}
