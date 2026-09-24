@@ -40,6 +40,17 @@ const checks = [
   ["Vendor exposes referral attribution against REAL referrals API", () => read("screens/VendorMobileScreen.tsx").includes("/api/v1/referrals") && read("screens/VendorMobileScreen.tsx").includes('tab === "referrals"')],
   ["Shared account exposes REAL notification preferences GET/PUT", () => { const s = read("screens/AccountMobileScreen.tsx"); return s.includes("/api/v1/notifications/preferences") && s.includes("api.put"); }],
   ["Ops exposes REAL support and notification read surfaces", () => { const s = read("screens/OpsMobileScreen.tsx"); return s.includes("SupportMobileScreen") && s.includes("/api/v1/notifications"); }],
+  ["Field assisted order never calls catalog without the required q parameter", () => read("screens/AssistedOrderScreen.tsx").includes("if (!q) {") && !read("screens/AssistedOrderScreen.tsx").includes('/api/v1/catalog/search?limit=40')],
+  ["Field assisted order maps canonical catalog product fields", () => { const s = read("screens/AssistedOrderScreen.tsx"); return s.includes("canonical_name_fa") && s.includes("master_sku"); }],
+  ["Offline banner reconciles the current online state after subscribing", () => read("components/OfflineBanner.tsx").includes("setOnline(isOnline())")],
+  ["Mobile theme has runtime provider and explicit Light/Night controls", () => {
+    const theme = read("theme.ts");
+    const app = readMobile("App.tsx");
+    const account = read("screens/AccountMobileScreen.tsx");
+    return theme.includes("ThemeProvider") && app.includes("<ThemeProvider>") && account.includes('setMode("night")') && account.includes('setMode("light")');
+  }],
+  ["Login normalizes local Iranian numbers to E.164 before auth", () => { const s = read("screens/LoginScreen.tsx"); return s.includes("toE164") && s.includes("mobileNumber"); }],
+
 ];
 
 let failed = 0;
