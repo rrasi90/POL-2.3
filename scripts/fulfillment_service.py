@@ -542,8 +542,7 @@ def transition_delivery_stage(cur, *, user_id, organization_id, order_id, target
             UPDATE deliveries
             SET delivery_status='FAILED',
                 failed_at=COALESCE(failed_at, now()),
-                failed_reason=%s,
-                updated_at=now()
+                failed_reason=%s
             WHERE id=%s
             RETURNING *
             """,
@@ -554,8 +553,7 @@ def transition_delivery_stage(cur, *, user_id, organization_id, order_id, target
             f"""
             UPDATE deliveries
             SET delivery_status=%s,
-                {timestamp_field}=COALESCE({timestamp_field}, now()),
-                updated_at=now()
+                {timestamp_field}=COALESCE({timestamp_field}, now())
             WHERE id=%s
             RETURNING *
             """,
