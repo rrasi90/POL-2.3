@@ -10,7 +10,6 @@ from scripts.api.db import get_db_cursor
 from scripts.application_boundary import ApplicationContext, POLApplicationBoundary
 from scripts.auth_application import AuthApplicationService
 from scripts.auth_boundary import AuthError
-from scripts.domain_services import AuthService
 
 
 def get_bearer_token(authorization: str | None = Header(default=None)) -> str:
@@ -62,7 +61,7 @@ def require_roles(*allowed_roles: str):
         cur=Depends(get_db_cursor),
         context: ApplicationContext = Depends(get_application_context),
     ) -> dict:
-        return AuthService.authorize_action(
+        return AuthApplicationService.authorize_action(
             cur, context.user_id, context.organization_id, list(allowed_roles)
         )
 
