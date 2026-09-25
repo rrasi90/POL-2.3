@@ -118,7 +118,7 @@ def test_refund_rejects_cross_order_payment_lineage(postgres_database, checkout_
         with transaction(postgres_database) as cur:
             order_a, _ = _order_and_item_ids(cur, checkout_result)
             cur.execute(
-                "SELECT id, order_id, retailer_id, vendor_id FROM orders WHERE id <> %s ORDER BY id LIMIT 1",
+                "SELECT id, retailer_id, vendor_id FROM orders WHERE id <> %s ORDER BY id LIMIT 1",
                 (order_a["id"],),
             )
             order_b = cur.fetchone()
