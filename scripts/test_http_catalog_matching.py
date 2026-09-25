@@ -112,11 +112,11 @@ def _seed_vendor_catalog(cur, suffix: str):
 def test_exact_barcode_match_uses_canonical_identifier():
     conn = _db()
     client = TestClient(app)
-    suffix = uuid4().hex[:8]
+    data = None
     try:
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                data = _seed_vendor_catalog(cur, suffix)
+                data = _seed_vendor_catalog(cur, uuid4().hex[:8])
         response = client.get(
             "/api/v1/catalog/barcode/lookup",
             params={"barcode": data["barcode"]},
@@ -131,11 +131,16 @@ def test_exact_barcode_match_uses_canonical_identifier():
     finally:
         with conn:
             with conn.cursor() as cur:
-                cur.execute("DELETE FROM user_sessions WHERE id=%s", (data["session_id"],) if "data" in locals() else (str(uuid4()),))
-                if "product_id" in locals():
+                if data:
                     cur.execute("DELETE FROM product_identifiers WHERE product_id=%s", (data["product_id"],))
+                    cur.execute("DELETE FROM vendor_inventory WHERE vendor_product_id=%s", (data["vendor_product_id"],))
+                    cur.execute("DELETE FROM vendor_prices WHERE vendor_product_id=%s", (data["vendor_product_id"],))
+                    cur.execute("DELETE FROM vendor_products WHERE id=%s", (data["vendor_product_id"],))
                     cur.execute("DELETE FROM products WHERE id=%s", (data["product_id"],))
-                    cur.execute("DELETE FROM subcategories WHERE category_id IN (SELECT category_id FROM subcategories WHERE id=%s)", (str(uuid4()),))
+                    cur.execute("DELETE FROM subcategories WHERE id=%s", (data["subcategory_id"],))
+                    cur.execute("DELETE FROM categories WHERE id=%s", (data["category_id"],))
+                    cur.execute("DELETE FROM brands WHERE id=%s", (data["brand_id"],))
+                    cur.execute("DELETE FROM user_sessions WHERE user_id=%s", (data["user_id"],))
                     cur.execute("DELETE FROM organization_memberships WHERE user_id=%s", (data["user_id"],))
                     cur.execute("DELETE FROM vendors WHERE id=%s", (data["vendor_id"],))
                     cur.execute("DELETE FROM users WHERE id=%s", (data["user_id"],))
@@ -143,33 +148,16 @@ def test_exact_barcode_match_uses_canonical_identifier():
         conn.close()
 
 
+
 def test_unknown_barcode_creates_quarantined_candidate_idempotently():
     conn = _db()
     client = TestClient(app)
     suffix = uuid4().hex[:8]
     data = None
-    category_id = None
-    subcategory_id = None
-    brand_id = None
-    product_id = None
     try:
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 data = _seed_vendor_catalog(cur, suffix)
-                brand_id, category_id, subcategory_id = str(uuid4()), str(uuid4()), str(uuid4())
-                product_id = str(uuid4())
-                cur.execute(
-                    "INSERT INTO brands (id,name_fa,slug) VALUES (%s,%s,%s)",
-                    (brand_id, "Unknown Brand " + suffix, "unknown-brand-" + suffix),
-                )
-                cur.execute(
-                    "INSERT INTO categories (id,name_fa,slug) VALUES (%s,%s,%s)",
-                    (category_id, "Unknown Category " + suffix, "unknown-cat-" + suffix),
-                )
-                cur.execute(
-                    "INSERT INTO subcategories (id,category_id,name_fa,slug) VALUES (%s,%s,%s,%s)",
-                    (subcategory_id, category_id, "Unknown Sub " + suffix, "unknown-sub-" + suffix),
-                )
                 unknown = "626999" + str(uuid4().int % 1000000000).zfill(9)
                 if len(unknown) > 13:
                     unknown = unknown[:13]
