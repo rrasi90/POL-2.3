@@ -55,7 +55,10 @@ BEGIN
     FROM invoices WHERE id=v_invoice_id;
 
     IF v_actual IS NULL THEN
-        RETURN COALESCE(NEW, OLD);
+        IF TG_OP = 'DELETE' THEN
+            RETURN OLD;
+        END IF;
+        RETURN NEW;
     END IF;
 
     SELECT COALESCE(SUM(total_line_amount),0)
@@ -69,9 +72,12 @@ BEGIN
             USING ERRCODE='23514';
     END IF;
 
-    RETURN COALESCE(NEW, OLD);
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    END IF;
+    RETURN NEW;
 END;
-$$;
+$;
 
 DROP TRIGGER IF EXISTS trg_invoice_items_total_v037 ON invoice_items;
 CREATE CONSTRAINT TRIGGER trg_invoice_items_total_v037
