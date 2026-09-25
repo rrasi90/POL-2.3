@@ -329,6 +329,24 @@ def verify_foreign_keys_and_indexes(conn):
     assert "is_active = true" in idx_s[1].lower(), f"Expected is_active = true partial index, got {idx_s[1]}"
     print(" - uq_active_support_assignment partial unique index verified")
 
+    # Check partial unique index for pending vendor barcode candidates (migration 046)
+    cur.execute("""
+        SELECT indexname, indexdef
+        FROM pg_indexes
+        WHERE tablename = 'product_candidates'
+          AND indexname = 'uq_product_candidates_pending_vendor_barcode';
+    """)
+    idx_c = cur.fetchone()
+    assert idx_c is not None, "uq_product_candidates_pending_vendor_barcode index missing"
+    idx_c_def = idx_c[1].lower()
+    assert "vendor_id" in idx_c_def and "barcode" in idx_c_def, (
+        f"Expected vendor_id+barcode candidate guard, got: {idx_c[1]}"
+    )
+    assert "status = 'pending_review'" in idx_c_def, (
+        f"Expected PENDING_REVIEW predicate, got: {idx_c[1]}"
+    )
+    print(" - pending vendor barcode concurrency index verified")
+
     # Check organization_id columns on retailers and vendors
     cur.execute("""
         SELECT column_name FROM information_schema.columns 
