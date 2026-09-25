@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response
@@ -20,6 +21,25 @@ from scripts.auth_application import AuthApplicationService
 from scripts.operational_config import OTP_RESEND_INTERVAL_SECONDS, OTP_TTL_SECONDS
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _is_production_environment() -> bool:
+    return (
+        os.environ.get("ENVIRONMENT", "").lower() in {"prod", "production"}
+        or os.environ.get("POL_ENV", "").lower() in {"prod", "production"}
+    )
+
+
+def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
+    response.set_cookie(
+        "pol_refresh",
+        refresh_token,
+        max_age=30 * 24 * 60 * 60,
+        httponly=True,
+        secure=not (os.environ.get("ENVIRONMENT", "").lower() == "test"),
+        samesite="lax",
+        path="/api/v1/auth",
+    )
 
 
 @router.post("/request-otp")
@@ -49,15 +69,7 @@ def verify_otp(payload: VerifyOTPRequest, response: Response, cur=Depends(get_db
     )
     refresh_token = result.get("refresh_token")
     if refresh_token and payload.client_platform == "web":
-        response.set_cookie(
-            "pol_refresh",
-            refresh_token,
-            max_age=30 * 24 * 60 * 60,
-            httponly=True,
-            secure=False if __import__("os").environ.get("ENVIRONMENT", "development") == "test" else True,
-            samesite="lax",
-            path="/api/v1/auth",
-        )
+        _set_refresh_cookie(response, refresh_token)
     if payload.client_platform == "web":
         result = {key: value for key, value in result.items() if key != "refresh_token"}
     return success_payload(result)
@@ -72,15 +84,7 @@ def refresh(request: Request, response: Response, payload: RefreshTokenRequest |
     result = AuthApplicationService.refresh(cur, refresh_token)
     next_refresh = result.get("refresh_token")
     if next_refresh and cookie_refresh:
-        response.set_cookie(
-            "pol_refresh",
-            next_refresh,
-            max_age=30 * 24 * 60 * 60,
-            httponly=True,
-            secure=False if __import__("os").environ.get("ENVIRONMENT", "development") == "test" else True,
-            samesite="lax",
-            path="/api/v1/auth",
-        )
+        _set_refresh_cookie(response, next_refresh)
     if cookie_refresh:
         result = {key: value for key, value in result.items() if key != "refresh_token"}
     return success_payload(result)
