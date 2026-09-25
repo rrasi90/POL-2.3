@@ -141,6 +141,15 @@ def resolve_delivery_exception(
         raise ValueError("Delivery exception not found.")
     exc = dict(exc)
 
+    _verify_exception_actor(
+        cur,
+        user_id=user_id,
+        organization_id=organization_id,
+        vendor_org_id=exc["vendor_organization_id"],
+        allowed_vendor_roles=("VENDOR_OWNER", "VENDOR_STAFF"),
+        allow_operator=True,
+    )
+
     if exc["status"] not in ("REPORTED", "UNDER_REVIEW", "ESCALATED"):
         raise AllocationIntegrityError(
             f"Cannot resolve exception in status '{exc['status']}'. Must be REPORTED, UNDER_REVIEW, or ESCALATED."
@@ -179,9 +188,11 @@ def escalate_delivery_exception(
     cur.execute(
         """
         SELECT de.id, de.status, de.order_id, de.delivery_id,
-               v.organization_id AS vendor_organization_id
+               v.organization_id AS vendor_organization_id,
+               r.organization_id AS retailer_organization_id
         FROM delivery_exceptions de
         JOIN vendors v ON v.id=de.vendor_id
+        JOIN retailers r ON r.id=de.retailer_id
         WHERE de.id=%s
         """,
         (exception_id,),
@@ -190,6 +201,15 @@ def escalate_delivery_exception(
     if not exc:
         raise ValueError("Delivery exception not found.")
     exc = dict(exc)
+
+    _verify_exception_actor(
+        cur,
+        user_id=user_id,
+        organization_id=organization_id,
+        vendor_org_id=exc["vendor_organization_id"],
+        allowed_vendor_roles=("VENDOR_OWNER", "VENDOR_STAFF"),
+        allow_operator=True,
+    )
 
     if exc["status"] not in ("REPORTED", "UNDER_REVIEW"):
         raise AllocationIntegrityError(
@@ -219,6 +239,30 @@ def escalate_delivery_exception(
 def list_delivery_exceptions(cur, *, order_id=None, delivery_id=None, status=None,
                              offset=0, limit=50) -> list[dict]:
     """Query delivery exceptions with optional filters."""
+    is_operator = False
+    cur.execute(
+        """
+        SELECT 1
+        FROM organization_memberships om
+        JOIN organizations o ON o.id=om.organization_id
+        WHERE om.user_id=%s
+          AND om.organization_id=%s
+          AND om.status='ACTIVE'
+          AND o.status='ACTIVE'
+          AND om.role IN ('OPS_AGENT','OPS_ADMIN','ADMIN_SUPER','SUPER_ADMIN')
+        LIMIT 1
+        """,
+        (user_id, organization_id),
+    )
+    is_operator = cur.fetchone() is not None
+
+    if not is_operator:
+        where_clauses.append(
+            "(EXISTS (SELECT 1 FROM retailers rr WHERE rr.id=de.retailer_id AND rr.organization_id=%s) "
+            "OR EXISTS (SELECT 1 FROM vendors vv WHERE vv.id=de.vendor_id AND vv.organization_id=%s))"
+        )
+        params.extend([organization_id, organization_id])
+
     where_clauses = []
     params = []
     if order_id:
@@ -245,14 +289,36 @@ def list_delivery_exceptions(cur, *, order_id=None, delivery_id=None, status=Non
     return [dict(r) for r in cur.fetchall()]
 
 
-def get_delivery_exception(cur, *, exception_id) -> dict | None:
+def get_delivery_exception(cur, *, user_id, organization_id, exception_id) -> dict | None:
     """Get a single delivery exception by ID."""
     cur.execute(
-        "SELECT id, delivery_id, order_id, retailer_id, vendor_id, exception_type, "
-        "status, description, resolution_type, resolution_note, "
-        "reported_by_user_id, reported_at, resolved_at, created_at, updated_at "
-        "FROM delivery_exceptions WHERE id = %s",
-        (exception_id,),
+        """
+        SELECT de.id, de.delivery_id, de.order_id, de.retailer_id, de.vendor_id,
+               de.exception_type, de.status, de.description, de.resolution_type,
+               de.resolution_note, de.reported_by_user_id, de.reported_at,
+               de.resolved_at, de.created_at, de.updated_at
+        FROM delivery_exceptions de
+        WHERE de.id=%s
+          AND (
+              EXISTS (
+                  SELECT 1
+                  FROM organization_memberships om
+                  WHERE om.user_id=%s
+                    AND om.organization_id=%s
+                    AND om.status='ACTIVE'
+                    AND om.role IN ('OPS_AGENT','OPS_ADMIN','ADMIN_SUPER','SUPER_ADMIN')
+              )
+              OR EXISTS (
+                  SELECT 1 FROM retailers rr
+                  WHERE rr.id=de.retailer_id AND rr.organization_id=%s
+              )
+              OR EXISTS (
+                  SELECT 1 FROM vendors vv
+                  WHERE vv.id=de.vendor_id AND vv.organization_id=%s
+              )
+          )
+        """,
+        (exception_id, user_id, organization_id, organization_id, organization_id),
     )
     row = cur.fetchone()
     return dict(row) if row else None
@@ -260,12 +326,59 @@ def get_delivery_exception(cur, *, exception_id) -> dict | None:
 
 def _verify_retailer_access(cur, user_id, organization_id, retailer_id):
     cur.execute(
-        "SELECT 1 FROM retailers WHERE id = %s AND organization_id = %s",
-        (retailer_id, organization_id),
+        """
+        SELECT 1
+        FROM retailers r
+        JOIN organization_memberships om ON om.organization_id=r.organization_id
+        JOIN users u ON u.id=om.user_id
+        WHERE r.id=%s
+          AND r.organization_id=%s
+          AND om.user_id=%s
+          AND om.status='ACTIVE'
+          AND u.is_active=TRUE
+          AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+        LIMIT 1
+        """,
+        (retailer_id, organization_id, user_id),
     )
     if not cur.fetchone():
         raise PermissionError("Actor is not authorized for this retailer.")
 
+
+def _verify_exception_actor(
+    cur,
+    *,
+    user_id,
+    organization_id,
+    vendor_org_id,
+    allowed_vendor_roles,
+    allow_operator,
+):
+    cur.execute(
+        """
+        SELECT om.role
+        FROM organization_memberships om
+        JOIN organizations o ON o.id=om.organization_id
+        JOIN users u ON u.id=om.user_id
+        WHERE om.user_id=%s
+          AND om.organization_id=%s
+          AND om.status='ACTIVE'
+          AND o.status='ACTIVE'
+          AND u.is_active=TRUE
+        LIMIT 1
+        """,
+        (user_id, organization_id),
+    )
+    membership = cur.fetchone()
+    if not membership:
+        raise PermissionError("Active tenant membership is required.")
+
+    role = membership["role"]
+    if str(organization_id) == str(vendor_org_id) and role in allowed_vendor_roles:
+        return
+    if allow_operator and role in ("OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN"):
+        return
+    raise PermissionError("Actor is not authorized for this exception.")
 
 def _record_exception_event(cur, exception_id, from_status, to_status,
                             actor_user_id, actor_organization_id, event_data=None):
