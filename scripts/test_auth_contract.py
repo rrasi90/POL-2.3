@@ -149,6 +149,50 @@ def _auth_tx_recovery(auth_env):
 
 
 # =========================================================
+# T-SEC-OTP-01: Deterministic OTP is test-environment only
+# =========================================================
+def test_static_otp_is_strictly_test_only(auth_env, monkeypatch):
+    """Prevent a non-test deployment from silently falling back to 1234."""
+    from scripts import domain_services
+    from scripts.domain_services import AuthService
+
+    cur = auth_env["cur"]
+    phone = f"+9891{uuid.uuid4().hex[:8]}"
+    ip = "10.240.0.10"
+
+    # Explicit test environment may expose the deterministic fixture code.
+    monkeypatch.setenv("ENVIRONMENT", "test")
+    monkeypatch.delenv("POL_ENV", raising=False)
+    first = AuthService.request_otp(cur, phone, ip, "LOGIN")
+    assert first["test_code"] == "1234"
+    cur.execute(
+        "SELECT code_hash FROM otp_challenges WHERE id=%s",
+        (first["id"],),
+    )
+    assert verify_otp_hash("1234", cur.fetchone()["code_hash"])
+
+    # Development/unknown/unset environments must never use or expose 1234.
+    monkeypatch.setattr(domain_services.secrets, "randbelow", lambda upper: 5678)
+    for env in ("development", "unknown", ""):
+        if env:
+            monkeypatch.setenv("ENVIRONMENT", env)
+        else:
+            monkeypatch.delenv("ENVIRONMENT", raising=False)
+        result = AuthService.request_otp(cur, phone, ip, "LOGIN")
+        assert "test_code" not in result
+        cur.execute(
+            "SELECT code_hash FROM otp_challenges WHERE id=%s",
+            (result["id"],),
+        )
+        stored_hash = cur.fetchone()["code_hash"]
+        assert verify_otp_hash("5678", stored_hash)
+        assert not verify_otp_hash("1234", stored_hash)
+
+    cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
+    auth_env["conn"].commit()
+
+
+# =========================================================
 # T-AC1: JWT claims complete
 # =========================================================
 def test_ac1_jwt_claims_complete(auth_env):
