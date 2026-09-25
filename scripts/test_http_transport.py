@@ -149,13 +149,18 @@ def test_auth_profile_switch_and_revocation_flow(client):
 
         response = client.post(
             "/api/v1/auth/verify-otp",
-            json={"mobile_number": phone, "otp_code": "1234"},
+            json={"mobile_number": phone, "otp_code": "1234", "client_platform": "web"},
         )
         assert response.status_code == 200
         body = response.json()
         assert body["success"] is True
         access_a = body["data"]["access_token"]
-        refresh = body["data"]["refresh_token"]
+        assert "refresh_token" not in body["data"]
+        set_cookie = response.headers.get("set-cookie", "")
+        assert "pol_refresh=" in set_cookie
+        assert "HttpOnly" in set_cookie
+        assert "SameSite=lax" in set_cookie
+
 
         response = client.get(
             "/api/v1/profile",
@@ -165,7 +170,6 @@ def test_auth_profile_switch_and_revocation_flow(client):
 
         response = client.post(
             "/api/v1/auth/refresh",
-            json={"refresh_token": refresh},
         )
         assert response.status_code == 200
         access_refreshed = response.json()["data"]["access_token"]
