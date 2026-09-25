@@ -2535,9 +2535,11 @@ class POLApplicationBoundary:
         candidate_vendor_sku = vendor_sku.strip() if vendor_sku and vendor_sku.strip() else None
         self.cur.execute(
             """
-            SELECT id, product_id, candidate_id, listing_status
-            FROM vendor_products
-            WHERE vendor_id=%s AND vendor_sku=%s
+            SELECT vp.id, vp.product_id, vp.candidate_id, vp.listing_status,
+                   pc.barcode AS candidate_barcode
+            FROM vendor_products vp
+            LEFT JOIN product_candidates pc ON pc.id = vp.candidate_id
+            WHERE vp.vendor_id=%s AND vp.vendor_sku=%s
             FOR UPDATE
             """,
             (vendor_id, candidate_vendor_sku),
@@ -2546,6 +2548,8 @@ class POLApplicationBoundary:
         if existing_vp and existing_vp["product_id"]:
             raise ValueError("vendor_sku is already bound to a canonical product.")
         if existing_vp and existing_vp["candidate_id"]:
+            if existing_vp["candidate_barcode"] not in (None, normalized):
+                raise ValueError("vendor_sku is already bound to a different barcode candidate.")
             candidate_id = str(existing_vp["candidate_id"])
             return {
                 "match_type": "NO_MATCH",
@@ -2653,9 +2657,11 @@ class POLApplicationBoundary:
             else:
                 self.cur.execute(
                     """
-                    SELECT id, product_id, candidate_id, listing_status
-                    FROM vendor_products
-                    WHERE vendor_id=%s AND vendor_sku=%s
+                    SELECT vp.id, vp.product_id, vp.candidate_id, vp.listing_status,
+                           pc.barcode AS candidate_barcode
+                    FROM vendor_products vp
+                    LEFT JOIN product_candidates pc ON pc.id = vp.candidate_id
+                    WHERE vp.vendor_id=%s AND vp.vendor_sku=%s
                     FOR UPDATE
                     """,
                     (vendor_id, candidate_vendor_sku),
@@ -2669,6 +2675,8 @@ class POLApplicationBoundary:
                     raise ValueError("vendor_sku is already bound to a canonical product.")
                 if str(winner_vp["candidate_id"]) != candidate_id:
                     raise ValueError("vendor_sku is already bound to a different product candidate.")
+                if winner_vp["candidate_barcode"] not in (None, normalized):
+                    raise ValueError("vendor_sku is already bound to a different barcode candidate.")
                 vendor_product_id = str(winner_vp["id"])
                 listing_status = winner_vp["listing_status"]
                 candidate_replayed = True
