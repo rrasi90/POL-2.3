@@ -131,7 +131,7 @@ class CanonicalReturnService:
             WHERE o.id = %s
               AND o.retailer_id IS NOT NULL
               AND o.order_status NOT IN ('CANCELLED','CREATED','SUBMITTED')
-            FOR SHARE;
+            FOR UPDATE OF o, oi;
             """,
             (order_id,),
         )
@@ -152,6 +152,7 @@ class CanonicalReturnService:
         # never bypass the per-item returnable quantity ceiling.
         requested_by_item = {}
         reason_by_item = {}
+        unit_refund_by_item = {}
         for item in order_items:
             item_key = str(item["order_item_id"])
             if item_key not in order_item_map:
@@ -164,12 +165,45 @@ class CanonicalReturnService:
                 raise ValueError("Unsupported RMA reason code.")
             requested_by_item[item_key] = requested_by_item.get(item_key, 0) + quantity
             reason_by_item.setdefault(item_key, reason_code)
+            if item.get("unit_refund_amount_toman") is not None:
+                unit_refund_by_item[item_key] = int(item["unit_refund_amount_toman"])
 
+        claim_ceiling = 0
         for item_key, quantity in requested_by_item.items():
             source = order_item_map[item_key]
-            max_returnable = int(source["delivered_quantity"] or source["ordered_quantity"])
+            delivered = int(source["delivered_quantity"] or 0)
+            cur.execute(
+                """
+                SELECT COALESCE(SUM(
+                    CASE
+                      WHEN r.status IN (
+                        'RETURN_REQUESTED','APPROVED','PICKUP_REQUIRED',
+                        'RETURN_IN_TRANSIT','RECEIVED','VENDOR_INSPECTION','REFUND_PENDING'
+                      ) THEN ri.requested_quantity
+                      WHEN r.status IN ('ACCEPTED','REFUNDED','CLOSED') THEN ri.accepted_quantity
+                      ELSE 0
+                    END
+                ),0) AS consumed_quantity
+                FROM return_items ri
+                JOIN returns r ON r.id = ri.return_id
+                WHERE ri.order_item_id = %s
+                  AND r.order_id = %s
+                """,
+                (item_key, order_id),
+            )
+            consumed = int(cur.fetchone()["consumed_quantity"])
+            max_returnable = max(0, delivered - consumed)
             if quantity > max_returnable:
-                raise ValueError("Aggregated return quantity exceeds delivered/ordered quantity.")
+                raise ValueError(
+                    f"Return quantity exceeds remaining returnable quantity: requested={quantity}, remaining={max_returnable}."
+                )
+            unit_refund = unit_refund_by_item.get(item_key, int(source["unit_price_toman"]))
+            claim_ceiling += quantity * unit_refund
+
+        if claimed_refund_amount_toman > claim_ceiling:
+            raise ValueError(
+                f"Claimed refund amount exceeds line-item ceiling: claimed={claimed_refund_amount_toman}, ceiling={claim_ceiling}."
+            )
 
         return_id = str(uuid.uuid4())
         return_number = "RMA-" + return_id.replace("-", "")[:12].upper()
@@ -190,6 +224,9 @@ class CanonicalReturnService:
             source = order_item_map[item_key]
             # A duplicate line is collapsed into one canonical return_items row.
             source_item = next(i for i in order_items if str(i["order_item_id"]) == item_key)
+            line_unit_refund = unit_refund_by_item.get(
+                item_key, int(source_item.get("unit_refund_amount_toman") or source["unit_price_toman"])
+            )
             cur.execute(
                 """
                 INSERT INTO return_items
@@ -198,7 +235,7 @@ class CanonicalReturnService:
                 VALUES (%s,%s,%s,%s,%s,%s)
                 """,
                 (str(uuid.uuid4()), return_id, item_key, quantity,
-                 int(source_item.get("unit_refund_amount_toman") or source["unit_price_toman"]),
+                 line_unit_refund,
                  reason_by_item[item_key]),
             )
         cls._write_event(cur, return_id, None, "RETURN_REQUESTED", actor_user_id, reason)
