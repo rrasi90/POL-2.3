@@ -551,10 +551,20 @@ class DisputeService:
             """
             SELECT o.id, o.order_status, o.retailer_id, o.vendor_id,
                    r.organization_id AS retailer_org_id,
-                   v.organization_id AS vendor_org_id
+                   v.organization_id AS vendor_org_id,
+                   d.delivered_at
             FROM orders o
             JOIN retailers r ON r.id=o.retailer_id
             JOIN vendors v ON v.id=o.vendor_id
+            LEFT JOIN LATERAL (
+                SELECT delivered_at
+                FROM deliveries
+                WHERE order_id=o.id
+                  AND delivery_status='DELIVERED'
+                  AND delivered_at IS NOT NULL
+                ORDER BY delivered_at DESC
+                LIMIT 1
+            ) d ON TRUE
             WHERE o.id=%s
             FOR UPDATE
             """,
@@ -567,6 +577,11 @@ class DisputeService:
             raise PermissionError("Dispute parties do not match the order.")
         if order["order_status"] != "DELIVERED":
             raise ValueError("Dispute can only be opened for a delivered order.")
+        delivered_at = order.get("delivered_at")
+        if not delivered_at:
+            raise ValueError("Delivered timestamp is required to open a dispute.")
+        if delivered_at < datetime.now(timezone.utc) - timedelta(hours=4):
+            raise ValueError("The four-hour dispute filing window has expired.")
 
         cur.execute(
             """
