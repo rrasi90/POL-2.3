@@ -1727,16 +1727,58 @@ class POLApplicationBoundary:
             },
         }
 
-    def catalog_create_product_candidate(self, *, proposed_title: str, proposed_brand: str | None, barcode: str | None, vendor_sku: str | None, photo_asset_id: str | None):
+    def catalog_create_product_candidate(
+        self,
+        *,
+        proposed_title: str,
+        proposed_brand: str | None,
+        barcode: str | None,
+        vendor_sku: str | None,
+        photo_asset_id: str | None,
+    ):
         if not self.context.organization_id:
             raise PermissionError("Candidate creation requires an active organization context.")
+
         self.cur.execute(
-            "SELECT id, user_id FROM vendors WHERE organization_id = %s::uuid AND status = 'ACTIVE' LIMIT 1",
+            """
+            SELECT 1
+            FROM organization_memberships
+            WHERE user_id=%s
+              AND organization_id=%s
+              AND role IN ('VENDOR_OWNER','VENDOR_STAFF')
+              AND status='ACTIVE'
+            LIMIT 1
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        if not self.cur.fetchone():
+            raise PermissionError("Only active vendor members may create product candidates.")
+
+        self.cur.execute(
+            """
+            SELECT id, user_id
+            FROM vendors
+            WHERE organization_id=%s::uuid AND status='ACTIVE'
+            ORDER BY id
+            LIMIT 1
+            """,
             (self.context.organization_id,),
         )
         vendor = self.cur.fetchone()
         if not vendor:
             raise PermissionError("No active vendor exists for this organization.")
+
+        normalized_barcode = None
+        if barcode:
+            normalized_barcode = "".join(ch for ch in str(barcode).strip() if ch.isalnum())
+            if len(normalized_barcode) < 8 or len(normalized_barcode) > 32:
+                raise ValueError("Barcode must contain between 8 and 32 alphanumeric characters.")
+
+        normalized_vendor_sku = vendor_sku.strip() if vendor_sku and vendor_sku.strip() else None
+        proposed_title = proposed_title.strip()
+        if not proposed_title:
+            raise ValueError("proposed_title is required.")
+
         if photo_asset_id:
             self.cur.execute(
                 "SELECT id FROM media_assets WHERE id=%s AND uploaded_by_user_id=%s AND status='READY'",
@@ -1744,40 +1786,122 @@ class POLApplicationBoundary:
             )
             if not self.cur.fetchone():
                 raise PermissionError("Candidate photo must be a READY asset owned by the current user.")
+
+        vendor_id = str(vendor["id"])
+
+        # Serialize the natural-key check so two concurrent submissions cannot
+        # create/replace competing candidate associations for one vendor SKU.
+        if normalized_vendor_sku:
+            self.cur.execute(
+                "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                (f"{vendor_id}:{normalized_vendor_sku}",),
+            )
+            self.cur.execute(
+                """
+                SELECT id, product_id, candidate_id, listing_status
+                FROM vendor_products
+                WHERE vendor_id=%s AND vendor_sku=%s
+                FOR UPDATE
+                """,
+                (vendor_id, normalized_vendor_sku),
+            )
+            existing_vp = self.cur.fetchone()
+            if existing_vp:
+                if existing_vp["product_id"]:
+                    raise ValueError("vendor_sku is already bound to a canonical product.")
+                if existing_vp["candidate_id"]:
+                    self.cur.execute(
+                        "SELECT id, status FROM product_candidates WHERE id=%s FOR UPDATE",
+                        (existing_vp["candidate_id"],),
+                    )
+                    candidate = self.cur.fetchone()
+                    if candidate and candidate["status"] != "REJECTED":
+                        return {
+                            "candidate_id": str(candidate["id"]),
+                            "vendor_product_id": str(existing_vp["id"]),
+                            "status": candidate["status"],
+                            "listing_status": existing_vp["listing_status"],
+                            "idempotent_replay": True,
+                            "message": "کاندیدای موجود برای این SKU بازگردانده شد.",
+                        }
+                    raise ValueError("vendor_sku is linked to a rejected candidate; use the existing resolution workflow.")
+
+        if normalized_barcode and not normalized_vendor_sku:
+            self.cur.execute(
+                """
+                SELECT id, status
+                FROM product_candidates
+                WHERE vendor_id=%s
+                  AND barcode=%s
+                  AND status='PENDING_REVIEW'
+                ORDER BY created_at DESC
+                LIMIT 1
+                FOR UPDATE
+                """,
+                (vendor_id, normalized_barcode),
+            )
+            existing_candidate = self.cur.fetchone()
+            if existing_candidate:
+                return {
+                    "candidate_id": str(existing_candidate["id"]),
+                    "status": existing_candidate["status"],
+                    "idempotent_replay": True,
+                    "message": "کاندیدای باز موجود برای این بارکد بازگردانده شد.",
+                }
+
         candidate_id = str(uuid4())
         self.cur.execute(
             """
-            INSERT INTO product_candidates (id, vendor_id, proposed_title, proposed_brand, barcode, vendor_sku, photo_asset_id, status)
+            INSERT INTO product_candidates
+                (id, vendor_id, proposed_title, proposed_brand, barcode, vendor_sku, photo_asset_id, status)
             VALUES (%s, %s, %s, %s, %s, %s, %s, 'PENDING_REVIEW')
             RETURNING id, status
             """,
-            (candidate_id, str(vendor["id"]), proposed_title.strip(), proposed_brand, barcode, vendor_sku, photo_asset_id),
+            (
+                candidate_id,
+                vendor_id,
+                proposed_title,
+                proposed_brand,
+                normalized_barcode,
+                normalized_vendor_sku,
+                photo_asset_id,
+            ),
         )
         row = self.cur.fetchone()
-        if vendor_sku:
+
+        vendor_product_id = None
+        if normalized_vendor_sku:
             self.cur.execute(
                 """
-                INSERT INTO vendor_products (vendor_id, product_id, candidate_id, vendor_sku, listing_status, is_active)
+                INSERT INTO vendor_products
+                    (vendor_id, product_id, candidate_id, vendor_sku, listing_status, is_active)
                 VALUES (%s, NULL, %s, %s, 'DRAFT_PENDING_CATALOG', FALSE)
-                ON CONFLICT (vendor_id, vendor_sku) DO UPDATE SET candidate_id = EXCLUDED.candidate_id, listing_status = 'DRAFT_PENDING_CATALOG', is_active = FALSE
                 RETURNING id
                 """,
-                (str(vendor["id"]), candidate_id, vendor_sku.strip()),
+                (vendor_id, candidate_id, normalized_vendor_sku),
             )
             vendor_product_id = str(self.cur.fetchone()["id"])
             self.cur.execute(
                 """
-                INSERT INTO vendor_inventory (vendor_product_id, inventory_unit, physical_quantity, reserved_quantity, moq, freshness_status)
+                INSERT INTO vendor_inventory
+                    (vendor_product_id, inventory_unit, physical_quantity, reserved_quantity, moq, freshness_status)
                 VALUES (%s, 'CARTON', 0, 0, 1, 'UNKNOWN')
                 ON CONFLICT (vendor_product_id) DO NOTHING
                 """,
                 (vendor_product_id,),
             )
+
         self.cur.execute(
             """
-            INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status)
-            VALUES (%s, %s, 'product_candidate_created', 'PRODUCT_CANDIDATE', %s, %s, 'PENDING')
-            ON CONFLICT DO NOTHING
+            INSERT INTO outbox_events (
+                id, event_id, event_name, aggregate_type, aggregate_id, payload, status,
+                target_user_id, target_organization_id, dedupe_key, channel_hint
+            )
+            VALUES (
+                %s, %s, 'product_candidate_created', 'PRODUCT_CANDIDATE', %s, %s, 'PENDING',
+                %s, %s, %s, 'INBOX'
+            )
+            ON CONFLICT (event_name, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
             """,
             (
                 str(uuid4()),
@@ -1785,7 +1909,9 @@ class POLApplicationBoundary:
                 candidate_id,
                 Json({
                     "candidate_id": candidate_id,
-                    "vendor_id": str(vendor["id"]),
+                    "vendor_id": vendor_id,
+                    "barcode": normalized_barcode,
+                    "vendor_sku": normalized_vendor_sku,
                     "status": "PENDING_REVIEW",
                 }),
                 str(vendor["user_id"]),
@@ -1795,7 +1921,10 @@ class POLApplicationBoundary:
         )
         return {
             "candidate_id": candidate_id,
+            "vendor_product_id": vendor_product_id,
             "status": row["status"],
+            "listing_status": "DRAFT_PENDING_CATALOG" if vendor_product_id else None,
+            "idempotent_replay": False,
             "message": "کاندیدا با موفقیت ثبت شد و در کارتابل بررسی تیم کاتالوگ قرار گرفت.",
         }
 
