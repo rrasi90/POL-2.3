@@ -7400,16 +7400,16 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 | 33 | PATCH `/api/v1/inbox/items/read-all` | HTTP_IMPLEMENTED | notification read-all |
 | 34 | GET `/api/v1/notifications/preferences` | HTTP_IMPLEMENTED | notification preferences |
 | 35 | PUT `/api/v1/notifications/preferences` | HTTP_IMPLEMENTED | notification preferences |
-| 36 | POST `/api/v1/admin/broadcasts` | CONTRACT_ONLY | admin/ops HTTP |
-| 37 | POST `/api/v1/admin/broadcasts/{id}/dispatch` | CONTRACT_ONLY | admin/ops HTTP |
+| 36 | POST `/api/v1/admin/broadcasts` | HTTP_IMPLEMENTED | `admin_broadcast_create` |
+| 37 | POST `/api/v1/admin/broadcasts/{id}/dispatch` | HTTP_IMPLEMENTED | `admin_broadcast_dispatch` |
 | 38 | GET `/api/v1/invoices` | HTTP_IMPLEMENTED | `invoices_list` |
 | 39 | GET `/api/v1/invoices/{id}` | HTTP_IMPLEMENTED | `invoice_get` |
 | 40 | GET `/api/v1/admin/exceptions/dashboard` | HTTP_IMPLEMENTED | `admin_exceptions_dashboard` |
 | 41 | POST `/api/v1/admin/sla-overrides` | CONTRACT_ONLY | ops SLA boundary |
 | 42 | GET `/api/v1/admin/audit-logs` | HTTP_IMPLEMENTED | `admin_audit_logs_list` |
-| 43 | GET `/api/v1/categories` | CONTRACT_ONLY | catalog HTTP |
-| 44 | POST `/api/v1/admin/categories` | CONTRACT_ONLY | catalog admin HTTP |
-| 45 | PATCH `/api/v1/admin/categories/{id}` | CONTRACT_ONLY | catalog admin HTTP |
+| 43 | GET `/api/v1/categories` | HTTP_IMPLEMENTED | `catalog_categories_public` |
+| 44 | POST `/api/v1/admin/categories` | HTTP_IMPLEMENTED | `admin_category_create` |
+| 45 | PATCH `/api/v1/admin/categories/{id}` | HTTP_IMPLEMENTED | `admin_category_update` |
 | 46 | GET `/api/v1/profile` | HTTP_IMPLEMENTED | `profile_get` |
 | 47 | PUT `/api/v1/profile` | HTTP_IMPLEMENTED | `profile_update` |
 | 48 | GET `/api/v1/profile/completion` | HTTP_IMPLEMENTED | `profile_completion` |
@@ -7417,7 +7417,7 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 | 50 | GET `/api/v1/profile/context` | HTTP_IMPLEMENTED / SHARED BOUNDARY | `profile_get` |
 
 Endpoint governance:
-- 39 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED on this remediation branch; rows marked CONTRACT_ONLY remain unimplemented at the canonical HTTP path.
+- 44 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED on this remediation branch; rows marked CONTRACT_ONLY remain unimplemented at the canonical HTTP path.
 - /healthz and /readyz are operational transport routes, not business endpoints.
 - BOUNDARY_READY / NOT_YET_HTTP methods are not production HTTP completion.
 - Path normalization may reconcile :id and {id}; this does not create a second endpoint.
