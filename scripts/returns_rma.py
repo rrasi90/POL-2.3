@@ -337,7 +337,55 @@ class CanonicalReturnService:
         if not allowed:
             raise ReturnAccessError("Actor is not authorized for this RMA transition.")
 
+        # Materialize item-level receipt/inspection state at the lifecycle boundary.
+        cur.execute(
+            """
+            SELECT id, requested_quantity, received_quantity, accepted_quantity, unit_refund_amount_toman
+            FROM return_items
+            WHERE return_id=%s
+            ORDER BY id
+            FOR UPDATE
+            """,
+            (return_id,),
+        )
+        return_lines = cur.fetchall()
+        if not return_lines:
+            raise ReturnStateError("Return has no return items.")
+
+        calculated_refund = 0
+        if target_status == "RECEIVED":
+            for line in return_lines:
+                cur.execute(
+                    """
+                    UPDATE return_items
+                    SET received_quantity = requested_quantity
+                    WHERE id=%s
+                    """,
+                    (line["id"],),
+                )
+        elif target_status == "ACCEPTED":
+            for line in return_lines:
+                cur.execute(
+                    """
+                    UPDATE return_items
+                    SET accepted_quantity = received_quantity
+                    WHERE id=%s
+                    """,
+                    (line["id"],),
+                )
+            calculated_refund = sum(
+                int(line["received_quantity"]) * int(line["unit_refund_amount_toman"])
+                for line in return_lines
+            )
+
         next_refund_amount = approved_refund_amount_toman
+        if target_status == "ACCEPTED":
+            if approved_refund_amount_toman is not None and int(approved_refund_amount_toman) != calculated_refund:
+                raise ValueError(
+                    f"Approved refund amount must equal accepted return lines: "
+                    f"approved={approved_refund_amount_toman}, calculated={calculated_refund}."
+                )
+            next_refund_amount = calculated_refund
         if target_status == "REFUND_PENDING" and next_refund_amount is None:
             next_refund_amount = ret["approved_refund_amount_toman"]
 
