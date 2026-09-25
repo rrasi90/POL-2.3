@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { api, setToken } from "../api";
+import { api, clearSession } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
@@ -105,7 +105,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
     setLoading(true); setError(null); setNotice(null);
     try {
       await api.delete("/api/v1/auth/sessions/current");
-      setToken(null);
+      await clearSession();
       props.onLogout?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "خروج از حساب ناموفق بود");
