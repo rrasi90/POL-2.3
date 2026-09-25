@@ -64,13 +64,14 @@ def verify_otp(payload: VerifyOTPRequest, response: Response, cur=Depends(get_db
 
 @router.post("/refresh")
 def refresh(request: Request, response: Response, payload: RefreshTokenRequest | None = None, cur=Depends(get_db_cursor)):
-    refresh_token = request.cookies.get("pol_refresh") or (payload.refresh_token if payload else None)
+    cookie_refresh = request.cookies.get("pol_refresh")
+    refresh_token = cookie_refresh or (payload.refresh_token if payload else None)
     if not refresh_token:
         from fastapi import HTTPException
         raise HTTPException(status_code=401, detail="Refresh token is required.")
     result = AuthApplicationService.refresh(cur, refresh_token)
     next_refresh = result.get("refresh_token")
-    if next_refresh:
+    if next_refresh and cookie_refresh:
         response.set_cookie(
             "pol_refresh",
             next_refresh,
@@ -80,6 +81,8 @@ def refresh(request: Request, response: Response, payload: RefreshTokenRequest |
             samesite="lax",
             path="/api/v1/auth",
         )
+    if cookie_refresh:
+        result = {key: value for key, value in result.items() if key != "refresh_token"}
     return success_payload(result)
 
 
