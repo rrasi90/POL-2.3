@@ -37,8 +37,14 @@ def test_order_item_rejects_cross_vendor_product(postgres_database, checkout_cat
         with transaction(postgres_database) as cur:
             order_a, item = _order_and_item_ids(cur, checkout_result)
             cur.execute(
-                "SELECT id FROM vendor_products WHERE id <> %s ORDER BY id LIMIT 1",
-                (item["vendor_product_id"],),
+                """
+                SELECT vp.id
+                FROM vendor_products vp
+                WHERE vp.id <> %s AND vp.vendor_id <> %s
+                ORDER BY vp.id
+                LIMIT 1
+                """,
+                (item["vendor_product_id"], order_a["vendor_id"]),
             )
             other_vendor_product = cur.fetchone()["id"]
             cur.execute(
@@ -112,11 +118,22 @@ def test_refund_rejects_cross_order_payment_lineage(postgres_database, checkout_
         with transaction(postgres_database) as cur:
             order_a, _ = _order_and_item_ids(cur, checkout_result)
             cur.execute(
-                "SELECT id, order_id FROM payments ORDER BY created_at LIMIT 1",
+                "SELECT id, order_id, retailer_id, vendor_id FROM orders WHERE id <> %s ORDER BY id LIMIT 1",
+                (order_a["id"],),
             )
-            payment = cur.fetchone()
-            if not payment:
-                pytest.skip("No payment fixture exists")
+            order_b = cur.fetchone()
+            cur.execute(
+                """
+                INSERT INTO payments (
+                    id, order_id, retailer_id, vendor_id, amount_toman,
+                    payment_method, payment_status, custody_model
+                )
+                VALUES (%s,%s,%s,%s,1,'POS_DRIVER','PENDING','NON_CUSTODIAL_DIRECT')
+                RETURNING id
+                """,
+                (str(uuid4()), order_b["id"], order_b["retailer_id"], order_b["vendor_id"]),
+            )
+            payment_id = cur.fetchone()["id"]
             cur.execute(
                 """
                 INSERT INTO refunds (
@@ -124,7 +141,7 @@ def test_refund_rejects_cross_order_payment_lineage(postgres_database, checkout_
                 )
                 VALUES (%s,%s,%s,%s,1,'integrity test','PENDING')
                 """,
-                (str(uuid4()), order_a["id"], payment["id"], order_a["retailer_id"]),
+                (str(uuid4()), order_a["id"], payment_id, order_a["retailer_id"]),
             )
 
 
