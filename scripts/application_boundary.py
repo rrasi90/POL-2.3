@@ -777,49 +777,61 @@ class POLApplicationBoundary:
                 filtered.append(ret)
         return {"returns": filtered, "count": len(filtered)}
 
-    def dispute_open(self, *, order_id, description, evidence_media_id=None):
+    def dispute_open(self, *, order_id, claimed_amount_toman, description, evidence_media_id=None):
         if not self.context.organization_id:
             raise PermissionError("Dispute open requires an organization context.")
+
+        # Client-facing dispute creation uses the same canonical domain service
+        # as the master E2E so settlement, filing-window and outbox rules cannot diverge.
+        from scripts.domain_services import DisputeService
+
         self.cur.execute(
-            "SELECT id, retailer_id, vendor_id FROM orders WHERE id = %s",
-            (order_id,),
+            """
+            SELECT o.retailer_id, o.vendor_id, s.id AS settlement_id
+            FROM orders o
+            JOIN settlements s ON s.order_id=o.id
+            JOIN retailers r ON r.id=o.retailer_id
+            WHERE o.id=%s
+              AND r.organization_id=%s
+              AND s.status <> 'DISPUTED'
+            ORDER BY s.created_at DESC
+            LIMIT 1
+            """,
+            (order_id, self.context.organization_id),
         )
-        order = self.cur.fetchone()
-        if not order:
-            raise KeyError("Order not found.")
-        order = dict(order)
-        self.cur.execute(
-            "SELECT id FROM retailers WHERE id = %s AND organization_id = %s",
-            (order["retailer_id"], self.context.organization_id),
+        context = self.cur.fetchone()
+        if not context:
+            raise ValueError("No eligible settlement found for this retailer order.")
+
+        disp_id = DisputeService.open_dispute(
+            self.cur,
+            str(order_id),
+            str(context["retailer_id"]),
+            str(context["vendor_id"]),
+            str(context["settlement_id"]),
+            int(claimed_amount_toman),
+            description,
         )
-        if not self.cur.fetchone():
-            raise PermissionError("Only the order retailer may open a dispute.")
-        self.cur.execute(
-            "SELECT id FROM settlements WHERE order_id = %s AND status != 'DISPUTED' ORDER BY created_at DESC LIMIT 1",
-            (order_id,),
-        )
-        settlement = self.cur.fetchone()
-        if not settlement:
-            raise ValueError("No active settlement found for this order.")
-        disp_id = str(uuid4())
-        self.cur.execute(
-            "INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description) "
-            "VALUES (%s, %s, %s, %s, 'OPEN', %s, %s) RETURNING id",
-            (disp_id, order_id, str(order["retailer_id"]), str(order["vendor_id"]), 0, description),
-        )
-        self.cur.execute("UPDATE orders SET dispute_status = 'OPEN' WHERE id = %s", (order_id,))
-        self.cur.execute("UPDATE settlements SET status = 'DISPUTED' WHERE id = %s", (str(settlement["id"]),))
-        self.cur.execute(
-            "INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status) "
-            "VALUES (%s, %s, 'DISPUTE_OPENED', 'ORDER', %s, %s, 'PENDING')",
-            (str(uuid4()), str(uuid4()), order_id, Json({"dispute_id": disp_id, "amount_toman": 0})),
-        )
+
         if evidence_media_id:
             self.cur.execute(
-                "UPDATE disputes SET evidence_media_id = %s WHERE id = %s",
+                """
+                SELECT id
+                FROM media_assets
+                WHERE id=%s
+                  AND uploaded_by_user_id=%s
+                  AND status='READY'
+                """,
+                (evidence_media_id, self.context.user_id),
+            )
+            if not self.cur.fetchone():
+                raise PermissionError("Evidence media must be a READY asset owned by the current user.")
+            self.cur.execute(
+                "UPDATE disputes SET evidence_media_id=%s WHERE id=%s",
                 (evidence_media_id, disp_id),
             )
-        self.cur.execute("SELECT * FROM disputes WHERE id = %s", (disp_id,))
+
+        self.cur.execute("SELECT * FROM disputes WHERE id=%s", (disp_id,))
         return dict(self.cur.fetchone())
 
     def dispute_get(self, *, dispute_id):
