@@ -133,9 +133,9 @@ Current mvp/apps/mobile/src/api.ts stores access, refresh, and role/session meta
 Residual closure: cold process-kill/relaunch on the current APK plus runtime-storage inspection remains required before treating device persistence as independently verified.
 
 ### DSA-002 — Mobile 401 recovery is now implemented
-Class: SOURCE REMEDIATED / CI-VERIFIABLE.
-Current mvp/apps/mobile/src/api.ts implements a single-flight refresh-and-single-retry flow on HTTP 401, restores session from SecureStore, and clears the session when refresh fails.
-Residual closure: execute/retain the mobile runtime regression evidence against the current release build; refresh-token rotation remains an explicit open policy decision and is not invented here.
+Class: SOURCE REMEDIATED / RUNTIME-UNVERIFIED.
+Current mvp/apps/mobile/src/api.ts implements a single-flight refresh-and-single-retry flow on HTTP 401, restores session from SecureStore, and clears the session when refresh fails. The current backend returns a replacement refresh token and the mobile client persists that replacement.
+Residual closure: execute/retain the mobile runtime regression evidence against the current release build. D-018 refresh-token rotation remains an explicit policy decision; the source behavior is documented as implementation state only.
 
 ### DSA-003 — Mobile explicit logout/revocation surface was absent; source remediation applied
 Class: IMPLEMENTED / UNVERIFIED.
