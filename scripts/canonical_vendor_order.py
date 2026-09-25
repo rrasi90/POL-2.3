@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from uuid import uuid5, NAMESPACE_URL
+from psycopg2.extras import Json
 
 
 class CanonicalVendorOrderService:
@@ -209,7 +210,7 @@ class CanonicalVendorOrderService:
                 order_id,
                 user_id,
                 organization_id,
-                '{"source":"vendor_accept"}'::jsonb,
+                Json({"source": "vendor_accept"}),
             ),
         )
 
@@ -466,7 +467,7 @@ class CanonicalVendorOrderService:
                 order_id,
                 user_id,
                 organization_id,
-                '{"source":"vendor_reject"}'::jsonb,
+                Json({"source": "vendor_reject"}),
             ),
         )
         cur.execute(
@@ -477,7 +478,7 @@ class CanonicalVendorOrderService:
             FROM orders o
             WHERE o.id = %s
             """,
-            ('{"reason":"VENDOR_REJECTED"}'::jsonb, order_id),
+            (Json({"reason": "VENDOR_REJECTED"}), order_id),
         )
 
         cur.execute(
