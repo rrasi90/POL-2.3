@@ -13,6 +13,7 @@ EXPECTED_BUSINESS_ROUTES = {
     ("POST", "/api/v1/auth/logout-all"),
     ("POST", "/api/v1/baskets"),
     ("POST", "/api/v1/baskets/{basket_id}/items"),
+    ("GET", "/api/v1/baskets/current"),
     ("POST", "/api/v1/baskets/{basket_id}/allocation-preview"),
     ("GET", "/api/v1/catalog/search"),
     ("GET", "/api/v1/products/search"),
