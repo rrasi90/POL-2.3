@@ -65,10 +65,10 @@ Authenticated /api/v1/ops/analytics and /api/v1/ops/analytics/weekly routes now 
 Vendor staff list/invite/update is implemented with owner-only mutations, tenant scoping, last-owner protection and audit logs. /api/v1/ops/permissions exposes the canonical RBAC catalog, and vendor staff UI is live.
 
 
-## G-011 — Admin broadcasts / SLA overrides / category admin (PARTIALLY RESOLVED)
+## G-011 — Admin broadcasts / SLA overrides / category admin (RESOLVED)
 
-- `POST /admin/sla-overrides` is now REAL and audited. Existing broadcast/category admin contracts remain separate capabilities and are not fabricated here.
-- **Status:** PARTIALLY RESOLVED (SLA override REAL; broadcasts/category admin still CONTRACT)
+- `POST /admin/sla-overrides`, `POST/PATCH /admin/categories`, and `POST /admin/broadcasts` + dispatch are REAL and audited.
+- **Status:** RESOLVED.
 
 ## G-012 — Basket current GET (RESOLVED)
 
@@ -87,22 +87,22 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 - Anything still undefined at implement time → new `G-0xx` + `PROPOSED` token marked in code.
 - **Status:** PROPOSED (rolling)
 
-## G-015 — OP-06 / OP-09 missing from Master Tree §9 listing (CONFLICT)
+## G-015 — OP-06 / OP-09 missing from Master Tree §9 listing (CONFLICT — RESOLVED)
 
 - Spec 22 has O-06, O-09; Master Tree tree listing gaps numbering.
 - **Resolution:** implement per spec 22 (higher for screen detail after decisions); tree is navigation aid.
-- **Status:** CONFLICT (resolved for build)
+- **Status:** RESOLVED for current build/source mappings; historical section numbering remains evidence only.
 
 ## G-016 — Phase C dead routes (historical)
 
 - `/admin/users`, `/admin/orgs`, `/ops/finance`, `/ops/reconciliation` were nav-only.
 - **Build:** only routes in SCREEN_MATRIX with sources; no dead links.
 
-## G-017 — Backend HTTP coverage 21/50 at inventory snapshot (BLOCKED_EXTERNAL for non-mock)
+## G-017 — Backend HTTP coverage 21/50 at inventory snapshot (HISTORICAL — RESOLVED)
 
 - Many CONTRACT endpoints not yet on FastAPI at Stage 07 snapshot; research-hardening added many REAL routes (orders list, support, field, etc.) beyond that snapshot.
 - **Build:** prefer REAL map in API_MAP §3; remaining CONTRACT → MOCK same-contract.
-- **Status:** BLOCKED_EXTERNAL for true e2e against missing HTTP; not a stop — continue with mocks.
+- **Status:** RESOLVED on the current remediation branch: canonical ledger is now 50/50 HTTP_IMPLEMENTED; runtime CI evidence remains the release gate.
 
 ## G-018 — Android readiness RED in design audit 60 (BLOCKED_EXTERNAL sequencing)
 
@@ -177,16 +177,16 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - Source remediation (2026-09-24): Mobile normalizes Iranian local numbers to E.164 before auth and backend OTP request/verification schemas now enforce the E.164 pattern.
 - Status: RESOLVED — local authentication/device retest PASS (2026-09-24).
 
-## G-029 — Web token persistence uses localStorage (SECURITY GAP — SOURCE REMEDIATED)
+## G-029 — Web token persistence uses localStorage (SECURITY GAP — RESOLVED)
 
 - **Historical source finding (2026-09-24):** the web auth store persisted access/refresh bearer credentials in browser localStorage.
 - **Current source remediation:** mvp/apps/web/src/lib/auth/store.ts now persists profile metadata only; accessToken remains in memory. Browser refresh uses the server-managed `pol_refresh` HttpOnly/Secure/SameSite cookie.
 - **Transport hardening:** web verify/refresh endpoints do not expose the refresh credential in JSON when the cookie-backed flow is used; refresh tests assert this behavior.
 - **Residual verification:** browser-runtime/XSS and production-cookie deployment evidence remain separate release evidence.
-- **Status:** SOURCE REMEDIATED / CI VERIFICATION IN PROGRESS.
+- **Status:** SOURCE REMEDIATED; final release gate is CI/runtime evidence.
 
-## G-030 — Browser-to-API CORS policy was not previously explicit (SOURCE REMEDIATED)
+## G-030 — Browser-to-API CORS policy was not previously explicit (RESOLVED)
 
 - **Finding:** web API client uses a separate API base origin while FastAPI had no explicit CORS policy in the audited transport source.
 - **Source remediation (2026-09-24):** FastAPI now applies environment-scoped CORS with explicit local development origins, requires POL_CORS_ORIGINS in production, forbids wildcard production CORS, and has a transport test for allowed/blocked origins.
-- **Status:** SOURCE REMEDIATED / CI VERIFICATION REQUIRED.
+- **Status:** SOURCE REMEDIATED; final release gate is CI/runtime evidence.
