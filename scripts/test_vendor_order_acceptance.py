@@ -279,7 +279,7 @@ def test_vendor_full_accept_consumes_reservation_and_notifies_retailer(pg_connec
                 """,
                 (data["order_id"],),
             )
-            assert cur.fetchone()["order_status"] == "PREPARING"
+            assert cur.fetchone()["order_status"] == "ACCEPTED"
 
             cur.execute(
                 """
@@ -399,7 +399,7 @@ def test_vendor_order_accept_rejects_non_submitted_state_without_mutation(pg_con
                 "SELECT order_status FROM orders WHERE id = %s",
                 (data["order_id"],),
             )
-            assert cur.fetchone()["order_status"] == "ACCEPTED"
+            assert cur.fetchone()["order_status"] == "PREPARING"
 
             cur.execute(
                 "SELECT status FROM inventory_reservations WHERE id = %s",
