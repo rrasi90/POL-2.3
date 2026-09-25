@@ -35,6 +35,16 @@ def rma_case(postgres_database, checkout_catalog, checkout_request):
     with transaction(postgres_database) as cur:
         result = POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
         order = result["orders"][0]
+        cur.execute(
+            """
+            UPDATE order_items
+            SET accepted_quantity=COALESCE(accepted_quantity, ordered_quantity),
+                delivered_quantity=ordered_quantity,
+                fulfillment_status='FULFILLED'
+            WHERE order_id=%s
+            """,
+            (order["id"],),
+        )
         cur.execute("UPDATE orders SET order_status='DELIVERED' WHERE id=%s", (order["id"],))
         cur.execute("SELECT id FROM order_items WHERE order_id=%s ORDER BY id", (order["id"],))
         item_id = cur.fetchone()["id"]
