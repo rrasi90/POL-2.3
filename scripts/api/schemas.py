@@ -147,6 +147,10 @@ class DeliveryConfirmRequest(APIBaseModel):
     issue_reported: str | None = Field(default=None, max_length=500)
 
 
+class DeliveryStageRequest(APIBaseModel):
+    reason: str | None = Field(default=None, max_length=2000)
+
+
 class DeliveryExceptionReportRequest(APIBaseModel):
     delivery_id: str = Field(min_length=1, max_length=64)
     order_id: str = Field(min_length=1, max_length=64)
