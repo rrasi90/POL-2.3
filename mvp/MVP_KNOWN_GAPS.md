@@ -80,12 +80,12 @@ Vendor staff list/invite/update is implemented with owner-only mutations, tenant
 Ops now has /api/v1/ops/returns for a tenant-independent operational workbench over all returns, and /ops/rma consumes it directly.
 
 
-## G-014 — Design contradictions register (PROPOSED / multi)
+## G-014 — Design contradictions register (RESOLVED)
 
 Prior research noted: brand blue vs tokens, type scale variants, radius, motion bands, density labels, WCAG version wording, Latin fallback font, breakpoints, focus ring details, golden-screen set.
 - **Resolution:** doc 56 (Precision Commerce) wins for visual tokens; motion bands 120–160 / 160–240 / 200–280 / ≤400ms; WCAG 2.2 where doc 21/22 adopt it.
 - Anything still undefined at implement time → new `G-0xx` + `PROPOSED` token marked in code.
-- **Status:** PROPOSED (rolling)
+- **Status:** RESOLVED. The canonical visual design system defines the active token hierarchy, typography, spacing, radius, motion, density, WCAG reference, RTL, responsive and golden-screen requirements. New material changes must be registered as explicit decisions rather than treated as inherited contradictions.
 
 ## G-015 — OP-06 / OP-09 missing from Master Tree §9 listing (CONFLICT — RESOLVED)
 
@@ -93,7 +93,7 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 - **Resolution:** implement per spec 22 (higher for screen detail after decisions); tree is navigation aid.
 - **Status:** RESOLVED for current build/source mappings; historical section numbering remains evidence only.
 
-## G-016 — Phase C dead routes (historical)
+## G-016 — Phase C dead routes (HISTORICAL — RESOLVED)
 
 - `/admin/users`, `/admin/orgs`, `/ops/finance`, `/ops/reconciliation` were nav-only.
 - **Build:** only routes in SCREEN_MATRIX with sources; no dead links.
@@ -108,13 +108,13 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 
 - Dual-client mandated (D-026) but audit marks Android RED pre-build.
 - **Build:** Phase 3 still required by contract; not a Phase 0 blocker.
-- **Status:** HISTORICAL. Mobile implementation and prior local/device verification exist on the current project line; final CI runner evidence remains separate.
+- **Status:** HISTORICAL / RESOLVED. Current screen matrix contains the live route set; historical dead-link snapshot is retained for traceability.. Mobile implementation and prior local/device verification exist on the current project line; final CI runner evidence remains separate.
 
-## G-019 — Working tree lacks many canonical files (CONFLICT — tooling)
+## G-019 — Working tree lacks many canonical files (HISTORICAL — RESOLVED)
 
 - Docs on `origin/product-architecture-evolution-2026-09-20` / research-hardening; working tree `main` has partial 50/56 staged.
 - **Resolution:** `git show <ref>:<path>` for reads (§2.8); do not switch branches unless necessary.
-- **Status:** CONFLICT (tooling)
+- **Status:** HISTORICAL / RESOLVED. The active source-of-truth references now point only to files present on the current remediation branch; missing historical documents are not treated as active authority.
 
 ## G-020 — Corporate `PUBLIC_ANON` not a backend role (RESOLVED — BY DESIGN)
 
