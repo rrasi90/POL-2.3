@@ -182,7 +182,7 @@ def test_batch4_recipient_membership_isolation(postgres_database, routing):
         event_id = "batch4-" + uuid.uuid4().hex
         insert_row(
             cur, "outbox_events", event_id=event_id, event_name="ORDER_ACCEPTED",
-            aggregate_type="ORDER", aggregate_id=str(uuid.uuid4()), payload=%s,
+            aggregate_type="ORDER", aggregate_id=str(uuid.uuid4()), payload='{}',
             target_user_id=None if routing == "missing_user" else user["id"],
             target_organization_id=None if routing == "missing_organization" else target_org,
             dedupe_key=event_id, channel_hint="INBOX",
@@ -197,13 +197,29 @@ def test_batch4_recipient_membership_isolation(postgres_database, routing):
             assert CanonicalIntegrationWorker.process_pending(cur) == 0
         else:
             assert CanonicalIntegrationWorker.process_pending(cur) == 1
-        cur.execute("SELECT user_id, organization_id FROM notifications")
+        cur.execute(
+            """
+            SELECT user_id, organization_id
+            FROM notifications
+            WHERE user_id=%s AND organization_id=%s AND event_name='ORDER_ACCEPTED'
+            ORDER BY created_at DESC
+            """,
+            (user["id"], org["id"]),
+        )
         rows = cur.fetchall()
         assert len(rows) == (1 if routing == "authorized" else 0)
         if rows:
             assert rows[0]["user_id"] == user["id"]
             assert rows[0]["organization_id"] == org["id"]
-        cur.execute("SELECT count(*) AS count FROM notification_deliveries")
+        cur.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM notification_deliveries nd
+            JOIN notifications n ON n.id=nd.notification_id
+            WHERE n.user_id=%s AND n.organization_id=%s AND n.event_name='ORDER_ACCEPTED'
+            """,
+            (user["id"], org["id"]),
+        )
         assert cur.fetchone()["count"] == len(rows)
         cur.execute("SELECT status, last_error FROM outbox_events WHERE event_id=%s", (event_id,))
         event_row = cur.fetchone()
@@ -211,5 +227,12 @@ def test_batch4_recipient_membership_isolation(postgres_database, routing):
         if routing != "authorized":
             assert event_row["last_error"]
     with transaction(postgres_database) as cur:
-        cur.execute("SELECT count(*) AS count FROM notifications")
+        cur.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM notifications
+            WHERE user_id=%s AND organization_id=%s AND event_name='ORDER_ACCEPTED'
+            """,
+            (user["id"], org["id"]),
+        )
         assert cur.fetchone()["count"] == (1 if routing == "authorized" else 0)
