@@ -10,26 +10,26 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 | Vendor | V-01, V-02, V-03, V-06, V-07, V-08, V-10, V-17 | VendorMobileScreen.tsx + OrderDetailMobileScreen.tsx | order queue/actions, partial acceptance, items/timeline, inventory, daily inventory, referrals, settlements, invoices | IMPLEMENTED |
 | Ops | O-01, O-02, O-06, O-10 | src/screens/OpsMobileScreen.tsx | exceptions dashboard, orders, reconciliation, audit logs | IMPLEMENTED (ADMIN_SUPER audit) |
 | Field | F-01…F-05 | FieldTaskList/Detail/AssistedOrderScreen.tsx + OfflineBanner | field tasks, healthz | IMPLEMENTED |
-| Barcode | R-03B / V-16 | no camera adapter yet | POST `/api/v1/products/match-barcode` is CONTRACT_ONLY in `mvp/MVP_API_MAP.md`; no runtime route is available | GAP / CONTRACT |
-| Vendor Customers/Staff | V-09 / V-11 | no CRUD invented | no authoritative HTTP contract | GAP |
+| Barcode | R-03B / V-16 | canonical API exists; no device camera adapter yet | POST `/api/v1/products/match-barcode` + candidate workflow | IMPLEMENTED / CAMERA RUNTIME SCOPE |
+| Vendor Customers/Staff | V-09 / V-11 | canonical management HTTP exists; mobile UI remains unported | GET `/api/v1/vendors/customers`, GET/POST/PATCH `/api/v1/vendors/staff*` | IMPLEMENTED SOURCE / MOBILE UI SCOPE |
 | Retailer order detail / returns / support | R-09…R-13 | order detail, return/dispute submission and support are implemented; remaining notifications/profile are shared | routes available per API map | IMPLEMENTED foundation |
 
 ## Mobile-wide rules
 
 - No Driver App (D-023).
-- D-028 barcode capability may use a camera adapter when the contract/runtime dependency is available; do not invent barcode matching semantics.
+- D-028 barcode matching semantics are now canonical in HTTP/domain code; a device camera adapter may feed the canonical endpoint without creating a second matching contract.
 - F-05 MVP is request-failure state + healthz retry. No rich offline sync is claimed.
 - Role is taken from backend membership context; client does not infer permissions.
 - Checkout uses the Idempotency-Key header.
 - Light/Night token sets exist centrally; profile/notifications/preferences are shared across authenticated roles; full screen-by-screen Night verification remains a QA task until visual evidence is recorded.
-- At least three Phase-3 QA cycles are required before claiming final mobile DoD.
+- Three Phase-3 QA cycles are evidenced historically; fresh certification must be re-established after the current remediation branch because the latest CI reruns fail before useful step execution.
 
 ## QA evidence
 
 - CI workflow: `.github/workflows/pol-mvp-mobile.yml`
 - Required checks currently wired: mobile typecheck + Expo config validation + Android export.
 - CI cycle 1 is evidenced by run `35884012647`. Functional/state-transition/parity QA cycle 2 is evidenced by run `35886815013` with **23/23 deterministic checks passing**; this remains contract/state coverage rather than device-level exploratory QA. Regression/cross-module QA cycle 3 is evidenced by run `35893284378` with **11/11 checks passing**, plus typecheck, Expo config validation and Android export. Visual Night verification remains a separate local gate.
-- Status must remain IMPLEMENTED until the corresponding CI/evidence row is recorded.
+- Source implementation and QA evidence are tracked separately; do not promote a mobile surface to VERIFIED without current executable evidence.
 
 ## Local device notes (LOCAL-04, 2026-09-24, pre-remediation build)
 
