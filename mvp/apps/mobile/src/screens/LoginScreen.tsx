@@ -74,6 +74,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void }): React.Re
       const data = await api.post<VerifyResult>("/api/v1/auth/verify-otp", {
         mobile_number: mobileNumber,
         otp_code: otp,
+        client_platform: "mobile",
       });
       const role = normalizeRole(data.current_organization?.role ?? data.role);
       if (!role) {
