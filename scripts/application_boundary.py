@@ -2503,7 +2503,7 @@ class POLApplicationBoundary:
         if not proposed_title or not proposed_title.strip():
             raise ValueError("proposed_title is required when creating a barcode candidate.")
 
-        candidate_vendor_sku = (vendor_sku or normalized).strip()
+        candidate_vendor_sku = vendor_sku.strip() if vendor_sku and vendor_sku.strip() else None
         self.cur.execute(
             """
             SELECT id, product_id, candidate_id, listing_status
@@ -2512,8 +2512,8 @@ class POLApplicationBoundary:
             FOR UPDATE
             """,
             (vendor_id, candidate_vendor_sku),
-        )
-        existing_vp = self.cur.fetchone()
+        ) if candidate_vendor_sku else None
+        existing_vp = self.cur.fetchone() if candidate_vendor_sku else None
         if existing_vp and existing_vp["product_id"]:
             raise ValueError("vendor_sku is already bound to a canonical product.")
         if existing_vp and existing_vp["candidate_id"]:
@@ -2542,6 +2542,7 @@ class POLApplicationBoundary:
             (vendor_id, normalized),
         )
         candidate = self.cur.fetchone()
+        candidate_replayed = bool(candidate)
         candidate_created = False
         if candidate:
             candidate_id = str(candidate["id"])
@@ -2570,6 +2571,7 @@ class POLApplicationBoundary:
                 candidate_created = True
                 candidate_id = str(inserted["id"])
             else:
+                candidate_replayed = True
                 self.cur.execute(
                     """
                     SELECT id
@@ -2588,6 +2590,59 @@ class POLApplicationBoundary:
                         "Concurrent barcode candidate insert conflicted but the winning candidate could not be re-read."
                     )
                 candidate_id = str(candidate["id"])
+
+        vendor_product_id = None
+        listing_status = None
+        vendor_product_created = False
+        if candidate_vendor_sku:
+            vendor_product_id = str(uuid4())
+            self.cur.execute(
+                """
+                INSERT INTO vendor_products
+                    (id,vendor_id,product_id,candidate_id,vendor_sku,
+                     packaging_unit,pack_quantity,sales_unit,is_active,listing_status)
+                VALUES (%s,%s,NULL,%s,%s,%s,%s,%s,FALSE,'DRAFT_PENDING_CATALOG')
+                ON CONFLICT (vendor_id, vendor_sku)
+                DO NOTHING
+                RETURNING id, listing_status
+                """,
+                (
+                    vendor_product_id,
+                    vendor_id,
+                    candidate_id,
+                    candidate_vendor_sku,
+                    packaging_unit.strip(),
+                    int(pack_quantity),
+                    packaging_unit.strip(),
+                ),
+            )
+            inserted_vp = self.cur.fetchone()
+            if inserted_vp:
+                vendor_product_created = True
+                vendor_product_id = str(inserted_vp["id"])
+                listing_status = inserted_vp["listing_status"]
+            else:
+                self.cur.execute(
+                    """
+                    SELECT id, product_id, candidate_id, listing_status
+                    FROM vendor_products
+                    WHERE vendor_id=%s AND vendor_sku=%s
+                    FOR UPDATE
+                    """,
+                    (vendor_id, candidate_vendor_sku),
+                )
+                winner_vp = self.cur.fetchone()
+                if not winner_vp:
+                    raise RuntimeError(
+                        "Concurrent vendor SKU insert conflicted but the winning vendor product could not be re-read."
+                    )
+                if winner_vp["product_id"]:
+                    raise ValueError("vendor_sku is already bound to a canonical product.")
+                if str(winner_vp["candidate_id"]) != candidate_id:
+                    raise ValueError("vendor_sku is already bound to a different product candidate.")
+                vendor_product_id = str(winner_vp["id"])
+                listing_status = winner_vp["listing_status"]
+                candidate_replayed = True
 
         if candidate_created:
             self.cur.execute(
@@ -2620,14 +2675,15 @@ class POLApplicationBoundary:
                     "PRODUCT_CANDIDATE_CREATED:" + candidate_id,
                 ),
             )
+
         return {
             "match_type": "NO_MATCH",
             "confidence_score": 0.0,
             "product": None,
             "candidate_id": candidate_id,
             "vendor_product_id": vendor_product_id,
-            "listing_status": "DRAFT_PENDING_CATALOG",
-            "idempotent_replay": False,
+            "listing_status": listing_status,
+            "idempotent_replay": candidate_replayed and not vendor_product_created,
         }
 
     def catalog_categories_public(self):
