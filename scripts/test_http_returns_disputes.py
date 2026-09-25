@@ -298,7 +298,7 @@ class TestDisputeOpen:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"description": "Wrong items delivered, vendor unresponsive"},
+            json={"claimed_amount_toman": 1000000, "description": "Wrong items delivered, vendor unresponsive"},
         )
         assert resp.status_code == 201
         body = resp.json()
@@ -311,7 +311,7 @@ class TestDisputeOpen:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['v_token']}"},
-            json={"description": "Test dispute from vendor"},
+            json={"claimed_amount_toman": 100000, "description": "Test dispute from vendor"},
         )
         assert resp.status_code in (403, 422)
 
@@ -319,10 +319,31 @@ class TestDisputeOpen:
         data = _seed_delivered_order(uuid4().hex[:8])
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            json={"description": "Test"},
+            json={"claimed_amount_toman": 100000, "description": "Test"},
         )
         assert resp.status_code == 401
 
+
+class TestDisputeFilingWindow:
+    def test_expired_dispute_window_is_rejected(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        conn = _db()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE deliveries SET delivered_at = now() - interval '5 hours' WHERE order_id = %s",
+                    (data["oi"],),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"claimed_amount_toman": 1000000, "description": "Expired dispute window"},
+        )
+        assert resp.status_code == 400
 
 class TestDisputeQuery:
     def test_get_dispute_by_tenant(self, client):
@@ -330,7 +351,7 @@ class TestDisputeQuery:
         create_resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"description": "Dispute for testing get"},
+            json={"claimed_amount_toman": 100000, "description": "Dispute for testing get"},
         )
         dispute_id = create_resp.json()["data"]["id"]
         resp = client.get(
@@ -345,7 +366,7 @@ class TestDisputeQuery:
         client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"description": "Dispute for listing"},
+            json={"claimed_amount_toman": 100000, "description": "Dispute for listing"},
         )
         resp = client.get(
             f"/api/v1/orders/{data['oi']}/disputes",
