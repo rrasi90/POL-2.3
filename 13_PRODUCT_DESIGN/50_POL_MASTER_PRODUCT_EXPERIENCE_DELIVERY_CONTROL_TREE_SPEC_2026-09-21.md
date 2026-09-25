@@ -7368,8 +7368,8 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 | 1 | GET `/api/v1/products/search` | HTTP_IMPLEMENTED | `catalog_products_search` |
 | 2 | POST `/api/v1/products/match-barcode` | HTTP_IMPLEMENTED | `catalog_match_barcode` |
 | 3 | POST `/api/v1/product-candidates` | HTTP_IMPLEMENTED | `catalog_create_product_candidate` |
-| 4 | POST `/api/v1/vendors/inventory/continuous-scan` | CONTRACT_ONLY | vendor catalog/inventory |
-| 5 | POST `/api/v1/vendors/inventory/publish` | CONTRACT_ONLY | vendor catalog/inventory |
+| 4 | POST `/api/v1/vendors/inventory/continuous-scan` | HTTP_IMPLEMENTED | `vendor_inventory_continuous_scan` |
+| 5 | POST `/api/v1/vendors/inventory/publish` | HTTP_IMPLEMENTED | `vendor_inventory_publish` |
 | 6 | POST `/api/v1/baskets` | HTTP_IMPLEMENTED | `basket_create` |
 | 7 | POST `/api/v1/baskets/{id}/items` | HTTP_IMPLEMENTED | `basket_add_item` |
 | 8 | POST `/api/v1/baskets/{id}/allocation-preview` | HTTP_IMPLEMENTED | `basket_allocation_preview` |
@@ -7381,10 +7381,10 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 | 14 | POST `/api/v1/orders/{id}/partial-acceptance-proposals/{proposal_id}/decline` | HTTP_IMPLEMENTED | `retailer_partial_acceptance_decline` |
 | 15 | POST `/api/v1/orders/{id}/dispatch` | HTTP_IMPLEMENTED | `vendor_dispatch_order` |
 | 16 | POST `/api/v1/orders/{id}/deliver` | HTTP_IMPLEMENTED | `retailer_confirm_delivery` |
-| 17 | POST `/api/v1/orders/{id}/payments/direct-transfer` | CONTRACT_ONLY | payment evidence API |
-| 18 | POST `/api/v1/orders/{id}/payments/{payment_id}/verify` | CONTRACT_ONLY | payment evidence API |
+| 17 | POST `/api/v1/orders/{id}/payments/direct-transfer` | HTTP_IMPLEMENTED | `submit_payment_evidence` alias |
+| 18 | POST `/api/v1/orders/{id}/payments/{payment_id}/verify` | HTTP_IMPLEMENTED | `verify_payment` bound by payment_id |
 | 19 | POST `/api/v1/orders/{id}/disputes` | HTTP_IMPLEMENTED | canonical dispute boundary |
-| 20 | PATCH `/api/v1/disputes/{id}/resolve` | CONTRACT_ONLY | dispute/RMA HTTP |
+| 20 | PATCH `/api/v1/disputes/{id}/resolve` | HTTP_IMPLEMENTED | `dispute_resolve` |
 | 21 | POST `/api/v1/auth/request-otp` | HTTP_IMPLEMENTED | authentication/session layer |
 | 22 | POST `/api/v1/auth/verify-otp` | HTTP_IMPLEMENTED | authentication/session layer |
 | 23 | POST `/api/v1/auth/refresh` | HTTP_IMPLEMENTED | authentication/session layer |
@@ -7405,7 +7405,7 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 | 38 | GET `/api/v1/invoices` | HTTP_IMPLEMENTED | `invoices_list` |
 | 39 | GET `/api/v1/invoices/{id}` | HTTP_IMPLEMENTED | `invoice_get` |
 | 40 | GET `/api/v1/admin/exceptions/dashboard` | HTTP_IMPLEMENTED | `admin_exceptions_dashboard` |
-| 41 | POST `/api/v1/admin/sla-overrides` | CONTRACT_ONLY | ops SLA boundary |
+| 41 | POST `/api/v1/admin/sla-overrides` | HTTP_IMPLEMENTED | `admin_sla_override` |
 | 42 | GET `/api/v1/admin/audit-logs` | HTTP_IMPLEMENTED | `admin_audit_logs_list` |
 | 43 | GET `/api/v1/categories` | HTTP_IMPLEMENTED | `catalog_categories_public` |
 | 44 | POST `/api/v1/admin/categories` | HTTP_IMPLEMENTED | `admin_category_create` |
@@ -7417,7 +7417,7 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 | 50 | GET `/api/v1/profile/context` | HTTP_IMPLEMENTED / SHARED BOUNDARY | `profile_get` |
 
 Endpoint governance:
-- 44 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED on this remediation branch; rows marked CONTRACT_ONLY remain unimplemented at the canonical HTTP path.
+- 50 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED on this remediation branch. The ledger is therefore fully HTTP-closed; remaining verification is runtime/CI evidence, not missing canonical routes.
 - /healthz and /readyz are operational transport routes, not business endpoints.
 - BOUNDARY_READY / NOT_YET_HTTP methods are not production HTTP completion.
 - Path normalization may reconcile :id and {id}; this does not create a second endpoint.
