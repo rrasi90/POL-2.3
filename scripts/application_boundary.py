@@ -234,7 +234,7 @@ class POLApplicationBoundary:
                 "amount_toman": int(row["line_total_toman"]),
             }
             for row in allocation_rows
-            if row["status"] in ("ALLOCATED", "PARTIALLY_ALLOCATED")
+            if row["status"] == "ALLOCATED"
         ]
 
         # Payment execution is a separate canonical order/payment capability.
