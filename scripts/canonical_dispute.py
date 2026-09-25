@@ -10,3 +10,4 @@ from scripts.domain_services import DisputeService
 
 class CanonicalDisputeService:
     open_dispute = staticmethod(DisputeService.open_dispute)
+    resolve_dispute = staticmethod(DisputeService.resolve_dispute)
