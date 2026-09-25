@@ -776,6 +776,8 @@ class POLApplicationBoundary:
         from scripts.delivery_exceptions import list_delivery_exceptions as _list
         return _list(
             self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
             order_id=order_id,
             delivery_id=delivery_id,
             status=status,
@@ -785,7 +787,12 @@ class POLApplicationBoundary:
 
     def delivery_exception_get(self, *, exception_id):
         from scripts.delivery_exceptions import get_delivery_exception as _get
-        result = _get(self.cur, exception_id=exception_id)
+        result = _get(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            exception_id=exception_id,
+        )
         if not result:
             raise ValueError("Delivery exception not found.")
         return result
