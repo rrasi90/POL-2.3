@@ -103,6 +103,9 @@ def _seed_vendor_catalog(cur, suffix: str):
         "org_id": org_id,
         "vendor_id": vendor_id,
         "product_id": product_id,
+        "brand_id": brand_id,
+        "category_id": category_id,
+        "subcategory_id": subcategory_id,
         "session_id": session_id,
         "token": access,
         "barcode": barcode,
@@ -133,9 +136,6 @@ def test_exact_barcode_match_uses_canonical_identifier():
             with conn.cursor() as cur:
                 if data:
                     cur.execute("DELETE FROM product_identifiers WHERE product_id=%s", (data["product_id"],))
-                    cur.execute("DELETE FROM vendor_inventory WHERE vendor_product_id=%s", (data["vendor_product_id"],))
-                    cur.execute("DELETE FROM vendor_prices WHERE vendor_product_id=%s", (data["vendor_product_id"],))
-                    cur.execute("DELETE FROM vendor_products WHERE id=%s", (data["vendor_product_id"],))
                     cur.execute("DELETE FROM products WHERE id=%s", (data["product_id"],))
                     cur.execute("DELETE FROM subcategories WHERE id=%s", (data["subcategory_id"],))
                     cur.execute("DELETE FROM categories WHERE id=%s", (data["category_id"],))
@@ -217,6 +217,8 @@ def test_unknown_barcode_creates_quarantined_candidate_idempotently():
             with conn:
                 with conn.cursor() as cur:
                     cur.execute("DELETE FROM product_candidates WHERE vendor_id=%s", (data["vendor_id"],))
+                    cur.execute("DELETE FROM vendor_inventory WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s)", (data["vendor_id"],))
+                    cur.execute("DELETE FROM vendor_prices WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s)", (data["vendor_id"],))
                     cur.execute("DELETE FROM vendor_products WHERE vendor_id=%s", (data["vendor_id"],))
                     cur.execute("DELETE FROM product_identifiers WHERE product_id=%s", (data["product_id"],))
                     cur.execute("DELETE FROM products WHERE id=%s", (data["product_id"],))
