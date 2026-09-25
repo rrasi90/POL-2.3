@@ -81,7 +81,7 @@ See `BUILD_PLAN.md` §11 defect log (full table). Highlights:
 
 ---
 
-## 4. GitHub discrepancies
+## 4. Historical GitHub discrepancies
 
 This section contains historical reconciliation evidence and is not the current branch state.
 
@@ -98,7 +98,7 @@ Untracked (intentionally not committed): `docker-compose.yml`, `monitoring/`, `f
 
 ## 5. Final screen / API coverage
 
-- **Screens:** 68 — 40 IMP / 19 VER / 8 GAP / 1 N/A (`MVP_SCREEN_MATRIX.md` §H).
+- **Historical screen snapshot:** 68 — 40 IMP / 19 VER / 8 GAP / 1 N/A (`MVP_SCREEN_MATRIX.md` §H).
 - **APIs:** `MVP_API_MAP.md` — deliver OTP pattern `^\d{4}$` (G-022 RESOLVED); catalog/search/notifications use REAL paths; gaps documented.
 - **Live smoke:** FastAPI `:8000` healthz **200**, Next `:3001` **200**; 19 screens VERIFIED cycle 5; route crawl 47/47 previously.
 - **Mobile Field:** F-01…F-05 wired to real field routes + healthz offline banner (parity.md).
@@ -109,15 +109,15 @@ Untracked (intentionally not committed): `docker-compose.yml`, `monitoring/`, `f
 
 | Check | Result |
 |-------|--------|
-| Full verification suite | **497/497 PASSED** in 210.67s — `artifacts/pol-test-results.json` `overall_status=PASSED` |
+| Historical full verification suite | **497/497 PASSED** in 210.67s — `artifacts/pol-test-results.json` `overall_status=PASSED` |
 | Targeted delivery/POD/field/hierarchy | 73/73 passed (pre-suite) |
 | `verify_repository_consistency` | **PASS 8 / FAIL 0**, EXIT 0 |
 | `structural_audit.py` | **EXIT 0** |
 | Web lint | **0 errors** (15 pre-existing warnings) |
 | Web typecheck + build | EXIT 0 (50 routes) |
 | Workspace typecheck (historical baseline) | EXIT 0; current mobile changes require new CI evidence |
-| Migration chain | contiguous 001–031; PG18.4; 95 tables (`pol` + `pol_test`) |
-| CI | **Code commit `f8ef267e6666a03b483afdd8618585ed82086014`: backend verification run 35893284312 SUCCESS; mobile Cycle 3 verification run 35893284378 SUCCESS** |
+| Historical migration chain snapshot | contiguous 001–031 at the recorded baseline; current branch contains migrations through 041+ |
+| Historical CI | **Code commit `f8ef267e`: backend verification run 35893284312 SUCCESS; mobile Cycle 3 run 35893284378 SUCCESS** |
 | Live services | API healthz 200; Web 200 |
 
 ---
@@ -136,9 +136,9 @@ No other external blockers claimed.
 
 ---
 
-## 8. Current audit state — 2026-09-23
+## 8. Historical audit state — 2026-09-23
 
-The repository has been re-audited against the remaining execution gates. Documentation status has been reconciled so that historical green evidence is not treated as current verification. Mobile QA Cycles 1–3 are now evidenced by current CI: Cycle 1 run `35884012647`; Cycle 2 run `35886815013` with **23/23 deterministic checks PASS**; Cycle 3 run `35893284378` with **11/11 regression checks PASS**, plus typecheck, Expo config validation and Android export green. Backend verification on the same current commit is run `35893284312` SUCCESS. Remaining executable gates are Night visual verification, live basket → allocation → checkout → order lifecycle E2E, and checkout idempotency replay. V-09/V-11 and D-028 remain GAP/CONTRACT where authoritative HTTP contracts are absent. OpenPencil WAVE-02 remains BLOCKED_EXTERNAL if MCP `:7600` is unavailable.
+The repository has been re-audited against the remaining execution gates. Documentation status has been reconciled so that historical green evidence is not treated as current verification. Mobile QA Cycles 1–3 were historically evidenced by CI: Cycle 1 run `35884012647`; Cycle 2 run `35886815013`; Cycle 3 run `35893284378`. At that snapshot the remaining executable gates were Night visual verification, live basket → allocation → checkout → order lifecycle E2E, and checkout idempotency replay. Those local gates are now recorded separately as LOCAL-01…04 PASS; V-09/V-11 and D-028 have since received source remediation. OpenPencil WAVE-02 remains BLOCKED_EXTERNAL if MCP `:7600` is unavailable.
 
 No current test/build result is claimed from this audit because the available GitHub integration can modify/read repository content but does not provide a local project runtime for executing the commands.
 
