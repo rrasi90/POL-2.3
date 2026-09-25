@@ -82,6 +82,24 @@ def reject_order(
 
  
  
+@router.get("/{order_id}/partial-acceptance-proposals")
+def list_partial_acceptance_proposals(
+    order_id: UUID,
+    status: str | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.partial_acceptance_proposals_list(
+            order_id=str(order_id),
+            status=status,
+            offset=offset,
+            limit=limit,
+        )
+    )
+
+
 @router.post("/{order_id}/partial-acceptance-proposals", status_code=201)
 def propose_partial_acceptance(
     order_id: UUID,
