@@ -328,7 +328,7 @@ def assert_checkout(cur, catalog, request, result):
             assert reservation["quantity"] == line["quantity"]
             assert reservation["status"] == "ACTIVE"
             assert reservation["idempotency_key"] == f"res-{request['idempotency_key']}-{line['vendor_product_id']}"
-            assert reservation["order_item_id"] is None
+            assert str(reservation["order_item_id"]) == str(by_offer[line["vendor_product_id"]]["id"])
             assert reservation["released_at"] is reservation["consumed_at"] is None
             assert reservation["created_at"] == group["created_at"]
             assert reservation["expires_at"] - reservation["created_at"] == timedelta(minutes=15)
