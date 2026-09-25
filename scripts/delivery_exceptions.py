@@ -248,11 +248,67 @@ def _record_exception_event(cur, exception_id, from_status, to_status,
     )
 
 
-def _emit_exception_outbox(cur, event_name, exception_id, payload):
+def _emit_exception_outbox(
+    cur,
+    event_name,
+    exception_id,
+    payload,
+    *,
+    recipient_org_id=None,
+    recipient_roles=(),
+    operator_orgs=False,
+):
+    clauses = ["m.status='ACTIVE'", "u.is_active=TRUE"]
+    params = []
+    if operator_orgs:
+        clauses.append("o.org_type='OPERATOR'")
+    elif recipient_org_id:
+        clauses.append("m.organization_id=%s")
+        params.append(recipient_org_id)
+    else:
+        raise ValueError("A notification target organization is required.")
+    if recipient_roles:
+        clauses.append("m.role = ANY(%s)")
+        params.append(list(recipient_roles))
+    where_sql = " AND ".join(clauses)
     cur.execute(
-        "INSERT INTO outbox_events "
-        "(id, event_id, event_name, aggregate_type, aggregate_id, payload, status, created_at) "
-        "VALUES (%s, %s, %s, %s, %s, %s, 'PENDING', now())",
-        (str(uuid4()), str(uuid4()), event_name, "DELIVERY_EXCEPTION", exception_id,
-         _json_dumps(payload)),
+        f"""
+        SELECT m.user_id, m.organization_id
+        FROM organization_memberships m
+        JOIN users u ON u.id=m.user_id
+        JOIN organizations o ON o.id=m.organization_id
+        WHERE {where_sql}
+        ORDER BY m.organization_id, m.user_id
+        """,
+        tuple(params),
+    )
+    recipients = cur.fetchall()
+    if not recipients:
+        raise ValueError("Delivery exception notification has no active recipient.")
+
+    for recipient in recipients:
+        dedupe_key = f"{event_name}:{exception_id}:{recipient['organization_id']}:{recipient['user_id']}"
+        cur.execute(
+            """
+            INSERT INTO outbox_events (
+                id, event_id, event_name, aggregate_type, aggregate_id, payload, status,
+                target_user_id, target_organization_id, dedupe_key, channel_hint, created_at
+            )
+            VALUES (
+                %s, %s, %s, 'DELIVERY_EXCEPTION', %s, %s, 'PENDING',
+                %s, %s, %s, 'INBOX', now()
+            )
+            ON CONFLICT (event_name, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+            """,
+            (
+                str(uuid4()),
+                str(uuid4()),
+                event_name,
+                exception_id,
+                _json_dumps(payload),
+                str(recipient["user_id"]),
+                str(recipient["organization_id"]),
+                dedupe_key,
+            ),
+        )
     )
