@@ -2669,8 +2669,15 @@ class POLApplicationBoundary:
             params.append(self.context.organization_id)
         where_sql = " AND ".join(where_clauses)
         self.cur.execute(
-            f"SELECT n.id, n.event_name, n.title, n.body, n.priority, n.created_at "
-            f"FROM notifications n WHERE {where_sql} "
+            f"""
+            SELECT n.id, n.event_name, n.title, n.body, n.priority, n.created_at,
+                   ui.is_read, ui.read_at, ui.deep_link
+            FROM notifications n
+            LEFT JOIN user_inbox_items ui
+              ON ui.notification_id = n.id
+             AND ui.user_id = n.user_id
+             AND (ui.organization_id = n.organization_id OR ui.organization_id IS NULL)
+            WHERE {where_sql} """
             f"ORDER BY n.created_at DESC LIMIT %s OFFSET %s",
             (*params, limit, offset),
         )
