@@ -457,6 +457,23 @@ def submit_payment_evidence(
     )
 
 
+@router.post("/{order_id}/payments/direct-transfer", status_code=201)
+def record_direct_transfer(
+    order_id: UUID,
+    payload: PaymentEvidenceRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.submit_payment_evidence(
+            order_id=str(order_id),
+            evidence_type=payload.evidence_type,
+            reference_number=payload.reference_number,
+            amount_toman=payload.amount_toman,
+            notes=payload.notes,
+        )
+    )
+
+
 @router.get("/{order_id}/payments/evidence")
 def list_payment_evidence(
     order_id: UUID,
@@ -464,6 +481,23 @@ def list_payment_evidence(
 ):
     return success_payload(
         boundary.get_payment_evidence(order_id=str(order_id))
+    )
+
+
+@router.post("/{order_id}/payments/{payment_id}/verify", status_code=200)
+def verify_payment_by_id(
+    order_id: UUID,
+    payment_id: UUID,
+    payload: PaymentVerifyRequest | None = None,
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "OPS_ADMIN", "VENDOR_OWNER", "SUPER_ADMIN"))] = None,
+):
+    return success_payload(
+        boundary.verify_payment(
+            order_id=str(order_id),
+            payment_id=str(payment_id),
+            notes=payload.notes if payload else None,
+        )
     )
 
 
