@@ -408,3 +408,13 @@ class BarcodeMatchRequest(APIBaseModel):
     packaging_unit: str = Field(default="UNIT", min_length=1, max_length=30)
     pack_quantity: int = Field(default=1, ge=1, le=100000)
     create_candidate: bool = False
+
+
+class AdminProductCandidateReviewRequest(APIBaseModel):
+    action: Literal["APPROVE_CANONICAL", "MERGE_EXISTING", "REJECT"]
+    reason: str = Field(min_length=1, max_length=1000)
+    brand_id: UUID | None = None
+    category_id: UUID | None = None
+    subcategory_id: UUID | None = None
+    canonical_name_fa: str | None = Field(default=None, max_length=255)
+    target_product_id: UUID | None = None
