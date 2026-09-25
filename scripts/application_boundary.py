@@ -2321,7 +2321,7 @@ class POLApplicationBoundary:
                     (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
                      target_user_id,target_organization_id,dedupe_key,channel_hint)
                 VALUES
-                    (gen_random_uuid(),gen_random_uuid(),'PRODUCT_CANDIDATE_CREATED',
+                    (gen_random_uuid(),gen_random_uuid(),'product_candidate_created',
                      'PRODUCT_CANDIDATE',%s,
                      jsonb_build_object(
                         'candidate_id',%s,
