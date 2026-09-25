@@ -142,20 +142,23 @@ Class: IMPLEMENTED / UNVERIFIED.
 The audited Account screen initially had no logout/revoke-session action. A source remediation was applied on this audit branch: the mobile API client now exposes DELETE /api/v1/auth/sessions/current, Account exposes an explicit خروج از حساب action, and App returns to the login route after successful revocation.
 Required closure: fresh mobile typecheck + functional regression + device logout/revocation test.
 
-### DSA-004 — Cross-cutting state coverage must become an executable matrix
-Class: GOVERNANCE GAP / P1.
-The Master Tree specifies global states, but the current delivery controls do not yet provide one machine-checkable matrix proving that every mutation/query has the applicable state coverage.
-Required closure: add a cross-cutting state/action matrix and use it as a QA gate.
+### DSA-004 — Cross-cutting state coverage matrix
+Class: IMPLEMENTED / CI VERIFIED / EXPANSION REMAINS.
+A machine-checkable-by-test cross-cutting state/action matrix now exists at `mvp/CROSS_CUTTING_STATE_ACTION_MATRIX.md`, and `scripts/test_cross_cutting_state_matrix.py` is executed inside the full verification suite.
+Current evidence: backend verification CI run #805 passed 526/526.
+Residual closure: expand the matrix from the current critical-action set to every MVP screen action before final DoD closure.
 
-### DSA-005 — Notification actionability is contract-limited
-Class: CONTRACT GAP.
-The notification domain models read state and deep links, but current live notification API evidence shows that the runtime projection does not return read state and no mark-read route exists.
-Required closure: keep the current UI honest; close the backend notification contract before adding unread/deep-link claims.
+### DSA-005 — Notification actionability
+Class: SOURCE REMEDIATED / CI VERIFIED.
+The current source now exposes durable inbox listing, unread filtering/counts, deep links, mark-one-read and mark-all-read routes, while `/notifications` also projects read state and deep-link data.
+Current evidence: notification HTTP tests are included in the 526/526 green verification suite.
+Residual closure: browser/device notification navigation and push-provider delivery remain separate runtime evidence.
 
-### DSA-006 — Live commerce closure remains open
-Class: EXECUTION GAP.
-Current delivery records explicitly leave live basket → allocation → checkout → order lifecycle and checkout idempotency replay open.
-Required closure: execute against current PG18/FastAPI environment and capture evidence on the current commit.
+### DSA-006 — Commerce integration closure
+Class: AUTOMATED INTEGRATION VERIFIED / DEPLOYED-LIVE UNVERIFIED.
+Current Master E2E completes the basket → allocation → checkout → order → vendor response → delivery → payment → dispute → notification chain on PostgreSQL 18, including checkout/idempotency and notification regression coverage.
+Current evidence: 526/526 backend verification tests passed on run #805.
+Residual closure: deployed environment / real-provider execution is not claimed from local CI evidence.
 
 ### DSA-007 — Night-theme verification is not equivalent to token existence
 Class: QA GAP.
@@ -163,9 +166,9 @@ Mobile Light/Night token infrastructure exists and recent device retest closed t
 Required closure: verify every applicable mobile screen in both themes, including dialogs, keyboard states and error/empty/loading surfaces.
 
 ### DSA-009 — Baseline API security response headers added
-Class: IMPLEMENTED / VERIFICATION PENDING.
+Class: IMPLEMENTED / CI VERIFIED.
 The FastAPI transport now emits X-Content-Type-Options, X-Frame-Options, Referrer-Policy and Permissions-Policy, while preserving X-Correlation-ID.
-A transport regression test was added. Fresh backend CI is the closure gate.
+A transport regression test was added and passed in backend verification CI run #805.
 
 ### DSA-010 — Duplicate operational configuration constant removed
 Class: RESOLVED.
@@ -204,11 +207,21 @@ for every in-scope production capability.
 11. Perform final independent second pass.
 12. Only then update delivery DoD.
 ### DSA-011 — Web access/refresh credentials no longer persist in localStorage
-Class: SOURCE REMEDIATED / CI + BROWSER VERIFICATION PENDING.
+Class: SOURCE REMEDIATED / CI VERIFIED / BROWSER VERIFICATION PENDING.
 Current mvp/apps/web/src/lib/auth/store.ts keeps the access token in memory and stores only non-secret profile metadata in localStorage. The web refresh credential is carried by the server-managed `pol_refresh` HttpOnly/Secure/SameSite cookie.
-Required closure: current backend transport CI plus browser-runtime/XSS verification and production cookie configuration evidence.
+Required closure: browser-runtime/XSS verification and production cookie configuration evidence; current backend transport CI is green.
 
 ### DSA-012 — Browser-to-API CORS policy remediated
-Class: SOURCE REMEDIATED / CI VERIFICATION PENDING.
+Class: SOURCE REMEDIATED / CI VERIFIED.
 The FastAPI transport uses explicit environment-scoped CORS; production requires POL_CORS_ORIGINS and wildcard production CORS is rejected. A transport test covers an allowed localhost origin and a blocked external origin.
-Required closure: current backend CI must pass and deployment configuration must supply the intended production origins.
+Required closure: deployment configuration must supply the intended production origins; source and automated transport CI are green.
+
+## 8.5 — Remediation verification checkpoint — 2026-09-25
+
+- Remediation branch: `remediation/full-closure-2026-09-25`
+- Head: `69a6a2536cc7296c840cbf76012656b65834ea5a`
+- Backend verification CI run #805: **526/526 passed, 0 failed, 0 skipped**.
+- Mobile verification run #202: **success**, including Expo Android export and regression QA.
+- Canonical migration chain verified through migration `040_dispute_notification_template.sql`.
+- Master E2E now reaches notification/inbox closure and passes on PostgreSQL 18.
+- Remaining release evidence is explicitly limited to areas requiring a deployed browser/device/provider environment or unresolved contractual/product decisions; these are not converted to PASS by source-only evidence.
