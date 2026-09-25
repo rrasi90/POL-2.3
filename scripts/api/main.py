@@ -49,6 +49,7 @@ from scripts.api.routes.field import router as field_router
 from scripts.api.routes.media import router as media_router
 from scripts.api.routes.vendor_storefront import router as vendor_storefront_router
 from scripts.api.routes.catalog_search import router as catalog_search_router
+from scripts.api.routes.analytics import router as analytics_router
 from scripts.api.routes.finance import (
     invoices_router as finance_invoices_router,
     order_invoice_router as finance_order_invoice_router,
@@ -168,6 +169,7 @@ def create_app() -> FastAPI:
     app.include_router(media_router, prefix="/api/v1")
     app.include_router(vendor_storefront_router, prefix="/api/v1")
     app.include_router(catalog_search_router, prefix="/api/v1")
+    app.include_router(analytics_router, prefix="/api/v1")
 
     app.add_exception_handler(RequestValidationError, request_validation_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
