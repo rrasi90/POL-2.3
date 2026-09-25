@@ -1,0 +1,31 @@
+name: POL Remediation Static Gate
+
+on:
+  push:
+    branches:
+      - main
+      - remediation/full-closure-2026-09-25
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  static:
+    name: Remediation static verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile Python sources
+        run: python -m compileall -q scripts
+
+      - name: Route registration invariant
+        env:
+          POL_JWT_SECRET: static-gate-secret-not-for-production
+        run: python scripts/test_api_route_hygiene.py
