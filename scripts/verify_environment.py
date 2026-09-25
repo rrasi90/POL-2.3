@@ -55,6 +55,7 @@ EXPECTED_MIGRATIONS = [
     "033_delivery_lifecycle_and_pod_integrity.sql",
     "034_checkout_single_use_and_reservation_lineage.sql",
     "035_delivery_state_machine_history.sql",
+    "036_inventory_audit_reservation_semantics.sql",
 ]
 EXPECTED_TABLE_COUNT = 95
 EXPECTED_CORE_TABLES = [
