@@ -345,3 +345,30 @@ class AdminSlaOverrideRequest(APIBaseModel):
     order_id: UUID
     extension_minutes: int = Field(ge=1, le=1440)
     reason: str = Field(min_length=1, max_length=500)
+
+
+class AdminBroadcastCreateRequest(APIBaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    body: str = Field(min_length=1, max_length=5000)
+    target_criteria: dict = Field(default_factory=dict)
+    channel: Literal["IN_APP", "SMS", "PUSH", "INBOX_AND_SMS", "ALL"] = "IN_APP"
+    priority: Literal["LOW", "NORMAL", "HIGH", "URGENT"] = "NORMAL"
+    scheduled_at: datetime | None = None
+
+
+class AdminBroadcastDispatchRequest(APIBaseModel):
+    approve: bool = True
+
+
+class AdminCategoryCreateRequest(APIBaseModel):
+    name_fa: str = Field(min_length=1, max_length=100)
+    slug: str = Field(min_length=1, max_length=120)
+    icon_url: str | None = Field(default=None, max_length=255)
+    display_order: int = Field(default=0, ge=0)
+
+
+class AdminCategoryUpdateRequest(APIBaseModel):
+    name_fa: str | None = Field(default=None, min_length=1, max_length=100)
+    slug: str | None = Field(default=None, min_length=1, max_length=120)
+    icon_url: str | None = Field(default=None, max_length=255)
+    display_order: int | None = Field(default=None, ge=0)
