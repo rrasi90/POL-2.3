@@ -15,7 +15,6 @@ interface OtpRequest {
 
 interface VerifyResult {
   access_token: string;
-  refresh_token?: string;
   token_type?: string;
   expires_in?: number;
   user?: { user_id?: string; id?: string; mobile_number?: string };
@@ -86,7 +85,6 @@ export default function LoginPage() {
         null;
       setSession({
         accessToken: data.access_token,
-        refreshToken: data.refresh_token ?? null,
         user: {
           user_id: data.user?.user_id ?? data.user?.id ?? "",
           mobile_number: data.user?.mobile_number ?? phone,
