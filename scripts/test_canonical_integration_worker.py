@@ -182,7 +182,7 @@ def test_batch4_recipient_membership_isolation(postgres_database, routing):
         event_id = "batch4-" + uuid.uuid4().hex
         insert_row(
             cur, "outbox_events", event_id=event_id, event_name="ORDER_ACCEPTED",
-            aggregate_type="ORDER", aggregate_id=str(uuid.uuid4()), payload='{}',
+            aggregate_type="ORDER", aggregate_id=str(uuid.uuid4()), payload=%s,
             target_user_id=None if routing == "missing_user" else user["id"],
             target_organization_id=None if routing == "missing_organization" else target_org,
             dedupe_key=event_id, channel_hint="INBOX",
