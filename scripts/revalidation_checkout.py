@@ -83,20 +83,6 @@ class RevalidationCheckoutService:
             )
             for row in persisted
         }
-        supplied_allocations = {
-            (
-                str(a["product_id"]) if a.get("product_id") else None,
-                str(a["vendor_id"]),
-                str(a["vendor_product_id"]),
-                int(a["quantity"]),
-                int(a["unit_price_toman"]),
-                int(a["amount_toman"]),
-            )
-            for a in vendor_allocations
-        }
-        if len(persisted) != len(vendor_allocations) or expected_allocations != supplied_allocations:
-            raise ValueError("Checkout allocation payload does not exactly match the persisted Allocation Plan.")
-
         allocations_by_vendor = defaultdict(list)
         seen_vendor_products = set()
         for alloc in vendor_allocations:
@@ -169,6 +155,20 @@ class RevalidationCheckoutService:
             alloc["_vendor_sku_snapshot"] = offer["vendor_sku"]
             alloc["_packaging_unit_snapshot"] = offer["packaging_unit"]
             alloc["_pack_quantity_snapshot"] = offer["pack_quantity"]
+
+        supplied_allocations = {
+            (
+                str(a["_product_id"]),
+                str(a["vendor_id"]),
+                str(a["vendor_product_id"]),
+                int(a["quantity"]),
+                int(a["unit_price_toman"]),
+                int(a["amount_toman"]),
+            )
+            for a in vendor_allocations
+        }
+        if len(persisted) != len(vendor_allocations) or expected_allocations != supplied_allocations:
+            raise ValueError("Checkout allocation payload does not exactly match the persisted Allocation Plan.")
 
         total_toman = sum(v["amount_toman"] for v in vendor_allocations)
         vendor_count = len(allocations_by_vendor)
