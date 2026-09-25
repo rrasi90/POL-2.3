@@ -146,7 +146,6 @@ def create_app() -> FastAPI:
     app.include_router(baskets_router, prefix="/api/v1")
     app.include_router(catalog_router, prefix="/api/v1")
     app.include_router(categories_router, prefix="/api/v1")
-    app.include_router(catalog_identifiers_router, prefix="/api/v1")
     app.include_router(catalog_candidates_router, prefix="/api/v1")
     app.include_router(products_router, prefix="/api/v1")
     app.include_router(vendor_catalog_router, prefix="/api/v1")
