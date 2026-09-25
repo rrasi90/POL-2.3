@@ -10,8 +10,8 @@ These rules are persistent workspace constraints for Antigravity when working on
 4. `13_PRODUCT_DESIGN/14_DESIGN_DECISION_REGISTER.md`
 5. `13_PRODUCT_DESIGN/21_MVP_DESIGN_AND_FRONTEND_READINESS_GATE_2026-09-16.md`
 6. `13_PRODUCT_DESIGN/22_UI_UX_PAGE_AND_SECTION_COMPLETION_SPEC_2026-09-16.md`
-7. `13_PRODUCT_DESIGN/52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
-8. Visual artifacts
+7. `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+8. Canonical design artifacts
 
 Never invent an undocumented business rule. Mark materially unresolved behavior `OPEN`.
 
@@ -101,8 +101,8 @@ Stop and report when:
 
 Before mutation:
 - build a versioned Context Package;
-- record RUN_ID, WAVE_ID, repository HEAD and Penpot revision;
-- probe documented versus observed tool behavior;
+- record RUN_ID, WAVE_ID and repository HEAD;
+- probe documented versus observed execution-tool behavior;
 - define mutation preconditions and postconditions;
 - preserve a rollback reference.
 
