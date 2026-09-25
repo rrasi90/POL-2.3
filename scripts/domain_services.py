@@ -19,7 +19,7 @@ from psycopg2.extras import RealDictCursor, Json
 import secrets
 import hashlib as _hashlib
 
-from scripts.revalidation_checkout import RevalidationCheckoutService
+from scripts.revalidation_checkout import RevalidationCheckoutService as CanonicalRevalidationCheckoutService
 from scripts.canonical_integration_worker import CanonicalIntegrationWorker
 from scripts.fulfillment_service import dispatch_order as canonical_dispatch_order, confirm_delivery as canonical_confirm_delivery
 
@@ -1080,104 +1080,49 @@ class FeedbackService:
 
 
 class RevalidationCheckoutService:
+    """Compatibility facade for the canonical transactional checkout service.
+
+    The implementation lives in scripts.revalidation_checkout. This facade keeps
+    legacy imports stable while preventing a stale duplicate implementation from
+    diverging from the canonical checkout contract.
     """
-    Checkout with Pre-Commit Verification
-    Guarantees:
-    - Allocation is never accepted blindly
-    - Price freshness check against effective vendor_prices
-    - Atomic stock reservation with row-level locks
-    - Vendor MOV/MOQ invariant re-check
-    """
+
     @staticmethod
-    def revalidate_and_checkout(cur, basket_id: str, plan_id: str, retailer_id: str,
-                                idempotency_key: str, address_snapshot: dict,
-                                vendor_allocations: list) -> dict:
-        cur.execute("""
-            SELECT b.version, p.basket_version, p.expires_at, p.status
-            FROM baskets b
-            JOIN allocation_plans p ON p.id = %s
-            WHERE b.id = %s;
-        """, (plan_id, basket_id))
-        chk = cur.fetchone()
-        if not chk:
-            raise ValueError("Basket or Allocation Plan not found.")
-        if chk["version"] != chk["basket_version"]:
-            raise ValueError(f"Stale basket checkout: basket v{chk['version']} != plan v{chk['basket_version']}")
-        if chk["expires_at"] < datetime.now(timezone.utc):
-            raise ValueError("Allocation plan has expired (15-minute TTL exceeded).")
+    def revalidate_and_checkout(
+        cur,
+        basket_id: str,
+        plan_id: str,
+        retailer_id: str,
+        idempotency_key: str,
+        address_snapshot: dict,
+        vendor_allocations: list,
+        request_fingerprint: str | None = None,
+    ) -> dict:
+        if request_fingerprint is None:
+            request_fingerprint = hashlib.sha256(
+                json.dumps(
+                    {
+                        "basket_id": basket_id,
+                        "plan_id": plan_id,
+                        "retailer_id": retailer_id,
+                        "vendor_allocations": vendor_allocations,
+                        "address_snapshot": address_snapshot,
+                    },
+                    sort_keys=True,
+                    default=str,
+                ).encode("utf-8")
+            ).hexdigest()
 
-        for alloc in vendor_allocations:
-            vp_id = alloc["vendor_product_id"]
-            quoted_price = alloc["unit_price_toman"]
-            req_qty = alloc["quantity"]
-
-            cur.execute("""
-                SELECT price_toman FROM vendor_prices
-                WHERE vendor_product_id = %s AND is_current = TRUE;
-            """, (vp_id,))
-            price_row = cur.fetchone()
-            if not price_row or price_row["price_toman"] != quoted_price:
-                actual = price_row["price_toman"] if price_row else "N/A"
-                raise ValueError(f"Price freshness failure for SKU {vp_id}: Quoted {quoted_price} vs Live {actual}")
-
-            cur.execute("""
-                SELECT physical_quantity, reserved_quantity FROM vendor_inventory
-                WHERE vendor_product_id = %s
-                FOR UPDATE;
-            """, (vp_id,))
-            inv_row = cur.fetchone()
-            if not inv_row:
-                raise ValueError(f"No inventory record found for SKU {vp_id}")
-            avail = inv_row["physical_quantity"] - inv_row["reserved_quantity"]
-            if avail < req_qty:
-                raise ValueError(f"Insufficient stock for SKU {vp_id}: Available {avail} < Requested {req_qty}")
-
-        total_toman = sum(v["amount_toman"] for v in vendor_allocations)
-        og_id = str(uuid.uuid4())
-        cur.execute("""
-            INSERT INTO order_groups (
-                id, basket_id, allocation_plan_id, retailer_id, checkout_idempotency_key, 
-                total_amount_toman, order_count, group_status
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, 'ACTIVE'
-            ) RETURNING id;
-        """, (og_id, basket_id, plan_id, retailer_id, idempotency_key, total_toman, len(vendor_allocations)))
-
-        child_orders = []
-        for alloc in vendor_allocations:
-            ord_id = str(uuid.uuid4())
-            res_id = str(uuid.uuid4())
-            ord_num = f"ORD-{uuid.uuid4().hex[:8].upper()}"
-
-            cur.execute("""
-                INSERT INTO orders (
-                    id, order_group_id, retailer_id, vendor_id, order_number, 
-                    total_amount_toman, order_status, dispute_status, delivery_address_snapshot, correlation_id
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, 'SUBMITTED', 'NONE', %s, %s
-                ) RETURNING *;
-            """, (
-                ord_id, og_id, retailer_id, alloc["vendor_id"], ord_num,
-                alloc["amount_toman"], Json(address_snapshot), f"corr-{og_id[:8]}"
-            ))
-            child_orders.append(cur.fetchone())
-
-            cur.execute("""
-                INSERT INTO inventory_reservations (
-                    id, vendor_product_id, order_id, order_item_id, quantity, status, idempotency_key, expires_at
-                ) VALUES (
-                    %s, %s, %s, %s, %s, 'ACTIVE', %s, now() + interval '15 minutes'
-                );
-            """, (res_id, alloc["vendor_product_id"], ord_id, order_item_id, alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_id']}"))
-
-            cur.execute("""
-                UPDATE vendor_inventory 
-                SET reserved_quantity = reserved_quantity + %s
-                WHERE vendor_product_id = %s;
-            """, (alloc["quantity"], alloc["vendor_product_id"]))
-
-        return {"order_group_id": og_id, "orders": child_orders}
-
+        return CanonicalRevalidationCheckoutService.revalidate_and_checkout(
+            cur=cur,
+            basket_id=basket_id,
+            plan_id=plan_id,
+            retailer_id=retailer_id,
+            idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint,
+            address_snapshot=address_snapshot,
+            vendor_allocations=vendor_allocations,
+        )
 
 class ReliabilityLedgerService:
     """
