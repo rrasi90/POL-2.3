@@ -229,8 +229,29 @@ class TestSubmitEvidence:
 
 
 class TestVerifyPayment:
+    def test_vendor_verify_requires_matching_evidence(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/verify",
+            headers={"Authorization": f"Bearer {data['v_token']}"},
+            json={"notes": "No evidence"},
+        )
+        assert resp.status_code == 422
+
     def test_vendor_verifies_payment(self, client):
         data = _seed_order(uuid4().hex[:8])
+        evidence = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['v_token']}"},
+            json={
+                "evidence_type": "BANK_REFERENCE",
+                "reference_number": f"TXN-{uuid4().hex[:12]}",
+                "amount_toman": 5000000,
+                "notes": "Bank statement reference",
+            },
+        )
+        assert evidence.status_code == 201
+
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/payments/verify",
             headers={"Authorization": f"Bearer {data['v_token']}"},
@@ -240,6 +261,15 @@ class TestVerifyPayment:
         body = resp.json()
         assert body["success"] is True
         assert body["data"]["status"] == "SUCCESS"
+        assert body["data"]["idempotent_replay"] is False
+
+        replay = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/verify",
+            headers={"Authorization": f"Bearer {data['v_token']}"},
+            json={"notes": "Replay"},
+        )
+        assert replay.status_code == 200
+        assert replay.json()["data"]["idempotent_replay"] is True
 
     def test_retailer_cannot_verify_payment(self, client):
         data = _seed_order(uuid4().hex[:8])
