@@ -959,6 +959,35 @@ class POLApplicationBoundary:
         self.cur.execute("SELECT * FROM disputes WHERE id=%s", (disp_id,))
         return dict(self.cur.fetchone())
 
+    def dispute_resolve(self, *, dispute_id, outcome, approved_amount_toman, reason):
+        self._require_dispute_resolution_context()
+        from scripts.canonical_dispute import CanonicalDisputeService
+
+        result = CanonicalDisputeService.resolve_dispute(
+            self.cur,
+            dispute_id=str(dispute_id),
+            actor_user_id=str(self.context.user_id),
+            outcome=outcome,
+            approved_amount=int(approved_amount_toman),
+            reason=reason,
+        )
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s,'DISPUTE_RESOLVED','DISPUTE',%s,%s,%s,%s)
+            """,
+            (
+                self.context.user_id,
+                dispute_id,
+                Json(result),
+                reason.strip(),
+                self.context.correlation_id,
+            ),
+        )
+        return result
+
     def dispute_get(self, *, dispute_id):
         if not self.context.organization_id:
             raise PermissionError("Dispute query requires an organization context.")
@@ -3745,6 +3774,27 @@ class POLApplicationBoundary:
             raise PermissionError("SUPER_ADMIN authority required.")
         return row
 
+
+    def _require_dispute_resolution_context(self):
+        self._require_ops_context()
+        self.cur.execute(
+            """
+            SELECT om.role
+            FROM organization_memberships om
+            JOIN organizations o ON o.id=om.organization_id
+            WHERE om.user_id=%s
+              AND om.organization_id=%s
+              AND om.status='ACTIVE'
+              AND o.org_type='OPERATOR'
+              AND o.status='ACTIVE'
+              AND om.role IN ('OPS_ADMIN','SUPER_ADMIN','ADMIN_SUPER')
+            LIMIT 1
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise PermissionError("Dispute resolution requires OPS_ADMIN authority.")
 
     def _require_catalog_admin(self):
         row = self._require_admin_management()
