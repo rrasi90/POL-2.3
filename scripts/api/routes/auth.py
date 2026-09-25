@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 
 from scripts.api.db import get_db_cursor
 from scripts.api.dependencies import get_bearer_token, get_current_auth
@@ -40,18 +40,45 @@ def request_otp(payload: RequestOTPRequest, request: Request, cur=Depends(get_db
 
 
 @router.post("/verify-otp")
-def verify_otp(payload: VerifyOTPRequest, cur=Depends(get_db_cursor)):
+def verify_otp(payload: VerifyOTPRequest, response: Response, cur=Depends(get_db_cursor)):
     result = AuthApplicationService.verify_otp(
         cur,
         payload.mobile_number,
         payload.otp_code,
     )
+    refresh_token = result.get("refresh_token")
+    if refresh_token:
+        response.set_cookie(
+            "pol_refresh",
+            refresh_token,
+            max_age=30 * 24 * 60 * 60,
+            httponly=True,
+            secure=False if __import__("os").environ.get("ENVIRONMENT", "development") == "test" else True,
+            samesite="lax",
+            path="/api/v1/auth",
+        )
     return success_payload(result)
 
 
 @router.post("/refresh")
-def refresh(payload: RefreshTokenRequest, cur=Depends(get_db_cursor)):
-    return success_payload(AuthApplicationService.refresh(cur, payload.refresh_token))
+def refresh(request: Request, response: Response, payload: RefreshTokenRequest | None = None, cur=Depends(get_db_cursor)):
+    refresh_token = request.cookies.get("pol_refresh") or (payload.refresh_token if payload else None)
+    if not refresh_token:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=401, detail="Refresh token is required.")
+    result = AuthApplicationService.refresh(cur, refresh_token)
+    next_refresh = result.get("refresh_token")
+    if next_refresh:
+        response.set_cookie(
+            "pol_refresh",
+            next_refresh,
+            max_age=30 * 24 * 60 * 60,
+            httponly=True,
+            secure=False if __import__("os").environ.get("ENVIRONMENT", "development") == "test" else True,
+            samesite="lax",
+            path="/api/v1/auth",
+        )
+    return success_payload(result)
 
 
 @router.post("/switch-organization")
@@ -70,12 +97,14 @@ def switch_organization(
 
 @router.delete("/sessions/current")
 def revoke_current_session(
+    response: Response,
     token: str = Depends(get_bearer_token),
     claims: dict = Depends(get_current_auth),
     cur=Depends(get_db_cursor),
 ):
     session_id = claims["sid"]
     AuthApplicationService.revoke_session(cur, token, str(session_id))
+    response.delete_cookie("pol_refresh", path="/api/v1/auth")
     return success_payload({"session_id": str(session_id), "status": "REVOKED"})
 
 
@@ -91,8 +120,10 @@ def revoke_session(
 
 @router.post("/logout-all")
 def logout_all(
+    response: Response,
     token: str = Depends(get_bearer_token),
     cur=Depends(get_db_cursor),
 ):
     revoked_count = AuthApplicationService.logout_all(cur, token)
+    response.delete_cookie("pol_refresh", path="/api/v1/auth")
     return success_payload({"revoked_sessions": revoked_count, "status": "ALL_REVOKED"})
