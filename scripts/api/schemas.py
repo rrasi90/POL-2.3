@@ -388,3 +388,14 @@ class VendorInventoryContinuousScanRequest(APIBaseModel):
 
 class VendorInventoryPublishRequest(APIBaseModel):
     session_id: str = Field(min_length=1, max_length=128)
+
+
+class DisputeResolveRequest(APIBaseModel):
+    outcome: Literal[
+        "ADJUSTED_SHORTAGE",
+        "REPLACEMENT_ORDER",
+        "REJECTED_CLAIM",
+        "MUTUAL_AGREEMENT",
+    ]
+    approved_amount_toman: int = Field(ge=0)
+    reason: str = Field(min_length=1, max_length=1000)
