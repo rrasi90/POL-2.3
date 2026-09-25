@@ -128,7 +128,7 @@ Untracked (intentionally not committed): `docker-compose.yml`, `monitoring/`, `f
 |----|---------|------|
 | B-01 | Real metrics source for `driver-stamford-07020/collector.py` | no real feed |
 | B-02 | OpenPencil MCP `:7600` down | curl exit 28 / code 000; WAVE-02 blocked |
-| B-03 | SMS provider credentials | non-prod OTP static `"1234"` (D-018) |
+| B-03 | SMS provider credentials | Live SMS provider credentials remain absent; deterministic OTP is now restricted to explicit `ENVIRONMENT=test` only; non-test environments use random OTPs. |
 | B-07 | Grafana `:3000` vs Next | Next on `:3001` |
 | G-003/G-004 literal contract path parity | only if a test demands contract path over REAL |
 
