@@ -58,7 +58,7 @@ EXPECTED_MIGRATIONS = [
     "036_inventory_audit_reservation_semantics.sql",
     "037_invoice_financial_invariants.sql",
 ]
-EXPECTED_TABLE_COUNT = 95
+EXPECTED_TABLE_COUNT = 96
 EXPECTED_CORE_TABLES = [
     "users",
     "organizations",
