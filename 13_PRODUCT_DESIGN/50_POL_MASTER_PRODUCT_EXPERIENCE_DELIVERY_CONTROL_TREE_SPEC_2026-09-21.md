@@ -7417,7 +7417,7 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 | 50 | GET `/api/v1/profile/context` | HTTP_IMPLEMENTED / SHARED BOUNDARY | `profile_get` |
 
 Endpoint governance:
-- 35 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED on this remediation branch; rows marked CONTRACT_ONLY remain unimplemented at the canonical HTTP path.
+- 36 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED on this remediation branch; rows marked CONTRACT_ONLY remain unimplemented at the canonical HTTP path.
 - /healthz and /readyz are operational transport routes, not business endpoints.
 - BOUNDARY_READY / NOT_YET_HTTP methods are not production HTTP completion.
 - Path normalization may reconcile :id and {id}; this does not create a second endpoint.
