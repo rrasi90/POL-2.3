@@ -129,7 +129,7 @@
 | O-04 | RMA / dispute workbench | `/ops/rma` | OPS_AGENT | `GET /ops/returns` + per-order returns/disputes | doc 22 L510–516 | IMPLEMENTED |
 | O-05 | Support workbench | `/ops/support` | OPS_AGENT | `/support/cases*` | doc 22 L518–524; MT OP-05 | IMPLEMENTED |
 | O-06 | Reconciliation | `/ops/reconciliation` | OPS_AGENT | `/finance/reconciliation*` | doc 22 L526–530; MT OP-03; G-015 | IMPLEMENTED |
-| O-07 | Risk / reliability | `/ops/risk` | OPS_AGENT | limited API | doc 22 L532–537; MT OP-07/08 | GAP |
+| O-07 | Risk / reliability | `/ops/risk` | OPS_AGENT | exceptions dashboard + reconciliation signals | doc 22 L532–537; MT OP-07/08 | IMPLEMENTED / LIMITED |
 | O-08 | Notification operations | `/ops/notifications` | OPS_AGENT | notifications list + GAP provider ops | doc 22 L539–543 | IMPLEMENTED |
 | O-09 | Pilot analytics | `/ops/analytics` | OPS_AGENT | `GET /ops/analytics`, `/ops/analytics/weekly` | doc 22 L545–554; KPI SSoT | IMPLEMENTED |
 | O-10 | Admin / context | `/ops/admin` | OPS_AGENT, ADMIN_SUPER | `/admin/audit-logs`, `/admin/exceptions/dashboard` | doc 22 L556–561; MT OP-10 | IMPLEMENTED |
@@ -143,7 +143,7 @@
 |----|----------------|--------------|
 | O-01/02/04/05/06/08/10 | `ops/page.tsx`, `queues`, `rma`, `support`, `reconciliation`, `notifications`, `ops/admin` | typecheck/build exit 0 |
 | O-10B | `admin/users/page.tsx`, `admin/orgs/page.tsx` (live API-backed) | status IMPLEMENTED (G-007 resolved) |
-| O-07 | risk API remains partial | status GAP |
+| O-07 | risk surface uses real exception/reconciliation signals; no synthetic risk score | status IMPLEMENTED / LIMITED |
 | O-03 | `ops/[type]/[id]/page.tsx` (generic detail shell) | typecheck/build exit 0 |
 
 ---
