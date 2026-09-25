@@ -11,6 +11,8 @@ import uuid
 
 from psycopg2.extras import Json
 
+from scripts.operational_config import PILOT_COMMISSION_RATE
+
 
 class PaymentReconciliationError(RuntimeError):
     pass
@@ -180,11 +182,77 @@ class PaymentReconciliationWorker:
                 UPDATE payments
                 SET payment_status='SUCCESS',
                     reference_number=COALESCE(reference_number,%s),
-                    paid_at=COALESCE(paid_at,now())
+                    paid_at=COALESCE(paid_at,now()),
+                    verified_at=COALESCE(verified_at,now())
                 WHERE id=%s AND payment_status IN ('PENDING','INITIATED');
                 """,
                 (matching_ref, case["payment_id"]),
             )
+
+            # Close downstream financial state only from the same reconciled payment.
+            cur.execute(
+                """
+                SELECT p.order_id, p.retailer_id, p.vendor_id, p.amount_toman,
+                       r.organization_id AS retailer_org_id,
+                       v.organization_id AS vendor_org_id
+                FROM payments p
+                JOIN retailers r ON r.id=p.retailer_id
+                JOIN vendors v ON v.id=p.vendor_id
+                WHERE p.id=%s
+                FOR UPDATE
+                """,
+                (case["payment_id"],),
+            )
+            payment_row = cur.fetchone()
+            if payment_row:
+                cur.execute(
+                    """
+                    UPDATE invoices
+                    SET status='PAID'
+                    WHERE order_id=%s
+                      AND total_amount=%s
+                      AND status IN ('ISSUED','ADJUSTED')
+                    """,
+                    (payment_row["order_id"], expected),
+                )
+                cur.execute(
+                    """
+                    SELECT id, status
+                    FROM settlements
+                    WHERE order_id=%s AND vendor_id=%s
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    FOR UPDATE
+                    """,
+                    (payment_row["order_id"], payment_row["vendor_id"]),
+                )
+                settlement = cur.fetchone()
+                if settlement:
+                    cur.execute(
+                        """
+                        UPDATE settlements
+                        SET status=CASE WHEN status='PENDING' THEN 'CALCULATED' ELSE status END
+                        WHERE id=%s
+                        """,
+                        (settlement["id"],),
+                    )
+                else:
+                    gross = int(payment_row["amount_toman"])
+                    commission = int(round(gross * float(PILOT_COMMISSION_RATE)))
+                    cur.execute(
+                        """
+                        INSERT INTO settlements (
+                            id, order_id, vendor_id, gross_amount_toman,
+                            commission_rate, commission_amount_toman,
+                            net_vendor_amount_toman, status
+                        )
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,'CALCULATED')
+                        """,
+                        (
+                            str(uuid.uuid4()), payment_row["order_id"], payment_row["vendor_id"],
+                            gross, PILOT_COMMISSION_RATE, commission, gross - commission,
+                        ),
+                    )
             cur.execute(
                 """
                 INSERT INTO outbox_events
