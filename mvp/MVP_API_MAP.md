@@ -237,16 +237,18 @@ HTTP may also set `X-Correlation-ID`.
 
 ---
 
-## 4. CONTRACT-only (from 50-endpoint inventory — mock with same contract)
+## 4. Contract reconciliation
 
-| # | Endpoint | Use |
-|---|----------|-----|
-| 4 | POST `/api/v1/vendors/inventory/continuous-scan` | VD-16 — CONTRACT_ONLY; scan-session semantics remain open |
-| 5 | POST `/api/v1/vendors/inventory/publish` | VD-01 publish — CONTRACT_ONLY; publish transition semantics remain open |
-| 17–20 | payments/disputes variants | partially REAL; exact direct-transfer/payment-id verify and dispute-resolve paths remain open |
-| 41 | POST `/api/v1/admin/sla-overrides` | CONTRACT_ONLY; canonical deadline column name requires clarification |
+The historical contract-only entries from the original 50-endpoint inventory have been promoted to canonical HTTP implementations on the remediation branch:
 
-Any screen needing a `CONTRACT` row before backend HTTP exists → **MOCK adapter** (same method/path/envelope), tagged `MOCK` in use-notes; no business rules in mock.
+| Former contract-only area | Current canonical HTTP | Source |
+|---|---|---|
+| Vendor continuous inventory | POST `/api/v1/vendors/inventory/continuous-scan`, POST `/api/v1/vendors/inventory/publish` | `scripts/api/routes/vendor_inventory.py` |
+| Payment/dispute verification + resolution | canonical payment verification variants and dispute resolution | `scripts/api/routes/finance.py`, `scripts/api/routes/disputes.py` |
+| Admin SLA override | POST `/api/v1/admin/sla-overrides` | `scripts/api/routes/management.py` |
+| Catalog candidate review | GET/PATCH `/api/v1/admin/product-candidates*` | `scripts/api/routes/management.py` |
+
+No current MVP screen should introduce a MOCK adapter merely because one of these entries was contract-only in the historical inventory.
 
 ---
 
