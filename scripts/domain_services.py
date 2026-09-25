@@ -403,7 +403,10 @@ class OrderGroupProjector:
         rows = cur.fetchall()
         statuses = [r["order_status"] for r in rows]
 
-        if all(s == 'DELIVERED' for s in statuses):
+        # Empty groups are never completed: COMPLETED requires at least one child order.
+        if not statuses:
+            new_status = 'ACTIVE'
+        elif all(s == 'DELIVERED' for s in statuses):
             new_status = 'COMPLETED'
         elif all(s in ('CANCELLED', 'REJECTED') for s in statuses):
             new_status = 'CANCELLED'
