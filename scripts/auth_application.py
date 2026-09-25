@@ -110,6 +110,10 @@ class AuthApplicationService:
         return validate_access_token(cur, access_token)
 
     @staticmethod
+    def authorize_action(cur, user_id: str, organization_id: str, allowed_roles: list[str]) -> dict:
+        return AuthService.authorize_action(cur, user_id, organization_id, allowed_roles)
+
+    @staticmethod
     def switch_organization(cur, access_token: str, target_organization_id: str) -> dict:
         claims = validate_access_token(cur, access_token)
         return AuthService.switch_organization(
