@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
+from uuid import UUID
 
 from scripts.api.dependencies import get_application_boundary
 from scripts.api.errors import success_payload
@@ -28,4 +29,37 @@ def exceptions_dashboard(
 ):
     return success_payload(
         boundary.admin_exceptions_dashboard()
+    )
+
+from scripts.api.schemas import BroadcastCreateRequest, BroadcastDispatchRequest
+
+
+@router.post("/broadcasts", status_code=201)
+def create_broadcast(
+    payload: BroadcastCreateRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.admin_broadcast_create(
+            title=payload.title,
+            body=payload.body,
+            target_criteria=payload.target_criteria,
+            channel=payload.channel,
+            priority=payload.priority,
+            scheduled_at=payload.scheduled_at,
+        )
+    )
+
+
+@router.post("/broadcasts/{broadcast_id}/dispatch")
+def dispatch_broadcast(
+    broadcast_id: UUID,
+    payload: BroadcastDispatchRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.admin_broadcast_dispatch(
+            broadcast_id=str(broadcast_id),
+            approve=payload.approve,
+        )
     )
