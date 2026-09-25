@@ -225,3 +225,13 @@ Required closure: deployment configuration must supply the intended production o
 - Canonical migration chain verified through migration `040_dispute_notification_template.sql`.
 - Master E2E now reaches notification/inbox closure and passes on PostgreSQL 18.
 - Remaining release evidence is explicitly limited to areas requiring a deployed browser/device/provider environment or unresolved contractual/product decisions; these are not converted to PASS by source-only evidence.
+
+
+## 8.6 — Current remediation branch checkpoint — 2026-09-25
+
+- Current branch: `remediation/full-closure-2026-09-25`.
+- The branch has moved materially beyond checkpoint 8.5: canonical HTTP implementations now exist for the historical management, continuous-inventory, barcode/candidate, payment/dispute, partial-acceptance and durable-inbox gaps.
+- Local execution evidence recorded in `mvp/LOCAL_EXECUTION_TRACKER.md` closes LOCAL-01, LOCAL-02, LOCAL-03 and LOCAL-04 as PASS on 2026-09-24.
+- Current source also rotates refresh tokens and contains a replay-failure regression; D-018 policy wording remains an explicit governance decision and is not inferred from implementation.
+- A fresh pull-request CI trigger on the remediation branch is presently failing before useful step-level execution. This is an evidence blocker, not a source PASS/FAIL result; no fresh CI green claim is made.
+- The old checkpoint's 526/526 and mobile #202 statements remain historical evidence only.
