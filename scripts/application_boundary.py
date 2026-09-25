@@ -1593,10 +1593,19 @@ class POLApplicationBoundary:
                 """,
                 (str(vendor["id"]), candidate_id, vendor_sku.strip()),
             )
+            vendor_product_id = str(self.cur.fetchone()["id"])
+            self.cur.execute(
+                """
+                INSERT INTO vendor_inventory (vendor_product_id, inventory_unit, physical_quantity, reserved_quantity, moq, freshness_status)
+                VALUES (%s, 'CARTON', 0, 0, 1, 'UNKNOWN')
+                ON CONFLICT (vendor_product_id) DO NOTHING
+                """,
+                (vendor_product_id,),
+            )
         self.cur.execute(
             """
             INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status)
-            VALUES (%s, %s, 'PRODUCT_CANDIDATE_CREATED', 'PRODUCT_CANDIDATE', %s, %s, 'PENDING')
+            VALUES (%s, %s, 'product_candidate_created', 'PRODUCT_CANDIDATE', %s, %s, 'PENDING')
             ON CONFLICT DO NOTHING
             """,
             (str(uuid4()), str(uuid4()), candidate_id, Json({"candidate_id": candidate_id, "vendor_id": str(vendor["id"]), "status": "PENDING_REVIEW"})),
