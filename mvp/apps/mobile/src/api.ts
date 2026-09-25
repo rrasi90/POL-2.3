@@ -1,3 +1,5 @@
+import * as SecureStore from "expo-secure-store";
+
 export type ApiEnvelope<T> =
   | { success: true; data: T }
   | { success: false; error: { code: string; message: string; details?: Record<string, unknown> } };
@@ -18,8 +20,11 @@ export class ApiError extends Error {
 }
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://10.0.2.2:8000";
+const ACCESS_KEY = "pol.access_token";
+const REFRESH_KEY = "pol.refresh_token";
 
 let accessToken: string | null = null;
+let refreshInFlight: Promise<boolean> | null = null;
 let online = true;
 const listeners = new Set<(v: boolean) => void>();
 
@@ -31,19 +36,68 @@ export function getToken(): string | null {
   return accessToken;
 }
 
-export function isOnline(): boolean {
-  return online;
+export async function persistSession(access: string, refresh: string | null | undefined): Promise<void> {
+  accessToken = access;
+  await SecureStore.setItemAsync(ACCESS_KEY, access, {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  });
+  if (refresh) {
+    await SecureStore.setItemAsync(REFRESH_KEY, refresh, {
+      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+    });
+  }
 }
 
-export function subscribeOnline(fn: (v: boolean) => void): () => void {
-  listeners.add(fn);
-  return () => listeners.delete(fn);
+export async function clearSession(): Promise<void> {
+  accessToken = null;
+  await Promise.allSettled([
+    SecureStore.deleteItemAsync(ACCESS_KEY),
+    SecureStore.deleteItemAsync(REFRESH_KEY),
+  ]);
 }
 
-function setOnline(v: boolean): void {
-  if (online === v) return;
-  online = v;
-  listeners.forEach((fn) => fn(v));
+async function refreshAccessToken(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY);
+      if (!refreshToken) return false;
+      try {
+        const res = await fetch(BASE + "/api/v1/auth/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        if (!res.ok) return false;
+        const payload = (await res.json()) as ApiEnvelope<{
+          access_token: string;
+          refresh_token?: string | null;
+        }>;
+        if (payload.success === false) return false;
+        if (!payload.data?.access_token) return false;
+        await persistSession(payload.data.access_token, payload.data.refresh_token ?? refreshToken);
+        return true;
+      } catch {
+        return false;
+      }
+    })().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
+export async function restoreSession(): Promise<boolean> {
+  const storedAccess = await SecureStore.getItemAsync(ACCESS_KEY);
+  const storedRefresh = await SecureStore.getItemAsync(REFRESH_KEY);
+  if (storedAccess) {
+    accessToken = storedAccess;
+    return true;
+  }
+  if (storedRefresh && await refreshAccessToken()) {
+    return Boolean(accessToken);
+  }
+  await clearSession();
+  return false;
 }
 
 async function request<T>(
@@ -51,6 +105,7 @@ async function request<T>(
   path: string,
   body?: unknown,
   options?: RequestOptions,
+  retried = false,
 ): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -71,6 +126,14 @@ async function request<T>(
       payload = (await res.json()) as ApiEnvelope<T>;
     } catch {
       throw new ApiError("PARSE_ERROR", "Invalid JSON response", res.status);
+    }
+
+    if (res.status === 401 && !retried && !path.startsWith("/api/v1/auth/refresh")) {
+      if (await refreshAccessToken()) {
+        return request<T>(method, path, body, options, true);
+      }
+      await clearSession();
+      throw new ApiError("AUTH_EXPIRED", "نشست منقضی شده است.", 401);
     }
 
     if (payload.success === false) {
@@ -110,4 +173,19 @@ export async function healthz(): Promise<boolean> {
     setOnline(false);
     return false;
   }
+}
+
+export function isOnline(): boolean {
+  return online;
+}
+
+export function subscribeOnline(fn: (v: boolean) => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+function setOnline(v: boolean): void {
+  if (online === v) return;
+  online = v;
+  listeners.forEach((fn) => fn(v));
 }
