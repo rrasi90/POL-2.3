@@ -144,13 +144,37 @@ class AuthService:
 
     @staticmethod
     def verify_otp(cur, phone_number: str, code: str, user_id: str, active_org_id: str) -> dict:
-        """Verify OTP and issue JWT + refresh token. Enforces D-018 brute-force defense.
+        """Verify OTP only for the identity and active membership bound to the phone.
 
-        On 5th failed attempt: status=BLOCKED, blocked_at=now().
-        On success: creates 30-day session, issues 15-min JWT + refresh token.
+        Caller-supplied identity/organization identifiers are independently
+        checked against database truth before any session is created.
         """
-        # Serialize verification on the active challenge so one OTP cannot
-        # be accepted successfully by concurrent requests.
+        cur.execute("""
+            SELECT id
+            FROM users
+            WHERE phone_number = %s
+              AND is_active = TRUE
+            LIMIT 1;
+        """, (phone_number,))
+        phone_user = cur.fetchone()
+        if not phone_user:
+            raise PermissionError("Phone number is not bound to an active user.")
+        if str(phone_user["id"]) != str(user_id):
+            raise PermissionError("OTP identity does not match requested user.")
+
+        cur.execute("""
+            SELECT role
+            FROM organization_memberships
+            WHERE user_id = %s
+              AND organization_id = %s
+              AND status = 'ACTIVE';
+        """, (user_id, active_org_id))
+        requested_membership = cur.fetchone()
+        if not requested_membership:
+            raise PermissionError("User has no active membership in the selected organization.")
+
+        # Serialize verification on the active challenge so one OTP cannot be
+        # accepted successfully by concurrent requests.
         cur.execute("""
             SELECT * FROM otp_challenges
             WHERE phone_number = %s AND status = 'PENDING' AND expires_at > now()
@@ -177,24 +201,16 @@ class AuthService:
             raise InvalidOTPError(f"Invalid OTP code. Attempt {upd['attempts_count']}/{challenge['max_attempts']}")
 
         cur.execute("""
-            UPDATE otp_challenges SET status = 'VERIFIED', verified_at = now() WHERE id = %s;
+            UPDATE otp_challenges
+            SET status = 'VERIFIED', verified_at = now()
+            WHERE id = %s;
         """, (challenge["id"],))
 
-        # Create session (30-day refresh session)
         sess_id = str(uuid.uuid4())
         refresh_token = generate_refresh_token()
         refresh_hash = hash_token(refresh_token)
+        role = requested_membership["role"]
 
-        cur.execute("""
-            SELECT role FROM organization_memberships
-            WHERE user_id = %s AND organization_id = %s AND status = 'ACTIVE';
-        """, (user_id, active_org_id))
-        mem = cur.fetchone()
-        if not mem:
-            raise PermissionError("User has no active membership in the selected organization.")
-        role = mem["role"]
-
-        # Issue access JWT
         access_token = encode_access_token(user_id, sess_id, active_org_id, role)
         token_hash = hash_token(access_token)
 
@@ -214,15 +230,17 @@ class AuthService:
 
     @staticmethod
     def refresh_access_token(cur, refresh_token: str) -> dict:
-        """Issue a new access JWT using a valid 30-day refresh session.
+        """Rotate a valid refresh token and issue a fresh access token.
 
-        Refresh token is NOT rotated (rotation TBD per D-018).
+        The presented refresh token is single-use. Replay of the old token
+        fails because its persisted hash is atomically replaced.
         """
         token_hash = hash_token(refresh_token)
         cur.execute("""
             SELECT *
             FROM user_sessions
-            WHERE refresh_token_hash = %s;
+            WHERE refresh_token_hash = %s
+            FOR UPDATE;
         """, (token_hash,))
         session = cur.fetchone()
 
@@ -244,11 +262,19 @@ class AuthService:
         if not membership:
             raise InvalidRefreshTokenError("Refresh session has no active organization membership.")
 
+        next_refresh_token = generate_refresh_token()
+        next_refresh_hash = hash_token(next_refresh_token)
         cur.execute("""
             UPDATE user_sessions
-            SET last_activity_at = now()
-            WHERE id = %s;
-        """, (session["id"],))
+            SET refresh_token_hash = %s,
+                last_activity_at = now()
+            WHERE id = %s
+              AND status = 'ACTIVE'
+            RETURNING id;
+        """, (next_refresh_hash, session["id"]))
+        rotated = cur.fetchone()
+        if not rotated:
+            raise InvalidRefreshTokenError("Refresh session is no longer active.")
 
         access_token = encode_access_token(
             str(session["user_id"]),
@@ -259,13 +285,30 @@ class AuthService:
 
         return {
             "access_token": access_token,
+            "refresh_token": next_refresh_token,
             "token_type": "Bearer",
             "expires_in": JWT_ACCESS_TTL_SECONDS,
         }
 
     @staticmethod
     def switch_organization(cur, user_id: str, target_org_id: str, session_id: str) -> dict:
-        """Switch active organization. Returns new JWT with updated org_id + role."""
+        """Switch active organization only on a session owned by the caller."""
+        cur.execute("""
+            SELECT id, user_id, status, expires_at
+            FROM user_sessions
+            WHERE id = %s
+            FOR UPDATE;
+        """, (session_id,))
+        session = cur.fetchone()
+        if not session:
+            raise AuthError("Session not found.")
+        if str(session["user_id"]) != str(user_id):
+            raise PermissionError("Session does not belong to authenticated user.")
+        if session["status"] == "REVOKED":
+            raise SessionRevokedError("Session has been revoked.")
+        if session["status"] == "EXPIRED" or session["expires_at"] <= datetime.now(timezone.utc):
+            raise SessionExpiredError("Session has expired.")
+
         cur.execute("""
             SELECT role, status FROM organization_memberships
             WHERE user_id = %s AND organization_id = %s;
@@ -275,17 +318,27 @@ class AuthService:
             raise PermissionError("User has no active membership in target organization.")
 
         cur.execute("""
+            SELECT 1
+            FROM organizations
+            WHERE id = %s AND status = 'ACTIVE';
+        """, (target_org_id,))
+        if not cur.fetchone():
+            raise PermissionError("Target organization is not active.")
+
+        cur.execute("""
             UPDATE user_sessions
             SET active_organization_id = %s, last_activity_at = now()
-            WHERE id = %s AND status = 'ACTIVE'
+            WHERE id = %s AND user_id = %s AND status = 'ACTIVE'
             RETURNING id, active_organization_id, status;
-        """, (target_org_id, session_id))
-        session = cur.fetchone()
+        """, (target_org_id, session_id, user_id))
+        updated_session = cur.fetchone()
+        if not updated_session:
+            raise AuthError("Session is no longer active.")
 
         new_access_token = encode_access_token(user_id, session_id, target_org_id, mem["role"])
 
         return {
-            "session": session,
+            "session": updated_session,
             "access_token": new_access_token,
         }
 
