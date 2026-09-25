@@ -494,6 +494,7 @@
 
 ### ۷.۳. تازه‌سازی توکن دسترسی (`POST /auth/refresh`)
 * **مجوز:** عمومی (نیاز به refresh_token معتبر).
+* **Rotation:** هر refresh موفق، refresh token قبلی را مصرف و یک refresh token جدید صادر می‌کند؛ replay توکن قبلی باید fail-closed شود.
 * **بدنه درخواست:**
 ```json
 {
@@ -506,6 +507,7 @@
   "success": true,
   "data": {
     "access_token": "eyJhbGciOiJIUzI1Ni...",
+    "refresh_token": "new-rotated-refresh-token...",
     "token_type": "Bearer",
     "expires_in": 900
   }
