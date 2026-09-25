@@ -182,6 +182,18 @@ class DeliveryExceptionEscalateRequest(APIBaseModel):
     reason: str | None = Field(default=None, max_length=2000)
 
 
+class CategoryCreateRequest(APIBaseModel):
+    name_fa: str = Field(min_length=1, max_length=100)
+    slug: str = Field(min_length=1, max_length=120)
+    icon_url: str | None = Field(default=None, max_length=255)
+    display_order: int = Field(default=0, ge=0)
+
+class CategoryUpdateRequest(APIBaseModel):
+    name_fa: str | None = Field(default=None, min_length=1, max_length=100)
+    slug: str | None = Field(default=None, min_length=1, max_length=120)
+    icon_url: str | None = Field(default=None, max_length=255)
+    display_order: int | None = Field(default=None, ge=0)
+
 class BroadcastCreateRequest(APIBaseModel):
     title: str = Field(min_length=1, max_length=255)
     body: str = Field(min_length=1, max_length=20000)
