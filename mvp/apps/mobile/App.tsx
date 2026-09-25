@@ -1,7 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import { Pressable, SafeAreaView, StyleSheet, Text } from "react-native";
-import { getToken, healthz } from "./src/api";
+import { getToken, healthz, restoreSession } from "./src/api";
 import { AccountMobileScreen } from "./src/screens/AccountMobileScreen";
 import { AssistedOrderScreen } from "./src/screens/AssistedOrderScreen";
 import { FieldTaskDetailScreen } from "./src/screens/FieldTaskDetailScreen";
@@ -29,12 +29,16 @@ function AppContent(): React.ReactNode {
   const [role, setRole] = useState<Role | null>(null);
   const [booted, setBooted] = useState(false);
 
-  const refresh = useCallback(() => {
-    void healthz().finally(() => setBooted(true));
+  const refresh = useCallback(async () => {
+    const restored = await restoreSession();
+    if (!restored) {
+      await healthz();
+    }
+    setBooted(true);
   }, []);
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
   function onLogout(): void {
