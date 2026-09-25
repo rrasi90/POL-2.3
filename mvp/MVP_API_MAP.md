@@ -272,6 +272,7 @@ feedback_*, support_* (HTTP now REAL for cases), referral (HTTP REAL), return_re
 | Support | support/cases/* | — |
 | Notifications | notifications/* | inbox path conflict if contract-literal |
 | Preferences | notifications/preferences | — |
+| Barcode matching | `GET /catalog/barcode/lookup`, `POST /products/match-barcode` | exact canonical identifier match; unknown barcode -> PENDING_REVIEW candidate/quarantined vendor product |
 | Vendor catalog/price/inventory | catalog/vendors/*, inventory/daily/*, `/vendors/inventory/continuous-scan`, `/vendors/inventory/publish` | continuous scan + publish REAL |
 | Invoices/settlements | finance routes | — |
 | Reconciliation | finance/reconciliation | — |
