@@ -1857,24 +1857,71 @@ class POLApplicationBoundary:
                 }
 
         candidate_id = str(uuid4())
-        self.cur.execute(
-            """
-            INSERT INTO product_candidates
-                (id, vendor_id, proposed_title, proposed_brand, barcode, vendor_sku, photo_asset_id, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, 'PENDING_REVIEW')
-            RETURNING id, status
-            """,
-            (
-                candidate_id,
-                vendor_id,
-                proposed_title,
-                proposed_brand,
-                normalized_barcode,
-                normalized_vendor_sku,
-                photo_asset_id,
-            ),
-        )
-        row = self.cur.fetchone()
+        if normalized_barcode and not normalized_vendor_sku:
+            self.cur.execute(
+                """
+                INSERT INTO product_candidates
+                    (id, vendor_id, proposed_title, proposed_brand, barcode, vendor_sku, photo_asset_id, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'PENDING_REVIEW')
+                ON CONFLICT (vendor_id, barcode)
+                    WHERE barcode IS NOT NULL AND status = 'PENDING_REVIEW'
+                DO NOTHING
+                RETURNING id, status
+                """,
+                (
+                    candidate_id,
+                    vendor_id,
+                    proposed_title,
+                    proposed_brand,
+                    normalized_barcode,
+                    normalized_vendor_sku,
+                    photo_asset_id,
+                ),
+            )
+            row = self.cur.fetchone()
+            if row is None:
+                self.cur.execute(
+                    """
+                    SELECT id, status
+                    FROM product_candidates
+                    WHERE vendor_id=%s
+                      AND barcode=%s
+                      AND status='PENDING_REVIEW'
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    """,
+                    (vendor_id, normalized_barcode),
+                )
+                row = self.cur.fetchone()
+                if not row:
+                    raise RuntimeError("Pending barcode candidate disappeared during idempotent replay.")
+                return {
+                    "candidate_id": str(row["id"]),
+                    "vendor_product_id": None,
+                    "status": row["status"],
+                    "listing_status": None,
+                    "idempotent_replay": True,
+                    "message": "کاندیدای باز موجود برای این بارکد بازگردانده شد.",
+                }
+        else:
+            self.cur.execute(
+                """
+                INSERT INTO product_candidates
+                    (id, vendor_id, proposed_title, proposed_brand, barcode, vendor_sku, photo_asset_id, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'PENDING_REVIEW')
+                RETURNING id, status
+                """,
+                (
+                    candidate_id,
+                    vendor_id,
+                    proposed_title,
+                    proposed_brand,
+                    normalized_barcode,
+                    normalized_vendor_sku,
+                    photo_asset_id,
+                ),
+            )
+            row = self.cur.fetchone()
 
         vendor_product_id = None
         if normalized_vendor_sku:
