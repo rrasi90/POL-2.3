@@ -18,6 +18,7 @@ from scripts.api.schemas import (
     AdminBroadcastDispatchRequest,
     AdminCategoryCreateRequest,
     AdminCategoryUpdateRequest,
+    AdminProductCandidateReviewRequest,
 )
 
 vendor_router = APIRouter(prefix="/vendors", tags=["vendor-management"])
@@ -174,6 +175,44 @@ def admin_category_update(
             slug=values.get("slug"),
             icon_url=values.get("icon_url"),
             display_order=values.get("display_order"),
+        )
+    )
+
+
+@admin_router.get("/product-candidates")
+def admin_product_candidates(
+    status: str | None = Query(default="PENDING_REVIEW"),
+    query: str | None = Query(default=None, max_length=160),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.admin_product_candidates_list(
+            status=status,
+            query=query,
+            offset=offset,
+            limit=limit,
+        )
+    )
+
+
+@admin_router.patch("/product-candidates/{candidate_id}")
+def admin_product_candidate_review(
+    candidate_id: UUID,
+    payload: AdminProductCandidateReviewRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.admin_product_candidate_review(
+            candidate_id=str(candidate_id),
+            action=payload.action,
+            reason=payload.reason,
+            brand_id=str(payload.brand_id) if payload.brand_id else None,
+            category_id=str(payload.category_id) if payload.category_id else None,
+            subcategory_id=str(payload.subcategory_id) if payload.subcategory_id else None,
+            canonical_name_fa=payload.canonical_name_fa,
+            target_product_id=str(payload.target_product_id) if payload.target_product_id else None,
         )
     )
 
