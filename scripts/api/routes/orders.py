@@ -484,8 +484,8 @@ def list_payment_evidence(
     )
 
 
-@router.post("/{order_id}/payments/{payment_id}/verify", status_code=200)
-def verify_payment_by_id(
+@router.post("/{order_id}/payments/verify", status_code=200)
+def verify_payment(
     order_id: UUID,
     payment_id: UUID,
     payload: PaymentVerifyRequest | None = None,
