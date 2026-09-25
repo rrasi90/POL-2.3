@@ -300,6 +300,8 @@ class CanonicalVendorOrderService:
             raise PermissionError("Vendor order rejection requires an active organization context.")
 
         reason = (rejection_reason or "").strip()
+        if not reason:
+            raise ValueError("Vendor rejection reason is required.")
         cur.execute(
             """
             SELECT o.id,
