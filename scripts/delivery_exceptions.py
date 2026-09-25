@@ -236,19 +236,32 @@ def escalate_delivery_exception(
     return {"exception_id": exception_id, "status": "ESCALATED"}
 
 
-def list_delivery_exceptions(cur, *, order_id=None, delivery_id=None, status=None,
-                             offset=0, limit=50) -> list[dict]:
-    """Query delivery exceptions with optional filters."""
-    is_operator = False
+def list_delivery_exceptions(
+    cur,
+    *,
+    user_id,
+    organization_id,
+    order_id=None,
+    delivery_id=None,
+    status=None,
+    offset=0,
+    limit=50,
+) -> list[dict]:
+    """Query delivery exceptions with tenant-safe filtering."""
+    where_clauses = []
+    params = []
+
     cur.execute(
         """
         SELECT 1
         FROM organization_memberships om
         JOIN organizations o ON o.id=om.organization_id
+        JOIN users u ON u.id=om.user_id
         WHERE om.user_id=%s
           AND om.organization_id=%s
           AND om.status='ACTIVE'
           AND o.status='ACTIVE'
+          AND u.is_active=TRUE
           AND om.role IN ('OPS_AGENT','OPS_ADMIN','ADMIN_SUPER','SUPER_ADMIN')
         LIMIT 1
         """,
@@ -263,8 +276,6 @@ def list_delivery_exceptions(cur, *, order_id=None, delivery_id=None, status=Non
         )
         params.extend([organization_id, organization_id])
 
-    where_clauses = []
-    params = []
     if order_id:
         where_clauses.append("de.order_id = %s")
         params.append(order_id)
@@ -277,13 +288,15 @@ def list_delivery_exceptions(cur, *, order_id=None, delivery_id=None, status=Non
 
     where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
     cur.execute(
-        f"SELECT de.id, de.delivery_id, de.order_id, de.exception_type, de.status, "
-        f"de.description, de.resolution_type, de.resolution_note, de.reported_at, de.resolved_at, "
-        f"de.created_at "
-        f"FROM delivery_exceptions de "
-        f"WHERE {where_sql} "
-        f"ORDER BY de.reported_at DESC "
-        f"LIMIT %s OFFSET %s",
+        f"""
+        SELECT de.id, de.delivery_id, de.order_id, de.exception_type, de.status,
+               de.description, de.resolution_type, de.resolution_note,
+               de.reported_at, de.resolved_at, de.created_at
+        FROM delivery_exceptions de
+        WHERE {where_sql}
+        ORDER BY de.reported_at DESC
+        LIMIT %s OFFSET %s
+        """,
         (*params, limit, offset),
     )
     return [dict(r) for r in cur.fetchall()]
