@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from scripts.api.db import get_db_cursor
 from scripts.api.dependencies import get_bearer_token, get_current_auth
 from scripts.api.errors import success_payload
+from scripts.auth_boundary import InvalidRefreshTokenError
 from scripts.api.schemas import (
     RefreshTokenRequest,
     RequestOTPRequest,
@@ -67,8 +68,7 @@ def refresh(request: Request, response: Response, payload: RefreshTokenRequest |
     cookie_refresh = request.cookies.get("pol_refresh")
     refresh_token = cookie_refresh or (payload.refresh_token if payload else None)
     if not refresh_token:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=401, detail="Refresh token is required.")
+        raise InvalidRefreshTokenError("Refresh token is required.")
     result = AuthApplicationService.refresh(cur, refresh_token)
     next_refresh = result.get("refresh_token")
     if next_refresh and cookie_refresh:
