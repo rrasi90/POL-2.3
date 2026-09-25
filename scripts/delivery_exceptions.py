@@ -55,7 +55,15 @@ def report_delivery_exception(
         raise ValueError(f"Invalid exception_type: {exception_type}. Must be one of: {sorted(VALID_EXCEPTION_TYPES)}")
 
     cur.execute(
-        "SELECT id, order_status, vendor_id, retailer_id FROM orders WHERE id = %s",
+        """
+        SELECT o.id, o.order_status, o.vendor_id, o.retailer_id,
+               v.organization_id AS vendor_organization_id,
+               r.organization_id AS retailer_organization_id
+        FROM orders o
+        JOIN vendors v ON v.id=o.vendor_id
+        JOIN retailers r ON r.id=o.retailer_id
+        WHERE o.id=%s
+        """,
         (order_id,),
     )
     order = cur.fetchone()
@@ -90,9 +98,14 @@ def report_delivery_exception(
     _record_exception_event(cur, order_id, None, "REPORTED", user_id, organization_id,
                             {"exception_id": exception_id, "exception_type": exception_type,
                              "description": description, "delivery_id": delivery_id})
-    _emit_exception_outbox(cur, "DELIVERY_EXCEPTION_REPORTED", exception_id,
-                           {"order_id": order_id, "delivery_id": delivery_id,
-                            "exception_type": exception_type})
+    _emit_exception_outbox(
+        cur,
+        "DELIVERY_EXCEPTION_REPORTED",
+        exception_id,
+        {"order_id": order_id, "delivery_id": delivery_id, "exception_type": exception_type},
+        recipient_org_id=order["vendor_organization_id"],
+        recipient_roles=("VENDOR_OWNER", "VENDOR_STAFF"),
+    )
 
     return {
         "exception_id": exception_id,
@@ -112,8 +125,15 @@ def resolve_delivery_exception(
         raise ValueError(f"Invalid resolution_type: {resolution_type}. Must be one of: {sorted(VALID_RESOLUTION_TYPES)}")
 
     cur.execute(
-        "SELECT id, status, order_id, delivery_id, vendor_id, retailer_id, exception_type "
-        "FROM delivery_exceptions WHERE id = %s",
+        """
+        SELECT de.id, de.status, de.order_id, de.delivery_id, de.vendor_id, de.retailer_id,
+               de.exception_type, v.organization_id AS vendor_organization_id,
+               r.organization_id AS retailer_organization_id
+        FROM delivery_exceptions de
+        JOIN vendors v ON v.id=de.vendor_id
+        JOIN retailers r ON r.id=de.retailer_id
+        WHERE de.id=%s
+        """,
         (exception_id,),
     )
     exc = cur.fetchone()
@@ -135,9 +155,15 @@ def resolve_delivery_exception(
     _record_exception_event(cur, exc["order_id"], exc["status"], "RESOLVED", user_id, organization_id,
                             {"exception_id": exception_id, "resolution_type": resolution_type,
                              "resolution_note": resolution_note})
-    _emit_exception_outbox(cur, "DELIVERY_EXCEPTION_RESOLVED", exception_id,
-                           {"order_id": exc["order_id"], "delivery_id": exc["delivery_id"],
-                            "exception_type": exc["exception_type"], "resolution_type": resolution_type})
+    _emit_exception_outbox(
+        cur,
+        "DELIVERY_EXCEPTION_RESOLVED",
+        exception_id,
+        {"order_id": exc["order_id"], "delivery_id": exc["delivery_id"],
+         "exception_type": exc["exception_type"], "resolution_type": resolution_type},
+        recipient_org_id=exc["retailer_organization_id"],
+        recipient_roles=("RETAILER_OWNER", "RETAILER_STAFF"),
+    )
 
     return {
         "exception_id": exception_id,
@@ -151,7 +177,13 @@ def escalate_delivery_exception(
 ) -> dict:
     """Escalate a delivery exception to ops for manual resolution."""
     cur.execute(
-        "SELECT id, status, order_id, delivery_id FROM delivery_exceptions WHERE id = %s",
+        """
+        SELECT de.id, de.status, de.order_id, de.delivery_id,
+               v.organization_id AS vendor_organization_id
+        FROM delivery_exceptions de
+        JOIN vendors v ON v.id=de.vendor_id
+        WHERE de.id=%s
+        """,
         (exception_id,),
     )
     exc = cur.fetchone()
@@ -172,8 +204,14 @@ def escalate_delivery_exception(
 
     _record_exception_event(cur, exc["order_id"], exc["status"], "ESCALATED", user_id, organization_id,
                             {"exception_id": exception_id, "reason": reason})
-    _emit_exception_outbox(cur, "DELIVERY_EXCEPTION_ESCALATED", exception_id,
-                           {"order_id": exc["order_id"], "delivery_id": exc["delivery_id"]})
+    _emit_exception_outbox(
+        cur,
+        "DELIVERY_EXCEPTION_ESCALATED",
+        exception_id,
+        {"order_id": exc["order_id"], "delivery_id": exc["delivery_id"]},
+        operator_orgs=True,
+        recipient_roles=("OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN"),
+    )
 
     return {"exception_id": exception_id, "status": "ESCALATED"}
 
