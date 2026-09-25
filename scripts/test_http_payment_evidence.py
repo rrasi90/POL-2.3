@@ -238,6 +238,52 @@ class TestVerifyPayment:
         )
         assert resp.status_code == 422
 
+
+
+    def test_canonical_direct_transfer_alias_and_payment_id_verify(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        evidence = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/direct-transfer",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={
+                "evidence_type": "BANK_REFERENCE",
+                "reference_number": f"TXN-CANON-{uuid4().hex[:10]}",
+                "amount_toman": 5000000,
+            },
+        )
+        assert evidence.status_code == 201
+        payment_id = evidence.json()["data"]["payment_id"]
+        assert payment_id
+
+        verified = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/{payment_id}/verify",
+            headers={"Authorization": f"Bearer {data['v_token']}"},
+            json={"notes": "Canonical payment id verification"},
+        )
+        assert verified.status_code == 200
+        assert verified.json()["data"]["status"] == "SUCCESS"
+        assert verified.json()["data"]["idempotent_replay"] is False
+
+    def test_payment_id_verify_rejects_payment_from_other_order(self, client):
+        first = _seed_order(uuid4().hex[:8])
+        second = _seed_order(uuid4().hex[:8])
+        evidence = client.post(
+            f"/api/v1/orders/{first['oi']}/payments/direct-transfer",
+            headers={"Authorization": f"Bearer {first['r_token']}"},
+            json={
+                "evidence_type": "BANK_REFERENCE",
+                "reference_number": f"TXN-X-{uuid4().hex[:10]}",
+                "amount_toman": 5000000,
+            },
+        )
+        payment_id = evidence.json()["data"]["payment_id"]
+        forged = client.post(
+            f"/api/v1/orders/{second['oi']}/payments/{payment_id}/verify",
+            headers={"Authorization": f"Bearer {second['v_token']}"},
+            json={},
+        )
+        assert forged.status_code == 422
+
     def test_vendor_verifies_payment(self, client):
         data = _seed_order(uuid4().hex[:8])
         evidence = client.post(
