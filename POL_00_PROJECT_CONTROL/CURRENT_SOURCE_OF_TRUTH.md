@@ -112,12 +112,9 @@ No visual artifact becomes canonical until the corresponding written requirement
 4. Generated local artifacts must not be committed to the repository.
 5. Production-readiness claims must distinguish domain verification from HTTP/auth/provider/UI/observability/deployment/recovery implementation.
 
-### Agentic Design Execution — 2026-09-21
+### Tool-Agnostic Design Execution — 2026-09-21
 
-For AI-agent-driven design tool construction, the execution control authority is:
-`13_PRODUCT_DESIGN/52_POL_design tool_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
-
-It governs agent behavior during design construction: preflight, capability probing, atomic mutations, checkpoints, visual/structural verification, approvals, resumability, rollback, and evidence separation. It does not override product decisions or domain/API authority.
+Design construction is governed by the written Master Tree, the canonical visual design system, repository safety rules, and the evidence ledgers in `mvp/`. Execution tooling is interchangeable and is never itself a product authority.
 
 ### Product Architecture Evolution — 2026-09-20
 
@@ -161,9 +158,7 @@ The visual system governs appearance, tokens, typography, shape, elevation, dens
 
 ### Design Approval → Engineering Readiness — 2026-09-21
 
-The project now explicitly separates DESIGN_APPROVED from ENGINEERING_READY.
-
-design tool approval certifies the design layer only. Engineering readiness additionally requires action, permission, state, data, API, error/recovery, analytics, platform and test mappings.
+The project explicitly separates DESIGN_APPROVED from ENGINEERING_READY. Design approval certifies the written/design layer; engineering readiness additionally requires action, permission, state, data, API, error/recovery, analytics, platform and test mappings.
 
 Current implementation state is governed by `mvp/BUILD_PLAN.md`, `mvp/MVP_SCREEN_MATRIX.md` and current repository evidence: Web has a partial live-verified baseline; Android/Expo source exists and is in Phase 3 verification. Remaining mobile parity and verification gates must not be described as absent source. These are engineering workstreams, not claims of design failure.
 ### Greenfield design tool Build Mode — 2026-09-21
@@ -178,9 +173,9 @@ Foundations → Components → Patterns → Golden Screens → Product Surfaces 
 
 ### Master Tree v4 Registry Upgrade — 2026-09-21
 
-The Master Tree is now Version 4.0.0 and adopts a registry-first control model:
+The Master Tree is a registry-first control model:
 
-Canonical Node Registry → Federated Views → Relationship Graph → Closure Profiles → Evidence → design tool Artifact Binding → Drift Control → Release Snapshot.
+Canonical Node Registry → Federated Views → Relationship Graph → Closure Profiles → Evidence → Artifact Binding → Drift Control → Release Snapshot.
 
 This upgrade does not create new product capabilities. It strengthens canonicality, applicability-aware closure, many-to-many evidence/relationships, artifact identity, source health, agent source packets and executable fitness functions.
 
@@ -188,32 +183,17 @@ Repeated screen IDs in derived sections are projections, not independent sources
 
 ## 7. Deep-Saturation Design Control — 2026-09-21
 
-The five-pass design saturation audit is registered as a supporting design-control artifact:
-
-- `13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
-
-The active Master Tree is now Version 4.3.0:
+The active design-control set on the current branch is:
 
 - `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md`
-- `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
-- `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
 - `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+- `mvp/MVP_KNOWN_GAPS.md`
+- `mvp/MVP_SCREEN_MATRIX.md`
+- `mvp/MVP_API_MAP.md`
 
-The active agent execution protocol is now Version 1.5.0:
-
-- `13_PRODUCT_DESIGN/52_POL_design tool_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
-
-The Master Tree saturation layer adds control-plane requirements for context packaging, execution identity, trust boundaries, mutation intent, persistence proof, semantic/structural/visual evidence, state freshness, task/command contracts, accessibility/RTL/network semantics, token/component lifecycle, analytics tracking governance and change-impact controls.
-
-These controls govern how design work is safely constructed and verified. They do not create new product capabilities and do not override product, domain, database, API or operations authorities.
+Execution safety and verification are governed by `.agents/rules/00-pol-canonical-safety.md` plus the active Master Tree and evidence ledgers. These controls govern how work is safely constructed and verified; they do not create new product capabilities or override product, domain, database, API or operations authorities.
 
 
 ### Executable Master Tree — 2026-09-21
 
-The human-readable Master Tree and its executable schema are now registered as the active design-control pair:
-
-- Human semantic authority: `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md`
-- Machine-readable structural authority: `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
-- Closure/validation rules: `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
-
-The executable schema constrains structure and evidence reporting; it does not override product/domain/API authority.
+The active human-readable design authority is `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md`; closure/validation evidence is maintained in `mvp/MVP_KNOWN_GAPS.md`, `mvp/MVP_SCREEN_MATRIX.md`, and `mvp/MVP_API_MAP.md`.
