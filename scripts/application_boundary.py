@@ -96,6 +96,49 @@ class POLApplicationBoundary:
             self.cur, self.context.user_id, self.context.organization_id, fields
         )
 
+    def basket_current(self):
+        retailer, basket = CanonicalBasketAllocationService._basket_for_context(
+            self.cur, self.context.user_id, self.context.organization_id,
+            self._current_basket_id(),
+        )
+        self.cur.execute(
+            """
+            SELECT bi.id, bi.product_id, p.master_sku, p.canonical_name_fa,
+                   bi.requested_quantity, bi.requested_unit, bi.pack_quantity
+            FROM basket_items bi
+            JOIN products p ON p.id = bi.product_id
+            WHERE bi.basket_id = %s
+            ORDER BY bi.created_at, bi.id
+            """,
+            (basket["id"],),
+        )
+        items = [dict(row, id=str(row["id"]), product_id=str(row["product_id"])) for row in self.cur.fetchall()]
+        return {
+            "basket_id": str(basket["id"]),
+            "retailer_id": str(retailer["retailer_id"]),
+            "status": basket["status"],
+            "version": int(basket["version"]),
+            "items": items,
+        }
+
+    def _current_basket_id(self):
+        self.cur.execute(
+            """
+            SELECT b.id
+            FROM baskets b
+            JOIN retailers r ON r.id = b.retailer_id
+            WHERE r.organization_id = %s
+              AND b.status = 'OPEN'
+            ORDER BY b.updated_at DESC, b.id DESC
+            LIMIT 1
+            """,
+            (self.context.organization_id,),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError("No OPEN basket exists for the active retailer organization.")
+        return str(row["id"])
+
     def basket_create(self):
         return CanonicalBasketAllocationService.create_basket(
             self.cur, self.context.user_id, self.context.organization_id
