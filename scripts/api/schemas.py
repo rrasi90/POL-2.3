@@ -307,3 +307,35 @@ class ReferralCreateRequest(APIBaseModel):
 
 class ReferralRedeemRequest(APIBaseModel):
     pass
+
+
+
+class VendorStaffInviteRequest(APIBaseModel):
+    phone_number: str = Field(
+        min_length=8,
+        max_length=16,
+        pattern=r"^\+[1-9]\d{7,14}$",
+    )
+    full_name: str = Field(min_length=1, max_length=100)
+
+
+class VendorStaffUpdateRequest(APIBaseModel):
+    role: Literal["VENDOR_OWNER", "VENDOR_STAFF"] | None = None
+    status: Literal["INVITED", "ACTIVE", "SUSPENDED", "REVOKED"] | None = None
+
+
+class AdminUserStatusRequest(APIBaseModel):
+    is_active: bool
+
+
+class AdminOrganizationStatusRequest(APIBaseModel):
+    status: Literal[
+        "LEAD",
+        "DOCUMENTS_PENDING",
+        "UNDER_REVIEW",
+        "VERIFICATION_PENDING",
+        "APPROVED",
+        "ACTIVE",
+        "REJECTED",
+        "SUSPENDED",
+    ]
