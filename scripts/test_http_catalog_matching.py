@@ -149,6 +149,45 @@ def test_exact_barcode_match_uses_canonical_identifier():
 
 
 
+def test_legacy_barcode_request_shape_remains_supported():
+    conn = _db()
+    client = TestClient(app)
+    data = None
+    try:
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                data = _seed_vendor_catalog(cur, uuid4().hex[:8])
+        response = client.post(
+            "/api/v1/products/match-barcode",
+            headers={"Authorization": "Bearer " + data["token"]},
+            json={
+                "raw_barcode": data["barcode"],
+                "scan_source": "CAMERA_CONTINUOUS_SCAN",
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()["data"]
+        assert body["match_type"] == "EXACT"
+        assert body["match_status"] == "EXACT"
+        assert body["scan_source"] == "CAMERA_CONTINUOUS_SCAN"
+        assert body["product"]["id"] == data["product_id"]
+    finally:
+        with conn:
+            with conn.cursor() as cur:
+                if data:
+                    cur.execute("DELETE FROM product_identifiers WHERE product_id=%s", (data["product_id"],))
+                    cur.execute("DELETE FROM products WHERE id=%s", (data["product_id"],))
+                    cur.execute("DELETE FROM subcategories WHERE id=%s", (data["subcategory_id"],))
+                    cur.execute("DELETE FROM categories WHERE id=%s", (data["category_id"],))
+                    cur.execute("DELETE FROM brands WHERE id=%s", (data["brand_id"],))
+                    cur.execute("DELETE FROM user_sessions WHERE user_id=%s", (data["user_id"],))
+                    cur.execute("DELETE FROM organization_memberships WHERE user_id=%s", (data["user_id"],))
+                    cur.execute("DELETE FROM vendors WHERE id=%s", (data["vendor_id"],))
+                    cur.execute("DELETE FROM users WHERE id=%s", (data["user_id"],))
+                    cur.execute("DELETE FROM organizations WHERE id=%s", (data["org_id"],))
+        conn.close()
+
+
 def test_unknown_barcode_creates_quarantined_candidate_idempotently():
     conn = _db()
     client = TestClient(app)
