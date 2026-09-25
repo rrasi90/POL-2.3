@@ -42,7 +42,9 @@ from scripts.domain_services import (
     AuditService
 )
 from scripts.checkout_gateway import CanonicalCheckoutGateway
-from scripts.fulfillment_service import mark_preparing as canonical_mark_preparing, mark_ready as canonical_mark_ready,  (
+from scripts.fulfillment_service import (
+    mark_preparing as canonical_mark_preparing,
+    mark_ready as canonical_mark_ready,
     dispatch_order as canonical_dispatch_order,
     transition_delivery_stage,
     confirm_delivery as canonical_confirm_delivery,
