@@ -1243,9 +1243,16 @@ class POLApplicationBoundary:
 
         self.cur.execute(
             """
-            SELECT p.id AS payment_id
+            SELECT p.id AS payment_id,
+                   p.retailer_id,
+                   p.vendor_id,
+                   r.organization_id AS retailer_org_id,
+                   v.organization_id AS vendor_org_id
             FROM payments p
-            WHERE p.order_id = %s
+            JOIN retailers r ON r.id=p.retailer_id
+            JOIN vendors v ON v.id=p.vendor_id
+            WHERE p.order_id=%s
+            ORDER BY p.created_at DESC, p.id DESC
             LIMIT 1
             """,
             (order_id,),
@@ -1253,6 +1260,34 @@ class POLApplicationBoundary:
         pay = self.cur.fetchone()
         if not pay:
             raise ValueError(f"Order {order_id} has no payment record.")
+
+        self.cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN organizations o ON o.id=om.organization_id
+            JOIN users u ON u.id=om.user_id
+            WHERE om.user_id=%s
+              AND om.organization_id=%s
+              AND om.status='ACTIVE'
+              AND o.status='ACTIVE'
+              AND u.is_active=TRUE
+              AND (
+                 (om.organization_id=%s AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF'))
+                 OR
+                 (om.organization_id=%s AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF'))
+              )
+            LIMIT 1
+            """,
+            (
+                self.context.user_id,
+                self.context.organization_id,
+                pay["retailer_org_id"],
+                pay["vendor_org_id"],
+            ),
+        )
+        if not self.cur.fetchone():
+            raise PermissionError("Actor is not authorized to read this payment evidence.")
 
         self.cur.execute(
             """
@@ -1302,8 +1337,24 @@ class POLApplicationBoundary:
         if not pay:
             raise ValueError(f"Order {order_id} has no payment record.")
 
-        if str(pay["vendor_org_id"]) != self.context.organization_id:
-            raise PermissionError("Only the vendor tenant may verify a payment.")
+        self.cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN organizations o ON o.id=om.organization_id
+            JOIN users u ON u.id=om.user_id
+            WHERE om.user_id=%s
+              AND om.organization_id=%s
+              AND om.status='ACTIVE'
+              AND o.status='ACTIVE'
+              AND u.is_active=TRUE
+              AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF','OPS_AGENT','OPS_ADMIN','ADMIN_SUPER','SUPER_ADMIN')
+            LIMIT 1
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        if not self.cur.fetchone() or str(pay["vendor_org_id"]) != str(self.context.organization_id):
+            raise PermissionError("Only an active vendor/operations actor may verify this payment.")
 
         if pay["payment_status"] == "SUCCESS":
             return {
