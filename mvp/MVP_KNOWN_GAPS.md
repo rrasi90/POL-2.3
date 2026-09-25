@@ -239,3 +239,8 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - Finding: POST /api/v1/orders/{order_id}/payments/verify was registered twice in the same router.
 - Resolution: retained the canonical implementation and removed the duplicate registration; route uniqueness regression now covers this class automatically.
 - Status: RESOLVED in source; fresh CI certification remains separate.
+## G-039 — Boundary role resolution trusted inactive users/orgs (RESOLVED — 2026-09-25)
+
+- Finding: the central application-boundary role resolver accepted ACTIVE memberships without independently checking users.is_active and organizations.status.
+- Resolution: role resolution now requires active user, active membership and active organization; batch contract regression covers inactive-user and suspended-organization contexts.
+- Status: RESOLVED in source; fresh CI certification remains separate.
