@@ -151,7 +151,14 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
 
 def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retailer_id: str,
                                        vendor_allocations: list) -> None:
-    """Reject forged/stale allocation input before transactional checkout."""
+    """Reject forged/stale allocation input before transactional checkout.
+
+    An allocation plan may legally contain UNFULFILLED basket lines. Checkout
+    commits only ALLOCATED/PARTIALLY_ALLOCATED lines and leaves the unfulfilled
+    demand represented in the consumed allocation plan.
+    """
+    allocated_statuses = {"ALLOCATED", "PARTIALLY_ALLOCATED"}
+
     cur.execute(
         """
         SELECT b.retailer_id, b.status, b.version,
@@ -178,6 +185,23 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
 
     cur.execute(
         """
+        SELECT bi.product_id, ai.vendor_product_id, ai.status,
+               ai.allocated_quantity, ai.unit_price_snapshot_toman,
+               ai.line_total_toman
+        FROM allocation_items ai
+        JOIN basket_items bi ON bi.id = ai.basket_item_id
+        WHERE ai.allocation_plan_id = %s
+          AND bi.basket_id = %s
+        ORDER BY ai.id;
+        """,
+        (plan_id, basket_id),
+    )
+    plan_items = cur.fetchall()
+    if not plan_items:
+        raise AllocationIntegrityError("Allocation plan has no basket lines.")
+
+    cur.execute(
+        """
         SELECT product_id, requested_quantity
         FROM basket_items
         WHERE basket_id = %s
@@ -189,13 +213,56 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
     if not basket_items:
         raise AllocationIntegrityError("Cannot checkout an empty basket.")
 
-    if len(vendor_allocations) != len(basket_items):
+    expected_requested = {
+        str(row["product_id"]): int(row["requested_quantity"])
+        for row in basket_items
+    }
+    plan_by_product = {}
+    for row in plan_items:
+        product_id = str(row["product_id"])
+        if product_id in plan_by_product:
+            raise AllocationIntegrityError("Allocation plan contains duplicate basket products.")
+        plan_by_product[product_id] = row
+
+    if set(plan_by_product) != set(expected_requested):
+        raise AllocationIntegrityError("Allocation plan does not cover the current basket lines.")
+
+    invalid_statuses = {
+        row["status"]
+        for row in plan_items
+        if row["status"] not in allocated_statuses and row["status"] != "UNFULFILLED"
+    }
+    if invalid_statuses:
         raise AllocationIntegrityError(
-            "MVP allocation must assign exactly one vendor offer to each basket line."
+            f"Allocation plan contains invalid line statuses: {sorted(invalid_statuses)}"
         )
 
-    expected = {str(r["product_id"]): int(r["requested_quantity"]) for r in basket_items}
+    allocated_plan = [
+        row for row in plan_items if row["status"] in allocated_statuses
+    ]
+    if not allocated_plan:
+        raise AllocationIntegrityError("Cannot checkout an allocation plan with no fulfilled lines.")
+
+    if len(vendor_allocations) != len(allocated_plan):
+        raise AllocationIntegrityError(
+            "Checkout allocations must exactly match the fulfilled allocation-plan lines."
+        )
+
+    expected_allocations = {
+        (
+            str(row["product_id"]),
+            str(row["vendor_product_id"]),
+            int(row["allocated_quantity"]),
+            int(row["unit_price_snapshot_toman"]),
+            int(row["line_total_toman"]),
+        )
+        for row in allocated_plan
+    }
+    if len(expected_allocations) != len(allocated_plan):
+        raise AllocationIntegrityError("Allocation plan contains duplicate fulfilled allocation lines.")
+
     seen = set()
+    supplied_allocations = set()
     vendor_totals = {}
 
     for alloc in vendor_allocations:
@@ -223,15 +290,35 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
             raise AllocationIntegrityError(f"Vendor product {vp_id} has incomplete inventory data.")
 
         product_id = str(row["product_id"])
-        if product_id in seen or product_id not in expected:
+        if product_id in seen or product_id not in expected_requested:
             raise AllocationIntegrityError("Allocation does not map one-to-one to basket products.")
         seen.add(product_id)
 
-        qty = int(alloc["quantity"])
-        if qty != expected[product_id]:
+        persisted = plan_by_product.get(product_id)
+        if not persisted or persisted["status"] not in allocated_statuses:
             raise AllocationIntegrityError(
-                f"Quantity mismatch for product {product_id}: allocation={qty}, basket={expected[product_id]}"
+                f"Allocation for product {product_id} is not present as a fulfilled plan line."
             )
+
+        qty = int(alloc["quantity"])
+        unit_price = int(alloc["unit_price_toman"])
+        amount = int(alloc["amount_toman"])
+        expected_tuple = (
+            product_id,
+            str(persisted["vendor_product_id"]),
+            int(persisted["allocated_quantity"]),
+            int(persisted["unit_price_snapshot_toman"]),
+            int(persisted["line_total_toman"]),
+        )
+        supplied_tuple = (product_id, str(vp_id), qty, unit_price, amount)
+        if supplied_tuple != expected_tuple:
+            raise AllocationIntegrityError(
+                f"Checkout allocation does not match the persisted plan for product {product_id}."
+            )
+        supplied_allocations.add(supplied_tuple)
+
+        if qty <= 0:
+            raise AllocationIntegrityError(f"Allocated quantity must be positive for {vp_id}.")
         if qty < int(row["moq"]):
             raise AllocationIntegrityError(f"Requested quantity is below vendor MOQ for {vp_id}.")
 
@@ -241,8 +328,6 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
                 f"Available stock is insufficient for {vp_id}: {available} < requested {qty}."
             )
 
-        unit_price = int(alloc["unit_price_toman"])
-        amount = int(alloc["amount_toman"])
         if amount != unit_price * qty:
             raise AllocationIntegrityError(f"Line amount mismatch for vendor product {vp_id}.")
 
@@ -261,8 +346,13 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
         vendor_key = str(row["vendor_id"])
         vendor_totals[vendor_key] = vendor_totals.get(vendor_key, 0) + amount
 
-    if seen != set(expected):
-        raise AllocationIntegrityError("Allocation is missing one or more basket products.")
+    expected_products = {
+        str(row["product_id"]) for row in allocated_plan
+    }
+    if seen != expected_products or supplied_allocations != expected_allocations:
+        raise AllocationIntegrityError(
+            "Checkout allocations do not exactly match the fulfilled allocation plan."
+        )
 
     for vendor_id, total in vendor_totals.items():
         cur.execute("SELECT min_order_value_toman FROM vendors WHERE id = %s;", (vendor_id,))
