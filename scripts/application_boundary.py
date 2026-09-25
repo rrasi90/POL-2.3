@@ -1671,7 +1671,7 @@ class POLApplicationBoundary:
             ) stock ON TRUE
             LEFT JOIN LATERAL (
                 SELECT CASE
-                    WHEN ma.storage_key LIKE 'http://%' OR ma.storage_key LIKE 'https://%' THEN ma.storage_key
+                    WHEN ma.storage_key LIKE 'http://%%' OR ma.storage_key LIKE 'https://%%' THEN ma.storage_key
                     ELSE NULL
                 END AS primary_image_url
                 FROM product_media pm
