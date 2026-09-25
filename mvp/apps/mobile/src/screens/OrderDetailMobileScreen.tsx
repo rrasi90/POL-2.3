@@ -364,6 +364,8 @@ export function OrderDetailMobileScreen(props: {
         {vendorMode ? (
           <Card>
             <Text style={styles.h2}>اقدامات فروشنده</Text>
+            {["SUBMITTED", "CREATED"].includes(status) ? <Input label="دلیل رد سفارش" value={rejectReason} onChangeText={setRejectReason} maxLength={1000} /> : null}
+            {status === "READY" ? <><Input label="نام راننده" value={dispatchDriverName} onChangeText={setDispatchDriverName} maxLength={100} /><Input label="پلاک خودرو" value={dispatchVehiclePlate} onChangeText={setDispatchVehiclePlate} maxLength={20} /><Input label="تلفن راننده" value={dispatchDriverPhone} onChangeText={setDispatchDriverPhone} maxLength={32} /></> : null}
             <View style={styles.row}>
               {["SUBMITTED", "CREATED"].includes(status) ? (
                 <>
@@ -418,9 +420,7 @@ export function OrderDetailMobileScreen(props: {
             <Input label="توضیح مرجوعی" value={returnNote} onChangeText={setReturnNote} multiline numberOfLines={3} maxLength={500} />
             <Btn label="ثبت مرجوعی" onPress={() => void submitReturn()} loading={acting === "return"} disabled={acting !== null} />
             <Text style={styles.meta}>کدهای قراردادی نمونه: DAMAGED، WRONG_ITEM، MISSING_ITEMS، QUALITY، EXPIRED، OTHER</Text>
-            {vendorMode && ["SUBMITTED", "CREATED"].includes(status) ? <Input label="دلیل رد سفارش" value={rejectReason} onChangeText={setRejectReason} maxLength={1000} /> : null}
             <Input label="دلیل اختلاف" value={disputeReason} onChangeText={setDisputeReason} maxLength={200} />
-            {vendorMode && status === "READY" ? <><Input label="نام راننده" value={dispatchDriverName} onChangeText={setDispatchDriverName} maxLength={100} /><Input label="پلاک خودرو" value={dispatchVehiclePlate} onChangeText={setDispatchVehiclePlate} maxLength={20} /><Input label="تلفن راننده" value={dispatchDriverPhone} onChangeText={setDispatchDriverPhone} maxLength={32} /></> : null}
             <Input label="مبلغ مورد ادعا (تومان)" value={disputeClaimedAmount} onChangeText={setDisputeClaimedAmount} keyboardType="numeric" />
             <Input label="شرح اختلاف" value={disputeDescription} onChangeText={setDisputeDescription} multiline numberOfLines={3} maxLength={2000} />
             <Btn label="ثبت اختلاف" tone="ghost" onPress={() => void submitDispute()} loading={acting === "dispute"} disabled={acting !== null || !disputeReason.trim() || !disputeClaimedAmount.trim()} />
