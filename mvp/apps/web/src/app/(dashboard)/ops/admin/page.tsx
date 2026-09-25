@@ -189,24 +189,24 @@ export default function OpsAdminPage() {
           <h2 className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
             کاربران و سازمان‌ها
           </h2>
-          <StatusChip tone="warning">G-007</StatusChip>
+          <StatusChip tone="success">G-007 resolved</StatusChip>
         </div>
         <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]">
-          شکاف G-007: هیچ API برای فهرست/ویرایش کاربران و سازمان‌ها وجود ندارد. این بخش فقط
-          پیوند به مسیرهای پیشنهادی است و هیچ CRUD جعلی ارائه نمی‌دهد.
+          مدیریت کاربران و سازمان‌ها اکنون به endpointهای واقعی متصل است؛ این صفحه فقط نمای جمع‌بندی است و
+          CRUD اصلی در مسیرهای تخصصی انجام می‌شود.
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Link
             href="/admin/users"
-            className="rounded-[8px] border border-dashed border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-subtle)] p-4 text-[14px] font-semibold text-[var(--pol-light-text-secondary)] transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-default)]"
+            className="rounded-[8px] border border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4 text-[14px] font-semibold text-[var(--pol-light-text-secondary)] transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-default)]"
           >
-            کاربران — شکاف (بدون API)
+            مدیریت کاربران
           </Link>
           <Link
             href="/admin/orgs"
             className="rounded-[8px] border border-dashed border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-subtle)] p-4 text-[14px] font-semibold text-[var(--pol-light-text-secondary)] transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-default)]"
           >
-            سازمان‌ها — شکاف (بدون API)
+            مدیریت سازمان‌ها
           </Link>
         </div>
       </section>
