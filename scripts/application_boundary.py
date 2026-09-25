@@ -1874,6 +1874,238 @@ class POLApplicationBoundary:
             "pagination": {"page": page, "limit": limit, "total": total},
         }
 
+    def catalog_barcode_match(
+        self,
+        *,
+        barcode: str,
+        proposed_title: str | None = None,
+        vendor_sku: str | None = None,
+        packaging_unit: str = "UNIT",
+        pack_quantity: int = 1,
+        create_candidate: bool = False,
+    ):
+        normalized = "".join(ch for ch in (barcode or "").strip() if ch.isalnum())
+        if not normalized or len(normalized) < 8 or len(normalized) > 32:
+            raise ValueError("Barcode must contain between 8 and 32 alphanumeric characters.")
+        if pack_quantity < 1:
+            raise ValueError("pack_quantity must be positive.")
+
+        vendor = self._current_vendor_for_context() if self.context.organization_id else None
+        vendor_id = str(vendor["id"]) if vendor else None
+
+        self.cur.execute(
+            """
+            SELECT DISTINCT
+                pi.id AS identifier_id,
+                pi.identifier_type,
+                pi.identifier_value,
+                pi.identifier_scope,
+                pi.packaging_scope,
+                pi.source,
+                pi.confidence_score,
+                p.id AS product_id,
+                p.master_sku,
+                p.canonical_name_fa,
+                p.base_unit,
+                p.default_pack_unit,
+                p.default_pack_quantity,
+                b.name_fa AS brand_name
+            FROM product_identifiers pi
+            JOIN products p ON p.id = pi.product_id
+            LEFT JOIN brands b ON b.id = p.brand_id
+            WHERE pi.identifier_value = %s
+              AND p.is_active = TRUE
+              AND (
+                    pi.vendor_id IS NULL
+                    OR pi.vendor_id = %s::uuid
+              )
+            ORDER BY
+                CASE WHEN pi.vendor_id IS NULL THEN 0 ELSE 1 END,
+                pi.confidence_score DESC,
+                pi.id
+            """,
+            (normalized, vendor_id),
+        )
+        matches = [dict(row) for row in self.cur.fetchall()]
+
+        product_ids = {str(row["product_id"]) for row in matches}
+        if len(product_ids) == 1:
+            row = matches[0]
+            return {
+                "match_type": "EXACT",
+                "confidence_score": float(row["confidence_score"]),
+                "product": {
+                    "id": str(row["product_id"]),
+                    "master_sku": row["master_sku"],
+                    "canonical_name_fa": row["canonical_name_fa"],
+                    "brand_name": row["brand_name"],
+                    "base_unit": row["base_unit"],
+                    "default_pack_unit": row["default_pack_unit"],
+                    "default_pack_quantity": row["default_pack_quantity"],
+                },
+                "identifier": {
+                    "id": str(row["identifier_id"]),
+                    "identifier_type": row["identifier_type"],
+                    "identifier_value": row["identifier_value"],
+                    "identifier_scope": row["identifier_scope"],
+                    "packaging_scope": row["packaging_scope"],
+                    "source": row["source"],
+                },
+                "candidate_id": None,
+                "vendor_product_id": None,
+            }
+
+        if len(product_ids) > 1:
+            return {
+                "match_type": "AMBIGUOUS",
+                "confidence_score": 0.0,
+                "products": [
+                    {
+                        "id": str(row["product_id"]),
+                        "master_sku": row["master_sku"],
+                        "canonical_name_fa": row["canonical_name_fa"],
+                        "brand_name": row["brand_name"],
+                    }
+                    for row in matches
+                ],
+                "candidate_id": None,
+                "vendor_product_id": None,
+            }
+
+        if not create_candidate:
+            return {
+                "match_type": "NO_MATCH",
+                "confidence_score": 0.0,
+                "product": None,
+                "candidate_id": None,
+                "vendor_product_id": None,
+            }
+
+        if not vendor_id:
+            raise PermissionError("Creating an unmatched barcode candidate requires an active vendor context.")
+        if not proposed_title or not proposed_title.strip():
+            raise ValueError("proposed_title is required when creating a barcode candidate.")
+
+        candidate_vendor_sku = (vendor_sku or normalized).strip()
+        self.cur.execute(
+            """
+            SELECT id, product_id, candidate_id, listing_status
+            FROM vendor_products
+            WHERE vendor_id=%s AND vendor_sku=%s
+            FOR UPDATE
+            """,
+            (vendor_id, candidate_vendor_sku),
+        )
+        existing_vp = self.cur.fetchone()
+        if existing_vp and existing_vp["product_id"]:
+            raise ValueError("vendor_sku is already bound to a canonical product.")
+        if existing_vp and existing_vp["candidate_id"]:
+            candidate_id = str(existing_vp["candidate_id"])
+            return {
+                "match_type": "NO_MATCH",
+                "confidence_score": 0.0,
+                "product": None,
+                "candidate_id": candidate_id,
+                "vendor_product_id": str(existing_vp["id"]),
+                "listing_status": existing_vp["listing_status"],
+                "idempotent_replay": True,
+            }
+
+        self.cur.execute(
+            """
+            SELECT id
+            FROM product_candidates
+            WHERE vendor_id=%s
+              AND barcode=%s
+              AND status='PENDING_REVIEW'
+            ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (vendor_id, normalized),
+        )
+        candidate = self.cur.fetchone()
+        if candidate:
+            candidate_id = str(candidate["id"])
+        else:
+            candidate_id = str(uuid4())
+            self.cur.execute(
+                """
+                INSERT INTO product_candidates
+                    (id,vendor_id,proposed_title,barcode,vendor_sku,status)
+                VALUES (%s,%s,%s,%s,%s,'PENDING_REVIEW')
+                RETURNING id
+                """,
+                (
+                    candidate_id,
+                    vendor_id,
+                    proposed_title.strip(),
+                    normalized,
+                    candidate_vendor_sku,
+                ),
+            )
+            self.cur.execute(
+                """
+                INSERT INTO outbox_events
+                    (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                     target_user_id,target_organization_id,dedupe_key,channel_hint)
+                VALUES
+                    (gen_random_uuid(),gen_random_uuid(),'PRODUCT_CANDIDATE_CREATED',
+                     'PRODUCT_CANDIDATE',%s,
+                     jsonb_build_object(
+                        'candidate_id',%s,
+                        'vendor_id',%s,
+                        'barcode',%s,
+                        'vendor_sku',%s,
+                        'proposed_title',%s
+                     ),
+                     'PENDING',NULL,NULL,%s,'INBOX')
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    candidate_id,
+                    candidate_id,
+                    vendor_id,
+                    normalized,
+                    candidate_vendor_sku,
+                    proposed_title.strip(),
+                    "PRODUCT_CANDIDATE_CREATED:" + candidate_id,
+                ),
+            )
+
+        if existing_vp:
+            vendor_product_id = str(existing_vp["id"])
+        else:
+            vendor_product_id = str(uuid4())
+            self.cur.execute(
+                """
+                INSERT INTO vendor_products
+                    (id,vendor_id,product_id,candidate_id,vendor_sku,
+                     packaging_unit,pack_quantity,sales_unit,is_active,listing_status)
+                VALUES (%s,%s,NULL,%s,%s,%s,%s,%s,TRUE,'DRAFT_PENDING_CATALOG')
+                RETURNING id,listing_status
+                """,
+                (
+                    vendor_product_id,
+                    vendor_id,
+                    candidate_id,
+                    candidate_vendor_sku,
+                    packaging_unit.strip(),
+                    int(pack_quantity),
+                    packaging_unit.strip(),
+                ),
+            )
+
+        return {
+            "match_type": "NO_MATCH",
+            "confidence_score": 0.0,
+            "product": None,
+            "candidate_id": candidate_id,
+            "vendor_product_id": vendor_product_id,
+            "listing_status": "DRAFT_PENDING_CATALOG",
+            "idempotent_replay": False,
+        }
+
     def catalog_categories_public(self):
         self.cur.execute(
             """
