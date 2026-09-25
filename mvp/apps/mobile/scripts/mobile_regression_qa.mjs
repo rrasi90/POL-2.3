@@ -31,7 +31,7 @@ const checks = [
       s.includes("order_item_id: x.id") && s.includes("accepted_quantity: Number") &&
       s.includes("/delivery/arrived") && s.includes("recipient_name: deliveryRecipient.trim()") &&
       v.includes("new_physical_quantity") && v.includes("vendor_product_id: x.vendor_product_id || x.id") &&
-      v.includes("declared_quantity: Number");
+      v.includes("declared_quantity: Number") && v.includes("physical_quantity ?? 0");
   }],
   ["Mobile dispute submission uses canonical amount and description fields", () => {
     const s = read("screens/OrderDetailMobileScreen.tsx");
