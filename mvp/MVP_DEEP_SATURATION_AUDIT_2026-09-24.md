@@ -127,16 +127,15 @@ Therefore this audit must verify closure and source/evidence consistency rather 
 
 ## 4. Findings confirmed in this pass
 
-### DSA-001 — Mobile access token is memory-only in audited source
-Class: CONFLICT / P0 security-lifecycle review.
-mvp/apps/mobile/src/api.ts declares a module-level access token and does not use SecureStore/Keychain persistence. No mobile refresh flow is present in that file.
-This conflicts with the device-evidence note claiming the session survives app restart.
-Required closure: cold process-kill/relaunch test on the current APK plus runtime-storage inspection. Then adopt one canonical policy; do not infer behavior.
+### DSA-001 — Mobile credential persistence is now SecureStore-backed
+Class: SOURCE REMEDIATED / DEVICE-UNVERIFIED.
+Current mvp/apps/mobile/src/api.ts stores access, refresh, and role/session metadata with Expo SecureStore; the in-memory access token is restored from SecureStore on process restart.
+Residual closure: cold process-kill/relaunch on the current APK plus runtime-storage inspection remains required before treating device persistence as independently verified.
 
-### DSA-002 — Mobile 401 recovery is absent
-Class: GAP / P1, dependent on auth policy.
-The audited mobile API client sends the bearer token but does not implement the web client's documented refresh-and-single-retry lifecycle.
-Required closure: after the existing refresh-token-rotation decision is closed, implement the canonical mobile lifecycle.
+### DSA-002 — Mobile 401 recovery is now implemented
+Class: SOURCE REMEDIATED / CI-VERIFIABLE.
+Current mvp/apps/mobile/src/api.ts implements a single-flight refresh-and-single-retry flow on HTTP 401, restores session from SecureStore, and clears the session when refresh fails.
+Residual closure: execute/retain the mobile runtime regression evidence against the current release build; refresh-token rotation remains an explicit open policy decision and is not invented here.
 
 ### DSA-003 — Mobile explicit logout/revocation surface was absent; source remediation applied
 Class: IMPLEMENTED / UNVERIFIED.
