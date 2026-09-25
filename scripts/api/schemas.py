@@ -378,7 +378,7 @@ class AdminCategoryUpdateRequest(APIBaseModel):
 class VendorInventoryContinuousScanRequest(APIBaseModel):
     product_id: UUID
     vendor_sku: str = Field(min_length=1, max_length=100)
-    packaging_unit: Literal["CARTON", "BOX", "PACK", "PIECE", "KG", "BUNDLE"]
+    packaging_unit: str = Field(min_length=1, max_length=30)
     pack_quantity: int = Field(ge=1, le=100000)
     physical_quantity: int = Field(ge=0)
     unit_price_toman: int = Field(gt=0)
