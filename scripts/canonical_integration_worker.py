@@ -13,20 +13,26 @@ class IntegrationWorkerError(RuntimeError):
 
 
 class CanonicalIntegrationWorker:
-    ALLOWED_DIRECT_NOTIFICATION_EVENTS = {
-        "ORDER_GROUP_SUBMITTED",
-        "ORDER_SUBMITTED",
-        "ORDER_ACCEPTED",
-        "ORDER_REJECTED",
-        "ORDER_CANCELLED",
-        "DISPUTE_OPENED",
-        "FEEDBACK_REPLIED",
-        "DAILY_INVENTORY_REMINDER",
-        "PAYMENT_RECONCILED",
-        "RETURN_REQUESTED",
-    }
+    @staticmethod
+    def _preference_category(event_name: str) -> str:
+        name = event_name.upper()
+        if any(k in name for k in ("PAYMENT", "SETTLEMENT", "INVOICE")):
+            return "PAYMENTS"
+        if any(k in name for k in ("DELIVERY", "RETURN", "DISPATCH", "ARRIVED", "PICKED_UP")):
+            return "DELIVERY"
+        if any(k in name for k in ("DISPUTE", "DAMAGE", "SHORTAGE")):
+            return "DISPUTES"
+        if "SUPPORT" in name:
+            return "SUPPORT"
+        if "SECURITY" in name or "OTP" in name:
+            return "SECURITY"
+        if "FEEDBACK" in name:
+            return "SUPPORT"
+        if "PROMO" in name or "BROADCAST" in name:
+            return "MARKETING"
+        return "ORDERS"
 
-    PASSTHROUGH_EVENTS = {"VENDOR_REFERRAL_REDEEMED"}
+PASSTHROUGH_EVENTS = {"VENDOR_REFERRAL_REDEEMED"}
 
     @staticmethod
     def _render_message(cur, event_name: str, payload: dict):
@@ -107,14 +113,27 @@ class CanonicalIntegrationWorker:
                 processed += 1
                 continue
 
-            if event_name not in cls.ALLOWED_DIRECT_NOTIFICATION_EVENTS:
-                cls._quarantine_unsupported(
-                    cur,
-                    event,
-                    f"Unsupported canonical outbox event: {event_name}",
+            if event_name not in cls.PASSTHROUGH_EVENTS:
+                cur.execute(
+                    """
+                    SELECT 1
+                    FROM notification_templates
+                    WHERE event_name = %s
+                      AND enabled = TRUE
+                      AND effective_from <= now()
+                      AND (effective_until IS NULL OR effective_until > now())
+                    LIMIT 1
+                    """,
+                    (event_name,),
                 )
-                processed += 1
-                continue
+                if not cur.fetchone():
+                    cls._quarantine_unsupported(
+                        cur,
+                        event,
+                        f"No active notification template for canonical event: {event_name}",
+                    )
+                    processed += 1
+                    continue
 
             target_user_id = event.get("target_user_id")
             target_org_id = event.get("target_organization_id")
@@ -160,14 +179,31 @@ class CanonicalIntegrationWorker:
                 ),
             )
             if channel != "INBOX":
+                category = cls._preference_category(event_name)
+                critical = str(priority).upper() == "CRITICAL"
+                pref_column = "push_enabled" if str(channel).upper() == "PUSH" else "sms_enabled"
+                cur.execute(
+                    f"""
+                    SELECT {pref_column}
+                    FROM notification_preferences
+                    WHERE user_id=%s AND category=%s
+                    ORDER BY id DESC
+                    LIMIT 1
+                    """,
+                    (str(target_user_id), category),
+                )
+                pref = cur.fetchone()
+                enabled = True if pref is None else bool(pref[0] if not isinstance(pref, dict) else pref[pref_column])
+                delivery_status = "PENDING" if (enabled or critical) else "SKIPPED"
+                failure_reason = None if (enabled or critical) else "User preference disabled this transactional channel."
                 cur.execute(
                     """
                     INSERT INTO notification_deliveries
-                        (id, notification_id, channel, status, scheduled_at)
-                    VALUES (%s,%s,%s,'PENDING',now())
+                        (id, notification_id, channel, status, scheduled_at, failure_reason)
+                    VALUES (%s,%s,%s,%s,now(),%s)
                     ON CONFLICT (notification_id, channel) DO NOTHING;
                     """,
-                    (str(uuid.uuid4()), notification_id, channel),
+                    (str(uuid.uuid4()), notification_id, channel, delivery_status, failure_reason),
                 )
             cur.execute(
                 """
