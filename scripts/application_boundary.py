@@ -1779,7 +1779,19 @@ class POLApplicationBoundary:
             VALUES (%s, %s, 'product_candidate_created', 'PRODUCT_CANDIDATE', %s, %s, 'PENDING')
             ON CONFLICT DO NOTHING
             """,
-            (str(uuid4()), str(uuid4()), candidate_id, Json({"candidate_id": candidate_id, "vendor_id": str(vendor["id"]), "status": "PENDING_REVIEW"})),
+            (
+                str(uuid4()),
+                str(uuid4()),
+                candidate_id,
+                Json({
+                    "candidate_id": candidate_id,
+                    "vendor_id": str(vendor["id"]),
+                    "status": "PENDING_REVIEW",
+                }),
+                str(vendor["user_id"]),
+                str(self.context.organization_id),
+                "PRODUCT_CANDIDATE_CREATED:" + candidate_id,
+            ),
         )
         return {
             "candidate_id": candidate_id,
