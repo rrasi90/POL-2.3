@@ -3877,3 +3877,254 @@ class POLApplicationBoundary:
             ),
         )
         return after
+
+
+    # ── Admin Broadcast HTTP Boundary (Stage 40) ────────────────────
+
+    @staticmethod
+    def _broadcast_criteria_where(criteria: dict, alias: str = "u"):
+        allowed = {"org_type", "status", "city", "role"}
+        unknown = set(criteria) - allowed
+        if unknown:
+            raise ValueError("Unsupported broadcast targeting criteria: " + ", ".join(sorted(unknown)))
+
+        clauses = []
+        params = []
+        if "role" in criteria:
+            role = str(criteria["role"])
+            if role not in {
+                "RETAILER_OWNER", "RETAILER_STAFF",
+                "VENDOR_OWNER", "VENDOR_STAFF",
+                "FIELD_ACTIVATOR", "OPS_ADMIN", "SUPER_ADMIN",
+            }:
+                raise ValueError("Unsupported broadcast role criterion.")
+            clauses.append("m.role = %s")
+            params.append(role)
+        if "org_type" in criteria:
+            org_type = str(criteria["org_type"]).upper()
+            if org_type not in {"RETAILER", "VENDOR", "OPERATOR"}:
+                raise ValueError("Unsupported organization type criterion.")
+            clauses.append("o.org_type = %s")
+            params.append(org_type)
+        if "status" in criteria:
+            org_status = str(criteria["status"]).upper()
+            if org_status not in {"ACTIVE", "SUSPENDED", "REJECTED", "APPROVED", "UNDER_REVIEW", "DOCUMENTS_PENDING", "VERIFICATION_PENDING", "LEAD"}:
+                raise ValueError("Unsupported organization status criterion.")
+            clauses.append("o.status = %s")
+            params.append(org_status)
+        if "city" in criteria:
+            clauses.append("r.city = %s")
+            params.append(str(criteria["city"]).strip())
+        return clauses, params
+
+    def admin_broadcast_create(self, *, title, body, target_criteria, channel="IN_APP", priority="NORMAL", scheduled_at=None):
+        self._require_admin_management()
+        if not title or not title.strip():
+            raise ValueError("Broadcast title is required.")
+        if not body or not body.strip():
+            raise ValueError("Broadcast body is required.")
+        if channel not in {"IN_APP", "SMS", "PUSH", "INBOX_AND_SMS", "ALL"}:
+            raise ValueError("Unsupported broadcast channel.")
+        if priority not in {"LOW", "NORMAL", "HIGH", "URGENT"}:
+            raise ValueError("Unsupported broadcast priority.")
+        if channel != "IN_APP":
+            raise ValueError("Only IN_APP broadcast dispatch is enabled in the current MVP notification runtime.")
+
+        criteria = dict(target_criteria or {})
+        clauses, params = self._broadcast_criteria_where(criteria)
+        where = " AND ".join(["m.status = 'ACTIVE'", "u.is_active = TRUE"] + clauses)
+
+        if "city" in criteria:
+            query = f"""
+                SELECT COUNT(DISTINCT u.id)::INT AS count
+                FROM users u
+                JOIN organization_memberships m ON m.user_id=u.id AND m.status='ACTIVE'
+                JOIN organizations o ON o.id=m.organization_id
+                JOIN retailers r ON r.organization_id=o.id
+                WHERE {where}
+            """
+        else:
+            query = f"""
+                SELECT COUNT(DISTINCT u.id)::INT AS count
+                FROM users u
+                JOIN organization_memberships m ON m.user_id=u.id AND m.status='ACTIVE'
+                JOIN organizations o ON o.id=m.organization_id
+                WHERE {where}
+            """
+        self.cur.execute(query, tuple(params))
+        estimated = int(self.cur.fetchone()["count"])
+
+        bid = str(uuid4())
+        self.cur.execute(
+            """
+            INSERT INTO broadcast_messages
+                (id, admin_user_id, title, body, target_criteria, channel,
+                 priority, status, estimated_recipient_count, scheduled_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,'DRAFT',%s,%s)
+            RETURNING id, title, body, target_criteria, channel, priority,
+                      status, recipient_count, estimated_recipient_count,
+                      scheduled_at, created_at
+            """,
+            (
+                bid,
+                self.context.user_id,
+                title.strip(),
+                body.strip(),
+                Json(criteria),
+                channel,
+                priority,
+                estimated,
+                scheduled_at,
+            ),
+        )
+        row = dict(self.cur.fetchone())
+        for key in ("id",):
+            row[key] = str(row[key])
+        for key in ("scheduled_at", "created_at"):
+            if row[key]:
+                row[key] = row[key].isoformat()
+        return row
+
+    def admin_broadcast_dispatch(self, *, broadcast_id, approve=True):
+        self._require_admin_management()
+        if not approve:
+            raise ValueError("Broadcast dispatch requires explicit approval.")
+
+        self.cur.execute(
+            """
+            SELECT *
+            FROM broadcast_messages
+            WHERE id=%s
+            FOR UPDATE
+            """,
+            (broadcast_id,),
+        )
+        broadcast = self.cur.fetchone()
+        if not broadcast:
+            raise KeyError("Broadcast not found.")
+        if broadcast["status"] == "COMPLETED":
+            self.cur.execute(
+                "SELECT COUNT(*)::INT AS count FROM broadcast_recipients WHERE broadcast_id=%s AND status='SENT'",
+                (broadcast_id,),
+            )
+            return {
+                "id": str(broadcast["id"]),
+                "status": "COMPLETED",
+                "recipient_count": int(self.cur.fetchone()["count"]),
+                "idempotent_replay": True,
+            }
+        if broadcast["status"] not in {"DRAFT", "SCHEDULED"}:
+            raise ValueError(f"Broadcast cannot be dispatched from {broadcast['status']}.")
+
+        criteria = dict(broadcast["target_criteria"] or {})
+        clauses, params = self._broadcast_criteria_where(criteria)
+        where = " AND ".join(["m.status='ACTIVE'", "u.is_active=TRUE"] + clauses)
+
+        if "city" in criteria:
+            recipient_sql = f"""
+                SELECT DISTINCT u.id AS user_id, o.id AS organization_id
+                FROM users u
+                JOIN organization_memberships m ON m.user_id=u.id AND m.status='ACTIVE'
+                JOIN organizations o ON o.id=m.organization_id
+                JOIN retailers r ON r.organization_id=o.id
+                WHERE {where}
+                ORDER BY u.id, o.id
+            """
+        else:
+            recipient_sql = f"""
+                SELECT DISTINCT u.id AS user_id, o.id AS organization_id
+                FROM users u
+                JOIN organization_memberships m ON m.user_id=u.id AND m.status='ACTIVE'
+                JOIN organizations o ON o.id=m.organization_id
+                WHERE {where}
+                ORDER BY u.id, o.id
+            """
+        self.cur.execute(recipient_sql, tuple(params))
+        recipients = self.cur.fetchall()
+
+        # Frozen recipient snapshot. The unique constraint makes retries safe.
+        self.cur.execute(
+            """
+            UPDATE broadcast_messages
+            SET status='PROCESSING', approved_by=%s, dispatched_at=now()
+            WHERE id=%s
+            """,
+            (self.context.user_id, broadcast_id),
+        )
+
+        sent = 0
+        for recipient in recipients:
+            self.cur.execute(
+                """
+                INSERT INTO broadcast_recipients
+                    (id,broadcast_id,user_id,organization_id,status)
+                VALUES (%s,%s,%s,%s,'PENDING')
+                ON CONFLICT (broadcast_id,user_id) DO NOTHING
+                RETURNING id
+                """,
+                (str(uuid4()), broadcast_id, recipient["user_id"], recipient["organization_id"]),
+            )
+            snap = self.cur.fetchone()
+            if not snap:
+                continue
+
+            self.cur.execute(
+                """
+                INSERT INTO notifications
+                    (id,user_id,organization_id,event_name,title,body,priority)
+                VALUES (%s,%s,%s,'ADMIN_BROADCAST_MESSAGE',%s,%s,%s)
+                RETURNING id
+                """,
+                (
+                    str(uuid4()),
+                    recipient["user_id"],
+                    recipient["organization_id"],
+                    broadcast["title"],
+                    broadcast["body"],
+                    broadcast["priority"],
+                ),
+            )
+            notification_id = self.cur.fetchone()["id"]
+
+            self.cur.execute(
+                """
+                INSERT INTO user_inbox_items
+                    (id,user_id,notification_id,title,body,category,is_read)
+                VALUES (%s,%s,%s,%s,%s,'SYSTEM',FALSE)
+                """,
+                (
+                    str(uuid4()),
+                    recipient["user_id"],
+                    notification_id,
+                    broadcast["title"],
+                    broadcast["body"],
+                ),
+            )
+            self.cur.execute(
+                """
+                UPDATE broadcast_recipients
+                SET notification_id=%s, status='SENT'
+                WHERE id=%s
+                """,
+                (notification_id, snap["id"]),
+            )
+            sent += 1
+
+        self.cur.execute(
+            """
+            UPDATE broadcast_messages
+            SET recipient_count=%s, status='COMPLETED', completed_at=now()
+            WHERE id=%s
+            RETURNING id,status,recipient_count,estimated_recipient_count,completed_at
+            """,
+            (sent, broadcast_id),
+        )
+        row = dict(self.cur.fetchone())
+        return {
+            "id": str(row["id"]),
+            "status": row["status"],
+            "recipient_count": int(row["recipient_count"]),
+            "estimated_recipient_count": int(row["estimated_recipient_count"]),
+            "completed_at": row["completed_at"].isoformat() if row["completed_at"] else None,
+            "idempotent_replay": False,
+        }
