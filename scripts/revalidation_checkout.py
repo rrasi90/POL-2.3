@@ -31,11 +31,13 @@ class RevalidationCheckoutService:
     ) -> dict:
         cur.execute(
             """
-            SELECT b.version, b.retailer_id, p.basket_id, p.basket_version,
+            SELECT b.id AS basket_id, b.version, b.retailer_id, b.status AS basket_status,
+                   p.id AS plan_id, p.basket_id, p.basket_version,
                    p.expires_at, p.status
             FROM baskets b
             JOIN allocation_plans p ON p.id = %s AND p.basket_id = b.id
-            WHERE b.id = %s;
+            WHERE b.id = %s
+            FOR UPDATE OF b, p;
             """,
             (plan_id, basket_id),
         )
@@ -46,12 +48,54 @@ class RevalidationCheckoutService:
             raise PermissionError("Checkout retailer does not own the basket.")
         if chk["status"] != "CONFIRMED":
             raise ValueError(f"Allocation plan is not checkout-ready: {chk['status']}")
+        if chk["basket_status"] in ("SUBMITTED", "ABANDONED", "EXPIRED"):
+            raise ValueError(f"Basket status {chk['basket_status']} cannot accept a new checkout.")
         if chk["version"] != chk["basket_version"]:
             raise ValueError(f"Stale basket checkout: basket v{chk['version']} != plan v{chk['basket_version']}")
         if chk["expires_at"] < datetime.now(timezone.utc):
             raise ValueError("Allocation plan has expired (15-minute TTL exceeded).")
         if not vendor_allocations:
             raise ValueError("Checkout requires at least one allocated basket line.")
+
+        cur.execute(
+            """
+            SELECT bi.product_id, ai.vendor_id, ai.vendor_product_id,
+                   ai.allocated_quantity, ai.unit_price_snapshot_toman, ai.line_total_toman,
+                   ai.status
+            FROM allocation_items ai
+            JOIN basket_items bi ON bi.id = ai.basket_item_id
+            WHERE ai.allocation_plan_id = %s AND bi.basket_id = %s
+            ORDER BY bi.product_id
+            """,
+            (plan_id, basket_id),
+        )
+        persisted = cur.fetchall()
+        if any(row["status"] != "ALLOCATED" for row in persisted):
+            raise ValueError("Checkout cannot consume an allocation plan with unfulfilled lines.")
+        expected_allocations = {
+            (
+                str(row["product_id"]),
+                str(row["vendor_id"]),
+                str(row["vendor_product_id"]),
+                int(row["allocated_quantity"]),
+                int(row["unit_price_snapshot_toman"]),
+                int(row["line_total_toman"]),
+            )
+            for row in persisted
+        }
+        supplied_allocations = {
+            (
+                str(a["product_id"]) if a.get("product_id") else None,
+                str(a["vendor_id"]),
+                str(a["vendor_product_id"]),
+                int(a["quantity"]),
+                int(a["unit_price_toman"]),
+                int(a["amount_toman"]),
+            )
+            for a in vendor_allocations
+        }
+        if len(persisted) != len(vendor_allocations) or expected_allocations != supplied_allocations:
+            raise ValueError("Checkout allocation payload does not exactly match the persisted Allocation Plan.")
 
         allocations_by_vendor = defaultdict(list)
         seen_vendor_products = set()
@@ -119,6 +163,7 @@ class RevalidationCheckoutService:
                 raise ValueError(f"Insufficient stock for SKU {vp_id}: Available {avail} < Requested {req_qty}")
 
             alloc["_product_id"] = str(offer["product_id"])
+            alloc["product_id"] = str(offer["product_id"])
             alloc["_product_name_snapshot"] = offer["product_name_snapshot"]
             alloc["_brand_name_snapshot"] = offer["brand_name_snapshot"]
             alloc["_vendor_sku_snapshot"] = offer["vendor_sku"]
@@ -170,40 +215,17 @@ class RevalidationCheckoutService:
 
             for alloc in vendor_allocs:
                 line_total = int(alloc["quantity"]) * int(alloc["unit_price_toman"])
-                cur.execute(
-                    """
-                    INSERT INTO order_items (
-                        id, order_id, product_id, vendor_product_id,
-                        product_name_snapshot, brand_name_snapshot, vendor_sku_snapshot,
-                        packaging_unit_snapshot, pack_quantity_snapshot,
-                        ordered_quantity, accepted_quantity, delivered_quantity,
-                        unit_price_toman, total_line_amount_toman, fulfillment_status
-                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NULL,0,%s,%s,'PENDING')
-                    RETURNING *;
-                    """,
-                    (
-                        str(uuid.uuid4()),
-                        ord_id,
-                        alloc["_product_id"],
-                        alloc["vendor_product_id"],
-                        alloc["_product_name_snapshot"],
-                        alloc["_brand_name_snapshot"],
-                        alloc["_vendor_sku_snapshot"],
-                        alloc["_packaging_unit_snapshot"],
-                        alloc["_pack_quantity_snapshot"],
-                        alloc["quantity"],
-                        alloc["unit_price_toman"],
-                        line_total,
-                    ),
-                )
+                order_item = cur.fetchone()
+                order_item_id = str(order_item["id"])
+
                 cur.execute(
                     """
                     INSERT INTO inventory_reservations (
-                        id, vendor_product_id, order_id, quantity, status,
+                        id, vendor_product_id, order_id, order_item_id, quantity, status,
                         idempotency_key, expires_at
-                    ) VALUES (%s,%s,%s,%s,'ACTIVE',%s,now() + interval '15 minutes');
+                    ) VALUES (%s,%s,%s,%s,%s,'ACTIVE',%s,now() + interval '15 minutes');
                     """,
-                    (str(uuid.uuid4()), alloc["vendor_product_id"], ord_id,
+                    (str(uuid.uuid4()), alloc["vendor_product_id"], ord_id, order_item_id,
                      alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_product_id']}"),
                 )
                 cur.execute(
@@ -217,6 +239,28 @@ class RevalidationCheckoutService:
                 )
                 if cur.rowcount != 1:
                     raise ValueError(f"Inventory reservation race detected for SKU {alloc['vendor_product_id']}")
+
+        cur.execute(
+            """
+            UPDATE allocation_plans
+            SET status='CONSUMED', consumed_at=now()
+            WHERE id=%s AND status='CONFIRMED'
+            """,
+            (plan_id,),
+        )
+        if cur.rowcount != 1:
+            raise ValueError("Allocation plan could not be consumed exactly once.")
+
+        cur.execute(
+            """
+            UPDATE baskets
+            SET status='SUBMITTED', updated_at=now()
+            WHERE id=%s AND status='OPEN'
+            """,
+            (basket_id,),
+        )
+        if cur.rowcount != 1:
+            raise ValueError("Basket could not be finalized for checkout.")
 
         RevalidationCheckoutService._enqueue_submission_events(cur, og_id)
         return {"order_group_id": og_id, "order_count": vendor_count, "orders": child_orders}
