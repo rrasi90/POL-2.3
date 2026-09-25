@@ -28,6 +28,7 @@ from scripts.payment_reconciliation_worker import PaymentReconciliationWorker
 from scripts.provider_delivery_worker import ProviderDeliveryWorker
 from scripts.operational_config import PILOT_COMMISSION_RATE
 from scripts.returns_rma import CanonicalReturnService
+from scripts.media_service import MediaService
 from scripts.user_profiles import UserProfileService
 from scripts.vendor_referral import VendorReferralService
 from scripts.vendor_acceptance_timeout_worker import VendorAcceptanceTimeoutWorker
@@ -46,6 +47,32 @@ class POLApplicationBoundary:
     def __init__(self, cur, context: ApplicationContext):
         self.cur = cur
         self.context = context
+
+    def media_presign(self, *, mime_type, file_size_bytes, target_type, target_id, filename=None):
+        if not self.context.organization_id:
+            raise PermissionError("Media upload requires an active organization context.")
+        return MediaService.presign(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            mime_type=mime_type,
+            file_size_bytes=file_size_bytes,
+            target_type=target_type,
+            target_id=str(target_id),
+            filename=filename,
+        )
+
+    def media_confirm_upload(self, *, media_id, target_type, target_id):
+        if not self.context.organization_id:
+            raise PermissionError("Media confirmation requires an active organization context.")
+        return MediaService.confirm_upload(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            media_id=str(media_id),
+            target_type=target_type,
+            target_id=str(target_id),
+        )
 
     def profile_get(self):
         return UserProfileService.get_my_profile(
