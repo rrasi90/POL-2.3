@@ -244,3 +244,9 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - Finding: the central application-boundary role resolver accepted ACTIVE memberships without independently checking users.is_active and organizations.status.
 - Resolution: role resolution now requires active user, active membership and active organization; batch contract regression covers inactive-user and suspended-organization contexts.
 - Status: RESOLVED in source; fresh CI certification remains separate.
+## G-040 — Payment evidence tenant isolation and retry idempotency (RESOLVED — 2026-09-25)
+
+- Finding: evidence reads were order-ID based without explicit tenant authorization, and duplicate submissions using the globally unique external reference could surface as a raw database conflict.
+- Resolution: reads require active retailer/vendor tenant membership; submissions require an active user; repeated external references return the existing evidence for the same payment with idempotent_replay=true, while cross-payment reuse is rejected.
+- Regression coverage: wrong-tenant read plus same-reference replay HTTP tests.
+- Status: RESOLVED in source; fresh CI certification remains separate.
