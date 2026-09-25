@@ -403,6 +403,21 @@ def test_product_candidate_review_http_is_tenant_and_idempotent(client, manageme
         assert reviewed.json()["data"]["status"] == "REJECTED"
         assert reviewed.json()["data"]["idempotent_replay"] is False
 
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT target_user_id, target_organization_id, dedupe_key
+                FROM outbox_events
+                WHERE event_name='PRODUCT_CANDIDATE_REVIEWED' AND aggregate_id=%s
+                """,
+                (candidate_id,),
+            )
+            event = cur.fetchone()
+            assert event is not None
+            assert str(event["target_user_id"]) == management_env["vendor_user"]
+            assert str(event["target_organization_id"]) == management_env["vendor_org"]
+            assert event["dedupe_key"] == "PRODUCT_CANDIDATE_REVIEWED:" + candidate_id
+
         replay = client.patch(
             "/api/v1/admin/product-candidates/" + candidate_id,
             headers=admin_headers,
