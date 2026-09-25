@@ -226,11 +226,8 @@ HTTP may also set `X-Correlation-ID`.
 
 | # | Endpoint | Use |
 |---|----------|-----|
-| 1 | GET `/api/v1/products/search` | Catalog — **path differs** from REAL `/catalog/search` + `/search` → prefer REAL; products/search = GAP-CONFLICT in gaps file |
-| 2 | POST `/api/v1/products/match-barcode` | Barcode (D-028) |
-| 3 | POST `/api/v1/product-candidates` | Unknown barcode candidate |
-| 4 | POST `/api/v1/vendors/inventory/continuous-scan` | VD-16 |
-| 5 | POST `/api/v1/vendors/inventory/publish` | VD-01 publish |
+| 4 | POST `/api/v1/vendors/inventory/continuous-scan` | VD-16 — CONTRACT_ONLY; session semantics still open |
+| 5 | POST `/api/v1/vendors/inventory/publish` | VD-01 publish — CONTRACT_ONLY |
 | 17–20 | payments/disputes variants | covered partially by REAL order payment/dispute routes — map per screen |
 | 36–37 | POST `/api/v1/admin/broadcasts[/{id}/dispatch]` | Ops broadcasts |
 | 40–42 | exceptions dashboard / sla-overrides / audit-logs | audit+exceptions = REAL under `/admin/*`; sla-overrides = CONTRACT |
