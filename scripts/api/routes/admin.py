@@ -31,7 +31,7 @@ def exceptions_dashboard(
         boundary.admin_exceptions_dashboard()
     )
 
-from scripts.api.schemas import BroadcastCreateRequest, BroadcastDispatchRequest
+from scripts.api.schemas import BroadcastCreateRequest, BroadcastDispatchRequest, CategoryCreateRequest, CategoryUpdateRequest
 
 
 @router.post("/broadcasts", status_code=201)
@@ -63,3 +63,18 @@ def dispatch_broadcast(
             approve=payload.approve,
         )
     )
+
+
+@router.post("/categories", status_code=201)
+def create_category(payload: CategoryCreateRequest, boundary=Depends(get_application_boundary)):
+    return success_payload(boundary.admin_category_create(
+        name_fa=payload.name_fa, slug=payload.slug, icon_url=payload.icon_url, display_order=payload.display_order
+    ))
+
+
+@router.patch("/categories/{category_id}")
+def update_category(category_id: UUID, payload: CategoryUpdateRequest, boundary=Depends(get_application_boundary)):
+    return success_payload(boundary.admin_category_update(
+        category_id=str(category_id), name_fa=payload.name_fa, slug=payload.slug,
+        icon_url=payload.icon_url, display_order=payload.display_order
+    ))
