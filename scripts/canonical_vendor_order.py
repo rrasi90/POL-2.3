@@ -21,6 +21,8 @@ class CanonicalVendorOrderService:
                    o.order_status,
                    o.retailer_id,
                    o.vendor_id,
+                   o.total_amount_toman,
+                   o.rejection_reason,
                    o.vendor_acceptance_deadline_at,
                    v.organization_id AS vendor_organization_id,
                    v.status AS vendor_status,
@@ -70,12 +72,7 @@ class CanonicalVendorOrderService:
                 "order_number": order["order_number"],
                 "order_group_id": str(order["order_group_id"]),
                 "order_status": "ACCEPTED",
-                "total_amount_toman": int(
-                    cur.execute(
-                        "SELECT total_amount_toman FROM orders WHERE id=%s",
-                        (order_id,),
-                    ) or 0
-                ),
+                "total_amount_toman": int(order["total_amount_toman"]),
                 "accepted_item_count": int(cls._accepted_item_count(cur, order_id)),
                 "reservation_count": consumed_count,
                 "idempotent_replay": True,
@@ -346,12 +343,7 @@ class CanonicalVendorOrderService:
                 "order_number": order["order_number"],
                 "order_group_id": str(order["order_group_id"]),
                 "order_status": "REJECTED",
-                "total_amount_toman": int(
-                    cur.execute(
-                        "SELECT total_amount_toman FROM orders WHERE id=%s",
-                        (order_id,),
-                    ) or 0
-                ),
+                "total_amount_toman": int(order["total_amount_toman"]),
                 "rejection_reason": order.get("rejection_reason"),
                 "released_reservation_count": 0,
                 "idempotent_replay": True,
