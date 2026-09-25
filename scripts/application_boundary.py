@@ -26,6 +26,7 @@ from scripts.fulfillment_service import (
 )
 from scripts.payment_reconciliation_worker import PaymentReconciliationWorker
 from scripts.provider_delivery_worker import ProviderDeliveryWorker
+from scripts.operational_config import PILOT_COMMISSION_RATE
 from scripts.returns_rma import CanonicalReturnService
 from scripts.user_profiles import UserProfileService
 from scripts.vendor_referral import VendorReferralService
@@ -1066,15 +1067,17 @@ class POLApplicationBoundary:
         if not self.context.organization_id:
             raise PermissionError("Payment verification requires an active organization context.")
 
-        # Only vendor can verify payment
         self.cur.execute(
             """
-            SELECT p.id AS payment_id, p.payment_status, p.vendor_id,
-                   v.organization_id AS vendor_org_id
+            SELECT p.*, v.organization_id AS vendor_org_id,
+                   r.organization_id AS retailer_org_id
             FROM payments p
-            JOIN vendors v ON v.id = p.vendor_id
-            WHERE p.order_id = %s
+            JOIN vendors v ON v.id=p.vendor_id
+            JOIN retailers r ON r.id=p.retailer_id
+            WHERE p.order_id=%s
+            ORDER BY p.created_at DESC, p.id DESC
             LIMIT 1
+            FOR UPDATE OF p
             """,
             (order_id,),
         )
@@ -1086,29 +1089,168 @@ class POLApplicationBoundary:
             raise PermissionError("Only the vendor tenant may verify a payment.")
 
         if pay["payment_status"] == "SUCCESS":
-            return {"payment_id": str(pay["payment_id"]), "status": "SUCCESS", "message": "Payment already verified."}
+            return {
+                "payment_id": str(pay["id"]),
+                "status": "SUCCESS",
+                "message": "Payment already verified.",
+                "idempotent_replay": True,
+            }
 
         self.cur.execute(
             """
-            UPDATE payments
-            SET payment_status = 'SUCCESS',
-                verified_by = %s,
-                verified_at = now(),
-                paid_at = COALESCE(paid_at, now())
-            WHERE id = %s AND payment_status IN ('PENDING', 'INITIATED')
-            RETURNING *;
+            SELECT id, evidence_type, external_reference,
+                   claimed_amount_toman, observed_amount_toman,
+                   captured_at
+            FROM payment_evidence
+            WHERE payment_id=%s
+            ORDER BY captured_at DESC, id DESC
+            FOR UPDATE
             """,
-            (self.context.user_id, str(pay["payment_id"])),
+            (str(pay["id"]),),
+        )
+        evidences = self.cur.fetchall()
+        matching = [
+            ev for ev in evidences
+            if ev["claimed_amount_toman"] is not None
+            and ev["observed_amount_toman"] is not None
+            and int(ev["claimed_amount_toman"]) == int(pay["amount_toman"])
+            and int(ev["observed_amount_toman"]) == int(pay["amount_toman"])
+        ]
+        if not matching:
+            raise ValueError(
+                "Payment verification requires a trusted evidence record whose observed and claimed amount exactly matches the payment amount."
+            )
+        evidence = matching[0]
+
+        cur_ref = evidence["external_reference"]
+        self.cur.execute(
+            """
+            UPDATE payments
+            SET payment_status='SUCCESS',
+                reference_number=COALESCE(reference_number,%s),
+                verified_by=%s,
+                verified_at=COALESCE(verified_at,now()),
+                paid_at=COALESCE(paid_at,now())
+            WHERE id=%s AND payment_status IN ('PENDING','INITIATED')
+            RETURNING *
+            """,
+            (cur_ref, self.context.user_id, str(pay["id"])),
         )
         updated = self.cur.fetchone()
         if not updated:
+            # Another verifier committed the terminal result; return the canonical replay.
+            self.cur.execute("SELECT * FROM payments WHERE id=%s", (str(pay["id"]),))
+            replay = self.cur.fetchone()
+            if replay and replay["payment_status"] == "SUCCESS":
+                return {
+                    "payment_id": str(replay["id"]),
+                    "status": "SUCCESS",
+                    "message": "Payment already verified.",
+                    "idempotent_replay": True,
+                }
             raise ValueError("Payment cannot be verified in its current status.")
+
+        gross = int(updated["amount_toman"])
+        commission = int(round(gross * float(PILOT_COMMISSION_RATE)))
+
+        self.cur.execute(
+            """
+            SELECT id, status
+            FROM settlements
+            WHERE order_id=%s AND vendor_id=%s
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (str(updated["order_id"]), str(updated["vendor_id"])),
+        )
+        settlement = self.cur.fetchone()
+        if settlement is None:
+            self.cur.execute(
+                """
+                INSERT INTO settlements (
+                    id, order_id, vendor_id, gross_amount_toman,
+                    commission_rate, commission_amount_toman,
+                    net_vendor_amount_toman, status
+                )
+                VALUES (%s,%s,%s,%s,%s,%s,%s,'CALCULATED')
+                RETURNING id, status
+                """,
+                (
+                    str(uuid4()), str(updated["order_id"]), str(updated["vendor_id"]),
+                    gross, PILOT_COMMISSION_RATE, commission, gross - commission,
+                ),
+            )
+            settlement = self.cur.fetchone()
+        elif settlement["status"] == "PENDING":
+            self.cur.execute(
+                """
+                UPDATE settlements
+                SET status='CALCULATED'
+                WHERE id=%s
+                RETURNING id, status
+                """,
+                (str(settlement["id"]),),
+            )
+            settlement = self.cur.fetchone()
+
+        # Invoice creation remains governed by the open invoice-timing decision.
+        # When an invoice already exists and exactly matches the payment amount,
+        # mark it paid as part of this verification transaction.
+        self.cur.execute(
+            """
+            UPDATE invoices
+            SET status='PAID'
+            WHERE order_id=%s
+              AND total_amount=%s
+              AND status IN ('ISSUED','ADJUSTED')
+            RETURNING id
+            """,
+            (str(updated["order_id"]), gross),
+        )
+
+        self.cur.execute(
+            """
+            INSERT INTO outbox_events (
+                id, event_id, event_name, aggregate_type, aggregate_id,
+                payload, status, target_user_id, target_organization_id,
+                dedupe_key, channel_hint
+            )
+            SELECT
+                gen_random_uuid(), gen_random_uuid(), 'PAYMENT_VERIFIED', 'PAYMENT', %s,
+                jsonb_build_object(
+                    'payment_id', %s,
+                    'order_id', %s,
+                    'amount_toman', %s,
+                    'evidence_id', %s
+                ),
+                'PENDING', om.user_id, om.organization_id,
+                %s, 'INBOX'
+            FROM organization_memberships om
+            JOIN organizations org ON org.id=om.organization_id
+            WHERE om.organization_id=%s
+              AND om.status='ACTIVE'
+              AND org.status='ACTIVE'
+              AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+            ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+            """,
+            (
+                str(updated["id"]), str(updated["id"]), str(updated["order_id"]),
+                gross, str(evidence["id"]),
+                f"payment_verified:{updated['id']}",
+                str(pay["retailer_org_id"]),
+            ),
+        )
 
         return {
             "payment_id": str(updated["id"]),
-            "status": updated["payment_status"],
+            "status": "SUCCESS",
             "verified_at": updated["verified_at"].isoformat() if updated["verified_at"] else None,
+            "evidence_id": str(evidence["id"]),
+            "settlement_id": str(settlement["id"]) if settlement else None,
+            "idempotent_replay": False,
         }
+
 
     def deliver_external_notifications(self, *, limit=100):
         self._require_ops_context()
