@@ -7365,9 +7365,9 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 
 | # | Canonical endpoint | Status | Current owner/path |
 |---:|---|---|---|
-| 1 | GET `/api/v1/products/search` | CONTRACT_ONLY | catalog applicationization |
-| 2 | POST `/api/v1/products/match-barcode` | CONTRACT_ONLY | catalog applicationization |
-| 3 | POST `/api/v1/product-candidates` | CONTRACT_ONLY | catalog applicationization |
+| 1 | GET `/api/v1/products/search` | HTTP_IMPLEMENTED | `catalog_products_search` |
+| 2 | POST `/api/v1/products/match-barcode` | HTTP_IMPLEMENTED | `catalog_match_barcode` |
+| 3 | POST `/api/v1/product-candidates` | HTTP_IMPLEMENTED | `catalog_create_product_candidate` |
 | 4 | POST `/api/v1/vendors/inventory/continuous-scan` | CONTRACT_ONLY | vendor catalog/inventory |
 | 5 | POST `/api/v1/vendors/inventory/publish` | CONTRACT_ONLY | vendor catalog/inventory |
 | 6 | POST `/api/v1/baskets` | HTTP_IMPLEMENTED | `basket_create` |
@@ -7417,7 +7417,7 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 | 50 | GET `/api/v1/profile/context` | HTTP_IMPLEMENTED / SHARED BOUNDARY | `profile_get` |
 
 Endpoint governance:
-- 36 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED on this remediation branch; rows marked CONTRACT_ONLY remain unimplemented at the canonical HTTP path.
+- 39 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED on this remediation branch; rows marked CONTRACT_ONLY remain unimplemented at the canonical HTTP path.
 - /healthz and /readyz are operational transport routes, not business endpoints.
 - BOUNDARY_READY / NOT_YET_HTTP methods are not production HTTP completion.
 - Path normalization may reconcile :id and {id}; this does not create a second endpoint.
