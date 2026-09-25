@@ -342,6 +342,11 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
         raise ValueError("recipient_name is required for proof of delivery.")
     if not otp_code:
         raise ValueError("Delivery OTP is required.")
+    allowed_proof_types = {"OTP_CODE", "PHYSICAL_SIGNATURE", "STORE_STAMP", "PHOTO_PROOF"}
+    if proof_type not in allowed_proof_types:
+        raise ValueError(f"Unsupported proof type: {proof_type}.")
+    if proof_type == "PHOTO_PROOF" and not proof_media_id:
+        raise ValueError("PHOTO_PROOF requires proof_media_id.")
 
     cur.execute(
         """
@@ -410,9 +415,9 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
             id, delivery_id, accepted_by_name, accepted_at,
             proof_type, otp_verified, proof_media_id, issue_reported_at_delivery
         )
-        VALUES (%s, %s, %s, now(), 'OTP_CODE', TRUE, %s, %s IS NOT NULL)
+        VALUES (%s, %s, %s, now(), %s, TRUE, %s, %s IS NOT NULL)
         """,
-        (str(uuid4()), delivery_id, recipient_name, proof_media_id, issue_reported),
+        (str(uuid4()), delivery_id, recipient_name, proof_type, proof_media_id, issue_reported),
     )
 
     cur.execute(
@@ -447,7 +452,7 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
     _record_timeline(
         cur, order_id, "DISPATCHED", "DELIVERED", user_id, organization_id,
         {"delivery_id": delivery_id, "recipient_name": recipient_name, "otp_verified": True,
-         "proof_type": "OTP_CODE"},
+         "proof_type": proof_type},
     )
     _emit_outbox(
         cur,
