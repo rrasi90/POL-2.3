@@ -116,7 +116,7 @@ Untracked (intentionally not committed): `docker-compose.yml`, `monitoring/`, `f
 | Web lint | **0 errors** (15 pre-existing warnings) |
 | Web typecheck + build | EXIT 0 (50 routes) |
 | Workspace typecheck (historical baseline) | EXIT 0; current mobile changes require new CI evidence |
-| Historical migration chain snapshot | contiguous 001–031 at the recorded baseline; current branch contains migrations through 041+ |
+| Historical migration chain snapshot | contiguous 001–031 at the recorded baseline; current branch contains migrations through 046 |
 | Historical CI | **Code commit `f8ef267e`: backend verification run 35893284312 SUCCESS; mobile Cycle 3 run 35893284378 SUCCESS** |
 | Live services | API healthz 200; Web 200 |
 
