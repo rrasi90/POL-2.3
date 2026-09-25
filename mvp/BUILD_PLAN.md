@@ -40,9 +40,9 @@
 | 0 | Discovery & Artifacts | **DONE** (2026-09-22) · BUILD GATE 0 **PASS** |
 | 1 | Foundation + Design System | **DONE** (2026-09-22) |
 | 2 | Web MVP | **DONE (impl + partial e2e)** — 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
-| 3 | Android MVP (Expo) | **PARTIAL (Field-first DONE)** — F-01…F-05 + supported retailer/vendor/ops parity; mobile QA Cycles 1–3 evidenced green; remaining local visual/live-E2E gates stay open |
-| 4 | Global QA + Regression | **REOPENED** — historical 497/497 and prior CI evidence remain recorded, but current mobile changes require fresh CI + regression |
-| 5 | Delivery + Final Audit | **REOPENED** — living report; final DoD is not satisfied while Phase 3/mobile and live checkout gates remain open |
+| 3 | Android MVP (Expo) | **SOURCE IMPLEMENTED / REVERIFY** — Field-first plus supported retailer/vendor/ops parity is implemented; selected deep admin/management screens remain web-first; fresh CI evidence is blocked before step execution |
+| 4 | Global QA + Regression | **SOURCE REMEDIATED / FRESH CERTIFICATION BLOCKED** — historical 497/497 remains evidence; current branch needs a useful CI execution before new certification |
+| 5 | Delivery + Final Audit | **OPEN — EVIDENCE RECONCILIATION** — source remediation is advanced; remaining gates are fresh CI, explicit product/security decisions and deployment/provider evidence |
 
 ### BUILD GATE 0 — checklist (Master Instruction §8)
 
@@ -56,7 +56,7 @@
 ### Phase 2 module order (each to module DoD before next)
 
 1. Auth / Profile / Notifications — **DONE**  
-2. Retailer loop (R-01…R-13 + RT-17/18/20/16/19) — **DONE** (R-03B GAP)  
+2. Retailer loop (R-01…R-13 + RT-17/18/20/16/19) — **DONE** (R-03B implemented; camera transport remains runtime scope)  
 3. Vendor loop (V-01…V-12 + VD-14…18) — **DONE** (V-09/11 source implemented; V-16 mobile-primary/N/A web)  
 4. Ops (O-01…O-10 + OP-11…15) — **DONE with O-07 partial** (OP-11/OP-13/O-10B source implemented)  
 5. Field web parity (F-01…F-05) — **DONE**  
@@ -214,22 +214,22 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] Retailer mobile support cases + case messaging via real support endpoints
 - [x] Retailer mobile return/dispute submission via real order endpoints
 - [x] Shared mobile account/profile/notifications for authenticated roles via real profile/notifications endpoints
-- [x] Supported mobile parity expanded for REAL APIs: retailer finance (R-16), vendor finance/referrals (V-17/V-08), shared notification preferences (SH-NOTIF-02), Ops support/notifications (O-05/O-08); unsupported vendor customers/staff remain GAP  
-- [ ] Barcode path = D-028 where inventory.scan; no Driver App  
-- [ ] Mobile Night theme visual verification per screen  
+- [x] Supported mobile parity expanded for REAL APIs: retailer finance (R-16), vendor finance/referrals (V-17/V-08), shared notification preferences (SH-NOTIF-02), Ops support/notifications (O-05/O-08); vendor customer/staff backend contracts are implemented, while some mobile management UI remains unported  
+- [x] Barcode path = D-028 canonical HTTP matching/candidate flow; device camera adapter remains runtime scope; no Driver App  
+- [x] Mobile Night theme visual verification post-remediation — LOCAL-01 PASS  
 - [x] Mobile QA cycle 2 — deterministic functional/error/state-transition/parity QA **23/23 PASS** (latest mobile run after parity expansion)  
 - [x] ≥3 mobile QA cycles evidenced: Cycle 1 run `35884012647`; Cycle 2 run `35886815013` (23/23); Cycle 3 run `35893284378` (11/11 regression + 23/23 functional + Expo config/export)  
 
 ### Phase 4 (Global QA)
 - [x] Full pytest/verification suite **fresh at current HEAD** — run 35884012589 SUCCESS; artifact `pol-test-results` SHA-256 `016c9dc96bb8e45dd1f89ae17f26d7efdc49809b8effac1d3edc9d92049ec839`  
 - [x] Web typecheck + lint + build (lint 0 errors, 15 warnings pre-existing)  
-- [x] Live e2e smoke — auth/profile/notif/catalog/orders/invoices/storefront/search/field/referrals/settlements/daily-inv (basket→checkout POST e2e still open)  
+- [x] Live e2e smoke — auth/profile/notif/catalog/orders/invoices/storefront/search/field/referrals/settlements/daily-inv; post-remediation LOCAL-02 covers basket→allocation→checkout→order (16/16)  
 - [x] Structural audit checklist green  
 - [x] Anti-vibe-coding audit green  
 - [x] GitHub reconciliation + current CI — current HEAD `ad88ca0c` backend run 35884012589 SUCCESS; mobile run 35884012647 SUCCESS  
 - [x] Independent second-pass audit (`verify_repository_consistency.py` PASS 8/8 EXIT=0; D-015/016/017 restored, hierarchy docs complete)  
 - [x] Mobile fix + re-regression closed: commit `f8ef267e` → mobile Cycle 3 11/11 and backend verification SUCCESS
-- [ ] Final executable gates: Night visual verification + live basket→allocation→checkout→order lifecycle E2E + checkout idempotency replay  
+- [x] Final executable local gates: LOCAL-01 Night visual PASS + LOCAL-02 16/16 basket→allocation→checkout→order + LOCAL-03 12/12 idempotency replay; fresh GitHub CI certification remains blocked  
 
 ### Phase 5 (Delivery)
 - [x] Final screen/API coverage table — `MVP_SCREEN_MATRIX.md` §H + `MVP_API_MAP.md`  
