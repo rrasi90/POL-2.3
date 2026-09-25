@@ -4002,19 +4002,6 @@ class POLApplicationBoundary:
 
         return weekly_snapshot(self.cur, snapshot_date)
 
-    def field_task_create(self, *, task_type, assigned_to_user_id,
-                          retailer_id=None, vendor_id=None, notes=None):
-        self._require_ops_context()
-        self.cur.execute(
-            "INSERT INTO field_tasks (task_type, assigned_to_user_id, notes) "
-            "VALUES (%s, %s, %s) "
-            "RETURNING id, task_type, status, notes, created_at",
-            (task_type, assigned_to_user_id, notes),
-        )
-        row = self.cur.fetchone()
-        return dict(row)
-
-
     # ── Management / IAM Read & Mutation Surface ───────────────────
 
     def _require_vendor_management(self):
