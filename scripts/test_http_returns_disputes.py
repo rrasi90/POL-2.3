@@ -307,7 +307,16 @@ class TestDisputeOpen:
         assert body["data"]["description"] == "Wrong items delivered, vendor unresponsive"
         assert body["data"]["claimed_amount_toman"] == 1000000
 
-        with _db() as verify_conn:\n            with verify_conn.cursor(cursor_factory=RealDictCursor) as cur:\n                cur.execute(\n                    "SELECT event_name, target_user_id, target_organization_id FROM outbox_events WHERE event_name = %s AND aggregate_id = %s",\n                    ("DISPUTE_OPENED", data["oi"]),\n                )\n                events = cur.fetchall()\n                assert events and all(e["target_user_id"] and e["target_organization_id"] for e in events)\n    def test_vendor_cannot_open_dispute(self, client):
+        with _db() as verify_conn:
+            with verify_conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT event_name, target_user_id, target_organization_id FROM outbox_events WHERE event_name = %s AND aggregate_id = %s",
+                    ("DISPUTE_OPENED", data["oi"]),
+                )
+                events = cur.fetchall()
+                assert events and all(e["target_user_id"] and e["target_organization_id"] for e in events)
+
+    def test_vendor_cannot_open_dispute(self, client):
         data = _seed_delivered_order(uuid4().hex[:8])
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
