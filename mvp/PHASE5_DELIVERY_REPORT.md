@@ -35,8 +35,8 @@ Fresh pull-request runs triggered by remediation commits are currently **failing
 | 0 | Discovery & Artifacts | **DONE** | `MVP_SCREEN_MATRIX.md`, `MVP_API_MAP.md`, `MVP_KNOWN_GAPS.md`, BUILD GATE 0 checklist |
 | 1 | Foundation + Design System | **DONE** | packages typecheck/build green; tokens Light+Night; shell + middleware role gates |
 | 2 | Web MVP | **DONE (impl + partial e2e)** | 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
-| 3 | Android MVP (Expo) | **IN PROGRESS** | Supported parity is implemented and mobile QA Cycles 1–3 are evidenced. Cycle 3 closed on run `35893284378`: typecheck, functional QA 23/23, regression QA 11/11, Expo config validation and Android export all SUCCESS. Remaining: unsupported contracts/barcode D-028, Night visual verification, and final live checkout gates. |
-| 4 | Global QA + Regression | **CURRENT CI GREEN / FINAL E2E OPEN** | Backend run `35893284312` SUCCESS and Mobile run `35893284378` SUCCESS on commit `f8ef267e`. Live basket→allocation→checkout→order E2E + idempotency replay remain open. |
+| 3 | Android MVP (Expo) | **IN PROGRESS / REMEDIATED SOURCE** | Supported parity is implemented; G-023…G-026 and D-028 source defects are remediated. Remaining executable evidence: current-device cold-relaunch/storage inspection, screen-by-screen Light/Night visual QA, and live checkout/idempotency evidence. |
+| 4 | Global QA + Regression | **SOURCE REMEDIATED / FRESH CI BLOCKED** | Historical green suites remain evidence only. Current remediation runs create jobs that fail before executing any job step; live basket→allocation→checkout→order E2E + idempotency replay remain separate runtime evidence. |
 | 5 | Delivery + Final Audit | **REOPENED** | Phase 3 mobile verification is now through Cycle 3; delivery remains open for Night visual verification, live checkout/idempotency E2E, and final reconciliation. |
 
 ---
@@ -45,18 +45,18 @@ Fresh pull-request runs triggered by remediation commits are currently **failing
 
 | ID | Gap | Status | Owner / next |
 |----|-----|--------|--------------|
-| G-003 | Catalog path `/products/search` vs real `/catalog/search` | **CONFLICT (documented)** | screens use REAL; literal contract parity = BLOCKED_EXTERNAL only if a test demands the path |
-| G-004 | Inbox path `/inbox/items` vs real `/notifications` | **CONFLICT (documented)** | screens use REAL `/notifications` |
-| G-007/008/009/010/011/012/013/015/017/019/020/021 | Ops/admin/staff/customers/analytics/permissions/basket-list/RMA-global/partial-acceptance-list/corporate-anon missing HTTP | **GAP** | shells only; no fake CRUD; wait for backend or keep GAP |
-| G-006 | Corporate routes proposed (not in route map) | **PROPOSED-G006** | static marketing screens |
-| G-029 | Web token persistence in localStorage | **GAP / OPEN** | browser credential architecture required before production |
-| G-030 | Browser-to-API CORS policy | **SOURCE REMEDIATED / VERIFY** | environment-scoped CORS + transport test merged in `23976ac` |
+| G-003 | Catalog path/search contract | **SOURCE RESOLVED / CI PENDING** | Canonical search implementation and compatibility route exist on the remediation branch. |
+| G-004 | Notification inbox/read contract | **SOURCE RESOLVED / CI PENDING** | Canonical inbox routes and notification projection exist; fresh CI certification remains pending. |
+| G-007/008/009/010/011/012/013/015/017/019/020/021 | Historical missing HTTP families | **SOURCE RESOLVED / CI PENDING** | Current remediation branch contains live application routes and corresponding tests; stale shell-only state must not be used as current status. |
+| G-006 | Corporate public routes | **RESOLVED** | Current screen matrix and web route set contain the corporate public surfaces. |
+| G-029 | Web token persistence in localStorage | **SOURCE REMEDIATED / BROWSER PENDING** | Access token is memory-only; refresh credential is server-managed HttpOnly/Secure cookie. |
+| G-030 | Browser-to-API CORS policy | **SOURCE REMEDIATED / DEPLOYMENT VERIFY** | Explicit environment-scoped CORS is enforced and wildcard production CORS is rejected. |
 | D-024 | Storefront write fields | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
 | OP-11 | Delegated permissions | **GAP** | no permission-list HTTP |
 | Refresh-token rotation | Stage 10 policy | **OPEN** | do not invent |
 | Invoice timing | on ACCEPTED default | **OPEN** | confirm before finance e2e |
-| Phase 3 remaining | Barcode D-028/unsupported contracts; Night visual verification | **OPEN** | mobile QA Cycles 1–3 are green; execute remaining visual/contract gates |
-| Phase 4 remaining | Live basket POST → allocation → checkout → order lifecycle e2e | **OPEN** | click-through when ready |
+| Phase 3 remaining | Night visual verification + current-device cold relaunch/storage evidence | **OPEN** | D-028 and G-023…G-026 source remediated; execute remaining runtime/device gates |
+| Phase 4 remaining | Live basket POST → allocation → checkout → order lifecycle + idempotency replay | **OPEN** | runtime execution evidence still required |
 | WAVE-02 | OpenPencil MCP design board | **BLOCKED_EXTERNAL** | start OpenPencil app (B-02) |
 
 **Resolved in current reconciliation:** G-001, G-002, G-005, G-022, G-023, G-024, G-025, G-026 (device/local retest PASS on 2026-09-24), plus mobile logout source remediation and API security-header/CORS hardening on audit branch merged as commit `23976ac`.
