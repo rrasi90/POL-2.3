@@ -2,7 +2,7 @@
 
 **Rule (Master Instruction §3):** higher authority wins; log here; unresolved = screen status `GAP` + minimal stub; do not guess; do not stop build unless critical dependency.
 
-**Status values in this file:** `CONFLICT` | `GAP` | `BLOCKED_EXTERNAL` | `PROPOSED`
+**Status values in this file:** `RESOLVED` | `CONFLICT` | `GAP` | `BLOCKED_EXTERNAL` | `PROPOSED`
 
 ---
 
@@ -36,7 +36,7 @@
 
 - **Current canonical wire field:** `is_read`, with `deep_link` on durable inbox items.
 - **Current implementation:** `/api/v1/inbox/items*` exposes unread filtering/counts and mark-one/mark-all read operations; `/api/v1/notifications` projects read state and deep link.
-- **Evidence:** current notification HTTP tests pass for projection, tenant-scoped read, and idempotent read-all; verification CI run #805 is green.
+- **Evidence:** current notification HTTP tests pass for projection, tenant-scoped read, and idempotent read-all; earlier verification CI green is historical evidence; fresh post-remediation CI is currently blocked before useful step execution.
 - **Status:** RESOLVED for source + automated CI evidence.
 
 ## G-006 — Corporate routes absent from legacy route map (RESOLVED)
@@ -147,9 +147,9 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 
 ## Phase 3 / live-e2e execution notes — 2026-09-23
 
-- Mobile retailer/vendor/ops foundations are implemented but remain `IMPLEMENTED` until mobile CI + three QA cycles provide evidence; do not promote to `VERIFIED` yet.
-- D-028 barcode matching is now implemented at the canonical API boundary: exact identifier lookup plus quarantined candidate creation for `NO_MATCH`; camera/device transport remains a client concern and is intentionally decoupled.
-- Mobile Night theme tokens exist, but screen-by-screen visual verification is still pending; no claim of full visual parity is made.
+- Historical mobile CI cycles remain evidence, but the current remediation branch must not inherit their green certification automatically because fresh GitHub runs currently fail before useful step execution.
+- D-028 barcode matching is implemented at the canonical API boundary, with legacy and extended request compatibility; camera/device transport remains a client/runtime concern.
+- Mobile Night theme verification and live checkout/idempotency are now recorded as LOCAL-01…04 PASS in the execution tracker; deployment/runtime evidence remains separate.
 - Live basket → allocation → checkout e2e remains pending in the local environment because the current catalog seed/search path and orderability criteria still need live verification. This is an execution task, not a reason to stop other work.
 
 
@@ -190,3 +190,15 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Finding:** web API client uses a separate API base origin while FastAPI had no explicit CORS policy in the audited transport source.
 - **Source remediation (2026-09-24):** FastAPI now applies environment-scoped CORS with explicit local development origins, requires POL_CORS_ORIGINS in production, forbids wildcard production CORS, and has a transport test for allowed/blocked origins.
 - **Status:** SOURCE REMEDIATED; final release gate is CI/runtime evidence.
+
+## G-031 — Duplicate barcode route / schema collision (RESOLVED — 2026-09-25)
+
+- Finding: two route modules registered the same POST /api/v1/products/match-barcode path with incompatible request models.
+- Resolution: one canonical route now serves both legacy and extended request shapes; duplicate registration was removed; route uniqueness regression coverage was added.
+- Status: RESOLVED in source; fresh CI certification remains separate.
+
+## G-032 — Direct candidate idempotency / notification targeting (RESOLVED — 2026-09-25)
+
+- Finding: direct candidate creation could create a new candidate and overwrite an existing vendor-SKU association, and candidate-created outbox events lacked recipient targets.
+- Resolution: advisory-lock serialization, existing-association replay, rejection protection, tenant-aware authorization, targeted outbox fields and dedupe key, plus HTTP regression coverage were added.
+- Status: RESOLVED in source; fresh CI certification remains separate.
