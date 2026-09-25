@@ -182,6 +182,17 @@ class DeliveryExceptionEscalateRequest(APIBaseModel):
     reason: str | None = Field(default=None, max_length=2000)
 
 
+class BroadcastCreateRequest(APIBaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    body: str = Field(min_length=1, max_length=20000)
+    target_criteria: dict[str, object] = Field(min_length=1)
+    channel: str = Field(default="IN_APP", max_length=32)
+    priority: str = Field(default="NORMAL", max_length=32)
+    scheduled_at: str | None = None
+
+class BroadcastDispatchRequest(APIBaseModel):
+    approve: bool = True
+
 class NotificationPreferenceUpdateRequest(APIBaseModel):
     event_name: str = Field(min_length=1, max_length=100)
     channel: str = Field(min_length=1, max_length=10)
