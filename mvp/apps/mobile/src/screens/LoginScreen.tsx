@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { StyleSheet, Text } from "react-native";
-import { api, setToken } from "../api";
+import { api, persistSession } from "../api";
 import { Btn, Card, ErrorBox, Input, Screen, Title } from "../components/ui";
 import { spacing, useThemedStyles, type Palette } from "../theme";
 import type { OtpRequest, Role, VerifyResult } from "../types";
@@ -80,7 +80,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void }): React.Re
         setError("نقش کاربر از پاسخ معتبر بک‌اند قابل تعیین نیست.");
         return;
       }
-      setToken(data.access_token);
+      await persistSession(data.access_token, data.refresh_token ?? null);
       props.onAuthed(role);
     } catch (err) {
       setError(err instanceof Error ? err.message : "تأیید کد ناموفق بود");
