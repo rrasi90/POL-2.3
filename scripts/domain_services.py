@@ -1164,11 +1164,11 @@ class RevalidationCheckoutService:
 
             cur.execute("""
                 INSERT INTO inventory_reservations (
-                    id, vendor_product_id, order_id, quantity, status, idempotency_key, expires_at
+                    id, vendor_product_id, order_id, order_item_id, quantity, status, idempotency_key, expires_at
                 ) VALUES (
-                    %s, %s, %s, %s, 'ACTIVE', %s, now() + interval '15 minutes'
+                    %s, %s, %s, %s, %s, 'ACTIVE', %s, now() + interval '15 minutes'
                 );
-            """, (res_id, alloc["vendor_product_id"], ord_id, alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_id']}"))
+            """, (res_id, alloc["vendor_product_id"], ord_id, order_item_id, alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_id']}"))
 
             cur.execute("""
                 UPDATE vendor_inventory 
