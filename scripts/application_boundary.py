@@ -2479,6 +2479,7 @@ class POLApplicationBoundary:
             (vendor_id, normalized),
         )
         candidate = self.cur.fetchone()
+        candidate_created = False
         if candidate:
             candidate_id = str(candidate["id"])
         else:
@@ -2488,6 +2489,9 @@ class POLApplicationBoundary:
                 INSERT INTO product_candidates
                     (id,vendor_id,proposed_title,barcode,vendor_sku,status)
                 VALUES (%s,%s,%s,%s,%s,'PENDING_REVIEW')
+                ON CONFLICT (vendor_id, barcode)
+                    WHERE barcode IS NOT NULL AND status='PENDING_REVIEW'
+                DO NOTHING
                 RETURNING id
                 """,
                 (
@@ -2498,6 +2502,31 @@ class POLApplicationBoundary:
                     candidate_vendor_sku,
                 ),
             )
+            inserted = self.cur.fetchone()
+            if inserted:
+                candidate_created = True
+                candidate_id = str(inserted["id"])
+            else:
+                self.cur.execute(
+                    """
+                    SELECT id
+                    FROM product_candidates
+                    WHERE vendor_id=%s
+                      AND barcode=%s
+                      AND status='PENDING_REVIEW'
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    """,
+                    (vendor_id, normalized),
+                )
+                candidate = self.cur.fetchone()
+                if not candidate:
+                    raise RuntimeError(
+                        "Concurrent barcode candidate insert conflicted but the winning candidate could not be re-read."
+                    )
+                candidate_id = str(candidate["id"])
+
+        if candidate_created:
             self.cur.execute(
                 """
                 INSERT INTO outbox_events
@@ -2523,33 +2552,11 @@ class POLApplicationBoundary:
                     normalized,
                     candidate_vendor_sku,
                     proposed_title.strip(),
+                    str(vendor_id),
+                    str(self.context.organization_id),
                     "PRODUCT_CANDIDATE_CREATED:" + candidate_id,
                 ),
             )
-
-        if existing_vp:
-            vendor_product_id = str(existing_vp["id"])
-        else:
-            vendor_product_id = str(uuid4())
-            self.cur.execute(
-                """
-                INSERT INTO vendor_products
-                    (id,vendor_id,product_id,candidate_id,vendor_sku,
-                     packaging_unit,pack_quantity,sales_unit,is_active,listing_status)
-                VALUES (%s,%s,NULL,%s,%s,%s,%s,%s,TRUE,'DRAFT_PENDING_CATALOG')
-                RETURNING id,listing_status
-                """,
-                (
-                    vendor_product_id,
-                    vendor_id,
-                    candidate_id,
-                    candidate_vendor_sku,
-                    packaging_unit.strip(),
-                    int(pack_quantity),
-                    packaging_unit.strip(),
-                ),
-            )
-
         return {
             "match_type": "NO_MATCH",
             "confidence_score": 0.0,
