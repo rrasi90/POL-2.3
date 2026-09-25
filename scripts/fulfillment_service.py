@@ -319,6 +319,25 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
             "idempotent_replay": True,
         }
 
+    cur.execute(
+        """
+        SELECT delivery_status
+        FROM deliveries
+        WHERE order_id=%s
+        ORDER BY created_at DESC
+        LIMIT 1
+        FOR UPDATE
+        """,
+        (order_id,),
+    )
+    current_delivery = cur.fetchone()
+    if not current_delivery:
+        raise ValueError("No delivery record found for this order.")
+    if current_delivery["delivery_status"] != "ARRIVED":
+        raise ValueError(
+            f"Delivery confirmation requires ARRIVED state, got {current_delivery['delivery_status']}."
+        )
+
     if not recipient_name or not str(recipient_name).strip():
         raise ValueError("recipient_name is required for proof of delivery.")
     if not otp_code:
@@ -449,6 +468,135 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
         "order_status": "DELIVERED",
         "delivery_id": delivery_id,
         "otp_verified": True,
+        "idempotent_replay": False,
+    }
+
+
+def transition_delivery_stage(cur, *, user_id, organization_id, order_id, target_status, reason=None) -> dict:
+    """Advance one delivery through the canonical operational state machine."""
+    allowed_from = {
+        "PICKED_UP": {"ASSIGNED", "PICKED_UP"},
+        "IN_TRANSIT": {"PICKED_UP", "IN_TRANSIT"},
+        "ARRIVED": {"IN_TRANSIT", "ARRIVED"},
+        "FAILED": {"IN_TRANSIT", "ARRIVED", "FAILED"},
+    }
+    if target_status not in allowed_from:
+        raise ValueError(f"Unsupported delivery stage: {target_status}")
+
+    cur.execute(
+        """
+        SELECT d.*, o.order_status, o.order_number, o.vendor_id, o.retailer_id,
+               r.organization_id AS retailer_organization_id
+        FROM deliveries d
+        JOIN orders o ON o.id=d.order_id
+        JOIN retailers r ON r.id=o.retailer_id
+        WHERE d.order_id=%s
+        ORDER BY d.created_at DESC
+        LIMIT 1
+        FOR UPDATE OF d, o
+        """,
+        (order_id,),
+    )
+    delivery = cur.fetchone()
+    if not delivery:
+        raise ValueError("No delivery record found for this order.")
+
+    current = str(delivery["delivery_status"])
+    if current == target_status:
+        return {
+            "order_id": str(order_id),
+            "delivery_id": str(delivery["id"]),
+            "delivery_status": target_status,
+            "idempotent_replay": True,
+        }
+    if current not in allowed_from[target_status]:
+        raise AllocationIntegrityError(
+            f"Cannot transition delivery from {current} to {target_status}."
+        )
+    if str(delivery["order_status"]) != "DISPATCHED":
+        raise AllocationIntegrityError(
+            f"Delivery stage changes require order DISPATCHED, got {delivery['order_status']}."
+        )
+
+    # Vendor members may advance the delivery; FIELD_ACTIVATOR is allowed when
+    # operating under the operator tenant for the pilot field flow.
+    _verify_vendor_actor(
+        cur, user_id, organization_id, delivery["vendor_id"]
+    )
+    now_fields = {
+        "PICKED_UP": "picked_up_at",
+        "IN_TRANSIT": "in_transit_at",
+        "ARRIVED": "arrived_at",
+        "FAILED": "failed_at",
+    }
+    timestamp_field = now_fields[target_status]
+
+    if target_status == "FAILED":
+        cur.execute(
+            f"""
+            UPDATE deliveries
+            SET delivery_status='FAILED',
+                failed_at=COALESCE(failed_at, now()),
+                failed_reason=%s,
+                updated_at=now()
+            WHERE id=%s
+            RETURNING *
+            """,
+            (reason, delivery["id"]),
+        )
+    else:
+        cur.execute(
+            f"""
+            UPDATE deliveries
+            SET delivery_status=%s,
+                {timestamp_field}=COALESCE({timestamp_field}, now()),
+                updated_at=now()
+            WHERE id=%s
+            RETURNING *
+            """,
+            (target_status, delivery["id"]),
+        )
+    updated = cur.fetchone()
+
+    cur.execute(
+        """
+        INSERT INTO delivery_timeline_events (
+            id, delivery_id, order_id, from_status, to_status,
+            actor_user_id, actor_organization_id, event_data
+        )
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+        """,
+        (
+            str(uuid4()),
+            str(delivery["id"]),
+            str(order_id),
+            current,
+            target_status,
+            user_id,
+            organization_id,
+            json_dumps({"reason": reason} if reason else {}),
+        ),
+    )
+
+    event_name = f"DELIVERY_{target_status}"
+    _emit_outbox(
+        cur,
+        event_name=event_name,
+        aggregate_id=str(delivery["id"]),
+        aggregate_type="DELIVERY",
+        payload={
+            "delivery_id": str(delivery["id"]),
+            "order_id": str(order_id),
+            "order_number": delivery["order_number"],
+            "delivery_status": target_status,
+            "reason": reason,
+        },
+        recipient_org_id=delivery["retailer_organization_id"],
+    )
+    return {
+        "order_id": str(order_id),
+        "delivery_id": str(delivery["id"]),
+        "delivery_status": updated["delivery_status"],
         "idempotent_replay": False,
     }
 
