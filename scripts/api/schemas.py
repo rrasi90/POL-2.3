@@ -21,6 +21,7 @@ class VerifyOTPRequest(APIBaseModel):
     mobile_number: str = Field(min_length=7, max_length=32)
     otp_code: str = Field(pattern=r"^\d{4}$")
     device_info: dict[str, Any] | None = None
+    client_platform: Literal["web", "mobile"] | None = None
 
 
 class RefreshTokenRequest(APIBaseModel):
