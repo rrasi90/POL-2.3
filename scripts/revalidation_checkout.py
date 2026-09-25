@@ -215,6 +215,25 @@ class RevalidationCheckoutService:
 
             for alloc in vendor_allocs:
                 line_total = int(alloc["quantity"]) * int(alloc["unit_price_toman"])
+                cur.execute(
+                    """
+                    INSERT INTO order_items (
+                        id, order_id, product_id, vendor_product_id,
+                        product_name_snapshot, brand_name_snapshot, vendor_sku_snapshot,
+                        packaging_unit_snapshot, pack_quantity_snapshot,
+                        ordered_quantity, accepted_quantity, delivered_quantity,
+                        unit_price_toman, total_line_amount_toman, fulfillment_status
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NULL,0,%s,%s,'PENDING')
+                    RETURNING *;
+                    """,
+                    (
+                        str(uuid.uuid4()), ord_id, alloc["_product_id"], alloc["vendor_product_id"],
+                        alloc["_product_name_snapshot"], alloc["_brand_name_snapshot"],
+                        alloc["_vendor_sku_snapshot"], alloc["_packaging_unit_snapshot"],
+                        alloc["_pack_quantity_snapshot"], alloc["quantity"],
+                        alloc["unit_price_toman"], line_total,
+                    ),
+                )
                 order_item = cur.fetchone()
                 order_item_id = str(order_item["id"])
 
