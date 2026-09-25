@@ -42,7 +42,7 @@ from scripts.domain_services import (
     AuditService
 )
 from scripts.checkout_gateway import CanonicalCheckoutGateway
-from scripts.fulfillment_service import (
+from scripts.fulfillment_service import mark_preparing as canonical_mark_preparing, mark_ready as canonical_mark_ready,  (
     dispatch_order as canonical_dispatch_order,
     transition_delivery_stage,
     confirm_delivery as canonical_confirm_delivery,
@@ -341,6 +341,22 @@ def run_master_e2e_test():
             "driver_phone": "+989163334455",
             "vehicle_plate": "14 Iran 333 b 12"
         }
+        prep_res = canonical_mark_preparing(
+            cur,
+            user_id=u_vnda_owner,
+            organization_id=org_vnda,
+            order_id=ord_a_id,
+        )
+        assert prep_res["order_status"] == "PREPARING"
+
+        ready_res = canonical_mark_ready(
+            cur,
+            user_id=u_vnda_owner,
+            organization_id=org_vnda,
+            order_id=ord_a_id,
+        )
+        assert ready_res["order_status"] == "READY"
+
         dispatch_res = canonical_dispatch_order(
             cur,
             user_id=u_vnda_owner,
