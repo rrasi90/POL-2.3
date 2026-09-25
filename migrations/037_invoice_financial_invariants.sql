@@ -77,7 +77,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$;
+$$;
 
 DROP TRIGGER IF EXISTS trg_invoice_items_total_v037 ON invoice_items;
 CREATE CONSTRAINT TRIGGER trg_invoice_items_total_v037
