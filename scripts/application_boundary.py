@@ -3730,3 +3730,68 @@ class POLApplicationBoundary:
             tuple(params),
         )
         return {"returns": [dict(x) for x in self.cur.fetchall()], "limit": limit, "offset": offset}
+
+
+    # ── Admin SLA Override (Stage 39) ──────────────────────────────
+
+    def admin_sla_override(self, *, order_id, extension_minutes, reason):
+        self._require_admin_management()
+        if not 1 <= int(extension_minutes) <= 24 * 60:
+            raise ValueError("extension_minutes must be between 1 and 1440.")
+        if not reason or not reason.strip():
+            raise ValueError("reason is required for an SLA override.")
+
+        self.cur.execute(
+            """
+            SELECT id, order_number, order_status, vendor_acceptance_deadline_at
+            FROM orders
+            WHERE id=%s
+            FOR UPDATE
+            """,
+            (order_id,),
+        )
+        before = self.cur.fetchone()
+        if not before:
+            raise KeyError("Order not found.")
+        if before["order_status"] != "SUBMITTED":
+            raise ValueError("SLA override is only valid for SUBMITTED orders.")
+        if before["vendor_acceptance_deadline_at"] is None:
+            raise ValueError("Order has no vendor acceptance SLA deadline.")
+
+        self.cur.execute(
+            """
+            UPDATE orders
+            SET vendor_acceptance_deadline_at = vendor_acceptance_deadline_at + (%s * interval '1 minute'),
+                updated_at = now()
+            WHERE id=%s
+            RETURNING id, order_number, order_status, vendor_acceptance_deadline_at, updated_at
+            """,
+            (int(extension_minutes), order_id),
+        )
+        after = dict(self.cur.fetchone())
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_before, state_after, reason, correlation_id)
+            VALUES (%s, 'ORDER_SLA_OVERRIDE', 'ORDER', %s, %s, %s, %s, %s)
+            """,
+            (
+                self.context.user_id,
+                order_id,
+                Json({
+                    "vendor_acceptance_deadline_at":
+                        before["vendor_acceptance_deadline_at"].isoformat()
+                        if before["vendor_acceptance_deadline_at"] else None
+                }),
+                Json({
+                    "vendor_acceptance_deadline_at":
+                        after["vendor_acceptance_deadline_at"].isoformat()
+                        if after["vendor_acceptance_deadline_at"] else None,
+                    "extension_minutes": int(extension_minutes),
+                }),
+                reason.strip(),
+                self.context.correlation_id,
+            ),
+        )
+        return after
