@@ -1197,10 +1197,12 @@ class POLApplicationBoundary:
             SELECT 1
             FROM organization_memberships om
             JOIN organizations o ON o.id = om.organization_id
+            JOIN users u ON u.id = om.user_id
             WHERE om.user_id = %s
               AND om.organization_id = %s
               AND om.status = 'ACTIVE'
               AND o.status = 'ACTIVE'
+              AND u.is_active = TRUE
               AND (
                   (om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
                    AND EXISTS (SELECT 1 FROM retailers r WHERE r.id = %s AND r.organization_id = %s))
