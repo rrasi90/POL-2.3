@@ -744,6 +744,12 @@ def test_section_16_cross_tenant_negative_matrix():
         inv_a, f"INV-NEG-A-{uuid.uuid4().hex[:6]}", ord_a, org_ret_a, org_vnd_1,
         inv_b, f"INV-NEG-B-{uuid.uuid4().hex[:6]}", ord_b, org_ret_b, org_vnd_2
     ))
+    cur.execute("""
+        INSERT INTO invoice_items (id, invoice_id, product_name, quantity, unit_price, total_line_amount)
+        VALUES
+            (%s, %s, 'Tenant Isolation A', 1, 1000000, 1000000),
+            (%s, %s, 'Tenant Isolation B', 1, 2000000, 2000000);
+    """, (str(uuid.uuid4()), inv_a, str(uuid.uuid4()), inv_b))
     conn.commit()
 
     # Negative Assertion 1: Org A querying invoices sees 0 rows of Org B
