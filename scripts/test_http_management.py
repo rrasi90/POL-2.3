@@ -184,3 +184,72 @@ def test_management_routes_reject_unauthenticated(client):
     assert client.get("/api/v1/vendors/customers").status_code == 401
     assert client.get("/api/v1/admin/users").status_code == 401
     assert client.get("/api/v1/ops/permissions").status_code == 401
+
+
+
+def test_broadcast_and_category_admin_routes_use_real_boundary(client, management_env):
+    headers = {"Authorization": f"Bearer {management_env['admin']}"}
+
+    created = client.post(
+        "/api/v1/admin/broadcasts",
+        headers=headers,
+        json={
+            "title": "Remediation test",
+            "body": "No-op test notification",
+            "target_criteria": {"org_type": "OPERATOR", "status": "ACTIVE"},
+        },
+    )
+    assert created.status_code == 201
+    broadcast = created.json()["data"]
+    assert broadcast["status"] == "DRAFT"
+    assert broadcast["estimated_recipient_count"] >= 1
+
+    dispatched = client.post(
+        "/api/v1/admin/broadcasts/" + broadcast["id"] + "/dispatch",
+        headers=headers,
+        json={"approve": True},
+    )
+    assert dispatched.status_code == 200
+    assert dispatched.json()["data"]["status"] == "COMPLETED"
+
+    category = client.post(
+        "/api/v1/admin/categories",
+        headers=headers,
+        json={
+            "name_fa": "Remediation Category",
+            "slug": "remediation-category-" + uuid4().hex[:8],
+            "display_order": 999,
+        },
+    )
+    assert category.status_code == 201
+    cat = category.json()["data"]
+    assert cat["display_order"] == 999
+
+    updated = client.patch(
+        "/api/v1/admin/categories/" + cat["id"],
+        headers=headers,
+        json={"name_fa": "Remediation Category Updated", "display_order": 1000},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["data"]["name_fa"] == "Remediation Category Updated"
+
+    with management_env["conn"].cursor() as cur:
+        cur.execute("DELETE FROM broadcast_messages WHERE id=%s", (broadcast["id"],))
+        cur.execute("DELETE FROM categories WHERE id=%s", (cat["id"],))
+    management_env["conn"].commit()
+
+
+def test_broadcast_and_category_mutations_reject_non_admin_context(client, management_env):
+    headers = {"Authorization": f"Bearer {management_env['vendor']}"}
+    broadcast = client.post(
+        "/api/v1/admin/broadcasts",
+        headers=headers,
+        json={"title": "Denied", "body": "Denied", "target_criteria": {}},
+    )
+    category = client.post(
+        "/api/v1/admin/categories",
+        headers=headers,
+        json={"name_fa": "Denied", "slug": "denied-" + uuid4().hex[:8]},
+    )
+    assert broadcast.status_code == 403
+    assert category.status_code == 403
