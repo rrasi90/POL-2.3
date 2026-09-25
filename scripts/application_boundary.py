@@ -1230,7 +1230,10 @@ class POLApplicationBoundary:
                 %s, %s, %s, %s,
                 %s, %s,
                 %s, 'SINGLE_PAYMENT', %s
-            ) RETURNING *;
+            )
+            ON CONFLICT (external_reference) WHERE external_reference IS NOT NULL
+            DO NOTHING
+            RETURNING *;
             """,
             (
                 evidence_id, str(row["payment_id"]), evidence_type, reference_number,
@@ -1240,6 +1243,31 @@ class POLApplicationBoundary:
             ),
         )
         ev = self.cur.fetchone()
+        if ev is None and reference_number:
+            self.cur.execute(
+                """
+                SELECT id, payment_id, evidence_type, external_reference,
+                       claimed_amount_toman, captured_at, captured_by_user_id
+                FROM payment_evidence
+                WHERE external_reference=%s
+                LIMIT 1
+                """,
+                (reference_number,),
+            )
+            existing = self.cur.fetchone()
+            if not existing:
+                raise RuntimeError("Payment evidence replay conflict could not be resolved.")
+            if str(existing["payment_id"]) != str(row["payment_id"]):
+                raise ValueError("This external reference is already attached to another payment.")
+            return {
+                "evidence_id": str(existing["id"]),
+                "payment_id": str(existing["payment_id"]),
+                "evidence_type": existing["evidence_type"],
+                "reference_number": existing["external_reference"],
+                "amount_toman": int(existing["claimed_amount_toman"]),
+                "captured_at": existing["captured_at"].isoformat() if existing["captured_at"] else None,
+                "idempotent_replay": True,
+            }
         return {
             "evidence_id": str(ev["id"]),
             "payment_id": str(ev["payment_id"]),
@@ -1247,6 +1275,7 @@ class POLApplicationBoundary:
             "reference_number": ev["external_reference"],
             "amount_toman": int(ev["claimed_amount_toman"]),
             "captured_at": ev["captured_at"].isoformat() if ev["captured_at"] else None,
+            "idempotent_replay": False,
         }
 
     def get_payment_evidence(self, *, order_id):
