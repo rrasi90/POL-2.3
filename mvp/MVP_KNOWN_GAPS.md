@@ -39,11 +39,11 @@
 - **Evidence:** current notification HTTP tests pass for projection, tenant-scoped read, and idempotent read-all; verification CI run #805 is green.
 - **Status:** RESOLVED for source + automated CI evidence.
 
-## G-006 — Corporate routes absent from route map (GAP)
+## G-006 — Corporate routes absent from legacy route map (RESOLVED)
 
-- Spec 22 C-01…C-08 + Master Tree CP-* exist; `frontend_route_contract_map.md` has **no corporate routes**.
-- **Build:** propose routes `/`, `/retailers`, `/vendors`, `/how`, `/pilot-ahvaz`, `/about`, `/contact`, `/legal` as `PROPOSED` in matrix with source = screen IDs only; record here.
-- **Status:** GAP → screens implemented as static marketing under proposed routes; mark route source `PROPOSED-G006`.
+- Spec 22 C-01…C-08 + Master Tree CP-* are implemented as public static pages.
+- Current canonical paths are `/`, `/retailers`, `/vendors`, `/how`, `/pilot`, `/about`, `/contact`, `/legal`, matching the current `MVP_SCREEN_MATRIX.md`.
+- **Status:** RESOLVED. The older route-map omission is historical documentation drift, not a runtime gap.
 
 ## G-007 — Admin users / organizations screen family (RESOLVED)
 
@@ -104,11 +104,11 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 - **Build:** prefer REAL map in API_MAP §3; remaining CONTRACT → MOCK same-contract.
 - **Status:** RESOLVED on the current remediation branch: canonical ledger is now 50/50 HTTP_IMPLEMENTED; runtime CI evidence remains the release gate.
 
-## G-018 — Android readiness RED in design audit 60 (BLOCKED_EXTERNAL sequencing)
+## G-018 — Android readiness RED in design audit 60 (HISTORICAL)
 
 - Dual-client mandated (D-026) but audit marks Android RED pre-build.
 - **Build:** Phase 3 still required by contract; not a Phase 0 blocker.
-- **Status:** informational
+- **Status:** HISTORICAL. Mobile implementation and prior local/device verification exist on the current project line; final CI runner evidence remains separate.
 
 ## G-019 — Working tree lacks many canonical files (CONFLICT — tooling)
 
@@ -116,10 +116,10 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 - **Resolution:** `git show <ref>:<path>` for reads (§2.8); do not switch branches unless necessary.
 - **Status:** CONFLICT (tooling)
 
-## G-020 — Corporate `PUBLIC_ANON` not a backend role (GAP — expected)
+## G-020 — Corporate `PUBLIC_ANON` not a backend role (RESOLVED — BY DESIGN)
 
 - Marketing screens need no auth; no API required for C-01…08 static content.
-- **Status:** GAP (by design — static)
+- **Status:** RESOLVED (by design). Corporate surfaces are static public pages and intentionally do not require an authenticated backend role.
 
 ## G-021 — Partial-acceptance proposal list (RESOLVED)
 
