@@ -2330,7 +2330,7 @@ class POLApplicationBoundary:
                         'vendor_sku',%s,
                         'proposed_title',%s
                      ),
-                     'PENDING',NULL,NULL,%s,'INBOX')
+                     'PENDING',%s,%s,%s,'INBOX')
                 ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
                 """,
                 (
