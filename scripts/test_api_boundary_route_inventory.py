@@ -104,6 +104,8 @@ EXPECTED_BUSINESS_ROUTES = {
     ("GET", "/api/v1/storefront/vendors/{vendor_id}"),
     ("GET", "/api/v1/storefront/vendors/{vendor_id}/products"),
     ("GET", "/api/v1/search"),
+    ("POST", "/api/v1/media/presigned-url"),
+    ("POST", "/api/v1/media/confirm-upload"),
 }
 
 EXPECTED_OPERATIONAL_ROUTES = {
