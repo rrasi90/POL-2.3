@@ -177,10 +177,11 @@ class TestDispatch:
                     headers={"Authorization": f"Bearer {data['v_token']}"})
         resp = client.post(f"/api/v1/orders/{data['oi']}/dispatch",
                            headers={"Authorization": f"Bearer {data['v_token']}"},
-                           json={"driver_name": "Ali", "vehicle_plate": "12-A-345"})
+                           json={"driver_name": "Ali", "driver_phone": "+989121234567", "vehicle_plate": "12-A-345"})
         assert resp.status_code == 200
         result = resp.json()["data"]
         assert result["order_status"] == "DISPATCHED"
+        assert result["delivery_status"] == "ASSIGNED"
         assert "delivery_id" in result
         assert "delivery_otp" in result
         otp = result["delivery_otp"]
