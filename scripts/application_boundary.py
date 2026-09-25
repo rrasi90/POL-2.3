@@ -3357,7 +3357,7 @@ class POLApplicationBoundary:
     # ── Catalog Administration (Stage 41) ───────────────────────────
 
     def admin_category_create(self, *, name_fa, slug, icon_url=None, display_order=0):
-        self._require_admin_management()
+        self._require_catalog_admin()
         if not name_fa or not name_fa.strip():
             raise ValueError("Category name is required.")
         if not slug or not slug.strip():
@@ -3378,7 +3378,7 @@ class POLApplicationBoundary:
         return row
 
     def admin_category_update(self, *, category_id, name_fa=None, slug=None, icon_url=None, display_order=None):
-        self._require_admin_management()
+        self._require_catalog_admin()
         updates = []
         params = []
         if name_fa is not None:
@@ -3501,6 +3501,19 @@ class POLApplicationBoundary:
         row = self._require_admin_management()
         if row["role"] not in ("SUPER_ADMIN", "ADMIN_SUPER"):
             raise PermissionError("SUPER_ADMIN authority required.")
+        return row
+
+
+    def _require_catalog_admin(self):
+        row = self._require_admin_management()
+        if row["role"] not in ("SUPER_ADMIN", "ADMIN_SUPER", "OPS_ADMIN"):
+            raise PermissionError("Catalog administration requires SUPER_ADMIN or OPS_ADMIN.")
+        return row
+
+    def _require_broadcast_admin(self):
+        row = self._require_admin_management()
+        if row["role"] not in ("SUPER_ADMIN", "ADMIN_SUPER", "OPS_ADMIN"):
+            raise PermissionError("Broadcast administration requires SUPER_ADMIN or OPS_ADMIN.")
         return row
 
     def vendor_customers_list(self, *, query=None, offset=0, limit=50):
@@ -3981,7 +3994,7 @@ class POLApplicationBoundary:
         return clauses, params
 
     def admin_broadcast_create(self, *, title, body, target_criteria, channel="IN_APP", priority="NORMAL", scheduled_at=None):
-        self._require_admin_management()
+        self._require_broadcast_admin()
         if not title or not title.strip():
             raise ValueError("Broadcast title is required.")
         if not body or not body.strip():
@@ -4049,7 +4062,7 @@ class POLApplicationBoundary:
         return row
 
     def admin_broadcast_dispatch(self, *, broadcast_id, approve=True):
-        self._require_admin_management()
+        self._require_broadcast_admin()
         if not approve:
             raise ValueError("Broadcast dispatch requires explicit approval.")
 
