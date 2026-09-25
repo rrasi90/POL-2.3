@@ -160,7 +160,7 @@ def run_master_e2e_test():
         # Test AuthService OTP & Session creation
         otp_challenge = AuthService.request_otp(cur, phone_ret_owner, "127.0.0.1", purpose='LOGIN')
         assert otp_challenge["status"] == "PENDING"
-        session = AuthService.verify_otp(cur, phone_ret_owner, "1234", u_ret_owner, org_ret)
+        session = AuthService.verify_otp(cur, phone_ret_owner, otp_challenge["test_code"], u_ret_owner, org_ret)
         assert session["session"]["status"] == "ACTIVE"
         assert str(session["session"]["active_organization_id"]) == org_ret
         assert session["access_token"] and session["refresh_token"]
