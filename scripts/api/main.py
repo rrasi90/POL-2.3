@@ -30,7 +30,7 @@ from scripts.api.routes.auth import router as auth_router
 from scripts.api.routes.baskets import router as baskets_router
 from scripts.api.routes.catalog import router as catalog_router
 from scripts.api.routes.categories import router as categories_router
-from scripts.api.routes.catalog_identifiers import candidates_router as catalog_candidates_router, router as catalog_identifiers_router
+from scripts.api.routes.catalog_identifiers import candidates_router as catalog_candidates_router
 from scripts.api.routes.products import router as products_router
 from scripts.api.routes.profile import membership_router, router as profile_router
 from scripts.api.routes.orders import router as orders_router
