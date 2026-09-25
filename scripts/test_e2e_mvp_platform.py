@@ -369,6 +369,54 @@ def test_checkout_persists_multivendor_orders_snapshots_and_reservations(
         assert_checkout(cur, checkout_catalog, checkout_request, result)
 
 
+def test_checkout_allows_unfulfilled_allocation_lines(postgres_database, checkout_catalog, checkout_request):
+    partial_request = deepcopy(checkout_request)
+    removed_offer = checkout_catalog["lines"][0]["vendor_product_id"]
+    partial_request["vendor_allocations"] = [
+        allocation
+        for allocation in partial_request["vendor_allocations"]
+        if allocation["vendor_product_id"] != removed_offer
+    ]
+
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            """
+            UPDATE allocation_items
+            SET vendor_id = NULL,
+                vendor_product_id = NULL,
+                allocated_quantity = 0,
+                unit_price_snapshot_toman = 0,
+                line_total_toman = 0,
+                status = 'UNFULFILLED'
+            WHERE allocation_plan_id = %s
+              AND vendor_product_id = %s
+            """,
+            (partial_request["plan_id"], removed_offer),
+        )
+
+    with transaction(postgres_database) as cur:
+        result = POLApplicationBoundary(
+            cur, checkout_catalog["context"]
+        ).checkout(**deepcopy(partial_request))
+
+    assert result["order_count"] == 2
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            "SELECT count(*) AS c FROM order_items WHERE order_group_id = %s",
+            (result["order_group_id"],),
+        )
+        assert cur.fetchone()["c"] == 2
+        cur.execute(
+            """
+            SELECT count(*) AS c
+            FROM allocation_items
+            WHERE allocation_plan_id = %s AND status = 'UNFULFILLED'
+            """,
+            (partial_request["plan_id"],),
+        )
+        assert cur.fetchone()["c"] == 1
+
+
 def test_checkout_replay_fingerprint_and_new_request_same_retailer(
     postgres_database, checkout_catalog, checkout_request,
 ):
