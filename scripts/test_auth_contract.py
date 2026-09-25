@@ -804,3 +804,116 @@ def test_con1_concurrent_rate_limit_advisory_lock(auth_env):
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([os.path.abspath(__file__)]))
+
+
+
+# =========================================================
+# P0 REGRESSION: SESSION OWNERSHIP / REFRESH ROTATION / OTP BINDING
+# =========================================================
+def test_p0_switch_organization_rejects_foreign_session(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    org_b = auth_env["org_b"]
+
+    foreign_user = str(uuid.uuid4())
+    foreign_phone = f"+9891{uuid.uuid4().hex[:8]}"
+    cur.execute(
+        "INSERT INTO users (id, phone_number, role, full_name, is_active) "
+        "VALUES (%s, %s, 'RETAILER_OWNER', 'Foreign Session User', TRUE)",
+        (foreign_user, foreign_phone),
+    )
+    foreign_session = str(uuid.uuid4())
+    cur.execute(
+        "INSERT INTO user_sessions "
+        "(id, user_id, active_organization_id, token_hash, status, expires_at) "
+        "VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days')",
+        (foreign_session, foreign_user, org_b, hash_token("foreign-access")),
+    )
+    conn.commit()
+
+    try:
+        with pytest.raises(PermissionError, match="does not belong"):
+            AuthService.switch_organization(cur, user_id, org_b, foreign_session)
+    finally:
+        cur.execute("DELETE FROM user_sessions WHERE id = %s", (foreign_session,))
+        cur.execute("DELETE FROM users WHERE id = %s", (foreign_user,))
+        conn.commit()
+
+
+def test_p0_refresh_token_is_rotated_and_old_token_replay_fails(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    session_id = str(uuid.uuid4())
+    access = encode_access_token(user_id, session_id, org_a, "RETAILER_OWNER")
+    old_refresh = generate_refresh_token()
+
+    cur.execute(
+        """
+        INSERT INTO user_sessions
+            (id, user_id, active_organization_id, token_hash, refresh_token_hash, status, expires_at)
+        VALUES (%s, %s, %s, %s, %s, 'ACTIVE', now() + interval '30 days')
+        """,
+        (session_id, user_id, org_a, hash_token(access), hash_token(old_refresh)),
+    )
+    conn.commit()
+
+    first = AuthService.refresh_access_token(cur, old_refresh)
+    assert first["access_token"]
+    assert first["refresh_token"]
+    assert first["refresh_token"] != old_refresh
+
+    cur.execute(
+        "SELECT refresh_token_hash FROM user_sessions WHERE id = %s",
+        (session_id,),
+    )
+    assert cur.fetchone()["refresh_token_hash"] == hash_token(first["refresh_token"])
+
+    with pytest.raises(InvalidRefreshTokenError):
+        AuthService.refresh_access_token(cur, old_refresh)
+
+    cur.execute("DELETE FROM user_sessions WHERE id = %s", (session_id,))
+    conn.commit()
+
+
+def test_p0_verify_otp_rejects_user_mismatch_for_same_phone(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    attacker_user = str(uuid.uuid4())
+    phone = auth_env["phone"] if "phone" in auth_env else "+989161110099"
+
+    if phone == "+989161110099":
+        cur.execute(
+            "SELECT phone_number FROM users WHERE id = %s",
+            (user_id,),
+        )
+        phone = cur.fetchone()["phone_number"]
+
+    otp_id = str(uuid.uuid4())
+    cur.execute(
+        """
+        INSERT INTO otp_challenges
+            (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
+        VALUES (%s, %s, %s, 'LOGIN', '10.0.0.99', 0, 5, 'PENDING', now() + interval '2 minutes')
+        """,
+        (otp_id, phone, store_otp_hash("1234")),
+    )
+    conn.commit()
+
+    try:
+        with pytest.raises(PermissionError, match="identity"):
+            AuthService.verify_otp(cur, phone, "1234", attacker_user, org_a)
+    finally:
+        cur.execute("DELETE FROM otp_challenges WHERE id = %s", (otp_id,))
+        conn.rollback()
