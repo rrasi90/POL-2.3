@@ -43,6 +43,7 @@ from scripts.api.routes.admin import router as admin_router
 from scripts.api.routes.referrals import router as referrals_router
 from scripts.api.routes.notifications import router as notifications_router
 from scripts.api.routes.field import router as field_router
+from scripts.api.routes.media import router as media_router
 from scripts.api.routes.vendor_storefront import router as vendor_storefront_router
 from scripts.api.routes.catalog_search import router as catalog_search_router
 from scripts.api.routes.finance import (
@@ -156,6 +157,7 @@ def create_app() -> FastAPI:
     app.include_router(referrals_router, prefix="/api/v1")
     app.include_router(notifications_router, prefix="/api/v1")
     app.include_router(field_router, prefix="/api/v1")
+    app.include_router(media_router, prefix="/api/v1")
     app.include_router(vendor_storefront_router, prefix="/api/v1")
     app.include_router(catalog_search_router, prefix="/api/v1")
 
