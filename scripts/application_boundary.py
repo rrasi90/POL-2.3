@@ -1787,6 +1787,263 @@ class POLApplicationBoundary:
             "message": "کاندیدا با موفقیت ثبت شد و در کارتابل بررسی تیم کاتالوگ قرار گرفت.",
         }
 
+    def admin_product_candidates_list(self, *, status="PENDING_REVIEW", query=None, offset=0, limit=50):
+        self._require_catalog_admin()
+        allowed = {"PENDING_REVIEW", "APPROVED_CANONICAL", "MERGED_EXISTING", "REJECTED"}
+        if status and status not in allowed:
+            raise ValueError("Invalid candidate status.")
+        params = []
+        clauses = ["1=1"]
+        if status:
+            clauses.append("pc.status=%s")
+            params.append(status)
+        if query:
+            needle = "%" + query.strip() + "%"
+            clauses.append("(pc.proposed_title ILIKE %s OR COALESCE(pc.proposed_brand,'') ILIKE %s OR COALESCE(pc.barcode,'') ILIKE %s OR COALESCE(pc.vendor_sku,'') ILIKE %s)")
+            params.extend([needle, needle, needle, needle])
+        where = " AND ".join(clauses)
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT
+                pc.id AS candidate_id,
+                pc.vendor_id,
+                v.business_name AS vendor_name,
+                pc.proposed_title,
+                pc.proposed_brand,
+                pc.barcode,
+                pc.vendor_sku,
+                pc.photo_asset_id,
+                pc.status,
+                pc.resolved_product_id,
+                pc.reviewed_by_user_id,
+                pc.review_notes,
+                pc.created_at,
+                pc.resolved_at
+            FROM product_candidates pc
+            JOIN vendors v ON v.id=pc.vendor_id
+            WHERE {where}
+            ORDER BY
+                CASE pc.status WHEN 'PENDING_REVIEW' THEN 0 ELSE 1 END,
+                pc.created_at ASC,
+                pc.id
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        rows=[]
+        for row in self.cur.fetchall():
+            item=dict(row)
+            for key in ("candidate_id","vendor_id","photo_asset_id","resolved_product_id","reviewed_by_user_id"):
+                if item.get(key):
+                    item[key]=str(item[key])
+            for key in ("created_at","resolved_at"):
+                if item.get(key):
+                    item[key]=item[key].isoformat()
+            rows.append(item)
+        return {"candidates": rows, "status": status, "limit": limit, "offset": offset}
+
+    def admin_product_candidate_review(
+        self,
+        *,
+        candidate_id,
+        action,
+        reason,
+        brand_id=None,
+        category_id=None,
+        subcategory_id=None,
+        canonical_name_fa=None,
+        target_product_id=None,
+    ):
+        self._require_catalog_admin()
+        if not reason or not reason.strip():
+            raise ValueError("Review reason is required.")
+        if action not in {"APPROVE_CANONICAL", "MERGE_EXISTING", "REJECT"}:
+            raise ValueError("Unsupported candidate review action.")
+
+        self.cur.execute(
+            """
+            SELECT pc.*, v.organization_id AS vendor_organization_id
+            FROM product_candidates pc
+            JOIN vendors v ON v.id=pc.vendor_id
+            WHERE pc.id=%s
+            FOR UPDATE
+            """,
+            (candidate_id,),
+        )
+        candidate=self.cur.fetchone()
+        if not candidate:
+            raise KeyError("Product candidate not found.")
+        if candidate["status"] != "PENDING_REVIEW":
+            return {
+                "candidate_id": str(candidate["id"]),
+                "status": candidate["status"],
+                "resolved_product_id": str(candidate["resolved_product_id"]) if candidate["resolved_product_id"] else None,
+                "idempotent_replay": True,
+            }
+
+        resolved_product_id=None
+        if action == "MERGE_EXISTING":
+            if not target_product_id:
+                raise ValueError("target_product_id is required for MERGE_EXISTING.")
+            self.cur.execute(
+                "SELECT id FROM products WHERE id=%s AND is_active=TRUE FOR UPDATE",
+                (target_product_id,),
+            )
+            if not self.cur.fetchone():
+                raise KeyError("Target product not found or inactive.")
+            resolved_product_id=str(target_product_id)
+        elif action == "APPROVE_CANONICAL":
+            for field_name, field_value in (
+                ("brand_id", brand_id), ("category_id", category_id), ("subcategory_id", subcategory_id)
+            ):
+                if not field_value:
+                    raise ValueError(field_name + " is required for APPROVE_CANONICAL.")
+            name = (canonical_name_fa or candidate["proposed_title"] or "").strip()
+            if not name:
+                raise ValueError("canonical_name_fa is required for APPROVE_CANONICAL.")
+
+            self.cur.execute(
+                "SELECT 1 FROM brands WHERE id=%s",
+                (brand_id,),
+            )
+            if not self.cur.fetchone():
+                raise KeyError("Brand not found.")
+            self.cur.execute(
+                "SELECT 1 FROM categories WHERE id=%s",
+                (category_id,),
+            )
+            if not self.cur.fetchone():
+                raise KeyError("Category not found.")
+            self.cur.execute(
+                "SELECT 1 FROM subcategories WHERE id=%s AND category_id=%s",
+                (subcategory_id, category_id),
+            )
+            if not self.cur.fetchone():
+                raise ValueError("Subcategory does not belong to the selected category.")
+
+            master_sku = None
+            for _ in range(5):
+                probe = "POL-PRD-" + uuid4().hex[:10].upper()
+                self.cur.execute("SELECT 1 FROM products WHERE master_sku=%s", (probe,))
+                if not self.cur.fetchone():
+                    master_sku=probe
+                    break
+            if not master_sku:
+                raise RuntimeError("Unable to allocate a unique master SKU.")
+
+            self.cur.execute(
+                """
+                INSERT INTO products
+                    (id,master_sku,canonical_name_fa,brand_id,category_id,subcategory_id,
+                     is_active,is_verified)
+                VALUES (%s,%s,%s,%s,%s,%s,TRUE,TRUE)
+                RETURNING id
+                """,
+                (str(uuid4()), master_sku, name, brand_id, category_id, subcategory_id),
+            )
+            resolved_product_id=str(self.cur.fetchone()["id"])
+
+        if candidate["vendor_sku"]:
+            self.cur.execute(
+                """
+                UPDATE vendor_products
+                SET product_id=%s,
+                    listing_status=CASE WHEN %s='REJECT' THEN 'SUSPENDED' ELSE 'ACTIVE' END,
+                    is_active=CASE WHEN %s='REJECT' THEN FALSE ELSE TRUE END,
+                    updated_at=now()
+                WHERE candidate_id=%s
+                """,
+                (resolved_product_id, action, action, candidate_id),
+            )
+
+        if action == "APPROVE_CANONICAL" and candidate["barcode"]:
+            normalized = "".join(ch for ch in str(candidate["barcode"]) if ch.isalnum())
+            self.cur.execute(
+                "SELECT id, product_id FROM product_identifiers WHERE identifier_value=%s FOR UPDATE",
+                (normalized,),
+            )
+            existing_identifier=self.cur.fetchone()
+            if existing_identifier and str(existing_identifier["product_id"]) != str(resolved_product_id):
+                raise ValueError("Barcode already belongs to a different canonical product.")
+            if not existing_identifier:
+                identifier_type = "EAN13" if normalized.isdigit() and len(normalized)==13 else ("UPC_A" if normalized.isdigit() and len(normalized)==12 else "INTERNAL_BARCODE")
+                self.cur.execute(
+                    """
+                    INSERT INTO product_identifiers
+                        (product_id,vendor_id,identifier_scope,identifier_type,identifier_value,
+                         packaging_scope,source,confidence_score,is_primary)
+                    VALUES (%s,NULL,'GLOBAL',%s,%s,'UNIT','CATALOG_REVIEW',1.00,TRUE)
+                    """,
+                    (resolved_product_id, identifier_type, normalized),
+                )
+
+        new_status = "APPROVED_CANONICAL" if action == "APPROVE_CANONICAL" else ("MERGED_EXISTING" if action == "MERGE_EXISTING" else "REJECTED")
+        self.cur.execute(
+            """
+            UPDATE product_candidates
+            SET status=%s,
+                resolved_product_id=%s,
+                reviewed_by_user_id=%s,
+                review_notes=%s,
+                resolved_at=now()
+            WHERE id=%s
+            RETURNING id,status,resolved_product_id,reviewed_by_user_id,resolved_at
+            """,
+            (new_status, resolved_product_id, self.context.user_id, reason.strip(), candidate_id),
+        )
+        reviewed=dict(self.cur.fetchone())
+
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s,'PRODUCT_CANDIDATE_REVIEWED','PRODUCT_CANDIDATE',%s,%s,%s,%s)
+            """,
+            (
+                self.context.user_id,
+                candidate_id,
+                Json({
+                    "status": new_status,
+                    "resolved_product_id": resolved_product_id,
+                    "action": action,
+                }),
+                reason.strip(),
+                self.context.correlation_id,
+            ),
+        )
+
+        self.cur.execute(
+            """
+            INSERT INTO outbox_events
+                (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                 target_user_id,target_organization_id,dedupe_key,channel_hint)
+            VALUES
+                (gen_random_uuid(),gen_random_uuid(),'PRODUCT_CANDIDATE_REVIEWED',
+                 'PRODUCT_CANDIDATE',%s,%s,'PENDING',NULL,NULL,%s,'INBOX')
+            ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+            """,
+            (
+                candidate_id,
+                Json({
+                    "candidate_id": candidate_id,
+                    "status": new_status,
+                    "resolved_product_id": resolved_product_id,
+                    "reviewed_by_user_id": str(self.context.user_id),
+                }),
+                "PRODUCT_CANDIDATE_REVIEWED:" + str(candidate_id),
+            ),
+        )
+        return {
+            "candidate_id": str(reviewed["id"]),
+            "status": reviewed["status"],
+            "resolved_product_id": str(reviewed["resolved_product_id"]) if reviewed["resolved_product_id"] else None,
+            "reviewed_by_user_id": str(reviewed["reviewed_by_user_id"]) if reviewed["reviewed_by_user_id"] else None,
+            "resolved_at": reviewed["resolved_at"].isoformat() if reviewed["resolved_at"] else None,
+            "idempotent_replay": False,
+        }
+
     def catalog_products_search(self, *, query: str, category_id: str | None = None, page: int = 1, limit: int = 20):
         if page < 1 or limit < 1 or limit > 100:
             raise ValueError("Invalid pagination.")
