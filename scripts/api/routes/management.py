@@ -13,6 +13,7 @@ from scripts.api.schemas import (
     AdminUserStatusRequest,
     VendorStaffInviteRequest,
     VendorStaffUpdateRequest,
+    AdminSlaOverrideRequest,
 )
 
 vendor_router = APIRouter(prefix="/vendors", tags=["vendor-management"])
@@ -91,6 +92,20 @@ def admin_user_status(
         boundary.admin_user_update(
             user_id=str(user_id),
             is_active=payload.is_active,
+        )
+    )
+
+
+@admin_router.post("/sla-overrides")
+def admin_sla_override(
+    payload: AdminSlaOverrideRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.admin_sla_override(
+            order_id=str(payload.order_id),
+            extension_minutes=payload.extension_minutes,
+            reason=payload.reason,
         )
     )
 
