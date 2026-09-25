@@ -306,6 +306,9 @@ class CanonicalVendorOrderService:
                    o.order_group_id,
                    o.order_status,
                    o.retailer_id,
+                   o.total_amount_toman,
+                   o.rejection_reason,
+                   o.vendor_acceptance_deadline_at,
                    v.organization_id AS vendor_organization_id
             FROM orders o
             JOIN vendors v ON v.id = o.vendor_id
