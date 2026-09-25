@@ -572,6 +572,27 @@ class PaymentService:
         if str(order["retailer_id"]) != str(retailer_id) or str(order["vendor_id"]) != str(vendor_id):
             raise PermissionError("Payment participants do not match the order.")
 
+        # This compatibility service receives the actor explicitly, so bind it
+        # to the retailer tenant before any financial mutation. Authorization
+        # is never inferred from user-supplied ids alone.
+        cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN retailers r ON r.organization_id = om.organization_id
+            JOIN organizations o ON o.id = om.organization_id
+            WHERE om.user_id = %s
+              AND r.id = %s
+              AND om.status = 'ACTIVE'
+              AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+              AND o.status = 'ACTIVE'
+            LIMIT 1
+            """,
+            (verified_by_user_id, retailer_id),
+        )
+        if not cur.fetchone():
+            raise PermissionError("Payment actor is not an authorized member of the retailer tenant.")
+
         cur.execute(
             """
             INSERT INTO payments (
