@@ -373,3 +373,18 @@ class AdminCategoryUpdateRequest(APIBaseModel):
     slug: str | None = Field(default=None, min_length=1, max_length=120)
     icon_url: str | None = Field(default=None, max_length=255)
     display_order: int | None = Field(default=None, ge=0)
+
+
+class VendorInventoryContinuousScanRequest(APIBaseModel):
+    product_id: UUID
+    vendor_sku: str = Field(min_length=1, max_length=100)
+    packaging_unit: Literal["CARTON", "BOX", "PACK", "PIECE", "KG", "BUNDLE"]
+    pack_quantity: int = Field(ge=1, le=100000)
+    physical_quantity: int = Field(ge=0)
+    unit_price_toman: int = Field(gt=0)
+    consumer_price_per_unit_toman: int | None = Field(default=None, gt=0)
+    session_id: str = Field(min_length=1, max_length=128)
+
+
+class VendorInventoryPublishRequest(APIBaseModel):
+    session_id: str = Field(min_length=1, max_length=128)
