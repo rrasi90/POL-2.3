@@ -2011,7 +2011,7 @@ class POLApplicationBoundary:
 
         self.cur.execute(
             """
-            SELECT pc.*, v.organization_id AS vendor_organization_id
+            SELECT pc.*, v.organization_id AS vendor_organization_id, v.user_id AS vendor_user_id
             FROM product_candidates pc
             JOIN vendors v ON v.id=pc.vendor_id
             WHERE pc.id=%s
