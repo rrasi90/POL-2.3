@@ -89,6 +89,15 @@ HTTP may also set `X-Correlation-ID`.
 | GET | `/catalog/products/{product_id}/compare-prices` |
 | GET | `/catalog/products/{product_id}/compare-inventory` |
 
+### 3.4.1 Canonical public catalog routes
+
+| Method | Path |
+|--------|------|
+| GET | `/products/search` |
+| POST | `/products/match-barcode` |
+| POST | `/product-candidates` |
+| GET | `/categories` |
+
 ### 3.5 Unified search — `catalog_search.py` (`/search`)
 
 | Method | Path |
@@ -154,7 +163,9 @@ HTTP may also set `X-Correlation-ID`.
 | POST/GET | `/support/cases` |
 | GET | `/support/cases/{case_id}` |
 | POST | `/support/cases/{case_id}/messages` |
-| PATCH | `/support/cases/{case_id}` | status transition |
+| POST | `/support/cases/{case_id}/assign` | canonical assignment |
+| PATCH | `/support/cases/{case_id}/status` | canonical status transition |
+| PATCH | `/support/cases/{case_id}` | legacy-compatible status transition alias |
 
 ### 3.11 Finance — `finance.py`
 
@@ -180,6 +191,10 @@ HTTP may also set `X-Correlation-ID`.
 |--------|------|
 | GET | `/admin/audit-logs` |
 | GET | `/admin/exceptions/dashboard` |
+| POST | `/admin/broadcasts` |
+| POST | `/admin/broadcasts/{broadcast_id}/dispatch` |
+| POST | `/admin/categories` |
+| PATCH | `/admin/categories/{category_id}` |
 
 ### 3.14 Referrals — `referrals.py`
 
@@ -229,9 +244,9 @@ HTTP may also set `X-Correlation-ID`.
 | 4 | POST `/api/v1/vendors/inventory/continuous-scan` | VD-16 — CONTRACT_ONLY; session semantics still open |
 | 5 | POST `/api/v1/vendors/inventory/publish` | VD-01 publish — CONTRACT_ONLY |
 | 17–20 | payments/disputes variants | covered partially by REAL order payment/dispute routes — map per screen |
-| 36–37 | POST `/api/v1/admin/broadcasts[/{id}/dispatch]` | Ops broadcasts |
-| 40–42 | exceptions dashboard / sla-overrides / audit-logs | audit+exceptions = REAL under `/admin/*`; sla-overrides = CONTRACT |
-| 43–45 | categories admin CRUD | CONTRACT |
+| 4–5 | vendor inventory continuous-scan/publish | CONTRACT — session/publish authority still open |
+| 17–20 | payments/disputes variants | partially REAL; exact direct-transfer/payment-id verify and dispute resolve paths still open |
+| 41 | POST `/api/v1/admin/sla-overrides` | CONTRACT — canonical deadline column name requires clarification |
 
 Any screen needing a `CONTRACT` row before backend HTTP exists → **MOCK adapter** (same method/path/envelope), tagged `MOCK` in use-notes; no business rules in mock.
 
