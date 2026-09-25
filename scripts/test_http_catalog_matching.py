@@ -279,7 +279,8 @@ def test_unknown_barcode_creates_quarantined_candidate_idempotently():
                 "create_candidate": True,
             },
         )
-        assert conflicting.status_code == 400
+        assert conflicting.status_code == 422
+        assert conflicting.json()["error"]["code"] == "INVALID_REQUEST"
         barcode_only = "626998" + str(uuid4().int % 1000000000).zfill(9)
         barcode_payload = {
             "barcode": barcode_only,
