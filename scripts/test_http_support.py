@@ -231,6 +231,39 @@ class TestAddMessage:
         assert resp.json()["data"]["sender_type"] == "USER"
 
 
+class TestSupportAssignment:
+    def test_assign_case_uses_canonical_route(self, client):
+        data = _seed_support(uuid4().hex[:8], include_ops=True)
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Assign test"},
+        )
+        case_id = create_resp.json()["data"]["id"]
+        resp = client.post(
+            f"/api/v1/support/cases/{case_id}/assign",
+            headers={"Authorization": f"Bearer {data['o_token']}"},
+            json={"assignee_user_id": data["ou"]},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["assigned_to_user_id"] == data["ou"]
+
+    def test_status_alias_uses_canonical_route(self, client):
+        data = _seed_support(uuid4().hex[:8], include_ops=True)
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Status route test"},
+        )
+        case_id = create_resp.json()["data"]["id"]
+        resp = client.patch(
+            f"/api/v1/support/cases/{case_id}/status",
+            headers={"Authorization": f"Bearer {data['o_token']}"},
+            json={"target_status": "IN_PROGRESS"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["status"] == "IN_PROGRESS"
+
 class TestTransitionCase:
     def test_transition_to_in_progress(self, client):
         data = _seed_support(uuid4().hex[:8], include_ops=True)
