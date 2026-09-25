@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, status
 
 from scripts.api.dependencies import get_application_boundary
 from scripts.api.errors import success_payload
-from scripts.api.schemas import DisputeOpenRequest
+from scripts.api.schemas import DisputeOpenRequest, DisputeResolveRequest
 
 
 router = APIRouter(prefix="/orders", tags=["disputes"])
@@ -48,4 +48,21 @@ def get_dispute(
 ):
     return success_payload(
         boundary.dispute_get(dispute_id=str(dispute_id))
+    )
+
+
+
+@disputes_router.patch("/{dispute_id}/resolve")
+def resolve_dispute(
+    dispute_id: UUID,
+    payload: DisputeResolveRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.dispute_resolve(
+            dispute_id=str(dispute_id),
+            outcome=payload.outcome,
+            approved_amount_toman=payload.approved_amount_toman,
+            reason=payload.reason,
+        )
     )
