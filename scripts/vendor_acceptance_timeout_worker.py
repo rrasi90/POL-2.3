@@ -116,9 +116,11 @@ class VendorAcceptanceTimeoutWorker:
             cur.execute(
                 """
                 SELECT o.order_number, o.order_group_id, o.retailer_id, o.vendor_id,
-                       r.organization_id AS retailer_organization_id
+                       r.organization_id AS retailer_organization_id,
+                       v.organization_id AS vendor_organization_id
                 FROM orders o
                 JOIN retailers r ON r.id = o.retailer_id
+                JOIN vendors v ON v.id = o.vendor_id
                 WHERE o.id = %s
                 """,
                 (order_id,),
@@ -183,13 +185,24 @@ class VendorAcceptanceTimeoutWorker:
                 SELECT om.user_id, om.organization_id
                 FROM organization_memberships om
                 JOIN organizations org ON org.id = om.organization_id
-                WHERE om.organization_id = %s
+                JOIN users u ON u.id = om.user_id
+                WHERE om.organization_id IN (%s, %s)
                   AND om.status = 'ACTIVE'
                   AND org.status = 'ACTIVE'
-                  AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
-                ORDER BY om.user_id
+                  AND u.is_active = TRUE
+                  AND (
+                    (om.organization_id = %s AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF'))
+                    OR
+                    (om.organization_id = %s AND om.role IN ('VENDOR_OWNER', 'VENDOR_STAFF'))
+                  )
+                ORDER BY om.organization_id, om.user_id
                 """,
-                (order["retailer_organization_id"],),
+                (
+                    order["retailer_organization_id"],
+                    order["vendor_organization_id"],
+                    order["retailer_organization_id"],
+                    order["vendor_organization_id"],
+                ),
             )
             recipients = cur.fetchall()
 
