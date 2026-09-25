@@ -71,7 +71,7 @@
 | OTP length 4 vs 6 | D-018 | **RESOLVED** (this session) | `operational_config.OTP_CODE_LENGTH = 4`; **both** login + delivery schemas `^\d{4}$` (G-022 closed); dispatch persists 4-digit `delivery_otp` |
 | Multi-vendor basket | D-014 | **RESOLVED** | enforced |
 | PG 18 canonical | D-015 | **RESOLVED** | host PG 18.2 |
-| Refresh-token rotation | D-018 note | **OPEN** | Stage 10 owns closure; do not invent policy |
+| Refresh-token rotation | D-018 note | **SOURCE IMPLEMENTED / POLICY OPEN** | Current source rotates refresh tokens and rejects replay; product/security policy remains an explicit D-018 decision and is not inferred from implementation |
 | Invoice timing | consolidated plan | **OPEN** | default: invoice on order ACCEPTED per existing finance routes; confirm before finance e2e |
 | Storefront write fields | D-024 | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
 | Delegated permissions | ops permissions | **OPEN** | OP-11 GAP; no fake CRUD |
