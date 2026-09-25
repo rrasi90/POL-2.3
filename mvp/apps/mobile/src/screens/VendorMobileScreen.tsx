@@ -6,7 +6,7 @@ import type { Role } from "../types";
 import { spacing, useThemedStyles, type Palette } from "../theme";
 
 type Order = { id: string; order_number?: string | null; order_status?: string | null; total_amount_toman?: number | string | null };
-type Inv = { id: string; vendor_product_id?: string | null; product_name?: string | null; stock_quantity?: number | null; available_quantity?: number | null; reserved_quantity?: number | null };
+type Inv = { id: string; vendor_product_id?: string | null; product_name?: string | null; physical_quantity?: number | null; available_quantity?: number | null; reserved_quantity?: number | null };
 type Invoice = { id: string; invoice_number?: string | null; status?: string | null; total_amount_toman?: number | string | null; issued_at?: string | null };
 type Referral = { id: string; status?: string | null; referral_code?: string | null; referred_organization_id?: string | null };
 type Settlement = { id: string; settlement_number?: string | null; status?: string | null; amount_toman?: number | string | null };
@@ -136,8 +136,8 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
 }
 function InventoryEditor(props: { row: Inv; onSave: (row: Inv, raw: string) => Promise<void> }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
-  const [value, setValue] = useState(String(props.row.stock_quantity ?? 0));
-  useEffect(() => setValue(String(props.row.stock_quantity ?? 0)), [props.row.stock_quantity]);
+  const [value, setValue] = useState(String(props.row.physical_quantity ?? 0));
+  useEffect(() => setValue(String(props.row.physical_quantity ?? 0)), [props.row.physical_quantity]);
   return (
     <Card>
       <Text style={styles.h2}>{props.row.product_name || props.row.id}</Text>
