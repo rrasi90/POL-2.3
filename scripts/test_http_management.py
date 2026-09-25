@@ -130,14 +130,31 @@ def test_vendor_customers_and_staff_are_tenant_scoped(client, management_env):
     assert resp.json()["success"] is True
     assert resp.json()["data"]["customers"] == []
 
+    phone = f"+9891{uuid4().hex[:8]}"
     invite = client.post(
         "/api/v1/vendors/staff/invite",
         headers={"Authorization": f"Bearer {management_env['vendor']}"},
-        json={"phone_number": f"+9891{uuid4().hex[:8]}", "full_name": "Invited Staff"},
+        json={"phone_number": phone, "full_name": "Invited Staff"},
     )
     assert invite.status_code == 201
-    assert invite.json()["data"]["role"] == "VENDOR_STAFF"
-    assert invite.json()["data"]["status"] == "INVITED"
+    data = invite.json()["data"]
+    assert data["role"] == "VENDOR_STAFF"
+    assert data["status"] == "INVITED"
+
+    conn = management_env["conn"]
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                DELETE FROM organization_memberships
+                WHERE organization_id=%s AND user_id=%s
+                """,
+                (management_env["vendor_org"], data["user_id"]),
+            )
+            cur.execute("DELETE FROM users WHERE id=%s", (data["user_id"],))
+        conn.commit()
+    finally:
+        conn.rollback()
 
 
 def test_only_vendor_owner_can_invite_staff(client, management_env):
