@@ -255,3 +255,52 @@ def test_basket_not_found_rejected():
                 )
     finally:
         conn.close()
+
+
+
+def test_forged_vendor_product_rejected():
+    conn = _db()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _seed_basket_and_plan(cur, uuid4().hex[:8])
+        conn.commit()
+        forged = [dict(data["vendor_allocations"][0], vendor_product_id=str(uuid4()))]
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            with pytest.raises(AllocationIntegrityError, match="does not exist"):
+                validate_allocation_against_basket(
+                    cur, data["basket_id"], data["plan_id"], data["retailer_id"], forged
+                )
+    finally:
+        conn.close()
+
+
+def test_forged_quantity_rejected_against_basket():
+    conn = _db()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _seed_basket_and_plan(cur, uuid4().hex[:8])
+        conn.commit()
+        forged = [dict(data["vendor_allocations"][0], quantity=9, amount_toman=4500000)]
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            with pytest.raises(AllocationIntegrityError, match="Quantity mismatch"):
+                validate_allocation_against_basket(
+                    cur, data["basket_id"], data["plan_id"], data["retailer_id"], forged
+                )
+    finally:
+        conn.close()
+
+
+def test_forged_line_total_rejected():
+    conn = _db()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _seed_basket_and_plan(cur, uuid4().hex[:8])
+        conn.commit()
+        forged = [dict(data["vendor_allocations"][0], amount_toman=4999999)]
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            with pytest.raises(AllocationIntegrityError, match="Line amount mismatch"):
+                validate_allocation_against_basket(
+                    cur, data["basket_id"], data["plan_id"], data["retailer_id"], forged
+                )
+    finally:
+        conn.close()
