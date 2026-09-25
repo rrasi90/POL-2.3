@@ -412,7 +412,7 @@ def resolve_delivery_exception(
     exception_id: UUID,
     payload: DeliveryExceptionResolveRequest,
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "VENDOR_OWNER"))] = None,
+    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN", "VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.resolve_delivery_exception(
@@ -428,6 +428,7 @@ def escalate_delivery_exception(
     exception_id: UUID,
     payload: DeliveryExceptionEscalateRequest | None = None,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN", "VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.escalate_delivery_exception(
