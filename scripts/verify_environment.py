@@ -52,6 +52,7 @@ EXPECTED_MIGRATIONS = [
     "030_delivery_otp_column.sql",
     "031_delivery_exceptions.sql",
     "032_cross_entity_integrity_and_append_only_guards.sql",
+    "033_delivery_lifecycle_and_pod_integrity.sql",
 ]
 EXPECTED_TABLE_COUNT = 95
 EXPECTED_CORE_TABLES = [
