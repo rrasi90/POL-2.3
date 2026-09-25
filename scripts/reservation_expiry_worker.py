@@ -97,9 +97,10 @@ class ReservationExpiryWorker:
                 INSERT INTO inventory_audit_log (
                     vendor_id, vendor_product_id, old_quantity, new_quantity,
                     old_price_toman, new_price_toman,
-                    source_trigger, reference_id, actor_user_id
+                    source_trigger, reference_id, actor_user_id,
+                    old_reserved_quantity, new_reserved_quantity
                 )
-                VALUES (%s,%s,%s,%s,NULL,NULL,%s,%s,%s)
+                VALUES (%s,%s,%s,%s,NULL,NULL,%s,%s,NULL,%s,%s)
                 """,
                 (
                     reservation["vendor_id"],
@@ -108,7 +109,8 @@ class ReservationExpiryWorker:
                     physical,
                     "RESERVATION_EXPIRY",
                     str(reservation["id"]),
-                    uuid.UUID(int=0),
+                    reserved_before,
+                    int(inventory_after["reserved_quantity"]),
                 ),
             )
 
