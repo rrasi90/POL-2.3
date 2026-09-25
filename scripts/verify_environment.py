@@ -51,6 +51,7 @@ EXPECTED_MIGRATIONS = [
     "029_order_timeline_events.sql",
     "030_delivery_otp_column.sql",
     "031_delivery_exceptions.sql",
+    "032_cross_entity_integrity_and_append_only_guards.sql",
 ]
 EXPECTED_TABLE_COUNT = 95
 EXPECTED_CORE_TABLES = [
