@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends
 
 from scripts.api.dependencies import get_application_boundary, require_roles
 from scripts.api.errors import success_payload
