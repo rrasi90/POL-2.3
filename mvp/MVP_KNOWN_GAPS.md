@@ -210,3 +210,18 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Regression proof:** scripts/test_auth_contract.py::test_static_otp_is_strictly_test_only covers explicit test mode plus development, unknown and unset environment cases.
 - **CI status:** source and test remediation committed; fresh GitHub Actions certification remains blocked by the current runner/check execution failure before useful job steps.
 - **Status:** SOURCE REMEDIATED / CI PENDING
+
+## G-034 — Delivery exception notification routing (RESOLVED — 2026-09-25)
+
+- Finding: delivery exception outbox events were emitted without explicit user/organization targets, while the canonical integration worker requires explicit routing.
+- Resolution: report events route to active vendor members, resolved events to active retailer members, escalation events to active operator/admin members; per-recipient dedupe keys and INBOX channel hints are persisted.
+- Additional hardening: report/get/list/resolve/escalate paths now enforce tenant and actor boundaries at the service layer.
+- Notification templates added in migration 042.
+- Status: RESOLVED in source; fresh CI certification remains separate.
+
+## G-035 — Fulfillment lifecycle notification template coverage (RESOLVED — 2026-09-25)
+
+- Finding: lifecycle events emitted by fulfillment/timeout workers included PREPARING, READY, DISPATCHED, DELIVERY_OTP_GENERATED, DELIVERED and CANCELLED, but the notification template registry did not cover all emitted events.
+- Resolution: migration 045 adds active INBOX templates for all six events. ORDER_DELIVERED and ORDER_CANCELLED now route to both commercial parties where the canonical notification matrix requires it.
+- Status: RESOLVED in source; fresh CI certification remains separate.
+
