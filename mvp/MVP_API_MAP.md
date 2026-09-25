@@ -268,16 +268,16 @@ feedback_*, support_* (HTTP now REAL for cases), referral (HTTP REAL), return_re
 | Order list/detail/group/timeline | orders GET/* | — |
 | Vendor accept/reject/partial | orders accept/reject/partial | — |
 | Fulfillment dispatch/POD | orders preparing/ready/dispatch/deliver | handoff UX (D-023) |
-| Returns/disputes | orders returns/disputes + `GET /ops/returns` | — |
+| Returns/disputes | orders returns/disputes + `GET /ops/returns` + `PATCH /disputes/{id}/resolve` | canonical dispute resolution REAL |
 | Support | support/cases/* | — |
 | Notifications | notifications/* | inbox path conflict if contract-literal |
 | Preferences | notifications/preferences | — |
-| Vendor catalog/price/inventory | catalog/vendors/*, inventory/daily/* | continuous-scan/publish CONTRACT |
+| Vendor catalog/price/inventory | catalog/vendors/*, inventory/daily/*, `/vendors/inventory/continuous-scan`, `/vendors/inventory/publish` | continuous scan + publish REAL |
 | Invoices/settlements | finance routes | — |
 | Reconciliation | finance/reconciliation | — |
 | Referrals | referrals/* | reward balance remains out of MVP by D-016 |
 | Field tasks | field/tasks* | — |
-| Admin audit/exceptions | admin/* | users/orgs, SLA override, audit/exceptions are REAL; broadcasts/categories remain CONTRACT |
+| Admin audit/exceptions | admin/* | users/orgs, SLA overrides, broadcasts, categories, audit/exceptions are REAL |
 | Pilot analytics O-09 | `GET /ops/analytics`, `GET /ops/analytics/weekly` | KPI service / live SQL |
 | Vendor customers V-09 | `GET /vendors/customers?query=&offset=&limit=` | tenant-scoped customers derived from vendor orders |
 | Staff/access V-11 | `GET/POST/PATCH /vendors/staff*` | vendor-owner managed membership lifecycle |
