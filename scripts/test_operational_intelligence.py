@@ -489,7 +489,29 @@ def test_revalidation_checkout_success(db):
                 (str(uuid.uuid4()), vp_id))
 
     b_id = BasketService.create_basket(cur, ret_id)
+    cur.execute(
+        """
+        INSERT INTO basket_items (
+            id, basket_id, product_id, requested_quantity, requested_unit, pack_quantity
+        )
+        VALUES (%s,%s,%s,10,'CARTON',1)
+        RETURNING id
+        """,
+        (str(uuid.uuid4()), b_id, p_id),
+    )
+    bi_id = cur.fetchone()["id"]
     plan = AllocationService.create_plan(cur, b_id, 1, 1, 300000)
+    cur.execute(
+        """
+        INSERT INTO allocation_items (
+            id, allocation_plan_id, basket_item_id, vendor_id, vendor_product_id,
+            allocated_quantity, allocated_unit, unit_price_snapshot_toman,
+            line_total_toman, status
+        )
+        VALUES (%s,%s,%s,%s,%s,10,'CARTON',30000,300000,'ALLOCATED')
+        """,
+        (str(uuid.uuid4()), plan["id"], bi_id, v_id, vp_id),
+    )
     conn.commit()
 
     valid_alloc = [{
