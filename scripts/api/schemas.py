@@ -398,7 +398,11 @@ class DisputeResolveRequest(APIBaseModel):
 
 
 class BarcodeMatchRequest(APIBaseModel):
-    barcode: str = Field(min_length=8, max_length=32)
+    # Legacy contract shape (raw_barcode + scan_source) remains accepted.
+    raw_barcode: str | None = Field(default=None, min_length=8, max_length=32)
+    scan_source: str | None = Field(default=None, min_length=1, max_length=50)
+    # Extended remediation shape adds optional candidate creation inputs.
+    barcode: str | None = Field(default=None, min_length=8, max_length=32)
     proposed_title: str | None = Field(default=None, max_length=255)
     vendor_sku: str | None = Field(default=None, max_length=100)
     packaging_unit: str = Field(default="UNIT", min_length=1, max_length=30)
