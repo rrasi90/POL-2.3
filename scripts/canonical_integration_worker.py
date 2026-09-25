@@ -107,9 +107,12 @@ class CanonicalIntegrationWorker:
             SELECT 1
             FROM organization_memberships om
             JOIN organizations o ON o.id = om.organization_id
+            JOIN users u ON u.id = om.user_id
             WHERE om.user_id = %s AND om.organization_id = %s
-              AND om.status = 'ACTIVE' AND o.status = 'ACTIVE'
-            FOR SHARE OF om, o;
+              AND om.status = 'ACTIVE'
+              AND o.status = 'ACTIVE'
+              AND u.is_active = TRUE
+            FOR SHARE OF om, o, u;
             """,
             (target_user_id, target_org_id),
         )
