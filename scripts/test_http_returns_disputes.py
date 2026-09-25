@@ -305,8 +305,9 @@ class TestDisputeOpen:
         assert body["success"] is True
         assert body["data"]["dispute_status"] == "OPEN"
         assert body["data"]["description"] == "Wrong items delivered, vendor unresponsive"
+        assert body["data"]["claimed_amount_toman"] == 1000000
 
-    def test_vendor_cannot_open_dispute(self, client):
+        with _db() as verify_conn:\n            with verify_conn.cursor(cursor_factory=RealDictCursor) as cur:\n                cur.execute(\n                    "SELECT event_name, target_user_id, target_organization_id FROM outbox_events WHERE event_name = %s AND aggregate_id = %s",\n                    ("DISPUTE_OPENED", data["oi"]),\n                )\n                events = cur.fetchall()\n                assert events and all(e["target_user_id"] and e["target_organization_id"] for e in events)\n    def test_vendor_cannot_open_dispute(self, client):
         data = _seed_delivered_order(uuid4().hex[:8])
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
@@ -343,7 +344,7 @@ class TestDisputeFilingWindow:
             headers={"Authorization": f"Bearer {data['r_token']}"},
             json={"claimed_amount_toman": 1000000, "description": "Expired dispute window"},
         )
-        assert resp.status_code == 400
+        assert resp.status_code == 422
 
 class TestDisputeQuery:
     def test_get_dispute_by_tenant(self, client):
