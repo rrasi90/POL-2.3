@@ -67,6 +67,8 @@ def _seed_dispatched(suffix, otp="1234"):
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             ru = str(uuid4()); ro = str(uuid4()); ri = str(uuid4())
             vu = str(uuid4()); vo = str(uuid4()); vi = str(uuid4())
+            brand_id = str(uuid4()); category_id = str(uuid4()); subcategory_id = str(uuid4())
+            product_id = str(uuid4()); vendor_product_id = str(uuid4())
             bi = str(uuid4()); pi = str(uuid4()); ogi = str(uuid4())
             oi = str(uuid4()); di = str(uuid4())
 
@@ -84,6 +86,20 @@ def _seed_dispatched(suffix, otp="1234"):
                         (str(uuid4()), vo, vu))
             cur.execute("INSERT INTO vendors (id, user_id, organization_id, business_name, warehouse_address, min_order_value_toman, status) "
                         "VALUES (%s, %s, %s, \'V\', \'Ahvaz\', 1000000, \'ACTIVE\')", (vi, vu, vo))
+            cur.execute("INSERT INTO brands (id,name_fa,slug) VALUES (%s,'Proof Brand',%s)",
+                        (brand_id, f'proof-brand-{suffix}'))
+            cur.execute("INSERT INTO categories (id,name_fa,slug) VALUES (%s,'Proof Category',%s)",
+                        (category_id, f'proof-category-{suffix}'))
+            cur.execute("INSERT INTO subcategories (id,category_id,name_fa,slug) VALUES (%s,%s,'Proof Subcategory',%s)",
+                        (subcategory_id, category_id, f'proof-subcategory-{suffix}'))
+            cur.execute(
+                "INSERT INTO products (id,master_sku,canonical_name_fa,brand_id,category_id,subcategory_id,is_active) VALUES (%s,%s,'Proof Product',%s,%s,%s,TRUE)",
+                (product_id, f'PROOF-{suffix}', brand_id, category_id, subcategory_id),
+            )
+            cur.execute(
+                "INSERT INTO vendor_products (id,vendor_id,product_id,vendor_sku,packaging_unit,pack_quantity,listing_status,is_active) VALUES (%s,%s,%s,%s,'CARTON',1,'ACTIVE',TRUE)",
+                (vendor_product_id, vi, product_id, f'PROOF-VP-{suffix}'),
+            )
             cur.execute("INSERT INTO baskets (id, retailer_id, status, version) VALUES (%s, %s, \'OPEN\', 1)", (bi, ri))
             cur.execute("INSERT INTO allocation_plans (id, basket_id, basket_version, status, strategy, vendor_count, total_estimated_toman, expires_at) "
                         "VALUES (%s, %s, 1, \'CONFIRMED\', \'SINGLE_VENDOR\', 1, 5000000, now() + interval \'15 minutes\')", (pi, bi))
@@ -93,8 +109,21 @@ def _seed_dispatched(suffix, otp="1234"):
                         "VALUES (%s, %s, %s, %s, %s, %s, \'DISPATCHED\', 5000000, now(), now())",
                         (oi, f"ORD-{suffix}", ogi, pi, ri, vi))
             cur.execute(
+                """
+                INSERT INTO order_items (
+                    id, order_id, product_id, vendor_product_id,
+                    product_name_snapshot, brand_name_snapshot, vendor_sku_snapshot,
+                    packaging_unit_snapshot, pack_quantity_snapshot,
+                    ordered_quantity, accepted_quantity, delivered_quantity,
+                    unit_price_toman, total_line_amount_toman, fulfillment_status
+                )
+                VALUES (%s,%s,%s,%s,'Proof Product','Proof Brand',%s,'CARTON',1,10,10,0,500000,5000000,'PENDING')
+                """,
+                (str(uuid4()), oi, product_id, vendor_product_id, f'PROOF-VP-{suffix}'),
+            )
+            cur.execute(
                 "INSERT INTO deliveries (id, order_id, vendor_id, delivery_status, driver_name, vehicle_plate, delivery_otp, dispatched_at, created_at) "
-                "VALUES (%s, %s, %s, \'IN_TRANSIT\', \'Ali\', \'12-A-345\', %s, now(), now())",
+                "VALUES (%s, %s, %s, \'ARRIVED\', \'Ali\', \'12-A-345\', %s, now(), now())",
                 (di, oi, vi, otp),
             )
             media_id = str(uuid4())
@@ -135,15 +164,15 @@ class TestOTPVerification:
             headers={"Authorization": f"Bearer {data['r_token']}"},
             json={"recipient_name": "Reza", "otp_code": "9999"},
         )
-        assert resp.status_code == 200
-        assert resp.json()["data"]["otp_verified"] is False
+        assert resp.status_code == 422
+        assert resp.json()["success"] is False
 
     def test_deliver_without_otp(self, client):
         data = _seed_dispatched(uuid4().hex[:8], "1234")
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza"},
+            json={"recipient_name": "Reza", "otp_code": data["otp"]},
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["otp_verified"] is False
@@ -155,7 +184,7 @@ class TestProofType:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "proof_type": "PHYSICAL_SIGNATURE"},
+            json={"recipient_name": "Reza", "otp_code": data["otp"], "proof_type": "PHYSICAL_SIGNATURE"},
         )
         assert resp.status_code == 200
         proof_resp = client.get(
@@ -169,7 +198,7 @@ class TestProofType:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "proof_type": "PHOTO_PROOF", "proof_media_id": data["media_id"]},
+            json={"recipient_name": "Reza", "otp_code": data["otp"], "proof_type": "PHOTO_PROOF", "proof_media_id": data["media_id"]},
         )
         assert resp.status_code == 200
 
@@ -180,7 +209,7 @@ class TestIssueReporting:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "issue_reported": "2 cartons damaged"},
+            json={"recipient_name": "Reza", "otp_code": data["otp"], "issue_reported": "2 cartons damaged"},
         )
         assert resp.status_code == 200
 
