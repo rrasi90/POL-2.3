@@ -65,7 +65,7 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
     void p.catch((e) => setError(e instanceof Error ? e.message : "بارگذاری ناموفق بود")).finally(() => setLoading(false));
   }, [tab, loadOrders, loadInventory, loadDaily, loadSettlements, loadInvoices, loadReferrals]);
 
-  async function action(orderId: string, actionName: "accept" | "reject" | "preparing" | "ready" | "dispatch"): Promise<void> {
+  async function action(orderId: string, actionName: "accept" | "preparing" | "ready"): Promise<void> {
     setLoading(true); setError(null);
     try { await api.post("/api/v1/orders/" + orderId + "/" + actionName, {}); await loadOrders(); }
     catch (e) { setError(e instanceof Error ? e.message : "عملیات ناموفق بود"); }
@@ -75,7 +75,7 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
     const n = Number(raw);
     if (!Number.isFinite(n) || n < 0) { setError("موجودی باید عددی غیرمنفی باشد."); return; }
     setLoading(true); setError(null);
-    try { await api.patch("/api/v1/catalog/vendors/products/" + String(row.vendor_product_id || row.id) + "/inventory", { stock_quantity: n }); await loadInventory(); }
+    try { await api.patch("/api/v1/catalog/vendors/products/" + String(row.vendor_product_id || row.id) + "/inventory", { new_physical_quantity: n }); await loadInventory(); }
     catch (e) { setError(e instanceof Error ? e.message : "ذخیره موجودی ناموفق بود"); }
     finally { setLoading(false); }
   }
@@ -83,7 +83,7 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
     setLoading(true); setError(null);
     try {
       if (!changes) await api.post("/api/v1/inventory/daily/" + dailyDate + "/confirm", {});
-      else await api.post("/api/v1/inventory/daily/" + dailyDate + "/confirm-with-changes", { lines: (daily?.lines || []).map((x) => ({ id: x.id, product_id: x.product_id, confirmed_quantity: Number(dailyEdits[x.id] || 0) })) });
+      else await api.post("/api/v1/inventory/daily/" + dailyDate + "/confirm-with-changes", { changes: (daily?.lines || []).map((x) => ({ vendor_product_id: x.vendor_product_id || x.id, declared_quantity: Number(dailyEdits[x.id] || 0) })) });
       await loadDaily();
     } catch (e) { setError(e instanceof Error ? e.message : "تأیید موجودی ناموفق بود"); }
     finally { setLoading(false); }
@@ -109,10 +109,10 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
             <Text style={styles.h2}>{o.order_number || o.id}</Text>
             <Text style={styles.metric}>{money(o.total_amount_toman)}</Text>
             <View style={styles.row}>
-              {["SUBMITTED", "CREATED"].includes(o.order_status || "") ? <><Btn label="پذیرش" onPress={() => void action(o.id, "accept")} disabled={loading} /><Btn label="رد" tone="ghost" onPress={() => void action(o.id, "reject")} disabled={loading} /></> : null}
+              {["SUBMITTED", "CREATED"].includes(o.order_status || "") ? <><Btn label="پذیرش" onPress={() => void action(o.id, "accept")} disabled={loading} /><Btn label="رد با جزئیات" tone="ghost" onPress={() => props.onOpenOrder(o.id)} disabled={loading} /></> : null}
               {["ACCEPTED", "PARTIALLY_ACCEPTED"].includes(o.order_status || "") ? <Btn label="آماده‌سازی" onPress={() => void action(o.id, "preparing")} disabled={loading} /> : null}
               {o.order_status === "PREPARING" ? <Btn label="آماده ارسال" onPress={() => void action(o.id, "ready")} disabled={loading} /> : null}
-              {o.order_status === "READY" ? <Btn label="ارسال" onPress={() => void action(o.id, "dispatch")} disabled={loading} /> : null}
+              {o.order_status === "READY" ? <Btn label="ثبت ارسال با جزئیات" onPress={() => props.onOpenOrder(o.id)} disabled={loading} /> : null}
             </View>
             <Btn label="جزئیات سفارش" tone="ghost" onPress={() => props.onOpenOrder(o.id)} />
           </Card>
