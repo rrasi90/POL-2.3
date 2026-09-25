@@ -1507,6 +1507,93 @@ class POLApplicationBoundary:
         )
         return self.cur.fetchall()
 
+    def catalog_products_search(self, *, query: str, category_id: str | None = None, page: int = 1, limit: int = 20):
+        if page < 1 or limit < 1 or limit > 100:
+            raise ValueError("Invalid pagination.")
+        offset = (page - 1) * limit
+        self.cur.execute(
+            """
+            SELECT count(*) AS total
+            FROM products p
+            JOIN brands b ON b.id = p.brand_id
+            WHERE p.is_active = TRUE
+              AND (
+                p.canonical_name_fa ILIKE %s
+                OR b.name_fa ILIKE %s
+                OR p.master_sku ILIKE %s
+                OR similarity(p.canonical_name_fa, %s) > 0.15
+              )
+              AND (%s::uuid IS NULL OR p.category_id = %s::uuid)
+            """,
+            (f"%{query}%", f"%{query}%", f"%{query}%", query, category_id, category_id),
+        )
+        total = int(self.cur.fetchone()["total"])
+
+        self.cur.execute(
+            """
+            SELECT p.id, p.master_sku, p.canonical_name_fa,
+                   b.name_fa AS brand_name,
+                   p.default_pack_unit AS pack_unit,
+                   p.default_pack_quantity AS pack_quantity,
+                   COALESCE(price.lowest_price, NULL) AS lowest_unit_price_toman,
+                   COALESCE(stock.available_vendors_count, 0) AS available_vendors_count,
+                   media.primary_image_url
+            FROM products p
+            JOIN brands b ON b.id = p.brand_id
+            LEFT JOIN LATERAL (
+                SELECT MIN(vpr.price_toman) AS lowest_price
+                FROM vendor_products vprp
+                JOIN vendor_prices vpr
+                  ON vpr.vendor_product_id = vprp.id AND vpr.is_current = TRUE
+                JOIN vendors vv ON vv.id = vprp.vendor_id AND vv.status = 'ACTIVE'
+                WHERE vprp.product_id = p.id
+                  AND vprp.is_active = TRUE
+                  AND vprp.listing_status = 'ACTIVE'
+            ) price ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT count(DISTINCT vprp.vendor_id) AS available_vendors_count
+                FROM vendor_products vprp
+                JOIN vendors vv ON vv.id = vprp.vendor_id AND vv.status = 'ACTIVE'
+                JOIN vendor_inventory vi ON vi.vendor_product_id = vprp.id
+                WHERE vprp.product_id = p.id
+                  AND vprp.is_active = TRUE
+                  AND vprp.listing_status = 'ACTIVE'
+                  AND vi.available_quantity > 0
+            ) stock ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT CASE
+                    WHEN ma.storage_key LIKE 'http://%' OR ma.storage_key LIKE 'https://%' THEN ma.storage_key
+                    ELSE NULL
+                END AS primary_image_url
+                FROM product_media pm
+                JOIN media_assets ma ON ma.id = pm.media_asset_id AND ma.status = 'READY'
+                WHERE pm.product_id = p.id
+                ORDER BY pm.is_primary DESC, pm.display_order, pm.created_at
+                LIMIT 1
+            ) media ON TRUE
+            WHERE p.is_active = TRUE
+              AND (
+                p.canonical_name_fa ILIKE %s
+                OR b.name_fa ILIKE %s
+                OR p.master_sku ILIKE %s
+                OR similarity(p.canonical_name_fa, %s) > 0.15
+              )
+              AND (%s::uuid IS NULL OR p.category_id = %s::uuid)
+            ORDER BY similarity(p.canonical_name_fa, %s) DESC, p.canonical_name_fa
+            LIMIT %s OFFSET %s
+            """,
+            (f"%{query}%", f"%{query}%", f"%{query}%", query, category_id, category_id, query, limit, offset),
+        )
+        rows = []
+        for row in self.cur.fetchall():
+            item = dict(row)
+            item["id"] = str(item["id"])
+            rows.append(item)
+        return {
+            "products": rows,
+            "pagination": {"page": page, "limit": limit, "total": total},
+        }
+
     def catalog_categories(self):
         self.cur.execute(
             """
