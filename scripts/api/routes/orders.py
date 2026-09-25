@@ -515,17 +515,3 @@ def verify_payment_by_id(
             notes=payload.notes if payload else None,
         )
     )
-
-@router.post("/{order_id}/payments/verify", status_code=200)
-def verify_payment(
-    order_id: UUID,
-    payload: PaymentVerifyRequest | None = None,
-    boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "VENDOR_OWNER"))] = None,
-):
-    return success_payload(
-        boundary.verify_payment(
-            order_id=str(order_id),
-            notes=payload.notes if payload else None,
-        )
-    )
