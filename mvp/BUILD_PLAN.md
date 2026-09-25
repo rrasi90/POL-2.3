@@ -15,21 +15,21 @@
 | Step | Name | Status | Notes |
 |------|------|--------|-------|
 | 1 | Infra / DB | **DONE** (2026-09-23) | Host PostgreSQL 18 owns schema: `pol` (live API, 95 tables, migrations 001–031 applied) + `pol_test` (suite, 95 tables). Docker container `pol_test` = 0 tables (ignore). Full research suite collected 497 tests. |
-| 2 | Open decisions | **PARTIAL** | D-014/015/016/017/018/021–025 resolved from register. G-022 closed (delivery OTP 4-digit + persisted). Remaining: refresh-token rotation (Stage 10), invoice timing, storefront write fields, delegated permissions, design-tool MCP access → §2. |
+| 2 | Open decisions | **PARTIAL** | Resolved: D-014/015/016/017/021–025 and barcode/runtime remediation. Remaining explicit decisions: D-018 policy wording, invoice timing, D-024 storefront write scope, plus external design/observability/provider dependencies → §2. |
 | 3 | Phase 0 + GATE 0 | **DONE** | Artifacts + skeleton; typecheck/build green. |
 | 4 | Phase 1 foundation + design system | **DONE** | tokens, ui package, shell, middleware role gates. |
-| 5 | Full Web MVP | **DONE (impl + partial e2e)** | 68 screens cycle 5: **40 IMPLEMENTED, 19 VERIFIED, 8 GAP, 1 N/A**; typecheck/lint/build green; live API+route smoke for SH-AUTH/PROFILE/NOTIF, R-02/03/10/16/17/18, V-04/07/08/10/12/14, F-01. |
-| 6 | Phase 3 Android | **IN PROGRESS** | Supported mobile parity is implemented and QA Cycles 1–3 are evidenced. Cycle 3 closed on mobile run `35893284378` with typecheck, 23/23 functional QA, 11/11 regression QA, Expo config validation and Android export all green. Remaining: Night visual verification, barcode D-028/unsupported contracts, and final live checkout gates. |
+| 5 | Full Web MVP | **IMPLEMENTED / PARTIAL E2E** | Current screen matrix remains the authoritative capability ledger; management/customer/staff/candidate surfaces are now source-implemented. Historical cycle-5 counts remain historical evidence only. |
+| 6 | Phase 3 Android | **SOURCE IMPLEMENTED / REVERIFY** | Supported mobile parity plus post-remediation LOCAL-01…04 evidence is recorded. Barcode matching backend is implemented; camera transport remains a separate runtime scope. Fresh CI reruns currently fail before step-level execution. |
 | 7 | OpenPencil WAVE-02 | **BLOCKED_EXTERNAL** | MCP `:7600` not listening (app not running). WAVE-01 evidence on disk. |
-| 8 | Global QA + regression | **CURRENT GREEN / OPEN FINAL E2E** | Backend run `35893284312` SUCCESS and mobile run `35893284378` SUCCESS on commit `f8ef267e6666a03b483afdd8618585ed82086014`. Final live basket→allocation→checkout→order E2E and idempotency replay remain open. |
+| 8 | Global QA + regression | **SOURCE COMPLETE / FRESH CI BLOCKED** | LOCAL-02 16/16 and LOCAL-03 12/12 are recorded PASS; latest pull-request CI runs fail before useful steps. No fresh green certification is claimed. |
 | 9 | Structural audit | **DONE** (2026-09-23) | `python artifacts/structural_audit.py` → EXIT 0: window_loc=0, console_log=0, fake_success=0 (biz_calc hits all backend). |
 | 10 | Anti-vibe-coding audit | **DONE** (2026-09-23) | same checklist green; rules file restored to `.agents/rules/00-pol-canonical-safety.md`. |
 | 11 | GitHub reconciliation | **DONE (2026-09-23)** | Current code commit `f8ef267e6666a03b483afdd8618585ed82086014` has fresh backend verification CI **SUCCESS** (run 35893284312) and mobile Cycle 3 verification CI **SUCCESS** (run 35893284378). |
 | 12 | Independent 2nd-pass audit | **DONE** | `verify_repository_consistency.py` PASS 8/8 EXIT 0 (D-015/016/017 + hierarchy restored). |
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
-| 14 | Regression | **GREEN (2026-09-23)** | Backend run `35893284312` SUCCESS and Mobile Cycle 3 run `35893284378` SUCCESS on current commit `f8ef267`. Live basket→checkout E2E remains separate/open. |
+| 14 | Regression | **REVERIFY** | Historical backend/mobile CI was green; post-remediation pull-request reruns are currently failing before useful step execution, so fresh certification is pending. Local regression/E2E evidence is recorded separately. |
 | 15 | Repeat until DoD | **OPEN** | DoD = §8; open gaps in `MVP_KNOWN_GAPS.md` + Phase 3 parity remain. |
-| 16 | Phase 5 delivery | **REOPENED** | Mobile verification through Cycle 3 is now closed; final delivery remains open for Night visual verification, live checkout/idempotency E2E, and final reconciliation. |
+| 16 | Phase 5 delivery | **OPEN — FINAL EVIDENCE RECONCILIATION** | Night, live checkout and idempotency local gates are recorded PASS. Remaining closure is fresh CI certification plus explicit product/security/deployment decisions/evidence. |
 
 ---
 
@@ -57,8 +57,8 @@
 
 1. Auth / Profile / Notifications — **DONE**  
 2. Retailer loop (R-01…R-13 + RT-17/18/20/16/19) — **DONE** (R-03B GAP)  
-3. Vendor loop (V-01…V-12 + VD-14…18) — **DONE** (V-09/11 GAP; V-16 N/A web)  
-4. Ops (O-01…O-10 + OP-11…15) — **DONE** (O-07/09/OP-11/13/O-10B GAP)  
+3. Vendor loop (V-01…V-12 + VD-14…18) — **DONE** (V-09/11 source implemented; V-16 mobile-primary/N/A web)  
+4. Ops (O-01…O-10 + OP-11…15) — **DONE with O-07 partial** (OP-11/OP-13/O-10B source implemented)  
 5. Field web parity (F-01…F-05) — **DONE**  
 6. Corporate (C-01…C-08, PUBLIC_ANON) — **DONE**  
 
@@ -76,8 +76,8 @@
 | Storefront write fields | D-024 | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
 | Delegated permissions | ops permissions | **OPEN** | OP-11 GAP; no fake CRUD |
 | Design-tool / OpenPencil MCP | WAVE-02 | **BLOCKED_EXTERNAL** | start OpenPencil app or continue without design-board WAVE-02 |
-| Catalog path `/products/search` vs `/catalog/search` | G-003 | **OPEN** | screens use REAL `/catalog/search`; contract parity = BLOCKED_EXTERNAL only if test demands literal path |
-| Inbox path | G-004 | **OPEN** | screens use REAL `/notifications` |
+| Catalog path `/products/search` vs `/catalog/search` | G-003 | **RESOLVED / DUAL COMPATIBILITY** | both canonical public HTTP paths are registered; current retailer screen uses `/catalog/search` |
+| Inbox path | G-004 | **RESOLVED** | durable `/inbox/items*` and `/notifications*` projections are both registered; screen uses `/notifications` |
 | Delivery OTP 6 vs D-018 4 | G-022 | **RESOLVED** | schema `^\d{4}$`, generation via `OTP_CODE_LENGTH`, dispatch persists `delivery_otp`, UI `maxLength={4}` |
 
 ---
@@ -279,13 +279,13 @@ MVP is DONE only when **all** hold:
 4. [x] Anti-vibe-coding audit pass — **DONE**.  
 5. [x] GitHub reconcile: `git push` main; CI **35837588088 success** on `dbcfb59`.  
 6. [x] Independent second-pass audit; fix D-015/016/017 + hierarchy docs — **DONE** (`verify_repository_consistency` PASS 8/8). Full regression **497/497 PASSED**.  
-7. [x] Phase 3 Field-first Expo screens (F-01…F-05) + parity matrix `src/__tests__/parity.md` — **DONE** (typecheck green); retailer/vendor/ops parity still open.  
+7. [x] Phase 3 Field-first Expo screens (F-01…F-05) + parity matrix — **DONE**; broader supported retailer/vendor/ops parity source is implemented, with fresh CI/device evidence treated separately.  
 8. [ ] WAVE-02 when OpenPencil is available; otherwise keep BLOCKED_EXTERNAL.  
 9. [ ] Phase 5 final report — **REOPENED** living report; update only after current DoD evidence.  
 10. [ ] Verify current mobile workflow at `.github/workflows/pol-mvp-mobile.yml`; fix any type/config/export failures.  
 11. [ ] Run mobile QA cycle 1 from current HEAD: typecheck + Expo config + Android export; record fresh evidence.  
 12. [ ] Run mobile QA cycle 2: functional/error/state-transition verification.  
-13. [ ] Complete supported mobile parity; keep V-09/V-11 and D-028 as GAP/CONTRACT where authoritative APIs/contracts are absent.  
+13. [x] Complete currently supported mobile parity source and post-remediation device gates; retain only explicitly separate runtime/provider/deployment evidence gaps.  
 14. [x] Run mobile QA cycle 3: regression + cross-module consistency — **11/11 PASS** on run `35893284378`; Night visual verification is tracked in `mvp/LOCAL_EXECUTION_TRACKER.md`.  
 15. [ ] Execute LOCAL-02 + LOCAL-03 from `mvp/LOCAL_EXECUTION_TRACKER.md`: live basket → allocation → checkout → order lifecycle E2E + checkout idempotency replay.  
 16. [ ] Run fresh full regression and reconcile all delivery documents before final DoD.
