@@ -24,7 +24,7 @@ class VerifyOTPRequest(APIBaseModel):
 
 
 class RefreshTokenRequest(APIBaseModel):
-    refresh_token: str = Field(min_length=20, max_length=512)
+    refresh_token: str | None = Field(default=None, min_length=20, max_length=512)
 
 
 class SwitchOrganizationRequest(APIBaseModel):
