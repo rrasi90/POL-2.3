@@ -58,6 +58,14 @@ def test_unknown_outbox_events_leave_pending_queue_and_enter_failed_quarantine()
     assert "'FAILED'" in migration
 
 
+def test_dispute_open_event_has_canonical_inbox_template():
+    migration = read("migrations/038_dispute_notification_template.sql")
+    assert "'DISPUTE_OPENED'" in migration
+    assert "'INBOX'" in migration
+    assert "notification_templates" in migration
+    assert "allow_opt_out" in migration
+
+
 def test_payment_reconciliation_rejects_conflicting_trusted_evidence():
     src = read("scripts/payment_reconciliation_worker.py")
     assert "conflicting = len(distinct_values) > 1" in src
