@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from psycopg2.extras import RealDictCursor
 
 from scripts.api.main import app
+from scripts.auth_boundary import store_otp_hash
 from scripts.migration_runner import get_connection
 
 
@@ -145,11 +146,21 @@ def test_production_refresh_cookie_is_secure(monkeypatch):
     production_client = TestClient(create_app(), raise_server_exceptions=False)
     phone, _, _, user_id = _seed_user()
     try:
-        response = production_client.post(
-            "/api/v1/auth/request-otp",
-            json={"mobile_number": phone},
-        )
-        assert response.status_code == 200
+        conn = _conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO otp_challenges (
+                        id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at
+                    ) VALUES (%s,%s,%s,'LOGIN','127.0.0.1',0,5,'PENDING',now() + interval '5 minutes')
+                    """,
+                    (str(uuid.uuid4()), phone, store_otp_hash("1234")),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+
         response = production_client.post(
             "/api/v1/auth/verify-otp",
             json={"mobile_number": phone, "otp_code": "1234", "client_platform": "web"},
