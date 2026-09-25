@@ -788,9 +788,15 @@ class DisputeService:
                    s.gross_amount_toman,
                    s.commission_amount_toman,
                    s.adjustment_amount_toman,
-                   s.net_vendor_amount_toman
+                   s.net_vendor_amount_toman,
+                   ro.organization_id AS retailer_org_id,
+                   vo.organization_id AS vendor_org_id
             FROM disputes d
             JOIN settlements s ON s.order_id=d.order_id AND s.vendor_id=d.vendor_id
+            JOIN retailers r ON r.id=d.retailer_id
+            JOIN vendors v ON v.id=d.vendor_id
+            JOIN organizations ro ON ro.id=r.organization_id
+            JOIN organizations vo ON vo.id=v.organization_id
             WHERE d.id=%s
             ORDER BY s.created_at DESC
             LIMIT 1
