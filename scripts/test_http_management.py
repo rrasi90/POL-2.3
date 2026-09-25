@@ -83,6 +83,15 @@ def management_env():
             """,
             (str(uuid4()), vendor_org, vendor_user),
         )
+        vendor_id = str(uuid4())
+        cur.execute(
+            """
+            INSERT INTO vendors
+                (id,user_id,organization_id,business_name,warehouse_address,min_order_value_toman,status)
+            VALUES (%s,%s,%s,'Management Vendor','Ahvaz',1000000,'ACTIVE')
+            """,
+            (vendor_id, vendor_user, vendor_org),
+        )
         sid_a, token_a = _session(cur, admin_user, admin_org)
         sid_v = str(uuid4())
         token_v = encode_access_token(vendor_user, sid_v, vendor_org, "VENDOR_OWNER")
@@ -103,6 +112,7 @@ def management_env():
         "admin_org": admin_org,
         "vendor_user": vendor_user,
         "vendor_org": vendor_org,
+        "vendor_id": vendor_id,
         "session_ids": [sid_a, sid_v],
     }
     try:
@@ -253,3 +263,84 @@ def test_broadcast_and_category_mutations_reject_non_admin_context(client, manag
     )
     assert broadcast.status_code == 403
     assert category.status_code == 403
+
+
+
+def test_continuous_inventory_scan_and_publish(client, management_env):
+    suffix = uuid4().hex[:8]
+    conn = management_env["conn"]
+    try:
+        brand_id = str(uuid4())
+        category_id = str(uuid4())
+        subcategory_id = str(uuid4())
+        product_id = str(uuid4())
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO brands (id,name_fa,slug) VALUES (%s,%s,%s)",
+            (brand_id, "Inventory Test Brand", "inv-brand-" + suffix),
+        )
+        cur.execute(
+            "INSERT INTO categories (id,name_fa,slug) VALUES (%s,%s,%s)",
+            (category_id, "Inventory Test Category", "inv-cat-" + suffix),
+        )
+        cur.execute(
+            "INSERT INTO subcategories (id,category_id,name_fa,slug) VALUES (%s,%s,%s,%s)",
+            (subcategory_id, category_id, "Inventory Test Sub", "inv-sub-" + suffix),
+        )
+        cur.execute(
+            """
+            INSERT INTO products
+                (id,master_sku,canonical_name_fa,brand_id,category_id,subcategory_id,is_active)
+            VALUES (%s,%s,%s,%s,%s,%s,TRUE)
+            """,
+            (product_id, "MASTER-" + suffix, "Inventory Product", brand_id, category_id, subcategory_id),
+        )
+        conn.commit()
+    finally:
+        if "cur" in locals():
+            cur.close()
+
+    scan = client.post(
+        "/api/v1/vendors/inventory/continuous-scan",
+        headers={"Authorization": "Bearer " + management_env["vendor"]},
+        json={
+            "product_id": product_id,
+            "vendor_sku": "VSKU-" + suffix,
+            "packaging_unit": "CARTON",
+            "pack_quantity": 2,
+            "physical_quantity": 50,
+            "unit_price_toman": 380000,
+            "consumer_price_per_unit_toman": 420000,
+            "session_id": "scan-" + suffix,
+        },
+    )
+    assert scan.status_code == 200
+    scan_data = scan.json()["data"]
+    assert scan_data["available_quantity"] == 50
+    assert scan_data["listing_status"] == "DRAFT_PENDING_CATALOG"
+
+    publish = client.post(
+        "/api/v1/vendors/inventory/publish",
+        headers={"Authorization": "Bearer " + management_env["vendor"]},
+        json={"session_id": "scan-" + suffix},
+    )
+    assert publish.status_code == 200
+    assert publish.json()["data"]["status"] == "PUBLISHED"
+    assert publish.json()["data"]["published_count"] == 1
+
+    replay = client.post(
+        "/api/v1/vendors/inventory/publish",
+        headers={"Authorization": "Bearer " + management_env["vendor"]},
+        json={"session_id": "scan-" + suffix},
+    )
+    assert replay.status_code == 200
+    assert replay.json()["data"]["idempotent_replay"] is True
+
+    with conn.cursor() as cur:
+        cur.execute("DELETE FROM inventory_scan_sessions WHERE vendor_id=%s AND external_session_id=%s", (management_env["vendor_id"], "scan-" + suffix))
+        cur.execute("DELETE FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s", (management_env["vendor_id"], "VSKU-" + suffix))
+        cur.execute("DELETE FROM products WHERE id=%s", (product_id,))
+        cur.execute("DELETE FROM subcategories WHERE id=%s", (subcategory_id,))
+        cur.execute("DELETE FROM categories WHERE id=%s", (category_id,))
+        cur.execute("DELETE FROM brands WHERE id=%s", (brand_id,))
+    conn.commit()
