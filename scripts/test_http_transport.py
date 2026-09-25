@@ -210,7 +210,6 @@ def test_auth_profile_switch_and_revocation_flow(client):
 
         refresh_after_revoke = client.post(
             "/api/v1/auth/refresh",
-            json={"refresh_token": refresh},
         )
         assert refresh_after_revoke.status_code == 401
         assert refresh_after_revoke.json()["error"]["code"] == "SESSION_REVOKED"
