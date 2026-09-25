@@ -711,24 +711,26 @@ class DisputeService:
         # the authenticated uploader owns a READY media asset. The HTTP boundary
         # performs this check before calling this service when evidence is supplied.
 
-        # Notify both commercial sides with explicit tenant routing.
+        # Notify commercial parties and the operations/admin workbench.
         recipients = [
-            (order["retailer_org_id"], "RETAILER"),
-            (order["vendor_org_id"], "VENDOR"),
+            (order["retailer_org_id"], "RETAILER", ("RETAILER_OWNER", "RETAILER_STAFF")),
+            (order["vendor_org_id"], "VENDOR", ("VENDOR_OWNER", "VENDOR_STAFF")),
         ]
-        for org_id, side in recipients:
+        for org_id, side, roles in recipients:
             cur.execute(
                 """
                 SELECT om.user_id
                 FROM organization_memberships om
                 JOIN organizations org ON org.id=om.organization_id
+                JOIN users u ON u.id=om.user_id
                 WHERE om.organization_id=%s
                   AND om.status='ACTIVE'
+                  AND u.is_active=TRUE
                   AND org.status='ACTIVE'
-                  AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF','VENDOR_OWNER','VENDOR_STAFF')
+                  AND om.role = ANY(%s)
                 ORDER BY om.user_id
                 """,
-                (org_id,),
+                (org_id, list(roles)),
             )
             for rec in cur.fetchall():
                 dedupe = f"DISPUTE_OPENED:{disp_id}:{org_id}:{rec['user_id']}"
@@ -755,6 +757,49 @@ class DisputeService:
                         rec["user_id"], org_id, dedupe,
                     ),
                 )
+
+        cur.execute(
+            """
+            SELECT om.user_id, om.organization_id
+            FROM organization_memberships om
+            JOIN organizations org ON org.id=om.organization_id
+            JOIN users u ON u.id=om.user_id
+            WHERE org.org_type='OPERATOR'
+              AND org.status='ACTIVE'
+              AND om.status='ACTIVE'
+              AND u.is_active=TRUE
+              AND om.role = ANY(%s)
+            ORDER BY om.organization_id, om.user_id
+            """,
+            (["OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN"],),
+        )
+        for rec in cur.fetchall():
+            org_id = rec["organization_id"]
+            dedupe = f"DISPUTE_OPENED:{disp_id}:{org_id}:{rec['user_id']}"
+            cur.execute(
+                """
+                INSERT INTO outbox_events (
+                    id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                    target_user_id,target_organization_id,dedupe_key,channel_hint
+                )
+                VALUES (
+                    gen_random_uuid(),gen_random_uuid(),'DISPUTE_OPENED','ORDER',%s,
+                    jsonb_build_object(
+                        'dispute_id',%s,
+                        'order_id',%s,
+                        'claimed_amount_toman',%s,
+                        'side','OPS'
+                    ),
+                    'PENDING',%s,%s,%s,'INBOX'
+                )
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    order_id, disp_id, order_id, claimed_amount,
+                    rec["user_id"], org_id, dedupe,
+                ),
+            )
+
         return disp_id
 
 
