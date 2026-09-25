@@ -758,6 +758,172 @@ class DisputeService:
         return disp_id
 
 
+    @staticmethod
+    def resolve_dispute(
+        cur,
+        dispute_id: str,
+        actor_user_id: str,
+        outcome: str,
+        approved_amount: int,
+        reason: str,
+    ) -> dict:
+        allowed = {
+            "ADJUSTED_SHORTAGE": "SHORTAGE_DEDUCTION",
+            "REPLACEMENT_ORDER": None,
+            "REJECTED_CLAIM": None,
+            "MUTUAL_AGREEMENT": "DAMAGE_COMPENSATION",
+        }
+        if outcome not in allowed:
+            raise ValueError("Unsupported dispute resolution outcome.")
+        if approved_amount < 0:
+            raise ValueError("Approved amount cannot be negative.")
+        if not reason or not reason.strip():
+            raise ValueError("Resolution reason is required.")
+
+        cur.execute(
+            """
+            SELECT d.*,
+                   s.id AS settlement_id,
+                   s.status AS settlement_status,
+                   s.gross_amount_toman,
+                   s.commission_amount_toman,
+                   s.adjustment_amount_toman,
+                   s.net_vendor_amount_toman
+            FROM disputes d
+            JOIN settlements s ON s.order_id=d.order_id AND s.vendor_id=d.vendor_id
+            WHERE d.id=%s
+            ORDER BY s.created_at DESC
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (dispute_id,),
+        )
+        dispute = cur.fetchone()
+        if not dispute:
+            raise KeyError("Dispute not found.")
+        if dispute["dispute_status"] not in ("OPEN", "INVESTIGATING"):
+            if dispute["dispute_status"] == "CLOSED":
+                return {
+                    "id": str(dispute["id"]),
+                    "dispute_status": "CLOSED",
+                    "resolution_outcome": dispute["resolution_outcome"],
+                    "approved_amount_toman": int(dispute["approved_amount_toman"] or 0),
+                    "idempotent_replay": True,
+                }
+            raise ValueError("Only OPEN or INVESTIGATING disputes may be resolved.")
+        if approved_amount > int(dispute["claimed_amount_toman"]):
+            raise ValueError("Approved amount cannot exceed the claimed amount.")
+        if outcome == "REJECTED_CLAIM" and approved_amount != 0:
+            raise ValueError("Rejected claims must have approved amount 0.")
+
+        adjustment_type = allowed[outcome]
+        if adjustment_type and approved_amount > 0:
+            cur.execute(
+                """
+                INSERT INTO settlement_adjustments
+                    (id, settlement_id, dispute_id, adjustment_type, amount_toman,
+                     reason, applied_by_user_id)
+                VALUES (%s,%s,%s,%s,%s,%s,%s)
+                RETURNING id
+                """,
+                (
+                    str(uuid4()),
+                    dispute["settlement_id"],
+                    dispute_id,
+                    adjustment_type,
+                    approved_amount,
+                    reason.strip(),
+                    actor_user_id,
+                ),
+            )
+
+        cur.execute(
+            """
+            SELECT COALESCE(SUM(amount_toman),0)::BIGINT AS total_adjustments
+            FROM settlement_adjustments
+            WHERE settlement_id=%s
+            """,
+            (dispute["settlement_id"],),
+        )
+        total_adjustments = int(cur.fetchone()["total_adjustments"])
+        gross = int(dispute["gross_amount_toman"])
+        commission = int(dispute["commission_amount_toman"])
+        net = gross - commission - total_adjustments
+
+        cur.execute(
+            """
+            UPDATE settlements
+            SET adjustment_amount_toman=%s,
+                net_vendor_amount_toman=%s,
+                status='RECONCILED'
+            WHERE id=%s
+            RETURNING id, adjustment_amount_toman, net_vendor_amount_toman, status
+            """,
+            (-total_adjustments, net, dispute["settlement_id"]),
+        )
+        settlement = dict(cur.fetchone())
+
+        cur.execute(
+            """
+            UPDATE disputes
+            SET dispute_status='CLOSED',
+                resolution_outcome=%s,
+                approved_amount_toman=%s,
+                assigned_ops_user_id=%s,
+                resolved_at=now(),
+                closed_at=now()
+            WHERE id=%s
+            RETURNING *
+            """,
+            (outcome, approved_amount, actor_user_id, dispute_id),
+        )
+        resolved = dict(cur.fetchone())
+
+        cur.execute(
+            """
+            UPDATE orders
+            SET dispute_status='CLOSED', updated_at=now()
+            WHERE id=%s
+            """,
+            (dispute["order_id"],),
+        )
+
+        dedupe = f"DISPUTE_RESOLVED:{dispute_id}"
+        cur.execute(
+            """
+            INSERT INTO outbox_events
+                (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                 target_user_id,target_organization_id,dedupe_key,channel_hint)
+            VALUES
+                (gen_random_uuid(),gen_random_uuid(),'DISPUTE_RESOLVED','ORDER',%s,
+                 jsonb_build_object(
+                    'dispute_id',%s,
+                    'order_id',%s,
+                    'outcome',%s,
+                    'approved_amount_toman',%s
+                 ),
+                 'PENDING',NULL,NULL,%s,'INBOX')
+            ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+            """,
+            (dispute["order_id"], dispute_id, dispute["order_id"], outcome, approved_amount, dedupe),
+        )
+
+        return {
+            "id": str(resolved["id"]),
+            "order_id": str(resolved["order_id"]),
+            "dispute_status": resolved["dispute_status"],
+            "resolution_outcome": resolved["resolution_outcome"],
+            "approved_amount_toman": int(resolved["approved_amount_toman"] or 0),
+            "settlement_id": str(dispute["settlement_id"]),
+            "settlement_status": settlement["status"],
+            "adjustment_amount_toman": int(settlement["adjustment_amount_toman"]),
+            "net_vendor_amount_toman": int(settlement["net_vendor_amount_toman"]),
+            "resolved_at": resolved["resolved_at"].isoformat() if resolved["resolved_at"] else None,
+            "closed_at": resolved["closed_at"].isoformat() if resolved["closed_at"] else None,
+            "idempotent_replay": False,
+        }
+
+
 class NotificationService:
     """Deprecated facade; delegates to the canonical PostgreSQL outbox worker."""
 
