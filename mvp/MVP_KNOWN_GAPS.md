@@ -65,16 +65,15 @@ Authenticated /api/v1/ops/analytics and /api/v1/ops/analytics/weekly routes now 
 Vendor staff list/invite/update is implemented with owner-only mutations, tenant scoping, last-owner protection and audit logs. /api/v1/ops/permissions exposes the canonical RBAC catalog, and vendor staff UI is live.
 
 
-## G-011 — Admin broadcasts / SLA overrides / category admin (CONTRACT)
+## G-011 — Admin broadcasts / SLA overrides / category admin (PARTIALLY RESOLVED)
 
-- Contract-only endpoints; mock allowed with same contract if screens need them in Phase 2 Ops.
-- **Status:** GAP until mock or backend HTTP
+- `POST /admin/sla-overrides` is now REAL and audited. Existing broadcast/category admin contracts remain separate capabilities and are not fabricated here.
+- **Status:** PARTIALLY RESOLVED (SLA override REAL; broadcasts/category admin still CONTRACT)
 
-## G-012 — Basket GET list not in routes (GAP)
+## G-012 — Basket current GET (RESOLVED)
 
-- Only POST create/items/preview; no GET basket.
-- Screens that reload basket need client persistence **or** GAP; checkout uses allocation-preview + POST orders.
-- **Status:** GAP (client basket cache is presentation, not business rule)
+- `GET /api/v1/baskets/current` exists and the application boundary owns current-basket retrieval.
+- **Status:** RESOLVED
 
 ## G-013 — Returns list all-orders (RESOLVED)
 
@@ -122,11 +121,10 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 - Marketing screens need no auth; no API required for C-01…08 static content.
 - **Status:** GAP (by design — static)
 
-## G-021 — No GET list for partial-acceptance proposals (GAP)
+## G-021 — Partial-acceptance proposal list (RESOLVED)
 
-- **Sources:** `orders.py` has POST create + approve/decline only; no `GET .../partial-acceptance-proposals`.
-- **Build:** R-09C derives open proposals from `GET /orders/{id}/timeline` `event_data.proposal_id` on `ORDER_PARTIAL_ACCEPTANCE_PROPOSED`, closed on later APPROVED/DECLINED events. If backend later adds a list GET, switch to it.
-- **Status:** GAP (documented workaround; no invented endpoint)
+- `GET /api/v1/orders/{order_id}/partial-acceptance-proposals` now returns the canonical proposal rows and item reductions, with vendor/retailer tenant scoping.
+- **Status:** RESOLVED
 
 ## G-022 — Delivery OTP schema vs D-018 (CONFLICT)
 
