@@ -497,7 +497,10 @@ def run_master_e2e_test():
         # 11. Transactional Outbox to Notification & User Inbox
         # -------------------------------------------------------------
         print("\n[STEP 11] Transactional Outbox Event to Notification Engine & User Inbox via NotificationService...")
-        dispatched_count = NotificationService.dispatch_pending_outbox(cur)
+        # The full verification suite shares pol_test across rollback-safe tests. Drain a
+        # bounded larger batch so older unrelated PENDING outbox rows cannot mask this E2E's
+        # canonical DISPUTE_OPENED notification contract.
+        dispatched_count = NotificationService.dispatch_pending_outbox(cur, limit=1000)
         assert dispatched_count >= 1
 
         cur.execute("SELECT count(*) as cnt FROM user_inbox_items WHERE user_id = %s AND category = 'DISPUTES';", (u_vnda_owner,))
