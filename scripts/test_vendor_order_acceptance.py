@@ -279,7 +279,7 @@ def test_vendor_full_accept_consumes_reservation_and_notifies_retailer(pg_connec
                 """,
                 (data["order_id"],),
             )
-            assert cur.fetchone()["order_status"] == "ACCEPTED"
+            assert cur.fetchone()["order_status"] == "PREPARING"
 
             cur.execute(
                 """
@@ -380,7 +380,7 @@ def test_vendor_order_accept_rejects_non_submitted_state_without_mutation(pg_con
         with pg_connection.cursor(cursor_factory=RealDictCursor) as cur:
             data = _setup_order(cur, suffix)
             cur.execute(
-                "UPDATE orders SET order_status = 'ACCEPTED' WHERE id = %s",
+                "UPDATE orders SET order_status = 'PREPARING' WHERE id = %s",
                 (data["order_id"],),
             )
             boundary = POLApplicationBoundary(
