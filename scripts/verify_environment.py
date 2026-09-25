@@ -57,7 +57,9 @@ EXPECTED_MIGRATIONS = [
     "035_delivery_state_machine_history.sql",
     "036_inventory_audit_reservation_semantics.sql",
     "037_invoice_financial_invariants.sql",
-    "038_dispute_notification_template.sql",
+    "038_invoice_total_trigger_fix.sql",
+    "039_notification_category_alignment.sql",
+    "040_dispute_notification_template.sql",
 ]
 EXPECTED_TABLE_COUNT = 96
 EXPECTED_CORE_TABLES = [
