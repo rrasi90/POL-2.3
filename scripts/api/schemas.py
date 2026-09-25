@@ -339,3 +339,9 @@ class AdminOrganizationStatusRequest(APIBaseModel):
         "REJECTED",
         "SUSPENDED",
     ]
+
+
+class AdminSlaOverrideRequest(APIBaseModel):
+    order_id: UUID
+    extension_minutes: int = Field(ge=1, le=1440)
+    reason: str = Field(min_length=1, max_length=500)
