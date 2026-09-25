@@ -440,7 +440,17 @@ class POLApplicationBoundary:
         if not self.context.organization_id:
             raise PermissionError("Order query requires an organization context.")
         self.cur.execute(
-            "SELECT role FROM organization_memberships WHERE organization_id = %s AND user_id = %s AND status = 'ACTIVE'",
+            """
+            SELECT om.role
+            FROM organization_memberships om
+            JOIN organizations o ON o.id=om.organization_id
+            JOIN users u ON u.id=om.user_id
+            WHERE om.organization_id=%s
+              AND om.user_id=%s
+              AND om.status='ACTIVE'
+              AND o.status='ACTIVE'
+              AND u.is_active=TRUE
+            """,
             (self.context.organization_id, self.context.user_id),
         )
         row = self.cur.fetchone()
