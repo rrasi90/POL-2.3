@@ -47,7 +47,7 @@ def verify_otp(payload: VerifyOTPRequest, response: Response, cur=Depends(get_db
         payload.otp_code,
     )
     refresh_token = result.get("refresh_token")
-    if refresh_token:
+    if refresh_token and payload.client_platform == "web":
         response.set_cookie(
             "pol_refresh",
             refresh_token,
@@ -57,6 +57,8 @@ def verify_otp(payload: VerifyOTPRequest, response: Response, cur=Depends(get_db
             samesite="lax",
             path="/api/v1/auth",
         )
+    if payload.client_platform == "web":
+        result = {key: value for key, value in result.items() if key != "refresh_token"}
     return success_payload(result)
 
 
