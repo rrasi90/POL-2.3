@@ -45,29 +45,25 @@
 - **Build:** propose routes `/`, `/retailers`, `/vendors`, `/how`, `/pilot-ahvaz`, `/about`, `/contact`, `/legal` as `PROPOSED` in matrix with source = screen IDs only; record here.
 - **Status:** GAP → screens implemented as static marketing under proposed routes; mark route source `PROPOSED-G006`.
 
-## G-007 — Admin dedicated screen family underspecified (GAP)
+## G-007 — Admin users / organizations screen family (RESOLVED)
 
-- Spec 22 folds admin into O-10; route map has `/admin/users`, `/admin/orgs` with **no API source** (not in 50-endpoint or REAL list except audit/exceptions).
-- **Build:** implement O-10 admin/context using REAL `/admin/audit-logs` + `/admin/exceptions/dashboard`; users/orgs screens = stub list UI without fake CRUD success → **GAP** rows.
-- **Status:** GAP
+Admin user and organization list/status APIs now exist behind the canonical administrative boundary, with audit logging and session invalidation on deactivation/suspension. Web screens are connected to live data.
 
-## G-008 — No HTTP for pilot analytics O-09 (GAP)
 
-- No analytics endpoints in inventory.
-- **Build:** screen with empty/loading + explicit “data unavailable” or mock aggregate **without** inventing metrics API paths; prefer GAP UI shell.
-- **Status:** GAP
+## G-008 — Pilot analytics O-09 HTTP (RESOLVED)
 
-## G-009 — Vendor customers V-09 list API missing (GAP)
+Authenticated /api/v1/ops/analytics and /api/v1/ops/analytics/weekly routes now expose the existing KPI calculation service through POLApplicationBoundary. The /ops/analytics screen consumes the live API; KPI source-of-truth remains scripts/pilot_kpis.py + scripts/analytics_lineage.py.
 
-- No `GET /customers` in inventory or routes.
-- **Build:** stub + GAP; optional derive from retailer-facing orders only if documented (not documented → no derive).
-- **Status:** GAP
 
-## G-010 — Staff/access management V-11 / permission APIs (GAP)
+## G-009 — Vendor customers V-09 list API (RESOLVED)
 
-- No membership admin HTTP beyond profile/membership self-serve.
-- **Build:** read-only stub or GAP; no fake invite success.
-- **Status:** GAP
+/api/v1/vendors/customers now returns tenant-scoped retailers derived from real vendor orders, with search and pagination. /vendor/customers consumes the API and does not fabricate rows.
+
+
+## G-010 — Staff/access management V-11 / permission APIs (RESOLVED)
+
+Vendor staff list/invite/update is implemented with owner-only mutations, tenant scoping, last-owner protection and audit logs. /api/v1/ops/permissions exposes the canonical RBAC catalog, and vendor staff UI is live.
+
 
 ## G-011 — Admin broadcasts / SLA overrides / category admin (CONTRACT)
 
@@ -80,11 +76,10 @@
 - Screens that reload basket need client persistence **or** GAP; checkout uses allocation-preview + POST orders.
 - **Status:** GAP (client basket cache is presentation, not business rule)
 
-## G-013 — Returns list all-orders (GAP)
+## G-013 — Returns list all-orders (RESOLVED)
 
-- Only `GET /orders/{order_id}/returns` — no global returns list.
-- R-11 entry via order → returns; global RMA queue for ops may need GAP.
-- **Status:** GAP for global list
+Ops now has /api/v1/ops/returns for a tenant-independent operational workbench over all returns, and /ops/rma consumes it directly.
+
 
 ## G-014 — Design contradictions register (PROPOSED / multi)
 
