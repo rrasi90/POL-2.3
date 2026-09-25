@@ -172,10 +172,10 @@ class TestOTPVerification:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "otp_code": data["otp"]},
+            json={"recipient_name": "Reza"},
         )
-        assert resp.status_code == 200
-        assert resp.json()["data"]["otp_verified"] is False
+        assert resp.status_code == 422
+        assert resp.json()["success"] is False
 
 
 class TestProofType:
@@ -218,7 +218,7 @@ class TestIssueReporting:
         client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "issue_reported": "Damaged goods"},
+            json={"recipient_name": "Reza", "otp_code": data["otp"], "issue_reported": "Damaged goods"},
         )
         proof_resp = client.get(
             f"/api/v1/orders/{data['oi']}/delivery/proof",
@@ -233,7 +233,7 @@ class TestSecureAccess:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza"},
+            json={"recipient_name": "Reza", "otp_code": data["otp"]},
         )
         assert resp.status_code == 200
 
