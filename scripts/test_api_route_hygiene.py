@@ -37,3 +37,4 @@ def test_api_layer_does_not_import_legacy_domain_services():
 
 if __name__ == "__main__":
     test_http_method_and_path_are_unique()
+    test_api_layer_does_not_import_legacy_domain_services()
