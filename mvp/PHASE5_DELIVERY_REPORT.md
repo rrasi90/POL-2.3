@@ -8,6 +8,25 @@
 
 ---
 
+## Current remediation reconciliation — 2026-09-25
+
+**Branch:** `remediation/full-closure-2026-09-25`  
+**Current source state:** the remediation branch has continued well beyond the historical 2026-09-24 delivery snapshot. Do not use the historical phase tables below as the current release state.
+
+### Current evidence
+- Local evidence recorded in `mvp/LOCAL_EXECUTION_TRACKER.md`: LOCAL-01 Night theme **PASS**, LOCAL-02 live basket→allocation→checkout→order **16/16 PASS**, LOCAL-03 checkout idempotency replay **12/12 PASS**, LOCAL-04 post-remediation device smoke **PASS**.
+- Current remediation source now includes canonical barcode matching/candidate quarantine, vendor continuous inventory scan/publish, admin SLA overrides, admin category/broadcast routes, global returns, partial-acceptance listing, payment verification variants, dispute resolution, durable inbox routes, and catalog candidate review.
+- The old 497-test / run-`805` claims in this document are historical and must not be used as current CI evidence.
+
+### Current CI state
+Fresh pull-request runs triggered by remediation commits are currently **failing before useful step-level execution** (the latest mobile and independent verification runs complete within a few seconds; the independent run exposes no executed job steps). Therefore no new green CI claim is made from those runs until GitHub Actions produces actual step logs.
+
+### Remaining closure classes
+1. **Open product/security decisions:** D-018 refresh-token policy wording, invoice timing, D-024 storefront write scope.
+2. **Runtime/deployment evidence:** production browser cookie configuration, deployed provider execution, push-provider delivery, production metrics/observability.
+3. **Partial capability:** O-07 risk/reliability and any other explicitly documented limited surfaces.
+4. **Fresh CI certification:** rerun the full backend and mobile gates after the current GitHub Actions execution blocker is cleared.
+
 ## 1. Phases done
 
 | Phase | Name | Status | Evidence |
