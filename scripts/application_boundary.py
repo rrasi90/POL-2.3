@@ -1507,6 +1507,106 @@ class POLApplicationBoundary:
         )
         return self.cur.fetchall()
 
+    def catalog_match_barcode(self, *, raw_barcode: str, scan_source: str):
+        normalized = raw_barcode.strip()
+        if not normalized:
+            raise ValueError("Barcode is required.")
+        self.cur.execute(
+            """
+            SELECT p.id, p.master_sku, p.canonical_name_fa,
+                   b.name_fa AS brand_name, p.default_pack_quantity, ma.storage_key AS image_url
+            FROM product_identifiers pi
+            JOIN products p ON p.id = pi.product_id AND p.is_active = TRUE
+            JOIN brands b ON b.id = p.brand_id
+            LEFT JOIN LATERAL (
+                SELECT ma.storage_key
+                FROM product_media pm
+                JOIN media_assets ma ON ma.id = pm.media_asset_id AND ma.status = 'READY'
+                WHERE pm.product_id = p.id
+                ORDER BY pm.is_primary DESC, pm.display_order, pm.created_at
+                LIMIT 1
+            ) ma ON TRUE
+            LEFT JOIN vendors v ON v.id = pi.vendor_id
+            WHERE pi.identifier_value = %s
+              AND (pi.vendor_id IS NULL OR v.organization_id = %s::uuid)
+            ORDER BY pi.vendor_id NULLS FIRST, pi.is_primary DESC
+            LIMIT 1
+            """,
+            (normalized, self.context.organization_id),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            return {
+                "match_status": "NO_MATCH",
+                "confidence_score": 0.0,
+                "suggested_action": "CREATE_PRODUCT_CANDIDATE",
+            }
+        result = dict(row)
+        result["id"] = str(result["id"])
+        return {
+            "match_status": "EXACT",
+            "confidence_score": 1.0,
+            "product": {
+                "id": result["id"],
+                "master_sku": result["master_sku"],
+                "canonical_name_fa": result["canonical_name_fa"],
+                "brand_name": result["brand_name"],
+                "default_pack_quantity": result["default_pack_quantity"],
+                "image_url": result.get("image_url"),
+            },
+        }
+
+    def catalog_create_product_candidate(self, *, proposed_title: str, proposed_brand: str | None, barcode: str | None, vendor_sku: str | None, photo_asset_id: str | None):
+        if not self.context.organization_id:
+            raise PermissionError("Candidate creation requires an active organization context.")
+        self.cur.execute(
+            "SELECT id, user_id FROM vendors WHERE organization_id = %s::uuid AND status = 'ACTIVE' LIMIT 1",
+            (self.context.organization_id,),
+        )
+        vendor = self.cur.fetchone()
+        if not vendor:
+            raise PermissionError("No active vendor exists for this organization.")
+        if photo_asset_id:
+            self.cur.execute(
+                "SELECT id FROM media_assets WHERE id=%s AND uploaded_by_user_id=%s AND status='READY'",
+                (photo_asset_id, self.context.user_id),
+            )
+            if not self.cur.fetchone():
+                raise PermissionError("Candidate photo must be a READY asset owned by the current user.")
+        candidate_id = str(uuid4())
+        self.cur.execute(
+            """
+            INSERT INTO product_candidates (id, vendor_id, proposed_title, proposed_brand, barcode, vendor_sku, photo_asset_id, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 'PENDING_REVIEW')
+            RETURNING id, status
+            """,
+            (candidate_id, str(vendor["id"]), proposed_title.strip(), proposed_brand, barcode, vendor_sku, photo_asset_id),
+        )
+        row = self.cur.fetchone()
+        if vendor_sku:
+            self.cur.execute(
+                """
+                INSERT INTO vendor_products (vendor_id, product_id, candidate_id, vendor_sku, listing_status, is_active)
+                VALUES (%s, NULL, %s, %s, 'DRAFT_PENDING_CATALOG', FALSE)
+                ON CONFLICT (vendor_id, vendor_sku) DO UPDATE SET candidate_id = EXCLUDED.candidate_id, listing_status = 'DRAFT_PENDING_CATALOG', is_active = FALSE
+                RETURNING id
+                """,
+                (str(vendor["id"]), candidate_id, vendor_sku.strip()),
+            )
+        self.cur.execute(
+            """
+            INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status)
+            VALUES (%s, %s, 'PRODUCT_CANDIDATE_CREATED', 'PRODUCT_CANDIDATE', %s, %s, 'PENDING')
+            ON CONFLICT DO NOTHING
+            """,
+            (str(uuid4()), str(uuid4()), candidate_id, Json({"candidate_id": candidate_id, "vendor_id": str(vendor["id"]), "status": "PENDING_REVIEW"})),
+        )
+        return {
+            "candidate_id": candidate_id,
+            "status": row["status"],
+            "message": "کاندیدا با موفقیت ثبت شد و در کارتابل بررسی تیم کاتالوگ قرار گرفت.",
+        }
+
     def catalog_products_search(self, *, query: str, category_id: str | None = None, page: int = 1, limit: int = 20):
         if page < 1 or limit < 1 or limit > 100:
             raise ValueError("Invalid pagination.")
