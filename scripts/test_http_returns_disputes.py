@@ -388,3 +388,169 @@ class TestDisputeQuery:
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["count"] >= 1
+
+
+
+def _seed_ops_admin():
+    conn = _db()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    user_id = str(uuid4())
+    org_id = str(uuid4())
+    cur.execute(
+        "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s,%s,'Ops Admin','OPS_ADMIN')",
+        (user_id, f"+9891{uuid4().int % 100000000:08d}"),
+    )
+    cur.execute(
+        "INSERT INTO organizations (id,name,org_type,status) VALUES (%s,'Ops','OPERATOR','ACTIVE')",
+        (org_id,),
+    )
+    cur.execute(
+        """
+        INSERT INTO organization_memberships
+            (id,organization_id,user_id,role,status,is_primary)
+        VALUES (%s,%s,%s,'OPS_ADMIN','ACTIVE',TRUE)
+        """,
+        (str(uuid4()), org_id, user_id),
+    )
+    session_id = _create_session(cur, user_id, org_id)
+    conn.commit()
+    token = encode_access_token(user_id, session_id, org_id, "OPS_ADMIN")
+    cur.close()
+    return conn, token, user_id, org_id, session_id
+
+
+class TestDisputeResolution:
+    def test_ops_admin_can_resolve_and_reconcile_dispute(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        opened = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={
+                "claimed_amount_toman": 1000000,
+                "description": "Resolution contract test",
+            },
+        )
+        assert opened.status_code == 201
+        dispute_id = opened.json()["data"]["id"]
+
+        ops_conn, ops_token, ops_user, ops_org, ops_session = _seed_ops_admin()
+        try:
+            resolved = client.patch(
+                f"/api/v1/disputes/{dispute_id}/resolve",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={
+                    "outcome": "ADJUSTED_SHORTAGE",
+                    "approved_amount_toman": 750000,
+                    "reason": "Confirmed shortage after review",
+                },
+            )
+            assert resolved.status_code == 200
+            body = resolved.json()["data"]
+            assert body["dispute_status"] == "CLOSED"
+            assert body["resolution_outcome"] == "ADJUSTED_SHORTAGE"
+            assert body["approved_amount_toman"] == 750000
+            assert body["settlement_status"] == "RECONCILED"
+            assert body["adjustment_amount_toman"] == -750000
+            assert body["net_vendor_amount_toman"] == 4250000
+
+            with ops_conn:
+                with ops_conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute(
+                        "SELECT dispute_status FROM disputes WHERE id=%s",
+                        (dispute_id,),
+                    )
+                    assert cur.fetchone()["dispute_status"] == "CLOSED"
+                    cur.execute(
+                        "SELECT amount_toman, adjustment_type, applied_by_user_id FROM settlement_adjustments WHERE dispute_id=%s",
+                        (dispute_id,),
+                    )
+                    adj = cur.fetchone()
+                    assert adj["amount_toman"] == 750000
+                    assert adj["adjustment_type"] == "SHORTAGE_DEDUCTION"
+                    assert str(adj["applied_by_user_id"]) == ops_user
+        finally:
+            ops_conn.rollback()
+            ops_conn.close()
+
+    def test_dispute_resolution_is_idempotent(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        opened = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"claimed_amount_toman": 500000, "description": "Idempotent resolution"},
+        )
+        dispute_id = opened.json()["data"]["id"]
+
+        ops_conn, ops_token, *_ = _seed_ops_admin()
+        try:
+            payload = {
+                "outcome": "ADJUSTED_SHORTAGE",
+                "approved_amount_toman": 300000,
+                "reason": "Approved",
+            }
+            first = client.patch(
+                f"/api/v1/disputes/{dispute_id}/resolve",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json=payload,
+            )
+            second = client.patch(
+                f"/api/v1/disputes/{dispute_id}/resolve",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json=payload,
+            )
+            assert first.status_code == 200
+            assert second.status_code == 200
+            assert second.json()["data"]["idempotent_replay"] is True
+            with ops_conn:
+                with ops_conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT COUNT(*) FROM settlement_adjustments WHERE dispute_id=%s",
+                        (dispute_id,),
+                    )
+                    assert cur.fetchone()[0] == 1
+        finally:
+            ops_conn.rollback()
+            ops_conn.close()
+
+    def test_non_ops_cannot_resolve_dispute(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        opened = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"claimed_amount_toman": 500000, "description": "Auth test"},
+        )
+        dispute_id = opened.json()["data"]["id"]
+        denied = client.patch(
+            f"/api/v1/disputes/{dispute_id}/resolve",
+            headers={"Authorization": f"Bearer {data['v_token']}"},
+            json={
+                "outcome": "ADJUSTED_SHORTAGE",
+                "approved_amount_toman": 100000,
+                "reason": "Denied",
+            },
+        )
+        assert denied.status_code == 403
+
+    def test_resolution_cannot_exceed_claim(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        opened = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"claimed_amount_toman": 500000, "description": "Amount guard"},
+        )
+        dispute_id = opened.json()["data"]["id"]
+        ops_conn, ops_token, *_ = _seed_ops_admin()
+        try:
+            denied = client.patch(
+                f"/api/v1/disputes/{dispute_id}/resolve",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={
+                    "outcome": "ADJUSTED_SHORTAGE",
+                    "approved_amount_toman": 500001,
+                    "reason": "Too high",
+                },
+            )
+            assert denied.status_code == 422
+        finally:
+            ops_conn.rollback()
+            ops_conn.close()
