@@ -361,3 +361,33 @@ def test_full_vendor_accept_is_blocked_while_partial_proposal_is_pending(pg_conn
                 (data["order_id"],),
             )
             assert cur.fetchone()["order_status"] == "SUBMITTED"
+
+
+
+def test_partial_acceptance_proposals_list_is_tenant_scoped(pg_connection):
+    suffix = uuid4().hex[:10]
+    with pg_connection:
+        with pg_connection.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _setup_order(cur, suffix)
+            proposal = _propose(cur, data, accepted_quantity=7)
+
+            vendor_result = _vendor_boundary(cur, data).partial_acceptance_proposals_list(
+                order_id=data["order_id"]
+            )
+            assert len(vendor_result["proposals"]) == 1
+            row = vendor_result["proposals"][0]
+            assert row["proposal_id"] == proposal["proposal_id"]
+            assert row["status"] == "PENDING"
+            assert row["items"][0]["accepted_quantity"] == 7
+
+            with pytest.raises(PermissionError):
+                POLApplicationBoundary(
+                    cur,
+                    ApplicationContext(
+                        user_id=data["retailer_user"],
+                        organization_id=data["vendor_org"],
+                        correlation_id=f"cross-list-{uuid4()}",
+                    ),
+                ).partial_acceptance_proposals_list(
+                    order_id=data["order_id"]
+                )
