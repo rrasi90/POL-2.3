@@ -23,13 +23,6 @@ from scripts.operational_config import OTP_RESEND_INTERVAL_SECONDS, OTP_TTL_SECO
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _is_production_environment() -> bool:
-    return (
-        os.environ.get("ENVIRONMENT", "").lower() in {"prod", "production"}
-        or os.environ.get("POL_ENV", "").lower() in {"prod", "production"}
-    )
-
-
 def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
     response.set_cookie(
         "pol_refresh",
