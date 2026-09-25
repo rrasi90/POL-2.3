@@ -3269,6 +3269,28 @@ class POLApplicationBoundary:
             raise ValueError("Field task not found.")
         return dict(row)
 
+
+    # ── Ops Analytics (Stage 38) ───────────────────────────────────
+
+    def ops_analytics(self, *, start_date, end_date):
+        self._require_ops_context()
+        if start_date > end_date:
+            raise ValueError("start_date must be on or before end_date.")
+        from scripts.pilot_kpis import compute_all_kpis
+
+        kpis = compute_all_kpis(self.cur, start_date, end_date)
+        return {
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
+            "kpis": kpis,
+        }
+
+    def ops_analytics_week(self, *, snapshot_date):
+        self._require_ops_context()
+        from scripts.pilot_kpis import weekly_snapshot
+
+        return weekly_snapshot(self.cur, snapshot_date)
+
     def field_task_create(self, *, task_type, assigned_to_user_id,
                           retailer_id=None, vendor_id=None, notes=None):
         self._require_ops_context()
