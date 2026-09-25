@@ -256,6 +256,17 @@ class SupportCaseMessageRequest(APIBaseModel):
     message_text: str = Field(min_length=1, max_length=5000)
 
 
+class BarcodeMatchRequest(APIBaseModel):
+    raw_barcode: str = Field(min_length=1, max_length=64)
+    scan_source: str = Field(min_length=1, max_length=50)
+
+class ProductCandidateCreateRequest(APIBaseModel):
+    proposed_title: str = Field(min_length=1, max_length=255)
+    proposed_brand: str | None = Field(default=None, max_length=100)
+    barcode: str | None = Field(default=None, max_length=100)
+    vendor_sku: str | None = Field(default=None, max_length=100)
+    photo_asset_id: UUID | None = None
+
 class SupportCaseAssignRequest(APIBaseModel):
     assignee_user_id: UUID
 
