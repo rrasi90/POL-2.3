@@ -95,9 +95,9 @@
 | V-06 | Inventory | `/vendor/inventory` | VENDOR_* | inventory GET/PATCH | doc 22 L428–435; MT VD-01 | IMPLEMENTED |
 | V-07 | Daily inventory confirmation | `/vendor/inventory/daily` | VENDOR_* | inventory/daily/* | doc 22 L437–441 | VERIFIED |
 | V-08 | Referral (attribution only) | `/vendor/referrals` | VENDOR_* | `/referrals*` | doc 22 L443–449; D-016 | VERIFIED |
-| V-09 | Customers | `/vendor/customers` | VENDOR_* | **none** → GAP G-009 | doc 22 L451–455; MT VD-09 | GAP |
+| V-09 | Customers | `/vendor/customers` | VENDOR_* | `GET /vendors/customers` | doc 22 L451–455; MT VD-09 | IMPLEMENTED |
 | V-10 | Reconciliation / documents | `/vendor/settlements` | VENDOR_OWNER | `/vendors/settlements`, invoices | doc 22 L457–461; MT VD-06/10/13 | VERIFIED |
-| V-11 | Staff / access | `/vendor/staff` | VENDOR_OWNER | **none** → GAP G-010 | doc 22 L463–468; MT VD-07/15 | GAP |
+| V-11 | Staff / access | `/vendor/staff` | VENDOR_OWNER | `GET/POST/PATCH /vendors/staff*` | doc 22 L463–468; MT VD-07/15 | IMPLEMENTED |
 | V-12 | Vendor profile | `/profile` vendor ctx | VENDOR_* | profile/context | doc 22 L470–475; MT VD-12 | VERIFIED |
 | V-14 | Storefront management | `/vendor/storefront` | VENDOR_OWNER | storefront read; write → GAP | MT VD-14; D-024 | VERIFIED |
 | V-16 | Barcode / continuous scan | (mobile) | VENDOR_STAFF + inv.scan | match-barcode, continuous-scan **CONTRACT** | MT VD-16; D-028 | NOT_APPLICABLE |
@@ -126,15 +126,15 @@
 | O-01 | Overview (queues first) | `/ops` | OPS_AGENT | exceptions dashboard, queues | doc 22 L479–486; MT OP-04 | IMPLEMENTED |
 | O-02 | Unified queues | `/ops/queues` | OPS_AGENT | orders/support/rma/recon lists | doc 22 L488–499; MT OP-01 | IMPLEMENTED |
 | O-03 | Object detail shell | `/ops/[type]/[id]` | OPS_AGENT | per object (orders/support/recon/returns) | doc 22 L501–508; MT OP-02 | IMPLEMENTED |
-| O-04 | RMA / dispute workbench | `/ops/rma` | OPS_AGENT | returns/disputes (per-order) + GAP global list G-013 | doc 22 L510–516 | IMPLEMENTED |
+| O-04 | RMA / dispute workbench | `/ops/rma` | OPS_AGENT | `GET /ops/returns` + per-order returns/disputes | doc 22 L510–516 | IMPLEMENTED |
 | O-05 | Support workbench | `/ops/support` | OPS_AGENT | `/support/cases*` | doc 22 L518–524; MT OP-05 | IMPLEMENTED |
 | O-06 | Reconciliation | `/ops/reconciliation` | OPS_AGENT | `/finance/reconciliation*` | doc 22 L526–530; MT OP-03; G-015 | IMPLEMENTED |
 | O-07 | Risk / reliability | `/ops/risk` | OPS_AGENT | **limited API** → GAP/partial | doc 22 L532–537; MT OP-07/08 | GAP |
 | O-08 | Notification operations | `/ops/notifications` | OPS_AGENT | notifications list + GAP provider ops | doc 22 L539–543 | IMPLEMENTED |
-| O-09 | Pilot analytics | `/ops/analytics` | OPS_AGENT | **none** → GAP G-008 | doc 22 L545–554; G-015 | GAP |
+| O-09 | Pilot analytics | `/ops/analytics` | OPS_AGENT | `GET /ops/analytics`, `/ops/analytics/weekly` | doc 22 L545–554; KPI SSoT | IMPLEMENTED |
 | O-10 | Admin / context | `/ops/admin` | OPS_AGENT, ADMIN_SUPER | `/admin/audit-logs`, `/admin/exceptions/dashboard` | doc 22 L556–561; MT OP-10 | IMPLEMENTED |
-| O-10B | Admin users/orgs | `/admin/users`, `/admin/orgs` | ADMIN_SUPER | **none** → GAP G-007 | route map §6 | GAP |
-| OP-11 | Permission audit | `/ops/permissions` | ADMIN_SUPER/OPS | **none** → GAP | MT OP-11 | GAP |
+| O-10B | Admin users/orgs | `/admin/users`, `/admin/orgs` | ADMIN_SUPER | `GET/PATCH /admin/users*`, `GET/PATCH /admin/organizations*` | route map §6 | IMPLEMENTED |
+| OP-11 | Permission catalog | `/ops/permissions` | ADMIN_SUPER/OPS | `GET /ops/permissions` | MT OP-11 | IMPLEMENTED |
 | OP-13 | Master SKU / candidate review | `/ops/catalog-candidates` | OPS/ADMIN | product-candidates **CONTRACT** | MT OP-13 | GAP |
 
 ### §D evidence — Ops + Admin (QA cycle 1, 2026-09-22)
