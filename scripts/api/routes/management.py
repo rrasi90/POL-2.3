@@ -14,6 +14,10 @@ from scripts.api.schemas import (
     VendorStaffInviteRequest,
     VendorStaffUpdateRequest,
     AdminSlaOverrideRequest,
+    AdminBroadcastCreateRequest,
+    AdminBroadcastDispatchRequest,
+    AdminCategoryCreateRequest,
+    AdminCategoryUpdateRequest,
 )
 
 vendor_router = APIRouter(prefix="/vendors", tags=["vendor-management"])
@@ -106,6 +110,70 @@ def admin_sla_override(
             order_id=str(payload.order_id),
             extension_minutes=payload.extension_minutes,
             reason=payload.reason,
+        )
+    )
+
+
+@admin_router.post("/broadcasts", status_code=201)
+def admin_broadcast_create(
+    payload: AdminBroadcastCreateRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.admin_broadcast_create(
+            title=payload.title,
+            body=payload.body,
+            target_criteria=payload.target_criteria,
+            channel=payload.channel,
+            priority=payload.priority,
+            scheduled_at=payload.scheduled_at,
+        )
+    )
+
+
+@admin_router.post("/broadcasts/{broadcast_id}/dispatch")
+def admin_broadcast_dispatch(
+    broadcast_id: UUID,
+    payload: AdminBroadcastDispatchRequest | None = None,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.admin_broadcast_dispatch(
+            broadcast_id=str(broadcast_id),
+            approve=payload.approve if payload else True,
+        )
+    )
+
+
+@admin_router.post("/categories", status_code=201)
+def admin_category_create(
+    payload: AdminCategoryCreateRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.admin_category_create(
+            name_fa=payload.name_fa,
+            slug=payload.slug,
+            icon_url=payload.icon_url,
+            display_order=payload.display_order,
+        )
+    )
+
+
+@admin_router.patch("/categories/{category_id}")
+def admin_category_update(
+    category_id: UUID,
+    payload: AdminCategoryUpdateRequest,
+    boundary=Depends(get_application_boundary),
+):
+    values = payload.model_dump(exclude_unset=True)
+    return success_payload(
+        boundary.admin_category_update(
+            category_id=str(category_id),
+            name_fa=values.get("name_fa"),
+            slug=values.get("slug"),
+            icon_url=values.get("icon_url"),
+            display_order=values.get("display_order"),
         )
     )
 
