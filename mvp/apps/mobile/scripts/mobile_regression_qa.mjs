@@ -38,7 +38,17 @@ const checks = [
     const account = read("screens/AccountMobileScreen.tsx");
     const app = readMobile("App.tsx");
     return api.includes('request<T>("DELETE"') && api.includes("delete: <T>") && account.includes("/api/v1/auth/sessions/current") &&
-      account.includes("setToken(null)") && app.includes("onLogout()");
+      account.includes("clearSession()") && api.includes("SecureStore") && api.includes("refreshAccessToken") &&
+      api.includes("AUTH_EXPIRED") && app.includes("onLogout()");
+  }],
+  ["Mobile session survives process restart through SecureStore and rotates access on 401", () => {
+    const s = read("api.ts");
+    const login = read("screens/LoginScreen.tsx");
+    const app = readMobile("App.tsx");
+    return s.includes("expo-secure-store") && s.includes("persistSession") &&
+      s.includes("restoreSession") && s.includes("res.status === 401") &&
+      s.includes("await refreshAccessToken()") && login.includes("data.refresh_token") &&
+      app.includes("restoreSession()");
   }],
   ["Shared account uses real profile/notification preference endpoints", () => {
     const s = read("screens/AccountMobileScreen.tsx");
