@@ -108,11 +108,15 @@ class AuthService:
 
         # 3. Generate OTP code
         otp_id = str(uuid.uuid4())
-        is_prod = os.getenv("ENVIRONMENT", "").lower() in ("prod", "production") or os.getenv("POL_ENV", "").lower() in ("prod", "production")
-        if is_prod:
-            code = f"{secrets.randbelow(10_000):04d}"
-        else:
+        environment = os.getenv("ENVIRONMENT", "").lower()
+        pol_environment = os.getenv("POL_ENV", "").lower()
+        # Deterministic OTP is strictly test-only. Any non-test environment,
+        # including an unset/unknown environment, must use a cryptographically
+        # random code so a deployment misconfiguration cannot silently expose 1234.
+        if environment == "test" or pol_environment == "test":
             code = "1234"
+        else:
+            code = f"{secrets.randbelow(10_000):04d}"
 
         code_hash = store_otp_hash(code)
         cur.execute("""
