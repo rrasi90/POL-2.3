@@ -148,6 +148,20 @@ class DeliveryConfirmRequest(APIBaseModel):
     issue_reported: str | None = Field(default=None, max_length=500)
 
 
+class MediaPresignRequest(APIBaseModel):
+    mime_type: Literal["image/jpeg", "image/png", "image/webp"]
+    file_size_bytes: int = Field(gt=0, le=5 * 1024 * 1024)
+    target_type: Literal["PRODUCT", "VENDOR", "CANDIDATE", "DISPUTE", "DELIVERY", "PAYMENT", "SUPPORT"]
+    target_id: UUID
+    filename: str | None = Field(default=None, max_length=255)
+
+
+class MediaConfirmUploadRequest(APIBaseModel):
+    media_id: UUID
+    target_type: Literal["PRODUCT", "VENDOR", "CANDIDATE", "DISPUTE", "DELIVERY", "PAYMENT", "SUPPORT"]
+    target_id: UUID
+
+
 class DeliveryStageRequest(APIBaseModel):
     reason: str | None = Field(default=None, max_length=2000)
 
