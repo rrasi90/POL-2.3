@@ -57,7 +57,7 @@
 | R-10 | Reorder / history | `/retailer/orders` | RETAILER_* | GET `/orders` | doc 22 L343–349; MT RT-10 | VERIFIED |
 | R-11 | Returns / disputes | `/retailer/orders/[id]/returns` | RETAILER_OWNER | POST/GET `/orders/{id}/returns`, disputes | doc 22 L351–353; MT RT-09 | IMPLEMENTED |
 | R-12 | Support | `/retailer/support` | RETAILER_* | `/support/cases*` | doc 22 L355–363; MT RT-13 | IMPLEMENTED |
-| R-13 | Account | `/profile` (+ org) | RETAILER_* | profile/context; staff mgmt → GAP G-010 | doc 22 L365–373; MT RT-12 | IMPLEMENTED |
+| R-13 | Account | `/profile` (+ org) | RETAILER_* | profile/context; staff management via `/vendors/staff*` | doc 22 L365–373; MT RT-12 | IMPLEMENTED |
 | R-16 | Financial activity | `/retailer/finance` | RETAILER_OWNER | GET `/invoices` (D-021 no wallet) | MT RT-16; D-021 | VERIFIED |
 | R-17 | Vendor search | `/retailer/vendors` | RETAILER_* | GET `/storefront/vendors` | MT RT-17; D-024 | VERIFIED |
 | R-18 | Vendor storefront | `/retailer/vendors/[id]` | RETAILER_* | GET storefront vendor + products | MT RT-18; D-024 | VERIFIED |
