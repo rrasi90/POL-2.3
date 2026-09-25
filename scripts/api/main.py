@@ -50,6 +50,7 @@ from scripts.api.routes.media import router as media_router
 from scripts.api.routes.vendor_storefront import router as vendor_storefront_router
 from scripts.api.routes.catalog_search import router as catalog_search_router
 from scripts.api.routes.analytics import router as analytics_router
+from scripts.api.routes.catalog_matching import router as catalog_matching_router
 from scripts.api.routes.management import vendor_router as vendor_management_router, admin_router as admin_management_router, ops_router as ops_management_router
 from scripts.api.routes.vendor_inventory import router as vendor_inventory_router
 from scripts.api.routes.finance import (
@@ -172,6 +173,7 @@ def create_app() -> FastAPI:
     app.include_router(vendor_storefront_router, prefix="/api/v1")
     app.include_router(catalog_search_router, prefix="/api/v1")
     app.include_router(analytics_router, prefix="/api/v1")
+    app.include_router(catalog_matching_router, prefix="/api/v1")
     app.include_router(vendor_management_router, prefix="/api/v1")
     app.include_router(admin_management_router, prefix="/api/v1")
     app.include_router(ops_management_router, prefix="/api/v1")
