@@ -79,7 +79,7 @@
 | R-12 | `retailer/support/page.tsx` | typecheck/build exit 0 |
 | R-16 | `retailer/finance/page.tsx` (wallet note D-021) | typecheck/build exit 0 |
 | R-17/18 | `retailer/vendors/page.tsx`, `vendors/[id]/page.tsx` | typecheck/build exit 0 |
-| R-03B | no CONTRACT call invented | status GAP (G-003-adjacent) |
+| R-03B | `POST /products/match-barcode` + barcode candidate workflow | status IMPLEMENTED; device camera transport remains runtime scope |
 
 ---
 
@@ -258,7 +258,7 @@ A mobile implementation is not promoted to VERIFIED until its required QA/eviden
 | Operations foundation | O-01/O-02/O-06/O-10 | apps/mobile/src/screens/OpsMobileScreen.tsx | IMPLEMENTED |
 | Field-first | F-01…F-05 | existing FieldTaskList/Detail/AssistedOrder screens + OfflineBanner | IMPLEMENTED |
 | Barcode | R-03B/V-16, D-028 | canonical API matching/candidate workflow implemented; device camera transport remains client/runtime scope | IMPLEMENTED |
-| Remaining mobile parity | order detail, returns, support, vendor storefront/customers/staff and other applicable screens | not yet ported | OPEN |
+| Remaining mobile parity | selected applicable surfaces such as candidate review, vendor customer/staff management and deeper Ops/admin workflows | not all mobile screens are ported; backend source is authoritative | OPEN / PARTIAL |
 
 Verification requirements:
 - .github/workflows/pol-mvp-mobile.yml
