@@ -53,6 +53,7 @@ EXPECTED_MIGRATIONS = [
     "031_delivery_exceptions.sql",
     "032_cross_entity_integrity_and_append_only_guards.sql",
     "033_delivery_lifecycle_and_pod_integrity.sql",
+    "034_checkout_single_use_and_reservation_lineage.sql",
 ]
 EXPECTED_TABLE_COUNT = 95
 EXPECTED_CORE_TABLES = [
