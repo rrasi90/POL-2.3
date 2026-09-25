@@ -1,6 +1,6 @@
 # POL MVP — Cross-Cutting State / Action Matrix
 
-Version: 1.0 — 2026-09-24
+Version: 1.1 — 2026-09-25
 Purpose: single executable governance matrix for cross-cutting behavior. This is complementary to the screen matrix; it does not replace domain state machines.
 
 ## Status vocabulary
@@ -37,20 +37,23 @@ Every in-scope action must be evaluated for: Preconditions | Validation | Loadin
 | CC-17 | Add support message | organization/case | support.message | yes | yes/retry | policy needed | closed case | REQUIRED | audit | recipient notification | IMPLEMENTED | support tests; internal/customer visibility audit |
 | CC-18 | Update profile | user/org | profile.write | yes | yes/retry | no | concurrent edit | safe retry | audit where sensitive | none | IMPLEMENTED | API + UI; stale/concurrency audit |
 | CC-19 | Update notification preferences | user | notification.manage | yes | yes/retry | no | concurrent edit | safe retry | audit optional | none | IMPLEMENTED | API + mobile UI; preference semantics audit |
-| CC-20 | Read notifications | user | notification.read | yes | yes/retry | cached only if supported | stale | n/a | none | none | CONTRACT GAP | live API omits read/deep-link fields; G-005/G-004 |
-| CC-21 | Mark notification read | user | notification.write | yes | yes/retry | no | already read | idempotent | audit optional | none | GAP | no current HTTP route |
+| CC-20 | Read notifications | user | notification.read | yes | yes/retry | cached only if supported | stale | n/a | none | none | VERIFIED | HTTP notification tests + CI #805; browser/device delivery remains separate |
+| CC-21 | Mark notification read | user | notification.write | yes | yes/retry | no | already read | idempotent | audit optional | none | VERIFIED | PATCH item/read + read-all HTTP tests + CI #805 |
 | CC-22 | Vendor inventory update | organization | vendor.inventory.write | yes | yes/retry | no | concurrent inventory | REQUIRED where mutation retries | audit | optional | IMPLEMENTED | source/runtime concurrency audit |
 | CC-23 | Invoice read | organization | finance.read | yes | yes/retry | cache only if supported | timing policy | n/a | financial audit | optional | OPEN_DECISION | invoice timing still OPEN |
 | CC-24 | Payment verification | organization/order | finance.verify | yes | yes/retry | forbidden | duplicate/out-of-order | REQUIRED | financial audit | payment notification | IMPLEMENTED | payment RBAC/idempotency tests |
 | CC-25 | Settlement adjustment | organization/order | ops.finance.adjust | yes | yes/retry | forbidden | duplicate adjustment | REQUIRED | immutable financial audit | settlement notification | IMPLEMENTED | dispute/settlement tests |
 | CC-26 | Refund creation | organization/order | ops.finance.refund | yes | yes/retry | forbidden | refund > paid / duplicate | REQUIRED | immutable financial audit | refund notification | IMPLEMENTED | refund tests; end-to-end financial drill open |
 | CC-27 | Logout mobile | user/session | authenticated | yes | yes | no | already revoked | idempotent | session audit | security optional | IMPLEMENTED | source remediation on audit branch; device/CI verification pending |
-| CC-28 | Mobile 401 recovery | organization | authenticated | yes | retry once | no | refresh failure | safe retry | auth audit | session-expired UX | IMPLEMENTED | source has single-flight refresh + one retry; current CI/device evidence remains required |
-| CC-29 | Mobile cold restart | user/session | authenticated | boot | boot error | n/a | stale session | n/a | auth event | none | IMPLEMENTED | SecureStore restoration exists; current APK cold-restart evidence remains required |
-| CC-30 | Mobile theme switch | user/device | authenticated | n/a | n/a | n/a | system mode | n/a | none | none | IMPLEMENTED | source remediation; screen-by-screen visual evidence open |
+| CC-28 | Mobile 401 recovery | organization | authenticated | yes | retry once | no | refresh failure | safe retry | auth audit | session-expired UX | IMPLEMENTED | source + mobile CI #202; device runtime evidence remains open |
+| CC-29 | Mobile cold restart | user/session | authenticated | boot | boot error | n/a | stale session | n/a | auth event | none | IMPLEMENTED | source + mobile CI #202; physical cold-restart evidence remains open |
+| CC-30 | Mobile theme switch | user/device | authenticated | n/a | n/a | n/a | system mode | n/a | none | none | IMPLEMENTED | source + mobile CI #202; screen-by-screen visual evidence remains open |
 
 ## Closure rule
 A row is not VERIFIED merely because the API or screen exists. It must have current evidence for the behavior dimensions that matter to that action.
 
 ## Next matrix expansion
 After the critical-action pass, expand this matrix to every screen action in MVP_SCREEN_MATRIX.md. Any action without a row is a traceability defect.
+## Current evidence checkpoint — 2026-09-25
+
+Backend verification CI run #805 passed 526/526 tests. Mobile verification run #202 passed including Expo Android export and regression QA. Rows are only promoted to VERIFIED where the current HTTP/source evidence actually tests the behavior; browser, physical-device, provider, and deployment evidence remain distinct.
