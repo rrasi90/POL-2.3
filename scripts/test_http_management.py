@@ -352,3 +352,80 @@ def test_continuous_inventory_scan_and_publish(client, management_env):
         cur.execute("DELETE FROM categories WHERE id=%s", (category_id,))
         cur.execute("DELETE FROM brands WHERE id=%s", (brand_id,))
     conn.commit()
+
+def test_product_candidate_review_http_is_tenant_and_idempotent(client, management_env):
+    conn = management_env["conn"]
+    candidate_id = str(uuid4())
+    suffix = uuid4().hex[:8]
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO product_candidates
+                    (id, vendor_id, proposed_title, proposed_brand, barcode, vendor_sku)
+                VALUES (%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    candidate_id,
+                    management_env["vendor_id"],
+                    "Candidate " + suffix,
+                    "Test Brand",
+                    "6261234567890",
+                    "CAND-" + suffix,
+                ),
+            )
+        conn.commit()
+
+        admin_headers = {"Authorization": f"Bearer {management_env['admin']}"}
+        vendor_headers = {"Authorization": f"Bearer {management_env['vendor']}"}
+
+        listed = client.get(
+            "/api/v1/admin/product-candidates",
+            headers=admin_headers,
+            params={"status": "PENDING_REVIEW", "query": suffix},
+        )
+        assert listed.status_code == 200
+        rows = listed.json()["data"]["candidates"]
+        assert any(row["candidate_id"] == candidate_id for row in rows)
+
+        denied = client.get(
+            "/api/v1/admin/product-candidates",
+            headers=vendor_headers,
+        )
+        assert denied.status_code == 403
+
+        reviewed = client.patch(
+            "/api/v1/admin/product-candidates/" + candidate_id,
+            headers=admin_headers,
+            json={"action": "REJECT", "reason": "Not a canonical catalog item."},
+        )
+        assert reviewed.status_code == 200
+        assert reviewed.json()["data"]["status"] == "REJECTED"
+        assert reviewed.json()["data"]["idempotent_replay"] is False
+
+        replay = client.patch(
+            "/api/v1/admin/product-candidates/" + candidate_id,
+            headers=admin_headers,
+            json={"action": "REJECT", "reason": "Replay should not mutate again."},
+        )
+        assert replay.status_code == 200
+        replay_data = replay.json()["data"]
+        assert replay_data["status"] == "REJECTED"
+        assert replay_data["idempotent_replay"] is True
+
+        non_admin_review = client.patch(
+            "/api/v1/admin/product-candidates/" + candidate_id,
+            headers=vendor_headers,
+            json={"action": "REJECT", "reason": "Denied."},
+        )
+        assert non_admin_review.status_code == 403
+    finally:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM outbox_events WHERE aggregate_id=%s", (candidate_id,))
+            cur.execute(
+                "DELETE FROM admin_audit_logs WHERE target_entity_type='PRODUCT_CANDIDATE' AND target_entity_id=%s",
+                (candidate_id,),
+            )
+            cur.execute("DELETE FROM product_candidates WHERE id=%s", (candidate_id,))
+        conn.commit()
+
