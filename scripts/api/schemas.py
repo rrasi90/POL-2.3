@@ -399,3 +399,12 @@ class DisputeResolveRequest(APIBaseModel):
     ]
     approved_amount_toman: int = Field(ge=0)
     reason: str = Field(min_length=1, max_length=1000)
+
+
+class BarcodeMatchRequest(APIBaseModel):
+    barcode: str = Field(min_length=8, max_length=32)
+    proposed_title: str | None = Field(default=None, max_length=255)
+    vendor_sku: str | None = Field(default=None, max_length=100)
+    packaging_unit: str = Field(default="UNIT", min_length=1, max_length=30)
+    pack_quantity: int = Field(default=1, ge=1, le=100000)
+    create_candidate: bool = False
