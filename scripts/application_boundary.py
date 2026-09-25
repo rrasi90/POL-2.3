@@ -519,10 +519,6 @@ class POLApplicationBoundary:
             raise ValueError("Order not found.")
         order = dict(order)
         if actor_role == "RETAILER":
-            org_check = self.cur.execute(
-                "SELECT id FROM retailers WHERE id = %s AND organization_id = %s",
-                (order["retailer_id"], self.context.organization_id),
-            ) or True
             self.cur.execute(
                 "SELECT 1 FROM retailers WHERE id = %s AND organization_id = %s",
                 (order["retailer_id"], self.context.organization_id),
