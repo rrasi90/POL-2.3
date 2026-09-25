@@ -278,10 +278,10 @@ feedback_*, support_* (HTTP now REAL for cases), referral (HTTP REAL), return_re
 | Referrals | referrals/* | — |
 | Field tasks | field/tasks* | — |
 | Admin audit/exceptions | admin/* | users/orgs administration remains GAP; broadcasts and categories admin are REAL |
-| Pilot analytics O-09 | **GAP** (no analytics HTTP) | MOCK read-model or GAP |
-| Vendor customers V-09 | **GAP/CONTRACT** (no list API found) | GAP → mock list from orders if needed |
-| Staff/access V-11 | **GAP** | GAP |
-| Permission mgmt | **GAP** | GAP |
+| Pilot analytics O-09 | `GET /ops/analytics`, `GET /ops/analytics/weekly` | KPI service / live SQL |
+| Vendor customers V-09 | `GET /vendors/customers?query=&offset=&limit=` | tenant-scoped customers derived from vendor orders |
+| Staff/access V-11 | `GET/POST/PATCH /vendors/staff*` | vendor-owner managed membership lifecycle |
+| Permission mgmt | `GET /ops/permissions` | canonical RBAC permission catalog |
 
 ---
 
