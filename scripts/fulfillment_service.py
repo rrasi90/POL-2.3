@@ -28,8 +28,11 @@ VALID_DELIVERY_TRANSITIONS = {"DISPATCHED"}
 
 def _guard_transition(cur, order_id, expected_from: set[str]) -> dict:
     cur.execute(
-        "SELECT id, order_status, vendor_id, retailer_id, order_number "
-        "FROM orders WHERE id = %s FOR UPDATE",
+        "SELECT o.id, o.order_status, o.vendor_id, o.retailer_id, o.order_number, "
+        "r.organization_id AS retailer_organization_id "
+        "FROM orders o "
+        "JOIN retailers r ON r.id=o.retailer_id "
+        "WHERE o.id = %s FOR UPDATE",
         (order_id,),
     )
     order = cur.fetchone()
@@ -137,7 +140,7 @@ def mark_preparing(cur, *, user_id, organization_id, order_id) -> dict:
             "order_number": order["order_number"],
             "order_status": "PREPARING",
         },
-        recipient_org_id=order["retailer_id"],
+        recipient_org_id=order["retailer_organization_id"],
     )
     return {
         "order_id": order_id,
