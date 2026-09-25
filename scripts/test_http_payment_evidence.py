@@ -375,3 +375,37 @@ class TestAccessControl:
             },
         )
         assert resp.status_code == 403
+
+
+    def test_wrong_tenant_cannot_read_evidence(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        conn = _db()
+        other_token = None
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                other_u = str(uuid4()); other_o = str(uuid4())
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s,%s,'OTHER','RETAILER_OWNER')",
+                    (other_u, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    "INSERT INTO organizations (id, name, org_type, status) VALUES (%s,'OTHER-READ','RETAILER','ACTIVE')",
+                    (other_o,),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status) "
+                    "VALUES (%s,%s,%s,'RETAILER_OWNER','ACTIVE')",
+                    (str(uuid4()), other_o, other_u),
+                )
+                other_sess = _create_session(cur, other_u, other_o)
+            conn.commit()
+            other_token = encode_access_token(other_u, other_sess, other_o, "RETAILER_OWNER")
+        finally:
+            conn.close()
+
+        resp = client.get(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {other_token}"},
+        )
+        assert resp.status_code == 403
+
