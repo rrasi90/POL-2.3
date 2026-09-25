@@ -29,6 +29,7 @@ from scripts.api.errors import (
 from scripts.api.routes.auth import router as auth_router
 from scripts.api.routes.baskets import router as baskets_router
 from scripts.api.routes.catalog import router as catalog_router
+from scripts.api.routes.catalog_identifiers import candidates_router as catalog_candidates_router, router as catalog_identifiers_router
 from scripts.api.routes.products import router as products_router
 from scripts.api.routes.profile import membership_router, router as profile_router
 from scripts.api.routes.orders import router as orders_router
@@ -139,6 +140,8 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(baskets_router, prefix="/api/v1")
     app.include_router(catalog_router, prefix="/api/v1")
+    app.include_router(catalog_identifiers_router, prefix="/api/v1")
+    app.include_router(catalog_candidates_router, prefix="/api/v1")
     app.include_router(products_router, prefix="/api/v1")
     app.include_router(vendor_catalog_router, prefix="/api/v1")
     app.include_router(daily_inventory_router, prefix="/api/v1")
