@@ -224,4 +224,8 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - Finding: lifecycle events emitted by fulfillment/timeout workers included PREPARING, READY, DISPATCHED, DELIVERY_OTP_GENERATED, DELIVERED and CANCELLED, but the notification template registry did not cover all emitted events.
 - Resolution: migration 045 adds active INBOX templates for all six events. ORDER_DELIVERED and ORDER_CANCELLED now route to both commercial parties where the canonical notification matrix requires it.
 - Status: RESOLVED in source; fresh CI certification remains separate.
+## G-036 — Barcode-only candidate concurrency (RESOLVED — 2026-09-25)
 
+- Finding: application-level replay checks did not by themselves guarantee uniqueness when two barcode-only candidate submissions raced concurrently.
+- Resolution: migration 046 adds a partial unique index on (vendor_id, barcode) for PENDING_REVIEW candidates; the application insert uses the same conflict target and re-reads the canonical candidate on conflict.
+- Status: RESOLVED in source; fresh CI certification remains separate.
