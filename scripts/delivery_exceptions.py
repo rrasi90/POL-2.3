@@ -320,9 +320,13 @@ def get_delivery_exception(cur, *, user_id, organization_id, exception_id) -> di
               EXISTS (
                   SELECT 1
                   FROM organization_memberships om
+                  JOIN organizations o ON o.id=om.organization_id
+                  JOIN users u ON u.id=om.user_id
                   WHERE om.user_id=%s
                     AND om.organization_id=%s
                     AND om.status='ACTIVE'
+                    AND o.status='ACTIVE'
+                    AND u.is_active=TRUE
                     AND om.role IN ('OPS_AGENT','OPS_ADMIN','ADMIN_SUPER','SUPER_ADMIN')
               )
               OR EXISTS (
