@@ -70,10 +70,11 @@ class RevalidationCheckoutService:
             (plan_id, basket_id),
         )
         persisted = cur.fetchall()
+        allocated_statuses = {"ALLOCATED", "PARTIALLY_ALLOCATED"}
         invalid_statuses = {
             row["status"]
             for row in persisted
-            if row["status"] not in {"ALLOCATED", "UNFULFILLED"}
+            if row["status"] not in allocated_statuses and row["status"] != "UNFULFILLED"
         }
         if invalid_statuses:
             raise ValueError(
@@ -83,7 +84,7 @@ class RevalidationCheckoutService:
         # commits only the vendor-assigned lines; those lines are intentionally
         # excluded from the commercial order payload and total.
         persisted_allocated = [
-            row for row in persisted if row["status"] == "ALLOCATED"
+            row for row in persisted if row["status"] in allocated_statuses
         ]
         expected_allocations = {
             (
