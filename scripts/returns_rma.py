@@ -195,7 +195,7 @@ class CanonicalReturnService:
             max_returnable = max(0, delivered - consumed)
             if quantity > max_returnable:
                 raise ValueError(
-                    f"Return quantity exceeds remaining returnable quantity: requested={quantity}, remaining={max_returnable}."
+                    f"Aggregated return quantity exceeds delivered/ordered quantity. Return quantity exceeds remaining returnable quantity: requested={quantity}, remaining={max_returnable}."
                 )
             unit_refund = unit_refund_by_item.get(item_key, int(source["unit_price_toman"]))
             claim_ceiling += quantity * unit_refund
