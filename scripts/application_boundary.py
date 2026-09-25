@@ -2021,7 +2021,7 @@ class POLApplicationBoundary:
                  target_user_id,target_organization_id,dedupe_key,channel_hint)
             VALUES
                 (gen_random_uuid(),gen_random_uuid(),'PRODUCT_CANDIDATE_REVIEWED',
-                 'PRODUCT_CANDIDATE',%s,%s,'PENDING',NULL,NULL,%s,'INBOX')
+                 'PRODUCT_CANDIDATE',%s,%s,'PENDING',%s,%s,%s,'INBOX')
             ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
             """,
             (
@@ -2032,6 +2032,8 @@ class POLApplicationBoundary:
                     "resolved_product_id": resolved_product_id,
                     "reviewed_by_user_id": str(self.context.user_id),
                 }),
+                candidate["vendor_user_id"],
+                candidate["vendor_organization_id"],
                 "PRODUCT_CANDIDATE_REVIEWED:" + str(candidate_id),
             ),
         )
