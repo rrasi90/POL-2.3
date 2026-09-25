@@ -52,7 +52,7 @@ Fresh pull-request runs triggered by remediation commits are currently **failing
 | G-029 | Web token persistence in localStorage | **SOURCE REMEDIATED / BROWSER PENDING** | Access token is memory-only; refresh credential is server-managed HttpOnly/Secure cookie. |
 | G-030 | Browser-to-API CORS policy | **SOURCE REMEDIATED / DEPLOYMENT VERIFY** | Explicit environment-scoped CORS is enforced and wildcard production CORS is rejected. |
 | D-024 | Storefront write fields | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
-| OP-11 | Delegated permissions | **GAP** | no permission-list HTTP |
+| OP-11 | Permission catalog | **SOURCE IMPLEMENTED / POLICY OPEN** | `GET /api/v1/ops/permissions` is live and consumed by the ops screen; delegated permission assignment remains unspecified. |
 | Refresh-token rotation | Stage 10 policy | **OPEN** | do not invent |
 | Invoice timing | on ACCEPTED default | **OPEN** | confirm before finance e2e |
 | Phase 3 remaining | Night visual verification + current-device cold relaunch/storage evidence | **OPEN** | D-028 and G-023…G-026 source remediated; execute remaining runtime/device gates |
@@ -130,7 +130,7 @@ Untracked (intentionally not committed): `docker-compose.yml`, `monitoring/`, `f
 | B-02 | OpenPencil MCP `:7600` down | curl exit 28 / code 000; WAVE-02 blocked |
 | B-03 | SMS provider credentials | Live SMS provider credentials remain absent; deterministic OTP is now restricted to explicit `ENVIRONMENT=test` only; non-test environments use random OTPs. |
 | B-07 | Grafana `:3000` vs Next | Next on `:3001` |
-| G-003/G-004 literal contract path parity | only if a test demands contract path over REAL |
+| G-003/G-004 literal contract path parity | **RESOLVED** | Canonical + compatibility HTTP paths are both implemented and covered by current route/tests; no source gap remains. |
 
 No other external blockers claimed.
 
