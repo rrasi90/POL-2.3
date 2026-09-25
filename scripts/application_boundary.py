@@ -1746,6 +1746,55 @@ class POLApplicationBoundary:
             "pagination": {"page": page, "limit": limit, "total": total},
         }
 
+    def catalog_categories_public(self):
+        self.cur.execute(
+            """
+            SELECT c.id, c.name_fa, c.slug, c.icon_url, c.display_order,
+                   COALESCE(json_agg(json_build_object('id', sc.id, 'name_fa', sc.name_fa, 'slug', sc.slug, 'display_order', sc.display_order)
+                                      ORDER BY sc.display_order, sc.name_fa) FILTER (WHERE sc.id IS NOT NULL), '[]'::json) AS subcategories
+            FROM categories c
+            LEFT JOIN subcategories sc ON sc.category_id=c.id
+            GROUP BY c.id, c.name_fa, c.slug, c.icon_url, c.display_order
+            ORDER BY c.display_order, c.name_fa
+            """
+        )
+        return self.cur.fetchall()
+
+    def admin_category_create(self, *, name_fa, slug, icon_url=None, display_order=0):
+        self._require_ops_context()
+        self.cur.execute(
+            """
+            INSERT INTO categories (name_fa, slug, icon_url, display_order)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id, name_fa, slug, icon_url, display_order, created_at
+            """,
+            (name_fa.strip(), slug.strip(), icon_url, display_order),
+        )
+        row = dict(self.cur.fetchone())
+        AuditService.log(self.cur, self.context.user_id, 'CATEGORY_CREATED', 'category', str(row['id']), {}, row, 'Admin category created.')
+        row['id'] = str(row['id'])
+        return row
+
+    def admin_category_update(self, *, category_id, name_fa=None, slug=None, icon_url=None, display_order=None):
+        self._require_ops_context()
+        self.cur.execute("SELECT * FROM categories WHERE id=%s::uuid FOR UPDATE", (category_id,))
+        before = self.cur.fetchone()
+        if not before:
+            raise KeyError('Category not found.')
+        updates=[]; params=[]
+        for col,val in (("name_fa",name_fa),("slug",slug),("icon_url",icon_url),("display_order",display_order)):
+            if val is not None:
+                updates.append(f"{col}=%s")
+                params.append(val.strip() if isinstance(val,str) else val)
+        if not updates:
+            return dict(before)
+        params.append(category_id)
+        self.cur.execute("UPDATE categories SET " + ', '.join(updates) + " WHERE id=%s::uuid RETURNING id,name_fa,slug,icon_url,display_order,created_at", tuple(params))
+        row=dict(self.cur.fetchone())
+        AuditService.log(self.cur, self.context.user_id, 'CATEGORY_UPDATED', 'category', str(category_id), dict(before), row, 'Admin category updated.')
+        row['id']=str(row['id'])
+        return row
+
     def catalog_categories(self):
         self.cur.execute(
             """
