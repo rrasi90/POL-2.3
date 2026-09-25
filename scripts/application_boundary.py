@@ -783,7 +783,7 @@ class POLApplicationBoundary:
 
         # Client-facing dispute creation uses the same canonical domain service
         # as the master E2E so settlement, filing-window and outbox rules cannot diverge.
-        from scripts.domain_services import DisputeService
+        from scripts.canonical_dispute import CanonicalDisputeService
 
         self.cur.execute(
             """
@@ -803,7 +803,7 @@ class POLApplicationBoundary:
         if not context:
             raise ValueError("No eligible settlement found for this retailer order.")
 
-        disp_id = DisputeService.open_dispute(
+        disp_id = CanonicalDisputeService.open_dispute(
             self.cur,
             str(order_id),
             str(context["retailer_id"]),
