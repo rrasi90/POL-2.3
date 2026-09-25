@@ -28,7 +28,7 @@
 | 12 | Independent 2nd-pass audit | **DONE** | `verify_repository_consistency.py` PASS 8/8 EXIT 0 (D-015/016/017 + hierarchy restored). |
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
 | 14 | Regression | **REVERIFY** | Historical backend/mobile CI was green; post-remediation pull-request reruns are currently failing before useful step execution, so fresh certification is pending. Local regression/E2E evidence is recorded separately. |
-| 15 | Repeat until DoD | **OPEN** | DoD = §8; open gaps in `MVP_KNOWN_GAPS.md` + Phase 3 parity remain. |
+| 15 | Repeat until DoD | **OPEN — EVIDENCE/DECISION GATE** | Source-level remediation is advanced; remaining DoD blockers are the explicit decisions in §2, deployment/provider/observability evidence, selected deep mobile parity, and fresh CI certification. |
 | 16 | Phase 5 delivery | **OPEN — FINAL EVIDENCE RECONCILIATION** | Night, live checkout and idempotency local gates are recorded PASS. Remaining closure is fresh CI certification plus explicit product/security/deployment decisions/evidence. |
 
 ---
