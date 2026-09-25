@@ -3302,3 +3302,431 @@ class POLApplicationBoundary:
         )
         row = self.cur.fetchone()
         return dict(row)
+
+
+    # ── Management / IAM Read & Mutation Surface ───────────────────
+
+    def _require_vendor_management(self):
+        if not self.context.organization_id:
+            raise PermissionError("Vendor management requires an active organization context.")
+        self.cur.execute(
+            """
+            SELECT om.role, o.org_type, o.status AS org_status
+            FROM organization_memberships om
+            JOIN organizations o ON o.id = om.organization_id
+            WHERE om.user_id = %s
+              AND om.organization_id = %s
+              AND om.status = 'ACTIVE'
+              AND o.org_type = 'VENDOR'
+              AND o.status = 'ACTIVE'
+            LIMIT 1
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        row = self.cur.fetchone()
+        if not row or row["role"] not in ("VENDOR_OWNER", "VENDOR_STAFF"):
+            raise PermissionError("Access denied: vendor membership required.")
+        return row
+
+    def _require_vendor_owner(self):
+        row = self._require_vendor_management()
+        if row["role"] != "VENDOR_OWNER":
+            raise PermissionError("Only VENDOR_OWNER may manage staff.")
+        return row
+
+    def _require_admin_management(self):
+        self._require_ops_context()
+        self.cur.execute(
+            """
+            SELECT role
+            FROM organization_memberships
+            WHERE user_id = %s
+              AND organization_id = %s
+              AND status = 'ACTIVE'
+            LIMIT 1
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        row = self.cur.fetchone()
+        if not row or row["role"] not in ("SUPER_ADMIN", "OPS_ADMIN", "ADMIN_SUPER", "OPS_AGENT"):
+            raise PermissionError("Administrative membership required.")
+        return row
+
+    def _require_super_admin(self):
+        row = self._require_admin_management()
+        if row["role"] not in ("SUPER_ADMIN", "ADMIN_SUPER"):
+            raise PermissionError("SUPER_ADMIN authority required.")
+        return row
+
+    def vendor_customers_list(self, *, query=None, offset=0, limit=50):
+        self._require_vendor_management()
+        params: list = [self.context.organization_id]
+        clauses = ["v.organization_id = %s", "o.order_status <> 'CANCELLED'"]
+        if query:
+            clauses.append("(r.store_name ILIKE %s OR u.full_name ILIKE %s OR u.phone_number ILIKE %s)")
+            needle = f"%{query.strip()}%"
+            params.extend([needle, needle, needle])
+        where_sql = " AND ".join(clauses)
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT
+                r.id AS retailer_id,
+                r.store_name,
+                r.city,
+                r.neighborhood,
+                u.id AS user_id,
+                u.full_name,
+                u.phone_number,
+                COUNT(o.id)::INT AS order_count,
+                MAX(o.created_at) AS last_order_at
+            FROM orders o
+            JOIN vendors v ON v.id = o.vendor_id
+            JOIN retailers r ON r.id = o.retailer_id
+            JOIN users u ON u.id = r.user_id
+            WHERE {where_sql}
+            GROUP BY r.id, r.store_name, r.city, r.neighborhood, u.id, u.full_name, u.phone_number
+            ORDER BY MAX(o.created_at) DESC, r.id
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        rows = [dict(x) for x in self.cur.fetchall()]
+        return {"customers": rows, "limit": limit, "offset": offset}
+
+    def vendor_staff_list(self, *, offset=0, limit=100):
+        self._require_vendor_management()
+        self.cur.execute(
+            """
+            SELECT
+                m.id AS membership_id,
+                m.user_id,
+                u.phone_number,
+                u.full_name,
+                m.role,
+                m.status,
+                m.is_primary,
+                m.created_at,
+                m.updated_at
+            FROM organization_memberships m
+            JOIN users u ON u.id = m.user_id
+            WHERE m.organization_id = %s
+            ORDER BY
+                CASE m.role WHEN 'VENDOR_OWNER' THEN 0 ELSE 1 END,
+                m.created_at ASC
+            LIMIT %s OFFSET %s
+            """,
+            (self.context.organization_id, limit, offset),
+        )
+        return {"members": [dict(x) for x in self.cur.fetchall()], "limit": limit, "offset": offset}
+
+    def vendor_staff_invite(self, *, phone_number, full_name):
+        self._require_vendor_owner()
+        self.cur.execute(
+            "SELECT id, is_active FROM users WHERE phone_number = %s LIMIT 1",
+            (phone_number,),
+        )
+        user = self.cur.fetchone()
+        if user and not user["is_active"]:
+            raise ValueError("The target user account is inactive.")
+        if not user:
+            user_id = str(uuid4())
+            self.cur.execute(
+                """
+                INSERT INTO users (id, phone_number, role, full_name, is_active)
+                VALUES (%s, %s, 'VENDOR_STAFF', %s, TRUE)
+                RETURNING id
+                """,
+                (user_id, phone_number, full_name),
+            )
+        else:
+            user_id = str(user["id"])
+            if full_name.strip():
+                self.cur.execute(
+                    "UPDATE users SET full_name=%s, updated_at=now() WHERE id=%s",
+                    (full_name.strip(), user_id),
+                )
+        self.cur.execute(
+            """
+            SELECT id, status, role
+            FROM organization_memberships
+            WHERE organization_id=%s AND user_id=%s
+            """,
+            (self.context.organization_id, user_id),
+        )
+        existing = self.cur.fetchone()
+        if existing:
+            raise ValueError(f"User already has membership in this vendor organization ({existing['status']}).")
+        membership_id = str(uuid4())
+        self.cur.execute(
+            """
+            INSERT INTO organization_memberships
+                (id, organization_id, user_id, role, status, is_primary)
+            VALUES (%s, %s, %s, 'VENDOR_STAFF', 'INVITED', FALSE)
+            RETURNING id, organization_id, user_id, role, status, created_at
+            """,
+            (membership_id, self.context.organization_id, user_id),
+        )
+        row = dict(self.cur.fetchone())
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id, state_after, reason, correlation_id)
+            VALUES (%s, 'VENDOR_STAFF_INVITED', 'ORGANIZATION_MEMBERSHIP', %s, %s, %s, %s)
+            """,
+            (
+                self.context.user_id,
+                membership_id,
+                Json(row),
+                "vendor staff invitation",
+                self.context.correlation_id,
+            ),
+        )
+        return row
+
+    def vendor_staff_update(self, *, membership_id, role=None, status=None):
+        self._require_vendor_owner()
+        allowed_roles = {"VENDOR_OWNER", "VENDOR_STAFF"}
+        allowed_statuses = {"INVITED", "ACTIVE", "SUSPENDED", "REVOKED"}
+        if role is not None and role not in allowed_roles:
+            raise ValueError("Invalid vendor membership role.")
+        if status is not None and status not in allowed_statuses:
+            raise ValueError("Invalid membership status.")
+        self.cur.execute(
+            """
+            SELECT id, user_id, role, status
+            FROM organization_memberships
+            WHERE id=%s AND organization_id=%s
+            FOR UPDATE
+            """,
+            (membership_id, self.context.organization_id),
+        )
+        before = self.cur.fetchone()
+        if not before:
+            raise KeyError("Vendor membership not found.")
+        if before["role"] == "VENDOR_OWNER" and (role == "VENDOR_STAFF" or status == "REVOKED"):
+            self.cur.execute(
+                """
+                SELECT COUNT(*) AS owners
+                FROM organization_memberships
+                WHERE organization_id=%s
+                  AND role='VENDOR_OWNER'
+                  AND status='ACTIVE'
+                  AND id<>%s
+                """,
+                (self.context.organization_id, membership_id),
+            )
+            if int(self.cur.fetchone()["owners"]) == 0:
+                raise ValueError("Cannot remove the last active vendor owner.")
+        updates = []
+        params: list = []
+        if role is not None:
+            updates.append("role=%s")
+            params.append(role)
+        if status is not None:
+            updates.append("status=%s")
+            params.append(status)
+        if not updates:
+            raise ValueError("No staff fields to update.")
+        updates.append("updated_at=now()")
+        params.extend([membership_id, self.context.organization_id])
+        self.cur.execute(
+            f"""
+            UPDATE organization_memberships
+            SET {", ".join(updates)}
+            WHERE id=%s AND organization_id=%s
+            RETURNING id, organization_id, user_id, role, status, is_primary, updated_at
+            """,
+            tuple(params),
+        )
+        after = dict(self.cur.fetchone())
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id, state_before, state_after, reason, correlation_id)
+            VALUES (%s, 'VENDOR_STAFF_UPDATED', 'ORGANIZATION_MEMBERSHIP', %s, %s, %s, %s, %s)
+            """,
+            (
+                self.context.user_id,
+                membership_id,
+                Json(dict(before)),
+                Json(after),
+                "vendor staff membership update",
+                self.context.correlation_id,
+            ),
+        )
+        return after
+
+    def admin_users_list(self, *, query=None, offset=0, limit=50):
+        self._require_admin_management()
+        params: list = []
+        clauses = ["1=1"]
+        if query:
+            clauses.append("(u.phone_number ILIKE %s OR u.full_name ILIKE %s OR u.role ILIKE %s)")
+            needle = f"%{query.strip()}%"
+            params.extend([needle, needle, needle])
+        where_sql = " AND ".join(clauses)
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT
+                u.id, u.phone_number, u.full_name, u.role, u.is_active,
+                u.last_login_at, u.created_at,
+                COUNT(DISTINCT m.id)::INT AS membership_count
+            FROM users u
+            LEFT JOIN organization_memberships m ON m.user_id=u.id
+            WHERE {where_sql}
+            GROUP BY u.id
+            ORDER BY u.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        return {"users": [dict(x) for x in self.cur.fetchall()], "limit": limit, "offset": offset}
+
+    def admin_user_update(self, *, user_id, is_active):
+        self._require_super_admin()
+        self.cur.execute(
+            "SELECT id, is_active, role FROM users WHERE id=%s FOR UPDATE",
+            (user_id,),
+        )
+        before = self.cur.fetchone()
+        if not before:
+            raise KeyError("User not found.")
+        if str(before["id"]) == str(self.context.user_id) and not is_active:
+            raise ValueError("Administrator cannot deactivate the current account.")
+        self.cur.execute(
+            "UPDATE users SET is_active=%s, updated_at=now() WHERE id=%s RETURNING id, phone_number, full_name, role, is_active, updated_at",
+            (is_active, user_id),
+        )
+        after = dict(self.cur.fetchone())
+        if not is_active:
+            self.cur.execute(
+                "UPDATE user_sessions SET status='REVOKED', revoked_at=now() WHERE user_id=%s AND status='ACTIVE'",
+                (user_id,),
+            )
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id, state_before, state_after, reason, correlation_id)
+            VALUES (%s, 'ADMIN_USER_STATUS_UPDATED', 'USER', %s, %s, %s, %s, %s)
+            """,
+            (self.context.user_id, user_id, Json(dict(before)), Json(after), "admin user status update", self.context.correlation_id),
+        )
+        return after
+
+    def admin_organizations_list(self, *, query=None, org_type=None, offset=0, limit=50):
+        self._require_admin_management()
+        params: list = []
+        clauses = ["1=1"]
+        if query:
+            clauses.append("(o.name ILIKE %s OR COALESCE(o.national_id,'') ILIKE %s)")
+            needle = f"%{query.strip()}%"
+            params.extend([needle, needle])
+        if org_type:
+            clauses.append("o.org_type=%s")
+            params.append(org_type)
+        where_sql = " AND ".join(clauses)
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT
+                o.id, o.name, o.org_type, o.status, o.national_id,
+                o.created_at, o.updated_at,
+                COUNT(DISTINCT m.id)::INT AS membership_count
+            FROM organizations o
+            LEFT JOIN organization_memberships m ON m.organization_id=o.id
+            WHERE {where_sql}
+            GROUP BY o.id
+            ORDER BY o.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        return {"organizations": [dict(x) for x in self.cur.fetchall()], "limit": limit, "offset": offset}
+
+    def admin_organization_update(self, *, organization_id, status):
+        self._require_super_admin()
+        allowed = {"LEAD", "DOCUMENTS_PENDING", "UNDER_REVIEW", "VERIFICATION_PENDING", "APPROVED", "ACTIVE", "REJECTED", "SUSPENDED"}
+        if status not in allowed:
+            raise ValueError("Invalid organization status.")
+        self.cur.execute(
+            "SELECT id, name, org_type, status FROM organizations WHERE id=%s FOR UPDATE",
+            (organization_id,),
+        )
+        before = self.cur.fetchone()
+        if not before:
+            raise KeyError("Organization not found.")
+        self.cur.execute(
+            "UPDATE organizations SET status=%s, updated_at=now() WHERE id=%s RETURNING id, name, org_type, status, updated_at",
+            (status, organization_id),
+        )
+        after = dict(self.cur.fetchone())
+        if status in ("SUSPENDED", "REJECTED"):
+            self.cur.execute(
+                """
+                UPDATE user_sessions
+                SET status='REVOKED', revoked_at=now()
+                WHERE active_organization_id=%s AND status='ACTIVE'
+                """,
+                (organization_id,),
+            )
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id, state_before, state_after, reason, correlation_id)
+            VALUES (%s, 'ADMIN_ORG_STATUS_UPDATED', 'ORGANIZATION', %s, %s, %s, %s, %s)
+            """,
+            (self.context.user_id, organization_id, Json(dict(before)), Json(after), "admin organization status update", self.context.correlation_id),
+        )
+        return after
+
+    def permission_catalog(self):
+        self._require_ops_context()
+        return {
+            "roles": {
+                "RETAILER_OWNER": ["invite_staff", "manage_store_profile", "place_orders", "confirm_delivery", "submit_payment_evidence", "open_disputes", "view_invoices"],
+                "RETAILER_STAFF": ["build_basket", "view_orders", "confirm_delivery"],
+                "VENDOR_OWNER": ["manage_catalog", "set_prices", "update_inventory", "accept_reject_orders", "assign_drivers", "view_settlements", "manage_staff"],
+                "VENDOR_STAFF": ["review_orders", "mark_preparing", "mark_ready", "dispatch", "confirm_inventory"],
+                "FIELD_ACTIVATOR": ["register_retailer_lead", "verify_coordinates", "complete_onboarding", "log_field_visits"],
+                "OPS_ADMIN": ["resolve_support", "catalog_operations", "review_candidates", "monitor_vendor_sla"],
+                "SUPER_ADMIN": ["manage_users", "manage_organizations", "broadcasts", "dispute_resolution", "financial_adjustments", "feature_flags"],
+            },
+            "source": "MASTER_SYSTEM_ARCHITECTURE.md §4",
+        }
+
+    def global_returns_list(self, *, status=None, offset=0, limit=50):
+        self._require_ops_context()
+        params: list = []
+        clauses = ["1=1"]
+        if status:
+            clauses.append("r.status=%s")
+            params.append(status)
+        params.extend([limit, offset])
+        where_sql = " AND ".join(clauses)
+        self.cur.execute(
+            f"""
+            SELECT
+                r.id AS return_id,
+                r.order_id,
+                r.status,
+                r.reason,
+                r.claimed_refund_amount_toman,
+                r.approved_refund_amount_toman,
+                r.created_at,
+                o.order_number,
+                o.order_status,
+                ret.store_name AS retailer_name,
+                v.business_name AS vendor_name
+            FROM returns r
+            JOIN orders o ON o.id=r.order_id
+            JOIN retailers ret ON ret.id=o.retailer_id
+            JOIN vendors v ON v.id=o.vendor_id
+            WHERE {where_sql}
+            ORDER BY r.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        return {"returns": [dict(x) for x in self.cur.fetchall()], "limit": limit, "offset": offset}
