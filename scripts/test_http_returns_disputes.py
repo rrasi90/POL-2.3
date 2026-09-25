@@ -122,6 +122,10 @@ def _seed_delivered_order(suffix):
                 (oii, oi, prod_id, vpid),
             )
             cur.execute(
+                "INSERT INTO deliveries (id, order_id, vendor_id, carrier_type, carrier_name, delivery_status, delivered_at) VALUES (%s, %s, %s, 'CLUSTER_LOGISTICS', 'Test Carrier', 'DELIVERED', now())",
+                (str(uuid4()), oi, vi),
+            )
+            cur.execute(
                 "INSERT INTO settlements (id, order_id, vendor_id, gross_amount_toman, commission_rate, commission_amount_toman, net_vendor_amount_toman, status) "
                 "VALUES (%s, %s, %s, 5000000, 0, 0, 5000000, 'CALCULATED')",
                 (si, oi, vi),
