@@ -37,7 +37,7 @@ export function getToken(): string | null {
   return accessToken;
 }
 
-export async function persistSession(access: string, refresh: string | null | undefined): Promise<void> {
+export async function persistSession(access: string, refresh: string | null | undefined, role?: string | null): Promise<void> {
   accessToken = access;
   await SecureStore.setItemAsync(ACCESS_KEY, access, {
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
