@@ -3352,6 +3352,69 @@ class POLApplicationBoundary:
         return dict(row)
 
 
+
+
+    # ── Catalog Administration (Stage 41) ───────────────────────────
+
+    def admin_category_create(self, *, name_fa, slug, icon_url=None, display_order=0):
+        self._require_admin_management()
+        if not name_fa or not name_fa.strip():
+            raise ValueError("Category name is required.")
+        if not slug or not slug.strip():
+            raise ValueError("Category slug is required.")
+        if int(display_order) < 0:
+            raise ValueError("display_order cannot be negative.")
+        self.cur.execute(
+            """
+            INSERT INTO categories (id,name_fa,slug,icon_url,display_order)
+            VALUES (%s,%s,%s,%s,%s)
+            RETURNING id,name_fa,slug,icon_url,display_order,created_at
+            """,
+            (str(uuid4()), name_fa.strip(), slug.strip(), icon_url, int(display_order)),
+        )
+        row = dict(self.cur.fetchone())
+        row["id"] = str(row["id"])
+        row["created_at"] = row["created_at"].isoformat()
+        return row
+
+    def admin_category_update(self, *, category_id, name_fa=None, slug=None, icon_url=None, display_order=None):
+        self._require_admin_management()
+        updates = []
+        params = []
+        if name_fa is not None:
+            if not name_fa.strip():
+                raise ValueError("Category name cannot be empty.")
+            updates.append("name_fa=%s")
+            params.append(name_fa.strip())
+        if slug is not None:
+            if not slug.strip():
+                raise ValueError("Category slug cannot be empty.")
+            updates.append("slug=%s")
+            params.append(slug.strip())
+        if icon_url is not None:
+            updates.append("icon_url=%s")
+            params.append(icon_url)
+        if display_order is not None:
+            if int(display_order) < 0:
+                raise ValueError("display_order cannot be negative.")
+            updates.append("display_order=%s")
+            params.append(int(display_order))
+        if not updates:
+            raise ValueError("No category fields to update.")
+        params.append(category_id)
+        self.cur.execute(
+            "UPDATE categories SET " + ", ".join(updates) +
+            " WHERE id=%s RETURNING id,name_fa,slug,icon_url,display_order,created_at",
+            tuple(params),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError("Category not found.")
+        result = dict(row)
+        result["id"] = str(result["id"])
+        result["created_at"] = result["created_at"].isoformat()
+        return result
+
     # ── Ops Analytics (Stage 38) ───────────────────────────────────
 
     def ops_analytics(self, *, start_date, end_date):
