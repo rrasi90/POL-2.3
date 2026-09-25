@@ -5,3 +5,5 @@ PyJWT>=2.13,<3
 requests>=2.32.0
 fastapi>=0.141,<0.142
 uvicorn>=0.53,<0.54
+boto3>=1.35,<2
+Pillow>=10,<12
