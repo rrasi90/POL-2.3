@@ -174,6 +174,31 @@ class TestSubmitEvidence:
         assert body["data"]["reference_number"] == ref
         assert body["data"]["amount_toman"] == 5000000
 
+    def test_replay_of_same_external_reference_is_idempotent(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        reference = f"TXN-REPLAY-{uuid4().hex[:10]}"
+        payload = {
+            "evidence_type": "BANK_REFERENCE",
+            "reference_number": reference,
+            "amount_toman": 5000000,
+        }
+        first = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json=payload,
+        )
+        second = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json=payload,
+        )
+        assert first.status_code == 201
+        assert second.status_code == 201
+        first_data = first.json()["data"]
+        second_data = second.json()["data"]
+        assert first_data["evidence_id"] == second_data["evidence_id"]
+        assert second_data["idempotent_replay"] is True
+
     def test_vendor_submits_pos_reference(self, client):
         data = _seed_order(uuid4().hex[:8])
         ref = f"POS-{uuid4().hex[:12]}"
