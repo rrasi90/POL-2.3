@@ -2676,6 +2676,84 @@ class POLApplicationBoundary:
         )
         return [dict(r) for r in self.cur.fetchall()]
 
+    def inbox_list(self, *, is_read=None, category=None, limit=20, offset=0):
+        where = ["ui.user_id = %s"]
+        params = [self.context.user_id]
+        if self.context.organization_id:
+            where.append("ui.organization_id = %s")
+            params.append(self.context.organization_id)
+        if is_read is not None:
+            where.append("ui.is_read = %s")
+            params.append(is_read)
+        if category:
+            where.append("ui.category = %s")
+            params.append(category)
+        where_sql = " AND ".join(where)
+        self.cur.execute(
+            f"""
+            SELECT ui.id, ui.notification_id, ui.title, ui.body, ui.category,
+                   ui.deep_link, ui.is_read, ui.read_at, ui.created_at
+            FROM user_inbox_items ui
+            WHERE {where_sql}
+            ORDER BY ui.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            (*params, limit, offset),
+        )
+        items = [dict(r) for r in self.cur.fetchall()]
+        self.cur.execute(
+            f"SELECT COUNT(*) AS count FROM user_inbox_items ui WHERE {where_sql} AND ui.is_read = FALSE",
+            tuple(params),
+        )
+        unread_count = int(self.cur.fetchone()["count"])
+        for item in items:
+            item["id"] = str(item["id"])
+            item["notification_id"] = str(item["notification_id"]) if item["notification_id"] else None
+        return {"items": items, "unread_count": unread_count, "limit": limit, "offset": offset}
+
+    def inbox_mark_read(self, *, item_id):
+        where = "id = %s AND user_id = %s"
+        params = [item_id, self.context.user_id]
+        if self.context.organization_id:
+            where += " AND organization_id = %s"
+            params.append(self.context.organization_id)
+        self.cur.execute(
+            f"""
+            UPDATE user_inbox_items
+            SET is_read = TRUE, read_at = COALESCE(read_at, now())
+            WHERE {where}
+            RETURNING id, is_read, read_at
+            """,
+            tuple(params),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise PermissionError("Inbox item not found or outside active organization.")
+        self.cur.execute(
+            "SELECT COUNT(*) AS count FROM user_inbox_items WHERE user_id=%s AND is_read=FALSE"
+            + (" AND organization_id=%s" if self.context.organization_id else ""),
+            (self.context.user_id, self.context.organization_id) if self.context.organization_id else (self.context.user_id,),
+        )
+        unread_count = int(self.cur.fetchone()["count"])
+        return {"id": str(row["id"]), "is_read": True, "read_at": row["read_at"].isoformat(), "unread_count": unread_count}
+
+    def inbox_mark_all_read(self):
+        where = "user_id = %s"
+        params = [self.context.user_id]
+        if self.context.organization_id:
+            where += " AND organization_id = %s"
+            params.append(self.context.organization_id)
+        self.cur.execute(
+            f"""
+            UPDATE user_inbox_items
+            SET is_read = TRUE, read_at = COALESCE(read_at, now())
+            WHERE {where} AND is_read = FALSE
+            """,
+            tuple(params),
+        )
+        marked_count = self.cur.rowcount
+        return {"marked_count": marked_count, "unread_count": 0}
+
     def notification_preferences_get(self):
         self.cur.execute(
             "SELECT user_id, category, push_enabled, sms_enabled "
