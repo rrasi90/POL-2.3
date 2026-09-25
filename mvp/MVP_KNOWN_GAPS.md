@@ -17,13 +17,13 @@
 - **Legacy reference:** an older governance document used a superseded tool-specific Master Tree filename; the active file is `50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_…` v4.3.0.
 - **Resolution:** the active file + v4.3.0 is canonical; execution tooling is not product authority.
 
-## G-003 — Catalog list path (CONFLICT)
+## G-003 — Catalog list/search contract path (RESOLVED)
 
-- **Contract #1:** GET `/api/v1/products/search`
-- **Implemented:** GET `/api/v1/catalog/search`, GET `/api/v1/search`
-- **Resolution for build:** use REAL paths for live calls; do not invent `/products/search`.
-- **Open:** whether contract will be renamed backend-side → `BLOCKED_EXTERNAL` for literal contract parity only if a test requires `/products/search`.
-- **Status:** CONFLICT (documented); screens use REAL.
+- **Canonical contract:** GET `/api/v1/products/search`
+- **Current implementation:** `catalog_products_search` behind `/api/v1/products/search`, with `q`, optional `category_id`, `page`, `limit`, contract envelope, pagination, current lowest vendor price and available-vendor count.
+- **Compatibility:** existing `/api/v1/catalog/search` remains available for current screens; it is no longer the only real path.
+- **Evidence:** catalog HTTP contract test added to the verification suite.
+- **Status:** RESOLVED for source/path parity; public deployed performance and media URL configuration remain deployment evidence.
 
 ## G-004 — Notifications inbox path (RESOLVED)
 
