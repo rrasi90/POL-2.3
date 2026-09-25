@@ -10,6 +10,8 @@ type Inv = { id: string; vendor_product_id?: string | null; product_name?: strin
 type Invoice = { id: string; invoice_number?: string | null; status?: string | null; total_amount_toman?: number | string | null; issued_at?: string | null };
 type Referral = { id: string; status?: string | null; referral_code?: string | null; referred_organization_id?: string | null };
 type Settlement = { id: string; settlement_number?: string | null; status?: string | null; amount_toman?: number | string | null };
+type Customer = { retailer_id: string; store_name?: string | null; city?: string | null; neighborhood?: string | null; user_id?: string | null; full_name?: string | null; phone_number?: string | null; order_count?: number | null; last_order_at?: string | null };
+type Staff = { membership_id: string; user_id: string; phone_number?: string | null; full_name?: string | null; role?: "VENDOR_OWNER" | "VENDOR_STAFF" | null; status?: "INVITED" | "ACTIVE" | "SUSPENDED" | "REVOKED" | null; is_primary?: boolean | null };
 type Daily = { status?: string | null; lines?: Array<{ id: string; vendor_product_id?: string | null; product_id?: string | null; product_name?: string | null; expected_quantity?: number | null; confirmed_quantity?: number | null }> };
 
 function rows<T>(data: unknown, key: string): T[] {
@@ -25,11 +27,16 @@ function money(v: number | string | null | undefined): string {
 }
 export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" | "VENDOR_STAFF">; onOpenOrder: (orderId: string) => void }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
-  const [tab, setTab] = useState<"orders" | "inventory" | "daily" | "settlements" | "finance" | "referrals">("orders");
+  const [tab, setTab] = useState<"orders" | "inventory" | "daily" | "settlements" | "finance" | "referrals" | "customers" | "staff">("orders");
   const [orders, setOrders] = useState<Order[]>([]);
   const [inventory, setInventory] = useState<Inv[]>([]);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
+  const [inviteName, setInviteName] = useState("");
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [daily, setDaily] = useState<Daily | null>(null);
   const [dailyDate, setDailyDate] = useState(new Date().toISOString().slice(0, 10));
@@ -51,6 +58,15 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
   }, []);
   const loadInvoices = useCallback(async () => { const d = await api.get<unknown>("/api/v1/invoices?limit=50&offset=0"); setInvoices(rows<Invoice>(d, "invoices")); }, []);
   const loadReferrals = useCallback(async () => { const d = await api.get<unknown>("/api/v1/referrals?limit=50&offset=0"); setReferrals(rows<Referral>(d, "referrals")); }, []);
+  const loadCustomers = useCallback(async () => {
+    const query = customerQuery.trim() ? "&query=" + encodeURIComponent(customerQuery.trim()) : "";
+    const d = await api.get<unknown>("/api/v1/vendors/customers?limit=50&offset=0" + query);
+    setCustomers(rows<Customer>(d, "customers"));
+  }, [customerQuery]);
+  const loadStaff = useCallback(async () => {
+    const d = await api.get<unknown>("/api/v1/vendors/staff?limit=100&offset=0");
+    setStaff(rows<Staff>(d, "members"));
+  }, []);
   const loadDaily = useCallback(async () => {
     const d = await api.get<Daily>("/api/v1/inventory/daily/" + dailyDate);
     setDaily(d);
@@ -61,9 +77,23 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
 
   useEffect(() => {
     setLoading(true); setError(null);
-    const p = tab === "orders" ? loadOrders() : tab === "inventory" ? loadInventory() : tab === "daily" ? loadDaily() : tab === "settlements" ? loadSettlements() : tab === "finance" ? loadInvoices() : loadReferrals();
+    const p = tab === "orders"
+      ? loadOrders()
+      : tab === "inventory"
+        ? loadInventory()
+        : tab === "daily"
+          ? loadDaily()
+          : tab === "settlements"
+            ? loadSettlements()
+            : tab === "finance"
+              ? loadInvoices()
+              : tab === "referrals"
+                ? loadReferrals()
+                : tab === "customers"
+                  ? loadCustomers()
+                  : loadStaff();
     void p.catch((e) => setError(e instanceof Error ? e.message : "بارگذاری ناموفق بود")).finally(() => setLoading(false));
-  }, [tab, loadOrders, loadInventory, loadDaily, loadSettlements, loadInvoices, loadReferrals]);
+  }, [tab, loadOrders, loadInventory, loadDaily, loadSettlements, loadInvoices, loadReferrals, loadCustomers, loadStaff]);
 
   async function action(orderId: string, actionName: "accept" | "preparing" | "ready"): Promise<void> {
     setLoading(true); setError(null);
@@ -89,6 +119,27 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
     finally { setLoading(false); }
   }
 
+  async function inviteStaff(): Promise<void> {
+    if (props.role !== "VENDOR_OWNER") { setError("فقط مالک فروشنده می‌تواند همکار جدید دعوت کند."); return; }
+    if (!/^\+[1-9]\d{7,14}$/.test(invitePhone.trim())) { setError("شماره موبایل با فرمت بین‌المللی وارد شود."); return; }
+    if (!inviteName.trim()) { setError("نام همکار الزامی است."); return; }
+    setLoading(true); setError(null);
+    try {
+      await api.post("/api/v1/vendors/staff/invite", { phone_number: invitePhone.trim(), full_name: inviteName.trim() });
+      setInvitePhone(""); setInviteName("");
+      await loadStaff();
+    } catch (e) { setError(e instanceof Error ? e.message : "دعوت همکار ناموفق بود"); }
+    finally { setLoading(false); }
+  }
+
+  async function updateStaff(membershipId: string, patch: { role?: Staff["role"]; status?: Staff["status"] }): Promise<void> {
+    if (props.role !== "VENDOR_OWNER") { setError("فقط مالک فروشنده می‌تواند وضعیت همکاران را تغییر دهد."); return; }
+    setLoading(true); setError(null);
+    try { await api.patch("/api/v1/vendors/staff/" + membershipId, patch); await loadStaff(); }
+    catch (e) { setError(e instanceof Error ? e.message : "ویرایش همکار ناموفق بود"); }
+    finally { setLoading(false); }
+  }
+
   return (
     <Screen>
       <Title badge={props.role}>فروشنده موبایل</Title>
@@ -99,6 +150,8 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
         <Btn label="تسویه" onPress={() => setTab("settlements")} tone={tab === "settlements" ? "primary" : "ghost"} />
         <Btn label="مالی" onPress={() => setTab("finance")} tone={tab === "finance" ? "primary" : "ghost"} />
         <Btn label="ارجاع‌ها" onPress={() => setTab("referrals")} tone={tab === "referrals" ? "primary" : "ghost"} />
+        <Btn label="مشتریان" onPress={() => setTab("customers")} tone={tab === "customers" ? "primary" : "ghost"} />
+        <Btn label="همکاران" onPress={() => setTab("staff")} tone={tab === "staff" ? "primary" : "ghost"} />
       </View>
       <ErrorBox message={error} />
       {loading && <Text style={styles.meta}>در حال بارگذاری…</Text>}
@@ -128,8 +181,50 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
           {!daily?.lines?.length ? <Empty title="ردیفی نیست" /> : daily.lines.map((x) => <Card key={x.id}><Text style={styles.h2}>{x.product_name || x.id}</Text><Text style={styles.meta}>انتظار: {String(x.expected_quantity ?? 0)}</Text><Input label="تأیید" value={dailyEdits[x.id] || ""} onChangeText={(v) => setDailyEdits((p) => ({ ...p, [x.id]: v }))} keyboardType="numeric" /></Card>)}
           {daily?.lines?.length ? <><Btn label="تأیید بدون تغییر" onPress={() => void confirmDaily(false)} disabled={loading} /><Btn label="تأیید با تغییرات" tone="ghost" onPress={() => void confirmDaily(true)} disabled={loading} /></> : null}
         </ScrollView>
-      ) : (
+      ) : tab === "settlements" ? (
         <ScrollView>{settlements.length === 0 ? <Empty title="تسویه‌ای نیست" /> : settlements.map((s) => <Card key={s.id}><StatusChip label={s.status || "—"} tone="info" /><Text style={styles.h2}>{s.settlement_number || s.id}</Text><Text style={styles.metric}>{money(s.amount_toman)}</Text></Card>)}</ScrollView>
+      ) : tab === "finance" ? (
+        <ScrollView>{invoices.length === 0 ? <Empty title="صورت‌حسابی نیست" /> : invoices.map((inv) => <Card key={inv.id}><StatusChip label={inv.status || "—"} tone="info" /><Text style={styles.h2}>{inv.invoice_number || inv.id}</Text><Text style={styles.metric}>{money(inv.total_amount_toman)}</Text><Text style={styles.meta}>صدور: {inv.issued_at || "—"}</Text></Card>)}</ScrollView>
+      ) : tab === "referrals" ? (
+        <ScrollView>{referrals.length === 0 ? <Empty title="ارجاعی نیست" /> : referrals.map((x) => <Card key={x.id}><StatusChip label={x.status || "—"} tone="info" /><Text style={styles.h2}>{x.referral_code || x.id}</Text><Text style={styles.meta}>سازمان ارجاع‌شده: {x.referred_organization_id || "—"}</Text></Card>)}</ScrollView>
+      ) : tab === "customers" ? (
+        <ScrollView>
+          <Input label="جست‌وجوی مشتری" value={customerQuery} onChangeText={setCustomerQuery} placeholder="نام، فروشگاه یا تلفن" />
+          <Btn label="جست‌وجو" tone="ghost" onPress={() => void loadCustomers().catch((e) => setError(e instanceof Error ? e.message : "خطا"))} />
+          {customers.length === 0 ? <Empty title="مشتری‌ای نیست" /> : customers.map((c) => (
+            <Card key={c.retailer_id}>
+              <Text style={styles.h2}>{c.store_name || c.full_name || c.retailer_id}</Text>
+              <Text style={styles.meta}>{c.full_name || "—"} · {c.phone_number || "—"}</Text>
+              <Text style={styles.meta}>{c.city || "—"} {c.neighborhood ? "· " + c.neighborhood : ""}</Text>
+              <Text style={styles.meta}>سفارش: {String(c.order_count ?? 0)} · آخرین سفارش: {c.last_order_at || "—"}</Text>
+            </Card>
+          ))}
+        </ScrollView>
+      ) : (
+        <ScrollView>
+          {props.role === "VENDOR_OWNER" ? (
+            <Card>
+              <Text style={styles.h2}>دعوت همکار</Text>
+              <Input label="شماره موبایل" value={invitePhone} onChangeText={setInvitePhone} keyboardType="phone-pad" />
+              <Input label="نام" value={inviteName} onChangeText={setInviteName} />
+              <Btn label="ارسال دعوت" onPress={() => void inviteStaff()} disabled={loading} />
+            </Card>
+          ) : null}
+          {staff.length === 0 ? <Empty title="همکاری ثبت نشده" /> : staff.map((member) => (
+            <Card key={member.membership_id}>
+              <StatusChip label={member.status || "—"} tone={member.status === "ACTIVE" ? "info" : "neutral"} />
+              <Text style={styles.h2}>{member.full_name || member.user_id}</Text>
+              <Text style={styles.meta}>{member.phone_number || "—"} · {member.role || "—"}</Text>
+              {props.role === "VENDOR_OWNER" && member.role !== "VENDOR_OWNER" ? (
+                <View style={styles.row}>
+                  <Btn label="فعال" onPress={() => void updateStaff(member.membership_id, { status: "ACTIVE" })} disabled={loading} />
+                  <Btn label="تعلیق" tone="ghost" onPress={() => void updateStaff(member.membership_id, { status: "SUSPENDED" })} disabled={loading} />
+                  <Btn label="لغو" tone="ghost" onPress={() => void updateStaff(member.membership_id, { status: "REVOKED" })} disabled={loading} />
+                </View>
+              ) : null}
+            </Card>
+          ))}
+        </ScrollView>
       )}
     </Screen>
   );
