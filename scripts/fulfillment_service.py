@@ -520,7 +520,7 @@ def transition_delivery_stage(cur, *, user_id, organization_id, order_id, target
 
     # Vendor members may advance the delivery; FIELD_ACTIVATOR is allowed when
     # operating under the operator tenant for the pilot field flow.
-    _verify_vendor_actor(
+    _verify_delivery_stage_actor(
         cur, user_id, organization_id, delivery["vendor_id"]
     )
     now_fields = {
@@ -599,6 +599,42 @@ def transition_delivery_stage(cur, *, user_id, organization_id, order_id, target
         "delivery_status": updated["delivery_status"],
         "idempotent_replay": False,
     }
+
+def _verify_delivery_stage_actor(cur, user_id, organization_id, vendor_id):
+    """Authorize vendor members or operator field activators for delivery stage commands."""
+    cur.execute(
+        """
+        SELECT 1
+        FROM vendors v
+        JOIN organization_memberships om ON om.organization_id=v.organization_id
+        WHERE v.id=%s AND v.organization_id=%s
+          AND om.user_id=%s AND om.status='ACTIVE'
+          AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
+        """,
+        (vendor_id, organization_id, user_id),
+    )
+    if cur.fetchone():
+        return
+
+    cur.execute(
+        """
+        SELECT 1
+        FROM organization_memberships om
+        JOIN organizations o ON o.id=om.organization_id
+        WHERE om.user_id=%s
+          AND om.organization_id=%s
+          AND om.status='ACTIVE'
+          AND o.status='ACTIVE'
+          AND o.org_type='OPERATOR'
+          AND om.role='FIELD_ACTIVATOR'
+        """,
+        (user_id, organization_id),
+    )
+    if cur.fetchone():
+        return
+
+    raise PermissionError("Actor is not authorized for this delivery stage.")
+
 
 def _verify_vendor_actor(cur, user_id, organization_id, vendor_id):
     cur.execute(
