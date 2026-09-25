@@ -428,6 +428,31 @@ def test_product_candidate_review_http_is_tenant_and_idempotent(client, manageme
         assert replay_data["status"] == "REJECTED"
         assert replay_data["idempotent_replay"] is True
 
+        direct = client.post(
+            "/api/v1/product-candidates",
+            headers=vendor_headers,
+            json={
+                "proposed_title": "Direct Candidate " + suffix,
+                "proposed_brand": "Test Brand",
+                "barcode": "6261234567891",
+                "vendor_sku": "DIRECT-" + suffix,
+            },
+        )
+        replay_direct = client.post(
+            "/api/v1/product-candidates",
+            headers=vendor_headers,
+            json={
+                "proposed_title": "Direct Candidate " + suffix,
+                "proposed_brand": "Test Brand",
+                "barcode": "6261234567891",
+                "vendor_sku": "DIRECT-" + suffix,
+            },
+        )
+        assert direct.status_code == 201
+        assert replay_direct.status_code == 201
+        assert direct.json()["data"]["candidate_id"] == replay_direct.json()["data"]["candidate_id"]
+        assert replay_direct.json()["data"]["idempotent_replay"] is True
+
         non_admin_review = client.patch(
             "/api/v1/admin/product-candidates/" + candidate_id,
             headers=vendor_headers,
