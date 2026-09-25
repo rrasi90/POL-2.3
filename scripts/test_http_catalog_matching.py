@@ -266,6 +266,20 @@ def test_unknown_barcode_creates_quarantined_candidate_idempotently():
             assert str(vp["candidate_id"]) == a["candidate_id"]
             assert vp["listing_status"] == "DRAFT_PENDING_CATALOG"
 
+        conflicting_barcode = "626997" + str(uuid4().int % 1000000000).zfill(9)
+        if len(conflicting_barcode) > 15:
+            conflicting_barcode = conflicting_barcode[:15]
+        conflicting = client.post(
+            "/api/v1/products/match-barcode",
+            headers={"Authorization": "Bearer " + data["token"]},
+            json={
+                "barcode": conflicting_barcode,
+                "proposed_title": "Conflicting barcode " + suffix,
+                "vendor_sku": payload["vendor_sku"],
+                "create_candidate": True,
+            },
+        )
+        assert conflicting.status_code == 400
         barcode_only = "626998" + str(uuid4().int % 1000000000).zfill(9)
         barcode_payload = {
             "barcode": barcode_only,
