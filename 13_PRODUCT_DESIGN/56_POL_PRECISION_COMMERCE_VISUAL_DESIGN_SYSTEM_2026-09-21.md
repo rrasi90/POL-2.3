@@ -3,10 +3,10 @@
 **Document ID:** `POL-DESIGN-VISUAL-001`  
 **Version:** `2.0.0`  
 **Date:** 2026-09-21  
-**Status:** ACTIVE / CANONICAL VISUAL DIRECTION / LIGHT+NIGHT / PENPOT BUILD SOURCE  
+**Status:** ACTIVE / CANONICAL VISUAL DIRECTION / LIGHT+NIGHT / TOOL-AGNOSTIC BUILD SOURCE  
 **Repository:** `rrasi90/POL-2.3`  
-**Branch:** `product-architecture-evolution-2026-09-20`  
-**Master Tree:** `50_POL_MASTER_PENPOT_UI_UX_TREE_SPEC_2026-09-21.md` v3.6.0  
+**Branch:** canonical source branch determined by `CURRENT_SOURCE_OF_TRUTH.md`  
+**Master Tree:** `50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md` v4.3.0  
 **Visual Direction:** **A — Precision Commerce**
 
 ---
@@ -870,7 +870,7 @@ For a canonical visual node:
 
 `DESIGN_DEFINED` requires the visual direction and semantic tokens.
 
-`PENPOT_BUILT` requires persisted Light + Night artifacts where applicable.
+`DESIGN_ARTIFACT_BUILT` requires persisted Light + Night artifacts where applicable.
 
 `VISUAL_VERIFIED` requires independent review of composition, token usage, theme parity and responsive behavior.
 
