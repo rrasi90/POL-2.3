@@ -70,8 +70,21 @@ class RevalidationCheckoutService:
             (plan_id, basket_id),
         )
         persisted = cur.fetchall()
-        if any(row["status"] != "ALLOCATED" for row in persisted):
-            raise ValueError("Checkout cannot consume an allocation plan with unfulfilled lines.")
+        invalid_statuses = {
+            row["status"]
+            for row in persisted
+            if row["status"] not in {"ALLOCATED", "UNFULFILLED"}
+        }
+        if invalid_statuses:
+            raise ValueError(
+                f"Checkout cannot consume allocation plan with invalid item statuses: {sorted(invalid_statuses)}"
+            )
+        # UNFULFILLED lines are a valid allocation-plan outcome. Checkout
+        # commits only the vendor-assigned lines; those lines are intentionally
+        # excluded from the commercial order payload and total.
+        persisted_allocated = [
+            row for row in persisted if row["status"] == "ALLOCATED"
+        ]
         expected_allocations = {
             (
                 str(row["product_id"]),
@@ -81,7 +94,7 @@ class RevalidationCheckoutService:
                 int(row["unit_price_snapshot_toman"]),
                 int(row["line_total_toman"]),
             )
-            for row in persisted
+            for row in persisted_allocated
         }
         allocations_by_vendor = defaultdict(list)
         seen_vendor_products = set()
@@ -167,7 +180,7 @@ class RevalidationCheckoutService:
             )
             for a in vendor_allocations
         }
-        if len(persisted) != len(vendor_allocations) or expected_allocations != supplied_allocations:
+        if len(persisted_allocated) != len(vendor_allocations) or expected_allocations != supplied_allocations:
             raise ValueError("Checkout allocation payload does not exactly match the persisted Allocation Plan.")
 
         total_toman = sum(v["amount_toman"] for v in vendor_allocations)
