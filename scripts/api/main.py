@@ -51,6 +51,7 @@ from scripts.api.routes.vendor_storefront import router as vendor_storefront_rou
 from scripts.api.routes.catalog_search import router as catalog_search_router
 from scripts.api.routes.analytics import router as analytics_router
 from scripts.api.routes.management import vendor_router as vendor_management_router, admin_router as admin_management_router, ops_router as ops_management_router
+from scripts.api.routes.vendor_inventory import router as vendor_inventory_router
 from scripts.api.routes.finance import (
     invoices_router as finance_invoices_router,
     order_invoice_router as finance_order_invoice_router,
@@ -174,6 +175,7 @@ def create_app() -> FastAPI:
     app.include_router(vendor_management_router, prefix="/api/v1")
     app.include_router(admin_management_router, prefix="/api/v1")
     app.include_router(ops_management_router, prefix="/api/v1")
+    app.include_router(vendor_inventory_router, prefix="/api/v1")
 
     app.add_exception_handler(RequestValidationError, request_validation_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
