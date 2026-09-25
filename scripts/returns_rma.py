@@ -388,6 +388,8 @@ class CanonicalReturnService:
             next_refund_amount = calculated_refund
         if target_status == "REFUND_PENDING" and next_refund_amount is None:
             next_refund_amount = ret["approved_refund_amount_toman"]
+        if target_status == "REFUND_PENDING" and (next_refund_amount is None or int(next_refund_amount) <= 0):
+            raise ReturnStateError("A positive approved refund amount is required before REFUND_PENDING.")
 
         cur.execute(
             """
