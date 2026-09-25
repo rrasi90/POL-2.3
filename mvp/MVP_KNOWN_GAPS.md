@@ -234,3 +234,8 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - Finding: canonical integration validated active organization membership but did not also require users.is_active.
 - Resolution: worker now verifies active user + active membership + active organization; membership-isolation regression coverage adds an inactive-user case.
 - Status: RESOLVED in source; fresh CI certification remains separate.
+## G-038 — Duplicate payment verification HTTP route (RESOLVED — 2026-09-25)
+
+- Finding: POST /api/v1/orders/{order_id}/payments/verify was registered twice in the same router.
+- Resolution: retained the canonical implementation and removed the duplicate registration; route uniqueness regression now covers this class automatically.
+- Status: RESOLVED in source; fresh CI certification remains separate.
