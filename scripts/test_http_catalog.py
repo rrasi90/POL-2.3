@@ -311,3 +311,10 @@ def test_catalog_product_detail_requires_auth(api_env):
 def test_catalog_product_vendors_requires_auth(api_env):
     response = TestClient(app).get(f"/api/v1/catalog/products/{uuid4()}/vendors")
     assert response.status_code == 401
+
+
+def test_public_categories_route_contract(api_env):
+    response = TestClient(app).get("/api/v1/categories")
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+
