@@ -666,13 +666,20 @@ class NotificationService:
     """Deprecated facade; delegates to the canonical PostgreSQL outbox worker."""
 
     @staticmethod
-    def dispatch_pending_outbox(cur, target_user_id: str = None, target_org_id: str = None) -> int:
+    def dispatch_pending_outbox(
+        cur,
+        target_user_id: str = None,
+        target_org_id: str = None,
+        limit: int = 100,
+    ) -> int:
         if target_user_id or target_org_id:
             raise PermissionError(
                 "Legacy targeted notification dispatch is disabled; "
                 "outbox events must contain explicit canonical routing."
             )
-        return CanonicalIntegrationWorker.process_pending(cur)
+        if limit < 1 or limit > 10000:
+            raise ValueError("Notification dispatch limit must be between 1 and 10000.")
+        return CanonicalIntegrationWorker.process_pending(cur, limit=limit)
 
 
 class SupportService:
