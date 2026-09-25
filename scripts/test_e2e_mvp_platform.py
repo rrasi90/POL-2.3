@@ -297,10 +297,10 @@ def assert_checkout(cur, catalog, request, result):
         cur.execute("SELECT * FROM order_items WHERE order_id = %s", (order["id"],))
         items = cur.fetchall()
         assert len(items) == len(lines)
-        by_offer = {str(item["vendor_product_id"]): item for item in items}
-        assert set(by_offer) == {line["vendor_product_id"] for line in lines}
+        items_by_offer = {str(item["vendor_product_id"]): item for item in items}
+        assert set(items_by_offer) == {line["vendor_product_id"] for line in lines}
         for line in lines:
-            item = dict(by_offer[line["vendor_product_id"]])
+            item = dict(items_by_offer[line["vendor_product_id"]])
             UUID(str(item.pop("id")))
             assert item.pop("created_at") == order["created_at"] == group["created_at"]
             assert item == {
@@ -320,15 +320,15 @@ def assert_checkout(cur, catalog, request, result):
         cur.execute("SELECT * FROM inventory_reservations WHERE order_id = %s", (order["id"],))
         reservations = cur.fetchall()
         assert len(reservations) == len(lines)
-        by_offer = {str(row["vendor_product_id"]): row for row in reservations}
-        assert set(by_offer) == {line["vendor_product_id"] for line in lines}
+        reservations_by_offer = {str(row["vendor_product_id"]): row for row in reservations}
+        assert set(reservations_by_offer) == {line["vendor_product_id"] for line in lines}
         for line in lines:
-            reservation = by_offer[line["vendor_product_id"]]
+            reservation = reservations_by_offer[line["vendor_product_id"]]
             UUID(str(reservation["id"]))
             assert reservation["quantity"] == line["quantity"]
             assert reservation["status"] == "ACTIVE"
             assert reservation["idempotency_key"] == f"res-{request['idempotency_key']}-{line['vendor_product_id']}"
-            assert str(reservation["order_item_id"]) == str(by_offer[line["vendor_product_id"]]["id"])
+            assert str(reservation["order_item_id"]) == str(items_by_offer[line["vendor_product_id"]]["id"])
             assert reservation["released_at"] is reservation["consumed_at"] is None
             assert reservation["created_at"] == group["created_at"]
             assert reservation["expires_at"] - reservation["created_at"] == timedelta(minutes=15)
