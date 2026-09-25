@@ -81,7 +81,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void }): React.Re
         setError("نقش کاربر از پاسخ معتبر بک‌اند قابل تعیین نیست.");
         return;
       }
-      await persistSession(data.access_token, data.refresh_token ?? null);
+      await persistSession(data.access_token, data.refresh_token ?? null, role);
       props.onAuthed(role);
     } catch (err) {
       setError(err instanceof Error ? err.message : "تأیید کد ناموفق بود");
