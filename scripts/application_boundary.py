@@ -336,6 +336,88 @@ class POLApplicationBoundary:
             reason=reason,
         )
 
+    def partial_acceptance_proposals_list(self, *, order_id, status=None, offset=0, limit=50):
+        actor_role = self._resolve_actor_role()
+        clauses = ["p.order_id = %s"]
+        params: list = [order_id]
+
+        if actor_role == "RETAILER":
+            clauses.append(
+                "p.retailer_id IN (SELECT id FROM retailers WHERE organization_id = %s)"
+            )
+            params.append(self.context.organization_id)
+        elif actor_role == "VENDOR":
+            clauses.append(
+                "p.vendor_id IN (SELECT id FROM vendors WHERE organization_id = %s)"
+            )
+            params.append(self.context.organization_id)
+
+        if status:
+            clauses.append("p.status = %s")
+            params.append(status)
+
+        where_sql = " AND ".join(clauses)
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT
+                p.id AS proposal_id,
+                p.order_id,
+                p.vendor_id,
+                p.retailer_id,
+                p.proposed_by_user_id,
+                p.status,
+                p.decision_by_user_id,
+                p.decision_reason,
+                p.decided_at,
+                p.created_at,
+                p.updated_at,
+                o.order_number,
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'order_item_id', pi.order_item_id,
+                            'accepted_quantity', pi.accepted_quantity,
+                            'reason', pi.reason
+                        )
+                        ORDER BY pi.order_item_id
+                    ) FILTER (WHERE pi.id IS NOT NULL),
+                    '[]'::json
+                ) AS items
+            FROM order_partial_acceptance_proposals p
+            JOIN orders o ON o.id = p.order_id
+            LEFT JOIN order_partial_acceptance_proposal_items pi
+              ON pi.proposal_id = p.id
+            WHERE {where_sql}
+            GROUP BY p.id, o.order_number
+            ORDER BY p.created_at DESC, p.id
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        proposals = []
+        for row in self.cur.fetchall():
+            item = dict(row)
+            item["proposal_id"] = str(item["proposal_id"])
+            item["order_id"] = str(item["order_id"])
+            item["vendor_id"] = str(item["vendor_id"])
+            item["retailer_id"] = str(item["retailer_id"])
+            item["proposed_by_user_id"] = str(item["proposed_by_user_id"])
+            item["decision_by_user_id"] = (
+                str(item["decision_by_user_id"])
+                if item["decision_by_user_id"] else None
+            )
+            for field in ("decided_at", "created_at", "updated_at"):
+                if item[field]:
+                    item[field] = item[field].isoformat()
+            proposals.append(item)
+
+        return {
+            "proposals": proposals,
+            "limit": limit,
+            "offset": offset,
+        }
+
     # ── Order Query Methods (Stage 20) ──────────────────────────────
 
     def _resolve_actor_role(self):
