@@ -500,7 +500,7 @@ def run_postgres_runtime_scenarios():
     try:
         cur.execute("""
             INSERT INTO deliveries (id, order_id, vendor_id, delivery_status)
-            VALUES (%s, %s, %s, 'IN_TRANSIT')
+            VALUES (%s, %s, %s, 'ARRIVED')
         """, (del_001_id, ord_1_b_id, VND_B))
         conn.commit()
 
