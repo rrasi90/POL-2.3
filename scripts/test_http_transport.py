@@ -172,8 +172,10 @@ def test_auth_profile_switch_and_revocation_flow(client):
             "/api/v1/auth/refresh",
         )
         assert response.status_code == 200
-        access_refreshed = response.json()["data"]["access_token"]
+        refresh_payload = response.json()["data"]
+        access_refreshed = refresh_payload["access_token"]
         assert access_refreshed
+        assert "refresh_token" not in refresh_payload
 
         response = client.post(
             "/api/v1/auth/switch-organization",
