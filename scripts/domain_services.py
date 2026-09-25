@@ -19,6 +19,10 @@ from psycopg2.extras import RealDictCursor, Json
 import secrets
 import hashlib as _hashlib
 
+from scripts.revalidation_checkout import RevalidationCheckoutService
+from scripts.canonical_integration_worker import CanonicalIntegrationWorker
+from scripts.fulfillment_service import dispatch_order as canonical_dispatch_order, confirm_delivery as canonical_confirm_delivery
+
 from scripts.operational_config import (
     RESERVATION_TTL_MINUTES,
     ALLOCATION_PLAN_TTL_MINUTES,
@@ -418,138 +422,119 @@ class OrderGroupProjector:
 
 
 class CheckoutService:
+    """Deprecated compatibility facade; delegates to the canonical checkout path."""
+
     @staticmethod
-    def checkout(cur, basket_id: str, plan_id: str, retailer_id: str, idempotency_key: str, 
+    def checkout(cur, basket_id: str, plan_id: str, retailer_id: str, idempotency_key: str,
                  address_snapshot: dict, vendor_allocations: list) -> dict:
-        # 1. Validate Basket & Plan
-        cur.execute("""
-            SELECT b.version, p.basket_version, p.expires_at, p.status
-            FROM baskets b
-            JOIN allocation_plans p ON p.id = %s
-            WHERE b.id = %s;
-        """, (plan_id, basket_id))
-        chk = cur.fetchone()
-        if not chk:
-            raise ValueError("Basket or Allocation Plan not found.")
-        if chk["version"] != chk["basket_version"]:
-            raise ValueError(f"Stale basket checkout: basket v{chk['version']} != plan v{chk['basket_version']}")
-        if chk["expires_at"] < datetime.now(timezone.utc):
-            raise ValueError("Allocation plan has expired (15-minute TTL exceeded).")
-
-        # 2. Idempotent Reservation & Stock deduction
-        total_toman = sum(v["amount_toman"] for v in vendor_allocations)
-        og_id = str(uuid.uuid4())
-        cur.execute("""
-            INSERT INTO order_groups (
-                id, basket_id, allocation_plan_id, retailer_id, checkout_idempotency_key, 
-                total_amount_toman, order_count, group_status
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, 'ACTIVE'
-            ) RETURNING id;
-        """, (og_id, basket_id, plan_id, retailer_id, idempotency_key, total_toman, len(vendor_allocations)))
-
-        child_orders = []
-        for alloc in vendor_allocations:
-            ord_id = str(uuid.uuid4())
-            res_id = str(uuid.uuid4())
-            ord_num = f"ORD-{uuid.uuid4().hex[:8].upper()}"
-
-            # Child order
-            cur.execute("""
-                INSERT INTO orders (
-                    id, order_group_id, retailer_id, vendor_id, order_number, 
-                    total_amount_toman, order_status, dispute_status, delivery_address_snapshot, correlation_id
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, 'SUBMITTED', 'NONE', %s, %s
-                ) RETURNING *;
-            """, (
-                ord_id, og_id, retailer_id, alloc["vendor_id"], ord_num,
-                alloc["amount_toman"], Json(address_snapshot), f"corr-{og_id[:8]}"
-            ))
-            child_orders.append(cur.fetchone())
-
-            # Inventory reservation
-            cur.execute("""
-                INSERT INTO inventory_reservations (
-                    id, vendor_product_id, order_id, quantity, status, idempotency_key, expires_at
-                ) VALUES (
-                    %s, %s, %s, %s, 'ACTIVE', %s, now() + interval '15 minutes'
-                );
-            """, (res_id, alloc["vendor_product_id"], ord_id, alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_id']}"))
-
-            cur.execute("""
-                UPDATE vendor_inventory 
-                SET reserved_quantity = reserved_quantity + %s
-                WHERE vendor_product_id = %s;
-            """, (alloc["quantity"], alloc["vendor_product_id"]))
-
-        return {"order_group_id": og_id, "orders": child_orders}
+        request_fingerprint = hashlib.sha256(
+            json.dumps(
+                {
+                    "basket_id": basket_id,
+                    "plan_id": plan_id,
+                    "retailer_id": retailer_id,
+                    "vendor_allocations": vendor_allocations,
+                    "address_snapshot": address_snapshot,
+                },
+                sort_keys=True,
+                default=str,
+            ).encode()
+        ).hexdigest()
+        return RevalidationCheckoutService.revalidate_and_checkout(
+            cur=cur,
+            basket_id=basket_id,
+            plan_id=plan_id,
+            retailer_id=retailer_id,
+            idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint,
+            address_snapshot=address_snapshot,
+            vendor_allocations=vendor_allocations,
+        )
 
 
 class FulfillmentService:
-    @staticmethod
-    def dispatch_order(cur, order_id: str, vendor_id: str, driver_metadata: dict) -> str:
-        deliv_id = str(uuid.uuid4())
-        cur.execute("""
-            INSERT INTO deliveries (
-                id, order_id, vendor_id, driver_name, driver_phone, vehicle_plate, delivery_status
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, 'IN_TRANSIT'
-            ) RETURNING id;
-        """, (
-            deliv_id, order_id, vendor_id,
-            driver_metadata["driver_name"], driver_metadata["driver_phone"], driver_metadata["vehicle_plate"]
-        ))
-        cur.execute("""
-            UPDATE orders SET order_status = 'DISPATCHED' WHERE id = %s;
-        """, (order_id,))
-        return deliv_id
+    """Deprecated compatibility facade; requires explicit authenticated actor context."""
 
     @staticmethod
-    def confirm_delivery_otp(cur, delivery_id: str, order_id: str, recipient_name: str) -> None:
-        cur.execute("""
-            INSERT INTO proof_of_delivery (id, delivery_id, proof_type, otp_verified, accepted_by_name, accepted_at)
-            VALUES (%s, %s, 'OTP_CODE', TRUE, %s, now());
-        """, (str(uuid.uuid4()), delivery_id, recipient_name))
+    def dispatch_order(cur, order_id: str, vendor_id: str, driver_metadata: dict,
+                       user_id: str | None = None, organization_id: str | None = None) -> str:
+        if not user_id or not organization_id:
+            raise PermissionError(
+                "Legacy FulfillmentService.dispatch_order requires explicit actor context; "
+                "use scripts.fulfillment_service.dispatch_order directly."
+            )
+        result = canonical_dispatch_order(
+            cur,
+            user_id=user_id,
+            organization_id=organization_id,
+            order_id=order_id,
+            driver_name=driver_metadata.get("driver_name"),
+            driver_phone=driver_metadata.get("driver_phone"),
+            vehicle_plate=driver_metadata.get("vehicle_plate"),
+        )
+        return str(result["delivery_id"])
 
-        cur.execute("""
-            UPDATE deliveries SET delivery_status = 'DELIVERED', delivered_at = now() WHERE id = %s;
-        """, (delivery_id,))
-
-        cur.execute("""
-            UPDATE orders SET order_status = 'DELIVERED' WHERE id = %s;
-        """, (order_id,))
+    @staticmethod
+    def confirm_delivery_otp(cur, delivery_id: str, order_id: str, recipient_name: str,
+                             otp_code: str | None = None, user_id: str | None = None,
+                             organization_id: str | None = None) -> None:
+        if not otp_code or not user_id or not organization_id:
+            raise PermissionError(
+                "Legacy FulfillmentService.confirm_delivery_otp requires authenticated actor context and OTP."
+            )
+        canonical_confirm_delivery(
+            cur,
+            user_id=user_id,
+            organization_id=organization_id,
+            order_id=order_id,
+            recipient_name=recipient_name,
+            otp_code=otp_code,
+        )
 
 
 class PaymentService:
+    """Safe compatibility facade for direct non-custodial payment recording."""
+
     @staticmethod
-    def record_direct_payment(cur, order_id: str, retailer_id: str, vendor_id: str, 
+    def record_direct_payment(cur, order_id: str, retailer_id: str, vendor_id: str,
                               amount_toman: int, verified_by_user_id: str) -> dict:
-        pay_id = str(uuid.uuid4())
-        cur.execute("""
+        if amount_toman <= 0:
+            raise ValueError("Payment amount must be positive.")
+
+        cur.execute(
+            """
+            SELECT id, retailer_id, vendor_id, total_amount_toman
+            FROM orders
+            WHERE id=%s
+            FOR UPDATE
+            """,
+            (order_id,),
+        )
+        order = cur.fetchone()
+        if not order:
+            raise KeyError("Order not found.")
+        if str(order["retailer_id"]) != str(retailer_id) or str(order["vendor_id"]) != str(vendor_id):
+            raise PermissionError("Payment participants do not match the order.")
+
+        cur.execute(
+            """
             INSERT INTO payments (
-                id, order_id, retailer_id, vendor_id, amount_toman, 
-                payment_method, custody_model, payment_status, reference_number, verified_by, verified_at, paid_at
-            ) VALUES (
-                %s, %s, %s, %s, %s,
-                'DIRECT_BANK_TRANSFER', 'NON_CUSTODIAL_DIRECT', 'SUCCESS', 'TX-778899', %s, now(), now()
-            ) RETURNING *;
-        """, (pay_id, order_id, retailer_id, vendor_id, amount_toman, verified_by_user_id))
-        pay = cur.fetchone()
+                id, order_id, retailer_id, vendor_id, amount_toman,
+                payment_method, custody_model, payment_status
+            )
+            VALUES (%s,%s,%s,%s,%s,'DIRECT_BANK_TRANSFER','NON_CUSTODIAL_DIRECT','PENDING')
+            RETURNING *
+            """,
+            (str(uuid.uuid4()), order_id, retailer_id, vendor_id, amount_toman),
+        )
+        payment = cur.fetchone()
 
-        # Generate settlement at 0% pilot commission (D-006)
-        settle_id = str(uuid.uuid4())
-        cur.execute("""
-            INSERT INTO settlements (
-                id, order_id, vendor_id, gross_amount_toman, commission_rate, 
-                commission_amount_toman, net_vendor_amount_toman, status
-            ) VALUES (
-                %s, %s, %s, %s, %s, 0, %s, 'CALCULATED'
-            ) RETURNING *;
-        """, (settle_id, order_id, vendor_id, amount_toman, PILOT_COMMISSION_RATE, amount_toman))
-        settle = cur.fetchone()
-
-        return {"payment": pay, "settlement": settle}
+        return {
+            "payment": payment,
+            "settlement": None,
+            "requires_evidence": True,
+            "verified_by_user_id": verified_by_user_id,
+        }
 
 
 class DisputeService:
