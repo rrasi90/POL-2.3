@@ -108,7 +108,7 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 
 - Dual-client mandated (D-026) but audit marks Android RED pre-build.
 - **Build:** Phase 3 still required by contract; not a Phase 0 blocker.
-- **Status:** HISTORICAL / RESOLVED. Current screen matrix contains the live route set; historical dead-link snapshot is retained for traceability.. Mobile implementation and prior local/device verification exist on the current project line; final CI runner evidence remains separate.
+- **Status:** HISTORICAL / RESOLVED. Mobile implementation and prior local/device verification exist on the current project line; final CI runner evidence remains separate.
 
 ## G-019 — Working tree lacks many canonical files (HISTORICAL — RESOLVED)
 
@@ -126,7 +126,7 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 - `GET /api/v1/orders/{order_id}/partial-acceptance-proposals` now returns the canonical proposal rows and item reductions, with vendor/retailer tenant scoping.
 - **Status:** RESOLVED
 
-## G-022 — Delivery OTP schema vs D-018 (CONFLICT)
+## G-022 — Delivery OTP schema vs D-018 (RESOLVED)
 
 - **Sources:** `DeliveryConfirmRequest.otp_code` pattern was `^\d{6}$` vs **D-018** 4-digit OTP (`OTP_CODE_LENGTH = 4`).
 - **Resolution:** **RESOLVED (2026-09-23).** Backend aligned end-to-end: schema pattern `^\d{4}$`; `fulfillment_service.dispatch_order` generates via `OTP_CODE_LENGTH` and **persists** `delivery_otp` (was generated-but-not-saved); web R-09E OTP input `maxLength={4}`; POD tests use 4-digit codes. Migration `030` column stays `VARCHAR(6)` for historical rows; comment updated to D-018 4-digit.
@@ -148,7 +148,7 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 ## Phase 3 / live-e2e execution notes — 2026-09-23
 
 - Mobile retailer/vendor/ops foundations are implemented but remain `IMPLEMENTED` until mobile CI + three QA cycles provide evidence; do not promote to `VERIFIED` yet.
-- D-028 barcode matching remains contract-only because the authoritative request/response schema and runtime camera adapter are not yet available; no invented payload or success behavior is allowed.
+- D-028 barcode matching is now implemented at the canonical API boundary: exact identifier lookup plus quarantined candidate creation for `NO_MATCH`; camera/device transport remains a client concern and is intentionally decoupled.
 - Mobile Night theme tokens exist, but screen-by-screen visual verification is still pending; no claim of full visual parity is made.
 - Live basket → allocation → checkout e2e remains pending in the local environment because the current catalog seed/search path and orderability criteria still need live verification. This is an execution task, not a reason to stop other work.
 
