@@ -8,23 +8,7 @@ from fastapi import APIRouter, Depends, status
 
 from scripts.api.dependencies import get_application_boundary, require_roles
 from scripts.api.errors import success_payload
-from scripts.api.schemas import BarcodeMatchRequest, ProductCandidateCreateRequest
-
-router = APIRouter(prefix="/products", tags=["catalog-identifiers"])
-
-@router.post("/match-barcode")
-def match_barcode(
-    payload: BarcodeMatchRequest,
-    boundary=Depends(get_application_boundary),
-    _auth=Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF", "FIELD_ACTIVATOR")),
-):
-    return success_payload(
-        boundary.catalog_match_barcode(
-            raw_barcode=payload.raw_barcode,
-            scan_source=payload.scan_source,
-        )
-    )
-
+from scripts.api.schemas import ProductCandidateCreateRequest
 
 candidates_router = APIRouter(prefix="/product-candidates", tags=["catalog-candidates"])
 
