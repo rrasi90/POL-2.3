@@ -1,10 +1,10 @@
 # POL CURRENT SOURCE OF TRUTH & REPOSITORY GOVERNANCE
 
 **Document ID:** `POL-GOV-001`  
-**Version:** 1.2 (Canonical)  
+**Version:** 1.3 (Canonical)  
 **Status:** `LOCKED / OFFICIAL GOVERNANCE CHARTER`  
 **Effective Milestone:** Sprint 0 & MVP v1.0  
-**Last Audit:** 2026-09-23  
+**Last Audit:** 2026-09-25  
 
 ---
 
@@ -181,6 +181,18 @@ Canonical Node Registry → Federated Views → Relationship Graph → Closure P
 This upgrade does not create new product capabilities. It strengthens canonicality, applicability-aware closure, many-to-many evidence/relationships, artifact identity, source health, agent source packets and executable fitness functions.
 
 Repeated screen IDs in derived sections are projections, not independent sources of truth.
+
+## 7.1 Current Remediation Checkpoint — 2026-09-25
+
+The active engineering state is the remediation branch remediation/full-closure-2026-09-25, ahead of main without divergence. Source remediation has added forward-only integrity migrations, canonical HTTP contracts, tenant/actor boundaries, idempotency safeguards, notification routing/template hardening, and live UI surfaces. Historical CI/local records remain evidence only; fresh CI on the remediation branch is currently failing before useful step execution, so no fresh green certification is asserted.
+
+Current unresolved closure classes are:
+- explicit product/security decisions: D-018 policy wording, invoice timing, D-024 storefront write scope;
+- deployment/provider/observability evidence;
+- selected deep mobile management UI parity;
+- fresh CI certification after the current GitHub Actions execution blocker is resolved.
+
+The repository must not mark these items VERIFIED merely because source implementation exists.
 
 ## 7. Deep-Saturation Design Control — 2026-09-21
 
