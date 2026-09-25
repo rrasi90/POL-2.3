@@ -24,6 +24,7 @@ def open_dispute(
     return success_payload(
         boundary.dispute_open(
             order_id=str(order_id),
+            claimed_amount_toman=payload.claimed_amount_toman,
             description=payload.description,
             evidence_media_id=str(payload.evidence_media_id) if payload.evidence_media_id else None,
         )
