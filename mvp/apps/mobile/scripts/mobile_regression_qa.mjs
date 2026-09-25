@@ -29,7 +29,7 @@ const checks = [
     const v = read("screens/VendorMobileScreen.tsx");
     return s.includes("reason: rejectReason.trim()") && s.includes("driver_name: dispatchDriverName.trim()") &&
       s.includes("order_item_id: x.id") && s.includes("accepted_quantity: Number") &&
-      s.includes("/delivery/arrived") && s.includes("recipient_name: deliveryRecipient.trim()") &&
+      s.includes("submitDeliveryStage(target:") && s.includes('"arrived"') && s.includes("recipient_name: deliveryRecipient.trim()") &&
       v.includes("new_physical_quantity") && v.includes("vendor_product_id: x.vendor_product_id || x.id") &&
       v.includes("declared_quantity: Number") && v.includes("physical_quantity ?? 0");
   }],
