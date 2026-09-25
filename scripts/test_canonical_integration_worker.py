@@ -165,7 +165,7 @@ def test_integration_worker_uses_exact_recipient_and_template(postgres_database)
 
 
 @pytest.mark.parametrize("routing", [
-    "authorized", "wrong_organization", "suspended", "revoked", "inactive_organization", "missing_user", "missing_organization",
+    "authorized", "wrong_organization", "suspended", "revoked", "inactive_organization", "inactive_user", "missing_user", "missing_organization",
 ])
 def test_batch4_recipient_membership_isolation(postgres_database, routing):
     with transaction(postgres_database) as cur:
@@ -191,6 +191,8 @@ def test_batch4_recipient_membership_isolation(postgres_database, routing):
             cur.execute("UPDATE organization_memberships SET status=%s WHERE user_id=%s", (routing.upper(), user["id"]))
         if routing == "inactive_organization":
             cur.execute("UPDATE organizations SET status='SUSPENDED' WHERE id=%s", (org["id"],))
+        if routing == "inactive_user":
+            cur.execute("UPDATE users SET is_active=FALSE WHERE id=%s", (user["id"],))
     with transaction(postgres_database) as cur:
         if routing == "authorized":
             assert CanonicalIntegrationWorker.process_pending(cur) == 1
