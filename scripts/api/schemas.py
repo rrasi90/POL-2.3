@@ -256,6 +256,10 @@ class SupportCaseMessageRequest(APIBaseModel):
     message_text: str = Field(min_length=1, max_length=5000)
 
 
+class SupportCaseAssignRequest(APIBaseModel):
+    assignee_user_id: UUID
+
+
 class SupportCaseTransitionRequest(APIBaseModel):
     target_status: str = Field(min_length=1, max_length=30)
     resolution_code: str | None = Field(default=None, max_length=50)
