@@ -888,25 +888,49 @@ class DisputeService:
             (dispute["order_id"],),
         )
 
-        dedupe = f"DISPUTE_RESOLVED:{dispute_id}"
-        cur.execute(
-            """
-            INSERT INTO outbox_events
-                (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
-                 target_user_id,target_organization_id,dedupe_key,channel_hint)
-            VALUES
-                (gen_random_uuid(),gen_random_uuid(),'DISPUTE_RESOLVED','ORDER',%s,
-                 jsonb_build_object(
-                    'dispute_id',%s,
-                    'order_id',%s,
-                    'outcome',%s,
-                    'approved_amount_toman',%s
-                 ),
-                 'PENDING',NULL,NULL,%s,'INBOX')
-            ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
-            """,
-            (dispute["order_id"], dispute_id, dispute["order_id"], outcome, approved_amount, dedupe),
-        )
+        for org_id, side, roles in (
+            (dispute["retailer_org_id"], "RETAILER", ("RETAILER_OWNER", "RETAILER_STAFF")),
+            (dispute["vendor_org_id"], "VENDOR", ("VENDOR_OWNER", "VENDOR_STAFF")),
+        ):
+            cur.execute(
+                """
+                SELECT om.user_id
+                FROM organization_memberships om
+                JOIN organizations org ON org.id=om.organization_id
+                JOIN users u ON u.id=om.user_id
+                WHERE om.organization_id=%s
+                  AND om.status='ACTIVE'
+                  AND u.is_active=TRUE
+                  AND org.status='ACTIVE'
+                  AND om.role = ANY(%s)
+                ORDER BY om.user_id
+                """,
+                (org_id, list(roles)),
+            )
+            for rec in cur.fetchall():
+                dedupe = f"DISPUTE_RESOLVED:{dispute_id}:{org_id}:{rec['user_id']}"
+                cur.execute(
+                    """
+                    INSERT INTO outbox_events
+                        (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                         target_user_id,target_organization_id,dedupe_key,channel_hint)
+                    VALUES
+                        (gen_random_uuid(),gen_random_uuid(),'DISPUTE_RESOLVED','ORDER',%s,
+                         jsonb_build_object(
+                            'dispute_id',%s,
+                            'order_id',%s,
+                            'outcome',%s,
+                            'approved_amount_toman',%s,
+                            'side',%s
+                         ),
+                         'PENDING',%s,%s,%s,'INBOX')
+                    ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                    """,
+                    (
+                        dispute["order_id"], dispute_id, dispute["order_id"], outcome,
+                        approved_amount, side, rec["user_id"], org_id, dedupe,
+                    ),
+                )
 
         return {
             "id": str(resolved["id"]),
