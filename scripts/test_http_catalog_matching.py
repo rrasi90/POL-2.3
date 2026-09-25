@@ -265,6 +265,42 @@ def test_unknown_barcode_creates_quarantined_candidate_idempotently():
             assert vp["product_id"] is None
             assert str(vp["candidate_id"]) == a["candidate_id"]
             assert vp["listing_status"] == "DRAFT_PENDING_CATALOG"
+
+        barcode_only = "626998" + str(uuid4().int % 1000000000).zfill(9)
+        barcode_payload = {
+            "barcode": barcode_only,
+            "proposed_title": "Barcode Only " + suffix,
+            "create_candidate": True,
+        }
+        first_bo = client.post(
+            "/api/v1/products/match-barcode",
+            headers={"Authorization": "Bearer " + data["token"]},
+            json=barcode_payload,
+        )
+        second_bo = client.post(
+            "/api/v1/products/match-barcode",
+            headers={"Authorization": "Bearer " + data["token"]},
+            json=barcode_payload,
+        )
+        assert first_bo.status_code == 200
+        assert second_bo.status_code == 200
+        a_bo = first_bo.json()["data"]
+        b_bo = second_bo.json()["data"]
+        assert a_bo["match_type"] == "NO_MATCH"
+        assert a_bo["vendor_product_id"] is None
+        assert a_bo["listing_status"] is None
+        assert b_bo["candidate_id"] == a_bo["candidate_id"]
+        assert b_bo["idempotent_replay"] is True
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT COUNT(*) AS c
+                FROM product_candidates
+                WHERE vendor_id=%s AND barcode=%s AND status='PENDING_REVIEW'
+                """,
+                (data["vendor_id"], barcode_only),
+            )
+            assert int(cur.fetchone()["c"]) == 1
     finally:
         if data:
             with conn:
