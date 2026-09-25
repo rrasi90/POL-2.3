@@ -2228,6 +2228,248 @@ class POLApplicationBoundary:
         if not self.cur.fetchone():
             raise PermissionError("Vendor product not found or not accessible from this organization.")
 
+    def vendor_inventory_continuous_scan(
+        self,
+        *,
+        product_id: str,
+        vendor_sku: str,
+        packaging_unit: str,
+        pack_quantity: int,
+        physical_quantity: int,
+        unit_price_toman: int,
+        consumer_price_per_unit_toman: int | None,
+        session_id: str,
+    ):
+        if not self.context.organization_id:
+            raise PermissionError("Inventory scan requires an active organization context.")
+        if pack_quantity < 1 or physical_quantity < 0 or unit_price_toman <= 0:
+            raise ValueError("Invalid pack quantity, physical quantity, or unit price.")
+        vendor = self._current_vendor_for_context()
+        if not vendor:
+            raise PermissionError("Active vendor membership required.")
+
+        self.cur.execute(
+            """
+            SELECT id, product_id, packaging_unit, pack_quantity, listing_status
+            FROM vendor_products
+            WHERE vendor_id=%s AND vendor_sku=%s
+            FOR UPDATE
+            """,
+            (vendor["id"], vendor_sku.strip()),
+        )
+        vp = self.cur.fetchone()
+        if vp:
+            if str(vp["product_id"]) != str(product_id):
+                raise ValueError("vendor_sku is already bound to another master product.")
+            if vp["packaging_unit"] != packaging_unit or int(vp["pack_quantity"]) != int(pack_quantity):
+                raise ValueError("Existing vendor SKU packaging does not match the scan contract.")
+            vendor_product_id = str(vp["id"])
+            if vp["listing_status"] == "SUSPENDED":
+                raise ValueError("Suspended vendor product cannot be updated by scan.")
+        else:
+            vendor_product_id = str(uuid4())
+            self.cur.execute(
+                """
+                INSERT INTO vendor_products
+                    (id,vendor_id,product_id,vendor_sku,packaging_unit,pack_quantity,sales_unit,is_active,listing_status)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,TRUE,'DRAFT_PENDING_CATALOG')
+                RETURNING id
+                """,
+                (vendor_product_id, vendor["id"], product_id, vendor_sku.strip(),
+                 packaging_unit, int(pack_quantity), packaging_unit),
+            )
+
+        self.cur.execute(
+            """
+            INSERT INTO inventory_scan_sessions
+                (vendor_id,external_session_id,created_by_user_id,status)
+            VALUES (%s,%s,%s,'DRAFT')
+            ON CONFLICT (vendor_id,external_session_id)
+            DO UPDATE SET created_by_user_id=EXCLUDED.created_by_user_id
+            RETURNING id,status
+            """,
+            (vendor["id"], session_id.strip(), self.context.user_id),
+        )
+        session = self.cur.fetchone()
+        if session["status"] != "DRAFT":
+            raise ValueError("Inventory scan session is already closed.")
+
+        self.cur.execute(
+            """
+            INSERT INTO inventory_scan_session_items
+                (session_id,vendor_product_id,physical_quantity,unit_price_toman,consumer_price_per_unit_toman)
+            VALUES (%s,%s,%s,%s,%s)
+            ON CONFLICT (session_id,vendor_product_id)
+            DO UPDATE SET
+                physical_quantity=EXCLUDED.physical_quantity,
+                unit_price_toman=EXCLUDED.unit_price_toman,
+                consumer_price_per_unit_toman=EXCLUDED.consumer_price_per_unit_toman,
+                updated_at=now()
+            RETURNING id
+            """,
+            (session["id"], vendor_product_id, physical_quantity, unit_price_toman,
+             consumer_price_per_unit_toman),
+        )
+
+        self.cur.execute(
+            """
+            SELECT physical_quantity, reserved_quantity
+            FROM vendor_inventory
+            WHERE vendor_product_id=%s
+            FOR UPDATE
+            """,
+            (vendor_product_id,),
+        )
+        inv = self.cur.fetchone()
+        old_qty = int(inv["physical_quantity"]) if inv else 0
+        reserved = int(inv["reserved_quantity"]) if inv else 0
+        if inv and physical_quantity < reserved:
+            raise ValueError("Physical quantity cannot be below currently reserved quantity.")
+
+        if inv:
+            self.cur.execute(
+                """
+                UPDATE vendor_inventory
+                SET physical_quantity=%s, updated_at=now(),
+                    freshness_status='FRESH',
+                    inventory_confidence='CONFIRMED_TODAY',
+                    verification_source='CONTINUOUS_SCAN',
+                    last_confirmed_at=now()
+                WHERE vendor_product_id=%s
+                """,
+                (physical_quantity, vendor_product_id),
+            )
+        else:
+            self.cur.execute(
+                """
+                INSERT INTO vendor_inventory
+                    (vendor_product_id,inventory_unit,physical_quantity,reserved_quantity,freshness_status,
+                     inventory_confidence,verification_source,last_confirmed_at)
+                VALUES (%s,%s,%s,0,'FRESH','CONFIRMED_TODAY','CONTINUOUS_SCAN',now())
+                """,
+                (vendor_product_id, packaging_unit, physical_quantity),
+            )
+
+        self.cur.execute(
+            """
+            UPDATE vendor_prices
+            SET is_current=FALSE,effective_to=now()
+            WHERE vendor_product_id=%s AND is_current=TRUE
+            """,
+            (vendor_product_id,),
+        )
+        self.cur.execute(
+            """
+            INSERT INTO vendor_prices
+                (vendor_product_id,price_toman,consumer_price_per_unit_toman,is_current,effective_from)
+            VALUES (%s,%s,%s,TRUE,now())
+            """,
+            (vendor_product_id, unit_price_toman, consumer_price_per_unit_toman),
+        )
+        self.cur.execute(
+            """
+            INSERT INTO inventory_audit_log
+                (vendor_id,vendor_product_id,old_quantity,new_quantity,old_price_toman,new_price_toman,
+                 source_trigger,reference_id,actor_user_id)
+            VALUES (%s,%s,%s,%s,
+                    (SELECT price_toman FROM vendor_prices WHERE vendor_product_id=%s AND is_current=FALSE ORDER BY effective_to DESC NULLS LAST LIMIT 1),
+                    %s,'BARCODE_SCAN',%s,%s)
+            """,
+            (vendor["id"],vendor_product_id,old_qty,physical_quantity,vendor_product_id,
+             unit_price_toman,session_id.strip(),self.context.user_id),
+        )
+        return {
+            "vendor_product_id": vendor_product_id,
+            "available_quantity": physical_quantity - reserved,
+            "inventory_unit": packaging_unit,
+            "unit_price_toman": unit_price_toman,
+            "freshness_status": "FRESH",
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "session_id": session_id.strip(),
+            "listing_status": "DRAFT_PENDING_CATALOG",
+        }
+
+    def vendor_inventory_publish(self, *, session_id: str):
+        if not self.context.organization_id:
+            raise PermissionError("Inventory publish requires an active organization context.")
+        vendor = self._current_vendor_for_context()
+        if not vendor:
+            raise PermissionError("Active vendor membership required.")
+
+        self.cur.execute(
+            """
+            SELECT id,status
+            FROM inventory_scan_sessions
+            WHERE vendor_id=%s AND external_session_id=%s
+            FOR UPDATE
+            """,
+            (vendor["id"], session_id.strip()),
+        )
+        session = self.cur.fetchone()
+        if not session:
+            raise KeyError("Inventory scan session not found.")
+        if session["status"] == "PUBLISHED":
+            self.cur.execute(
+                "SELECT COUNT(*)::INT AS count FROM inventory_scan_session_items WHERE session_id=%s",
+                (session["id"],),
+            )
+            return {"session_id": session_id.strip(), "status": "PUBLISHED",
+                    "published_count": int(self.cur.fetchone()["count"]), "idempotent_replay": True}
+        if session["status"] != "DRAFT":
+            raise ValueError("Inventory scan session cannot be published from its current state.")
+
+        self.cur.execute(
+            "SELECT vendor_product_id,physical_quantity,unit_price_toman FROM inventory_scan_session_items WHERE session_id=%s FOR UPDATE",
+            (session["id"],),
+        )
+        items = self.cur.fetchall()
+        if not items:
+            raise ValueError("Inventory scan session contains no items.")
+
+        published = 0
+        for item in items:
+            self.cur.execute(
+                """
+                UPDATE vendor_products
+                SET listing_status='ACTIVE', is_active=TRUE, updated_at=now()
+                WHERE id=%s
+                  AND vendor_id=%s
+                  AND listing_status='DRAFT_PENDING_CATALOG'
+                RETURNING id
+                """,
+                (item["vendor_product_id"],vendor["id"]),
+            )
+            if self.cur.fetchone():
+                published += 1
+            self.cur.execute(
+                """
+                INSERT INTO inventory_audit_log
+                    (vendor_id,vendor_product_id,old_quantity,new_quantity,new_price_toman,source_trigger,reference_id,actor_user_id)
+                SELECT %s,vi.vendor_product_id,vi.physical_quantity,vi.physical_quantity,%s,'SESSION_PUBLISH',%s,%s
+                FROM vendor_inventory vi
+                WHERE vi.vendor_product_id=%s
+                """,
+                (vendor["id"],item["vendor_product_id"],session_id.strip(),self.context.user_id,item["vendor_product_id"]),
+            )
+
+        self.cur.execute(
+            """
+            UPDATE inventory_scan_sessions
+            SET status='PUBLISHED',published_at=now()
+            WHERE id=%s
+            RETURNING status,published_at
+            """,
+            (session["id"],),
+        )
+        done = self.cur.fetchone()
+        return {
+            "session_id": session_id.strip(),
+            "status": done["status"],
+            "published_count": published,
+            "published_at": done["published_at"].isoformat(),
+            "idempotent_replay": False,
+        }
+
     def vendor_inventory_get(self, vendor_product_id: str):
         """Get inventory details for a vendor product (tenant-scoped)."""
         if not self.context.organization_id:
