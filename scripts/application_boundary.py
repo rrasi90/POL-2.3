@@ -420,6 +420,22 @@ class POLApplicationBoundary:
 
     # ── Order Query Methods (Stage 20) ──────────────────────────────
 
+    def _current_vendor_for_context(self):
+        if not self.context.organization_id:
+            return None
+        self.cur.execute(
+            """
+            SELECT v.id, v.organization_id, v.user_id, v.business_name, v.status
+            FROM vendors v
+            WHERE v.organization_id=%s
+              AND v.status='ACTIVE'
+            ORDER BY v.id
+            LIMIT 1
+            """,
+            (self.context.organization_id,),
+        )
+        return self.cur.fetchone()
+
     def _resolve_actor_role(self):
         if not self.context.organization_id:
             raise PermissionError("Order query requires an organization context.")
