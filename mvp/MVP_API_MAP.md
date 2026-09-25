@@ -208,10 +208,10 @@ HTTP may also set `X-Correlation-ID`.
 
 | Method | Path |
 |--------|------|
-| GET | `/notifications` | inbox list (confirm field names vs `read`/`is_read` when wiring) |
+| GET | `/notifications` | notification projection including read/deep-link state |
 | GET/PUT | `/notifications/preferences` |
 
-**Note:** Contract inventory lists `/inbox/items*` paths — **CONFLICT** with implemented `/notifications*`; prefer implemented path for REAL calls; contract inbox paths → see GAPS if screens require exact contract path.
+**Note:** Canonical inbox routes `/inbox/items*` are implemented alongside `/notifications*`; both are real HTTP surfaces and are covered by notification transport tests.
 
 ### 3.16 Field — `field.py` (`/field`)
 
@@ -241,12 +241,10 @@ HTTP may also set `X-Correlation-ID`.
 
 | # | Endpoint | Use |
 |---|----------|-----|
-| 4 | POST `/api/v1/vendors/inventory/continuous-scan` | VD-16 — CONTRACT_ONLY; session semantics still open |
-| 5 | POST `/api/v1/vendors/inventory/publish` | VD-01 publish — CONTRACT_ONLY |
-| 17–20 | payments/disputes variants | covered partially by REAL order payment/dispute routes — map per screen |
-| 4–5 | vendor inventory continuous-scan/publish | CONTRACT — session/publish authority still open |
-| 17–20 | payments/disputes variants | partially REAL; exact direct-transfer/payment-id verify and dispute resolve paths still open |
-| 41 | POST `/api/v1/admin/sla-overrides` | CONTRACT — canonical deadline column name requires clarification |
+| 4 | POST `/api/v1/vendors/inventory/continuous-scan` | VD-16 — CONTRACT_ONLY; scan-session semantics remain open |
+| 5 | POST `/api/v1/vendors/inventory/publish` | VD-01 publish — CONTRACT_ONLY; publish transition semantics remain open |
+| 17–20 | payments/disputes variants | partially REAL; exact direct-transfer/payment-id verify and dispute-resolve paths remain open |
+| 41 | POST `/api/v1/admin/sla-overrides` | CONTRACT_ONLY; canonical deadline column name requires clarification |
 
 Any screen needing a `CONTRACT` row before backend HTTP exists → **MOCK adapter** (same method/path/envelope), tagged `MOCK` in use-notes; no business rules in mock.
 
@@ -279,7 +277,7 @@ feedback_*, support_* (HTTP now REAL for cases), referral (HTTP REAL), return_re
 | Reconciliation | finance/reconciliation | — |
 | Referrals | referrals/* | — |
 | Field tasks | field/tasks* | — |
-| Admin audit/exceptions | admin/* | broadcasts, users/orgs, categories admin |
+| Admin audit/exceptions | admin/* | users/orgs administration remains GAP; broadcasts and categories admin are REAL |
 | Pilot analytics O-09 | **GAP** (no analytics HTTP) | MOCK read-model or GAP |
 | Vendor customers V-09 | **GAP/CONTRACT** (no list API found) | GAP → mock list from orders if needed |
 | Staff/access V-11 | **GAP** | GAP |
