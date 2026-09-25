@@ -117,6 +117,11 @@ def management_env():
     }
     try:
         with conn.cursor() as cur:
+            cur.execute("DELETE FROM inventory_audit_log WHERE vendor_id=%s", (vendor_id,))
+            cur.execute("DELETE FROM vendor_inventory WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s)", (vendor_id,))
+            cur.execute("DELETE FROM vendor_prices WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s)", (vendor_id,))
+            cur.execute("DELETE FROM vendor_products WHERE vendor_id=%s", (vendor_id,))
+            cur.execute("DELETE FROM vendors WHERE id=%s", (vendor_id,))
             cur.execute("DELETE FROM organization_memberships WHERE user_id IN (%s,%s)", (admin_user, vendor_user))
             cur.execute("DELETE FROM user_sessions WHERE user_id IN (%s,%s)", (admin_user, vendor_user))
             cur.execute("DELETE FROM users WHERE id IN (%s,%s)", (admin_user, vendor_user))
@@ -337,6 +342,9 @@ def test_continuous_inventory_scan_and_publish(client, management_env):
     assert replay.json()["data"]["idempotent_replay"] is True
 
     with conn.cursor() as cur:
+        cur.execute("DELETE FROM inventory_audit_log WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s)", (management_env["vendor_id"], "VSKU-" + suffix))
+        cur.execute("DELETE FROM vendor_prices WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s)", (management_env["vendor_id"], "VSKU-" + suffix))
+        cur.execute("DELETE FROM vendor_inventory WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s)", (management_env["vendor_id"], "VSKU-" + suffix))
         cur.execute("DELETE FROM inventory_scan_sessions WHERE vendor_id=%s AND external_session_id=%s", (management_env["vendor_id"], "scan-" + suffix))
         cur.execute("DELETE FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s", (management_env["vendor_id"], "VSKU-" + suffix))
         cur.execute("DELETE FROM products WHERE id=%s", (product_id,))
