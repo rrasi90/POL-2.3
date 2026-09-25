@@ -118,9 +118,7 @@ Design construction is governed by the written Master Tree, the canonical visual
 
 ### Product Architecture Evolution — 2026-09-20
 
-The current product-design authority now also includes:
-
-- POL_00_PROJECT_CONTROL/PRODUCT_EVOLUTION/PRODUCT_ARCHITECTURE_EVOLUTION_WAVE_01_2026-09-20.md
+The current product-architecture direction is represented by the active Decision Register and the current Master Tree.
 
 This document records the adopted product-architecture direction for:
 - Financial Activity without MVP stored-value Wallet
@@ -139,17 +137,20 @@ These directions refine presentation, UX and implementation sequencing without o
 
 ### Precision Commerce Visual Direction — 2026-09-21
 
-POL's canonical product visual direction is now **A — Precision Commerce**.
+POL's canonical product visual direction is **A — Precision Commerce**.
 
-The visual authority is:
+The active visual authority on this branch is:
 
 - `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
-- `13_PRODUCT_DESIGN/57_POL_MASTER_TREE_DEEP_CRITICAL_AUDIT_2026-09-21.md`
-- `13_PRODUCT_DESIGN/58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`
-- `13_PRODUCT_DESIGN/59_POL_DESIGN_TO_ENGINEERING_HANDOFF_AND_BUILD_READINESS_2026-09-21.md`
-- `13_PRODUCT_DESIGN/60_POL_FINAL_DESIGN_TO_BUILD_READINESS_AUDIT_2026-09-21.md`
+- `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md`
 
-Required theme policy: **Light + Night are first-class variants for every applicable canonical screen, section, component, pattern and design tool artifact.** Night is semantic theming, not color inversion.
+Operational closure evidence is maintained in:
+
+- `mvp/MVP_SCREEN_MATRIX.md`
+- `mvp/MVP_API_MAP.md`
+- `mvp/MVP_KNOWN_GAPS.md`
+
+Required theme policy: **Light + Night are first-class variants for every applicable canonical screen, section and component.** Night is semantic theming, not color inversion.
 
 The visual system governs appearance, tokens, typography, shape, elevation, density, motion, RTL presentation and visual QA only. It does not override product/domain/API/permission/financial/MVP authorities.
 
