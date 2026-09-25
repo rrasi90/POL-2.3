@@ -10,7 +10,7 @@ type Inv = { id: string; vendor_product_id?: string | null; product_name?: strin
 type Invoice = { id: string; invoice_number?: string | null; status?: string | null; total_amount_toman?: number | string | null; issued_at?: string | null };
 type Referral = { id: string; status?: string | null; referral_code?: string | null; referred_organization_id?: string | null };
 type Settlement = { id: string; settlement_number?: string | null; status?: string | null; amount_toman?: number | string | null };
-type Daily = { status?: string | null; lines?: Array<{ id: string; product_id?: string | null; product_name?: string | null; expected_quantity?: number | null; confirmed_quantity?: number | null }> };
+type Daily = { status?: string | null; lines?: Array<{ id: string; vendor_product_id?: string | null; product_id?: string | null; product_name?: string | null; expected_quantity?: number | null; confirmed_quantity?: number | null }> };
 
 function rows<T>(data: unknown, key: string): T[] {
   if (Array.isArray(data)) return data as T[];
