@@ -42,6 +42,11 @@ from scripts.domain_services import (
     AuditService
 )
 from scripts.checkout_gateway import CanonicalCheckoutGateway
+from scripts.fulfillment_service import (
+    dispatch_order as canonical_dispatch_order,
+    transition_delivery_stage,
+    confirm_delivery as canonical_confirm_delivery,
+)
 
 import hashlib
 import json
@@ -294,36 +299,89 @@ def run_master_e2e_test():
         # -------------------------------------------------------------
         # 6. Delivery Dispatch (Driver Info Option A) & OTP Delivery Confirmation
         # -------------------------------------------------------------
-        print("\n[STEP 6] Fulfillment: Dispatch with Driver Info (Option A) and OTP Confirmation via FulfillmentService...")
+        print("\n[STEP 6] Fulfillment: Dispatch with Driver Info (Option A) and staged OTP confirmation...")
         driver_metadata = {
             "driver_name": "Karim Driver",
             "driver_phone": "+989163334455",
             "vehicle_plate": "14 Iran 333 b 12"
         }
-        deliv_id = FulfillmentService.dispatch_order(cur, ord_a_id, vnda_id, driver_metadata)
-        cur.execute("SELECT delivery_status FROM deliveries WHERE id = %s;", (deliv_id,))
-        assert cur.fetchone()["delivery_status"] == "IN_TRANSIT"
+        dispatch_res = canonical_dispatch_order(
+            cur,
+            user_id=u_vnda_owner,
+            organization_id=org_vnda,
+            order_id=ord_a_id,
+            **driver_metadata,
+        )
+        deliv_id = dispatch_res["delivery_id"]
+        otp_code = dispatch_res["delivery_otp"]
+        assert dispatch_res["delivery_status"] == "ASSIGNED"
 
-        # Retailer confirms delivery via OTP
-        FulfillmentService.confirm_delivery_otp(cur, deliv_id, ord_a_id, 'Hossein Golestani')
+        for stage in ("PICKED_UP", "IN_TRANSIT", "ARRIVED"):
+            stage_res = transition_delivery_stage(
+                cur,
+                user_id=u_vnda_owner,
+                organization_id=org_vnda,
+                order_id=ord_a_id,
+                target_status=stage,
+            )
+            assert stage_res["delivery_status"] == stage
+
+        cur.execute("SELECT delivery_status FROM deliveries WHERE id = %s;", (deliv_id,))
+        assert cur.fetchone()["delivery_status"] == "ARRIVED"
+
+        canonical_confirm_delivery(
+            cur,
+            user_id=u_ret_owner,
+            organization_id=org_ret,
+            order_id=ord_a_id,
+            recipient_name="Hossein Golestani",
+            otp_code=otp_code,
+        )
         cur.execute("SELECT delivery_status FROM deliveries WHERE id = %s;", (deliv_id,))
         assert cur.fetchone()["delivery_status"] == "DELIVERED"
         cur.execute("SELECT order_status FROM orders WHERE id = %s;", (ord_a_id,))
         assert cur.fetchone()["order_status"] == "DELIVERED"
-        print("  [PASS] Delivery dispatched with driver credentials and verified by OTP -> DELIVERED via FulfillmentService.")
+        print("  [PASS] Delivery staged ASSIGNED→PICKED_UP→IN_TRANSIT→ARRIVED→DELIVERED with one-time OTP.")
 
         # -------------------------------------------------------------
-        # 7. Non-Custodial Direct Payment & Proof Verification
+        # 7. Non-Custodial Direct Payment Evidence & Verification
         # -------------------------------------------------------------
-        print("\n[STEP 7] Non-Custodial Direct Payment Proof & Verification via PaymentService...")
-        pay_res = PaymentService.record_direct_payment(cur, ord_a_id, ret_id, vnda_id, 6000000, u_vnda_owner)
-        payment = pay_res["payment"]
-        settlement = pay_res["settlement"]
-        settle_id = settlement["id"]
-        assert payment["custody_model"] == "NON_CUSTODIAL_DIRECT"
-        assert settlement["commission_rate"] == 0
-        assert settlement["status"] == "CALCULATED"
-        print("  [PASS] Direct payment proof recorded via PaymentService: 6,000,000 Toman settled at 0% commission.")
+        print("\n[STEP 7] Non-Custodial Direct Payment Evidence & Verification...")
+        pay_id = str(uuid.uuid4())
+        cur.execute(
+            """
+            INSERT INTO payments (
+                id, order_id, retailer_id, vendor_id, amount_toman,
+                payment_method, custody_model, payment_status
+            ) VALUES (
+                %s,%s,%s,%s,6000000,'DIRECT_BANK_TRANSFER','NON_CUSTODIAL_DIRECT','PENDING'
+            )
+            RETURNING *
+            """,
+            (pay_id, ord_a_id, ret_id, vnda_id),
+        )
+        cur.execute(
+            """
+            INSERT INTO payment_evidence (
+                id, payment_id, evidence_type, external_reference,
+                claimed_amount_toman, observed_amount_toman,
+                captured_by_user_id, observation_scope, metadata
+            ) VALUES (
+                %s,%s,'BANK_REFERENCE',%s,6000000,6000000,%s,'SINGLE_PAYMENT','{}'::jsonb
+            )
+            """,
+            (str(uuid.uuid4()), pay_id, f"TXN-{uuid.uuid4().hex[:12]}", u_ret_owner),
+        )
+        payment_boundary = POLApplicationBoundary(
+            cur,
+            ApplicationContext(u_vnda_owner, org_vnda, corr_id),
+        )
+        pay_res = payment_boundary.verify_payment(order_id=ord_a_id, notes="Master E2E verification")
+        assert pay_res["status"] == "SUCCESS"
+        settle_id = pay_res["settlement_id"]
+        cur.execute("SELECT status FROM settlements WHERE id=%s", (settle_id,))
+        assert cur.fetchone()["status"] == "CALCULATED"
+        print("  [PASS] Payment verified only after matching evidence; settlement CALCULATED.")
 
         # -------------------------------------------------------------
         # 8. Invoices with Multi-Tenant Access
