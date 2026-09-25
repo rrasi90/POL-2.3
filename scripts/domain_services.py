@@ -1327,11 +1327,6 @@ class FeedbackService:
         ))
         fb = cur.fetchone()
 
-        cur.execute("""
-            INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status)
-            VALUES (%s, %s, 'FEEDBACK_SUBMITTED', 'FEEDBACK', %s, %s, 'PENDING');
-        """, (str(uuid.uuid4()), f"fb_ev_{f_id[:8]}", f_id, Json({"feedback_id": f_id, "type": feedback_type, "priority": priority})))
-
         return fb
 
     @staticmethod
