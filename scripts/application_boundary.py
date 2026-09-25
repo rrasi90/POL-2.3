@@ -21,6 +21,7 @@ from scripts.fulfillment_service import (
     mark_preparing as _mark_preparing,
     mark_ready as _mark_ready,
     dispatch_order as _dispatch_order,
+    transition_delivery_stage as _transition_delivery_stage,
     confirm_delivery as _confirm_delivery,
 )
 from scripts.payment_reconciliation_worker import PaymentReconciliationWorker
@@ -493,6 +494,16 @@ class POLApplicationBoundary:
             driver_name=driver_name,
             vehicle_plate=vehicle_plate,
             driver_phone=driver_phone,
+        )
+
+    def vendor_delivery_stage(self, *, order_id, target_status, reason=None):
+        return _transition_delivery_stage(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            order_id=order_id,
+            target_status=target_status,
+            reason=reason,
         )
 
     def retailer_confirm_delivery(self, *, order_id, recipient_name=None,
