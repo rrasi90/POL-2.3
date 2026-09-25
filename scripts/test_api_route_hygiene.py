@@ -33,3 +33,7 @@ def test_api_layer_does_not_import_legacy_domain_services():
             if isinstance(node, ast.ImportFrom) and node.module == "scripts.domain_services":
                 offenders.append(str(path.relative_to(repo_root)))
     assert not offenders, f"API transport imports legacy domain_services directly: {offenders}"
+
+
+if __name__ == "__main__":
+    test_http_method_and_path_are_unique()
