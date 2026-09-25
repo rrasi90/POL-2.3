@@ -14,6 +14,7 @@ from scripts.api.schemas import (
     DeliveryConfirmRequest,
     DeliveryExceptionEscalateRequest,
     DeliveryExceptionReportRequest,
+    DeliveryStageRequest,
     DeliveryExceptionResolveRequest,
     DispatchRequest,
     PaymentEvidenceRequest,
@@ -243,6 +244,58 @@ def dispatch_order(
         if payload.driver_phone:
             kwargs["driver_phone"] = payload.driver_phone
     return success_payload(boundary.vendor_dispatch_order(**kwargs))
+
+
+def _delivery_stage(order_id: UUID, target_status: str, payload, boundary):
+    return success_payload(
+        boundary.vendor_delivery_stage(
+            order_id=str(order_id),
+            target_status=target_status,
+            reason=payload.reason if payload else None,
+        )
+    )
+
+
+@router.post("/{order_id}/delivery/picked-up", status_code=200)
+def delivery_picked_up(
+    order_id: UUID,
+    payload: DeliveryStageRequest | None = None,
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF", "FIELD_ACTIVATOR"))] = None,
+):
+    return _delivery_stage(order_id, "PICKED_UP", payload, boundary)
+
+
+@router.post("/{order_id}/delivery/in-transit", status_code=200)
+def delivery_in_transit(
+    order_id: UUID,
+    payload: DeliveryStageRequest | None = None,
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF", "FIELD_ACTIVATOR"))] = None,
+):
+    return _delivery_stage(order_id, "IN_TRANSIT", payload, boundary)
+
+
+@router.post("/{order_id}/delivery/arrived", status_code=200)
+def delivery_arrived(
+    order_id: UUID,
+    payload: DeliveryStageRequest | None = None,
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF", "FIELD_ACTIVATOR"))] = None,
+):
+    return _delivery_stage(order_id, "ARRIVED", payload, boundary)
+
+
+@router.post("/{order_id}/delivery/failed", status_code=200)
+def delivery_failed(
+    order_id: UUID,
+    payload: DeliveryStageRequest,
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF", "FIELD_ACTIVATOR"))] = None,
+):
+    if not payload.reason:
+        raise ValueError("Failure reason is required.")
+    return _delivery_stage(order_id, "FAILED", payload, boundary)
 
 
 @router.post("/{order_id}/deliver", status_code=200)
