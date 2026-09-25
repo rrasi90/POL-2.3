@@ -222,6 +222,7 @@ class ReturnTransitionRequest(APIBaseModel):
 
 
 class DisputeOpenRequest(APIBaseModel):
+    claimed_amount_toman: int = Field(gt=0)
     description: str = Field(min_length=1, max_length=2000)
     evidence_media_id: UUID | None = None
 
