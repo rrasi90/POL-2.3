@@ -461,11 +461,19 @@ def test_product_candidate_review_http_is_tenant_and_idempotent(client, manageme
         assert non_admin_review.status_code == 403
     finally:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM outbox_events WHERE aggregate_id=%s", (candidate_id,))
             cur.execute(
-                "DELETE FROM admin_audit_logs WHERE target_entity_type='PRODUCT_CANDIDATE' AND target_entity_id=%s",
-                (candidate_id,),
+                "DELETE FROM outbox_events WHERE aggregate_id IN (SELECT id FROM product_candidates WHERE vendor_id=%s)",
+                (management_env["vendor_id"],),
             )
-            cur.execute("DELETE FROM product_candidates WHERE id=%s", (candidate_id,))
+            cur.execute(
+                "DELETE FROM admin_audit_logs WHERE target_entity_type='PRODUCT_CANDIDATE' AND target_entity_id IN (SELECT id FROM product_candidates WHERE vendor_id=%s)",
+                (management_env["vendor_id"],),
+            )
+            cur.execute(
+                "DELETE FROM vendor_inventory WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s)",
+                (management_env["vendor_id"],),
+            )
+            cur.execute("DELETE FROM vendor_products WHERE vendor_id=%s", (management_env["vendor_id"],))
+            cur.execute("DELETE FROM product_candidates WHERE vendor_id=%s", (management_env["vendor_id"],))
         conn.commit()
 
