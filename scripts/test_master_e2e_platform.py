@@ -223,6 +223,42 @@ def run_master_e2e_test():
         # Allocation Engine produces Multi-Vendor Plan (D-014)
         plan = AllocationService.create_plan(cur, basket_id, basket_version=3, vendor_count=2, total_toman=12750000)
         plan_id = plan["id"]
+        cur.execute(
+            """
+            SELECT id, product_id, requested_quantity, requested_unit
+            FROM basket_items
+            WHERE basket_id=%s
+            ORDER BY created_at, id
+            """,
+            (basket_id,),
+        )
+        basket_rows = cur.fetchall()
+        assert len(basket_rows) == 2
+        allocation_rows = {
+            str(row["product_id"]): row
+            for row in basket_rows
+        }
+        for product_id, vendor_id, vendor_product_id, quantity, unit_price in (
+            (prod_a, vnda_id, vp_a, 10, 600000),
+            (prod_b, vndb_id, vp_b, 15, 450000),
+        ):
+            row = allocation_rows[product_id]
+            cur.execute(
+                """
+                INSERT INTO allocation_items (
+                    id, allocation_plan_id, basket_item_id, vendor_id, vendor_product_id,
+                    allocated_quantity, allocated_unit, unit_price_snapshot_toman,
+                    line_total_toman, status
+                )
+                VALUES (
+                    gen_random_uuid(), %s, %s, %s, %s, %s, %s, %s, %s, 'ALLOCATED'
+                )
+                """,
+                (
+                    plan_id, row["id"], vendor_id, vendor_product_id,
+                    quantity, row["requested_unit"], unit_price, quantity * unit_price,
+                ),
+            )
         assert plan["strategy"] == "MULTI_VENDOR_MIN_FRAGMENTATION"
         assert plan["vendor_count"] == 2
         print(f"  [PASS] Basket v3 allocated across 2 vendors ({plan['total_estimated_toman']:,} Toman) via AllocationService.")
