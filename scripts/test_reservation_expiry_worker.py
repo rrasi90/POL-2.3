@@ -53,13 +53,37 @@ def test_reservation_expiry_releases_inventory_and_is_idempotent():
                     """,
                     (vendor_id, user_id, org_id),
                 )
+                brand_id = str(uuid.uuid4())
+                category_id = str(uuid.uuid4())
+                subcategory_id = str(uuid.uuid4())
+                cur.execute(
+                    """
+                    INSERT INTO brands (id,name_fa,slug)
+                    VALUES (%s,'Expiry Brand',%s)
+                    """,
+                    (brand_id, f"expiry-brand-{uuid.uuid4().hex[:8]}"),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO categories (id,name_fa,slug)
+                    VALUES (%s,'Expiry Category',%s)
+                    """,
+                    (category_id, f"expiry-category-{uuid.uuid4().hex[:8]}"),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO subcategories (id,category_id,name_fa,slug)
+                    VALUES (%s,%s,'Expiry Subcategory',%s)
+                    """,
+                    (subcategory_id, category_id, f"expiry-subcategory-{uuid.uuid4().hex[:8]}"),
+                )
                 cur.execute(
                     """
                     INSERT INTO products
-                        (id,master_sku,canonical_name_fa,is_active)
-                    VALUES (%s,%s,'Expiry Test Product',TRUE)
+                        (id,master_sku,canonical_name_fa,brand_id,category_id,subcategory_id,is_active)
+                    VALUES (%s,%s,'Expiry Test Product',%s,%s,%s,TRUE)
                     """,
-                    (product_id, f"EXP-{uuid.uuid4().hex[:10]}"),
+                    (product_id, f"EXP-{uuid.uuid4().hex[:10]}", brand_id, category_id, subcategory_id),
                 )
                 cur.execute(
                     """
