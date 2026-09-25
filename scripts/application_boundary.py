@@ -2278,6 +2278,13 @@ class POLApplicationBoundary:
             raise PermissionError("Active vendor membership required.")
 
         self.cur.execute(
+            "SELECT id FROM products WHERE id=%s::uuid AND is_active=TRUE",
+            (product_id,),
+        )
+        if not self.cur.fetchone():
+            raise KeyError("Master product not found or inactive.")
+
+        self.cur.execute(
             """
             SELECT id, product_id, packaging_unit, pack_quantity, listing_status
             FROM vendor_products
