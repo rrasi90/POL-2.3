@@ -77,6 +77,7 @@ export default function LoginPage() {
       const data = await getApi().post<VerifyResult>("/api/v1/auth/verify-otp", {
         mobile_number: phone,
         otp_code: otp,
+        client_platform: "web",
       });
       const role =
         normalizeRole(data.role) ??
