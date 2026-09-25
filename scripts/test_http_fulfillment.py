@@ -50,6 +50,31 @@ def _db():
     )
 
 
+
+
+def _advance_delivery_to_arrived(client, data):
+    v = {"Authorization": f"Bearer {data['v_token']}"}
+    res = client.post(
+        f"/api/v1/orders/{data['oi']}/dispatch",
+        headers=v,
+        json={
+            "driver_name": "Ali",
+            "driver_phone": "+989121234567",
+            "vehicle_plate": "12-A-345",
+        },
+    )
+    assert res.status_code == 200
+    result = res.json()["data"]
+    otp = result["delivery_otp"]
+    for path in ("picked-up", "in-transit", "arrived"):
+        res = client.post(
+            f"/api/v1/orders/{data['oi']}/delivery/{path}",
+            headers=v,
+        )
+        assert res.status_code == 200, (path, res.text)
+    return otp
+
+
 def _create_session(cur, user_id, org_id):
     session_id = str(uuid4())
     cur.execute(
@@ -186,6 +211,12 @@ class TestDispatch:
         assert "delivery_otp" in result
         otp = result["delivery_otp"]
         assert isinstance(otp, str) and len(otp) == 4 and otp.isdigit()
+        for path in ("picked-up", "in-transit", "arrived"):
+            stage = client.post(
+                f"/api/v1/orders/{data['oi']}/delivery/{path}",
+                headers={"Authorization": f"Bearer {data['v_token']}"}
+            )
+            assert stage.status_code == 200
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
@@ -204,25 +235,69 @@ class TestDispatch:
 
 
 class TestConfirmDelivery:
-    def test_deliver_from_dispatched(self, client):
+    def test_deliver_requires_arrived_and_otp(self, client):
         data = _seed_order_with_status(uuid4().hex[:8], "ACCEPTED")
-        client.post(f"/api/v1/orders/{data['oi']}/preparing",
-                    headers={"Authorization": f"Bearer {data['v_token']}"})
-        client.post(f"/api/v1/orders/{data['oi']}/ready",
-                    headers={"Authorization": f"Bearer {data['v_token']}"})
-        client.post(f"/api/v1/orders/{data['oi']}/dispatch",
-                    headers={"Authorization": f"Bearer {data['v_token']}"})
-        resp = client.post(f"/api/v1/orders/{data['oi']}/deliver",
-                           headers={"Authorization": f"Bearer {data['r_token']}"},
-                           json={"recipient_name": "Reza"})
+        otp = _advance_delivery_to_arrived(client, data)
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/deliver",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"recipient_name": "Reza", "otp_code": otp},
+        )
         assert resp.status_code == 200
         assert resp.json()["data"]["order_status"] == "DELIVERED"
 
+    def test_deliver_from_dispatched_rejected(self, client):
+        data = _seed_order_with_status(uuid4().hex[:8], "ACCEPTED")
+        v = {"Authorization": f"Bearer {data['v_token']}"}
+        client.post(f"/api/v1/orders/{data['oi']}/preparing", headers=v)
+        client.post(f"/api/v1/orders/{data['oi']}/ready", headers=v)
+        client.post(
+            f"/api/v1/orders/{data['oi']}/dispatch",
+            headers=v,
+            json={"driver_name": "Ali", "driver_phone": "+989121234567", "vehicle_plate": "12-A-345"},
+        )
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/deliver",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"recipient_name": "Reza", "otp_code": "1234"},
+        )
+        assert resp.status_code == 422
+
+    def test_wrong_otp_rejected_without_delivery(self, client):
+        data = _seed_order_with_status(uuid4().hex[:8], "ACCEPTED")
+        _advance_delivery_to_arrived(client, data)
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/deliver",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"recipient_name": "Reza", "otp_code": "0000"},
+        )
+        assert resp.status_code == 422
+
+    def test_repeated_delivery_confirmation_replays(self, client):
+        data = _seed_order_with_status(uuid4().hex[:8], "ACCEPTED")
+        otp = _advance_delivery_to_arrived(client, data)
+        r = {"Authorization": f"Bearer {data['r_token']}"}
+        first = client.post(
+            f"/api/v1/orders/{data['oi']}/deliver",
+            headers=r,
+            json={"recipient_name": "Reza", "otp_code": otp},
+        )
+        second = client.post(
+            f"/api/v1/orders/{data['oi']}/deliver",
+            headers=r,
+            json={"recipient_name": "Reza", "otp_code": otp},
+        )
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert second.json()["data"]["idempotent_replay"] is True
+
     def test_deliver_from_submitted_rejected(self, client):
         data = _seed_order_with_status(uuid4().hex[:8], "SUBMITTED")
-        resp = client.post(f"/api/v1/orders/{data['oi']}/deliver",
-                           headers={"Authorization": f"Bearer {data['r_token']}"},
-                           json={"recipient_name": "Reza"})
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/deliver",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"recipient_name": "Reza", "otp_code": "1234"},
+        )
         assert resp.status_code == 422
 
 
@@ -238,10 +313,18 @@ class TestFullLifecycle:
         resp = client.post(f"/api/v1/orders/{data['oi']}/ready", headers=v)
         assert resp.status_code == 200
 
-        resp = client.post(f"/api/v1/orders/{data['oi']}/dispatch", headers=v)
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/dispatch",
+            headers=v,
+            json={"driver_name": "Ali", "driver_phone": "+989121234567", "vehicle_plate": "12-A-345"},
+        )
         assert resp.status_code == 200
+        otp = resp.json()["data"]["delivery_otp"]
+        for path in ("picked-up", "in-transit", "arrived"):
+            resp = client.post(f"/api/v1/orders/{data['oi']}/delivery/{path}", headers=v)
+            assert resp.status_code == 200
 
-        resp = client.post(f"/api/v1/orders/{data['oi']}/deliver", headers=r, json={"recipient_name": "Test"})
+        resp = client.post(f"/api/v1/orders/{data['oi']}/deliver", headers=r, json={"recipient_name": "Test", "otp_code": otp})
         assert resp.status_code == 200
         assert resp.json()["data"]["order_status"] == "DELIVERED"
 
@@ -254,8 +337,17 @@ class TestTimelineAfterFulfillment:
 
         client.post(f"/api/v1/orders/{data['oi']}/preparing", headers=v)
         client.post(f"/api/v1/orders/{data['oi']}/ready", headers=v)
-        client.post(f"/api/v1/orders/{data['oi']}/dispatch", headers=v)
-        client.post(f"/api/v1/orders/{data['oi']}/deliver", headers=r, json={"recipient_name": "Test"})
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/dispatch",
+            headers=v,
+            json={"driver_name": "Ali", "driver_phone": "+989121234567", "vehicle_plate": "12-A-345"},
+        )
+        assert resp.status_code == 200
+        otp = resp.json()["data"]["delivery_otp"]
+        for path in ("picked-up", "in-transit", "arrived"):
+            resp = client.post(f"/api/v1/orders/{data['oi']}/delivery/{path}", headers=v)
+            assert resp.status_code == 200
+        client.post(f"/api/v1/orders/{data['oi']}/deliver", headers=r, json={"recipient_name": "Test", "otp_code": otp})
 
         resp = client.get(f"/api/v1/orders/{data['oi']}/timeline", headers=v)
         events = resp.json()["data"]["events"]
