@@ -124,6 +124,45 @@ def test_security_headers_present(client):
     assert response.headers.get("X-Correlation-ID")
 
 
+def test_production_cors_configuration_fails_closed(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.delenv("POL_CORS_ORIGINS", raising=False)
+    with pytest.raises(RuntimeError, match="POL_CORS_ORIGINS"):
+        from scripts.api.main import create_app
+        create_app()
+
+    monkeypatch.setenv("POL_CORS_ORIGINS", "*")
+    with pytest.raises(RuntimeError, match="Wildcard CORS"):
+        create_app()
+
+
+def test_production_refresh_cookie_is_secure(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("POL_CORS_ORIGINS", "https://app.example.com")
+    from scripts.api.main import create_app
+
+    production_client = TestClient(create_app(), raise_server_exceptions=False)
+    phone, _, _, user_id = _seed_user()
+    try:
+        response = production_client.post(
+            "/api/v1/auth/request-otp",
+            json={"mobile_number": phone},
+        )
+        assert response.status_code == 200
+        response = production_client.post(
+            "/api/v1/auth/verify-otp",
+            json={"mobile_number": phone, "otp_code": "1234", "client_platform": "web"},
+        )
+        assert response.status_code == 200
+        cookie = response.headers.get("set-cookie", "")
+        assert "pol_refresh=" in cookie
+        assert "HttpOnly" in cookie
+        assert "Secure" in cookie
+        assert "SameSite=lax" in cookie
+    finally:
+        _cleanup(phone, user_id)
+
+
 def test_health_and_readiness(client):
     response = client.get("/healthz")
     assert response.status_code == 200
