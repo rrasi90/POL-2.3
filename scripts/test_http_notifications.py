@@ -53,6 +53,15 @@ def _seed():
             notif_id = str(uuid4())
             cur.execute("INSERT INTO notifications (id, user_id, organization_id, event_name, title, body, priority) VALUES (%s, %s, %s, 'ORDER_ACCEPTED', 'Test', 'Body', 'NORMAL')",
                         (notif_id, uid, org_id))
+            inbox_id = str(uuid4())
+            cur.execute(
+                """
+                INSERT INTO user_inbox_items
+                    (id, user_id, organization_id, notification_id, title, body, category, deep_link, is_read)
+                VALUES (%s,%s,%s,%s,'Test','Body','ORDERS','/orders/test',FALSE)
+                """,
+                (inbox_id, uid, org_id, notif_id),
+            )
             sid = _create_session(cur, uid, org_id)
         conn.commit()
         token = encode_access_token(uid, sid, org_id, "RETAILER_OWNER")
@@ -102,3 +111,38 @@ class TestNotificationAccess:
     def test_unauthenticated_rejected(self, client):
         resp = client.get("/api/v1/notifications")
         assert resp.status_code == 401
+
+class TestDurableInbox:
+    def test_list_and_unread_count(self, client):
+        data = _seed()
+        resp = client.get("/api/v1/inbox/items", headers={"Authorization": f"Bearer {data['token']}"})
+        assert resp.status_code == 200
+        payload = resp.json()["data"]
+        assert payload["unread_count"] >= 1
+        assert any(item["deep_link"] == "/orders/test" and item["is_read"] is False for item in payload["items"])
+
+    def test_mark_one_read_is_tenant_scoped(self, client):
+        data = _seed()
+        listed = client.get("/api/v1/inbox/items", headers={"Authorization": f"Bearer {data['token']}"}).json()["data"]["items"]
+        item_id = listed[0]["id"]
+        resp = client.patch(f"/api/v1/inbox/items/{item_id}/read", headers={"Authorization": f"Bearer {data['token']}"})
+        assert resp.status_code == 200
+        assert resp.json()["data"]["is_read"] is True
+        assert resp.json()["data"]["unread_count"] == 0
+
+    def test_mark_all_read_is_idempotent(self, client):
+        data = _seed()
+        first = client.patch("/api/v1/inbox/items/read-all", headers={"Authorization": f"Bearer {data['token']}"})
+        assert first.status_code == 200
+        assert first.json()["data"]["unread_count"] == 0
+        second = client.patch("/api/v1/inbox/items/read-all", headers={"Authorization": f"Bearer {data['token']}"})
+        assert second.status_code == 200
+        assert second.json()["data"]["marked_count"] == 0
+
+    def test_notification_projection_contains_read_state(self, client):
+        data = _seed()
+        resp = client.get("/api/v1/notifications", headers={"Authorization": f"Bearer {data['token']}"})
+        assert resp.status_code == 200
+        item = next(row for row in resp.json()["data"] if row["id"] == data["notif_id"])
+        assert item["is_read"] is False
+        assert item["deep_link"] == "/orders/test"
