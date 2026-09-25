@@ -31,7 +31,15 @@ function AppContent(): React.ReactNode {
 
   const refresh = useCallback(async () => {
     const restored = await restoreSession();
-    if (!restored) {
+    if (restored.restored && restored.role) {
+      const restoredRole = restored.role as Role;
+      setRole(restoredRole);
+      setRoute(
+        restoredRole === "FIELD_ACTIVATOR"
+          ? { name: "field" }
+          : { name: "workspace", role: restoredRole },
+      );
+    } else {
       await healthz();
     }
     setBooted(true);
