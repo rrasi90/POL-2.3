@@ -144,20 +144,6 @@ def mark_preparing(cur, *, user_id, organization_id, order_id) -> dict:
         },
         recipient_org_id=order["retailer_organization_id"],
     )
-    _emit_outbox(
-        cur,
-        event_name="ORDER_DELIVERED",
-        aggregate_id=order_id,
-        aggregate_type="ORDER",
-        payload={
-            "order_id": order_id,
-            "order_number": order["order_number"],
-            "order_status": "DELIVERED",
-            "delivery_id": delivery_id,
-            "otp_verified": True,
-        },
-        recipient_org_id=order["vendor_organization_id"],
-    )
     return {
         "order_id": order_id,
         "order_status": "PREPARING",
@@ -483,6 +469,20 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
             "otp_verified": True,
         },
         recipient_org_id=order["retailer_organization_id"],
+    )
+    _emit_outbox(
+        cur,
+        event_name="ORDER_DELIVERED",
+        aggregate_id=order_id,
+        aggregate_type="ORDER",
+        payload={
+            "order_id": order_id,
+            "order_number": order["order_number"],
+            "order_status": "DELIVERED",
+            "delivery_id": delivery_id,
+            "otp_verified": True,
+        },
+        recipient_org_id=order["vendor_organization_id"],
     )
     return {
         "order_id": order_id,
