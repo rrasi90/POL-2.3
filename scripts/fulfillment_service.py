@@ -176,7 +176,7 @@ def mark_ready(cur, *, user_id, organization_id, order_id) -> dict:
             "order_number": order["order_number"],
             "order_status": "READY",
         },
-        recipient_org_id=order["retailer_id"],
+        recipient_org_id=order["retailer_organization_id"],
     )
     return {
         "order_id": order_id,
@@ -278,7 +278,7 @@ def dispatch_order(cur, *, user_id, organization_id, order_id, driver_name=None,
             "order_status": "DISPATCHED",
             "delivery_id": delivery_id,
         },
-        recipient_org_id=order["retailer_id"],
+        recipient_org_id=order["retailer_organization_id"],
     )
     return {
         "order_id": order_id,
@@ -319,6 +319,8 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
             "idempotent_replay": True,
         }
 
+    if not recipient_name or not str(recipient_name).strip():
+        raise ValueError("recipient_name is required for proof of delivery.")
     if not otp_code:
         raise ValueError("Delivery OTP is required.")
 
@@ -440,7 +442,7 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
             "delivery_id": delivery_id,
             "otp_verified": True,
         },
-        recipient_org_id=order["retailer_id"],
+        recipient_org_id=order["retailer_organization_id"],
     )
     return {
         "order_id": order_id,
