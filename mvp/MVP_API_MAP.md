@@ -277,11 +277,12 @@ feedback_*, support_* (HTTP now REAL for cases), referral (HTTP REAL), return_re
 | Reconciliation | finance/reconciliation | — |
 | Referrals | referrals/* | — |
 | Field tasks | field/tasks* | — |
-| Admin audit/exceptions | admin/* | users/orgs administration remains GAP; broadcasts and categories admin are REAL |
+| Admin audit/exceptions | admin/* | users/orgs administration now REAL; broadcasts and categories admin are REAL |
 | Pilot analytics O-09 | `GET /ops/analytics`, `GET /ops/analytics/weekly` | KPI service / live SQL |
 | Vendor customers V-09 | `GET /vendors/customers?query=&offset=&limit=` | tenant-scoped customers derived from vendor orders |
 | Staff/access V-11 | `GET/POST/PATCH /vendors/staff*` | vendor-owner managed membership lifecycle |
 | Permission mgmt | `GET /ops/permissions` | canonical RBAC permission catalog |
+| Global returns | `GET /ops/returns` | ops workbench over all returns |
 
 ---
 
