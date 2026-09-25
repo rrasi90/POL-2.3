@@ -97,6 +97,11 @@ def _seed_order_with_status(suffix, order_status):
             vu = str(uuid4())
             vo = str(uuid4())
             vi = str(uuid4())
+            brand_id = str(uuid4())
+            category_id = str(uuid4())
+            subcategory_id = str(uuid4())
+            product_id = str(uuid4())
+            vendor_product_id = str(uuid4())
             bi = str(uuid4())
             pi = str(uuid4())
             ogi = str(uuid4())
@@ -119,6 +124,28 @@ def _seed_order_with_status(suffix, order_status):
             cur.execute("INSERT INTO vendors (id, user_id, organization_id, business_name, warehouse_address, min_order_value_toman, status) "
                         "VALUES (%s, %s, %s, \'V\', \'Ahvaz\', 1000000, \'ACTIVE\')",
                         (vi, vu, vo))
+            cur.execute("INSERT INTO brands (id, name_fa, slug) VALUES (%s, 'Fulfillment Brand', %s)",
+                        (brand_id, f'fulfillment-brand-{suffix}'))
+            cur.execute("INSERT INTO categories (id, name_fa, slug) VALUES (%s, 'Fulfillment Category', %s)",
+                        (category_id, f'fulfillment-category-{suffix}'))
+            cur.execute("INSERT INTO subcategories (id, category_id, name_fa, slug) VALUES (%s,%s,'Fulfillment Subcategory',%s)",
+                        (subcategory_id, category_id, f'fulfillment-subcategory-{suffix}'))
+            cur.execute(
+                """
+                INSERT INTO products
+                    (id, master_sku, canonical_name_fa, brand_id, category_id, subcategory_id, is_active)
+                VALUES (%s,%s,'Fulfillment Product',%s,%s,%s,TRUE)
+                """,
+                (product_id, f'FULFILL-{suffix}', brand_id, category_id, subcategory_id),
+            )
+            cur.execute(
+                """
+                INSERT INTO vendor_products
+                    (id, vendor_id, product_id, vendor_sku, packaging_unit, pack_quantity, listing_status, is_active)
+                VALUES (%s,%s,%s,%s,'CARTON',1,'ACTIVE',TRUE)
+                """,
+                (vendor_product_id, vi, product_id, f'FULFILL-VP-{suffix}'),
+            )
 
             cur.execute("INSERT INTO baskets (id, retailer_id, status, version) VALUES (%s, %s, \'OPEN\', 1)", (bi, ri))
             cur.execute("INSERT INTO allocation_plans (id, basket_id, basket_version, status, strategy, vendor_count, total_estimated_toman, expires_at) "
@@ -130,6 +157,20 @@ def _seed_order_with_status(suffix, order_status):
             cur.execute("INSERT INTO orders (id, order_number, order_group_id, allocation_plan_id, retailer_id, vendor_id, order_status, total_amount_toman, created_at, updated_at) "
                         "VALUES (%s, %s, %s, %s, %s, %s, %s, 5000000, now(), now())",
                         (oi, f"ORD-{suffix}", ogi, pi, ri, vi, order_status))
+            cur.execute(
+                """
+                INSERT INTO order_items (
+                    id, order_id, product_id, vendor_product_id,
+                    product_name_snapshot, brand_name_snapshot, vendor_sku_snapshot,
+                    packaging_unit_snapshot, pack_quantity_snapshot,
+                    ordered_quantity, accepted_quantity, delivered_quantity,
+                    unit_price_toman, total_line_amount_toman, fulfillment_status
+                )
+                VALUES (%s,%s,%s,%s,'Fulfillment Product','Fulfillment Brand',%s,
+                        'CARTON',1,10,NULL,0,500000,5000000,'PENDING')
+                """,
+                (str(uuid4()), oi, product_id, vendor_product_id, f'FULFILL-VP-{suffix}'),
+            )
 
             rs = _create_session(cur, ru, ro)
             vs = _create_session(cur, vu, vo)
