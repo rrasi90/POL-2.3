@@ -110,10 +110,12 @@ class AuthService:
         otp_id = str(uuid.uuid4())
         environment = os.getenv("ENVIRONMENT", "").lower()
         pol_environment = os.getenv("POL_ENV", "").lower()
+        is_prod = environment in ("prod", "production") or pol_environment in ("prod", "production")
+        is_test = environment == "test"
         # Deterministic OTP is strictly test-only. Any non-test environment,
         # including an unset/unknown environment, must use a cryptographically
         # random code so a deployment misconfiguration cannot silently expose 1234.
-        if environment == "test" or pol_environment == "test":
+        if is_test and not is_prod:
             code = "1234"
         else:
             code = f"{secrets.randbelow(10_000):04d}"
@@ -140,9 +142,10 @@ class AuthService:
                 raise RuntimeError("Production OTP delivery failed: SMS provider not configured. Set POL_SMS_ENDPOINT.")
             except ProviderTransientError as exc:
                 raise RuntimeError(f"Production OTP delivery failed: provider transient error. {exc}") from exc
-        else:
-            if isinstance(res, dict):
-                res["test_code"] = code
+        elif is_test and isinstance(res, dict):
+            # Test-only convenience: expose the deterministic code only when the
+            # environment is explicitly set to "test".
+            res["test_code"] = code
 
         return res
 
