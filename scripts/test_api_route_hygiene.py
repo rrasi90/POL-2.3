@@ -17,3 +17,19 @@ def test_http_method_and_path_are_unique():
 
     duplicates = {key: endpoints for key, endpoints in seen.items() if len(endpoints) > 1}
     assert not duplicates, f"Duplicate HTTP registrations detected: {duplicates}"
+
+import ast
+from pathlib import Path
+
+
+def test_api_layer_does_not_import_legacy_domain_services():
+    """Keep FastAPI transport on the application boundary."""
+    repo_root = Path(__file__).resolve().parents[1]
+    api_root = repo_root / "scripts" / "api"
+    offenders = []
+    for path in api_root.rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8-sig"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module == "scripts.domain_services":
+                offenders.append(str(path.relative_to(repo_root)))
+    assert not offenders, f"API transport imports legacy domain_services directly: {offenders}"
