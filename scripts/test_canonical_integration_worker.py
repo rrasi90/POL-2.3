@@ -196,8 +196,7 @@ def test_batch4_recipient_membership_isolation(postgres_database, routing):
             assert CanonicalIntegrationWorker.process_pending(cur) == 1
             assert CanonicalIntegrationWorker.process_pending(cur) == 0
         else:
-            with pytest.raises(IntegrationWorkerError, match="routing|active membership"):
-                CanonicalIntegrationWorker.process_pending(cur)
+            assert CanonicalIntegrationWorker.process_pending(cur) == 1
         cur.execute("SELECT user_id, organization_id FROM notifications")
         rows = cur.fetchall()
         assert len(rows) == (1 if routing == "authorized" else 0)
@@ -206,8 +205,11 @@ def test_batch4_recipient_membership_isolation(postgres_database, routing):
             assert rows[0]["organization_id"] == org["id"]
         cur.execute("SELECT count(*) AS count FROM notification_deliveries")
         assert cur.fetchone()["count"] == len(rows)
-        cur.execute("SELECT status FROM outbox_events WHERE event_id=%s", (event_id,))
-        assert cur.fetchone()["status"] == ("PUBLISHED" if routing == "authorized" else "PENDING")
+        cur.execute("SELECT status, last_error FROM outbox_events WHERE event_id=%s", (event_id,))
+        event_row = cur.fetchone()
+        assert event_row["status"] == ("PUBLISHED" if routing == "authorized" else "FAILED")
+        if routing != "authorized":
+            assert event_row["last_error"]
     with transaction(postgres_database) as cur:
         cur.execute("SELECT count(*) AS count FROM notifications")
         assert cur.fetchone()["count"] == (1 if routing == "authorized" else 0)
