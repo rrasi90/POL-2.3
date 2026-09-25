@@ -115,6 +115,16 @@ def test_cors_is_scoped_to_known_web_origins(client):
     assert "access-control-allow-origin" not in blocked.headers
 
 
+def test_production_hsts_is_present(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("POL_CORS_ORIGINS", "https://app.example.com")
+    from scripts.api.main import create_app
+
+    response = TestClient(create_app()).get("/healthz")
+    assert response.status_code == 200
+    assert response.headers.get("Strict-Transport-Security") == "max-age=31536000; includeSubDomains"
+
+
 def test_security_headers_present(client):
     response = client.get("/healthz")
     assert response.status_code == 200
