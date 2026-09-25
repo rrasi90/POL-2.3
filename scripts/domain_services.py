@@ -542,79 +542,137 @@ class PaymentService:
 
 class DisputeService:
     @staticmethod
-    def open_dispute(cur, order_id: str, retailer_id: str, vendor_id: str, settlement_id: str, 
+    def open_dispute(cur, order_id: str, retailer_id: str, vendor_id: str, settlement_id: str,
                      claimed_amount: int, description: str) -> str:
+        if claimed_amount <= 0:
+            raise ValueError("Dispute claimed amount must be positive.")
+
+        cur.execute(
+            """
+            SELECT o.id, o.order_status, o.retailer_id, o.vendor_id,
+                   r.organization_id AS retailer_org_id,
+                   v.organization_id AS vendor_org_id
+            FROM orders o
+            JOIN retailers r ON r.id=o.retailer_id
+            JOIN vendors v ON v.id=o.vendor_id
+            WHERE o.id=%s
+            FOR UPDATE
+            """,
+            (order_id,),
+        )
+        order = cur.fetchone()
+        if not order:
+            raise KeyError("Order not found.")
+        if str(order["retailer_id"]) != str(retailer_id) or str(order["vendor_id"]) != str(vendor_id):
+            raise PermissionError("Dispute parties do not match the order.")
+        if order["order_status"] != "DELIVERED":
+            raise ValueError("Dispute can only be opened for a delivered order.")
+
+        cur.execute(
+            """
+            SELECT id, status, vendor_id, order_id
+            FROM settlements
+            WHERE id=%s
+            FOR UPDATE
+            """,
+            (settlement_id,),
+        )
+        settlement = cur.fetchone()
+        if not settlement or str(settlement["order_id"]) != str(order_id) or str(settlement["vendor_id"]) != str(vendor_id):
+            raise ValueError("Settlement does not belong to the disputed order/vendor.")
+
+        cur.execute(
+            """
+            SELECT 1
+            FROM disputes
+            WHERE order_id=%s
+              AND dispute_status IN ('OPEN','INVESTIGATING','RESOLVED')
+            LIMIT 1
+            """,
+            (order_id,),
+        )
+        if cur.fetchone():
+            raise ValueError("An active or unresolved dispute already exists for this order.")
+
         disp_id = str(uuid.uuid4())
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO disputes (
-                id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description
-            ) VALUES (
-                %s, %s, %s, %s, 'OPEN', %s, %s
-            ) RETURNING id;
-        """, (disp_id, order_id, retailer_id, vendor_id, claimed_amount, description))
+                id, order_id, retailer_id, vendor_id, dispute_status,
+                claimed_amount_toman, description
+            ) VALUES (%s,%s,%s,%s,'OPEN',%s,%s)
+            RETURNING id
+            """,
+            (disp_id, order_id, retailer_id, vendor_id, claimed_amount, description),
+        )
 
-        # Project dispute state onto order while preserving order_status
-        cur.execute("""
-            UPDATE orders SET dispute_status = 'OPEN' WHERE id = %s;
-        """, (order_id,))
+        cur.execute(
+            "UPDATE orders SET dispute_status='OPEN' WHERE id=%s",
+            (order_id,),
+        )
+        cur.execute(
+            "UPDATE settlements SET status='DISPUTED' WHERE id=%s",
+            (settlement_id,),
+        )
 
-        # Place hold on settlement
-        cur.execute("""
-            UPDATE settlements SET status = 'DISPUTED' WHERE id = %s;
-        """, (settlement_id,))
-
-        # Outbox event
-        cur.execute("""
-            INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status)
-            VALUES (%s, %s, 'DISPUTE_OPENED', 'ORDER', %s, %s, 'PENDING');
-        """, (str(uuid.uuid4()), str(uuid.uuid4()), order_id, Json({"dispute_id": disp_id, "amount_toman": claimed_amount})))
-
+        # Notify both commercial sides with explicit tenant routing.
+        recipients = [
+            (order["retailer_org_id"], "RETAILER"),
+            (order["vendor_org_id"], "VENDOR"),
+        ]
+        for org_id, side in recipients:
+            cur.execute(
+                """
+                SELECT om.user_id
+                FROM organization_memberships om
+                JOIN organizations org ON org.id=om.organization_id
+                WHERE om.organization_id=%s
+                  AND om.status='ACTIVE'
+                  AND org.status='ACTIVE'
+                  AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF','VENDOR_OWNER','VENDOR_STAFF')
+                ORDER BY om.user_id
+                """,
+                (org_id,),
+            )
+            for rec in cur.fetchall():
+                dedupe = f"DISPUTE_OPENED:{disp_id}:{org_id}:{rec['user_id']}"
+                cur.execute(
+                    """
+                    INSERT INTO outbox_events (
+                        id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                        target_user_id,target_organization_id,dedupe_key,channel_hint
+                    )
+                    VALUES (
+                        gen_random_uuid(),gen_random_uuid(),'DISPUTE_OPENED','ORDER',%s,
+                        jsonb_build_object(
+                            'dispute_id',%s,
+                            'order_id',%s,
+                            'claimed_amount_toman',%s,
+                            'side',%s
+                        ),
+                        'PENDING',%s,%s,%s,'INBOX'
+                    )
+                    ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                    """,
+                    (
+                        order_id, disp_id, order_id, claimed_amount, side,
+                        rec["user_id"], org_id, dedupe,
+                    ),
+                )
         return disp_id
 
 
 class NotificationService:
+    """Deprecated facade; delegates to the canonical PostgreSQL outbox worker."""
+
     @staticmethod
     def dispatch_pending_outbox(cur, target_user_id: str = None, target_org_id: str = None) -> int:
-        cur.execute("""
-            SELECT * FROM outbox_events WHERE status = 'PENDING' FOR UPDATE SKIP LOCKED;
-        """, ())
-        events = cur.fetchall()
-        count = 0
-        for ev in events:
-            notif_id = str(uuid.uuid4())
-            if target_user_id and target_org_id:
-                u_id, o_id = target_user_id, target_org_id
-            else:
-                cur.execute("""
-                    SELECT user_id, organization_id FROM organization_memberships 
-                    WHERE role = 'VENDOR_OWNER' AND status = 'ACTIVE' LIMIT 1;
-                """)
-                recip = cur.fetchone()
-                if recip:
-                    u_id, o_id = recip["user_id"], recip["organization_id"]
-                else:
-                    cur.execute("SELECT id FROM users LIMIT 1;")
-                    u_id = cur.fetchone()["id"]
-                    o_id = None
-
-            cur.execute("""
-                INSERT INTO notifications (id, user_id, organization_id, event_name, title, body, priority)
-                VALUES (%s, %s, %s, %s, 'اعلام مغایرت سفارش', 'مغایرت کالای آسیب‌دیده ثبت شد.', 'CRITICAL')
-                RETURNING id, user_id, organization_id;
-            """, (notif_id, u_id, o_id, ev["event_name"]))
-            n_row = cur.fetchone()
-
-            if n_row and n_row["organization_id"]:
-                cur.execute("""
-                    INSERT INTO user_inbox_items (id, user_id, organization_id, notification_id, title, body, category, deep_link, is_read)
-                    VALUES (%s, %s, %s, %s, 'اعلام مغایرت سفارش', 'مغایرت ثبت شد.', 'DISPUTES', '/disputes', FALSE);
-                """, (str(uuid.uuid4()), n_row["user_id"], n_row["organization_id"], n_row["id"]))
-
-            cur.execute("""
-                UPDATE outbox_events SET status = 'PUBLISHED', published_at = now() WHERE id = %s;
-            """, (ev["id"],))
-            count += 1
-        return count
+        if target_user_id or target_org_id:
+            raise PermissionError(
+                "Legacy targeted notification dispatch is disabled; "
+                "outbox events must contain explicit canonical routing."
+            )
+        return CanonicalIntegrationWorker.process_pending(cur)
 
 
 class SupportService:
