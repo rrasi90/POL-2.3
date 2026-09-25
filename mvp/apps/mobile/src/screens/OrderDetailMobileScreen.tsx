@@ -81,6 +81,7 @@ export function OrderDetailMobileScreen(props: {
   const [returnQuantity, setReturnQuantity] = useState("1");
   const [returnNote, setReturnNote] = useState("");
   const [disputeReason, setDisputeReason] = useState("");
+  const [disputeClaimedAmount, setDisputeClaimedAmount] = useState("");
   const [disputeDescription, setDisputeDescription] = useState("");
 
   const load = useCallback(async () => {
@@ -159,13 +160,24 @@ export function OrderDetailMobileScreen(props: {
       setActionError("دلیل اختلاف الزامی است.");
       return;
     }
+    const claimedAmount = Number(disputeClaimedAmount);
+    if (!Number.isFinite(claimedAmount) || claimedAmount <= 0) {
+      setActionError("مبلغ مورد ادعا باید بیشتر از صفر باشد.");
+      return;
+    }
     setActing("dispute");
     setActionError(null);
     try {
-      const body: Record<string, string> = { reason: disputeReason.trim() };
-      if (disputeDescription.trim()) body.description = disputeDescription.trim();
+      const description = disputeDescription.trim()
+        ? disputeReason.trim() + ": " + disputeDescription.trim()
+        : disputeReason.trim();
+      const body: Record<string, unknown> = {
+        claimed_amount_toman: claimedAmount,
+        description,
+      };
       await api.post("/api/v1/orders/" + props.orderId + "/disputes", body);
       setDisputeReason("");
+      setDisputeClaimedAmount("");
       setDisputeDescription("");
       await load();
     } catch (e) {
@@ -271,8 +283,9 @@ export function OrderDetailMobileScreen(props: {
             <Btn label="ثبت مرجوعی" onPress={() => void submitReturn()} loading={acting === "return"} disabled={acting !== null} />
             <Text style={styles.meta}>کدهای قراردادی نمونه: DAMAGED، WRONG_ITEM، MISSING_ITEMS، QUALITY، EXPIRED، OTHER</Text>
             <Input label="دلیل اختلاف" value={disputeReason} onChangeText={setDisputeReason} maxLength={200} />
+            <Input label="مبلغ مورد ادعا (تومان)" value={disputeClaimedAmount} onChangeText={setDisputeClaimedAmount} keyboardType="numeric" />
             <Input label="شرح اختلاف" value={disputeDescription} onChangeText={setDisputeDescription} multiline numberOfLines={3} maxLength={2000} />
-            <Btn label="ثبت اختلاف" tone="ghost" onPress={() => void submitDispute()} loading={acting === "dispute"} disabled={acting !== null || !disputeReason.trim()} />
+            <Btn label="ثبت اختلاف" tone="ghost" onPress={() => void submitDispute()} loading={acting === "dispute"} disabled={acting !== null || !disputeReason.trim() || !disputeClaimedAmount.trim()} />
             {returns.length === 0 ? <Empty title="مرجوعی ثبت نشده" description="برای این سفارش مورد بازگشتی از API دریافت نشد." /> : returns.map((x) => (
               <View key={x.id} style={styles.item}>
                 <StatusChip label={x.status || "—"} tone="info" />
