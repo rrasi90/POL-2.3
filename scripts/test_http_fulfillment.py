@@ -55,6 +55,16 @@ def _db():
 def _advance_delivery_to_arrived(client, data):
     v = {"Authorization": f"Bearer {data['v_token']}"}
     res = client.post(
+        f"/api/v1/orders/{data['oi']}/preparing",
+        headers=v,
+    )
+    assert res.status_code == 200, res.text
+    res = client.post(
+        f"/api/v1/orders/{data['oi']}/ready",
+        headers=v,
+    )
+    assert res.status_code == 200, res.text
+    res = client.post(
         f"/api/v1/orders/{data['oi']}/dispatch",
         headers=v,
         json={
