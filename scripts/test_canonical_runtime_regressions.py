@@ -59,7 +59,7 @@ def test_unknown_outbox_events_leave_pending_queue_and_enter_failed_quarantine()
 
 
 def test_dispute_open_event_has_canonical_inbox_template():
-    migration = read("migrations/038_dispute_notification_template.sql")
+    migration = read("migrations/040_dispute_notification_template.sql")
     assert "'DISPUTE_OPENED'" in migration
     assert "'INBOX'" in migration
     assert "notification_templates" in migration
