@@ -68,6 +68,7 @@ def _seed_delivered(suffix):
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             ru = str(uuid4()); ro = str(uuid4()); ri = str(uuid4())
             vu = str(uuid4()); vo = str(uuid4()); vi = str(uuid4())
+            ou = str(uuid4()); oo = str(uuid4())
             bi = str(uuid4()); pi = str(uuid4()); ogi = str(uuid4())
             oi = str(uuid4()); di = str(uuid4())
 
@@ -85,6 +86,11 @@ def _seed_delivered(suffix):
                         (str(uuid4()), vo, vu))
             cur.execute("INSERT INTO vendors (id, user_id, organization_id, business_name, warehouse_address, min_order_value_toman, status) "
                         "VALUES (%s, %s, %s, \'V\', \'Ahvaz\', 1000000, \'ACTIVE\')", (vi, vu, vo))
+            cur.execute("INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, 'Ops', 'OPS_AGENT')",
+                        (ou, f"+9891{uuid4().int % 100000000:08d}"))
+            cur.execute("INSERT INTO organizations (id, name, org_type, status) VALUES (%s, 'OPS', 'OPERATOR', 'ACTIVE')", (oo,))
+            cur.execute("INSERT INTO organization_memberships (id, organization_id, user_id, role, status) VALUES (%s, %s, %s, 'OPS_AGENT', 'ACTIVE')",
+                        (str(uuid4()), oo, ou))
             cur.execute("INSERT INTO baskets (id, retailer_id, status, version) VALUES (%s, %s, \'OPEN\', 1)", (bi, ri))
             cur.execute("INSERT INTO allocation_plans (id, basket_id, basket_version, status, strategy, vendor_count, total_estimated_toman, expires_at) "
                         "VALUES (%s, %s, 1, \'CONFIRMED\', \'SINGLE_VENDOR\', 1, 5000000, now() + interval \'15 minutes\')", (pi, bi))
