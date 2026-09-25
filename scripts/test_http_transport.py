@@ -139,6 +139,7 @@ def test_production_cors_configuration_fails_closed(monkeypatch):
 def test_production_refresh_cookie_is_secure(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "production")
     monkeypatch.setenv("POL_CORS_ORIGINS", "https://app.example.com")
+    monkeypatch.setenv("POL_JWT_SECRET", "test-secret-key-for-auth-contract-tests-only-32bytes!!")
     from scripts.api.main import create_app
 
     production_client = TestClient(create_app(), raise_server_exceptions=False)
