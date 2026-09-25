@@ -23,7 +23,7 @@ VALID_FULFILLMENT_TRANSITIONS = {
 }
 
 VALID_DISPATCH_TRANSITIONS = {"READY"}
-VALID_DELIVERY_TRANSITIONS = {"DISPATCHED"}
+VALID_DELIVERY_TRANSITIONS = {"DISPATCHED": {"DELIVERED"}}
 
 
 def _guard_transition(cur, order_id, expected_from: set[str]) -> dict:
