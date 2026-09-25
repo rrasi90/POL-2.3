@@ -795,7 +795,24 @@ class DailyInventoryService:
                 RETURNING *;
             """, (vendor_id, confirmation_date))
             row = cur.fetchone()
-        return row
+
+        result = dict(row)
+        cur.execute("""
+            SELECT vp.id AS vendor_product_id,
+                   p.id AS product_id,
+                   p.canonical_name_fa AS product_name,
+                   vi.physical_quantity AS expected_quantity,
+                   COALESCE(dci.declared_quantity, vi.physical_quantity, 0) AS confirmed_quantity
+            FROM vendor_products vp
+            JOIN products p ON p.id = vp.product_id
+            LEFT JOIN vendor_inventory vi ON vi.vendor_product_id = vp.id
+            LEFT JOIN daily_inventory_confirmation_items dci
+              ON dci.confirmation_id = %s AND dci.vendor_product_id = vp.id
+            WHERE vp.vendor_id = %s AND vp.is_active = TRUE
+            ORDER BY p.canonical_name_fa, vp.id
+        """, (result["id"], vendor_id))
+        result["lines"] = [dict(line, id=str(line["vendor_product_id"])) for line in cur.fetchall()]
+        return result
 
     @staticmethod
     def confirm_no_changes(cur, vendor_id: str, actor_user_id: str, confirmation_date: str, source: str = 'WEB_PANEL') -> dict:
