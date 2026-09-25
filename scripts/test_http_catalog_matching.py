@@ -186,6 +186,20 @@ def test_unknown_barcode_creates_quarantined_candidate_idempotently():
         b = second.json()["data"]
         assert a["match_type"] == "NO_MATCH"
         assert a["listing_status"] == "DRAFT_PENDING_CATALOG"
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT target_user_id, target_organization_id, dedupe_key
+                FROM outbox_events
+                WHERE event_name='product_candidate_created' AND aggregate_id=%s
+                """,
+                (a["candidate_id"],),
+            )
+            event = cur.fetchone()
+            assert event is not None
+            assert str(event["target_user_id"]) == data["user_id"]
+            assert str(event["target_organization_id"]) == data["org_id"]
+            assert event["dedupe_key"] == "PRODUCT_CANDIDATE_CREATED:" + a["candidate_id"]
         assert b["candidate_id"] == a["candidate_id"]
         assert b["vendor_product_id"] == a["vendor_product_id"]
         assert b["idempotent_replay"] is True
