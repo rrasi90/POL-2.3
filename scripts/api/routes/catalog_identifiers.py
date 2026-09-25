@@ -32,7 +32,7 @@ candidates_router = APIRouter(prefix="/product-candidates", tags=["catalog-candi
 def create_product_candidate(
     payload: ProductCandidateCreateRequest,
     boundary=Depends(get_application_boundary),
-    _auth=Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF", "FIELD_ACTIVATOR")),
+    _auth=Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF")),
 ):
     return success_payload(
         boundary.catalog_create_product_candidate(
