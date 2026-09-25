@@ -185,13 +185,13 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - Source remediation (2026-09-24): Mobile normalizes Iranian local numbers to E.164 before auth and backend OTP request/verification schemas now enforce the E.164 pattern.
 - Status: RESOLVED — local authentication/device retest PASS (2026-09-24).
 
-## G-029 — Web token persistence uses localStorage (SECURITY GAP — OPEN)
+## G-029 — Web token persistence uses localStorage (SECURITY GAP — SOURCE REMEDIATED)
 
-- **Source finding (2026-09-24):** mvp/apps/web/src/lib/auth/store.ts persists both accessToken and refreshToken in window.localStorage under pol.auth.
-- **Risk:** bearer credentials stored in JavaScript-readable storage are exposed to any successful XSS execution in the origin.
-- **Required action:** choose a canonical browser session architecture, preferably server-managed HttpOnly/Secure/SameSite session credentials or an equivalent architecture explicitly approved by the security authority.
-- **Do not:** silently migrate to another browser storage mechanism and call it secure.
-- **Status:** GAP / OPEN.
+- **Historical source finding (2026-09-24):** the web auth store persisted access/refresh bearer credentials in browser localStorage.
+- **Current source remediation:** mvp/apps/web/src/lib/auth/store.ts now persists profile metadata only; accessToken remains in memory. Browser refresh uses the server-managed `pol_refresh` HttpOnly/Secure/SameSite cookie.
+- **Transport hardening:** web verify/refresh endpoints do not expose the refresh credential in JSON when the cookie-backed flow is used; refresh tests assert this behavior.
+- **Residual verification:** browser-runtime/XSS and production-cookie deployment evidence remain separate release evidence.
+- **Status:** SOURCE REMEDIATED / CI VERIFICATION IN PROGRESS.
 
 ## G-030 — Browser-to-API CORS policy was not previously explicit (SOURCE REMEDIATED)
 
