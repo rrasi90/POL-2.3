@@ -120,7 +120,7 @@ def _seed_delivered(suffix):
         conn.commit()
         rt = encode_access_token(ru, rs, ro, "RETAILER_OWNER")
         vt = encode_access_token(vu, vs, vo, "VENDOR_OWNER")
-        return {"oi": oi, "di": di, "r_token": rt, "v_token": vt, "ru": ru, "ro": ro, "vi": vi, "vo": vo}
+        return {"oi": oi, "di": di, "r_token": rt, "v_token": vt, "ru": ru, "ro": ro, "vi": vi, "vo": vo, "oo": oo}
     finally:
         conn.close()
 
@@ -142,6 +142,34 @@ class TestExceptionReporting:
         assert resp.status_code == 201
         assert resp.json()["data"]["exception_type"] == "DAMAGED_GOODS"
         assert resp.json()["data"]["status"] == "REPORTED"
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT target_user_id, target_organization_id, dedupe_key
+                    FROM outbox_events
+                    WHERE event_name='DELIVERY_EXCEPTION_REPORTED'
+                      AND aggregate_id=%s
+                    """,
+                    (resp.json()["data"]["exception_id"],),
+                )
+                event = cur.fetchone()
+                assert event is not None
+                assert str(event["target_user_id"]) == data["vu"]
+                assert str(event["target_organization_id"]) == data["vo"]
+                assert event["dedupe_key"].startswith("DELIVERY_EXCEPTION_REPORTED:")
+                cur.execute(
+                    """
+                    SELECT COUNT(*) AS c FROM notification_templates
+                    WHERE event_name='DELIVERY_EXCEPTION_REPORTED'
+                      AND channel='INBOX'
+                      AND enabled=TRUE
+                    """
+                )
+                assert int(cur.fetchone()["c"]) >= 1
+        finally:
+            conn.close()
 
     def test_report_doorstep_rejection(self, client):
         data = _seed_delivered(uuid4().hex[:8])
@@ -192,6 +220,26 @@ class TestExceptionResolution:
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["resolution_type"] == "FULL_REFUND"
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT target_user_id, target_organization_id
+                    FROM outbox_events
+                    WHERE event_name='DELIVERY_EXCEPTION_RESOLVED'
+                      AND aggregate_id=%s
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    """,
+                    (exc_id,),
+                )
+                event = cur.fetchone()
+                assert event is not None
+                assert str(event["target_user_id"]) == data["ru"]
+                assert str(event["target_organization_id"]) == data["ro"]
+        finally:
+            conn.close()
 
     def test_resolve_replacement(self, client):
         data = _seed_delivered(uuid4().hex[:8])
@@ -249,6 +297,24 @@ class TestExceptionEscalation:
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["status"] == "ESCALATED"
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT target_user_id, target_organization_id
+                    FROM outbox_events
+                    WHERE event_name='DELIVERY_EXCEPTION_ESCALATED'
+                      AND aggregate_id=%s
+                    LIMIT 1
+                    """,
+                    (exc_id,),
+                )
+                event = cur.fetchone()
+                assert event is not None
+                assert str(event["target_organization_id"]) == data["oo"]
+        finally:
+            conn.close()
 
 
 class TestExceptionQuery:
