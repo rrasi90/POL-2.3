@@ -280,10 +280,6 @@ class SupportCaseMessageRequest(APIBaseModel):
     message_text: str = Field(min_length=1, max_length=5000)
 
 
-class BarcodeMatchRequest(APIBaseModel):
-    raw_barcode: str = Field(min_length=1, max_length=64)
-    scan_source: str = Field(min_length=1, max_length=50)
-
 class ProductCandidateCreateRequest(APIBaseModel):
     proposed_title: str = Field(min_length=1, max_length=255)
     proposed_brand: str | None = Field(default=None, max_length=100)
