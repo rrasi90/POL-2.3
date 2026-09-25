@@ -171,3 +171,34 @@ def test_broadcasts():
 
 if __name__ == "__main__":
     test_broadcasts()
+
+
+
+def test_http_broadcast_contract():
+    from fastapi.testclient import TestClient
+    from scripts.api.main import app
+    from scripts.api.dependencies import get_application_boundary
+
+    class FakeBoundary:
+        def admin_broadcast_create(self, **kwargs):
+            return {"id": str(uuid.uuid4()), "status": "DRAFT", "estimated_recipient_count": 3, **kwargs}
+        def admin_broadcast_dispatch(self, **kwargs):
+            return {"id": kwargs["broadcast_id"], "status": "COMPLETED", "recipient_count": 3, "idempotent_replay": False}
+
+    app.dependency_overrides[get_application_boundary] = lambda: FakeBoundary()
+    try:
+        client = TestClient(app)
+        created = client.post(
+            "/api/v1/admin/broadcasts",
+            json={"title": "Test", "body": "Hello", "target_criteria": {"org_type": "RETAILER"}},
+        )
+        assert created.status_code == 201
+        bid = created.json()["data"]["id"]
+        dispatched = client.post(
+            f"/api/v1/admin/broadcasts/{bid}/dispatch",
+            json={"approve": True},
+        )
+        assert dispatched.status_code == 200
+        assert dispatched.json()["data"]["status"] == "COMPLETED"
+    finally:
+        app.dependency_overrides.clear()
