@@ -29,9 +29,11 @@ VALID_DELIVERY_TRANSITIONS = {"DISPATCHED": {"DELIVERED"}}
 def _guard_transition(cur, order_id, expected_from: set[str]) -> dict:
     cur.execute(
         "SELECT o.id, o.order_status, o.vendor_id, o.retailer_id, o.order_number, "
-        "r.organization_id AS retailer_organization_id "
+        "r.organization_id AS retailer_organization_id, "
+        "v.organization_id AS vendor_organization_id "
         "FROM orders o "
         "JOIN retailers r ON r.id=o.retailer_id "
+        "JOIN vendors v ON v.id=o.vendor_id "
         "WHERE o.id = %s FOR UPDATE",
         (order_id,),
     )
@@ -141,6 +143,20 @@ def mark_preparing(cur, *, user_id, organization_id, order_id) -> dict:
             "order_status": "PREPARING",
         },
         recipient_org_id=order["retailer_organization_id"],
+    )
+    _emit_outbox(
+        cur,
+        event_name="ORDER_DELIVERED",
+        aggregate_id=order_id,
+        aggregate_type="ORDER",
+        payload={
+            "order_id": order_id,
+            "order_number": order["order_number"],
+            "order_status": "DELIVERED",
+            "delivery_id": delivery_id,
+            "otp_verified": True,
+        },
+        recipient_org_id=order["vendor_organization_id"],
     )
     return {
         "order_id": order_id,
