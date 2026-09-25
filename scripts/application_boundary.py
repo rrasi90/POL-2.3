@@ -1272,7 +1272,7 @@ class POLApplicationBoundary:
             for r in rows
         ]
 
-    def verify_payment(self, *, order_id, notes=None):
+    def verify_payment(self, *, order_id, notes=None, payment_id=None):
         if not self.context.organization_id:
             raise PermissionError("Payment verification requires an active organization context.")
 
@@ -1284,11 +1284,12 @@ class POLApplicationBoundary:
             JOIN vendors v ON v.id=p.vendor_id
             JOIN retailers r ON r.id=p.retailer_id
             WHERE p.order_id=%s
+              AND (%s::uuid IS NULL OR p.id=%s::uuid)
             ORDER BY p.created_at DESC, p.id DESC
             LIMIT 1
             FOR UPDATE OF p
             """,
-            (order_id,),
+            (order_id, payment_id, payment_id),
         )
         pay = self.cur.fetchone()
         if not pay:
