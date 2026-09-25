@@ -17,6 +17,7 @@ router = APIRouter(tags=["catalog-matching"])
 def barcode_lookup(
     barcode: str = Query(min_length=8, max_length=32),
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.catalog_barcode_match(
