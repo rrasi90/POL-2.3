@@ -118,6 +118,25 @@ def test_daily_inventory_get_creates_pending(api_env):
         conn.close()
 
 
+def test_daily_inventory_get_includes_vendor_product_lines(api_env):
+    conn = _db()
+    try:
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                data = _seed_vendor_with_inventory(cur, uuid4().hex[:8])
+        response = TestClient(app).get(
+            "/api/v1/inventory/daily/2026-10-15",
+            headers={"Authorization": f"Bearer {data['token']}"},
+        )
+        assert response.status_code == 200
+        lines = response.json()["data"]["lines"]
+        assert any(
+            row["vendor_product_id"] == data["vendor_product_id"] and row["expected_quantity"] == 50
+            for row in lines
+        )
+    finally:
+        conn.close()
+
 def test_daily_inventory_confirm_no_changes(api_env):
     conn = _db()
     try:
