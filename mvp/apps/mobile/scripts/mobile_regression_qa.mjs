@@ -24,6 +24,10 @@ const checks = [
     const s = read("screens/VendorMobileScreen.tsx");
     return s.includes("SUBMITTED") && s.includes("ACCEPTED") && s.includes("PREPARING") && s.includes("READY");
   }],
+  ["Mobile dispute submission uses canonical amount and description fields", () => {
+    const s = read("screens/OrderDetailMobileScreen.tsx");
+    return s.includes("claimed_amount_toman") && s.includes("const description = disputeDescription.trim()") && !s.includes("{ reason: disputeReason.trim() }");
+  }],
   ["Order detail lifecycle remains state-gated for returns/disputes/vendor actions", () => {
     const s = read("screens/OrderDetailMobileScreen.tsx");
     return s.includes("quantity < 1") && s.includes("disputeReason") && s.includes("DISPATCHED");
