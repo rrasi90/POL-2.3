@@ -2,7 +2,7 @@ import psycopg2
 import pytest
 from uuid import uuid4
 
-from scripts.test_e2e_mvp_platform import postgres_database, transaction
+from scripts.test_e2e_mvp_platform import checkout_catalog, checkout_request, postgres_database, transaction
 
 
 def _checkout(cur, catalog, request):
