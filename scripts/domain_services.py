@@ -630,6 +630,10 @@ class DisputeService:
             (settlement_id,),
         )
 
+        # Evidence may be attached after the dispute is created, but only when
+        # the authenticated uploader owns a READY media asset. The HTTP boundary
+        # performs this check before calling this service when evidence is supplied.
+
         # Notify both commercial sides with explicit tenant routing.
         recipients = [
             (order["retailer_org_id"], "RETAILER"),
