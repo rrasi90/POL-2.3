@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, status
 from scripts.api.dependencies import get_application_boundary
 from scripts.api.errors import success_payload
 from scripts.api.schemas import (
+    SupportCaseAssignRequest,
     SupportCaseCreateRequest,
     SupportCaseMessageRequest,
     SupportCaseTransitionRequest,
@@ -65,8 +66,36 @@ def add_support_message(
     )
 
 
-@router.patch("/{case_id}")
+@router.post("/{case_id}/assign", status_code=200)
+def assign_support_case(
+    case_id: UUID,
+    payload: SupportCaseAssignRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.support_assign(
+            case_id=str(case_id),
+            assignee_user_id=str(payload.assignee_user_id),
+        )
+    )
+
+@router.patch("/{case_id}/status")
 def transition_support_case(
+    case_id: UUID,
+    payload: SupportCaseTransitionRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.support_transition(
+            case_id=str(case_id),
+            target_status=payload.target_status,
+            resolution_code=payload.resolution_code,
+            resolution_note=payload.resolution_note,
+        )
+    )
+
+@router.patch("/{case_id}")
+def transition_support_case_legacy(
     case_id: UUID,
     payload: SupportCaseTransitionRequest,
     boundary=Depends(get_application_boundary),
