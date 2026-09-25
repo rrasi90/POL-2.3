@@ -22,6 +22,7 @@ export class ApiError extends Error {
 const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://10.0.2.2:8000";
 const ACCESS_KEY = "pol.access_token";
 const REFRESH_KEY = "pol.refresh_token";
+const ROLE_KEY = "pol.session_role";
 
 let accessToken: string | null = null;
 let refreshInFlight: Promise<boolean> | null = null;
@@ -46,6 +47,11 @@ export async function persistSession(access: string, refresh: string | null | un
       keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
     });
   }
+  if (role) {
+    await SecureStore.setItemAsync(ROLE_KEY, role, {
+      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+    });
+  }
 }
 
 export async function clearSession(): Promise<void> {
@@ -53,6 +59,7 @@ export async function clearSession(): Promise<void> {
   await Promise.allSettled([
     SecureStore.deleteItemAsync(ACCESS_KEY),
     SecureStore.deleteItemAsync(REFRESH_KEY),
+    SecureStore.deleteItemAsync(ROLE_KEY),
   ]);
 }
 
@@ -74,7 +81,7 @@ async function refreshAccessToken(): Promise<boolean> {
         }>;
         if (payload.success === false) return false;
         if (!payload.data?.access_token) return false;
-        await persistSession(payload.data.access_token, payload.data.refresh_token ?? refreshToken);
+        await persistSession(payload.data.access_token, payload.data.refresh_token ?? refreshToken, await SecureStore.getItemAsync(ROLE_KEY));
         return true;
       } catch {
         return false;
@@ -86,18 +93,22 @@ async function refreshAccessToken(): Promise<boolean> {
   return refreshInFlight;
 }
 
-export async function restoreSession(): Promise<boolean> {
+export async function restoreSession(): Promise<{ restored: boolean; role: string | null }> {
   const storedAccess = await SecureStore.getItemAsync(ACCESS_KEY);
   const storedRefresh = await SecureStore.getItemAsync(REFRESH_KEY);
+  const storedRole = await SecureStore.getItemAsync(ROLE_KEY);
   if (storedAccess) {
     accessToken = storedAccess;
-    return true;
+    return { restored: true, role: storedRole };
   }
   if (storedRefresh && await refreshAccessToken()) {
-    return Boolean(accessToken);
+    return {
+      restored: Boolean(accessToken),
+      role: await SecureStore.getItemAsync(ROLE_KEY),
+    };
   }
   await clearSession();
-  return false;
+  return { restored: false, role: null };
 }
 
 async function request<T>(
