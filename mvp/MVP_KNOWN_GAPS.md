@@ -25,20 +25,19 @@
 - **Open:** whether contract will be renamed backend-side → `BLOCKED_EXTERNAL` for literal contract parity only if a test requires `/products/search`.
 - **Status:** CONFLICT (documented); screens use REAL.
 
-## G-004 — Notifications inbox path (CONFLICT)
+## G-004 — Notifications inbox path (RESOLVED)
 
 - **Contract:** `/api/v1/inbox/items*`
-- **Implemented:** `/api/v1/notifications` + preferences
-- **Build:** use REAL `/notifications`; mark contract inbox as non-HTTP until backend aligns.
-- **Status:** CONFLICT
+- **Current implementation:** `GET /api/v1/inbox/items`, `PATCH /api/v1/inbox/items/{item_id}/read`, and `PATCH /api/v1/inbox/items/read-all`, alongside `/api/v1/notifications` and preferences.
+- **Evidence:** HTTP notification tests cover listing, unread count, deep links, tenant-scoped mark-read, idempotent mark-all-read, and read-state projection; current verification CI is green.
+- **Status:** RESOLVED for source + automated CI evidence.
 
-## G-005 — Notification read field name (CONFLICT — RESOLVED at wire time)
+## G-005 — Notification read/deep-link projection (RESOLVED)
 
-- **Some Phase C UI:** `is_read` vs type/backend `read`
-- **Action:** when wiring, read `notifications.py` response model; use backend field only.
-- **Wire-time verification (2026-09-22):** `notifications_list` projects only `id, event_name, title, body, priority, created_at` — neither `read` nor `is_read` is returned; no mark-read HTTP route exists (`GET /notifications`, `GET/PUT /notifications/preferences` only).
-- **Build:** UI reads `is_read`/`read` via optional fields and shows the unread badge only if a boolean is present (absent on current backend); no mark-read control invented.
-- **Status:** RESOLVED for MVP — no unread surface until backend projects a read field.
+- **Current canonical wire field:** `is_read`, with `deep_link` on durable inbox items.
+- **Current implementation:** `/api/v1/inbox/items*` exposes unread filtering/counts and mark-one/mark-all read operations; `/api/v1/notifications` projects read state and deep link.
+- **Evidence:** current notification HTTP tests pass for projection, tenant-scoped read, and idempotent read-all; verification CI run #805 is green.
+- **Status:** RESOLVED for source + automated CI evidence.
 
 ## G-006 — Corporate routes absent from route map (GAP)
 
