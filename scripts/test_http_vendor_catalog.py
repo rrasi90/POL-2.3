@@ -395,7 +395,7 @@ def test_vendor_barcode_match_and_unknown_candidate_flow(api_env):
         response = client.post('/api/v1/products/match-barcode', headers={'Authorization': f"Bearer {data['token']}"}, json={'raw_barcode': '6260123456789', 'scan_source': 'CAMERA_CONTINUOUS_SCAN'})
         assert response.status_code == 200
         assert response.json()['data']['match_status'] == 'EXACT'
-        assert response.json()['data']['product']['master_sku'] == f"POL-PRD-{data['product_id'][:0]}" or response.json()['data']['product']['id'] == data['product_id']
+        assert response.json()['data']['product']['id'] == data['product_id']
         response = client.post('/api/v1/products/match-barcode', headers={'Authorization': f"Bearer {data['token']}"}, json={'raw_barcode': '6299999999999', 'scan_source': 'CAMERA_CONTINUOUS_SCAN'})
         assert response.status_code == 200
         assert response.json()['data']['match_status'] == 'NO_MATCH'
