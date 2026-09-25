@@ -1,37 +1,35 @@
-import { EmptyState, StatusChip } from "@pol/ui";
-import { cardCls } from "../_shared";
+"use client";
 
-/**
- * OP-11 permission audit — GAP: no permission-list HTTP in inventory.
- * Shell only; no fake audit rows.
- */
+import { useEffect, useState } from "react";
+import { ErrorState, Skeleton } from "@pol/ui";
+import { getApi } from "@/lib/auth/api";
+import { cardCls, type LoadState } from "../../_shared";
+
+interface PermissionData { roles?: Record<string,string[]>; source?: string; }
+
 export default function OpsPermissionsPage() {
-  return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          ممیزی دسترسی‌ها
-        </h1>
-        <StatusChip tone="warning">GAP</StatusChip>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">OP-11</span>
-      </header>
+  const [data,setData]=useState<PermissionData|null>(null);
+  const [state,setState]=useState<LoadState>("loading");
+  const [error,setError]=useState<string|null>(null);
 
-      <div className="rounded-[12px] border border-[var(--pol-light-semantic-warning)]/40 bg-[var(--pol-light-surface-default)] p-4">
-        <p className="text-[14px] font-semibold text-[var(--pol-light-semantic-warning)]">
-          داده در دسترس نیست
-        </p>
-        <p className="mt-1 text-[13px] leading-[20px] text-[var(--pol-light-text-secondary)]">
-          endpoint فهرست مجوزها / نقش‌ها در inventory و route map وجود ندارد. هیچ مسیر API
-          اختراع نشده و ردیف ممیزی ساختگی نمایش داده نمی‌شود.
-        </p>
-      </div>
+  useEffect(()=>{void (async()=>{
+    try {
+      const value=await getApi().get<PermissionData>("/api/v1/ops/permissions");
+      setData(value); setState("ready");
+    } catch(e) { setError(e instanceof Error?e.message:"دریافت مجوزها ناموفق بود"); setState("error"); }
+  })()},[]);
 
-      <div className={cardCls}>
-        <EmptyState
-          title="ممیزی دسترسی"
-          description="تا ارائه HTTP از بک‌اند، این صفحه فقط پوسته GAP است."
-        />
-      </div>
-    </div>
-  );
+  if(state==="loading") return <div className="space-y-4" aria-busy="true"><Skeleton className="h-8 w-48"/><div className={cardCls}><Skeleton lines={10}/></div></div>;
+  if(state==="error") return <ErrorState title="دریافت مجوزها ناموفق بود" description={error??undefined}/>;
+
+  return <div className="space-y-4">
+    <header><h1 className="text-[24px] font-bold text-[var(--pol-light-text-primary)]">کاتالوگ مجوزها</h1><p className="mt-1 text-[12px] text-[var(--pol-light-text-muted)]">OP-11 · مرجع مجوزهای کانونیکال</p></header>
+    {data?.roles ? Object.entries(data.roles).map(([role,permissions])=>
+      <section key={role} className={cardCls}>
+        <div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold text-[var(--pol-light-text-primary)]">{role}</h2><span className="text-[11px] text-[var(--pol-light-text-muted)]">{permissions.length.toLocaleString("fa-IR")} مجوز</span></div>
+        <div className="mt-3 flex flex-wrap gap-2">{permissions.map(p=><span key={p} className="rounded-full border border-[var(--pol-light-border-subtle)] px-2.5 py-1 text-[12px] text-[var(--pol-light-text-secondary)]">{p}</span>)}</div>
+      </section>
+    ):null}
+    <p className="text-[11px] text-[var(--pol-light-text-muted)]">{data?.source ?? ""}</p>
+  </div>;
 }
