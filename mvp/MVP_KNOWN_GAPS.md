@@ -229,3 +229,8 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - Finding: application-level replay checks did not by themselves guarantee uniqueness when two barcode-only candidate submissions raced concurrently.
 - Resolution: migration 046 adds a partial unique index on (vendor_id, barcode) for PENDING_REVIEW candidates; the application insert uses the same conflict target and re-reads the canonical candidate on conflict.
 - Status: RESOLVED in source; fresh CI certification remains separate.
+## G-037 — Notification worker inactive-user delivery (RESOLVED — 2026-09-25)
+
+- Finding: canonical integration validated active organization membership but did not also require users.is_active.
+- Resolution: worker now verifies active user + active membership + active organization; membership-isolation regression coverage adds an inactive-user case.
+- Status: RESOLVED in source; fresh CI certification remains separate.
