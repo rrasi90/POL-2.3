@@ -298,8 +298,9 @@ class SupportCaseTransitionRequest(APIBaseModel):
 
 
 class ReferralCreateRequest(APIBaseModel):
-    referred_retailer_id: UUID
-    referral_code: str = Field(min_length=1, max_length=32)
+    referral_code: str | None = Field(default=None, min_length=1, max_length=32)
+    max_redemptions: int | None = Field(default=None, gt=0)
+    expires_at: datetime | None = None
 
 
 class ReferralRedeemRequest(APIBaseModel):
