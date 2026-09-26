@@ -1,4 +1,4 @@
-from scripts.media_service import MAX_UPLOAD_BYTES, MediaError, _magic_mime, _target_key
+from scripts.media_service import MAX_UPLOAD_BYTES, MediaError, _magic_mime, _target_key, _validate_bound_upload_target
 
 
 def test_media_magic_bytes_are_strict():
@@ -23,3 +23,25 @@ def test_media_target_keys_never_use_client_filename():
 
 def test_media_upload_limit_is_five_megabytes():
     assert MAX_UPLOAD_BYTES == 5 * 1024 * 1024
+
+
+def test_presigned_upload_target_cannot_be_retargeted():
+    media = {
+        "upload_target_type": "CANDIDATE",
+        "upload_target_id": "11111111-1111-1111-1111-111111111111",
+    }
+    _validate_bound_upload_target(
+        media,
+        "CANDIDATE",
+        "11111111-1111-1111-1111-111111111111",
+    )
+    try:
+        _validate_bound_upload_target(
+            media,
+            "DISPUTE",
+            "22222222-2222-2222-2222-222222222222",
+        )
+    except MediaError:
+        pass
+    else:
+        raise AssertionError("A presigned media upload must not be confirmable for a different target.")
