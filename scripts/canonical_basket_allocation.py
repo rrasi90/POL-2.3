@@ -24,7 +24,8 @@ class CanonicalBasketAllocationService:
             SELECT r.id AS retailer_id,
                    r.organization_id,
                    r.city,
-                   r.store_name
+                   r.store_name,
+                   om.role
             FROM retailers r
             JOIN organizations o ON o.id = r.organization_id
             JOIN organization_memberships om
@@ -64,9 +65,17 @@ class CanonicalBasketAllocationService:
             raise KeyError("Basket not found in the active retailer organization.")
         return retailer, basket
 
+    @staticmethod
+    def _assert_owner(retailer):
+        if retailer["role"] != "RETAILER_OWNER":
+            raise PermissionError(
+                "Basket modification and allocation require RETAILER_OWNER authority."
+            )
+
     @classmethod
     def create_basket(cls, cur, user_id: str, organization_id: str):
         retailer = cls._retailer_for_context(cur, user_id, organization_id)
+        cls._assert_owner(retailer)
         basket_id = BasketService.create_basket(cur, str(retailer["retailer_id"]))
         return {
             "basket_id": str(basket_id),
@@ -86,7 +95,8 @@ class CanonicalBasketAllocationService:
         pack_quantity: int,
         expected_version: int,
     ):
-        _, basket = cls._basket_for_context(cur, user_id, organization_id, basket_id)
+        retailer, basket = cls._basket_for_context(cur, user_id, organization_id, basket_id)
+        cls._assert_owner(retailer)
         if basket["status"] != "OPEN":
             raise ValueError("Only OPEN baskets can be modified.")
         if quantity <= 0:
@@ -133,6 +143,7 @@ class CanonicalBasketAllocationService:
         retailer, basket = cls._basket_for_context(
             cur, user_id, organization_id, basket_id
         )
+        cls._assert_owner(retailer)
         if basket["status"] != "OPEN":
             raise ValueError("Allocation preview requires an OPEN basket.")
 
