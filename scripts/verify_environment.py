@@ -7,7 +7,7 @@ Validates:
 3. SQL migration chain availability & readability
 4. PostgreSQL 18.x connection & port availability
 5. Target database 'pol_test' readiness
-6. Core tables (56 active tables) & trigger invariants
+6. Core tables, delegated-permission tables, and trigger invariants
 """
 
 import os
@@ -19,47 +19,45 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-EXPECTED_MIGRATIONS = [
-    "001_initial_schema.sql",
-    "002_platform_core_schema.sql",
-    "003_contract_reconciliation.sql",
-    "004_operational_intelligence.sql",
-    "005_competitive_operational_hardening.sql",
-    "006_temporal_price_transition.sql",
-    "007_vendor_price_close_transition.sql",
-    "008_integration_delivery_contract.sql",
-    "009_canonical_operational_responsibility_and_notification_delivery.sql",
-    "010_daily_confirmation_scheduler_contract.sql",
-    "011_application_boundary_rma_reconciliation_provider_hardening.sql",
-    "012_canonical_route_templates.sql",
-    "013_vendor_referral_mvp_and_integrity_fixes.sql",
-    "014_vendor_inventory_responsibility_creation_guard.sql",
-    "015_vendor_inventory_responsibility_unconditional_on_vendor_owner.sql",
-    "016_daily_inventory_routing_exception_ledger.sql",
-    "017_canonical_user_profiles_and_persona_context.sql",
-    "018_membership_profile_role_transition_guard.sql",
-    "019_rma_refund_state_integrity.sql",
-    "020_repository_integrity_hardening.sql",
-    "021_cross_entity_runtime_integrity.sql",
-    "022_tenant_ownership_integrity.sql",
-    "023_compatibility_and_tenant_guard_refinement.sql",
-    "024_runtime_bug_fixes_and_audit_guards.sql",
-    "025_refund_amount_and_order_group_template.sql",
-    "026_auth_otp_rate_limit_and_lockout.sql",
-    "027_partial_acceptance_two_party_contract.sql",
-    "028_vendor_acceptance_timeout_canonical.sql",
-    "029_order_timeline_events.sql",
-    "030_delivery_otp_column.sql",
-    "031_delivery_exceptions.sql",
-    "032_cross_entity_integrity_and_append_only_guards.sql",
-    "033_delivery_lifecycle_and_pod_integrity.sql",
-    "034_checkout_single_use_and_reservation_lineage.sql",
-    "035_delivery_state_machine_history.sql",
-    "036_inventory_audit_reservation_semantics.sql",
-    "037_invoice_financial_invariants.sql",
-    "038_invoice_total_trigger_fix.sql",
-    "039_notification_category_alignment.sql",
-    "040_dispute_notification_template.sql",
+EXPECTED_MIGRATION_HEAD = 48
+EXPECTED_TABLE_COUNT = 98
+EXPECTED_CORE_TABLES = [
+    "users",
+    "organizations",
+    "organization_memberships",
+    "user_sessions",
+    "user_devices",
+    "retailers",
+    "vendors",
+    "products",
+    "vendor_products",
+    "vendor_inventory",
+    "vendor_prices",
+    "baskets",
+    "basket_items",
+    "allocation_plans",
+    "allocation_items",
+    "order_groups",
+    "orders",
+    "order_items",
+    "payments",
+    "deliveries",
+    "settlements",
+    "disputes",
+    "support_cases",
+    "invoices",
+    "invoice_items",
+    "notifications",
+    "user_inbox_items",
+    "outbox_events",
+    "daily_inventory_confirmations",
+    "daily_inventory_confirmation_items",
+    "feedback_submissions",
+    "vendor_reliability_events",
+    "product_identity_lifecycle_logs",
+    "returns",
+    "delegated_permission_grants",
+    "permission_audit_events",
 ]
 EXPECTED_TABLE_COUNT = 96
 EXPECTED_CORE_TABLES = [
@@ -128,22 +126,44 @@ def verify_dependencies():
 
 def verify_migration_files():
     migrations_dir = os.path.join(REPO_ROOT, "migrations")
-    status = {}
-    all_found = True
-    for mig in EXPECTED_MIGRATIONS:
-        path = os.path.join(migrations_dir, mig)
-        exists = os.path.isfile(path) and os.path.getsize(path) > 0
-        status[mig] = {
-            "exists": exists,
-            "size_bytes": os.path.getsize(path) if exists else 0,
+    if not os.path.isdir(migrations_dir):
+        return {
+            "check": "migration_files",
+            "passed": False,
+            "directory": migrations_dir,
+            "error": "migrations directory not found",
         }
-        if not exists:
-            all_found = False
+
+    files = sorted(
+        name for name in os.listdir(migrations_dir)
+        if name.endswith(".sql")
+    )
+    numbered = []
+    malformed = []
+    for name in files:
+        prefix = name.split("_", 1)[0]
+        if not prefix.isdigit():
+            malformed.append(name)
+            continue
+        numbered.append((int(prefix), name))
+
+    numbers = [n for n, _ in numbered]
+    contiguous = numbers == list(range(1, max(numbers) + 1)) if numbers else False
+    head_ok = bool(numbered) and numbers[-1] == EXPECTED_MIGRATION_HEAD
+    unique_numbers = len(numbers) == len(set(numbers))
+    all_found = bool(files) and contiguous and head_ok and unique_numbers and not malformed
+
     return {
         "check": "migration_files",
         "passed": all_found,
         "directory": migrations_dir,
-        "files": status,
+        "migration_count": len(files),
+        "migration_head": numbered[-1][1] if numbered else None,
+        "expected_migration_head": EXPECTED_MIGRATION_HEAD,
+        "contiguous_numeric_chain": contiguous,
+        "unique_numeric_prefixes": unique_numbers,
+        "malformed_files": malformed,
+        "files": files,
     }
 
 def verify_postgres():
