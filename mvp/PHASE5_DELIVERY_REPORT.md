@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24  
 **Branch:** `main`  
-**Report baseline:** `3e657a4a39880317a0c82938158c4c99d33e8600`  
+**Report baseline:** remediation branch current source; historical baseline retained only as provenance.  
 **Report policy:** this is a living delivery report; do not store a mutable "current HEAD" claim here. Repository HEAD is authoritative via Git.  
 **Authority:** `DECISION_REGISTER.md` (D-001…D-028) → CURRENT_SOURCE_OF_TRUTH → `BUILD_PLAN.md` → module evidence  
 
@@ -155,3 +155,12 @@ No current test/build result is claimed from this audit because the available Gi
 ---
 
 *Phase 5 delivery artifacts remain open because Night visual verification, live basket→checkout/order lifecycle evidence, idempotency replay, and final reconciliation are not yet evidenced. Mobile QA Cycle 3 and current backend verification are green on commit `f8ef267e`.*
+
+
+### Remediation continuation — 2026-09-26
+
+- IAM: D-026 / VD-15 delegated permission grant/revoke, effective access, privilege ceiling, tenant scope and append-only permission audit implemented.
+- Auth: inactive principal invalidation, OTP purpose isolation, active-organization binding and E.164 verify contract hardened.
+- Media: migration 048 binds presigned uploads to their authorized target and rejects confirmation retargeting.
+- Verification: migration-head and schema discovery are now dynamic; hard-coded current table-count certification was removed.
+- Current CI evidence remains pending because remediation Actions fail before useful step execution.
