@@ -227,3 +227,11 @@ The active human-readable design authority is `13_PRODUCT_DESIGN/50_POL_MASTER_P
 - Historical backend/mobile/device results remain historical evidence for their respective commits and are not promoted to current-head PASS.
 - Remaining unresolved closure classes are still the explicit governance/product decisions, deployment/provider/browser/device evidence, and the external OpenPencil/runtime dependencies identified in the audit register.
 \n
+
+## Post-Reaudit Remediation Checkpoint — 2026-09-26
+- Remediation branch: `remediation/full-closure-2026-09-25`
+- Latest remediation head at checkpoint: `5c40c14a619e0c530ae795638b556d79d7f86705`
+- Additional source-level findings closed after the prior checkpoint: G-052 delegated-permission ceiling enforcement at evaluation time; G-053 product-media tenant/provenance authorization; G-054 fail-closed handling and database invariant for legacy unbound in-flight uploads.
+- Regression coverage added/extended in `scripts/test_delegated_permissions.py` and `scripts/test_media_service.py`.
+- Fresh GitHub Actions executions continue to terminate with failed jobs whose step lists are empty, including reruns. Therefore current-head CI certification remains **blocked by execution/evidence**, not marked PASS.
+- Main remains unchanged; these changes are isolated to the remediation branch/PR.
