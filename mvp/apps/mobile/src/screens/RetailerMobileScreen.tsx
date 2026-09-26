@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { api } from "../api";
+import { api, ApiError } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
 import { spacing, useThemedStyles, type Palette } from "../theme";
@@ -21,6 +21,7 @@ type Vendor = { id: string; name?: string | null; display_name?: string | null; 
 type VendorProduct = { id: string; product_id?: string | null; product_name?: string | null; name?: string | null; brand_name?: string | null; price_toman?: number | null; stock_quantity?: number | null; packaging_unit?: string | null; is_available?: boolean | null };
 type Allocation = {
   allocation_plan_id: string;
+  basket_version?: number;
   vendor_count?: number;
   summary?: { total_items_requested?: number; total_items_allocated?: number; total_amount_toman?: number; total_items_unfulfilled?: number };
 };
@@ -53,6 +54,7 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
   const [products, setProducts] = useState<Product[]>([]);
   const [basket, setBasket] = useState<Array<Product & { quantity: number }>>([]);
   const [serverBasketId, setServerBasketId] = useState<string | null>(null);
+  const [serverBasketVersion, setServerBasketVersion] = useState<number | null>(null);
   const [allocation, setAllocation] = useState<Allocation | null>(null);
   const [address, setAddress] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
@@ -89,6 +91,7 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
         version = next.version;
       }
       setServerBasketId(created.basket_id);
+      setServerBasketVersion(version);
       setAllocation(null);
       setError(null);
     } catch (e) { setError(e instanceof Error ? e.message : "ثبت سبد ناموفق بود"); }
@@ -101,6 +104,7 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
     try {
       const data = await api.post<Allocation>("/api/v1/baskets/" + serverBasketId + "/allocation-preview");
       setAllocation(data);
+      if (typeof data.basket_version === "number") setServerBasketVersion(data.basket_version);
     } catch (e) { setError(e instanceof Error ? e.message : "بررسی تخصیص ناموفق بود"); }
     finally { setLoading(false); }
   }
@@ -118,11 +122,35 @@ export function RetailerMobileScreen(props: { role: Extract<Role, "RETAILER_OWNE
       setCheckout(data);
       setBasket([]);
       setServerBasketId(null);
+      setServerBasketVersion(null);
       setAllocation(null);
       setAddress("");
       setTab("orders");
       await loadOrders();
-    } catch (e) { setError(e instanceof Error ? e.message : "ثبت سفارش ناموفق بود"); }
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409 && e.code === "CONFLICT") {
+        try {
+          const current = await api.get<{ basket_id: string; version: number; status: string; items: Array<{ id: string; product_id: string; master_sku?: string | null; canonical_name_fa?: string | null; requested_quantity: number; requested_unit?: string | null; pack_quantity?: number | null }> }>("/api/v1/baskets/current");
+          const previousByProduct = new Map(basket.map((item) => [item.id, item]));
+          setServerBasketId(current.basket_id);
+          setServerBasketVersion(current.version);
+          setAllocation(null);
+          setBasket(current.items.map((item) => ({
+            ...(previousByProduct.get(item.product_id) || { id: item.product_id, canonical_name_fa: item.canonical_name_fa, master_sku: item.master_sku }),
+            id: item.product_id,
+            quantity: item.requested_quantity,
+            default_pack_quantity: item.pack_quantity,
+            default_pack_unit: item.requested_unit,
+          })));
+          setError("سبد روی سرور تغییر کرده است؛ تخصیص قبلی باطل شد و نسخه جدید بارگذاری شد.");
+        } catch {
+          setAllocation(null);
+          setError("نسخه سبد تغییر کرده است؛ تخصیص قبلی باطل شد. سبد فعلی را دوباره بارگذاری کنید.");
+        }
+      } else {
+        setError(e instanceof Error ? e.message : "ثبت سفارش ناموفق بود");
+      }
+    }
     finally { setLoading(false); }
   }
 
