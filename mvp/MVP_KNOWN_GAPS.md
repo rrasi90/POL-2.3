@@ -449,7 +449,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-317 | P1 | Public product-media serving lacks canonical approval/provenance/private-reference gating. | RESOLVED — query e1991dd5; regression 31f2c994 |
 | G-318 | P1 | Canonical media ingestion pipeline (presign → confirm → validate → process → thumbnail/resumable) is not fully implemented/evidenced. | RESOLVED_CODE / EXTERNAL_EVIDENCE_PENDING — migration b6cb7877; service 6ccc1618→3af490e5; API 2564d61; regression 408639c5→6ccc1618 |
 | G-319 | P1 | POD/dispute media references lack READY + ownership + tenant + purpose validation. | RESOLVED — validator b7c4e56a; dispute 7c078b5f; POD 891778b1; regression a0a5d55b |
-| G-320 | P2 | DB media DELETED lifecycle lacks explicit object-storage reconciliation. | OPEN |
+| G-320 | P2 | DB media DELETED lifecycle lacks explicit object-storage reconciliation. | RESOLVED_CODE / PROVIDER_EVIDENCE_PENDING — migration 2b7c4d6e; worker 47656dc4; regression fd611fe5 |
 | G-325 | P1 | Basket/allocation stale-version handling and checkout consistency require complete canonical enforcement. | OPEN |
 | G-326 | P1 | Stale-checkout must return a canonical 409 Conflict contract. | OPEN |
 | G-327 | P1 | Checkout must be atomic across allocation/order/reservation mutations. | OPEN |
@@ -644,3 +644,11 @@ At the end of each closed item, the ledger must contain:
 - **Regression:** `test_media_reference_requires_ready_owner_and_exact_purpose` verifies valid attachment plus wrong-purpose and wrong-target rejection.
 - **Regression commit:** `a0a5d55ba31299a7f6de0731da18ed63e1079423`
 - **Verification state:** SOURCE + SHARED VALIDATOR + DISPUTE/POD INTEGRATION + REGRESSION PERSISTED; fresh CI/runtime remains pending.
+
+### G-320 Closure Record
+- **Resolution:** migration `055_media_storage_reconciliation.sql` adds explicit storage-deletion timestamps, attempt counters and last errors for media assets and variants. `media_storage_reconcile_worker.py` claims DELETED assets with `SKIP LOCKED`, deletes source/variant provider objects first, and only then records successful reconciliation; failures retain retryable state/error.
+- **Regression:** `test_deleted_media_storage_reconciliation_is_retryable` verifies provider deletion calls and post-success markers.
+- **Migration commit:** `2b7c4d6e0c67d94e092cdb5e39637e6cbde7bfb5`
+- **Worker commits:** `f9bbfeb2f9cc57e076432187d90f052f1f05b864`, `47656dc4f869536e8c9732f594fde950175a46e7`
+- **Regression commit:** `fd611fe54a12043b6b3b846bb527b134bf13250a`
+- **Verification state:** code + fake-provider regression persisted; live S3/MinIO execution remains pending.
