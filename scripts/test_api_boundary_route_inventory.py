@@ -80,6 +80,8 @@ EXPECTED_BUSINESS_ROUTES = {
     ("PUT", "/api/v1/profile"),
     ("GET", "/api/v1/membership/profile"),
     ("PUT", "/api/v1/membership/profile"),
+    ("POST", "/api/v1/privacy/export"),
+    ("POST", "/api/v1/privacy/deletion"),
     ("POST", "/api/v1/support/cases"),
     ("GET", "/api/v1/support/cases"),
     ("GET", "/api/v1/support/cases/{case_id}"),
