@@ -508,11 +508,11 @@ class TestDisputeResolution:
         data = _seed_delivered_order(uuid4().hex[:8])
         opened = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={
-                "claimed_amount_toman": 1000000,
-                "description": "Resolution contract test",
+            headers={
+                "Authorization": f"Bearer {data['r_token']}",
+                "Idempotency-Key": str(uuid4()),
             },
+            json=_dispute_payload(data, 1000000, "Resolution contract test", 2),
         )
         assert opened.status_code == 201
         dispute_id = opened.json()["data"]["id"]
@@ -541,7 +541,6 @@ class TestDisputeResolution:
             assert body["dispute_status"] == "RESOLVED"
             assert body["resolution_outcome"] == "ADJUSTED_SHORTAGE"
             assert body["approved_amount_toman"] == 750000
-            assert body["settlement_status"] == "DISPUTED"
             assert body["settlement_status"] == "DISPUTED"
 
             with ops_conn:
@@ -639,6 +638,13 @@ class TestDisputeResolution:
         dispute_id = opened.json()["data"]["id"]
         ops_conn, ops_token, *_ = _seed_ops_admin()
         try:
+            investigating = client.post(
+                f"/api/v1/disputes/{dispute_id}/investigate",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={"reason": "Ops review started"},
+            )
+            assert investigating.status_code == 200
+
             denied = client.patch(
                 f"/api/v1/disputes/{dispute_id}/resolve",
                 headers={"Authorization": f"Bearer {ops_token}"},
