@@ -322,21 +322,25 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
 
     cur.execute(
         """
-        SELECT delivery_status
+        SELECT id, delivery_status, delivery_otp, delivery_otp_used_at,
+               delivery_otp_attempt_count, delivery_otp_expires_at
         FROM deliveries
         WHERE order_id=%s
+          AND delivery_status IN ('ASSIGNED','PICKED_UP','IN_TRANSIT','ARRIVED')
         ORDER BY created_at DESC
         LIMIT 1
         FOR UPDATE
         """,
         (order_id,),
     )
-    current_delivery = cur.fetchone()
-    if not current_delivery:
-        raise ValueError("No delivery record found for this order.")
-    if current_delivery["delivery_status"] != "ARRIVED":
+    delivery = cur.fetchone()
+    if not delivery:
+        raise ValueError("No active delivery found for this order.")
+
+    delivery_id = str(delivery["id"])
+    if delivery["delivery_status"] != "ARRIVED":
         raise ValueError(
-            f"Delivery confirmation requires ARRIVED state, got {current_delivery['delivery_status']}."
+            f"Delivery confirmation requires ARRIVED state, got {delivery['delivery_status']}."
         )
 
     if not recipient_name or not str(recipient_name).strip():
@@ -355,27 +359,8 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
             user_id=str(user_id),
             organization_id=str(organization_id),
             target_type="DELIVERY",
-            target_id=str(delivery_id),
+            target_id=delivery_id,
         )
-
-    cur.execute(
-        """
-        SELECT id, delivery_status, delivery_otp, delivery_otp_used_at,
-               delivery_otp_attempt_count, delivery_otp_expires_at
-        FROM deliveries
-        WHERE order_id=%s
-          AND delivery_status IN ('ASSIGNED','PICKED_UP','IN_TRANSIT','ARRIVED')
-        ORDER BY created_at DESC
-        LIMIT 1
-        FOR UPDATE
-        """,
-        (order_id,),
-    )
-    delivery = cur.fetchone()
-    if not delivery:
-        raise ValueError("No active delivery found for this order.")
-
-    delivery_id = str(delivery["id"])
 
     if delivery["delivery_otp_used_at"] is not None:
         raise ValueError("Delivery OTP has already been used.")
