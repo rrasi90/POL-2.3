@@ -459,7 +459,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-331 | P1 | Allocation tie-selection semantics are incomplete/under-specified in runtime. | RESOLVED_CODE / EXECUTION_PENDING — source 6dcaa74c/9377e38a; regression 12964486 |
 | G-332 | P1 | Allocation ignores/removes pack_quantity semantics in candidate scoring/selection. | RESOLVED_CODE / EXECUTION_PENDING — source 6dcaa74c/9377e38a/b8b673ea; regression 12964486 |
 | G-333 | P1 | Allocation behavior for K>=3 vendors is not fully covered by deterministic tests. | RESOLVED_CODE / EXECUTION_PENDING — regression 12964486 |
-| G-334 | P1 | Allocation-result identity/hash does not fully cover canonical input/decision identity. | OPEN |
+| G-334 | P1 | Allocation-result identity/hash does not fully cover canonical input/decision identity. | RESOLVED_CODE / EXECUTION_PENDING — source 6dcaa74c/9377e38a/b8b673ea/0c759d1c/a3d0a358/cba145bd; regression 12964486 |
 | G-335 | P1 | Allocation regression coverage is incomplete for adversarial/tie/packing cases. | OPEN |
 | G-336 | P1 | Reservation-expiry worker/runtime path is not fully evidenced as canonical. | OPEN |
 | G-337 | P1 | Retailer cancellation/release of active reservation is incomplete. | OPEN |
@@ -703,4 +703,10 @@ At the end of each closed item, the ledger must contain:
 ### G-333 Closure Record
 - **Resolution:** K>=3 remains open-ended; explicit K=3 coverage confirms no hidden two-vendor cap.
 - **Evidence:** Test 13D in scripts/test_allocation_engine.py; commit 129644862a13550f610e6e4ef8f53b71ae9b3563
+- **Verification state:** code/regression persisted; fresh CI/runtime execution remains pending.
+
+
+### G-334 Closure Record
+- **Resolution:** Allocation engine now emits a 64-char decision hash and canonical persistence fingerprints basket version/items, vendor state, SKU state, decision hash and algorithm version rather than only basket+total.
+- **Evidence:** Test 13E; persistence source commit a3d0a35823331c3e263686c741223b54fdec97c4; test commit 129644862a13550f610e6e4ef8f53b71ae9b3563
 - **Verification state:** code/regression persisted; fresh CI/runtime execution remains pending.
