@@ -182,6 +182,20 @@ def test_rma_ops_context_and_separation_of_duties(postgres_database, rma_case, r
             return_id=ret["id"], target_status="REFUND_PENDING", approved_refund_amount_toman=1000,
         )
         assert pending["status"] == "REFUND_PENDING"
+    with transaction(postgres_database) as cur:
+        pending = POLApplicationBoundary(cur, approver).return_transition(
+            return_id=ret["id"], target_status="REFUND_PENDING", approved_refund_amount_toman=1000,
+        )
+        assert pending["status"] == "REFUND_PENDING"
+        cur.execute("SELECT status FROM refunds WHERE return_id=%s", (ret["id"],))
+        assert cur.fetchone()["status"] == "PENDING"
+
+    with transaction(postgres_database) as cur:
+        approved = POLApplicationBoundary(cur, approver).return_refund_approve(
+            return_id=ret["id"], reason="Finance approval",
+        )
+        assert approved["status"] == "APPROVED"
+
     with pytest.raises(ReturnAccessError, match="different actor than the approver"):
         with transaction(postgres_database) as cur:
             POLApplicationBoundary(cur, approver).return_transition(return_id=ret["id"], target_status="REFUNDED")
@@ -207,7 +221,7 @@ def test_rma_ops_context_and_separation_of_duties(postgres_database, rma_case, r
             """,
             (str(refund["id"]),),
         )
-        assert [row["event_name"] for row in cur.fetchall()] == ["REFUND_COMPLETED"]
+        assert [row["event_name"] for row in cur.fetchall()] == ["REFUND_APPROVED", "REFUND_COMPLETED"]
 
         cur.execute(
             "SELECT event_name FROM outbox_events WHERE aggregate_id=%s AND event_name='REFUND_CREATED'",
