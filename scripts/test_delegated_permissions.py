@@ -227,3 +227,21 @@ def test_permission_audit_is_append_only(permission_env):
     assert cur.fetchone() is None
     cur.close()
     _ = granted
+
+
+def test_vendor_editor_rejects_non_vendor_staff_target(permission_env):
+    env = permission_env
+    # The application-boundary vendor editor passes target_role=VENDOR_STAFF.
+    # Exercise the underlying guard directly to prove a manager cannot retarget
+    # a different membership/persona type through the vendor staff capability.
+    with pytest.raises(ValueError, match="VENDOR_STAFF"):
+        grant_permission(
+            env["cur"],
+            env["owner_id"],
+            env["vendor_org_id"],
+            env["owner_membership_id"],
+            "inventory.adjust",
+            "cross-role target test",
+            client="test",
+            target_role="VENDOR_STAFF",
+        )
