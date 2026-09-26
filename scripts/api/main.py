@@ -33,6 +33,7 @@ from scripts.api.routes.categories import router as categories_router
 from scripts.api.routes.catalog_identifiers import candidates_router as catalog_candidates_router
 from scripts.api.routes.products import router as products_router
 from scripts.api.routes.profile import membership_router, router as profile_router
+from scripts.api.routes.privacy import router as privacy_router
 from scripts.api.routes.orders import router as orders_router
 from scripts.api.routes.returns import router as returns_order_router
 from scripts.api.routes.returns import returns_router
@@ -153,6 +154,7 @@ def create_app() -> FastAPI:
     app.include_router(vendor_catalog_router, prefix="/api/v1")
     app.include_router(daily_inventory_router, prefix="/api/v1")
     app.include_router(profile_router, prefix="/api/v1")
+    app.include_router(privacy_router, prefix="/api/v1")
     app.include_router(membership_router, prefix="/api/v1")
     app.include_router(orders_router, prefix="/api/v1")
     app.include_router(returns_order_router, prefix="/api/v1")
