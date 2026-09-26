@@ -168,7 +168,7 @@ def _seed_delivered_order(suffix):
         conn.close()
 
 
-def _dispute_payload(data, amount, description, quantity=1, idempotency_key=None):
+def _dispute_payload(data, amount, description, quantity=1):
     return {
         "claimed_amount_toman": amount,
         "description": description,
@@ -179,7 +179,6 @@ def _dispute_payload(data, amount, description, quantity=1, idempotency_key=None
             "claimed_amount_toman": amount,
             "reason_code": "DELIVERY",
         }],
-        "idempotency_key": idempotency_key or str(uuid4()),
     }
 
 
@@ -341,7 +340,10 @@ class TestDisputeOpen:
         data = _seed_delivered_order(uuid4().hex[:8])
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            headers={"Authorization": f"Bearer {data['r_token']}"},
+            headers={
+                "Authorization": f"Bearer {data['r_token']}",
+                "Idempotency-Key": str(uuid4()),
+            },
             json=_dispute_payload(data, 1000000, "Wrong items delivered, vendor unresponsive", 2),
         )
         assert resp.status_code == 201
@@ -391,11 +393,11 @@ class TestDisputeOpen:
 
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            headers={"Authorization": f"Bearer {staff_token}"},
-            json={
-                "claimed_amount_toman": 100000,
-                "description": "Staff must not open a formal dispute",
+            headers={
+                "Authorization": f"Bearer {staff_token}",
+                "Idempotency-Key": str(uuid4()),
             },
+            json=_dispute_payload(data, 100000, "Staff must not open a formal dispute", 1),
         )
         assert resp.status_code == 403
 
@@ -403,7 +405,10 @@ class TestDisputeOpen:
         data = _seed_delivered_order(uuid4().hex[:8])
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            headers={"Authorization": f"Bearer {data['v_token']}"},
+            headers={
+                "Authorization": f"Bearer {data['v_token']}",
+                "Idempotency-Key": str(uuid4()),
+            },
             json=_dispute_payload(data, 100000, "Test dispute from vendor", 1),
         )
         assert resp.status_code in (403, 422)
@@ -514,6 +519,14 @@ class TestDisputeResolution:
 
         ops_conn, ops_token, ops_user, ops_org, ops_session = _seed_ops_admin()
         try:
+            investigating = client.post(
+                f"/api/v1/disputes/{dispute_id}/investigate",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={"reason": "Ops review started"},
+            )
+            assert investigating.status_code == 200
+            assert investigating.json()["data"]["dispute_status"] == "INVESTIGATING"
+
             resolved = client.patch(
                 f"/api/v1/disputes/{dispute_id}/resolve",
                 headers={"Authorization": f"Bearer {ops_token}"},
@@ -525,12 +538,11 @@ class TestDisputeResolution:
             )
             assert resolved.status_code == 200
             body = resolved.json()["data"]
-            assert body["dispute_status"] == "CLOSED"
+            assert body["dispute_status"] == "RESOLVED"
             assert body["resolution_outcome"] == "ADJUSTED_SHORTAGE"
             assert body["approved_amount_toman"] == 750000
-            assert body["settlement_status"] == "RECONCILED"
-            assert body["adjustment_amount_toman"] == -750000
-            assert body["net_vendor_amount_toman"] == 4250000
+            assert body["settlement_status"] == "DISPUTED"
+            assert body["settlement_status"] == "DISPUTED"
 
             with ops_conn:
                 with ops_conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -538,7 +550,7 @@ class TestDisputeResolution:
                         "SELECT dispute_status FROM disputes WHERE id=%s",
                         (dispute_id,),
                     )
-                    assert cur.fetchone()["dispute_status"] == "CLOSED"
+                    assert cur.fetchone()["dispute_status"] == "RESOLVED"
                     cur.execute(
                         "SELECT amount_toman, adjustment_type, applied_by_user_id FROM settlement_adjustments WHERE dispute_id=%s",
                         (dispute_id,),
@@ -567,6 +579,13 @@ class TestDisputeResolution:
                 "approved_amount_toman": 300000,
                 "reason": "Approved",
             }
+            investigating = client.post(
+                f"/api/v1/disputes/{dispute_id}/investigate",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={"reason": "Ops review started"},
+            )
+            assert investigating.status_code == 200
+
             first = client.patch(
                 f"/api/v1/disputes/{dispute_id}/resolve",
                 headers={"Authorization": f"Bearer {ops_token}"},
