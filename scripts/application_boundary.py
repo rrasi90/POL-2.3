@@ -1316,7 +1316,7 @@ class POLApplicationBoundary:
     })
 
     def submit_payment_evidence(self, *, order_id, evidence_type, reference_number,
-                                  amount_toman, evidence_media_id=None, notes=None):
+                                  amount_toman, payment_id=None, evidence_media_id=None, notes=None):
         if evidence_type not in self.VALID_EVIDENCE_TYPES:
             raise ValueError(
                 f"Invalid evidence_type '{evidence_type}'. "
