@@ -293,7 +293,7 @@ def dispatch_order(cur, *, user_id, organization_id, order_id, driver_name=None,
 
 def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=None,
                      otp_code=None, proof_type="OTP_CODE", proof_media_id=None,
-                     issue_reported=None) -> dict:
+                     issue_reported=None, delivered_items=None) -> dict:
     """Transition active delivery to DELIVERED with mandatory one-time OTP verification."""
     order = _guard_transition(cur, order_id, {"DISPATCHED", "DELIVERED"})
     _verify_retailer_actor(cur, user_id, organization_id, order["retailer_id"])
@@ -365,6 +365,9 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
     if delivery["delivery_otp_used_at"] is not None:
         raise ValueError("Delivery OTP has already been used.")
 
+    if int(delivery["delivery_otp_attempt_count"] or 0) >= 5:
+        raise ValueError("Delivery OTP attempt limit has been reached.")
+
     if delivery["delivery_otp_expires_at"] is not None:
         cur.execute("SELECT now() >= %s AS expired", (delivery["delivery_otp_expires_at"],))
         if cur.fetchone()["expired"]:
@@ -428,16 +431,37 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
     if not items:
         raise ValueError("Delivered order has no order items.")
 
+    supplied = {}
+    for raw in (delivered_items or []):
+        supplied[str(raw["order_item_id"])] = int(raw["delivered_quantity"])
+
+    if supplied:
+        unknown = set(supplied) - {str(item["id"]) for item in items}
+        if unknown:
+            raise ValueError("Delivered quantity payload contains an item outside this order.")
+
     for item in items:
-        accepted = int(item["accepted_quantity"] or item["ordered_quantity"])
-        status = "SHORTAGE" if accepted < int(item["ordered_quantity"]) else "FULFILLED"
+        item_id = str(item["id"])
+        ordered = int(item["ordered_quantity"])
+        accepted = int(item["accepted_quantity"] or ordered)
+        delivered = supplied.get(item_id, accepted)
+        if delivered < 0 or delivered > ordered:
+            raise ValueError("Delivered quantity must be between 0 and ordered quantity.")
+        if delivered > accepted:
+            raise ValueError("Delivered quantity cannot exceed accepted quantity.")
+        if delivered == ordered:
+            status = "FULFILLED"
+        elif delivered == 0:
+            status = "REJECTED"
+        else:
+            status = "SHORTAGE"
         cur.execute(
             """
             UPDATE order_items
             SET delivered_quantity=%s, fulfillment_status=%s
             WHERE id=%s
             """,
-            (accepted, status, item["id"]),
+            (delivered, status, item["id"]),
         )
 
     cur.execute(
