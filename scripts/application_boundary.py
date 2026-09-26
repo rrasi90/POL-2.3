@@ -32,6 +32,15 @@ from scripts.media_service import MediaService
 from scripts.user_profiles import UserProfileService
 from scripts.vendor_referral import VendorReferralService
 from scripts.vendor_acceptance_timeout_worker import VendorAcceptanceTimeoutWorker
+FIELD_TASK_TRANSITIONS = {
+    "ASSIGNED": {"IN_PROGRESS", "FAILED", "CANCELLED"},
+    "IN_PROGRESS": {"COMPLETED", "FAILED", "CANCELLED"},
+    "FAILED": {"IN_PROGRESS", "CANCELLED"},
+    "COMPLETED": set(),
+    "CANCELLED": set(),
+}
+
+
 from scripts.permissions import (
     BASE_ROLE_PERMISSIONS,
     CANONICAL_PERMISSIONS,
@@ -4113,6 +4122,11 @@ class POLApplicationBoundary:
         updates = []
         params = []
         if status is not None:
+            allowed_next = FIELD_TASK_TRANSITIONS.get(task["status"], set())
+            if status != task["status"] and status not in allowed_next:
+                raise ValueError(
+                    f"Invalid field task transition: {task['status']} -> {status}."
+                )
             updates.append("status = %s")
             params.append(status)
             if status == "COMPLETED":
