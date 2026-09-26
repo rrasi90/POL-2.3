@@ -351,9 +351,6 @@ class AuthService:
         if mem["org_status"] != "ACTIVE":
             raise PermissionError("Target organization is not active.")
 
-        if not cur.fetchone():
-            raise PermissionError("Target organization is not active.")
-
         cur.execute("""
             UPDATE user_sessions
             SET active_organization_id = %s, last_activity_at = now()
