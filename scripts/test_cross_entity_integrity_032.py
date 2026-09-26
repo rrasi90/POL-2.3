@@ -114,7 +114,7 @@ def test_delivery_rejects_cross_vendor_context(postgres_database, checkout_resul
 
 
 def test_refund_rejects_cross_order_payment_lineage(postgres_database, checkout_result):
-    with pytest.raises(psycopg2.Error, match="REFUND_PAYMENT_LINEAGE_MISMATCH"):
+    with pytest.raises(psycopg2.Error, match="REFUND_PAYMENT_PROVENANCE_MISMATCH"):
         with transaction(postgres_database) as cur:
             order_a, _ = _order_and_item_ids(cur, checkout_result)
             cur.execute(
@@ -146,7 +146,7 @@ def test_refund_rejects_cross_order_payment_lineage(postgres_database, checkout_
 
 
 def test_order_item_quantity_invariants(postgres_database, checkout_result):
-    with pytest.raises(psycopg2.Error, match="ORDER_ITEM_ACCEPTED_QUANTITY_INVALID"):
+    with pytest.raises(psycopg2.Error, match="chk_order_item_accepted_quantity_v068"):
         with transaction(postgres_database) as cur:
             _, item = _order_and_item_ids(cur, checkout_result)
             cur.execute(
@@ -154,7 +154,7 @@ def test_order_item_quantity_invariants(postgres_database, checkout_result):
                 (item["id"],),
             )
 
-    with pytest.raises(psycopg2.Error, match="ORDER_ITEM_DELIVERED_QUANTITY_INVALID"):
+    with pytest.raises(psycopg2.Error, match="chk_order_item_delivered_quantity_v068"):
         with transaction(postgres_database) as cur:
             _, item = _order_and_item_ids(cur, checkout_result)
             cur.execute(

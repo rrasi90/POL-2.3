@@ -216,12 +216,12 @@ def test_rma_ops_context_and_separation_of_duties(postgres_database, rma_case, r
             SELECT event_name
             FROM outbox_events
             WHERE aggregate_id=%s
-              AND event_name IN ('REFUND_CREATED','REFUND_COMPLETED','PAYMENT_REFUNDED')
+              AND event_name IN ('REFUND_CREATED','REFUND_APPROVED','REFUND_COMPLETED','PAYMENT_REFUNDED')
             ORDER BY event_name
             """,
             (str(refund["id"]),),
         )
-        assert [row["event_name"] for row in cur.fetchall()] == ["REFUND_APPROVED", "REFUND_COMPLETED"]
+        assert [row["event_name"] for row in cur.fetchall()] == ["REFUND_APPROVED", "REFUND_COMPLETED", "REFUND_CREATED"]
 
         cur.execute(
             "SELECT event_name FROM outbox_events WHERE aggregate_id=%s AND event_name='REFUND_CREATED'",

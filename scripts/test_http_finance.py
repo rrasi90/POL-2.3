@@ -166,8 +166,9 @@ def _seed_finance(suffix):
                 "INSERT INTO order_items (id, order_id, product_id, vendor_product_id, "
                 "product_name_snapshot, brand_name_snapshot, vendor_sku_snapshot, "
                 "packaging_unit_snapshot, pack_quantity_snapshot, ordered_quantity, "
-                "unit_price_toman, total_line_amount_toman, fulfillment_status) "
-                "VALUES (%s, %s, %s, %s, 'Product', 'Brand', 'VS', 'CARTON', 4, 10, 500000, 5000000, 'FULFILLED')",
+                "delivered_quantity, unit_price_toman, total_line_amount_toman, "
+                "fulfillment_status) "
+                "VALUES (%s, %s, %s, %s, 'Product', 'Brand', 'VS', 'CARTON', 4, 10, 10, 500000, 5000000, 'FULFILLED')",
                 (order_item_id, order_id, product_id, vendor_product_id),
             )
 

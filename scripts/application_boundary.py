@@ -1627,6 +1627,18 @@ class POLApplicationBoundary:
     def verify_payment(self, *, order_id, notes=None, payment_id=None):
         if not self.context.organization_id:
             raise PermissionError("Payment verification requires an active organization context.")
+        if payment_id is None:
+            # Multi-payment symmetry with submit_payment_evidence: verification
+            # must never silently pick "the latest" payment record.
+            self.cur.execute(
+                "SELECT COUNT(*) AS c FROM payments WHERE order_id = %s;",
+                (order_id,),
+            )
+            if int(self.cur.fetchone()["c"]) > 1:
+                raise ValueError(
+                    "Explicit payment_id is required when an order has multiple "
+                    "payment records."
+                )
 
         self.cur.execute(
             """

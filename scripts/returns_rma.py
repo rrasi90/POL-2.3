@@ -419,6 +419,28 @@ class CanonicalReturnService:
             (total_adjustments, total_adjustments, settlement["id"]),
         )
 
+        cur.execute(
+            """
+            SELECT COALESCE(SUM(r.amount_toman),0) AS total_completed
+            FROM refunds r
+            WHERE r.payment_id=%s AND r.status='COMPLETED'
+            """,
+            (payment["id"],),
+        )
+        total_completed = int(cur.fetchone()["total_completed"])
+        fully_refunded = total_completed == int(payment["amount_toman"])
+        if fully_refunded:
+            cur.execute(
+                """
+                UPDATE payments
+                SET payment_status='REFUNDED'
+                WHERE id=%s AND payment_status='SUCCESS'
+                """,
+                (payment["id"],),
+            )
+            if cur.rowcount != 1:
+                raise ValueError("Linked payment is no longer refundable.")
+
         for event_name in (("REFUND_COMPLETED", "PAYMENT_REFUNDED") if fully_refunded else ("REFUND_COMPLETED",)):
             cur.execute(
                 """
@@ -450,8 +472,8 @@ class CanonicalReturnService:
             """,
             (
                 actor_user_id, ret["refund_id"],
-                Json({"status":"APPROVED","payment_status":"SUCCESS"}),
-                Json({"status":"COMPLETED","payment_status":"REFUNDED"}),
+                json.dumps({"status":"APPROVED","payment_status":"SUCCESS"}),
+                json.dumps({"status":"COMPLETED","payment_status":"REFUNDED"}),
                 f"RMA {ret['return_number']} refund completed",
             ),
         )
@@ -468,7 +490,7 @@ class CanonicalReturnService:
             FROM returns r
             LEFT JOIN refunds f ON f.id=r.refund_id
             WHERE r.id=%s
-            FOR UPDATE
+            FOR UPDATE OF r
             """,
             (return_id,),
         )
@@ -508,8 +530,8 @@ class CanonicalReturnService:
             """,
             (
                 actor_user_id, ret["refund_id"],
-                Json({"status":"PENDING"}),
-                Json({"status":"APPROVED","approved_by_user_id":str(actor_user_id)}),
+                json.dumps({"status":"PENDING"}),
+                json.dumps({"status":"APPROVED","approved_by_user_id":str(actor_user_id)}),
                 reason,
             ),
         )
@@ -548,6 +570,16 @@ class CanonicalReturnService:
         if not ret:
             raise KeyError("Return not found")
         current = ret["status"]
+        if target_status == current == "REFUND_PENDING":
+            # Idempotent replay: re-issuing the refund-pending command keeps the
+            # return and its linked refund in their current state (the linked
+            # refunds row is created by _ensure_refund_pending with a partial
+            # unique ON CONFLICT DO NOTHING).
+            if not cls._ops_access(cur, actor_user_id, organization_id):
+                raise ReturnAccessError("Actor is not authorized for this RMA transition.")
+            cls._ensure_refund_pending(cur, ret, actor_user_id)
+            cur.execute("SELECT * FROM returns WHERE id = %s", (return_id,))
+            return dict(cur.fetchone())
         if target_status not in cls.TRANSITIONS.get(current, set()):
             raise ReturnStateError(f"Invalid RMA transition: {current} -> {target_status}")
 

@@ -484,7 +484,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-321..G-324 | Blocks 43+ findings covering data/notification/consent/preferences/inbox/retention/export lifecycle. Exact atomic titles require transcript reconstruction before implementation. | OPEN / RECOVERY REQUIRED |
 | G-344..G-407 | Blocks 47–56 findings spanning subsequent domain, security, reconciliation, dispute/RMA and cross-module deep-audit checks. Exact atomic titles require transcript reconstruction before implementation; IDs are intentionally retained and not considered closed. | OPEN / RECOVERY REQUIRED |
 | G-440..G-451 | Delivery/POD findings after G-439: ARRIVED runtime, duplicate/concurrent POD, delivered_quantity, OTP lifecycle/event/routing, proof validation/provenance, FAILED semantics and endpoint parity. | OPEN |
-| G-452..G-465 | Payment/Settlement/Reconciliation findings: checkout→payment integration, direct-transfer path, reconciliation bypass, amount invariants, events, settlement/invoice projection, payment attempts/status vocabulary, multi-payment selection, idempotency and Payment Evidence→Media linkage. | OPEN |
+| G-452..G-465 | Payment/Settlement/Reconciliation findings: checkout→payment integration, direct-transfer path, reconciliation bypass, amount invariants, events, settlement/invoice projection, payment attempts/status vocabulary, multi-payment selection, idempotency and Payment Evidence→Media linkage. | PARTIALLY RESOLVED 2026-09-26 — see Stage-12 record; checkout→payment and reconciliation case-feed remain OPEN with root causes registered |
 
 ## C. Explicit latest Return/Dispute/Refund findings recovered from the audit transcript
 
@@ -657,6 +657,31 @@ This section is the persistent intake ledger for findings previously identified 
   `scripts/test_http_delivery_pod_g440_451.py` (new, 19 cases).
 - **Verification state:** SOURCE PATCH + REGRESSION + HTTP EVIDENCE + CONCURRENCY
   EVIDENCE (HTTP-level) on `remediation/master-gap-closure-2026-09-26`.
+
+
+### Stage 12 closure record — Payment/Settlement/Reconciliation G-452..G-465 (2026-09-26)
+Parallel diagnosis (failure inventory: 11 finance + 4 batch2 RMA + 2 cross_entity + 1 payment_evidence) produced per-failure root causes; remediation results:
+
+**REVALIDATED_RESOLVED (source verified with file:line evidence; tests green):**
+- Direct-transfer path: `POST /orders/{id}/payments/evidence` + `/payments/direct-transfer` + `/payments/verify` fully implemented with tenant/owner provenance (active membership EXISTS subqueries), amount bounds (<=0 rejected; >payment amount rejected), READY media bound to ORDER/PAYMENT targets (064/065/066 DB triggers), external_reference idempotency incl. cross-payment reuse rejection.
+- Settlement/invoice projection: invoices org-scoped (retailer_organization_id/vendor_organization_id; ops cross-tenant read-only), settlements vendor-only via vendors.organization_id join; detail access re-checks ownership.
+- Payment status vocabulary: single canonical CHECK set (PENDING/INITIATED/SUCCESS/FAILED/CANCELLED/REFUNDED) used consistently; `payment_attempts` table is schema-only (no runtime writer) — noted.
+- Payment Evidence→Media linkage: code + DB triggers enforce READY+owner+ORDER/PAYMENT binding.
+
+**RESOLVED this stage (source fixes with regression evidence):**
+- Idempotency (payment creation): migration 073 adds payments.idempotency_key/idempotency_fingerprint + partial unique index (mirrors refunds/checkout model).
+- Events: PAYMENT_VERIFIED had no notification template (orphaned outbox contract) — template v1.0 added by migration 073; refund chain events (CREATED/APPROVED/COMPLETED/PAYMENT_REFUNDED) verified as real DB rows by batch2 tests.
+- Multi-payment selection asymmetry: verify_payment without payment_id silently picked the latest record; now requires explicit payment_id when an order has multiple payment records (mirrors the evidence-side guard).
+- RMA/Refund chain (batch2, 4 failures → root-cause chain fixed in scripts/returns_rma.py): (1) REFUND_PENDING→REFUND_PENDING idempotent replay added (ops-gated; linked refund materialization is ON CONFLICT DO NOTHING); (2) `_complete_refund` used an unassigned `fully_refunded` variable (UnboundLocalError — a regression from commit 24deed2) and never marked payments REFUNDED; restored the completed-sum computation + state-conditioned `payments.payment_status='REFUNDED'` (mirrors refund_service.py); (3) `approve_refund` locked a nullable LEFT JOIN side (FOR UPDATE → FeatureNotSupported); now `FOR UPDATE OF r`; (4) audit inserts used an unimported `Json(...)` (NameError); now `json.dumps(...)`. Test-side: event filter excluded REFUND_APPROVED and the expectation omitted the legitimate REFUND_CREATED event — corrected.
+
+**TEST-stale repairs (source correct):** test_http_finance `_seed_finance` violated the migration-068 fulfillment-consistency constraint (11 failures); test_cross_entity expectations updated to the newer canonical guards (067 `REFUND_PAYMENT_PROVENANCE_MISMATCH`, 068 CHECK constraint names); test_http_payment_evidence `_seed_order` never returned `media_id`.
+
+**OPEN (root cause identified, next units):**
+- checkout→payment integration: the contract endpoint `POST /orders/{id}/payments/direct-receipt` (matrix row 14) is not implemented; `PaymentService.record_direct_payment` exists but is unwired (test-only caller), so freshly checked-out orders have no payment row for the evidence/verify chain to operate on. Next remediation unit: wire the contract route through the boundary using the existing domain service + 073 idempotency columns.
+- Reconciliation: matching worker is conflict-safe and state-conditioned, but (a) no runtime feed creates `payment_reconciliation_cases` (only fixtures) and (b) the "trusted" evidence types are actor self-attestations — true bank/POS confirmation requires an external integration decision (OPEN_DECISION/BLOCKED_EXTERNAL).
+
+**Files changed:** scripts/returns_rma.py, scripts/application_boundary.py, migrations/073_payment_idempotency_and_verified_template.sql, test_http_finance.py, test_cross_entity_integrity_032.py, test_http_payment_evidence.py, test_batch2_rma_and_outbox.py.
+**Verification state:** SOURCE PATCH + REGRESSION + HTTP/DB EVIDENCE on remediation/master-gap-closure-2026-09-26; 17/17 in-scope failures green (finance 11, batch2 4, cross_entity 2, payment_evidence 1... plus cross_entity full file green).
 
 ## D. Recovery-control rule for G-321..G-407
 

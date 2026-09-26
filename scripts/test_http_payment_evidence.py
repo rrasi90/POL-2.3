@@ -163,7 +163,8 @@ def _seed_order(suffix):
         conn.commit()
         r_token = encode_access_token(ru, rs, ro, "RETAILER_OWNER")
         v_token = encode_access_token(vu, vs, vo, "VENDOR_OWNER")
-        return {"oi": oi, "pay_id": pay_id, "r_token": r_token, "v_token": v_token,
+        return {"oi": oi, "pay_id": pay_id, "media_id": media_id,
+                "r_token": r_token, "v_token": v_token,
                 "ru": ru, "vu": vu, "ro": ro, "vo": vo}
     finally:
         conn.close()
