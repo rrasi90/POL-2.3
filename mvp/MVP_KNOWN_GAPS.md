@@ -290,3 +290,25 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** removed the stray cursor fetch. Target user/session ownership, session state, target membership, user state and organization state remain explicitly validated before the session context is updated.
 - **Regression proof:** `scripts/test_auth_contract.py::test_p0_switch_organization_valid_target_succeeds` now verifies successful tenant switching, persisted active organization, and the newly issued JWT role/org/session claims.
 - **Status:** SOURCE REMEDIATED / FRESH CI PENDING
+
+
+## G-046 — Retailer staff commerce-command overreach (SECURITY / RBAC — REMEDIATED — 2026-09-26)
+
+- **Finding:** basket creation/modification/allocation and checkout were reachable from an active RETAILER_STAFF membership even though the approved role matrix reserves basket creation/checkout authority to RETAILER_OWNER (with field-assisted execution handled separately).
+- **Resolution:** canonical basket/allocation mutations now explicitly require RETAILER_OWNER; checkout-from-allocation-plan now resolves only an active RETAILER_OWNER membership.
+- **Regression proof:** scripts/test_basket_allocation_application.py covers staff rejection for basket create/add/allocation; checkout source authorization is owner-only.
+- **Status:** SOURCE REMEDIATED / FRESH CI PENDING
+
+## G-047 — Retailer staff partial-acceptance decision overreach (SECURITY / RBAC — REMEDIATED — 2026-09-26)
+
+- **Finding:** partial-acceptance approve/decline queries accepted both RETAILER_OWNER and RETAILER_STAFF, allowing a staff member to make a quantity/financial order decision.
+- **Resolution:** canonical partial-acceptance approve/decline now require an active RETAILER_OWNER; vendor-side proposal creation remains governed by the vendor acceptance permission.
+- **Regression proof:** scripts/test_partial_acceptance.py::test_retailer_staff_cannot_decide_partial_acceptance verifies the decision is rejected and the proposal remains PENDING.
+- **Status:** SOURCE REMEDIATED / FRESH CI PENDING
+
+## G-048 — Vendor staff order-acceptance permission drift (SECURITY / RBAC — REMEDIATED — 2026-09-26)
+
+- **Finding:** VENDOR_STAFF still carried the generic order.accept permission even though the approved role matrix assigns order acceptance/rejection to VENDOR_OWNER.
+- **Resolution:** order.accept was removed from the VENDOR_STAFF baseline permission set; vendor owner retains it.
+- **Regression proof:** scripts/test_delegated_permissions.py::test_vendor_staff_role_does_not_receive_order_accept_permission.
+- **Status:** SOURCE REMEDIATED / FRESH CI PENDING
