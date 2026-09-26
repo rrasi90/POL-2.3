@@ -185,6 +185,7 @@ cat artifacts/pol-test-results.json
 
 | Suite | Purpose | Status |
 | :--- | :--- | :---: |
+| `scripts/test_http_management.py` | delegated permission HTTP lifecycle (grant/replay/revoke/audit/tenant scope) | SOURCE READY / FRESH CI PENDING |
 | `scripts/test_delegated_permissions.py` | D-026/VD-15 effective permissions, privilege ceiling, tenant isolation, grant/revoke idempotency, append-only permission audit | SOURCE READY / FRESH CI PENDING |
 | `scripts/test_media_service.py` | media magic bytes, upload limits, deterministic object keys, presign target binding against retargeting | SOURCE READY / FRESH CI PENDING |
 | `scripts/test_auth_contract.py` | inactive user/org rejection for access and refresh tokens; direct authorization and org-switch guards | SOURCE READY / FRESH CI PENDING |
