@@ -301,14 +301,14 @@ class CanonicalReturnService:
                  refund_method, reason, status, approved_by_user_id, approved_at,
                  created_by_user_id, return_id, idempotency_key, source_type)
             VALUES
-                (%s,%s,%s,NULL,%s,%s,'VENDOR_CASH_DIRECT',%s,'APPROVED',%s,now(),%s,%s,%s,'RMA')
+                (%s,%s,%s,NULL,%s,%s,'VENDOR_CASH_DIRECT',%s,'PENDING',NULL,NULL,%s,%s,%s,'RMA')
             ON CONFLICT (return_id) WHERE return_id IS NOT NULL DO NOTHING
             RETURNING id
             """,
             (
                 str(uuid.uuid4()), ret["order_id"], payment["id"], ret["retailer_id"],
-                amount, f"RMA refund {ret['return_number']}", actor_user_id,
-                ret["initiated_by_user_id"], ret["id"], f"rma:{ret['id']}",
+                amount, f"RMA refund {ret['return_number']}", ret["initiated_by_user_id"],
+                ret["id"], f"rma:{ret['id']}",
             ),
         )
         refund_row = cur.fetchone()
@@ -376,7 +376,7 @@ class CanonicalReturnService:
                 (
                     f"REFUND_CREATED:{refund_id}", str(refund_id),
                     json.dumps({"refund_id":str(refund_id),"order_id":str(ret["order_id"]),
-                                "amount_toman":int(amount),"status":"APPROVED"}),
+                                "amount_toman":int(amount),"status":"PENDING"}),
                     f"REFUND_CREATED:{refund_id}", ret["retailer_id"],
                 ),
             )
@@ -473,6 +473,85 @@ class CanonicalReturnService:
                 f"RMA {ret['return_number']} refund completed",
             ),
         )
+
+    @classmethod
+    def approve_refund(cls, cur, actor_user_id: str, return_id: str, organization_id: str,
+                       reason: str | None = None):
+        if not cls._ops_access(cur, actor_user_id, organization_id):
+            raise ReturnAccessError("Only active operator staff may approve RMA refunds.")
+        cur.execute(
+            """
+            SELECT r.*, f.id AS refund_id, f.status AS refund_status,
+                   f.created_by_user_id, f.approved_by_user_id
+            FROM returns r
+            LEFT JOIN refunds f ON f.id=r.refund_id
+            WHERE r.id=%s
+            FOR UPDATE
+            """,
+            (return_id,),
+        )
+        ret=cur.fetchone()
+        if not ret:
+            raise KeyError("Return not found")
+        if not ret["refund_id"]:
+            raise ReturnStateError("RMA has no refund to approve.")
+        if ret["refund_status"] == "APPROVED":
+            return dict(ret, idempotent_replay=True)
+        if ret["refund_status"] != "PENDING":
+            raise ReturnStateError("Only PENDING RMA refunds may be approved.")
+        if ret["status"] != "REFUND_PENDING":
+            raise ReturnStateError("RMA must be REFUND_PENDING before refund approval.")
+        if ret["created_by_user_id"] and str(ret["created_by_user_id"]) == str(actor_user_id):
+            raise ReturnAccessError("Refund approval must be performed by a different actor than the RMA initiator.")
+
+        cur.execute(
+            """
+            UPDATE refunds
+            SET status='APPROVED', approved_by_user_id=%s, approved_at=now()
+            WHERE id=%s AND status='PENDING'
+            RETURNING *
+            """,
+            (actor_user_id, ret["refund_id"]),
+        )
+        refund=cur.fetchone()
+        if not refund:
+            raise ReturnStateError("RMA refund approval raced with another request.")
+
+        cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_before, state_after, reason)
+            VALUES (%s,'RMA_REFUND_APPROVED','REFUND',%s,%s,%s,%s)
+            """,
+            (
+                actor_user_id, ret["refund_id"],
+                Json({"status":"PENDING"}),
+                Json({"status":"APPROVED","approved_by_user_id":str(actor_user_id)}),
+                reason,
+            ),
+        )
+        cur.execute(
+            """
+            INSERT INTO outbox_events
+                (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                 target_organization_id,target_user_id,dedupe_key,channel_hint)
+            SELECT gen_random_uuid(),%s,'REFUND_APPROVED','REFUND',%s,%s::jsonb,'PENDING',
+                   om.organization_id,om.user_id,%s,'INBOX'
+            FROM organization_memberships om
+            WHERE om.organization_id=(SELECT organization_id FROM retailers WHERE id=%s)
+              AND om.status='ACTIVE'
+              AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+            ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+            """,
+            (
+                f"REFUND_APPROVED:{ret['refund_id']}", str(ret["refund_id"]),
+                json.dumps({"refund_id":str(ret["refund_id"]),"order_id":str(ret["order_id"]),
+                            "amount_toman":int(refund["amount_toman"]),"status":"APPROVED"}),
+                f"REFUND_APPROVED:{ret['refund_id']}", ret["retailer_id"],
+            ),
+        )
+        return dict(refund)
 
     @classmethod
     def transition(cls, cur, actor_user_id: str, return_id: str, target_status: str,
