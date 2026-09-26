@@ -43,11 +43,11 @@ class VendorSKU:
     vendor_id: str
     master_product_id: str
     packaging_unit: str  # e.g., "CARTON", "BOX", "BUNDLE"
-    pack_quantity: int = 1
     price_toman: int
     physical_quantity: int
     reserved_quantity: int
     moq: int = 1
+    pack_quantity: int = 1
 
     @property
     def available_quantity(self) -> int:
