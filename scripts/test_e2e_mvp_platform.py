@@ -610,6 +610,82 @@ def test_reservation_expiry_matches_allocation_plan_expiry(postgres_database, ch
         assert reservation_expiry == plan_expiry
 
 
+def test_reservation_lifecycle_uses_canonical_runtime_commands(postgres_database, checkout_catalog):
+    """G-339: reservation create/release/expiry lifecycle is exercised through canonical runtime commands."""
+    from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
+    from scripts.canonical_vendor_order import CanonicalVendorOrderService
+    from scripts.reservation_expiry_worker import ReservationExpiryWorker
+    catalog = checkout_catalog
+    with transaction(postgres_database) as cur:
+        basket = CanonicalBasketAllocationService.create_basket(cur, catalog["context"].user_id, catalog["context"].organization_id)
+        CanonicalBasketAllocationService.add_item(
+            cur, catalog["context"].user_id, catalog["context"].organization_id,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 1, catalog["lines"][0]["pack_quantity"], 1,
+        )
+        preview = CanonicalBasketAllocationService.allocation_preview(cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"])
+        plan_id = preview["allocation_plan_id"]
+        cur.execute("SELECT vendor_id, vendor_product_id, allocated_quantity, unit_price_snapshot_toman FROM allocation_items WHERE allocation_plan_id=%s AND status IN ('ALLOCATED','PARTIALLY_ALLOCATED') ORDER BY id LIMIT 1", (plan_id,))
+        alloc = cur.fetchone()
+        assert alloc
+        checkout = RevalidationCheckoutService.checkout_from_allocation(
+            cur, basket_id=basket["basket_id"], plan_id=plan_id, retailer_id=catalog["retailer_id"],
+            idempotency_key=str(uuid4()), request_fingerprint=f"g339-{uuid4()}",
+            address_snapshot={"address": "G339"},
+            vendor_allocations=[{
+                "vendor_id": alloc["vendor_id"], "vendor_product_id": alloc["vendor_product_id"],
+                "quantity": int(alloc["allocated_quantity"]), "unit_price_toman": int(alloc["unit_price_snapshot_toman"]),
+                "amount_toman": int(alloc["allocated_quantity"]) * int(alloc["unit_price_snapshot_toman"]),
+            }],
+        )
+        order_group_id = checkout["order_group_id"]
+        cur.execute("SELECT id, vendor_id FROM orders WHERE order_group_id=%s LIMIT 1", (order_group_id,))
+        order = cur.fetchone()
+        assert order
+        cur.execute("SELECT om.user_id, v.organization_id FROM vendors v JOIN organization_memberships om ON om.organization_id=v.organization_id WHERE v.id=%s AND om.role='VENDOR_OWNER' AND om.status='ACTIVE' LIMIT 1", (order["vendor_id"],))
+        vendor_actor = cur.fetchone()
+        assert vendor_actor
+        rejected = CanonicalVendorOrderService.reject_order(
+            cur, user_id=str(vendor_actor["user_id"]), organization_id=str(vendor_actor["organization_id"]),
+            order_id=str(order["id"]), rejection_reason="G339_RUNTIME_REJECT",
+        )
+        assert rejected["order_status"] == "REJECTED"
+        cur.execute("SELECT status FROM inventory_reservations WHERE order_id=%s", (order["id"],))
+        assert all(row["status"] == "RELEASED" for row in cur.fetchall())
+
+    # Second runtime-created reservation reaches the expiry worker rather than a SQL-seeded lifecycle state.
+    with transaction(postgres_database) as cur:
+        basket = CanonicalBasketAllocationService.create_basket(cur, catalog["context"].user_id, catalog["context"].organization_id)
+        CanonicalBasketAllocationService.add_item(
+            cur, catalog["context"].user_id, catalog["context"].organization_id,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 1, catalog["lines"][0]["pack_quantity"], 1,
+        )
+        preview = CanonicalBasketAllocationService.allocation_preview(cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"])
+        plan_id = preview["allocation_plan_id"]
+        cur.execute("SELECT vendor_id, vendor_product_id, allocated_quantity, unit_price_snapshot_toman FROM allocation_items WHERE allocation_plan_id=%s AND status IN ('ALLOCATED','PARTIALLY_ALLOCATED') ORDER BY id LIMIT 1", (plan_id,))
+        alloc = cur.fetchone()
+        checkout = RevalidationCheckoutService.checkout_from_allocation(
+            cur, basket_id=basket["basket_id"], plan_id=plan_id, retailer_id=catalog["retailer_id"],
+            idempotency_key=str(uuid4()), request_fingerprint=f"g339-exp-{uuid4()}",
+            address_snapshot={"address": "G339-EXP"},
+            vendor_allocations=[{
+                "vendor_id": alloc["vendor_id"], "vendor_product_id": alloc["vendor_product_id"],
+                "quantity": int(alloc["allocated_quantity"]), "unit_price_toman": int(alloc["unit_price_snapshot_toman"] if False else alloc["unit_price_snapshot_toman"]),
+                "amount_toman": int(alloc["allocated_quantity"]) * int(alloc["unit_price_snapshot_toman"]),
+            }],
+        )
+        order_group_id = checkout["order_group_id"]
+        cur.execute("SELECT id FROM inventory_reservations WHERE order_id IN (SELECT id FROM orders WHERE order_group_id=%s) LIMIT 1", (order_group_id,))
+        reservation_id = cur.fetchone()["id"]
+        cur.execute("UPDATE inventory_reservations SET expires_at=now()-interval '1 second' WHERE id=%s", (reservation_id,))
+        cur.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s", (alloc["vendor_product_id"],))
+        reserved_before = int(cur.fetchone()["reserved_quantity"])
+        result = ReservationExpiryWorker.process_expired(cur, limit=10)
+        assert result["expired_reservation_count"] == 1
+        cur.execute("SELECT status FROM inventory_reservations WHERE id=%s", (reservation_id,))
+        assert cur.fetchone()["status"] == "EXPIRED"
+        cur.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s", (alloc["vendor_product_id"],))
+        assert int(cur.fetchone()["reserved_quantity"]) == reserved_before - int(alloc["allocated_quantity"])
+
 def persist_request(cur, catalog):
     basket = insert_row(cur, "baskets", retailer_id=catalog["retailer_id"], status="OPEN", version=1)
     basket_items = []
