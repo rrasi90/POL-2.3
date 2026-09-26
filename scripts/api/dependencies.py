@@ -58,6 +58,8 @@ def require_permission(permission_key: str):
         cur=Depends(get_db_cursor),
         context: ApplicationContext = Depends(get_application_context),
     ) -> dict:
+        if not context.organization_id:
+            raise PermissionError("An active organization context is required.")
         return check_permission(
             cur,
             context.user_id,
