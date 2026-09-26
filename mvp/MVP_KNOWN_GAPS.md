@@ -466,7 +466,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-338 | P1 | Reservation time semantics are not fully aligned with the canonical checkout/Journey timing contract. | RESOLVED_CODE / EXECUTION_PENDING — source 04e105d5; regression 6f6ae7ae |
 | G-339 | P1 | Reservation lifecycle tests rely too heavily on direct SQL seeding rather than canonical runtime commands. | RESOLVED_CODE / EXECUTION_PENDING — runtime lifecycle regression 7c3e6d2a |
 | G-340 | P1 | Reservation concurrency is not fully verified through the real runtime path. | RESOLVED_CODE / EXECUTION_PENDING — ReservationService dbb01751→dbf9f0a1; concurrency 536f6e7a |
-| G-341 | P1 | Reservation idempotency is not DB-enforced end-to-end. | OPEN |
+| G-341 | P1 | Reservation idempotency is not DB-enforced end-to-end. | RESOLVED_CODE / EXECUTION_PENDING — migration 056 a3b976a4; service dbf9f0a1; concurrency 536f6e7a |
 | G-342 | P1 | Reservation and inventory reserved_quantity reconciliation invariant is incomplete. | OPEN |
 | G-343 | P1 | Reservation lifecycle needs an independent durable event/audit record rather than inference only. | OPEN |
 | G-179..G-195 | P1/P2 | Earlier Return/RMA and Audit/Event deep-audit findings covering return client contract, cumulative ceilings, refund evidence/approval, replay/idempotency, dispute-outbox routing, audit/event envelope, sequence/lineage, poison-event isolation and read-only Ops behavior. | OPEN |
@@ -747,4 +747,10 @@ At the end of each closed item, the ledger must contain:
 ### G-340 Closure Record
 - **Resolution:** Two real PostgreSQL connections call ReservationService against one scarce inventory row; row locking allows exactly one reservation.
 - **Evidence:** 536f6e7ae653db2b8762dc9accd03416480e7fe5
+- **Verification state:** code + regression persisted; fresh PostgreSQL/CI execution remains pending.
+
+
+### G-341 Closure Record
+- **Resolution:** DB partial unique index enforces idempotency_key uniqueness; service re-checks after inventory locking and returns exact replay for concurrent same-key calls.
+- **Evidence:** a3b976a4f2a9aa0970b9b34da2854118eabbb786; dbf9f0a195a0ae7c1e06065a6f432d07d9194b88; 536f6e7ae653db2b8762dc9accd03416480e7fe5
 - **Verification state:** code + regression persisted; fresh PostgreSQL/CI execution remains pending.
