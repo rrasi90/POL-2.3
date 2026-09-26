@@ -8,6 +8,7 @@ Validates migrations/001_initial_schema.sql against real PostgreSQL 18:
 """
 
 import os
+from uuid import uuid4
 import sys
 import psycopg2
 from psycopg2 import sql
@@ -524,63 +525,91 @@ def verify_financial_dispute_remediation(conn):
 
 
 def test_dispute_resolution_invariant_direct_sql(conn):
-    """Exercise the DB guardrails on newly-managed dispute rows."""
+    """Exercise the PostgreSQL adjudication guard directly with a minimal aggregate."""
     cur = conn.cursor()
+
+    # Build only the minimum FK-compatible aggregate. Session trigger replication
+    # is disabled locally while creating the order because its parent group belongs
+    # to checkout-time concerns outside this focused migration invariant test.
+    cur.execute("SET LOCAL session_replication_role = replica")
+
     cur.execute(
         """
         INSERT INTO organizations (id,name,org_type,status)
-        VALUES (gen_random_uuid(),'Migration test operator','OPERATOR','ACTIVE')
-        RETURNING id
+        VALUES
+            (gen_random_uuid(),'Migration Test Retailer Org','RETAILER','ACTIVE'),
+            (gen_random_uuid(),'Migration Test Vendor Org','VENDOR','ACTIVE')
+        RETURNING id, org_type
         """
     )
-    op_org = cur.fetchone()[0]
+    orgs = {row[1]: row[0] for row in cur.fetchall()}
+
     cur.execute(
         """
         INSERT INTO users (id,phone_number,full_name,role,is_active)
-        VALUES (gen_random_uuid(),%s,'Migration test actor','OPS_ADMIN',TRUE)
-        RETURNING id
+        VALUES
+            (gen_random_uuid(),%s,'Migration Retailer','RETAILER_OWNER',TRUE),
+            (gen_random_uuid(),%s,'Migration Vendor','VENDOR_OWNER',TRUE)
+        RETURNING id, role
         """,
-        (f"+989{int.from_bytes(os.urandom(4),'big') % 1000000000:09d}",),
+        (
+            f"+989{int.from_bytes(os.urandom(4),'big') % 1000000000:09d}",
+            f"+989{int.from_bytes(os.urandom(4),'big') % 1000000000:09d}",
+        ),
     )
-    actor = cur.fetchone()[0]
+    users = {row[1]: row[0] for row in cur.fetchall()}
+
     cur.execute(
         """
-        INSERT INTO organization_memberships
-            (id,organization_id,user_id,role,status,is_primary)
-        VALUES (gen_random_uuid(),%s,%s,'OPS_ADMIN','ACTIVE',TRUE)
-        """,
-        (op_org, actor),
-    )
-    cur.execute(
-        """
-        INSERT INTO retailers (id,user_id,organization_id,store_name,city)
-        VALUES (gen_random_uuid(),%s,%s,'Migration Test Retailer','Ahvaz')
+        INSERT INTO retailers
+            (id,user_id,organization_id,store_name,neighborhood,address,city)
+        VALUES
+            (gen_random_uuid(),%s,%s,'Migration Test Retailer','Central','Test Address','Ahvaz')
         RETURNING id
         """,
-        (actor, op_org),
+        (users["RETAILER_OWNER"], orgs["RETAILER"]),
     )
     retailer = cur.fetchone()[0]
+
     cur.execute(
         """
-        INSERT INTO vendors (id,user_id,organization_id,store_name,city)
-        VALUES (gen_random_uuid(),%s,%s,'Migration Test Vendor','Ahvaz')
+        INSERT INTO vendors
+            (id,user_id,organization_id,business_name,warehouse_address,cluster_location)
+        VALUES
+            (gen_random_uuid(),%s,%s,'Migration Test Vendor','Test Warehouse','Ahvaz')
         RETURNING id
         """,
-        (actor, op_org),
+        (users["VENDOR_OWNER"], orgs["VENDOR"]),
     )
     vendor = cur.fetchone()[0]
+
     cur.execute(
         """
-        INSERT INTO orders (id,order_number,retailer_id,vendor_id,order_status,dispute_status,total_amount_toman)
-        VALUES (gen_random_uuid(),%s,%s,%s,'DELIVERED','RESOLVED_REJECTED',100000)
+        INSERT INTO orders
+            (id,order_number,retailer_id,vendor_id,order_status,dispute_status,total_amount_toman)
+        VALUES
+            (gen_random_uuid(),%s,%s,%s,'DELIVERED','NONE',100000)
         RETURNING id
         """,
         (f"MIG-{uuid4().hex[:12]}", retailer, vendor),
     )
     order_id = cur.fetchone()[0]
 
-    # An invalid resolved outcome must be rejected by the DB, not just the service.
-    with pytest.raises(psycopg2.errors.CheckViolation):
+    # Re-enable normal trigger behavior before testing the remediation trigger.
+    cur.execute("SET LOCAL session_replication_role = origin")
+
+    cur.execute(
+        """
+        INSERT INTO media_assets
+            (id,storage_key,file_size_bytes,status,provenance,uploaded_by_user_id)
+        VALUES (gen_random_uuid(),%s,1024,'READY','POL_OWNED',%s)
+        RETURNING id
+        """,
+        (f"migration-test/{uuid4().hex}.jpg", users["RETAILER_OWNER"]),
+    )
+    evidence_id = cur.fetchone()[0]
+
+    with pytest.raises(psycopg2.errors.CheckViolation, match="DISPUTE_APPROVED_AMOUNT_OUT_OF_BOUNDS"):
         cur.execute(
             """
             INSERT INTO disputes (
@@ -588,15 +617,14 @@ def test_dispute_resolution_invariant_direct_sql(conn):
                 claimed_amount_toman,approved_amount_toman,resolution_outcome,
                 evidence_media_id
             )
-            VALUES (gen_random_uuid(),%s,%s,%s,'RESOLVED',1000,2000,'ADJUSTED_SHORTAGE',gen_random_uuid())
+            VALUES (gen_random_uuid(),%s,%s,%s,'RESOLVED',1000,2000,'ADJUSTED_SHORTAGE',%s)
             """,
-            (order_id, retailer, vendor),
+            (order_id, retailer, vendor, evidence_id),
         )
+
     conn.rollback()
-    # Re-establish the connection state for the caller.
-    conn.autocommit = False
-    cur = conn.cursor()
     cur.close()
+
 
 
 def test_postgres_migrations():
