@@ -138,6 +138,18 @@ def test_timeout_cancels_releases_notifies_penalizes_and_tasks(pg_connection):
             reservation = cur.fetchone()
             assert reservation["status"] == "RELEASED"
             assert reservation["consumed_quantity"] == 0
+            cur.execute(
+                """
+                SELECT COUNT(*) AS count
+                FROM outbox_events
+                WHERE event_name='INVENTORY_RESERVATION_RELEASED'
+                  AND aggregate_type='INVENTORY_RESERVATION'
+                  AND aggregate_id=%s
+                """,
+                (data["reservation_id"],),
+            )
+            assert cur.fetchone()["count"] == 1
+
 
             cur.execute(
                 "SELECT physical_quantity, reserved_quantity FROM vendor_inventory WHERE vendor_product_id = %s",
