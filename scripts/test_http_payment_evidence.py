@@ -219,6 +219,34 @@ class TestSubmitEvidence:
         assert first_data["evidence_id"] == second_data["evidence_id"]
         assert second_data["idempotent_replay"] is True
 
+    def test_receipt_image_requires_owned_media(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={
+                "evidence_type": "RECEIPT_IMAGE",
+                "reference_number": f"IMG-{uuid4().hex[:10]}",
+                "amount_toman": 5000000,
+                "evidence_media_id": data["media_id"],
+            },
+        )
+        assert resp.status_code == 201
+        assert resp.json()["data"]["evidence_type"] == "RECEIPT_IMAGE"
+
+    def test_receipt_image_without_media_rejected(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={
+                "evidence_type": "RECEIPT_IMAGE",
+                "reference_number": f"IMG-NONE-{uuid4().hex[:10]}",
+                "amount_toman": 5000000,
+            },
+        )
+        assert resp.status_code == 422
+
     def test_vendor_submits_pos_reference(self, client):
         data = _seed_order(uuid4().hex[:8])
         ref = f"POS-{uuid4().hex[:12]}"
