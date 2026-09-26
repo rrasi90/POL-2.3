@@ -258,7 +258,6 @@ class CanonicalReturnService:
         return ret
 
     @classmethod
-    @classmethod
     def _ensure_refund_pending(cls, cur, ret: dict, actor_user_id: str):
         amount = ret["approved_refund_amount_toman"]
         if amount is None or int(amount) <= 0:
