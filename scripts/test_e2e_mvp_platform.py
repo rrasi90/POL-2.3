@@ -180,30 +180,45 @@ def test_admin_audit_logs_are_db_immutable(
         assert cur.fetchone()["reason"] == "immutability regression"
 
 
-def test_inventory_audit_history_blocks_vendor_product_delete(
+def test_inventory_audit_history_survives_vendor_product_delete(
     postgres_database, checkout_catalog,
 ):
-    """G-313: audit history makes vendor-product deletion fail closed."""
+    """G-313: audit history survives vendor-product lifecycle removal.
+
+    Migration 069 declared inventory_audit_log.vendor_product_id nullable with an
+    ON DELETE SET NULL foreign key; migration 075 reconciled the append-only
+    guard with that lifecycle, so removing the product clears the reference on
+    the audit rows instead of failing closed, while the history itself stays
+    append-only and intact.
+    """
     line = checkout_catalog["lines"][0]
     vendor_id = line["vendor_id"]
     vendor_product_id = line["vendor_product_id"]
     actor_user_id = checkout_catalog["context"].user_id
+    reference_id = f"G313-{uuid4().hex}"
     with transaction(postgres_database) as cur:
         insert_row(
             cur, "inventory_audit_log", vendor_id=vendor_id, vendor_product_id=vendor_product_id,
             old_quantity=100, new_quantity=99, old_price_toman=500000, new_price_toman=500000,
-            source_trigger="MANUAL_EDIT", reference_id=f"G313-{uuid4().hex}", actor_user_id=actor_user_id,
+            source_trigger="MANUAL_EDIT", reference_id=reference_id, actor_user_id=actor_user_id,
         )
 
     with transaction(postgres_database) as cur:
-        with pytest.raises(psycopg2.Error):
-            cur.execute("DELETE FROM vendor_products WHERE id=%s", (vendor_product_id,))
+        cur.execute("DELETE FROM vendor_prices WHERE vendor_product_id=%s", (vendor_product_id,))
+        cur.execute("DELETE FROM vendor_inventory WHERE vendor_product_id=%s", (vendor_product_id,))
+        cur.execute("DELETE FROM vendor_products WHERE id=%s", (vendor_product_id,))
 
     with transaction(postgres_database) as cur:
-        cur.execute("SELECT COUNT(*) AS n FROM inventory_audit_log WHERE vendor_product_id=%s", (vendor_product_id,))
+        cur.execute(
+            """
+            SELECT COUNT(*) AS n FROM inventory_audit_log
+            WHERE vendor_id=%s AND reference_id=%s AND vendor_product_id IS NULL
+            """,
+            (vendor_id, reference_id),
+        )
         assert cur.fetchone()["n"] == 1
         cur.execute("SELECT COUNT(*) AS n FROM vendor_products WHERE id=%s", (vendor_product_id,))
-        assert cur.fetchone()["n"] == 1
+        assert cur.fetchone()["n"] == 0
 
 
 def test_privacy_export_and_deletion_lifecycle(postgres_database, checkout_catalog):
@@ -598,7 +613,7 @@ def test_reservation_expiry_matches_allocation_plan_expiry(postgres_database, ch
         )
         CanonicalBasketAllocationService.add_item(
             cur, catalog["context"].user_id, catalog["context"].organization_id,
-            basket["basket_id"], catalog["lines"][0]["product_id"], 1,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 3,
             catalog["lines"][0]["pack_quantity_snapshot"], 1
         )
         preview = CanonicalBasketAllocationService.allocation_preview(
@@ -610,7 +625,7 @@ def test_reservation_expiry_matches_allocation_plan_expiry(postgres_database, ch
         cur.execute("SELECT vendor_id, vendor_product_id, allocated_quantity, unit_price_snapshot_toman FROM allocation_items WHERE allocation_plan_id=%s AND status IN ('ALLOCATED','PARTIALLY_ALLOCATED') ORDER BY id LIMIT 1", (plan_id,))
         alloc = cur.fetchone()
         assert alloc
-        result = RevalidationCheckoutService.checkout_from_allocation(
+        result = RevalidationCheckoutService.revalidate_and_checkout(
             cur, basket_id=basket["basket_id"], plan_id=plan_id, retailer_id=catalog["retailer_id"],
             idempotency_key=str(uuid4()), request_fingerprint=f"g338-{uuid4()}",
             address_snapshot={"address": "G338"},
@@ -636,14 +651,14 @@ def test_reservation_lifecycle_uses_canonical_runtime_commands(postgres_database
         basket = CanonicalBasketAllocationService.create_basket(cur, catalog["context"].user_id, catalog["context"].organization_id)
         CanonicalBasketAllocationService.add_item(
             cur, catalog["context"].user_id, catalog["context"].organization_id,
-            basket["basket_id"], catalog["lines"][0]["product_id"], 1, catalog["lines"][0]["pack_quantity_snapshot"], 1,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 3, catalog["lines"][0]["pack_quantity_snapshot"], 1,
         )
         preview = CanonicalBasketAllocationService.allocation_preview(cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"])
         plan_id = preview["allocation_plan_id"]
         cur.execute("SELECT vendor_id, vendor_product_id, allocated_quantity, unit_price_snapshot_toman FROM allocation_items WHERE allocation_plan_id=%s AND status IN ('ALLOCATED','PARTIALLY_ALLOCATED') ORDER BY id LIMIT 1", (plan_id,))
         alloc = cur.fetchone()
         assert alloc
-        checkout = RevalidationCheckoutService.checkout_from_allocation(
+        checkout = RevalidationCheckoutService.revalidate_and_checkout(
             cur, basket_id=basket["basket_id"], plan_id=plan_id, retailer_id=catalog["retailer_id"],
             idempotency_key=str(uuid4()), request_fingerprint=f"g339-{uuid4()}",
             address_snapshot={"address": "G339"},
@@ -673,13 +688,13 @@ def test_reservation_lifecycle_uses_canonical_runtime_commands(postgres_database
         basket = CanonicalBasketAllocationService.create_basket(cur, catalog["context"].user_id, catalog["context"].organization_id)
         CanonicalBasketAllocationService.add_item(
             cur, catalog["context"].user_id, catalog["context"].organization_id,
-            basket["basket_id"], catalog["lines"][0]["product_id"], 1, catalog["lines"][0]["pack_quantity_snapshot"], 1,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 3, catalog["lines"][0]["pack_quantity_snapshot"], 1,
         )
         preview = CanonicalBasketAllocationService.allocation_preview(cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"])
         plan_id = preview["allocation_plan_id"]
         cur.execute("SELECT vendor_id, vendor_product_id, allocated_quantity, unit_price_snapshot_toman FROM allocation_items WHERE allocation_plan_id=%s AND status IN ('ALLOCATED','PARTIALLY_ALLOCATED') ORDER BY id LIMIT 1", (plan_id,))
         alloc = cur.fetchone()
-        checkout = RevalidationCheckoutService.checkout_from_allocation(
+        checkout = RevalidationCheckoutService.revalidate_and_checkout(
             cur, basket_id=basket["basket_id"], plan_id=plan_id, retailer_id=catalog["retailer_id"],
             idempotency_key=str(uuid4()), request_fingerprint=f"g339-exp-{uuid4()}",
             address_snapshot={"address": "G339-EXP"},

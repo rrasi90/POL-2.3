@@ -180,7 +180,9 @@ def test_append_only_order_timeline_is_enforced(postgres_database, checkout_resu
 
 
 def test_append_only_admin_audit_is_enforced(postgres_database, checkout_catalog, checkout_result):
-    with pytest.raises(psycopg2.Error, match="admin_audit_logs is append-only"):
+    # Migration 074 consolidated the admin_audit_logs append-only guard onto the
+    # dedicated v049 trigger, whose canonical error message is used here.
+    with pytest.raises(psycopg2.Error, match="admin_audit_logs are immutable"):
         with transaction(postgres_database) as cur:
             user_id = checkout_catalog["context"].user_id
             log_id = str(uuid4())
@@ -222,4 +224,7 @@ def test_migration_032_triggers_are_installed(postgres_database):
             """
         )
         names = [row["tgname"] for row in cur.fetchall()]
-        assert len(names) == 9
+        # Migration 074 consolidated the admin_audit_logs append-only guard onto
+        # the dedicated v049 trigger, so the v032 admin guard no longer exists.
+        assert "trg_admin_audit_append_only_v032" not in names
+        assert len(names) == 8

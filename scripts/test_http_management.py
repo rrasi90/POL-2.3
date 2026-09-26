@@ -117,17 +117,18 @@ def management_env():
     }
     try:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM inventory_audit_log WHERE vendor_id=%s", (vendor_id,))
+            # inventory_audit_log is append-only by contract (migration 069):
+            # its rows are never deleted, and their vendor_id FK pins the
+            # vendor, so the vendor, its orgs and its users must stay as well
+            # (same accepted leftover policy as admin_audit_logs -- ids are
+            # random). Migration 075 keeps the declared ON DELETE SET NULL
+            # lifecycle working, so removing the products below nulls
+            # vendor_product_id on the surviving audit rows.
             cur.execute("DELETE FROM vendor_inventory WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s)", (vendor_id,))
             cur.execute("DELETE FROM vendor_prices WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s)", (vendor_id,))
             cur.execute("DELETE FROM vendor_products WHERE vendor_id=%s", (vendor_id,))
-            cur.execute("DELETE FROM vendors WHERE id=%s", (vendor_id,))
             cur.execute("DELETE FROM organization_memberships WHERE user_id IN (%s,%s)", (admin_user, vendor_user))
             cur.execute("DELETE FROM user_sessions WHERE user_id IN (%s,%s)", (admin_user, vendor_user))
-            # admin_audit_logs rows reference these users and the table is
-            # immutable (append-only trigger), so the users themselves cannot be
-            # deleted; ids are random and the leftovers are harmless.
-            cur.execute("DELETE FROM organizations WHERE id IN (%s,%s)", (admin_org, vendor_org))
         conn.commit()
     finally:
         conn.close()
@@ -378,17 +379,24 @@ def test_continuous_inventory_scan_and_publish(client, management_env):
     assert replay.status_code == 200
     assert replay.json()["data"]["idempotent_replay"] is True
 
-    with conn.cursor() as cur:
-        cur.execute("DELETE FROM inventory_audit_log WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s)", (management_env["vendor_id"], "VSKU-" + suffix))
-        cur.execute("DELETE FROM vendor_prices WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s)", (management_env["vendor_id"], "VSKU-" + suffix))
-        cur.execute("DELETE FROM vendor_inventory WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s)", (management_env["vendor_id"], "VSKU-" + suffix))
-        cur.execute("DELETE FROM inventory_scan_sessions WHERE vendor_id=%s AND external_session_id=%s", (management_env["vendor_id"], "scan-" + suffix))
-        cur.execute("DELETE FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s", (management_env["vendor_id"], "VSKU-" + suffix))
-        cur.execute("DELETE FROM products WHERE id=%s", (product_id,))
-        cur.execute("DELETE FROM subcategories WHERE id=%s", (subcategory_id,))
-        cur.execute("DELETE FROM categories WHERE id=%s", (category_id,))
-        cur.execute("DELETE FROM brands WHERE id=%s", (brand_id,))
-    conn.commit()
+    # inventory_audit_log is append-only by contract (migration 069) -- its
+    # rows are never deleted here; migration 075 clears vendor_product_id via
+    # the declared ON DELETE SET NULL when the product below is removed.
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM vendor_prices WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s)", (management_env["vendor_id"], "VSKU-" + suffix))
+            cur.execute("DELETE FROM vendor_inventory WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s)", (management_env["vendor_id"], "VSKU-" + suffix))
+            cur.execute("DELETE FROM inventory_scan_sessions WHERE vendor_id=%s AND external_session_id=%s", (management_env["vendor_id"], "scan-" + suffix))
+            cur.execute("DELETE FROM vendor_products WHERE vendor_id=%s AND vendor_sku=%s", (management_env["vendor_id"], "VSKU-" + suffix))
+            cur.execute("DELETE FROM products WHERE id=%s", (product_id,))
+            cur.execute("DELETE FROM subcategories WHERE id=%s", (subcategory_id,))
+            cur.execute("DELETE FROM categories WHERE id=%s", (category_id,))
+            cur.execute("DELETE FROM brands WHERE id=%s", (brand_id,))
+        conn.commit()
+    finally:
+        # No-op after commit; keeps the module-scoped shared connection usable
+        # for the next test if any cleanup statement fails.
+        conn.rollback()
 
 def test_product_candidate_review_http_is_tenant_and_idempotent(client, management_env):
     conn = management_env["conn"]
@@ -497,6 +505,9 @@ def test_product_candidate_review_http_is_tenant_and_idempotent(client, manageme
         )
         assert non_admin_review.status_code == 403
     finally:
+        # Clear any aborted transaction state first so a failed assertion can
+        # neither mask its own error nor poison the shared connection.
+        conn.rollback()
         with conn.cursor() as cur:
             cur.execute(
                 "DELETE FROM outbox_events WHERE aggregate_id::text IN (SELECT id::text FROM product_candidates WHERE vendor_id=%s)",
@@ -651,6 +662,9 @@ def test_vendor_permission_editor_http_lifecycle(client, management_env):
         assert replay_revoke.status_code == 200
         assert replay_revoke.json()["data"]["idempotent_replay"] is True
     finally:
+        # Clear any aborted transaction state first so a failed assertion can
+        # neither mask its own error nor poison the shared connection.
+        conn.rollback()
         with conn.cursor() as cur:
             cur.execute(
                 "DELETE FROM delegated_permission_grants WHERE membership_id=%s",

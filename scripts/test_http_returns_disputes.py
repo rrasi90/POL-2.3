@@ -618,6 +618,82 @@ class TestDisputeResolution:
             ops_conn.rollback()
             ops_conn.close()
 
+    def test_resolution_notifies_every_active_member_of_both_parties(self, client):
+        """G-466 regression: DISPUTE_RESOLVED fan-out must not collide on event_id.
+
+        Both party organizations expand to one outbox row per active member, and
+        the per-user dedupe_key makes those rows genuinely distinct, so a single
+        shared event_id made the second row fail with a unique violation and the
+        resolution request returned HTTP 500.
+        """
+        data = _seed_delivered_order(uuid4().hex[:8])
+        opened = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json=_dispute_payload(data, 500000, "Fan-out regression", 1),
+        )
+        dispute_id = opened.json()["data"]["id"]
+
+        # Give both party organizations a second active member (owner + staff).
+        second_member_conn = _db()
+        try:
+            with second_member_conn.cursor() as cur:
+                for org_id, role in ((data["ro"], "RETAILER_STAFF"), (data["vo"], "VENDOR_STAFF")):
+                    member_id = str(uuid4())
+                    cur.execute(
+                        "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s,%s,'Second member',%s)",
+                        (member_id, f"+9891{uuid4().int % 100000000:08d}", role),
+                    )
+                    cur.execute(
+                        "INSERT INTO organization_memberships (id, organization_id, user_id, role, status) "
+                        "VALUES (%s,%s,%s,%s,'ACTIVE')",
+                        (str(uuid4()), org_id, member_id, role),
+                    )
+            second_member_conn.commit()
+        finally:
+            second_member_conn.close()
+
+        ops_conn, ops_token, *_ = _seed_ops_admin()
+        try:
+            investigating = client.post(
+                f"/api/v1/disputes/{dispute_id}/investigate",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={"reason": "Ops review started"},
+            )
+            assert investigating.status_code == 200
+
+            resolved = client.patch(
+                f"/api/v1/disputes/{dispute_id}/resolve",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={
+                    "outcome": "ADJUSTED_SHORTAGE",
+                    "approved_amount_toman": 250000,
+                    "reason": "Multi-member fan-out",
+                },
+            )
+            assert resolved.status_code == 200, resolved.text
+            assert resolved.json()["data"]["dispute_status"] == "RESOLVED"
+
+            with ops_conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT target_organization_id, count(*) AS n,
+                           count(DISTINCT event_id) AS distinct_ids
+                    FROM outbox_events
+                    WHERE event_name='DISPUTE_RESOLVED' AND aggregate_id=%s
+                    GROUP BY 1
+                    """,
+                    (dispute_id,),
+                )
+                rows = cur.fetchall()
+                assert len(rows) == 2, rows
+                for row in rows:
+                    assert row["n"] == 2, row
+                    assert row["distinct_ids"] == row["n"], row
+        finally:
+            ops_conn.rollback()
+            ops_conn.close()
+
     def test_non_ops_cannot_resolve_dispute(self, client):
         data = _seed_delivered_order(uuid4().hex[:8])
         opened = client.post(
