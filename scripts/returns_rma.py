@@ -302,7 +302,7 @@ class CanonicalReturnService:
                  created_by_user_id, return_id, idempotency_key, source_type)
             VALUES
                 (%s,%s,%s,NULL,%s,%s,'VENDOR_CASH_DIRECT',%s,'PENDING',NULL,NULL,%s,%s,%s,'RMA')
-            ON CONFLICT (return_id) WHERE return_id IS NOT NULL DO NOTHING
+            ON CONFLICT (return_id) WHERE return_id IS NOT NULL AND status IN ('PENDING','APPROVED','COMPLETED') DO NOTHING
             RETURNING id
             """,
             (
