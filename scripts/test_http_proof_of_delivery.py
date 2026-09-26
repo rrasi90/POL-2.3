@@ -70,7 +70,7 @@ def _seed_dispatched(suffix, otp="1234"):
             brand_id = str(uuid4()); category_id = str(uuid4()); subcategory_id = str(uuid4())
             product_id = str(uuid4()); vendor_product_id = str(uuid4())
             bi = str(uuid4()); pi = str(uuid4()); ogi = str(uuid4())
-            oi = str(uuid4()); di = str(uuid4())
+            oi = str(uuid4()); di = str(uuid4()); item_id = str(uuid4())
 
             cur.execute("INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, \'R\', \'RETAILER_OWNER\')",
                         (ru, f"+9891{uuid4().hex[:8]}"))
@@ -119,7 +119,7 @@ def _seed_dispatched(suffix, otp="1234"):
                 )
                 VALUES (%s,%s,%s,%s,'Proof Product','Proof Brand',%s,'CARTON',1,10,10,0,500000,5000000,'PENDING')
                 """,
-                (str(uuid4()), oi, product_id, vendor_product_id, f'PROOF-VP-{suffix}'),
+                (item_id, oi, product_id, vendor_product_id, f'PROOF-VP-{suffix}'),
             )
             cur.execute(
                 "INSERT INTO deliveries (id, order_id, vendor_id, delivery_status, driver_name, vehicle_plate, delivery_otp, dispatched_at, created_at) "
@@ -136,7 +136,8 @@ def _seed_dispatched(suffix, otp="1234"):
         conn.commit()
         rt = encode_access_token(ru, rs, ro, "RETAILER_OWNER")
         vt = encode_access_token(vu, vs, vo, "VENDOR_OWNER")
-        return {"oi": oi, "di": di, "r_token": rt, "v_token": vt, "otp": otp, "media_id": media_id}
+        return {"oi": oi, "di": di, "r_token": rt, "v_token": vt, "otp": otp,
+                "media_id": media_id, "item_id": item_id}
     finally:
         conn.close()
 
