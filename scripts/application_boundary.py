@@ -33,6 +33,7 @@ from scripts.user_profiles import UserProfileService
 from scripts.privacy_lifecycle import PrivacyLifecycleService
 from scripts.vendor_referral import VendorReferralService
 from scripts.vendor_acceptance_timeout_worker import VendorAcceptanceTimeoutWorker
+from scripts.reservation_expiry_worker import ReservationExpiryWorker
 FIELD_TASK_TRANSITIONS = {
     "ASSIGNED": {"IN_PROGRESS", "FAILED", "CANCELLED"},
     "IN_PROGRESS": {"COMPLETED", "FAILED", "CANCELLED"},
@@ -1125,6 +1126,10 @@ class POLApplicationBoundary:
             if self.cur.fetchone():
                 filtered.append(disp)
         return {"disputes": filtered, "count": len(filtered)}
+
+    def process_reservation_expiries(self, *, limit=100):
+        self._require_ops_context()
+        return ReservationExpiryWorker.process_expired(self.cur, limit=limit)
 
     def process_vendor_acceptance_timeouts(self, *, limit=100):
         self._require_ops_context()
