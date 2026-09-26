@@ -1605,9 +1605,10 @@ class POLApplicationBoundary:
             params.append(self.context.organization_id)
             where = "i.vendor_organization_id = %s"
         else:
-            params.append(self.context.organization_id)
-            where = "(i.retailer_organization_id = %s OR i.vendor_organization_id = %s)"
-            params.append(self.context.organization_id)
+            # Operator administration is intentionally cross-tenant for read-only
+            # invoice visibility, matching the RBAC/API contract. Tenant users are
+            # already handled by the RETAILER/VENDOR branches above.
+            where = "1 = 1"
         params.extend([limit, offset])
         self.cur.execute(
             f"""
