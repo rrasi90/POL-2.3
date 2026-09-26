@@ -466,9 +466,9 @@ class BasketService:
 
 class AllocationService:
     @staticmethod
-    def create_plan(cur, basket_id: str, basket_version: int, vendor_count: int, total_toman: int) -> dict:
+    def create_plan(cur, basket_id: str, basket_version: int, vendor_count: int, total_toman: int, input_hash: str | None = None) -> dict:
         plan_id = str(uuid.uuid4())
-        inp_hash = hashlib.sha256(f"{basket_id}:{basket_version}:{total_toman}".encode()).hexdigest()[:16]
+        inp_hash = input_hash or hashlib.sha256(f"{basket_id}:{basket_version}:{total_toman}".encode()).hexdigest()
         cur.execute("""
             INSERT INTO allocation_plans (
                 id, basket_id, basket_version, strategy, vendor_count, 
