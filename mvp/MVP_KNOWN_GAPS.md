@@ -438,7 +438,7 @@ This section is the persistent intake ledger for findings previously identified 
 | ID | Severity | Finding | Status |
 |---|---:|---|---|
 | G-308 | P1 | Operating-window selection can resolve weekday from capacity timezone before applying the window timezone; deterministic cross-timezone semantics are incomplete. | RESOLVED — source fix a4683721; regression 4fc8804e |
-| G-309 | P1 | Cross-midnight operating windows do not resolve the previous weekday after midnight. | OPEN |
+| G-309 | P1 | Cross-midnight operating windows do not resolve the previous weekday after midnight. | RESOLVED — source logic introduced with G-308; regression e64ea3bd |
 | G-310 | P1 | Overnight `order_cutoff_at` lacks day-offset/instant semantics. | OPEN |
 | G-311 | P1 | Daily/hourly vendor capacity is check-then-act and lacks atomic reservation/invariant enforcement. | OPEN |
 | G-312 | P1 | Admin audit immutability is not DB-enforced against UPDATE/DELETE. | OPEN |
@@ -552,3 +552,9 @@ At the end of each closed item, the ledger must contain:
 - **Source commit:** `a468372131a738b503e9167a52fbb5e2485f2125`
 - **Test commit:** `4fc8804e2e13aec0669726c215d9e4beddd446c4`
 - **Verification state:** SOURCE PATCH + REGRESSION ADDED; fresh CI execution remains separately pending.
+
+### G-309 Closure Record
+- **Resolution:** overnight windows now map post-midnight times to the previous local business weekday before selecting the window.
+- **Regression:** `test_overnight_window_uses_previous_weekday_after_midnight`
+- **Test commit:** `e64ea3bdade1c14b57b6134740d19e94eb731f0f`
+- **Verification state:** SOURCE LOGIC + REGRESSION ADDED; fresh CI remains separate.
