@@ -379,17 +379,6 @@ class RefundService:
 
         cur.execute(
             """
-            UPDATE payments
-            SET payment_status='REFUNDED'
-            WHERE id=%s AND payment_status='SUCCESS'
-            """,
-            (payment["id"],),
-        )
-        if cur.rowcount != 1:
-            raise ValueError("Linked payment is no longer refundable.")
-
-        cur.execute(
-            """
             UPDATE refunds
             SET status='COMPLETED', completed_at=now(), completed_by_user_id=%s
             WHERE id=%s AND status='APPROVED'
@@ -397,9 +386,37 @@ class RefundService:
             """,
             (actor_user_id, refund_id),
         )
-        completed = dict(cur.fetchone())
+        completed_row = cur.fetchone()
+        if not completed_row:
+            raise ValueError("Refund completion raced with another completion request.")
+        completed = dict(completed_row)
+
+        cur.execute(
+            """
+            SELECT COALESCE(SUM(r.amount_toman),0) AS total_completed
+            FROM refunds r
+            WHERE r.payment_id=%s AND r.status='COMPLETED'
+            """,
+            (payment["id"],),
+        )
+        total_completed = int(cur.fetchone()["total_completed"])
+        fully_refunded = total_completed == int(payment["amount_toman"])
+
+        if fully_refunded:
+            cur.execute(
+                """
+                UPDATE payments
+                SET payment_status='REFUNDED'
+                WHERE id=%s AND payment_status='SUCCESS'
+                """,
+                (payment["id"],),
+            )
+            if cur.rowcount != 1:
+                raise ValueError("Linked payment is no longer refundable.")
+
         cls._event(cur, completed, "REFUND_COMPLETED", actor_user_id, organization_id)
-        cls._event(cur, completed, "PAYMENT_REFUNDED", actor_user_id, organization_id)
+        if fully_refunded:
+            cls._event(cur, completed, "PAYMENT_REFUNDED", actor_user_id, organization_id)
 
         if refund["dispute_id"]:
             cur.execute(
