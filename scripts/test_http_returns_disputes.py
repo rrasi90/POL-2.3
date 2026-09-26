@@ -121,6 +121,30 @@ def _seed_delivered_order(suffix):
                 "VALUES (%s, %s, %s, %s, 'Product', 'Brand', 'VS', 'CARTON', 4, 10, 10, 500000, 5000000, 'PENDING')",
                 (oii, oi, prod_id, vpid),
             )
+            media_id = str(uuid4())
+            cur.execute(
+                """
+                INSERT INTO media_assets (
+                    id, storage_provider, storage_bucket, storage_key,
+                    bucket_name, object_key, mime_type, file_size_bytes,
+                    checksum_sha256, status, provenance,
+                    uploaded_by_user_id, upload_target_type, upload_target_id
+                )
+                VALUES (
+                    %s,'S3_COMPATIBLE','pol-media',%s,'pol-media',%s,
+                    'image/jpeg',1024,%s,'READY','POL_OWNED',%s,'ORDER',%s
+                )
+                """,
+                (
+                    media_id,
+                    f"test/{media_id}.jpg",
+                    f"test/{media_id}.jpg",
+                    "a" * 64,
+                    ru,
+                    oi,
+                ),
+            )
+
             cur.execute(
                 "INSERT INTO deliveries (id, order_id, vendor_id, carrier_type, carrier_name, delivery_status, delivered_at) VALUES (%s, %s, %s, 'CLUSTER_LOGISTICS', 'Test Carrier', 'DELIVERED', now())",
                 (str(uuid4()), oi, vi),
@@ -138,9 +162,25 @@ def _seed_delivered_order(suffix):
         rt = encode_access_token(ru, rs, ro, "RETAILER_OWNER")
         vt = encode_access_token(vu, vs, vo, "VENDOR_OWNER")
         return {"oi": oi, "oii": oii, "si": si, "r_token": rt, "v_token": vt,
-                "ru": ru, "ro": ro, "vi": vi, "vo": vo, "ri": ri}
+                "ru": ru, "ro": ro, "vi": vi, "vo": vo, "ri": ri,
+                "media_id": media_id}
     finally:
         conn.close()
+
+
+def _dispute_payload(data, amount, description, quantity=1, idempotency_key=None):
+    return {
+        "claimed_amount_toman": amount,
+        "description": description,
+        "evidence_media_id": data["media_id"],
+        "items": [{
+            "order_item_id": data["oii"],
+            "quantity": quantity,
+            "claimed_amount_toman": amount,
+            "reason_code": "DELIVERY",
+        }],
+        "idempotency_key": idempotency_key or str(uuid4()),
+    }
 
 
 @pytest.fixture(scope="module")
@@ -302,7 +342,7 @@ class TestDisputeOpen:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"claimed_amount_toman": 1000000, "description": "Wrong items delivered, vendor unresponsive"},
+            json=_dispute_payload(data, 1000000, "Wrong items delivered, vendor unresponsive", 2),
         )
         assert resp.status_code == 201
         body = resp.json()
@@ -364,7 +404,7 @@ class TestDisputeOpen:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['v_token']}"},
-            json={"claimed_amount_toman": 100000, "description": "Test dispute from vendor"},
+            json=_dispute_payload(data, 100000, "Test dispute from vendor", 1),
         )
         assert resp.status_code in (403, 422)
 
@@ -372,7 +412,7 @@ class TestDisputeOpen:
         data = _seed_delivered_order(uuid4().hex[:8])
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            json={"claimed_amount_toman": 100000, "description": "Test"},
+            json=_dispute_payload(data, 100000, "Test", 1),
         )
         assert resp.status_code == 401
 
@@ -394,7 +434,7 @@ class TestDisputeFilingWindow:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"claimed_amount_toman": 1000000, "description": "Expired dispute window"},
+            json=_dispute_payload(data, 1000000, "Expired dispute window", 2),
         )
         assert resp.status_code == 422
 
@@ -404,7 +444,7 @@ class TestDisputeQuery:
         create_resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"claimed_amount_toman": 100000, "description": "Dispute for testing get"},
+            json=_dispute_payload(data, 100000, "Dispute for testing get", 1),
         )
         dispute_id = create_resp.json()["data"]["id"]
         resp = client.get(
@@ -419,7 +459,7 @@ class TestDisputeQuery:
         client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"claimed_amount_toman": 100000, "description": "Dispute for listing"},
+            json=_dispute_payload(data, 100000, "Dispute for listing", 1),
         )
         resp = client.get(
             f"/api/v1/orders/{data['oi']}/disputes",
@@ -516,7 +556,7 @@ class TestDisputeResolution:
         opened = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"claimed_amount_toman": 500000, "description": "Idempotent resolution"},
+            json=_dispute_payload(data, 500000, "Idempotent resolution", 1),
         )
         dispute_id = opened.json()["data"]["id"]
 
@@ -556,7 +596,7 @@ class TestDisputeResolution:
         opened = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"claimed_amount_toman": 500000, "description": "Auth test"},
+            json=_dispute_payload(data, 500000, "Auth test", 1),
         )
         dispute_id = opened.json()["data"]["id"]
         denied = client.patch(
@@ -575,7 +615,7 @@ class TestDisputeResolution:
         opened = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"claimed_amount_toman": 500000, "description": "Amount guard"},
+            json=_dispute_payload(data, 500000, "Amount guard", 1),
         )
         dispute_id = opened.json()["data"]["id"]
         ops_conn, ops_token, *_ = _seed_ops_admin()
