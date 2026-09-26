@@ -579,6 +579,24 @@
 
 ---
 
+## ۷.۷ Media Ingestion APIs
+
+### ۷.۷.۱ Presign معمولی (`POST /api/v1/media/presigned-url`)
+- فایل ابتدا در quarantine با وضعیت `UPLOADING` قرار می‌گیرد.
+- اندازه حداکثر ۵MB و MIME اولیه فقط JPEG/PNG/WebP است؛ `confirm-upload` نوع واقعی فایل را با magic bytes بررسی می‌کند.
+
+### ۷.۷.۲ آپلود resumable (`POST /api/v1/media/resumable/init`)
+- یک `media_upload_session` و تعداد partهای موردنیاز ایجاد می‌کند و برای هر part URL امضاشده برمی‌گرداند.
+- partها با شماره متوالی ۱..N تکمیل می‌شوند.
+
+### ۷.۷.۳ تکمیل resumable (`POST /api/v1/media/resumable/complete`)
+- همه partها باید دقیقاً یک‌بار ارائه شوند؛ multipart در provider تکمیل و session به `COMPLETED` می‌رود.
+- سپس caller از همان `POST /media/confirm-upload` برای validation/processing نهایی استفاده می‌کند.
+
+### ۷.۷.۴ Trusted processing
+- validation: size + magic bytes + decode.
+- metadata/EXIF حذف می‌شود؛ derivative به WebP تبدیل می‌شود و thumbnail استاندارد ۱۵۰×۱۵۰ تولید می‌شود.
+
 ## ۷.۶ Privacy Export / Account Deletion APIs
 
 ### ۷.۶.۱ درخواست دریافت داده شخصی (`POST /api/v1/privacy/export`)
