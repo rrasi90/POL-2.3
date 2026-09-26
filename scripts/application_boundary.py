@@ -739,7 +739,7 @@ class POLApplicationBoundary:
 
     def retailer_confirm_delivery(self, *, order_id, recipient_name=None,
                                     otp_code=None, proof_type="OTP_CODE",
-                                    proof_media_id=None, issue_reported=None):
+                                    proof_media_id=None, issue_reported=None, delivered_items=None):
         return _confirm_delivery(
             self.cur,
             user_id=self.context.user_id,
@@ -750,6 +750,7 @@ class POLApplicationBoundary:
             proof_type=proof_type,
             proof_media_id=proof_media_id,
             issue_reported=issue_reported,
+            delivered_items=delivered_items,
         )
 
     # ── Delivery Tracking Methods (Stage 23) ───────────────────────
