@@ -97,6 +97,15 @@ migrations/047_delegated_permissions_and_audit.sql
 
 ---
 
+### Remediation additions — migration 047
+
+این دو جدول در migration `047_delegated_permissions_and_audit.sql` برای اجرای D-026 / VD-15 اضافه شده‌اند. آن‌ها به inventory تاریخی ۵۶ جدول legacy در بالا الحاق می‌شوند؛ این بخش عمداً شمارش کل فعلی schema را ادعا یا بازتعریف نمی‌کند.
+
+| جدول | حوزه | نکته حاکمیتی |
+|---|---|---|
+| `delegated_permission_grants` | IAM / Delegated Access | وضعیت فعلی grant برای هر Membership + Permission؛ unique per membership/permission؛ tenant-scoped |
+| `permission_audit_events` | IAM / Audit | تاریخچه grant/revoke؛ append-only در DB با trigger؛ actor/reason/client/correlation-independent event fields |
+
 ## ۳. قرارداد کانونیکال هویت، چندمستأجری و دسترسی (Canonical IAM Contract)
 
 ### منبع یگانه حقیقت صلاحیت (SSoT)
