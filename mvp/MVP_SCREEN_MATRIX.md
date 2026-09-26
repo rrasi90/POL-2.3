@@ -97,7 +97,7 @@
 | V-08 | Referral (attribution only) | `/vendor/referrals` | VENDOR_* | `/referrals*` | doc 22 L443–449; D-016 | VERIFIED |
 | V-09 | Customers | `/vendor/customers` | VENDOR_* | `GET /vendors/customers` | doc 22 L451–455; MT VD-09 | IMPLEMENTED |
 | V-10 | Reconciliation / documents | `/vendor/settlements` | VENDOR_OWNER | `/vendors/settlements`, invoices | doc 22 L457–461; MT VD-06/10/13 | VERIFIED |
-| V-11 | Staff / access | `/vendor/staff` | VENDOR_OWNER | `GET/POST/PATCH /vendors/staff*` | doc 22 L463–468; MT VD-07/15 | IMPLEMENTED |
+| V-11 | Staff / access + Permission Editor | `/vendor/staff` | VENDOR_OWNER | `GET/POST/PATCH /vendors/staff*` + `/vendors/staff/{membership_id}/permissions*` | doc 22 L463–468; MT VD-07/15; D-026 | IMPLEMENTED (Web + Android; fresh runtime QA pending) |
 | V-12 | Vendor profile | `/profile` vendor ctx | VENDOR_* | profile/context | doc 22 L470–475; MT VD-12 | VERIFIED |
 | V-14 | Storefront management | `/vendor/storefront` | VENDOR_OWNER | storefront read; write → GAP | MT VD-14; D-024 | VERIFIED |
 | V-16 | Barcode / continuous scan | (mobile) | VENDOR_STAFF + inv.scan | match-barcode, continuous-scan **CONTRACT** | MT VD-16; D-028 | NOT_APPLICABLE |
