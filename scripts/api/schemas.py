@@ -284,6 +284,7 @@ class DisputeOpenRequest(APIBaseModel):
 
 
 class PaymentEvidenceRequest(APIBaseModel):
+    payment_id: UUID | None = None
     evidence_type: Literal[
         "BANK_REFERENCE", "POS_REFERENCE", "RECEIPT_IMAGE",
         "VENDOR_CONFIRMATION", "RETAILER_CONFIRMATION",
