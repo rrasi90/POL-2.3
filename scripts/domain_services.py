@@ -327,18 +327,24 @@ class AuthService:
             raise SessionExpiredError("Session has expired.")
 
         cur.execute("""
-            SELECT role, status FROM organization_memberships
-            WHERE user_id = %s AND organization_id = %s;
+            SELECT
+                m.role,
+                m.status AS membership_status,
+                u.is_active AS user_is_active,
+                o.status AS org_status
+            FROM organization_memberships m
+            JOIN users u ON u.id = m.user_id
+            JOIN organizations o ON o.id = m.organization_id
+            WHERE m.user_id = %s AND m.organization_id = %s;
         """, (user_id, target_org_id))
         mem = cur.fetchone()
-        if not mem or mem["status"] != "ACTIVE":
+        if not mem or mem["membership_status"] != "ACTIVE":
             raise PermissionError("User has no active membership in target organization.")
+        if not mem["user_is_active"]:
+            raise PermissionError("User is inactive.")
+        if mem["org_status"] != "ACTIVE":
+            raise PermissionError("Target organization is not active.")
 
-        cur.execute("""
-            SELECT 1
-            FROM organizations
-            WHERE id = %s AND status = 'ACTIVE';
-        """, (target_org_id,))
         if not cur.fetchone():
             raise PermissionError("Target organization is not active.")
 
@@ -393,14 +399,22 @@ class AuthService:
         Supports canonical roles (ADMIN_SUPER, OPS_AGENT) and legacy aliases (SUPER_ADMIN, OPS_ADMIN).
         """
         cur.execute("""
-            SELECT m.role, m.status, o.org_type, o.status as org_status
+            SELECT
+                m.role,
+                m.status,
+                o.org_type,
+                o.status AS org_status,
+                u.is_active AS user_is_active
             FROM organization_memberships m
             JOIN organizations o ON m.organization_id = o.id
+            JOIN users u ON m.user_id = u.id
             WHERE m.user_id = %s AND m.organization_id = %s;
         """, (user_id, active_org_id))
         mem = cur.fetchone()
         if not mem or mem["status"] != "ACTIVE":
             raise PermissionError("Access denied: No active organization membership found.")
+        if not mem["user_is_active"]:
+            raise PermissionError("Access denied: User is inactive.")
         if mem["org_status"] != "ACTIVE":
             raise PermissionError(f"Access denied: Organization status is {mem['org_status']}.")
 
