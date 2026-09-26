@@ -234,10 +234,10 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] Live e2e smoke — auth/profile/notif/catalog/orders/invoices/storefront/search/field/referrals/settlements/daily-inv; post-remediation LOCAL-02 covers basket→allocation→checkout→order (16/16)  
 - [x] Structural audit checklist green  
 - [x] Anti-vibe-coding audit green  
-- [x] GitHub reconciliation + current CI — current HEAD `ad88ca0c` backend run 35884012589 SUCCESS; mobile run 35884012647 SUCCESS  
+- [ ] GitHub reconciliation + current CI — historical runs were green at an earlier HEAD; current remediation runs fail before useful step execution (`steps: null`), so fresh CI certification is pending.  
 - [x] Independent second-pass audit (`verify_repository_consistency.py` PASS 8/8 EXIT=0; D-015/016/017 restored, hierarchy docs complete)  
 - [x] Mobile fix + re-regression closed: commit `f8ef267e` → mobile Cycle 3 11/11 and backend verification SUCCESS
-- [x] Final executable local gates: LOCAL-01 Night visual PASS + LOCAL-02 16/16 basket→allocation→checkout→order + LOCAL-03 12/12 idempotency replay; fresh GitHub CI certification remains blocked  
+- [x] Final executable local gates previously evidenced: LOCAL-01 Night visual PASS + LOCAL-02 16/16 basket→allocation→checkout→order + LOCAL-03 12/12 idempotency replay; current source-level remediation is ahead of those historical runtime snapshots and requires fresh certification.  
 
 ### Phase 5 (Delivery)
 - [x] Final screen/API coverage table — `MVP_SCREEN_MATRIX.md` §H + `MVP_API_MAP.md`  
