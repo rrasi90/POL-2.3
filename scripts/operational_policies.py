@@ -84,7 +84,15 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
     _, vendor_units = _vendor_allocated_totals(vendor_allocations)
     now_utc = datetime.now(timezone.utc)
 
-    for vendor_id, requested_units in vendor_units.items():
+    # Capacity is a shared transactional resource. Serialize checks per vendor
+    # so the canonical checkout path cannot perform two check-then-act decisions
+    # against the same capacity snapshot concurrently.
+    for vendor_id in sorted(vendor_units):
+        requested_units = vendor_units[vendor_id]
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0));",
+            (f"POL:vendor-capacity:{vendor_id}",),
+        )
         cur.execute(
             """
             SELECT timezone, max_orders_per_day, max_pick_units_per_hour
