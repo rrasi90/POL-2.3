@@ -89,6 +89,7 @@ BASE_ROLE_PERMISSIONS = {
         "catalog.view",
         "inventory.view",
         "inventory.scan",
+        "inventory.adjust",
         "price.view",
         "order.view",
         "order.accept",
