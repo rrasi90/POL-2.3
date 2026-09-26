@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 from uuid import UUID
 
-from scripts.api.dependencies import get_application_boundary
+from scripts.api.dependencies import get_application_boundary, require_roles
 from scripts.api.errors import success_payload
 
 
@@ -38,6 +38,7 @@ from scripts.api.schemas import BroadcastCreateRequest, BroadcastDispatchRequest
 def create_broadcast(
     payload: BroadcastCreateRequest,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN"))] = None,
 ):
     return success_payload(
         boundary.admin_broadcast_create(
@@ -56,6 +57,7 @@ def dispatch_broadcast(
     broadcast_id: UUID,
     payload: BroadcastDispatchRequest,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN"))] = None,
 ):
     return success_payload(
         boundary.admin_broadcast_dispatch(
@@ -66,14 +68,14 @@ def dispatch_broadcast(
 
 
 @router.post("/categories", status_code=201)
-def create_category(payload: CategoryCreateRequest, boundary=Depends(get_application_boundary)):
+def create_category(payload: CategoryCreateRequest, boundary=Depends(get_application_boundary), _auth: Annotated[dict, Depends(require_roles("OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN"))] = None):
     return success_payload(boundary.admin_category_create(
         name_fa=payload.name_fa, slug=payload.slug, icon_url=payload.icon_url, display_order=payload.display_order
     ))
 
 
 @router.patch("/categories/{category_id}")
-def update_category(category_id: UUID, payload: CategoryUpdateRequest, boundary=Depends(get_application_boundary)):
+def update_category(category_id: UUID, payload: CategoryUpdateRequest, boundary=Depends(get_application_boundary), _auth: Annotated[dict, Depends(require_roles("OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN"))] = None):
     return success_payload(boundary.admin_category_update(
         category_id=str(category_id), name_fa=payload.name_fa, slug=payload.slug,
         icon_url=payload.icon_url, display_order=payload.display_order
