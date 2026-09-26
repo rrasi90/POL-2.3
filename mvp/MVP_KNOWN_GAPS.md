@@ -766,3 +766,23 @@ At the end of each closed item, the ledger must contain:
 - **Source commits:** `24b273301cc114d31348ea16cbc94c1ab79159f1`, `af98846fa4ca594473ff6c0482249508ebf159c3`, `7dde8adf442d1ea0b205d1407e6c7099c3d6a04f`, `fa4d1a82a37d5daa3e47d631f3c7b33b182bd592`.
 - **Regression commits:** `3db5ebc525cdcdcfc0aa93e532ce319e7b80cb79`, `1474189e4e019e80df4b56a2229feed5aaa7a297`, `38c105283c3d4757d4c84342318e44fbd18abf57`.
 - **Verification state:** source + architecture + regression evidence persisted; fresh PostgreSQL/CI execution remains pending.
+
+
+## Remediation reconciliation — 2026-09-26 — second pass
+
+The following closure claims are based on current runtime/source inspection on this remediation branch; they are not equivalent to a successful CI execution.
+
+### Closed in source/runtime
+- **G408-G439 — Dispute/Refund canonicalization:** required evidence and line items, delivered-order + filing-window checks, idempotency fingerprints, canonical investigation/resolution/closure lifecycle, DB adjudication guards, payment-linked refunds, source-scoped refund uniqueness, cumulative refund ceilings, actor separation, immutable dispute events, and canonical HTTP routes.
+- **G440-G451 — Delivery/POD hardening:** dispatch no longer exposes the delivery OTP, active-delivery locking precedes POD media validation, OTP attempt limit and format are enforced, delivered quantities are bounded by ordered/accepted quantities, and POD test coverage was extended.
+- **Payment Evidence subset:** explicit payment selection is required when an order has multiple payment records; evidence amount is bounded by the selected payment; RECEIPT_IMAGE requires READY media with exact order/payment target and uploader ownership.
+- **RMA financial lifecycle:** refund creation is PENDING, approval is a separate operator action with two-person separation, completion creates the settlement adjustment, partial refund does not mark the payment fully refunded, and REFUND_PENDING cannot close before refund completion.
+- **Audit/history/media controls:** admin/inventory audit history is append-only; READY media requires SHA-256; order-targeted media is allowed for pre-created evidence; notification retention has a daily scheduler entry point and workflow.
+
+### Still requiring environment/external evidence
+- GitHub Actions currently creates the verification jobs but they terminate before executing any step; the job-log endpoint also returns no stored log. Therefore **CI PASS is not claimed**.
+- Live object-storage evidence and real device/mobile evidence remain external execution items; local/test-provider coverage does not substitute for that evidence.
+- Deployment secrets/configuration (e.g. database secret for scheduled retention) remain environment configuration rather than repository guarantees.
+
+### Design note
+The remediation intentionally does **not** enforce one refund record per order. Refund uniqueness is source-scoped (one active refund per dispute or return) while cumulative payment ceilings prevent financial over-refunding across multiple legitimate refund sources.
