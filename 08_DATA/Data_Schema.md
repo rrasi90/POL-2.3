@@ -1033,6 +1033,13 @@ CREATE TABLE IF NOT EXISTS field_tasks (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Field-task lifecycle invariant (application/domain guard):
+-- ASSIGNED -> IN_PROGRESS | FAILED | CANCELLED
+-- IN_PROGRESS -> COMPLETED | FAILED | CANCELLED
+-- FAILED -> IN_PROGRESS | CANCELLED
+-- COMPLETED/CANCELLED are terminal for status transitions.
+-- Notes may still be edited by the assigned field operator.
+
 -- 16. Inventory Reservations (Explicit Lifecycle Tracking with Idempotency)
 CREATE TABLE IF NOT EXISTS inventory_reservations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
