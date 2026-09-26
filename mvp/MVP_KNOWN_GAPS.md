@@ -456,7 +456,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-328 | P1 | Client/server basket-allocation-checkout state coherence is incomplete. | RESOLVED_CODE / DEVICE_EVIDENCE_PENDING — mobile 753d5e5c; API 2493c647; QA 8f1c2b60 |
 | G-329 | P1 | DB/runtime evidence for stale/concurrent basket/checkout invariants is incomplete. | RESOLVED_CODE / EXECUTION_EVIDENCE_PENDING — stale validation existing regression; rollback d8e8a5aa; HTTP 409 af860ce5 |
 | G-330 | P1 | Allocation tie-breaking is not fully deterministic. | RESOLVED_CODE / EXECUTION_PENDING — source 6dcaa74c/9377e38a; regression 12964486 |
-| G-331 | P1 | Allocation tie-selection semantics are incomplete/under-specified in runtime. | OPEN |
+| G-331 | P1 | Allocation tie-selection semantics are incomplete/under-specified in runtime. | RESOLVED_CODE / EXECUTION_PENDING — source 6dcaa74c/9377e38a; regression 12964486 |
 | G-332 | P1 | Allocation ignores/removes pack_quantity semantics in candidate scoring/selection. | OPEN |
 | G-333 | P1 | Allocation behavior for K>=3 vendors is not fully covered by deterministic tests. | OPEN |
 | G-334 | P1 | Allocation-result identity/hash does not fully cover canonical input/decision identity. | OPEN |
@@ -685,4 +685,10 @@ At the end of each closed item, the ledger must contain:
 ### G-330 Closure Record
 - **Resolution:** Total-order vendor tie-break now uses price, reputation, vendor_id and SKU id; adversarial vendor input order cannot change selection.
 - **Evidence:** Test 13A in scripts/test_allocation_engine.py; commit 129644862a13550f610e6e4ef8f53b71ae9b3563
+- **Verification state:** code/regression persisted; fresh CI/runtime execution remains pending.
+
+
+### G-331 Closure Record
+- **Resolution:** SKU-level tie selection now has a final deterministic SKU-id order for otherwise equal candidates.
+- **Evidence:** Test 13B in scripts/test_allocation_engine.py; commit 129644862a13550f610e6e4ef8f53b71ae9b3563
 - **Verification state:** code/regression persisted; fresh CI/runtime execution remains pending.
