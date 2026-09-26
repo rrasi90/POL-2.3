@@ -711,7 +711,8 @@ CREATE TABLE IF NOT EXISTS refunds (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     payment_id UUID REFERENCES payments(id) ON DELETE SET NULL,
-    dispute_id UUID REFERENCES disputes(id) ON DELETE SET NULL, -- کلید خارجی صریح به جدول اختلافات
+    dispute_id UUID REFERENCES disputes(id) ON DELETE SET NULL,
+    return_id UUID REFERENCES returns(id) ON DELETE SET NULL,
     retailer_id UUID NOT NULL REFERENCES retailers(id),
     amount_toman BIGINT NOT NULL CHECK (amount_toman > 0),
     refund_method VARCHAR(30) NOT NULL DEFAULT 'VENDOR_CASH_DIRECT' CHECK (
@@ -722,18 +723,47 @@ CREATE TABLE IF NOT EXISTS refunds (
         status IN ('PENDING', 'APPROVED', 'COMPLETED', 'REJECTED')
     ),
     approved_by_user_id UUID REFERENCES users(id),
+    created_by_user_id UUID REFERENCES users(id),
+    completed_by_user_id UUID REFERENCES users(id),
+    approved_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ,
+    idempotency_key VARCHAR(128),
+    idempotency_fingerprint VARCHAR(64),
+    source_type VARCHAR(30) NOT NULL DEFAULT 'DISPUTE',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_refund_per_dispute ON refunds(dispute_id) WHERE dispute_id IS NOT NULL AND status IN ('PENDING', 'APPROVED', 'COMPLETED');
-```
+CREATE UNIQUE INDEX IF NOT EXISTS uq_refund_per_dispute_v063
+    ON refunds(dispute_id)
+    WHERE dispute_id IS NOT NULL AND status IN ('PENDING', 'APPROVED', 'COMPLETED');
 
----
+CREATE UNIQUE INDEX IF NOT EXISTS uq_refund_per_return_v063
+    ON refunds(return_id)
+    WHERE return_id IS NOT NULL AND status IN ('PENDING', 'APPROVED', 'COMPLETED');
 
-## ۸. اعتبار و لاگ تاریخی رتبه‌بندی بنکداران (`reputations`, `reputation_snapshots`)
+CREATE TABLE IF NOT EXISTS dispute_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dispute_id UUID NOT NULL REFERENCES disputes(id) ON DELETE CASCADE,
+    from_status VARCHAR(30),
+    to_status VARCHAR(30) NOT NULL,
+    actor_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    actor_organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL,
+    reason TEXT,
+    event_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-```sql
+CREATE TABLE IF NOT EXISTS dispute_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dispute_id UUID NOT NULL REFERENCES disputes(id) ON DELETE CASCADE,
+    order_item_id UUID NOT NULL REFERENCES order_items(id) ON DELETE RESTRICT,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    claimed_amount_toman BIGINT NOT NULL CHECK (claimed_amount_toman > 0),
+    reason_code VARCHAR(50) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT uq_dispute_item UNIQUE (dispute_id, order_item_id)
+);
+
 CREATE TABLE IF NOT EXISTS reputations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     vendor_id UUID UNIQUE NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
