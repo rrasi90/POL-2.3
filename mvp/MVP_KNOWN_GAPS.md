@@ -452,7 +452,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-320 | P2 | DB media DELETED lifecycle lacks explicit object-storage reconciliation. | RESOLVED_CODE / PROVIDER_EVIDENCE_PENDING — migration 2b7c4d6e; worker 47656dc4; regression fd611fe5 |
 | G-325 | P1 | Basket/allocation stale-version handling and checkout consistency require complete canonical enforcement. | RESOLVED — gateway/revalidation source; stale regression already persisted |
 | G-326 | P1 | Stale-checkout must return a canonical 409 Conflict contract. | RESOLVED — 409 mapper 7f11226a; stale exception 2f221746; HTTP regression af860ce5 |
-| G-327 | P1 | Checkout must be atomic across allocation/order/reservation mutations. | OPEN |
+| G-327 | P1 | Checkout must be atomic across allocation/order/reservation mutations. | RESOLVED_SOURCE/REGRESSION — transactional gateway + rollback test d8e8a5aa |
 | G-328 | P1 | Client/server basket-allocation-checkout state coherence is incomplete. | OPEN |
 | G-329 | P1 | DB/runtime evidence for stale/concurrent basket/checkout invariants is incomplete. | OPEN |
 | G-330 | P1 | Allocation tie-breaking is not fully deterministic. | OPEN |
@@ -664,3 +664,9 @@ At the end of each closed item, the ledger must contain:
 - **Source commits:** `7f11226aeba931e71dec8131258dc9bb3940c33b`, `2f221746aa0e06a09c6aa62df6827c91be496aa6`
 - **Regression commit:** `af860ce59840e8ade8243384275680babce27847`
 - **Verification state:** HTTP contract + exception mapping + regression persisted; fresh runtime/CI execution remains pending.
+
+### G-327 Closure Record
+- **Resolution:** canonical checkout runs inside the caller's PostgreSQL transaction; basket/allocation-plan locks, allocation validation, order-group/order-item creation, reservation creation, inventory reservation increment, plan consumption and basket finalization all occur before commit. A forced failure after the reservation stage rolls back the entire transaction.
+- **Regression:** `test_checkout_is_atomic_on_failure_after_reservation_stage` now intentionally raises from event enqueue inside a real transaction and verifies zero persisted order groups/reservations, plan remains CONFIRMED, basket remains OPEN, and reserved quantity returns to zero.
+- **Regression commit:** `d8e8a5aa2cb84f6604561beaf41d125acd824ec9`
+- **Verification state:** source + rollback regression persisted; fresh execution/CI remains pending.
