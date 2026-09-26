@@ -160,6 +160,21 @@ class MediaPresignRequest(APIBaseModel):
     filename: str | None = Field(default=None, max_length=255)
 
 
+class MediaResumableInitRequest(APIBaseModel):
+    mime_type: Literal["image/jpeg", "image/png", "image/webp"]
+    file_size_bytes: int = Field(gt=0, le=5 * 1024 * 1024)
+    target_type: Literal["PRODUCT", "VENDOR", "CANDIDATE", "DISPUTE", "DELIVERY", "PAYMENT", "SUPPORT"]
+    target_id: UUID
+    filename: str | None = Field(default=None, max_length=255)
+
+class MediaResumableCompletePart(APIBaseModel):
+    part_number: int = Field(ge=1, le=10000)
+    etag: str = Field(min_length=1, max_length=255)
+
+class MediaResumableCompleteRequest(APIBaseModel):
+    session_id: UUID
+    parts: list[MediaResumableCompletePart] = Field(min_length=1, max_length=10000)
+
 class MediaConfirmUploadRequest(APIBaseModel):
     media_id: UUID
     target_type: Literal["PRODUCT", "VENDOR", "CANDIDATE", "DISPUTE", "DELIVERY", "PAYMENT", "SUPPORT"]
