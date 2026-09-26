@@ -105,9 +105,9 @@ def _seed_delivered(suffix):
                 (di, oi, vi, "1234"),
             )
             media_id = str(uuid4())
-            cur.execute("INSERT INTO media_assets (id, storage_key, file_size_bytes, uploaded_by_user_id, status, provenance, created_at) "
-                        "VALUES (%s, %s, 1024, %s, 'READY', 'POL_OWNED', now())",
-                        (media_id, f"proof/{media_id}", ru))
+            cur.execute("INSERT INTO media_assets (id, storage_key, file_size_bytes, uploaded_by_user_id, status, provenance, checksum_sha256, created_at) "
+                        "VALUES (%s, %s, 1024, %s, 'READY', 'POL_OWNED', %s, now())",
+                        (media_id, f"proof/{media_id}", ru, "d" * 64))
             cur.execute(
                 "INSERT INTO proof_of_delivery (id, delivery_id, accepted_by_name, accepted_at, "
                 "proof_type, otp_verified, proof_media_id, issue_reported_at_delivery) "
