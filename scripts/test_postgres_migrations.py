@@ -446,6 +446,159 @@ def verify_delegated_permission_schema(conn):
     cur.close()
 
 
+def verify_financial_dispute_remediation(conn):
+    """Verify migrations 058-062 are present and protect their new invariants."""
+    cur = conn.cursor()
+
+    for table in ("dispute_events", "dispute_items"):
+        cur.execute(
+            """
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema='public' AND table_name=%s
+            """,
+            (table,),
+        )
+        assert cur.fetchone() is not None, f"{table} missing after financial/dispute remediation"
+
+    for table, column in (
+        ("disputes", "idempotency_key"),
+        ("disputes", "idempotency_fingerprint"),
+        ("disputes", "created_by_user_id"),
+        ("refunds", "idempotency_key"),
+        ("refunds", "idempotency_fingerprint"),
+        ("refunds", "approved_at"),
+        ("refunds", "completed_by_user_id"),
+        ("refunds", "created_by_user_id"),
+        ("refunds", "source_type"),
+        ("settlement_adjustments", "refund_id"),
+    ):
+        cur.execute(
+            """
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema='public' AND table_name=%s AND column_name=%s
+            """,
+            (table, column),
+        )
+        assert cur.fetchone() is not None, f"{table}.{column} missing"
+
+    for table, index_name in (
+        ("disputes", "uq_dispute_idempotency_key"),
+        ("refunds", "uq_refund_idempotency_key"),
+        ("refunds", "uq_active_refund_per_order_v058"),
+        ("settlement_adjustments", "uq_refund_settlement_adjustment_v058"),
+    ):
+        cur.execute(
+            "SELECT 1 FROM pg_indexes WHERE tablename=%s AND indexname=%s",
+            (table, index_name),
+        )
+        assert cur.fetchone() is not None, f"Index {index_name} missing"
+
+    for table, trigger_name in (
+        ("dispute_events", "trg_dispute_events_append_only_v058"),
+        ("disputes", "trg_validate_dispute_adjudication_v062"),
+        ("refunds", "trg_completed_refund_payment_v058"),
+    ):
+        cur.execute(
+            """
+            SELECT 1 FROM pg_trigger
+            WHERE tgrelid=%s::regclass AND tgname=%s
+            """,
+            (table, trigger_name),
+        )
+        assert cur.fetchone() is not None, f"Trigger {trigger_name} missing"
+
+    cur.execute(
+        """
+        SELECT 1
+        FROM notification_templates
+        WHERE event_name='REFUND_COMPLETED'
+          AND channel='INBOX'
+          AND enabled=TRUE
+        LIMIT 1
+        """
+    )
+    assert cur.fetchone() is not None, "REFUND_COMPLETED notification template missing"
+
+    cur.close()
+    print(" - financial/dispute remediation 058-062 schema, indexes, triggers and template verified")
+
+
+def test_dispute_resolution_invariant_direct_sql(conn):
+    """Exercise the DB guardrails on newly-managed dispute rows."""
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO organizations (id,name,org_type,status)
+        VALUES (gen_random_uuid(),'Migration test operator','OPERATOR','ACTIVE')
+        RETURNING id
+        """
+    )
+    op_org = cur.fetchone()[0]
+    cur.execute(
+        """
+        INSERT INTO users (id,phone_number,full_name,role,is_active)
+        VALUES (gen_random_uuid(),%s,'Migration test actor','OPS_ADMIN',TRUE)
+        RETURNING id
+        """,
+        (f"+989{int.from_bytes(os.urandom(4),'big') % 1000000000:09d}",),
+    )
+    actor = cur.fetchone()[0]
+    cur.execute(
+        """
+        INSERT INTO organization_memberships
+            (id,organization_id,user_id,role,status,is_primary)
+        VALUES (gen_random_uuid(),%s,%s,'OPS_ADMIN','ACTIVE',TRUE)
+        """,
+        (op_org, actor),
+    )
+    cur.execute(
+        """
+        INSERT INTO retailers (id,user_id,organization_id,store_name,city)
+        VALUES (gen_random_uuid(),%s,%s,'Migration Test Retailer','Ahvaz')
+        RETURNING id
+        """,
+        (actor, op_org),
+    )
+    retailer = cur.fetchone()[0]
+    cur.execute(
+        """
+        INSERT INTO vendors (id,user_id,organization_id,store_name,city)
+        VALUES (gen_random_uuid(),%s,%s,'Migration Test Vendor','Ahvaz')
+        RETURNING id
+        """,
+        (actor, op_org),
+    )
+    vendor = cur.fetchone()[0]
+    cur.execute(
+        """
+        INSERT INTO orders (id,order_number,retailer_id,vendor_id,order_status,dispute_status,total_amount_toman)
+        VALUES (gen_random_uuid(),%s,%s,%s,'DELIVERED','RESOLVED_REJECTED',100000)
+        RETURNING id
+        """,
+        (f"MIG-{uuid4().hex[:12]}", retailer, vendor),
+    )
+    order_id = cur.fetchone()[0]
+
+    # An invalid resolved outcome must be rejected by the DB, not just the service.
+    with pytest.raises(psycopg2.errors.CheckViolation):
+        cur.execute(
+            """
+            INSERT INTO disputes (
+                id,order_id,retailer_id,vendor_id,dispute_status,
+                claimed_amount_toman,approved_amount_toman,resolution_outcome,
+                evidence_media_id
+            )
+            VALUES (gen_random_uuid(),%s,%s,%s,'RESOLVED',1000,2000,'ADJUSTED_SHORTAGE',gen_random_uuid())
+            """,
+            (order_id, retailer, vendor),
+        )
+    conn.rollback()
+    # Re-establish the connection state for the caller.
+    conn.autocommit = False
+    cur = conn.cursor()
+    cur.close()
+
+
 def test_postgres_migrations():
     """Canonical test entry point for pytest."""
     conn = get_connection()
@@ -461,6 +614,7 @@ def test_postgres_migrations():
     verify_constraints(conn)
     verify_foreign_keys_and_indexes(conn)
     verify_delegated_permission_schema(conn)
+    verify_financial_dispute_remediation(conn)
 
     # Path 2: Incremental upgrade (001+002, then 003)
     run_upgrade_test(conn)
@@ -468,6 +622,7 @@ def test_postgres_migrations():
     verify_constraints(conn)
     verify_foreign_keys_and_indexes(conn)
     verify_delegated_permission_schema(conn)
+    verify_financial_dispute_remediation(conn)
 
     conn.close()
 
