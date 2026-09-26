@@ -1200,7 +1200,7 @@ class POLApplicationBoundary:
               AND o.status = 'ACTIVE'
               AND u.is_active = TRUE
               AND (
-                  (om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+                  (om.role = 'RETAILER_OWNER'
                    AND EXISTS (SELECT 1 FROM retailers r WHERE r.id = %s AND r.organization_id = %s))
                   OR
                   (om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
@@ -1385,7 +1385,7 @@ class POLApplicationBoundary:
               AND om.status='ACTIVE'
               AND o.status='ACTIVE'
               AND u.is_active=TRUE
-              AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF','OPS_AGENT','OPS_ADMIN','ADMIN_SUPER','SUPER_ADMIN')
+              AND om.role IN ('VENDOR_OWNER','OPS_AGENT','OPS_ADMIN','ADMIN_SUPER','SUPER_ADMIN')
             LIMIT 1
             """,
             (self.context.user_id, self.context.organization_id),
