@@ -445,7 +445,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-313 | P1 | Inventory audit history can be cascaded away through `vendor_product_id`. | RESOLVED — migration 050 / 4a87a750; regression b3008be1 |
 | G-314 | P1 | Notification retention/expiry is not canonically populated and no auto-archive worker is evidenced. | RESOLVED — migration 051 / d209963c; worker 63adf6d1; regression 061c7d88 |
 | G-315 | P1 | Privacy export/account-deletion lifecycle lacks a runtime API/workflow. | RESOLVED — migration 052 / 1603218e; service c8d01227; HTTP a74da82a; route registry 7ee49596; regression 1fbf3511 |
-| G-316 | P1 | Runtime media schema diverges from canonical media specification; approval/provenance/media-type/checksum semantics are incomplete. | OPEN |
+| G-316 | P1 | Runtime media schema diverges from canonical media specification; approval/provenance/media-type/checksum semantics are incomplete. | RESOLVED — migration 053 / 6fa46ec8; service 3ff27c8f; schema docs bd5d5261; regression f5f5b0df |
 | G-317 | P1 | Public product-media serving lacks canonical approval/provenance/private-reference gating. | OPEN |
 | G-318 | P1 | Canonical media ingestion pipeline (presign → confirm → validate → process → thumbnail/resumable) is not fully implemented/evidenced. | OPEN |
 | G-319 | P1 | POD/dispute media references lack READY + ownership + tenant + purpose validation. | OPEN |
@@ -609,3 +609,12 @@ At the end of each closed item, the ledger must contain:
 - **API contract commit:** `df6b40d86e3a95dab5bdec381e3d5afdb7f4b86f`
 - **Regression commit:** `1fbf3511d4656422de304eb14d7a8bccc761ef69`
 - **Verification state:** SOURCE + DB LIFECYCLE + HTTP ROUTES + REGRESSION PERSISTED; fresh CI still pending.
+
+### G-316 Closure Record
+- **Resolution:** migration `053_canonical_media_schema_alignment.sql` adds canonical `bucket_name/object_key` aliases, product-media governance fields (`media_type`, `source_provenance`, `approval_status`, approver/timestamp), checksum format validation, and changes product-media media FK to `ON DELETE RESTRICT`. `MediaService` now writes the canonical governance fields and synchronizes storage aliases.
+- **Regression:** `test_media_schema_alignment_and_governance_fields` verifies alias synchronization, nullable checksum while UPLOADING, and product-media governance fields at the PostgreSQL boundary.
+- **Migration commit:** `6fa46ec8b4f627c34a176fb0a32d2d7179ee5b92`
+- **Service commit:** `3ff27c8f6b5327a111cd639163954a2a6026e10b`
+- **Regression commit:** `f5f5b0dff798da9770ec796a2f4fa6eaec15a1ad`
+- **Schema-doc commit:** `bd5d5261c2a85ade28848ac33e99ed80beb49d97`
+- **Verification state:** SOURCE + DB SCHEMA + SERVICE + REGRESSION PERSISTED; fresh CI/local execution remains pending due current network/CI constraints.
