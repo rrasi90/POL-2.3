@@ -284,6 +284,7 @@ class PaymentEvidenceRequest(APIBaseModel):
     ]
     reference_number: str = Field(min_length=1, max_length=255)
     amount_toman: int = Field(gt=0)
+    evidence_media_id: UUID | None = None
     notes: str | None = Field(default=None, max_length=2000)
 
 
