@@ -259,15 +259,25 @@ class AuthService:
             raise SessionExpiredError("Refresh session has expired.")
 
         cur.execute("""
-            SELECT role
-            FROM organization_memberships
-            WHERE user_id = %s
-              AND organization_id = %s
-              AND status = 'ACTIVE';
+            SELECT
+                m.role,
+                m.status AS membership_status,
+                u.is_active AS user_is_active,
+                o.status AS organization_status
+            FROM organization_memberships m
+            JOIN users u ON u.id = m.user_id
+            JOIN organizations o ON o.id = m.organization_id
+            WHERE m.user_id = %s
+              AND m.organization_id = %s
+              AND m.status = 'ACTIVE';
         """, (session["user_id"], session["active_organization_id"]))
         membership = cur.fetchone()
         if not membership:
             raise InvalidRefreshTokenError("Refresh session has no active organization membership.")
+        if not membership["user_is_active"]:
+            raise InvalidRefreshTokenError("User is inactive.")
+        if membership["organization_status"] != "ACTIVE":
+            raise InvalidRefreshTokenError("Organization is not active.")
 
         next_refresh_token = generate_refresh_token()
         next_refresh_hash = hash_token(next_refresh_token)
