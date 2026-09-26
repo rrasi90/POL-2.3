@@ -99,7 +99,6 @@ class RefundService:
                     recipient_key,
                 ),
             )
-        )
 
     @classmethod
     def issue_from_dispute(

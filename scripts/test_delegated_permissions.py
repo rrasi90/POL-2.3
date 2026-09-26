@@ -251,7 +251,7 @@ def test_vendor_staff_role_does_not_receive_order_accept_permission():
 
     assert "order.accept" not in BASE_ROLE_PERMISSIONS["VENDOR_STAFF"]
     assert "order.accept" in BASE_ROLE_PERMISSIONS["VENDOR_OWNER"]
-\n
+
 
 def test_owner_only_permissions_cannot_be_delegated_to_vendor_staff(permission_env):
     env = permission_env
@@ -266,7 +266,7 @@ def test_owner_only_permissions_cannot_be_delegated_to_vendor_staff(permission_e
                 "role ceiling regression",
                 client="test",
             )
-\n
+
 def test_historical_owner_only_grant_cannot_become_effective(permission_env):
     env = permission_env
     env["cur"].execute(

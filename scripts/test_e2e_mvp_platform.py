@@ -1146,13 +1146,6 @@ def freeze_policy_clock(monkeypatch, instant):
     monkeypatch.setattr(operational_policies, "datetime", FixedDatetime)
 
 
-@pytest.mark.parametrize("created_at,status,allowed", [
-    ("2026-09-16T20:29:59+00:00", "SUBMITTED", True),
-    ("2026-09-16T20:30:00+00:00", "SUBMITTED", False),
-    ("2026-09-17T20:30:00+00:00", "SUBMITTED", True),
-    ("2026-09-16T20:30:00+00:00", "CANCELLED", True),
-    ("2026-09-16T20:30:00+00:00", "REJECTED", True),
-])
 def test_vendor_capacity_lock_serializes_concurrent_checkout_decisions(
     postgres_database, checkout_catalog, monkeypatch,
 ):
@@ -1200,6 +1193,13 @@ def test_vendor_capacity_lock_serializes_concurrent_checkout_decisions(
             conn1.rollback()
         conn1.close()
 
+@pytest.mark.parametrize("created_at,status,allowed", [
+    ("2026-09-16T20:29:59+00:00", "SUBMITTED", True),
+    ("2026-09-16T20:30:00+00:00", "SUBMITTED", False),
+    ("2026-09-17T20:30:00+00:00", "SUBMITTED", True),
+    ("2026-09-16T20:30:00+00:00", "CANCELLED", True),
+    ("2026-09-16T20:30:00+00:00", "REJECTED", True),
+])
 def test_daily_capacity_uses_vendor_local_day(
     postgres_database, checkout_catalog, checkout_request, monkeypatch, created_at, status, allowed,
 ):
@@ -1224,11 +1224,6 @@ def test_daily_capacity_uses_vendor_local_day(
                 validate_vendor_operational_capacity(cur, allocations)
 
 
-@pytest.mark.parametrize("instant,allowed", [
-    ("2026-09-16T19:30:00+00:00", True),
-    ("2026-09-16T21:30:00+00:00", True),
-    ("2026-09-17T00:00:00+00:00", False),
-])
 def test_operating_window_uses_its_own_timezone_for_weekday(
     postgres_database, checkout_catalog, monkeypatch,
 ):
@@ -1303,6 +1298,11 @@ def test_overnight_window_uses_previous_weekday_after_midnight(
     with transaction(postgres_database) as cur:
         validate_vendor_operational_capacity(cur, allocations)
 
+@pytest.mark.parametrize("instant,allowed", [
+    ("2026-09-16T19:30:00+00:00", True),
+    ("2026-09-16T21:30:00+00:00", True),
+    ("2026-09-17T00:00:00+00:00", False),
+])
 def test_overnight_operating_window_remains_enforced(
     postgres_database, checkout_catalog, monkeypatch, instant, allowed,
 ):

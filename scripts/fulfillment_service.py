@@ -7,8 +7,9 @@ in domain_services.py.
 FastAPI architecture: this module is imported by application_boundary.py only.
 """
 
-from __future__ from scripts.media_service import MediaService, validate_ready_attachment
-import annotations
+from __future__ import annotations
+
+from scripts.media_service import MediaService, validate_ready_attachment
 
 from datetime import datetime, timezone
 from uuid import uuid4, uuid5, NAMESPACE_URL

@@ -82,10 +82,6 @@ def test_checkout_rejects_invalid_tenant_context(
         assert snapshot(cur) == before
 
 
-@pytest.mark.parametrize("change, message", [
-    ("price", "Quoted price is not the current vendor price"),
-    ("stock", "Available stock is insufficient"),
-])
 @pytest.mark.parametrize("mutation", ["inactive_user", "suspended_org"])
 def test_boundary_role_resolution_rejects_inactive_security_context(
     postgres_database, checkout_catalog, mutation,
@@ -101,6 +97,10 @@ def test_boundary_role_resolution_rejects_inactive_security_context(
             POLApplicationBoundary(cur, actor).order_list(limit=5)
     # The mutation above is intentional test state; fixture teardown owns restoration.
 
+@pytest.mark.parametrize("change, message", [
+    ("price", "Quoted price is not the current vendor price"),
+    ("stock", "Available stock is insufficient"),
+])
 def test_checkout_revalidates_live_offer(
     postgres_database, checkout_catalog, checkout_request, change, message,
 ):
