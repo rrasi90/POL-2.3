@@ -1314,7 +1314,8 @@ class POLApplicationBoundary:
         "VENDOR_CONFIRMATION", "RETAILER_CONFIRMATION",
     })
 
-    def submit_payment_evidence(self, *, order_id, evidence_type, reference_number, amount_toman, notes=None):
+    def submit_payment_evidence(self, *, order_id, evidence_type, reference_number,
+                                  amount_toman, evidence_media_id=None, notes=None):
         if evidence_type not in self.VALID_EVIDENCE_TYPES:
             raise ValueError(
                 f"Invalid evidence_type '{evidence_type}'. "
@@ -1332,7 +1333,9 @@ class POLApplicationBoundary:
             FROM orders o
             JOIN payments p ON p.order_id = o.id
             WHERE o.id = %s
+            ORDER BY p.created_at DESC, p.id DESC
             LIMIT 1
+            FOR UPDATE OF p
             """,
             (order_id,),
         )
@@ -1372,16 +1375,38 @@ class POLApplicationBoundary:
         if not self.cur.fetchone():
             raise PermissionError("Actor is not an authorized member of this order's retailer or vendor tenant.")
 
+        if evidence_type == "RECEIPT_IMAGE" and not evidence_media_id:
+            raise ValueError("RECEIPT_IMAGE requires evidence_media_id.")
+        if evidence_media_id:
+            self.cur.execute(
+                """
+                SELECT id, status, uploaded_by_user_id, upload_target_type, upload_target_id
+                FROM media_assets
+                WHERE id=%s
+                FOR SHARE
+                """,
+                (str(evidence_media_id),),
+            )
+            media = self.cur.fetchone()
+            if not media:
+                raise ValueError("Payment evidence media was not found.")
+            if str(media["status"]).upper() != "READY":
+                raise ValueError("Payment evidence media must be READY.")
+            if str(media["uploaded_by_user_id"]) != str(self.context.user_id):
+                raise PermissionError("Payment evidence media is not owned by the current actor.")
+            if str(media["upload_target_type"] or "").upper() == "ORDER" and str(media["upload_target_id"]) != str(row["order_id"]):
+                raise PermissionError("Payment evidence media is not bound to this order.")
+
         evidence_id = str(uuid4())
         self.cur.execute(
             """
             INSERT INTO payment_evidence (
                 id, payment_id, evidence_type, external_reference,
                 claimed_amount_toman, observed_amount_toman,
-                captured_by_user_id, observation_scope, metadata
+                evidence_media_id, captured_by_user_id, observation_scope, metadata
             ) VALUES (
                 %s, %s, %s, %s,
-                %s, %s,
+                %s, %s, %s,
                 %s, 'SINGLE_PAYMENT', %s
             )
             ON CONFLICT (external_reference) WHERE external_reference IS NOT NULL
@@ -1390,7 +1415,7 @@ class POLApplicationBoundary:
             """,
             (
                 evidence_id, str(row["payment_id"]), evidence_type, reference_number,
-                amount_toman, amount_toman,
+                amount_toman, amount_toman, str(evidence_media_id) if evidence_media_id else None,
                 self.context.user_id,
                 Json({"notes": notes} if notes else {}),
             ),
