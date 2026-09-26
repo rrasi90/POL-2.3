@@ -929,6 +929,12 @@ class POLApplicationBoundary:
             organization_id=self.context.organization_id,
         )
 
+    def return_refund_approve(self, *, return_id, reason=None):
+        return CanonicalReturnService.approve_refund(
+            self.cur, self.context.user_id, return_id,
+            self.context.organization_id, reason=reason,
+        )
+
     def return_transition(self, *, return_id, target_status, reason=None, approved_refund_amount_toman=None):
         return CanonicalReturnService.transition(
             self.cur, self.context.user_id, return_id, target_status,
