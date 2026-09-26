@@ -259,7 +259,8 @@ def dispatch_order(cur, *, user_id, organization_id, order_id, driver_name=None,
         (
             str(uuid5(NAMESPACE_URL, f"DELIVERY_OTP_GENERATED:{delivery_id}")),
             delivery_id,
-            json_dumps({"delivery_id": delivery_id, "order_id": order_id}),
+            json_dumps({"delivery_id": delivery_id, "order_id": order_id,
+                        "delivery_otp": otp}),
             f"DELIVERY_OTP_GENERATED:{delivery_id}",
             order["retailer_id"],
         ),
@@ -366,23 +367,13 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
     if delivery["delivery_otp_used_at"] is not None:
         raise ValueError("Delivery OTP has already been used.")
 
-    if int(delivery["delivery_otp_attempt_count"] or 0) >= 5:
-        raise ValueError("Delivery OTP attempt limit has been reached.")
-
     if delivery["delivery_otp_expires_at"] is not None:
         cur.execute("SELECT now() >= %s AS expired", (delivery["delivery_otp_expires_at"],))
         if cur.fetchone()["expired"]:
             raise ValueError("Delivery OTP has expired.")
 
-    cur.execute(
-        """
-        UPDATE deliveries
-        SET delivery_otp_attempt_count = delivery_otp_attempt_count + 1,
-            last_otp_attempt_at = now()
-        WHERE id=%s
-        """,
-        (delivery_id,),
-    )
+    # Attempt accounting happens in the application boundary via an independent
+    # transaction (delivery_otp_attempts) so it survives this request's rollback.
 
     if str(delivery["delivery_otp"]) != str(otp_code):
         raise ValueError("Invalid delivery OTP.")

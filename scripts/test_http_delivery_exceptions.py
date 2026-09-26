@@ -120,7 +120,8 @@ def _seed_delivered(suffix):
         conn.commit()
         rt = encode_access_token(ru, rs, ro, "RETAILER_OWNER")
         vt = encode_access_token(vu, vs, vo, "VENDOR_OWNER")
-        return {"oi": oi, "di": di, "r_token": rt, "v_token": vt, "ru": ru, "ro": ro, "vi": vi, "vo": vo, "oo": oo}
+        return {"oi": oi, "di": di, "r_token": rt, "v_token": vt, "ru": ru, "ro": ro,
+                "vu": vu, "vi": vi, "vo": vo, "oo": oo}
     finally:
         conn.close()
 
@@ -306,9 +307,10 @@ class TestExceptionEscalation:
                     FROM outbox_events
                     WHERE event_name='DELIVERY_EXCEPTION_ESCALATED'
                       AND aggregate_id=%s
+                      AND target_organization_id=%s
                     LIMIT 1
                     """,
-                    (exc_id,),
+                    (exc_id, data["oo"]),
                 )
                 event = cur.fetchone()
                 assert event is not None

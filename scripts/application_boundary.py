@@ -740,6 +740,13 @@ class POLApplicationBoundary:
     def retailer_confirm_delivery(self, *, order_id, recipient_name=None,
                                     otp_code=None, proof_type="OTP_CODE",
                                     proof_media_id=None, issue_reported=None, delivered_items=None):
+        if otp_code:
+            # G-438: the attempt cap must survive per-request rollback, so each
+            # verification attempt is recorded in an independent transaction
+            # before the confirmation transaction starts. An expired or already
+            # consumed OTP is not counted; the canonical service still raises
+            # the precise error for those cases.
+            self._record_delivery_otp_attempt(order_id)
         return _confirm_delivery(
             self.cur,
             user_id=self.context.user_id,
@@ -754,6 +761,46 @@ class POLApplicationBoundary:
         )
 
     # ── Delivery Tracking Methods (Stage 23) ───────────────────────
+
+
+    _DELIVERY_OTP_MAX_ATTEMPTS = 5
+
+    def _record_delivery_otp_attempt(self, order_id):
+        """Record one delivery-OTP verification attempt atomically and durably.
+
+        Uses an independent connection so the counter survives the rollback of
+        the rejected confirmation request. Concurrent verifications serialize on
+        the delivery_otp_attempts row; the cap (5, per D-018 max-attempts policy)
+        is enforced by the guarded RETURNING increment.
+        """
+        from scripts.api.db import get_runtime_connection
+
+        conn = get_runtime_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO delivery_otp_attempts AS a (delivery_id, attempt_count, last_attempt_at)
+                    SELECT d.id, 1, now()
+                    FROM deliveries d
+                    WHERE d.order_id = %s
+                      AND d.delivery_otp IS NOT NULL
+                      AND d.delivery_otp_used_at IS NULL
+                      AND (d.delivery_otp_expires_at IS NULL OR d.delivery_otp_expires_at > now())
+                    ON CONFLICT (delivery_id) DO UPDATE
+                      SET attempt_count = a.attempt_count + 1,
+                          last_attempt_at = now(),
+                          updated_at = now()
+                    RETURNING attempt_count;
+                    """,
+                    (order_id,),
+                )
+                row = cur.fetchone()
+                conn.commit()
+                if row and int(row[0]) > self._DELIVERY_OTP_MAX_ATTEMPTS:
+                    raise ValueError("Delivery OTP attempt limit has been reached.")
+        finally:
+            conn.close()
 
     def delivery_get(self, *, order_id):
         self.order_get(order_id=order_id)

@@ -75,7 +75,8 @@ def _advance_delivery_to_arrived(client, data):
     )
     assert res.status_code == 200
     result = res.json()["data"]
-    otp = result["delivery_otp"]
+    assert "delivery_otp" not in result  # G-439: no OTP in vendor response
+    otp = _recipient_delivery_otp(data["oi"])
     for path in ("picked-up", "in-transit", "arrived"):
         res = client.post(
             f"/api/v1/orders/{data['oi']}/delivery/{path}",
@@ -83,6 +84,34 @@ def _advance_delivery_to_arrived(client, data):
         )
         assert res.status_code == 200, (path, res.text)
     return otp
+
+
+def _recipient_delivery_otp(order_id):
+    """G-438/G-439: the delivery OTP is a recipient secret.
+
+    The vendor dispatch response must NOT contain it (G-439); the retailer
+    receives it through the DELIVERY_OTP_GENERATED outbox event targeted at
+    the retailer organization (canonical recipient channel, rendered into the
+    retailer inbox by the integration worker).
+    """
+    conn = _db()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT payload FROM outbox_events
+                WHERE event_name = 'DELIVERY_OTP_GENERATED'
+                  AND payload->>'order_id' = %s
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (order_id,),
+            )
+            event = cur.fetchone()
+            assert event is not None, "DELIVERY_OTP_GENERATED event missing"
+            return event["payload"]["delivery_otp"]
+    finally:
+        conn.close()
 
 
 def _create_session(cur, user_id, org_id):
@@ -259,8 +288,10 @@ class TestDispatch:
         assert result["order_status"] == "DISPATCHED"
         assert result["delivery_status"] == "ASSIGNED"
         assert "delivery_id" in result
-        assert "delivery_otp" in result
-        otp = result["delivery_otp"]
+        # G-439: the dispatch response is vendor-facing and must not carry the OTP.
+        assert "delivery_otp" not in result
+        # The OTP reaches the retailer through the targeted DELIVERY_OTP_GENERATED event.
+        otp = _recipient_delivery_otp(data["oi"])
         assert isinstance(otp, str) and len(otp) == 4 and otp.isdigit()
         for path in ("picked-up", "in-transit", "arrived"):
             stage = client.post(
@@ -370,7 +401,8 @@ class TestFullLifecycle:
             json={"driver_name": "Ali", "driver_phone": "+989121234567", "vehicle_plate": "12-A-345"},
         )
         assert resp.status_code == 200
-        otp = resp.json()["data"]["delivery_otp"]
+        assert "delivery_otp" not in resp.json()["data"]  # G-439: no OTP in vendor response
+        otp = _recipient_delivery_otp(data["oi"])
         for path in ("picked-up", "in-transit", "arrived"):
             resp = client.post(f"/api/v1/orders/{data['oi']}/delivery/{path}", headers=v)
             assert resp.status_code == 200
@@ -394,7 +426,8 @@ class TestTimelineAfterFulfillment:
             json={"driver_name": "Ali", "driver_phone": "+989121234567", "vehicle_plate": "12-A-345"},
         )
         assert resp.status_code == 200
-        otp = resp.json()["data"]["delivery_otp"]
+        assert "delivery_otp" not in resp.json()["data"]  # G-439: no OTP in vendor response
+        otp = _recipient_delivery_otp(data["oi"])
         for path in ("picked-up", "in-transit", "arrived"):
             resp = client.post(f"/api/v1/orders/{data['oi']}/delivery/{path}", headers=v)
             assert resp.status_code == 200

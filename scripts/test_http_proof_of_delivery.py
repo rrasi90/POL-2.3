@@ -127,9 +127,12 @@ def _seed_dispatched(suffix, otp="1234"):
                 (di, oi, vi, otp),
             )
             media_id = str(uuid4())
-            cur.execute("INSERT INTO media_assets (id, storage_key, file_size_bytes, uploaded_by_user_id, status, provenance, checksum_sha256, created_at) "
-                        "VALUES (%s, %s, 1024, %s, 'READY', 'POL_OWNED', %s, now())",
-                        (media_id, f"proof/{media_id}", ru, "d" * 64))
+            # G-319/G-054: POD photo media must be READY and pre-bound to the
+            # DELIVERY target it proves.
+            cur.execute(
+                "INSERT INTO media_assets (id, storage_key, file_size_bytes, uploaded_by_user_id, status, provenance, checksum_sha256, upload_target_type, upload_target_id, created_at) "
+                "VALUES (%s, %s, 1024, %s, 'READY', 'POL_OWNED', %s, 'DELIVERY', %s, now())",
+                (media_id, f"proof/{media_id}", ru, "d" * 64, di))
             rs = _create_session(cur, ru, ro)
             vs = _create_session(cur, vu, vo)
 

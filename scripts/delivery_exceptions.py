@@ -254,13 +254,9 @@ def list_delivery_exceptions(
     cur.execute(
         """
         SELECT 1
-                  JOIN organizations o ON o.id=om.organization_id
-                  JOIN users u ON u.id=om.user_id
         FROM organization_memberships om
         JOIN organizations o ON o.id=om.organization_id
         JOIN users u ON u.id=om.user_id
-                    AND o.status='ACTIVE'
-                    AND u.is_active=TRUE
         WHERE om.user_id=%s
           AND om.organization_id=%s
           AND om.status='ACTIVE'
