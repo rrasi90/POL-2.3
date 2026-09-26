@@ -324,6 +324,35 @@ class VendorStaffUpdateRequest(APIBaseModel):
 class AdminUserStatusRequest(APIBaseModel):
     is_active: bool
 
+class DelegatedPermissionGrantRequest(APIBaseModel):
+    permission_key: Literal[
+        "catalog.view",
+        "catalog.manage",
+        "inventory.view",
+        "inventory.scan",
+        "inventory.adjust",
+        "price.view",
+        "price.manage",
+        "order.view",
+        "order.accept",
+        "order.fulfillment",
+        "delivery.dispatch",
+        "delivery.handoff",
+        "payment.view",
+        "payment.record",
+        "settlement.view",
+        "membership.manage",
+        "reports.view",
+    ]
+    reason: str = Field(min_length=1, max_length=500)
+    client: str | None = Field(default=None, max_length=32)
+
+
+class DelegatedPermissionRevokeRequest(APIBaseModel):
+    reason: str = Field(min_length=1, max_length=500)
+    client: str | None = Field(default=None, max_length=32)
+
+
 
 class AdminOrganizationStatusRequest(APIBaseModel):
     status: Literal[
