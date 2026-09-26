@@ -55,6 +55,17 @@ def create_order(
     )
 
 
+@router.post("/{order_id}/cancel", status_code=200)
+def cancel_order(
+    order_id: UUID,
+    reason: str | None = Query(default=None, max_length=64),
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "RETAILER_STAFF"))] = None,
+):
+    return success_payload(
+        boundary.retailer_order_cancel(order_id=str(order_id), reason=reason or "RETAILER_CANCELLED")
+    )
+
 @router.post("/{order_id}/accept", status_code=200)
 def accept_order(
     order_id: UUID,
