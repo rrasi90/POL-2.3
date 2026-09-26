@@ -44,6 +44,13 @@
 | 4 | Global QA + Regression | **SOURCE REMEDIATED / FRESH CERTIFICATION BLOCKED** — historical 497/497 remains evidence; current branch needs a useful CI execution before new certification |
 | 5 | Delivery + Final Audit | **OPEN — EVIDENCE RECONCILIATION** — source remediation is advanced; remaining gates are fresh CI, explicit product/security decisions and deployment/provider evidence |
 
+### 2026-09-26 remediation continuation
+
+- Auth principal-state hardening: bearer access, refresh, direct authorization, and organization switching now require active user + active organization + active membership; regression coverage added.
+- OTP transport contract: `VerifyOTPRequest.mobile_number` now enforces the same E.164 pattern as request-OTP, with explicit HTTP/schema regression coverage.
+- Mobile source parity expanded: Ops mobile now covers risk signals, pilot analytics, catalog-candidate review, and ADMIN_SUPER user/organization status management; Vendor mobile customer/staff management is already source-implemented.
+- CI remains an external evidence blocker: latest remediation runs terminate before useful step execution (`steps:null`). No fresh green certification is claimed.
+
 ### BUILD GATE 0 — checklist (Master Instruction §8)
 
 - [x] `MVP_SCREEN_MATRIX.md`: 68 screens, id/route/role/source  
