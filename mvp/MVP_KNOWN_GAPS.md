@@ -467,7 +467,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-339 | P1 | Reservation lifecycle tests rely too heavily on direct SQL seeding rather than canonical runtime commands. | RESOLVED_CODE / EXECUTION_PENDING — runtime lifecycle regression 7c3e6d2a |
 | G-340 | P1 | Reservation concurrency is not fully verified through the real runtime path. | RESOLVED_CODE / EXECUTION_PENDING — ReservationService dbb01751→dbf9f0a1; concurrency 536f6e7a |
 | G-341 | P1 | Reservation idempotency is not DB-enforced end-to-end. | RESOLVED_CODE / EXECUTION_PENDING — migration 056 a3b976a4; service dbf9f0a1; concurrency 536f6e7a |
-| G-342 | P1 | Reservation and inventory reserved_quantity reconciliation invariant is incomplete. | OPEN |
+| G-342 | P1 | Reservation and inventory reserved_quantity reconciliation invariant is incomplete. | RESOLVED_CODE / EXECUTION_PENDING — migration 057 43380c08; concurrency ecb42e20 |
 | G-343 | P1 | Reservation lifecycle needs an independent durable event/audit record rather than inference only. | OPEN |
 | G-179..G-195 | P1/P2 | Earlier Return/RMA and Audit/Event deep-audit findings covering return client contract, cumulative ceilings, refund evidence/approval, replay/idempotency, dispute-outbox routing, audit/event envelope, sequence/lineage, poison-event isolation and read-only Ops behavior. | OPEN |
 
@@ -753,4 +753,10 @@ At the end of each closed item, the ledger must contain:
 ### G-341 Closure Record
 - **Resolution:** DB partial unique index enforces idempotency_key uniqueness; service re-checks after inventory locking and returns exact replay for concurrent same-key calls.
 - **Evidence:** a3b976a4f2a9aa0970b9b34da2854118eabbb786; dbf9f0a195a0ae7c1e06065a6f432d07d9194b88; 536f6e7ae653db2b8762dc9accd03416480e7fe5
+- **Verification state:** code + regression persisted; fresh PostgreSQL/CI execution remains pending.
+
+
+### G-342 Closure Record
+- **Resolution:** Deferred PostgreSQL constraint trigger enforces vendor_inventory.reserved_quantity = SUM(ACTIVE reservation quantity) at transaction commit; regression proves mismatched direct mutation is rejected.
+- **Evidence:** 43380c08d752e3dcfe4dca70d5d84a3c5ac9a00d; ecb42e201b31ffb7f99222e522cd645b5c2d4421
 - **Verification state:** code + regression persisted; fresh PostgreSQL/CI execution remains pending.
