@@ -259,7 +259,7 @@ class MediaService:
             """,
             (
                 media_id, _bucket(), object_key, _bucket(), object_key, mime_type, file_size_bytes,
-                meta["provenance"], user_id, target_type.upper(), target_id,
+                None, meta["provenance"], user_id, target_type.upper(), target_id,
             ),
         )
 
