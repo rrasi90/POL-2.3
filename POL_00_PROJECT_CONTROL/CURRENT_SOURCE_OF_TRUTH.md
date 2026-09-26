@@ -210,3 +210,20 @@ Execution safety and verification are governed by `.agents/rules/00-pol-canonica
 ### Executable Master Tree — 2026-09-21
 
 The active human-readable design authority is `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md`; closure/validation evidence is maintained in `mvp/MVP_KNOWN_GAPS.md`, `mvp/MVP_SCREEN_MATRIX.md`, and `mvp/MVP_API_MAP.md`.
+
+## Remediation Re-Audit Checkpoint — 2026-09-26
+
+- Main remains authoritative at the main branch; remediation changes remain isolated on `remediation/full-closure-2026-09-25`.
+- Current remediation head at this checkpoint: `c380e7c1a0d9c3d993d45629707ab411829b1dd5`.
+- Additional closure completed after the prior saturation audit:
+  - valid organization switching corrected and regression-protected;
+  - retailer staff blocked from basket mutation, allocation, checkout and formal dispute opening;
+  - retailer partial-acceptance decisions restricted to retailer owners;
+  - vendor order acceptance/rejection restricted to vendor owners;
+  - vendor staff baseline order.accept removed and delegation ceilings prevent re-granting owner-only capabilities;
+  - mobile CI Node runtime aligned with Expo SDK 57 requirements;
+  - project evidence documents reconciled against the current remediation branch.
+- Current CI is not certifiable: the latest remediation workflow jobs fail before useful step execution, with no executable step metadata and unavailable job logs.
+- Historical backend/mobile/device results remain historical evidence for their respective commits and are not promoted to current-head PASS.
+- Remaining unresolved closure classes are still the explicit governance/product decisions, deployment/provider/browser/device evidence, and the external OpenPencil/runtime dependencies identified in the audit register.
+\n
