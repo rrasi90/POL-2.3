@@ -425,7 +425,12 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
 
     supplied = {}
     for raw in (delivered_items or []):
-        supplied[str(raw["order_item_id"])] = int(raw["delivered_quantity"])
+        item_ref = str(raw["order_item_id"])
+        if item_ref in supplied:
+            raise ValueError(
+                "Delivered quantity payload contains a duplicate order item."
+            )
+        supplied[item_ref] = int(raw["delivered_quantity"])
 
     if supplied:
         unknown = set(supplied) - {str(item["id"]) for item in items}

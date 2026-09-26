@@ -586,6 +586,78 @@ This section is the persistent intake ledger for findings previously identified 
   matching semantic); implemented as award-without-adjustment pending an
   explicit settlement-mapping decision.
 
+
+### Stage 11 closure record — Delivery/POD G-440..G-451 (2026-09-26)
+- **Failure inventory mapping (11 test_http_vendor_order failures):** root cause
+  was test-harness staleness, not runtime defects — the vendor order routes
+  evaluate the delegated-permission dependency (require_permission("order.accept"))
+  which the transport-contract tests did not override; the DB-backed permission
+  query received the harness's synthetic ids. Harness modernized (grants
+  check_permission), routes verified contract-correct 16/16 → evidence for G-449.
+  Separately, `scripts/api/routes/admin.py` used `Annotated[...]` annotations
+  without importing `Annotated`, so any OpenAPI generation after a plain module
+  import failed with pydantic's incomplete-TypeAdapter error (this was the
+  long-standing `test_api_boundary_route_inventory` failure) — import added;
+  the static route-inventory registry was regenerated to the current canonical
+  surface (155 business + 2 ops routes).
+- **G-440 ARRIVED runtime: RESOLVED (verified).** DISPATCHED→PICKED_UP→IN_TRANSIT→
+  ARRIVED→DELIVERED executes end-to-end over HTTP: legality map enforced
+  (ASSIGNED→ARRIVED jump → 422), vendor/field actor authorization, stage
+  timestamps persisted (picked_up_at/in_transit_at/arrived_at), delivery_timeline_events
+  rows, DELIVERY_* outbox events to the retailer org, same-state idempotent
+  replay, order-status DISPATCHED guard. Evidence: TestG440ArrivedRuntime 4/4.
+- **G-441 duplicate/concurrent POD: RESOLVED (verified).** Two simultaneous HTTP
+  confirmations (ThreadPoolExecutor, real TestClients): exactly one terminal
+  mutation — one POD row, one DELIVERED delivery, OTP consumed once; the second
+  request is either a deterministic 200 replay (idempotent_replay) or a 422.
+  Evidence: TestG441ConcurrentPod (DB assertions included).
+- **G-442 delivered_quantity: RESOLVED (verified).** 0 <= delivered <= ordered,
+  delivered <= accepted enforced; missing payload defaults to accepted_quantity;
+  partial → SHORTAGE, zero → REJECTED, full → FULFILLED (projection derived from
+  real quantities); unknown order_item_id → 422; duplicate payload entry → 422
+  (source fix in confirm_delivery). DB backstop: migration 068 CHECKs.
+  Evidence: TestG442DeliveredQuantity 7/7.
+- **G-443/G-444 OTP lifecycle + routing: RESOLVED (verified in Stage-10/Block-58
+  closure, commit 792980c).** generated → recipient-only channel (retailer org
+  inbox via DELIVERY_OTP_GENERATED v1.1 template; vendor response and payload
+  never carry it) → attempted (durable delivery_otp_attempts, rollback-proof) →
+  consumed once (atomic used_at) → expired/locked. No evidence to reopen.
+- **G-445/G-446 proof validation/provenance: RESOLVED (verified).** PHOTO_PROOF
+  requires READY media owned by the reporter and pre-bound to the exact DELIVERY
+  target (unbound/foreign media → 422); non-media proof types
+  (PHYSICAL_SIGNATURE/STORE_STAMP/OTP_CODE) accepted per contract without media.
+  Evidence: TestG445G446ProofValidation 2/2 + test_http_proof_of_delivery.py.
+- **G-447 FAILED semantics: RESOLVED (runtime semantics documented; canonical
+  doc gap noted).** FAILED is legal only from IN_TRANSIT/ARRIVED (ASSIGNED → 422),
+  requires the delivery to remain order-DISPATCHED, persists failed_reason +
+  failed_at, writes a FAILED timeline row + DELIVERY_FAILED outbox event, is
+  idempotent on duplicate (replay), and never implies order DELIVERED — a
+  post-FAILED delivery confirmation is rejected (422) because confirmation
+  requires ARRIVED. Note: Order_Lifecycle.md defines the FAILED state but no
+  post-FAILED transition narrative; the runtime behavior is recorded here as
+  the implementation contract. Evidence: TestG447FailedSemantics 4/4.
+- **G-448 state-machine consistency: RESOLVED (reconciled).** API routes
+  (picked-up/in-transit/arrived/failed/deliver) ↔ runtime legality map ↔ DB
+  CHECK vocabulary (ASSIGNED, PICKED_UP, IN_TRANSIT, ARRIVED, DELIVERED, FAILED)
+  are one-to-one; per-stage timestamp columns align with the runtime map.
+- **G-449 endpoint parity: RESOLVED (verified).** Every Delivery/POD contract
+  endpoint verified route→schema→boundary→service→DB; the route-inventory gate
+  (155 routes) is green against the live app.
+- **G-450 POD persistence/replay: RESOLVED (verified).** Successful confirmation
+  creates exactly one POD row and one terminal delivery state; identical retry
+  replays (idempotent_replay=true) without a second POD.
+- **G-451 evidence/audit/event consistency: RESOLVED (verified).** After the
+  terminal transition the order row (DELIVERED), delivery row, single POD,
+  ORDER_DELIVERED outbox events (per recipient org) and the terminal
+  order_timeline_events row all reference the same state.
+- **Files changed:** `scripts/test_http_vendor_order.py` (harness),
+  `scripts/api/routes/admin.py` (missing import),
+  `scripts/test_api_boundary_route_inventory.py` (registry + reuse production app),
+  `scripts/fulfillment_service.py` (duplicate delivered_items rejection),
+  `scripts/test_http_delivery_pod_g440_451.py` (new, 19 cases).
+- **Verification state:** SOURCE PATCH + REGRESSION + HTTP EVIDENCE + CONCURRENCY
+  EVIDENCE (HTTP-level) on `remediation/master-gap-closure-2026-09-26`.
+
 ## D. Recovery-control rule for G-321..G-407
 
 The numbered IDs are deliberately retained as OPEN rather than silently dropped because the user required every prior finding to remain traceable. Before implementing any such item, its exact original audit wording must be recovered from the audit transcript/source artifact. No guessed implementation is permitted.
