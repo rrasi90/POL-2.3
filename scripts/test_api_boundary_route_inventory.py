@@ -122,6 +122,8 @@ EXPECTED_BUSINESS_ROUTES = {
     ("GET", "/api/v1/search"),
     ("POST", "/api/v1/media/presigned-url"),
     ("POST", "/api/v1/media/confirm-upload"),
+    ("POST", "/api/v1/media/resumable/init"),
+    ("POST", "/api/v1/media/resumable/complete"),
 }
 
 EXPECTED_OPERATIONAL_ROUTES = {
