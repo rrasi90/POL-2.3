@@ -520,8 +520,27 @@ This section is the persistent intake ledger for findings previously identified 
 | G-435 | P2 | Ops assignment/investigation is modeled in DB but lacks the corresponding runtime command. | OPEN |
 | G-436 | P2 | Dispute evidence ownership/provenance is not enforced at admission. | OPEN |
 | G-437 | P2 | Dispute creation lacks true HTTP idempotency/fingerprint replay semantics. | OPEN |
-| G-438 | P1 | Delivery OTP is not actually mandatory for the DISPATCHED→DELIVERED transition. | OPEN |
-| G-439 | P1 | Delivery OTP is returned to the vendor caller, exposing a secret that should remain with the delivery recipient/proof flow. | OPEN |
+| G-438 | P1 | Delivery OTP is not actually mandatory for the DISPATCHED→DELIVERED transition. | RESOLVED — see closure record below (2026-09-26) |
+| G-439 | P1 | Delivery OTP is returned to the vendor caller, exposing a secret that should remain with the delivery recipient/proof flow. | RESOLVED — see closure record below (2026-09-26) |
+
+
+### G-438 / G-439 Closure Record — 2026-09-26
+- **Finding re-verified:** the interrupted remediation line had already removed `delivery_otp` from the vendor dispatch response (G-439 source) and implemented mandatory OTP confirmation (ARRIVED gate, recipient name, single-use consumption, expiry) — but (a) the recipient channel was missing entirely (the DELIVERY_OTP_GENERATED event payload and template carried no code, so no actor could ever complete delivery), and (b) the 5-attempt cap lived in the per-request transaction and was rolled back on every rejection, so brute-force protection never engaged. Stale tests still asserted the leaked-OTP contract.
+- **Resolution (this branch):**
+  1. Recipient channel: `DELIVERY_OTP_GENERATED` outbox payload now carries `delivery_otp`; template version 1.1 (migration 071) renders it into the targeted retailer inbox (INBOX channel, ops untouched, vendor response stays clean).
+  2. Durable attempt accounting: new `delivery_otp_attempts` table (migration 071); `POLApplicationBoundary.retailer_confirm_delivery` records each verification attempt in an **independent transaction** before the confirmation transaction starts (guarded: not consumed, not expired); cap 5 per D-018 max-attempts policy; `deliveries.delivery_otp_attempt_count` superseded (kept for historical rows; 068 CHECK retained).
+  3. Corruption repair on this path: `list_delivery_exceptions` security pre-check SQL had duplicated/joined fragments (unparseable) — rebuilt.
+  4. Tests updated to the canonical contract: vendor dispatch response must NOT contain `delivery_otp`; tests fetch the OTP from the recipient outbox channel; POD photo media must be READY and pre-bound to the DELIVERY target (G-319/G-054 model); escalation fan-out asserted against the seeded ops org.
+- **Files changed:** `scripts/fulfillment_service.py`, `scripts/application_boundary.py`, `scripts/delivery_exceptions.py`, `migrations/071_delivery_otp_recipient_channel.sql`, `scripts/test_http_fulfillment.py`, `scripts/test_http_proof_of_delivery.py`, `scripts/test_http_delivery_exceptions.py`.
+- **Test evidence:** `test_http_fulfillment.py` 15/15; `test_http_proof_of_delivery.py` incl. `TestOTPAttemptCap::test_otp_attempt_limit` (5 wrong attempts then correct OTP → 422 attempt-limit); `test_http_delivery_exceptions.py` 12/12; delivery tracking/exceptions/proof cluster 49 passed / 0 failed.
+- **Commits:** `792980c` (fix(gap): complete G-438/G-439 delivery OTP remediation).
+- **Verification state:** SOURCE PATCH + REGRESSION + LOCAL RUNTIME EVIDENCE on branch `remediation/master-gap-closure-2026-09-26`; fresh CI execution pending (remote push intentionally deferred).
+
+### Phase-0 record — branch state on adoption (2026-09-26)
+- Adopted `origin/remediation/full-closure-2026-09-25` (826 commits ahead of origin/main) as the working line: `remediation/master-gap-closure-2026-09-26`.
+- The tip carried committed corruption from the interrupted run (45 collection errors; "fresh CI blocked" note in this ledger): spliced `from __future__` import in `fulfillment_service.py`, orphan `)` in `delivery_exceptions.py`/`refund_service.py`, stray backslash-n lines in `test_delegated_permissions.py`, parametrize decorators attached to wrong tests in `test_batch3_contract_matrix.py`/`test_e2e_mvp_platform.py`, and migration 062 referencing a nonexistent `disputes.created_at`. All repaired (`3e0b2bc`, `971e07e`).
+- pol_test schema was behind the migration chain (060–071); applied locally. 062 required the index fix above before it could apply anywhere.
+- Suite trajectory on this line: 430/637 (2026-09-26 baseline after corruption repair) → **544/637** after Block 58 closure + schema sync. Remaining 93 failures concentrate in the still-OPEN Block 56/57 chains (refund/RMA/dispute/payment), e2e platform, concurrency and worker clusters — these are the next remediation units, each requiring the READ→ROOT-CAUSE→PATCH→TEST cycle; none may be closed by test-editing alone.
 
 ## D. Recovery-control rule for G-321..G-407
 
