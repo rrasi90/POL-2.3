@@ -409,3 +409,10 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** referral creation now accepts an optional `referral_code` and optional quota/expiry controls, generates a canonical `POLV-XXXXXXXX` code when omitted, validates custom codes in the canonical `VendorReferralService`, and the HTTP boundary delegates to that service. The web client sends/reads `referral_code`. Referral redemption tests now use the retailer identity and verify attribution plus quota behavior.
 - **Contract source:** D-016 — vendor creates a referral code/link; retailer redeems once as first-touch attribution; no reward/wallet engine in MVP.
 - **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
+
+## G-062 — Field Task Lifecycle Transition Gap (DOMAIN INTEGRITY — REMEDIATED — 2026-09-26)
+
+- **Finding:** `field_tasks.status` had a DB enum/check constraint but `PATCH /field/tasks/:id` accepted any allowed status from any current state, permitting rollback or impossible jumps such as `IN_PROGRESS -> ASSIGNED` or changing terminal tasks back into active work.
+- **Resolution:** the application boundary now enforces the canonical transition graph: `ASSIGNED -> IN_PROGRESS/FAILED/CANCELLED`; `IN_PROGRESS -> COMPLETED/FAILED/CANCELLED`; `FAILED -> IN_PROGRESS/CANCELLED`; `COMPLETED` and `CANCELLED` are terminal for status. The HTTP schema constrains the status vocabulary and the Field Task detail UI only offers valid next states while still allowing notes updates.
+- **Regression proof:** `scripts/test_http_field_tasks.py::TestFieldTaskCRUD::test_task_cannot_roll_back_from_in_progress_to_assigned` verifies server rejection and state preservation after an invalid rollback.
+- **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
