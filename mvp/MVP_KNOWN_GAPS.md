@@ -282,3 +282,11 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** auth verification now accepts only LOGIN/REGISTER challenges and requires an ACTIVE user, ACTIVE membership, and ACTIVE organization before session creation.
 - **Regression proof:** `scripts/test_auth_contract.py` covers suspended-organization rejection and prevents ORDER_CONFIRMATION challenges from being consumed by authentication verification.
 - **Status:** SOURCE REMEDIATED / FRESH CI PENDING
+
+
+## G-045 — Organization switch valid-target regression (SECURITY / CORRECTNESS — REMEDIATED — 2026-09-26)
+
+- **Finding:** `AuthService.switch_organization` performed an additional `cur.fetchone()` after validating the target membership. No query preceded that fetch, so the cursor returned no row and every otherwise-valid organization switch was rejected.
+- **Resolution:** removed the stray cursor fetch. Target user/session ownership, session state, target membership, user state and organization state remain explicitly validated before the session context is updated.
+- **Regression proof:** `scripts/test_auth_contract.py::test_p0_switch_organization_valid_target_succeeds` now verifies successful tenant switching, persisted active organization, and the newly issued JWT role/org/session claims.
+- **Status:** SOURCE REMEDIATED / FRESH CI PENDING
