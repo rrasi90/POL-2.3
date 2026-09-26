@@ -124,6 +124,15 @@ MANAGER_ROLES = frozenset({
     "RETAILER_OWNER",
 })
 
+ROLE_DELEGATION_DENY = {
+    # These capabilities are intentionally owner-only in the approved RBAC matrix.
+    # Removing them from the baseline is not sufficient because historical or new
+    # delegated grants otherwise could reintroduce the capability.
+    "VENDOR_STAFF": frozenset({"order.accept", "membership.manage", "payment.record"}),
+    "RETAILER_STAFF": frozenset({"membership.manage", "payment.record"}),
+    "FIELD_ACTIVATOR": frozenset({"membership.manage", "payment.record", "order.accept"}),
+}
+
 
 def canonical_role(role: str) -> str:
     return {
@@ -232,6 +241,12 @@ def grant_permission(
         raise ValueError("Target membership must be active.")
     if target_role and target["role"] != target_role:
         raise ValueError(f"Target membership role must be {target_role}.")
+
+    target_canonical_role = canonical_role(target["role"])
+    if permission_key in ROLE_DELEGATION_DENY.get(target_canonical_role, frozenset()):
+        raise PermissionError(
+            f"Permission '{permission_key}' cannot be delegated to {target_canonical_role}."
+        )
 
     cur.execute(
         """
