@@ -477,3 +477,116 @@ def test_product_candidate_review_http_is_tenant_and_idempotent(client, manageme
             cur.execute("DELETE FROM product_candidates WHERE vendor_id=%s", (management_env["vendor_id"],))
         conn.commit()
 
+
+
+def test_vendor_permission_editor_http_lifecycle(client, management_env):
+    conn = management_env["conn"]
+    staff_user = str(uuid4())
+    membership_id = str(uuid4())
+    headers = {"Authorization": f"Bearer {management_env['vendor']}"}
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO users (id, phone_number, full_name, role, is_active) VALUES (%s,%s,'Permission Staff','VENDOR_STAFF',TRUE)",
+                (staff_user, f"+9891{uuid4().hex[:8]}"),
+            )
+            cur.execute(
+                """
+                INSERT INTO organization_memberships
+                    (id, organization_id, user_id, role, status, is_primary)
+                VALUES (%s,%s,%s,'VENDOR_STAFF','ACTIVE',FALSE)
+                """,
+                (membership_id, management_env["vendor_org"], staff_user),
+            )
+        conn.commit()
+
+        initial = client.get(
+            f"/api/v1/vendors/staff/{membership_id}/permissions",
+            headers=headers,
+        )
+        assert initial.status_code == 200
+        initial_data = initial.json()["data"]
+        assert initial_data["role"] == "VENDOR_STAFF"
+        assert "inventory.scan" in initial_data["effective_permissions"]
+        assert "inventory.adjust" in initial_data["grantable_permissions"]
+
+        granted = client.post(
+            f"/api/v1/vendors/staff/{membership_id}/permissions",
+            headers=headers,
+            json={
+                "permission_key": "price.manage",
+                "reason": "Temporary price lead duty",
+                "client": "TEST",
+            },
+        )
+        assert granted.status_code == 200
+        assert granted.json()["data"]["status"] == "GRANTED"
+
+        detail = client.get(
+            f"/api/v1/vendors/staff/{membership_id}/permissions",
+            headers=headers,
+        )
+        assert detail.status_code == 200
+        assert "price.manage" in detail.json()["data"]["effective_permissions"]
+
+        replay = client.post(
+            f"/api/v1/vendors/staff/{membership_id}/permissions",
+            headers=headers,
+            json={
+                "permission_key": "price.manage",
+                "reason": "Replay",
+                "client": "TEST",
+            },
+        )
+        assert replay.status_code == 200
+        assert replay.json()["data"]["idempotent_replay"] is True
+
+        audit = client.get(
+            f"/api/v1/ops/permissions/audit?membership_id={membership_id}",
+            headers=headers,
+        )
+        assert audit.status_code == 200
+        assert any(
+            item["action"] == "GRANT" and item["permission_key"] == "price.manage"
+            for item in audit.json()["data"]["items"]
+        )
+
+        revoked = client.post(
+            f"/api/v1/vendors/staff/{membership_id}/permissions/price.manage/revoke",
+            headers=headers,
+            json={"reason": "Duty ended", "client": "TEST"},
+        )
+        assert revoked.status_code == 200
+        assert revoked.json()["data"]["status"] == "REVOKED"
+
+        final = client.get(
+            f"/api/v1/vendors/staff/{membership_id}/permissions",
+            headers=headers,
+        )
+        assert final.status_code == 200
+        assert "price.manage" not in final.json()["data"]["effective_permissions"]
+
+        replay_revoke = client.post(
+            f"/api/v1/vendors/staff/{membership_id}/permissions/price.manage/revoke",
+            headers=headers,
+            json={"reason": "Replay", "client": "TEST"},
+        )
+        assert replay_revoke.status_code == 200
+        assert replay_revoke.json()["data"]["idempotent_replay"] is True
+    finally:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM delegated_permission_grants WHERE membership_id=%s",
+                (membership_id,),
+            )
+            cur.execute(
+                "DELETE FROM permission_audit_events WHERE membership_id=%s",
+                (membership_id,),
+            )
+            cur.execute(
+                "DELETE FROM organization_memberships WHERE id=%s",
+                (membership_id,),
+            )
+            cur.execute("DELETE FROM users WHERE id=%s", (staff_user,))
+        conn.commit()
