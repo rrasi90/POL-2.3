@@ -22,6 +22,7 @@ from scripts.operational_policies import AllocationIntegrityError, validate_vend
 from scripts.privacy_lifecycle import PrivacyLifecycleService
 from scripts.media_service import MediaService, MediaError, validate_ready_attachment
 from scripts.checkout_gateway import CanonicalCheckoutGateway
+from scripts.reservation_expiry_worker import ReservationExpiryWorker
 from scripts.revalidation_checkout import RevalidationCheckoutService
 
 
@@ -482,6 +483,40 @@ def test_checkout_is_atomic_on_failure_after_reservation_stage(postgres_database
             (catalog["lines"][0]["vendor_product_id"],)
         )
         assert int(cur.fetchone()["reserved_quantity"]) == 0
+
+
+def test_reservation_expiry_worker_releases_stock_and_persists_event(postgres_database, checkout_catalog):
+    """G-336: the canonical expiry worker expires ACTIVE rows, restores availability and writes a durable event."""
+    line = checkout_catalog["lines"][0]
+    vendor_product_id = line["vendor_product_id"]
+    vendor_id = line["vendor_id"]
+    user_id = checkout_catalog["context"].user_id
+    reservation_id = str(uuid4())
+    with transaction(postgres_database) as cur:
+        cur.execute("UPDATE vendor_inventory SET reserved_quantity=10 WHERE vendor_product_id=%s", (vendor_product_id,))
+        cur.execute("DELETE FROM inventory_reservations WHERE vendor_product_id=%s AND status='ACTIVE'", (vendor_product_id,))
+        cur.execute(
+            """INSERT INTO inventory_reservations
+               (id,vendor_product_id,quantity,status,idempotency_key,expires_at)
+               VALUES (%s,%s,10,'ACTIVE',%s,now()-interval '1 minute')""",
+            (reservation_id, vendor_product_id, f"g336-{reservation_id}"),
+        )
+        result = ReservationExpiryWorker.process_expired(cur, limit=10)
+        assert result["expired_reservation_count"] == 1
+        assert result["released_quantity"] == 10
+        cur.execute("SELECT status,released_at FROM inventory_reservations WHERE id=%s", (reservation_id,))
+        res = cur.fetchone()
+        assert res["status"] == "EXPIRED"
+        assert res["released_at"] is not None
+        cur.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s", (vendor_product_id,))
+        assert int(cur.fetchone()["reserved_quantity"]) == 0
+        cur.execute(
+            "SELECT event_name, aggregate_id, payload->>'reservation_id' AS reservation_id FROM outbox_events WHERE aggregate_type='INVENTORY_RESERVATION' AND aggregate_id=%s",
+            (reservation_id,),
+        )
+        event = cur.fetchone()
+        assert event["event_name"] == "INVENTORY_RESERVATION_EXPIRED"
+        assert event["reservation_id"] == reservation_id
 
 
 def persist_request(cur, catalog):
