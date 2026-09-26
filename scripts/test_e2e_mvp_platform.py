@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import os
 from collections import Counter
@@ -19,6 +20,7 @@ from scripts.migration_runner import apply_migration_chain, get_migration_chain
 from scripts import operational_policies
 from scripts.operational_policies import AllocationIntegrityError, validate_vendor_operational_capacity
 from scripts.privacy_lifecycle import PrivacyLifecycleService
+from scripts.media_service import MediaService
 
 
 @pytest.fixture
@@ -287,6 +289,77 @@ def test_media_schema_alignment_and_governance_fields(postgres_database, checkou
         assert row["media_type"] == "PRIMARY_IMAGE"
         assert row["source_provenance"] == "VENDOR_UPLOADED"
         assert row["approval_status"] == "PENDING"
+
+
+def test_resumable_media_session_and_processing_pipeline(postgres_database, checkout_catalog, monkeypatch):
+    """G-318: multipart session persists parts; confirmation strips metadata and emits trusted thumbnail."""
+    import scripts.media_service as media_module
+    from PIL import Image
+    class FakeBody:
+        def __init__(self, data): self._io = io.BytesIO(data)
+        def read(self, size=-1): return self._io.read(size)
+    class FakeS3:
+        def __init__(self, raw): self.raw = raw; self.objects = {}; self.upload_id = "upload-g318"
+        def generate_presigned_url(self, **kwargs): return "https://fake.local/upload"
+        def create_multipart_upload(self, **kwargs): return {"UploadId": self.upload_id}
+        def abort_multipart_upload(self, **kwargs): return None
+        def complete_multipart_upload(self, **kwargs): return None
+        def get_object(self, Bucket, Key): return {"Body": FakeBody(self.objects[Key])}
+        def put_object(self, Bucket, Key, Body, **kwargs): self.objects[Key] = Body if isinstance(Body, bytes) else Body.read()
+        def delete_object(self, Bucket, Key): self.objects.pop(Key, None)
+    image = Image.new("RGB", (320, 200), "white")
+    exif = Image.Exif()
+    exif[270] = "PII-G318"
+    raw_out = io.BytesIO()
+    image.save(raw_out, format="JPEG", exif=exif)
+    fake = FakeS3(raw_out.getvalue())
+    monkeypatch.setattr(media_module, "_s3_client", lambda: fake)
+    monkeypatch.setattr(media_module, "_authorize_target", lambda *args, **kwargs: {"provenance": "VENDOR_UPLOADED"})
+
+    user_id = checkout_catalog["context"].user_id
+    org_id = checkout_catalog["context"].organization_id
+    with transaction(postgres_database) as cur:
+        init = MediaService.presign_resumable(
+            cur, user_id=user_id, organization_id=org_id, mime_type="image/jpeg",
+            file_size_bytes=len(fake.raw), target_type="VENDOR", target_id=str(uuid4()),
+        )
+        assert init["part_count"] == 1
+        assert len(init["parts"]) == 1
+        cur.execute("UPDATE media_assets SET storage_key=%s, storage_bucket=%s, bucket_name=%s, object_key=%s WHERE id=%s",
+                    (init["object_key"], "pol-media", "pol-media", init["object_key"], init["media_id"]))
+        fake.objects[init["object_key"]] = fake.raw
+        complete = MediaService.complete_resumable(
+            cur, user_id=user_id, organization_id=org_id, session_id=init["session_id"],
+            parts=[{"part_number": 1, "etag": "\"etag-g318\""}],
+        )
+        assert complete["status"] == "COMPLETED"
+
+    with transaction(postgres_database) as cur:
+        media = cur.execute if False else None
+        cur.execute("SELECT status, checksum_sha256 FROM media_assets WHERE id=%s", (init["media_id"],))
+        row = cur.fetchone()
+        assert row["status"] == "UPLOADING"
+        MediaService.confirm_upload(
+            cur, user_id=user_id, organization_id=org_id, media_id=init["media_id"],
+            target_type="VENDOR", target_id=str(uuid4()),
+        )
+
+        cur.execute(
+            "SELECT status, mime_type, checksum_sha256 FROM media_assets WHERE id=%s",
+            (init["media_id"],),
+        )
+        media_row = cur.fetchone()
+        assert media_row["status"] == "READY"
+        assert media_row["mime_type"] == "image/webp"
+        assert len(media_row["checksum_sha256"]) == 64
+        cur.execute(
+            "SELECT variant_type, width, height, checksum_sha256 FROM media_variants WHERE source_media_asset_id=%s",
+            (init["media_id"],),
+        )
+        variant = cur.fetchone()
+        assert variant["variant_type"] == "THUMBNAIL"
+        assert (variant["width"], variant["height"]) == (150, 150)
+        assert len(variant["checksum_sha256"]) == 64
 
 
 def persist_request(cur, catalog):
