@@ -4685,6 +4685,7 @@ class POLApplicationBoundary:
             permission_key,
             reason,
             client=client,
+            target_role="VENDOR_STAFF",
         )
 
     def delegated_permission_revoke(
@@ -4705,6 +4706,7 @@ class POLApplicationBoundary:
             permission_key,
             reason,
             client=client,
+            target_role="VENDOR_STAFF",
         )
 
     def delegated_permission_audit(self, *, membership_id=None, limit=100):
