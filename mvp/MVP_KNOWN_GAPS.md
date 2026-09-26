@@ -423,3 +423,124 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** the last-owner safeguard now treats `SUSPENDED` exactly like `REVOKED`/demotion. At least one other active vendor owner must exist before an active owner can be suspended, revoked, or demoted.
 - **Regression proof:** `scripts/test_http_management.py::test_vendor_owner_cannot_suspend_last_active_owner` verifies HTTP rejection and membership state preservation.
 - **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
+
+
+---
+
+# 2026-09-26 — Deep Audit Remediation Intake Register
+
+This section is the persistent intake ledger for findings previously identified in the deep audit/remediation conversations but not yet demonstrably closed by the current remediation line.
+
+**Rule:** Registration is not closure. Each item remains **OPEN** until a source fix, regression/evidence record, and persisted closure entry exist. Historical PASS evidence does not close a later finding.
+
+## A. Previously identified deep-audit gaps — individually actionable
+
+| ID | Severity | Finding | Status |
+|---|---:|---|---|
+| G-308 | P1 | Operating-window selection can resolve weekday from capacity timezone before applying the window timezone; deterministic cross-timezone semantics are incomplete. | OPEN |
+| G-309 | P1 | Cross-midnight operating windows do not resolve the previous weekday after midnight. | OPEN |
+| G-310 | P1 | Overnight `order_cutoff_at` lacks day-offset/instant semantics. | OPEN |
+| G-311 | P1 | Daily/hourly vendor capacity is check-then-act and lacks atomic reservation/invariant enforcement. | OPEN |
+| G-312 | P1 | Admin audit immutability is not DB-enforced against UPDATE/DELETE. | OPEN |
+| G-313 | P1 | Inventory audit history can be cascaded away through `vendor_product_id`. | OPEN |
+| G-314 | P1 | Notification retention/expiry is not canonically populated and no auto-archive worker is evidenced. | OPEN |
+| G-315 | P1 | Privacy export/account-deletion lifecycle lacks a runtime API/workflow. | OPEN |
+| G-316 | P1 | Runtime media schema diverges from canonical media specification; approval/provenance/media-type/checksum semantics are incomplete. | OPEN |
+| G-317 | P1 | Public product-media serving lacks canonical approval/provenance/private-reference gating. | OPEN |
+| G-318 | P1 | Canonical media ingestion pipeline (presign → confirm → validate → process → thumbnail/resumable) is not fully implemented/evidenced. | OPEN |
+| G-319 | P1 | POD/dispute media references lack READY + ownership + tenant + purpose validation. | OPEN |
+| G-320 | P2 | DB media DELETED lifecycle lacks explicit object-storage reconciliation. | OPEN |
+| G-325 | P1 | Basket/allocation stale-version handling and checkout consistency require complete canonical enforcement. | OPEN |
+| G-326 | P1 | Stale-checkout must return a canonical 409 Conflict contract. | OPEN |
+| G-327 | P1 | Checkout must be atomic across allocation/order/reservation mutations. | OPEN |
+| G-328 | P1 | Client/server basket-allocation-checkout state coherence is incomplete. | OPEN |
+| G-329 | P1 | DB/runtime evidence for stale/concurrent basket/checkout invariants is incomplete. | OPEN |
+| G-330 | P1 | Allocation tie-breaking is not fully deterministic. | OPEN |
+| G-331 | P1 | Allocation tie-selection semantics are incomplete/under-specified in runtime. | OPEN |
+| G-332 | P1 | Allocation ignores/removes pack_quantity semantics in candidate scoring/selection. | OPEN |
+| G-333 | P1 | Allocation behavior for K>=3 vendors is not fully covered by deterministic tests. | OPEN |
+| G-334 | P1 | Allocation-result identity/hash does not fully cover canonical input/decision identity. | OPEN |
+| G-335 | P1 | Allocation regression coverage is incomplete for adversarial/tie/packing cases. | OPEN |
+| G-336 | P1 | Reservation-expiry worker/runtime path is not fully evidenced as canonical. | OPEN |
+| G-337 | P1 | Retailer cancellation/release of active reservation is incomplete. | OPEN |
+| G-338 | P1 | Reservation time semantics are not fully aligned with the canonical checkout/Journey timing contract. | OPEN |
+| G-339 | P1 | Reservation lifecycle tests rely too heavily on direct SQL seeding rather than canonical runtime commands. | OPEN |
+| G-340 | P1 | Reservation concurrency is not fully verified through the real runtime path. | OPEN |
+| G-341 | P1 | Reservation idempotency is not DB-enforced end-to-end. | OPEN |
+| G-342 | P1 | Reservation and inventory reserved_quantity reconciliation invariant is incomplete. | OPEN |
+| G-343 | P1 | Reservation lifecycle needs an independent durable event/audit record rather than inference only. | OPEN |
+| G-179..G-195 | P1/P2 | Earlier Return/RMA and Audit/Event deep-audit findings covering return client contract, cumulative ceilings, refund evidence/approval, replay/idempotency, dispute-outbox routing, audit/event envelope, sequence/lineage, poison-event isolation and read-only Ops behavior. | OPEN |
+
+## B. Later audit ranges previously found but not atomically recovered into the canonical repo register
+
+| IDs | Domain / finding family | Status |
+|---|---|---|
+| G-235..G-239 | Daily Inventory lifecycle, runtime/reconciliation, tenant scoping and evidence gaps. | OPEN |
+| G-240..G-246 | Order-item quantity invariants, reconciliation, partial/zero/negative quantity enforcement and runtime evidence. | OPEN |
+| G-247..G-255 | Unit normalization/conversion, pack/unit arithmetic, allocation quantity semantics and cross-layer unit consistency. | OPEN |
+| G-256..G-265 | Price×quantity arithmetic, MOQ, discounts, line/subtotal/group totals, rounding, currency precision, authoritative calculation and reconciliation. | OPEN |
+| G-266..G-274 | Checkout/group integrity, atomicity, partial acceptance, orphan states, rollback/failure and runtime evidence. | OPEN |
+| G-284..G-307 | Blocks 36–39 findings: deep lifecycle/contract/concurrency/evidence defects identified before the temporal block. Exact atomic titles remain to be reconstructed from the audit transcript before implementation. | OPEN / RECOVERY REQUIRED |
+| G-321..G-324 | Blocks 43+ findings covering data/notification/consent/preferences/inbox/retention/export lifecycle. Exact atomic titles require transcript reconstruction before implementation. | OPEN / RECOVERY REQUIRED |
+| G-344..G-407 | Blocks 47–56 findings spanning subsequent domain, security, reconciliation, dispute/RMA and cross-module deep-audit checks. Exact atomic titles require transcript reconstruction before implementation; IDs are intentionally retained and not considered closed. | OPEN / RECOVERY REQUIRED |
+| G-440..G-451 | Delivery/POD findings after G-439: ARRIVED runtime, duplicate/concurrent POD, delivered_quantity, OTP lifecycle/event/routing, proof validation/provenance, FAILED semantics and endpoint parity. | OPEN |
+| G-452..G-465 | Payment/Settlement/Reconciliation findings: checkout→payment integration, direct-transfer path, reconciliation bypass, amount invariants, events, settlement/invoice projection, payment attempts/status vocabulary, multi-payment selection, idempotency and Payment Evidence→Media linkage. | OPEN |
+
+## C. Explicit latest Return/Dispute/Refund findings recovered from the audit transcript
+
+| ID | Severity | Finding | Status |
+|---|---:|---|---|
+| G-408 | P1 | Canonical Dispute→Refund path does not exist as a direct runtime flow; current refund creation is RMA-driven. | OPEN |
+| G-409 | P1 | Canonical Finance Refund HTTP APIs are missing; runtime exposes only RMA transition endpoints. | OPEN |
+| G-410 | P1 | Completing a refund does not transition the linked payment to REFUNDED. | OPEN |
+| G-411 | P1 | Refund amount has no complete financial ceiling against paid/disputed/eligible/returned value. | OPEN |
+| G-412 | P1 | Refund does not atomically reconcile with Settlement Adjustment. | OPEN |
+| G-413 | P1 | Canonical refund state machine differs from the RMA-driven runtime state machine. | OPEN |
+| G-414 | P1 | Refund-specific domain events are not emitted to the outbox. | OPEN |
+| G-415 | P1 | Refund approval/completion lacks required administrative audit trail. | OPEN |
+| G-416 | P2 | Two-person completion exists, but the approval/creation actor model is not unified with canonical Finance states. | OPEN |
+| G-417 | P2 | Refund/payment provenance cannot reliably select the payment for multi-payment orders. | OPEN |
+| G-418 | P2 | Refund schema documentation lags executable migration provenance fields. | OPEN |
+| G-419 | P2 | Refund idempotency is path-specific (dispute vs return) and lacks a cross-path single-refund invariant. | OPEN |
+| G-420 | P2 | RMA admission is not explicitly constrained to delivered orders. | OPEN |
+| G-421 | P1 | Dispute-create request contract does not fully match the canonical claim/evidence requirements. | OPEN |
+| G-422 | P1 | Dispute admission does not enforce DELIVERED + four-hour eligibility. | OPEN |
+| G-423 | P1 | `evidence_media_id` is optional at runtime although canonical dispute admission requires evidence. | OPEN |
+| G-424 | P1 | No item-level dispute scope (`dispute_items`, quantities, item amount/reason). | OPEN |
+| G-425 | P1 | `approved_amount_toman` has no invariant bounding it to the claim. | OPEN |
+| G-426 | P1 | Resolution outcome has no enforced relationship to approved/refunded amount. | OPEN |
+| G-427 | P1 | Dispute resolution lifecycle OPEN→INVESTIGATING→RESOLVED→CLOSED is absent from runtime. | OPEN |
+| G-428 | P1 | Canonical `PATCH /api/v1/disputes/{id}/resolve` is absent. | OPEN |
+| G-429 | P1 | Open Dispute can attach to an inappropriate settlement status; active-settlement selection is not state-aware. | OPEN |
+| G-430 | P1 | Dispute-open and settlement close/payout have a concurrency race; settlement is not locked/state-conditioned atomically. | OPEN |
+| G-431 | P1 | `orders.dispute_status` projection cannot be maintained across the full dispute lifecycle. | OPEN |
+| G-432 | P1 | Dispute-open event payload carries incorrect/insufficient aggregate and amount data. | OPEN |
+| G-433 | P1 | Runtime and canonical dispute event naming are inconsistent. | OPEN |
+| G-434 | P2 | Dispute lacks an independent immutable transition-history stream. | OPEN |
+| G-435 | P2 | Ops assignment/investigation is modeled in DB but lacks the corresponding runtime command. | OPEN |
+| G-436 | P2 | Dispute evidence ownership/provenance is not enforced at admission. | OPEN |
+| G-437 | P2 | Dispute creation lacks true HTTP idempotency/fingerprint replay semantics. | OPEN |
+| G-438 | P1 | Delivery OTP is not actually mandatory for the DISPATCHED→DELIVERED transition. | OPEN |
+| G-439 | P1 | Delivery OTP is returned to the vendor caller, exposing a secret that should remain with the delivery recipient/proof flow. | OPEN |
+
+## D. Recovery-control rule for G-321..G-407
+
+The numbered IDs are deliberately retained as OPEN rather than silently dropped because the user required every prior finding to remain traceable. Before implementing any such item, its exact original audit wording must be recovered from the audit transcript/source artifact. No guessed implementation is permitted.
+
+## E. Completion protocol
+
+For every item:
+1. source fix;
+2. regression test / runtime evidence;
+3. update this ledger immediately;
+4. record fix commit SHA;
+5. reconcile `BUILD_PLAN.md`, API/screen matrices and current source-of-truth docs;
+6. only then change status from OPEN to RESOLVED.
+
+At the end of each closed item, the ledger must contain:
+- **Resolution**
+- **Files changed**
+- **Test evidence**
+- **Commit**
+- **Verification state**
+
