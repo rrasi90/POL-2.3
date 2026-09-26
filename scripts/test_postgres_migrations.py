@@ -498,6 +498,7 @@ def verify_financial_dispute_remediation(conn):
         assert cur.fetchone() is not None, f"Index {index_name} missing"
 
     for table, constraint_name in (
+        ("media_assets", "chk_media_asset_checksum_required_v070"),
         ("deliveries", "chk_delivery_otp_attempt_count_max_v068"),
         ("deliveries", "chk_delivery_otp_format_v068"),
         ("order_items", "chk_order_item_accepted_quantity_v068"),
