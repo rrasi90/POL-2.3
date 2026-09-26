@@ -3616,8 +3616,8 @@ class POLApplicationBoundary:
                 FROM vendor_inventory vi
                 WHERE vi.vendor_product_id=%s
                 """,
-                (vendor["id"],item["vendor_product_id"],session_id.strip(),
-                 item["unit_price_toman"],item["unit_price_toman"],item["vendor_product_id"]),
+                (vendor["id"],item["unit_price_toman"],item["unit_price_toman"],
+                 session_id.strip(),self.context.user_id,item["vendor_product_id"]),
             )
 
         self.cur.execute(

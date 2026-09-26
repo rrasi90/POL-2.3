@@ -963,7 +963,7 @@ class DisputeService:
                 status, target_user_id, target_organization_id, dedupe_key,
                 channel_hint, created_at
             )
-            SELECT gen_random_uuid(), %s, 'DISPUTE_OPENED', 'DISPUTE', %s,
+            SELECT gen_random_uuid(), gen_random_uuid(), 'DISPUTE_OPENED', 'DISPUTE', %s,
                    %s::jsonb, 'PENDING', om.user_id, om.organization_id,
                    %s || ':' || om.user_id::text, 'INBOX', now()
             FROM organization_memberships om
@@ -976,7 +976,7 @@ class DisputeService:
             DO NOTHING;
             """,
             (
-                str(uuid.uuid4()), dispute_id,
+                dispute_id,
                 Json({
                     "dispute_id": dispute_id,
                     "order_id": order_id,
@@ -1200,7 +1200,7 @@ class DisputeService:
                     payload, status, target_user_id, target_organization_id,
                     dedupe_key, channel_hint, created_at
                 )
-                SELECT gen_random_uuid(), %(event_id)s, 'DISPUTE_RESOLVED',
+                SELECT gen_random_uuid(), gen_random_uuid(), 'DISPUTE_RESOLVED',
                        'DISPUTE', %(dispute_id)s, %(payload)s::jsonb, 'PENDING',
                        om.user_id, om.organization_id,
                        %(dedupe)s || ':' || om.user_id::text, 'INBOX', now()
@@ -1212,7 +1212,6 @@ class DisputeService:
                 """,
                 {
                     "did": dispute_id,
-                    "event_id": str(uuid.uuid4()),
                     "dispute_id": dispute_id,
                     "payload": resolved_payload,
                     "dedupe": f"DISPUTE_RESOLVED:{dispute_id}",
