@@ -39,7 +39,7 @@ class CanonicalVendorOrderService:
             WHERE o.id = %s
               AND om.organization_id = %s
               AND om.status = 'ACTIVE'
-              AND om.role IN ('VENDOR_OWNER', 'VENDOR_STAFF')
+              AND om.role = 'VENDOR_OWNER'
               AND vo.status = 'ACTIVE'
               AND ro.status = 'ACTIVE'
               AND v.status = 'ACTIVE'
