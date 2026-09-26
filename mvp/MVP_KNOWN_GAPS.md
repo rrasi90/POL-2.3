@@ -446,7 +446,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-314 | P1 | Notification retention/expiry is not canonically populated and no auto-archive worker is evidenced. | RESOLVED — migration 051 / d209963c; worker 63adf6d1; regression 061c7d88 |
 | G-315 | P1 | Privacy export/account-deletion lifecycle lacks a runtime API/workflow. | RESOLVED — migration 052 / 1603218e; service c8d01227; HTTP a74da82a; route registry 7ee49596; regression 1fbf3511 |
 | G-316 | P1 | Runtime media schema diverges from canonical media specification; approval/provenance/media-type/checksum semantics are incomplete. | RESOLVED — migration 053 / 6fa46ec8; service 3ff27c8f; schema docs bd5d5261; regression f5f5b0df |
-| G-317 | P1 | Public product-media serving lacks canonical approval/provenance/private-reference gating. | OPEN |
+| G-317 | P1 | Public product-media serving lacks canonical approval/provenance/private-reference gating. | RESOLVED — query e1991dd5; regression 31f2c994 |
 | G-318 | P1 | Canonical media ingestion pipeline (presign → confirm → validate → process → thumbnail/resumable) is not fully implemented/evidenced. | OPEN |
 | G-319 | P1 | POD/dispute media references lack READY + ownership + tenant + purpose validation. | OPEN |
 | G-320 | P2 | DB media DELETED lifecycle lacks explicit object-storage reconciliation. | OPEN |
@@ -618,3 +618,9 @@ At the end of each closed item, the ledger must contain:
 - **Regression commit:** `f5f5b0dff798da9770ec796a2f4fa6eaec15a1ad`
 - **Schema-doc commit:** `bd5d5261c2a85ade28848ac33e99ed80beb49d97`
 - **Verification state:** SOURCE + DB SCHEMA + SERVICE + REGRESSION PERSISTED; fresh CI/local execution remains pending due current network/CI constraints.
+
+### G-317 Closure Record
+- **Resolution:** canonical product-detail media now requires `READY` asset status, public provenance (`VENDOR_UPLOADED`, `MANUFACTURER_PROVIDED`, `POL_OWNED`) and `product_media.approval_status = 'APPROVED'`; `PRIVATE_REFERENCE` is explicitly excluded.
+- **Source commit:** `e1991dd58f318b44f9c4bfb4dbd749e88eacbce0`
+- **Regression commit:** `31f2c994b466f8c1982b02749d38357c91561cad`
+- **Verification state:** SOURCE + PUBLIC-READ GATE + REGRESSION PERSISTED; fresh runtime/CI execution remains pending.
