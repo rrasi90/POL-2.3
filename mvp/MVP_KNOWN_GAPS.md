@@ -395,3 +395,10 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** API documentation now reflects the implementation: refresh rotation occurs on `POST /auth/refresh`; organization switching does not rotate the refresh token. D-018 remains the governing open policy decision and no new behavior was invented.
 - **Regression / evidence:** source-contract inspection confirms the documented response and implementation path are aligned; future policy changes must be recorded as a superseding D-018 decision before changing either behavior.
 - **Status:** **SOURCE/DOC REMEDIATED / FRESH CI PENDING**
+
+## G-060 — Operator Invoice List Scope Drift (SECURITY / FINANCE / API CONTRACT — REMEDIATED — 2026-09-26)
+
+- **Finding:** the canonical RBAC/API contract grants `ADMIN_SUPER`/`OPS_ADMIN` read access to formal invoices, and `invoice_get()` already treated operator actors as global read-only viewers, but `invoices_list()` filtered operator users by their OPERATOR organization ID. Because invoices are owned by retailer/vendor organizations, operator invoice listings could therefore be empty even though direct detail access was permitted.
+- **Resolution:** operator invoice listing now uses an explicit read-only global scope (`WHERE 1 = 1`), while retailer/vendor tenants remain strictly organization-scoped.
+- **Regression proof:** `scripts/test_http_finance.py::TestInvoiceList::test_ops_list_cross_tenant_invoices` creates an active `ADMIN_SUPER` operator session and verifies that an invoice belonging to separate retailer/vendor tenants is returned by the operator list endpoint.
+- **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
