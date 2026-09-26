@@ -48,6 +48,50 @@ def rma_case(postgres_database, checkout_catalog, checkout_request):
         cur.execute("UPDATE orders SET order_status='DELIVERED' WHERE id=%s", (order["id"],))
         cur.execute("SELECT id FROM order_items WHERE order_id=%s ORDER BY id", (order["id"],))
         item_id = cur.fetchone()["id"]
+
+        cur.execute(
+            "SELECT COUNT(*) AS c FROM payments WHERE order_id=%s AND payment_status='SUCCESS'",
+            (order["id"],),
+        )
+        if cur.fetchone()["c"] == 0:
+            cur.execute(
+                "SELECT COALESCE(SUM(ordered_quantity * unit_price_toman),0) AS total FROM order_items WHERE order_id=%s",
+                (order["id"],),
+            )
+            total = int(cur.fetchone()["total"])
+            cur.execute(
+                """
+                INSERT INTO payments
+                    (id,order_id,retailer_id,vendor_id,amount_toman,payment_method,
+                     payment_status,custody_model,reference_number,paid_at)
+                VALUES (%s,%s,%s,%s,%s,'ONLINE_MOCK','SUCCESS','NON_CUSTODIAL_DIRECT',%s,now())
+                """,
+                (
+                    str(uuid4()), order["id"], order["retailer_id"], order["vendor_id"],
+                    total, f"TEST-{order['id']}",
+                ),
+            )
+
+        cur.execute(
+            "SELECT COUNT(*) AS c FROM settlements WHERE order_id=%s AND vendor_id=%s",
+            (order["id"], order["vendor_id"]),
+        )
+        if cur.fetchone()["c"] == 0:
+            cur.execute(
+                "SELECT COALESCE(SUM(ordered_quantity * unit_price_toman),0) AS total FROM order_items WHERE order_id=%s",
+                (order["id"],),
+            )
+            total = int(cur.fetchone()["total"])
+            cur.execute(
+                """
+                INSERT INTO settlements
+                    (id,order_id,vendor_id,gross_amount_toman,commission_rate,
+                     commission_amount_toman,net_vendor_amount_toman,status)
+                VALUES (%s,%s,%s,%s,0,0,%s,'CALCULATED')
+                """,
+                (str(uuid4()), order["id"], order["vendor_id"], total, total),
+            )
+
         cur.execute("SELECT organization_id, user_id FROM vendors WHERE id=%s", (order["vendor_id"],))
         vendor = cur.fetchone()
         payload = dict(
