@@ -257,53 +257,209 @@ class CanonicalReturnService:
         return ret
 
     @classmethod
+    @classmethod
     def _ensure_refund_pending(cls, cur, ret: dict, actor_user_id: str):
         amount = ret["approved_refund_amount_toman"]
         if amount is None or int(amount) <= 0:
             raise ReturnStateError("A positive approved refund amount is required before REFUND_PENDING.")
         if str(ret.get("initiated_by_user_id")) == str(actor_user_id):
             raise ReturnAccessError("Refund approval must be performed by a different actor than the RMA initiator.")
+
+        # Canonical payment provenance: exactly one successful payment must be
+        # attributable to the order, otherwise an explicit payment choice is
+        # required before an RMA refund can be approved.
+        cur.execute(
+            """
+            SELECT p.*,
+                   p.amount_toman - COALESCE((
+                       SELECT SUM(r2.amount_toman)
+                       FROM refunds r2
+                       WHERE r2.payment_id=p.id
+                         AND r2.status IN ('PENDING','APPROVED','COMPLETED')
+                   ),0) AS refundable_remaining
+            FROM payments p
+            WHERE p.order_id=%s
+              AND p.retailer_id=%s
+              AND p.vendor_id=%s
+              AND p.payment_status='SUCCESS'
+            ORDER BY p.created_at ASC
+            FOR UPDATE
+            """,
+            (ret["order_id"], ret["retailer_id"], ret["vendor_id"]),
+        )
+        payments = [dict(x) for x in cur.fetchall()]
+        eligible = [x for x in payments if int(x["refundable_remaining"]) >= int(amount)]
+        if len(eligible) != 1:
+            raise ReturnStateError("RMA refund requires exactly one eligible successful payment.")
+        payment = eligible[0]
+
         cur.execute(
             """
             INSERT INTO refunds
                 (id, order_id, payment_id, dispute_id, retailer_id, amount_toman,
-                 refund_method, reason, status, approved_by_user_id, return_id)
+                 refund_method, reason, status, approved_by_user_id, approved_at,
+                 created_by_user_id, return_id, idempotency_key, source_type)
             VALUES
-                (%s,%s,NULL,NULL,%s,%s,'VENDOR_CASH_DIRECT',%s,'APPROVED',%s,%s)
+                (%s,%s,%s,NULL,%s,%s,'BANK_REVERSAL',%s,'APPROVED',%s,now(),%s,%s,%s,'RMA')
             ON CONFLICT (return_id) WHERE return_id IS NOT NULL DO NOTHING
-            RETURNING id;
+            RETURNING id
             """,
-            (str(uuid.uuid4()), ret["order_id"], ret["retailer_id"], amount,
-             f"RMA refund {ret['return_number']}", actor_user_id, ret["id"]),
+            (
+                str(uuid.uuid4()), ret["order_id"], payment["id"], ret["retailer_id"],
+                amount, f"RMA refund {ret['return_number']}", actor_user_id,
+                ret["initiated_by_user_id"], ret["id"], f"rma:{ret['id']}",
+            ),
         )
         refund_row = cur.fetchone()
         if refund_row:
+            refund_id = refund_row["id"]
+            cur.execute("UPDATE returns SET refund_id=%s WHERE id=%s", (refund_id, ret["id"]))
             cur.execute(
-                "UPDATE returns SET refund_id=%s WHERE id=%s",
-                (refund_row["id"], ret["id"]),
+                """
+                SELECT id
+                FROM settlements
+                WHERE order_id=%s AND vendor_id=%s
+                ORDER BY created_at DESC
+                LIMIT 1
+                FOR UPDATE
+                """,
+                (ret["order_id"], ret["vendor_id"]),
             )
+            settlement = cur.fetchone()
+            if settlement:
+                cur.execute(
+                    """
+                    INSERT INTO settlement_adjustments
+                        (id, settlement_id, dispute_id, refund_id, adjustment_type,
+                         amount_toman, reason, applied_by_user_id)
+                    VALUES (%s,%s,NULL,%s,'REFUND',%s,%s,%s)
+                    ON CONFLICT (refund_id) WHERE refund_id IS NOT NULL DO NOTHING
+                    """,
+                    (
+                        str(uuid.uuid4()), settlement["id"], refund_id, amount,
+                        f"RMA refund {ret['return_number']}", actor_user_id,
+                    ),
+                )
+                cur.execute(
+                    """
+                    SELECT COALESCE(SUM(amount_toman),0) AS total
+                    FROM settlement_adjustments WHERE settlement_id=%s
+                    """,
+                    (settlement["id"],),
+                )
+                total = int(cur.fetchone()["total"])
+                cur.execute(
+                    """
+                    UPDATE settlements
+                    SET adjustment_amount_toman=-%s,
+                        net_vendor_amount_toman=gross_amount_toman-commission_amount_toman-%s,
+                        status='RECONCILED'
+                    WHERE id=%s
+                    """,
+                    (total, total, settlement["id"]),
+                )
 
+            cur.execute(
+                """
+                INSERT INTO outbox_events
+                    (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                     target_organization_id,target_user_id,dedupe_key,channel_hint)
+                SELECT gen_random_uuid(),%s,'REFUND_CREATED','REFUND',%s,
+                       %s::jsonb,'PENDING',om.organization_id,om.user_id,%s,'INBOX'
+                FROM organization_memberships om
+                WHERE om.organization_id=(SELECT organization_id FROM retailers WHERE id=%s)
+                  AND om.status='ACTIVE'
+                  AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    f"REFUND_CREATED:{refund_id}", str(refund_id),
+                    json.dumps({"refund_id":str(refund_id),"order_id":str(ret["order_id"]),
+                                "amount_toman":int(amount),"status":"APPROVED"}),
+                    f"REFUND_CREATED:{refund_id}", ret["retailer_id"],
+                ),
+            )
     @staticmethod
     def _complete_refund(cur, ret: dict, actor_user_id: str):
         if not ret["refund_id"]:
             raise ReturnStateError("Cannot mark RMA REFUNDED without a linked refund.")
-        cur.execute("SELECT approved_by_user_id FROM refunds WHERE id=%s FOR UPDATE", (ret["refund_id"],))
+        cur.execute(
+            "SELECT * FROM refunds WHERE id=%s FOR UPDATE",
+            (ret["refund_id"],),
+        )
         refund = cur.fetchone()
         if not refund:
             raise ReturnStateError("Linked refund does not exist.")
         if str(refund["approved_by_user_id"]) == str(actor_user_id):
             raise ReturnAccessError("Refund completion must be performed by a different actor than the approver.")
+        if refund["status"] != "APPROVED":
+            raise ReturnStateError("Linked refund is missing or is not in APPROVED state.")
+
+        cur.execute("SELECT * FROM payments WHERE id=%s FOR UPDATE", (refund["payment_id"],))
+        payment = cur.fetchone()
+        if not payment or payment["payment_status"] != "SUCCESS":
+            raise ReturnStateError("Linked refund payment is missing or not refundable.")
+
+        cur.execute(
+            """
+            UPDATE payments
+            SET payment_status='REFUNDED'
+            WHERE id=%s AND payment_status='SUCCESS'
+            """,
+            (refund["payment_id"],),
+        )
+        if cur.rowcount != 1:
+            raise ReturnStateError("Linked payment is no longer refundable.")
+
         cur.execute(
             """
             UPDATE refunds
             SET status='COMPLETED', completed_at=now(), completed_by_user_id=%s
             WHERE id=%s AND status='APPROVED'
-            RETURNING id;
+            RETURNING *
             """,
             (actor_user_id, ret["refund_id"]),
         )
-        if not cur.fetchone():
-            raise ReturnStateError("Linked refund is missing or is not in APPROVED state.")
+        completed = cur.fetchone()
+        if not completed:
+            raise ReturnStateError("Refund completion raced with another completion request.")
+
+        for event_name in ("REFUND_COMPLETED", "PAYMENT_REFUNDED"):
+            cur.execute(
+                """
+                INSERT INTO outbox_events
+                    (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                     target_organization_id,target_user_id,dedupe_key,channel_hint)
+                SELECT gen_random_uuid(),%s,%s,'REFUND',%s,%s::jsonb,'PENDING',
+                       om.organization_id,om.user_id,%s,'INBOX'
+                FROM organization_memberships om
+                JOIN retailers r ON r.organization_id=om.organization_id
+                WHERE r.id=%s AND om.status='ACTIVE'
+                  AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    f"{event_name}:{ret['refund_id']}", event_name, str(ret["refund_id"]),
+                    json.dumps({"refund_id":str(ret["refund_id"]),"order_id":str(ret["order_id"]),
+                                "amount_toman":int(refund["amount_toman"]),"status":"COMPLETED"}),
+                    f"{event_name}:{ret['refund_id']}", ret["retailer_id"],
+                ),
+            )
+
+        cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_before, state_after, reason)
+            VALUES (%s,'RMA_REFUND_COMPLETED','REFUND',%s,%s,%s,%s)
+            """,
+            (
+                actor_user_id, ret["refund_id"],
+                Json({"status":"APPROVED","payment_status":"SUCCESS"}),
+                Json({"status":"COMPLETED","payment_status":"REFUNDED"}),
+                f"RMA {ret['return_number']} refund completed",
+            ),
+        )
 
     @classmethod
     def transition(cls, cur, actor_user_id: str, return_id: str, target_status: str,
