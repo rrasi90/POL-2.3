@@ -137,6 +137,26 @@ def _seed_order(suffix):
                 (pay_id, oi, ri, vi),
             )
 
+            media_id = str(uuid4())
+            cur.execute(
+                """
+                INSERT INTO media_assets (
+                    id, storage_provider, storage_bucket, storage_key,
+                    bucket_name, object_key, mime_type, file_size_bytes,
+                    checksum_sha256, status, provenance,
+                    uploaded_by_user_id, upload_target_type, upload_target_id
+                )
+                VALUES (
+                    %s,'S3_COMPATIBLE','pol-media',%s,'pol-media',%s,
+                    'image/jpeg',2048,%s,'READY','POL_OWNED',%s,'ORDER',%s
+                )
+                """,
+                (
+                    media_id, f"tests/payments/{media_id}.jpg",
+                    f"tests/payments/{media_id}.jpg", "c" * 64, ru, oi,
+                ),
+            )
+
             rs = _create_session(cur, ru, ro)
             vs = _create_session(cur, vu, vo)
 
