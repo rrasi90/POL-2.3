@@ -107,3 +107,9 @@ These are source-level closures. They are not marked as fresh CI PASS because cu
 - **G-059:** `POST /auth/switch-organization` documentation incorrectly claimed refresh-token rotation. The API contract now documents the actual implementation: organization switch changes the active organization and issues a new access token; refresh-token rotation remains on `POST /auth/refresh`, while D-018 remains the open policy decision.
 - **G-060:** operator invoice-list scope was narrower than the approved finance/RBAC contract. `invoices_list()` now gives active operator administration the intended read-only cross-tenant invoice visibility, while retailer/vendor paths remain organization-scoped. A new HTTP regression covers the operator list path.
 - These closures are source/contract-level. Current GitHub Actions runs continue to terminate before useful workflow steps, so no fresh CI PASS is claimed.
+
+## Post-reaudit Source Finding Closed — G-061 — 2026-09-26
+
+- **G-061 Vendor Referral create contract drift:** D-016 requires vendor-created referral codes/links with retailer first-touch attribution at redemption. The HTTP schema previously required an unrelated retailer target, the boundary bypassed `VendorReferralService.create_referral`, and the V-08 web page used the wrong `code` field while an older test redeemed as a vendor.
+- The canonical service now owns code generation/validation (`POLV-XXXXXXXX`), optional quota/expiry, and creation; the API schema/route/boundary follow that contract; the web page sends and projects `referral_code`; HTTP lifecycle tests redeem under retailer identity and verify attribution/quota behavior.
+- This is a source-level closure. Fresh CI remains unverified because current Actions jobs terminate before useful step execution.
