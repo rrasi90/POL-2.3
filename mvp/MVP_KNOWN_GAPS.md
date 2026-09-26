@@ -443,7 +443,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-311 | P1 | Daily/hourly vendor capacity is check-then-act and lacks atomic reservation/invariant enforcement. | RESOLVED — transactional advisory lock 4f6f8aec; regression 59f83384 |
 | G-312 | P1 | Admin audit immutability is not DB-enforced against UPDATE/DELETE. | RESOLVED — migration 049 / 6dd3791e; regression 03979c4c |
 | G-313 | P1 | Inventory audit history can be cascaded away through `vendor_product_id`. | RESOLVED — migration 050 / 4a87a750; regression b3008be1 |
-| G-314 | P1 | Notification retention/expiry is not canonically populated and no auto-archive worker is evidenced. | OPEN |
+| G-314 | P1 | Notification retention/expiry is not canonically populated and no auto-archive worker is evidenced. | RESOLVED — migration 051 / d209963c; worker 63adf6d1; regression 061c7d88 |
 | G-315 | P1 | Privacy export/account-deletion lifecycle lacks a runtime API/workflow. | OPEN |
 | G-316 | P1 | Runtime media schema diverges from canonical media specification; approval/provenance/media-type/checksum semantics are incomplete. | OPEN |
 | G-317 | P1 | Public product-media serving lacks canonical approval/provenance/private-reference gating. | OPEN |
@@ -586,3 +586,11 @@ At the end of each closed item, the ledger must contain:
 - **Migration commit:** `4a87a750f0ee80d9d31589ffe1d480fcbe3814df`
 - **Regression commit:** `b3008be1e847085bddd5ede3222f1f8d0558285f`
 - **Verification state:** SOURCE + DB FK + REGRESSION PERSISTED; fresh CI remains separate.
+
+### G-314 Closure Record
+- **Resolution:** migration `051_notification_retention_defaults.sql` backfills missing inbox expiry values and installs a write-time trigger: 30 days for `PROMOTIONS`, 90 days for transactional/system categories. `notification_retention_worker.py` archives expired, non-archived inbox rows in bounded batches using `FOR UPDATE SKIP LOCKED`.
+- **Regression:** `test_notifications.py::test_notifications` now verifies write-time expiry and invokes the archive worker after forcing an expiry into the past.
+- **Migration commit:** `d209963c05d002df14cc0776ba04ac0bd7485c9b`
+- **Worker commit:** `63adf6d11911afebfc6fa0daf67b491250350a73`
+- **Regression commit:** `061c7d883c37b63f9ba89beb7d890bb0f5e88886`
+- **Verification state:** SOURCE + DB RETENTION RULE + WORKER + REGRESSION PERSISTED; fresh CI remains separate.
