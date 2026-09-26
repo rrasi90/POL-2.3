@@ -1,0 +1,33 @@
+name: POL Notification Retention
+
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  archive-expired-inbox:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Archive expired inbox items
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          POL_PG_DSN: ${{ secrets.POL_PG_DSN }}
+          NOTIFICATION_RETENTION_BATCH_SIZE: "500"
+        run: python -m scripts.run_notification_retention
