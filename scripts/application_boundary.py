@@ -987,89 +987,87 @@ class POLApplicationBoundary:
                 filtered.append(ret)
         return {"returns": filtered, "count": len(filtered)}
 
-    def dispute_open(self, *, order_id, claimed_amount_toman, description, evidence_media_id=None):
+    def dispute_open(self, *, order_id, claimed_amount_toman, description,
+                     evidence_media_id, items, idempotency_key):
         if not self.context.organization_id:
             raise PermissionError("Dispute open requires an organization context.")
-
-        self.cur.execute(
-            """
-            SELECT 1
-            FROM organization_memberships om
-            JOIN organizations org ON org.id = om.organization_id
-            JOIN users u ON u.id = om.user_id
-            WHERE om.user_id = %s
-              AND om.organization_id = %s
-              AND om.status = 'ACTIVE'
-              AND om.role = 'RETAILER_OWNER'
-              AND org.org_type = 'RETAILER'
-              AND org.status = 'ACTIVE'
-              AND u.is_active = TRUE
-            LIMIT 1
-            """,
-            (self.context.user_id, self.context.organization_id),
-        )
-        if not self.cur.fetchone():
-            raise PermissionError(
-                "Formal dispute opening requires an active RETAILER_OWNER membership."
-            )
-
-        # Client-facing dispute creation uses the same canonical domain service
-        # as the master E2E so settlement, filing-window and outbox rules cannot diverge.
         from scripts.canonical_dispute import CanonicalDisputeService
 
+        # Resolve the retailer/vendor parties from the active tenant rather than
+        # accepting them from the client.
         self.cur.execute(
             """
-            SELECT o.retailer_id, o.vendor_id, s.id AS settlement_id
+            SELECT o.retailer_id, o.vendor_id
             FROM orders o
-            JOIN settlements s ON s.order_id=o.id
             JOIN retailers r ON r.id=o.retailer_id
-            WHERE o.id=%s
-              AND r.organization_id=%s
-              AND s.status <> 'DISPUTED'
-            ORDER BY s.created_at DESC
+            WHERE o.id=%s AND r.organization_id=%s
             LIMIT 1
             """,
             (order_id, self.context.organization_id),
         )
         context = self.cur.fetchone()
         if not context:
-            raise ValueError("No eligible settlement found for this retailer order.")
+            raise PermissionError("Order is not in the active retailer tenant.")
 
-        disp_id = CanonicalDisputeService.open_dispute(
+        normalized_items = [
+            {
+                "order_item_id": str(x.order_item_id),
+                "quantity": int(x.quantity),
+                "claimed_amount_toman": int(x.claimed_amount_toman),
+                "reason_code": str(x.reason_code),
+            } if hasattr(x, "order_item_id") else {
+                "order_item_id": str(x["order_item_id"]),
+                "quantity": int(x["quantity"]),
+                "claimed_amount_toman": int(x["claimed_amount_toman"]),
+                "reason_code": str(x["reason_code"]),
+            }
+            for x in items
+        ]
+        return CanonicalDisputeService.open_dispute_v2(
             self.cur,
-            str(order_id),
-            str(context["retailer_id"]),
-            str(context["vendor_id"]),
-            str(context["settlement_id"]),
-            int(claimed_amount_toman),
-            description,
+            order_id=str(order_id),
+            retailer_id=str(context["retailer_id"]),
+            vendor_id=str(context["vendor_id"]),
+            claimed_amount=int(claimed_amount_toman),
+            description=str(description),
+            evidence_media_id=str(evidence_media_id),
+            items=normalized_items,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            idempotency_key=str(idempotency_key),
         )
 
-        if evidence_media_id:
-            MediaService.validate_ready_attachment(
-                self.cur,
-                media_id=str(evidence_media_id),
-                user_id=self.context.user_id,
-                organization_id=self.context.organization_id,
-                target_type="DISPUTE",
-                target_id=str(disp_id),
-            )
-            self.cur.execute(
-                "UPDATE disputes SET evidence_media_id=%s WHERE id=%s",
-                (evidence_media_id, disp_id),
-            )
 
-        self.cur.execute("SELECT * FROM disputes WHERE id=%s", (disp_id,))
-        return dict(self.cur.fetchone())
+    def dispute_investigate(self, *, dispute_id, reason=None):
+        self._require_dispute_resolution_context()
+        from scripts.canonical_dispute import CanonicalDisputeService
+        result = CanonicalDisputeService.investigate_dispute(
+            self.cur,
+            dispute_id=str(dispute_id),
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            reason=reason.strip() if reason else None,
+        )
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s,'DISPUTE_INVESTIGATING','DISPUTE',%s,%s,%s,%s)
+            """,
+            (self.context.user_id, dispute_id, Json(result), reason, self.context.correlation_id),
+        )
+        return result
+
 
     def dispute_resolve(self, *, dispute_id, outcome, approved_amount_toman, reason):
         self._require_dispute_resolution_context()
         from scripts.canonical_dispute import CanonicalDisputeService
-
-        result = CanonicalDisputeService.resolve_dispute(
+        result = CanonicalDisputeService.resolve_canonical(
             self.cur,
             dispute_id=str(dispute_id),
             actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
             outcome=outcome,
             approved_amount=int(approved_amount_toman),
             reason=reason,
@@ -1078,18 +1076,99 @@ class POLApplicationBoundary:
             """
             INSERT INTO admin_audit_logs
                 (actor_user_id, action, target_entity_type, target_entity_id,
-                 state_after, reason, correlation_id)
-            VALUES (%s,'DISPUTE_RESOLVED','DISPUTE',%s,%s,%s,%s)
+                 state_before, state_after, reason, correlation_id)
+            VALUES (%s,'DISPUTE_RESOLVED','DISPUTE',%s,%s,%s,%s,%s)
             """,
             (
-                self.context.user_id,
-                dispute_id,
-                Json(result),
-                reason.strip(),
-                self.context.correlation_id,
+                self.context.user_id, dispute_id,
+                Json({"status": "INVESTIGATING"}),
+                Json(result), reason.strip(), self.context.correlation_id,
             ),
         )
         return result
+
+
+    def dispute_close(self, *, dispute_id, reason=None):
+        self._require_dispute_resolution_context()
+        from scripts.canonical_dispute import CanonicalDisputeService
+        result = CanonicalDisputeService.close_canonical(
+            self.cur,
+            dispute_id=str(dispute_id),
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            reason=reason.strip() if reason else None,
+        )
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s,'DISPUTE_CLOSED','DISPUTE',%s,%s,%s,%s)
+            """,
+            (self.context.user_id, dispute_id, Json(result), reason, self.context.correlation_id),
+        )
+        return result
+
+
+    def refund_issue(self, *, dispute_id, amount_toman, payment_id=None,
+                     reason="", idempotency_key=None):
+        from scripts.refund_service import RefundService
+        return RefundService.issue_from_dispute(
+            self.cur,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            dispute_id=str(dispute_id),
+            amount_toman=int(amount_toman),
+            payment_id=str(payment_id) if payment_id else None,
+            reason=str(reason),
+            idempotency_key=str(idempotency_key) if idempotency_key else None,
+            correlation_id=self.context.correlation_id,
+        )
+
+
+    def refund_approve(self, *, refund_id, reason=""):
+        from scripts.refund_service import RefundService
+        return RefundService.approve(
+            self.cur,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            refund_id=str(refund_id),
+            reason=str(reason),
+            correlation_id=self.context.correlation_id,
+        )
+
+
+    def refund_complete(self, *, refund_id, reason=""):
+        from scripts.refund_service import RefundService
+        return RefundService.complete(
+            self.cur,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            refund_id=str(refund_id),
+            reason=str(reason),
+            correlation_id=self.context.correlation_id,
+        )
+
+
+    def refund_get(self, *, refund_id):
+        from scripts.refund_service import RefundService
+        return RefundService.get(
+            self.cur,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            refund_id=str(refund_id),
+        )
+
+
+    def refunds_list(self, *, offset=0, limit=50):
+        from scripts.refund_service import RefundService
+        return RefundService.list(
+            self.cur,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            limit=int(limit),
+            offset=int(offset),
+        )
 
     def dispute_get(self, *, dispute_id):
         if not self.context.organization_id:
