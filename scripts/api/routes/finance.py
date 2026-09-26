@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query
 
-from scripts.api.dependencies import get_application_boundary
+from scripts.api.dependencies import get_application_boundary, require_roles
 from scripts.api.errors import success_payload
 from scripts.api.schemas import RefundApproveRequest, RefundCompleteRequest, RefundIssueRequest
 
