@@ -19,6 +19,8 @@ from scripts.api.schemas import (
     AdminCategoryCreateRequest,
     AdminCategoryUpdateRequest,
     AdminProductCandidateReviewRequest,
+    DelegatedPermissionGrantRequest,
+    DelegatedPermissionRevokeRequest,
 )
 
 vendor_router = APIRouter(prefix="/vendors", tags=["vendor-management"])
@@ -56,6 +58,49 @@ def vendor_staff_invite(
         boundary.vendor_staff_invite(
             phone_number=payload.phone_number,
             full_name=payload.full_name,
+        )
+    )
+
+
+@vendor_router.get("/staff/{membership_id}/permissions")
+def vendor_staff_permissions(
+    membership_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.delegated_permissions_list(membership_id=str(membership_id))
+    )
+
+
+@vendor_router.post("/staff/{membership_id}/permissions")
+def vendor_staff_permission_grant(
+    membership_id: UUID,
+    payload: DelegatedPermissionGrantRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.delegated_permission_grant(
+            membership_id=str(membership_id),
+            permission_key=payload.permission_key,
+            reason=payload.reason,
+            client=payload.client,
+        )
+    )
+
+
+@vendor_router.post("/staff/{membership_id}/permissions/{permission_key}/revoke")
+def vendor_staff_permission_revoke(
+    membership_id: UUID,
+    permission_key: str,
+    payload: DelegatedPermissionRevokeRequest,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.delegated_permission_revoke(
+            membership_id=str(membership_id),
+            permission_key=permission_key,
+            reason=payload.reason,
+            client=payload.client,
         )
     )
 
@@ -242,6 +287,20 @@ def admin_organization_status(
         boundary.admin_organization_update(
             organization_id=str(organization_id),
             status=payload.status,
+        )
+    )
+
+
+@ops_router.get("/permissions/audit")
+def permission_audit(
+    membership_id: UUID | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.delegated_permission_audit(
+            membership_id=str(membership_id) if membership_id else None,
+            limit=limit,
         )
     )
 
