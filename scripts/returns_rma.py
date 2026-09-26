@@ -403,17 +403,6 @@ class CanonicalReturnService:
 
         cur.execute(
             """
-            UPDATE payments
-            SET payment_status='REFUNDED'
-            WHERE id=%s AND payment_status='SUCCESS'
-            """,
-            (refund["payment_id"],),
-        )
-        if cur.rowcount != 1:
-            raise ReturnStateError("Linked payment is no longer refundable.")
-
-        cur.execute(
-            """
             UPDATE refunds
             SET status='COMPLETED', completed_at=now(), completed_by_user_id=%s
             WHERE id=%s AND status='APPROVED'
@@ -425,7 +414,30 @@ class CanonicalReturnService:
         if not completed:
             raise ReturnStateError("Refund completion raced with another completion request.")
 
-        for event_name in ("REFUND_COMPLETED", "PAYMENT_REFUNDED"):
+        cur.execute(
+            """
+            SELECT COALESCE(SUM(amount_toman),0) AS total_completed
+            FROM refunds
+            WHERE payment_id=%s AND status='COMPLETED'
+            """,
+            (refund["payment_id"],),
+        )
+        total_completed = int(cur.fetchone()["total_completed"])
+        fully_refunded = total_completed == int(payment["amount_toman"])
+
+        if fully_refunded:
+            cur.execute(
+                """
+                UPDATE payments
+                SET payment_status='REFUNDED'
+                WHERE id=%s AND payment_status='SUCCESS'
+                """,
+                (refund["payment_id"],),
+            )
+            if cur.rowcount != 1:
+                raise ReturnStateError("Linked payment is no longer refundable.")
+
+        for event_name in (("REFUND_COMPLETED", "PAYMENT_REFUNDED") if fully_refunded else ("REFUND_COMPLETED",)):
             cur.execute(
                 """
                 INSERT INTO outbox_events
