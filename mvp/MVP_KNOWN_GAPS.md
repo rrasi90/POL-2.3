@@ -448,7 +448,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-316 | P1 | Runtime media schema diverges from canonical media specification; approval/provenance/media-type/checksum semantics are incomplete. | RESOLVED — migration 053 / 6fa46ec8; service 3ff27c8f; schema docs bd5d5261; regression f5f5b0df |
 | G-317 | P1 | Public product-media serving lacks canonical approval/provenance/private-reference gating. | RESOLVED — query e1991dd5; regression 31f2c994 |
 | G-318 | P1 | Canonical media ingestion pipeline (presign → confirm → validate → process → thumbnail/resumable) is not fully implemented/evidenced. | RESOLVED_CODE / EXTERNAL_EVIDENCE_PENDING — migration b6cb7877; service 6ccc1618→3af490e5; API 2564d61; regression 408639c5→6ccc1618 |
-| G-319 | P1 | POD/dispute media references lack READY + ownership + tenant + purpose validation. | OPEN |
+| G-319 | P1 | POD/dispute media references lack READY + ownership + tenant + purpose validation. | RESOLVED — validator b7c4e56a; dispute 7c078b5f; POD 891778b1; regression a0a5d55b |
 | G-320 | P2 | DB media DELETED lifecycle lacks explicit object-storage reconciliation. | OPEN |
 | G-325 | P1 | Basket/allocation stale-version handling and checkout consistency require complete canonical enforcement. | OPEN |
 | G-326 | P1 | Stale-checkout must return a canonical 409 Conflict contract. | OPEN |
@@ -637,3 +637,10 @@ At the end of each closed item, the ledger must contain:
 - **API contract:** `4c60fbe40065169d936552f2b4e35d4a7bbc04cd`
 - **Regression commits:** `408639c57feae3a747a46fc2d3c128b81121e230`, `6ccc1618d9a0b341f6395d4569cd2d3de184a063`
 - **Verification state:** code and fake-provider regression persisted; live S3/MinIO runtime evidence + fresh CI remain pending.
+
+### G-319 Closure Record
+- **Resolution:** shared `validate_ready_attachment` now enforces READY lifecycle, exact uploader ownership, active organization context, exact `upload_target_type` purpose and exact `upload_target_id`. Dispute admission and POD confirmation both call the same validator before attaching evidence/proof.
+- **Source commits:** `b7c4e56aaa17c33bc7b75a6256e8731d88a709a2`, `7c078b5f8b5204a04a2bcf288b434aed6f8c83c7`, `891778b17aeeb7033a9367c22c95c24e3c2017e2`
+- **Regression:** `test_media_reference_requires_ready_owner_and_exact_purpose` verifies valid attachment plus wrong-purpose and wrong-target rejection.
+- **Regression commit:** `a0a5d55ba31299a7f6de0731da18ed63e1079423`
+- **Verification state:** SOURCE + SHARED VALIDATOR + DISPUTE/POD INTEGRATION + REGRESSION PERSISTED; fresh CI/runtime remains pending.
