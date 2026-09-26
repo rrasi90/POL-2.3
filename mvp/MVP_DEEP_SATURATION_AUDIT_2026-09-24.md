@@ -149,7 +149,7 @@ Current evidence: backend verification CI run #805 passed 526/526.
 Residual closure: expand the matrix from the current critical-action set to every MVP screen action before final DoD closure.
 
 ### DSA-005 — Notification actionability
-Class: SOURCE REMEDIATED / CI VERIFIED.
+Class: SOURCE REMEDIATED / CURRENT CI CERTIFICATION BLOCKED.
 The current source now exposes durable inbox listing, unread filtering/counts, deep links, mark-one-read and mark-all-read routes, while `/notifications` also projects read state and deep-link data.
 Current evidence: notification HTTP tests are included in the 526/526 green verification suite.
 Residual closure: browser/device notification navigation and push-provider delivery remain separate runtime evidence.
@@ -207,14 +207,14 @@ for every in-scope production capability.
 11. Perform final independent second pass.
 12. Only then update delivery DoD.
 ### DSA-011 — Web access/refresh credentials no longer persist in localStorage
-Class: SOURCE REMEDIATED / CI VERIFIED / BROWSER VERIFICATION PENDING.
+Class: SOURCE REMEDIATED / CURRENT CI CERTIFICATION BLOCKED / BROWSER VERIFICATION PENDING.
 Current mvp/apps/web/src/lib/auth/store.ts keeps the access token in memory and stores only non-secret profile metadata in localStorage. The web refresh credential is carried by the server-managed `pol_refresh` HttpOnly/Secure/SameSite cookie.
-Required closure: browser-runtime/XSS verification and production cookie configuration evidence; current backend transport CI is green.
+Required closure: browser-runtime/XSS verification and production cookie configuration evidence; current remediation CI is not currently certifiable because GitHub Actions jobs are failing before useful step execution.
 
 ### DSA-012 — Browser-to-API CORS policy remediated
 Class: SOURCE REMEDIATED / CI VERIFIED.
 The FastAPI transport uses explicit environment-scoped CORS; production requires POL_CORS_ORIGINS and wildcard production CORS is rejected. A transport test covers an allowed localhost origin and a blocked external origin.
-Required closure: deployment configuration must supply the intended production origins; source and automated transport CI are green.
+Required closure: deployment configuration must supply the intended production origins; the source/transport tests exist, but current remediation CI is not currently certifiable because GitHub Actions jobs are failing before useful step execution.
 
 ## 8.5 — Remediation verification checkpoint — 2026-09-25
 
@@ -227,11 +227,12 @@ Required closure: deployment configuration must supply the intended production o
 - Remaining release evidence is explicitly limited to areas requiring a deployed browser/device/provider environment or unresolved contractual/product decisions; these are not converted to PASS by source-only evidence.
 
 
-## 8.6 — Current remediation branch checkpoint — 2026-09-25
+## 8.6 — Current remediation branch checkpoint — 2026-09-26
 
 - Current branch: `remediation/full-closure-2026-09-25`.
-- The branch has moved materially beyond checkpoint 8.5: canonical HTTP implementations now exist for the historical management, continuous-inventory, barcode/candidate, payment/dispute, partial-acceptance and durable-inbox gaps.
-- Local execution evidence recorded in `mvp/LOCAL_EXECUTION_TRACKER.md` closes LOCAL-01, LOCAL-02, LOCAL-03 and LOCAL-04 as PASS on 2026-09-24.
-- Current source also rotates refresh tokens and contains a replay-failure regression; D-018 policy wording remains an explicit governance decision and is not inferred from implementation.
-- A fresh pull-request CI trigger on the remediation branch is presently failing before useful step-level execution. This is an evidence blocker, not a source PASS/FAIL result; no fresh CI green claim is made.
-- The old checkpoint's 526/526 and mobile #202 statements remain historical evidence only.
+- Current remediation head: `54e5aab3061bd8ec898f06b1ac37d903f64e4b28` at the time of this reconciliation.
+- Source remediation has continued beyond checkpoint 8.5, including authentication tenant switching, retailer/vendor role boundaries for commerce decisions, formal dispute opening, and Expo SDK 57 toolchain alignment.
+- Historical local/device evidence from 2026-09-24 remains valid as historical evidence for the tested build; it does not certify the current remediation head.
+- Current pull-request CI runs for the remediation branch have repeatedly produced failed jobs before useful step-level execution; job steps are empty and job-log retrieval is unavailable. This is an evidence/execution blocker, not a source-level PASS or FAIL result.
+- The old 526/526 backend and mobile success statements remain historical evidence only.
+- Remaining non-technical gates are explicit governance/product decisions (D-018 refresh-token policy wording, invoice timing, D-024 storefront-write contract) and deployment/provider/browser/device evidence that cannot be honestly manufactured from repository inspection.
