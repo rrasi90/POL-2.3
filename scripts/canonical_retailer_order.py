@@ -104,6 +104,29 @@ class CanonicalRetailerOrderService:
             if cur.rowcount == 1:
                 released_count += 1
 
+                cur.execute(
+                    """
+                    INSERT INTO outbox_events (
+                        id,event_id,event_name,aggregate_type,aggregate_id,payload,
+                        status,target_user_id,target_organization_id,dedupe_key,channel_hint
+                    )
+                    VALUES (
+                        gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_RELEASED','INVENTORY_RESERVATION',%s,
+                        jsonb_build_object(
+                            'reservation_id',%s,'order_id',%s,'vendor_product_id',%s,
+                            'quantity',%s,'reason','RETAILER_CANCELLED'
+                        ),
+                        'PENDING',NULL,NULL,%s,'INBOX'
+                    )
+                    ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                    """,
+                    (
+                        reservation["id"], reservation["id"], order_id,
+                        reservation["vendor_product_id"], reservation["quantity"],
+                        f"reservation-released:{reservation['id']}:RETAILER_CANCELLED"
+                    ),
+                )
+
         cur.execute(
             """
             UPDATE orders
