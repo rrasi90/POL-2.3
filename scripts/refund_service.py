@@ -48,13 +48,24 @@ class RefundService:
         dedupe = event_id
         cur.execute(
             """
-            SELECT om.user_id
+            SELECT DISTINCT om.user_id, om.organization_id
             FROM organization_memberships om
             JOIN users u ON u.id=om.user_id
-            WHERE om.organization_id=%s AND om.status='ACTIVE' AND u.is_active=TRUE
-            ORDER BY om.user_id
+            WHERE om.organization_id IN (
+                SELECT r.organization_id
+                FROM retailers r
+                WHERE r.id=%s
+                UNION
+                SELECT v.organization_id
+                FROM orders o
+                JOIN vendors v ON v.id=o.vendor_id
+                WHERE o.id=%s
+            )
+              AND om.status='ACTIVE'
+              AND u.is_active=TRUE
+            ORDER BY om.organization_id, om.user_id
             """,
-            (organization_id,),
+            (refund["retailer_id"], refund["order_id"]),
         )
         recipients = cur.fetchall()
         for rec in recipients:
@@ -84,7 +95,7 @@ class RefundService:
                     str(refund["id"]),
                     payload_json,
                     rec["user_id"],
-                    organization_id,
+                    rec["organization_id"],
                     recipient_key,
                 ),
             )
@@ -292,7 +303,8 @@ class RefundService:
             """
             SELECT s.*
             FROM settlements s
-            WHERE s.order_id=%s AND s.vendor_id=%s
+            JOIN orders o ON o.id=s.order_id AND o.vendor_id=s.vendor_id
+            WHERE s.order_id=%s
             ORDER BY s.created_at DESC
             LIMIT 1
             FOR UPDATE
@@ -300,6 +312,10 @@ class RefundService:
             (refund["order_id"],),
         )
         settlement = cur.fetchone()
+        if not settlement:
+            raise ValueError("No settlement exists for the refunded order.")
+        if settlement["status"] not in ("DISPUTED", "CALCULATED", "RECONCILED"):
+            raise ValueError("Refund cannot be completed against a closed or paid-out settlement.")
 
         # Atomically link this refund to an existing dispute adjustment of the
         # same amount, or create the explicit REFUND adjustment exactly once.
@@ -435,11 +451,9 @@ class RefundService:
             """
             SELECT r.*
             FROM refunds r
-            JOIN retailers rt ON rt.id=r.retailer_id
             WHERE r.id=%s
-              AND rt.organization_id = %s
             """,
-            (refund_id, organization_id),
+            (refund_id,),
         )
         refund = cur.fetchone()
         if not refund:
