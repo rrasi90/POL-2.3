@@ -91,4 +91,6 @@ Source remediation is substantially advanced and the branch has additional defen
 - **G-055 Field task contract:** the field task HTTP route and application boundary now share the same retailer/vendor target contract and resolve target organization safely; HTTP regression added.
 - **G-056 Support related-order tenancy:** support case creation now requires an optional related order to belong to the active support organization; cross-tenant HTTP regression added.
 
+**G-057 HTTP Referral Redemption:** the HTTP redemption endpoint now executes the canonical retailer first-touch attribution service with deterministic idempotency; new HTTP regression covers creation and replay.
+
 These are source-level closures. They are not marked as fresh CI PASS because current GitHub Actions executions still terminate before reporting any workflow step.
