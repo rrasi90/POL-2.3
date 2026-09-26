@@ -81,3 +81,14 @@ Therefore:
 ## Release interpretation
 
 Source remediation is substantially advanced and the branch has additional defense-in-depth beyond the prior audit. Final release certification still requires the explicit governance decisions and external runtime/provider/deployment evidence above, plus a usable fresh CI execution.
+
+
+## Post-Reaudit Source Findings Closed — 2026-09-26
+
+- **G-052 Delegated permission evaluation ceiling:** `effective_permissions()` now filters legacy/direct delegated grants through the target-role deny ceiling; regression added in `scripts/test_delegated_permissions.py`.
+- **G-053 Product media tenant/provenance:** vendor product media now requires an active vendor-product relationship in the caller's organization; operator uploads use `POL_OWNED`; regression added in `scripts/test_media_service.py`.
+- **G-054 Legacy unbound uploads:** unbound `UPLOADING` assets fail closed at runtime; migration 048 invalidates legacy unbound rows and enforces a database CHECK invariant.
+- **G-055 Field task contract:** the field task HTTP route and application boundary now share the same retailer/vendor target contract and resolve target organization safely; HTTP regression added.
+- **G-056 Support related-order tenancy:** support case creation now requires an optional related order to belong to the active support organization; cross-tenant HTTP regression added.
+
+These are source-level closures. They are not marked as fresh CI PASS because current GitHub Actions executions still terminate before reporting any workflow step.
