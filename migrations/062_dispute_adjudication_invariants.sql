@@ -1,4 +1,5 @@
 -- 062: Dispute adjudication invariants at the PostgreSQL boundary.
+-- (Index uses opened_at — disputes has no created_at column.)
 -- Forward-only. Existing historical rows are left untouched; future
 -- transitions into RESOLVED/CLOSED are enforced centrally.
 
@@ -72,4 +73,4 @@ FOR EACH ROW
 EXECUTE FUNCTION pol_validate_dispute_adjudication_v062();
 
 CREATE INDEX IF NOT EXISTS idx_disputes_order_status_v062
-    ON disputes(order_id, dispute_status, created_at DESC);
+    ON disputes(order_id, dispute_status, opened_at DESC);
