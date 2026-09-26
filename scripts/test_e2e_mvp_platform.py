@@ -635,6 +635,27 @@ def test_daily_capacity_uses_vendor_local_day(
     ("2026-09-16T21:30:00+00:00", True),
     ("2026-09-17T00:00:00+00:00", False),
 ])
+def test_operating_window_uses_its_own_timezone_for_weekday(
+    postgres_database, checkout_catalog, monkeypatch,
+):
+    """G-308: window timezone, not capacity timezone, determines its business weekday."""
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            "UPDATE vendor_capacity_profiles SET timezone='Asia/Tehran' WHERE vendor_id=%s",
+            (vendor_id,),
+        )
+        # 2026-09-16 20:30 UTC is Thursday 00:00 in Tehran but Wednesday 16:30 in New York.
+        insert_row(
+            cur, "vendor_operating_windows", vendor_id=vendor_id, weekday=3,
+            timezone="America/New_York", opens_at="15:00", closes_at="16:00", is_active=True,
+        )
+    freeze_policy_clock(monkeypatch, datetime(2026, 9, 16, 20, 30, tzinfo=timezone.utc))
+    allocations = [{"vendor_id": vendor_id, "quantity": 7, "amount_toman": 3100000}]
+    with transaction(postgres_database) as cur:
+        with pytest.raises(AllocationIntegrityError, match="outside its operating window"):
+            validate_vendor_operational_capacity(cur, allocations)
+
 def test_overnight_operating_window_remains_enforced(
     postgres_database, checkout_catalog, monkeypatch, instant, allowed,
 ):
