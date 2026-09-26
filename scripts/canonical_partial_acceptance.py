@@ -267,7 +267,7 @@ class CanonicalPartialAcceptanceService:
             JOIN organizations org ON org.id = om.organization_id
             WHERE om.organization_id = %s
               AND om.status = 'ACTIVE'
-              AND om.role = 'RETAILER_OWNER'
+              AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
               AND org.status = 'ACTIVE'
             ORDER BY om.user_id
             """,
@@ -623,7 +623,7 @@ class CanonicalPartialAcceptanceService:
             JOIN organizations org ON org.id = om.organization_id
             WHERE om.organization_id = %s
               AND om.status = 'ACTIVE'
-              AND om.role = 'RETAILER_OWNER'
+              AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
               AND org.status = 'ACTIVE'
             UNION ALL
             SELECT om.user_id, om.organization_id, 'VENDOR' AS recipient_kind
