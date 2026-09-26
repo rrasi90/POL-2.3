@@ -199,6 +199,8 @@ class RefundService:
 
         if not payment:
             raise ValueError("Payment not found for the disputed order.")
+        if str(payment["retailer_id"]) != str(dispute["retailer_id"]) or str(payment["vendor_id"]) != str(dispute["vendor_id"]):
+            raise PermissionError("Refund payment provenance does not match the disputed retailer/vendor.")
         if payment["payment_status"] != "SUCCESS":
             raise ValueError("Refund requires a successful payment.")
         cur.execute(
