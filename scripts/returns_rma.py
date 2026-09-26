@@ -314,50 +314,6 @@ class CanonicalReturnService:
         if refund_row:
             refund_id = refund_row["id"]
             cur.execute("UPDATE returns SET refund_id=%s WHERE id=%s", (refund_id, ret["id"]))
-            cur.execute(
-                """
-                SELECT id
-                FROM settlements
-                WHERE order_id=%s AND vendor_id=%s
-                ORDER BY created_at DESC
-                LIMIT 1
-                FOR UPDATE
-                """,
-                (ret["order_id"], ret["vendor_id"]),
-            )
-            settlement = cur.fetchone()
-            if settlement:
-                cur.execute(
-                    """
-                    INSERT INTO settlement_adjustments
-                        (id, settlement_id, dispute_id, refund_id, adjustment_type,
-                         amount_toman, reason, applied_by_user_id)
-                    VALUES (%s,%s,NULL,%s,'REFUND',%s,%s,%s)
-                    ON CONFLICT (refund_id) WHERE refund_id IS NOT NULL DO NOTHING
-                    """,
-                    (
-                        str(uuid.uuid4()), settlement["id"], refund_id, amount,
-                        f"RMA refund {ret['return_number']}", actor_user_id,
-                    ),
-                )
-                cur.execute(
-                    """
-                    SELECT COALESCE(SUM(amount_toman),0) AS total
-                    FROM settlement_adjustments WHERE settlement_id=%s
-                    """,
-                    (settlement["id"],),
-                )
-                total = int(cur.fetchone()["total"])
-                cur.execute(
-                    """
-                    UPDATE settlements
-                    SET adjustment_amount_toman=-%s,
-                        net_vendor_amount_toman=gross_amount_toman-commission_amount_toman-%s,
-                        status='RECONCILED'
-                    WHERE id=%s
-                    """,
-                    (total, total, settlement["id"]),
-                )
 
             cur.execute(
                 """
@@ -415,26 +371,53 @@ class CanonicalReturnService:
 
         cur.execute(
             """
-            SELECT COALESCE(SUM(amount_toman),0) AS total_completed
-            FROM refunds
-            WHERE payment_id=%s AND status='COMPLETED'
+            SELECT id, order_id, vendor_id
+            FROM settlements
+            WHERE order_id=%s AND vendor_id=%s
+            ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE
             """,
-            (refund["payment_id"],),
+            (ret["order_id"], ret["vendor_id"]),
         )
-        total_completed = int(cur.fetchone()["total_completed"])
-        fully_refunded = total_completed == int(payment["amount_toman"])
+        settlement = cur.fetchone()
+        if not settlement:
+            raise ReturnStateError("No settlement exists for the RMA order.")
 
-        if fully_refunded:
-            cur.execute(
-                """
-                UPDATE payments
-                SET payment_status='REFUNDED'
-                WHERE id=%s AND payment_status='SUCCESS'
-                """,
-                (refund["payment_id"],),
-            )
-            if cur.rowcount != 1:
-                raise ReturnStateError("Linked payment is no longer refundable.")
+        cur.execute(
+            """
+            INSERT INTO settlement_adjustments
+                (id,settlement_id,dispute_id,refund_id,adjustment_type,
+                 amount_toman,reason,applied_by_user_id)
+            VALUES (%s,%s,NULL,%s,'REFUND',%s,%s,%s)
+            ON CONFLICT (refund_id) WHERE refund_id IS NOT NULL DO NOTHING
+            """,
+            (
+                str(uuid.uuid4()), settlement["id"], ret["refund_id"],
+                int(refund["amount_toman"]),
+                f"RMA refund {ret['return_number']}",
+                actor_user_id,
+            ),
+        )
+        cur.execute(
+            """
+            SELECT COALESCE(SUM(amount_toman),0) AS total
+            FROM settlement_adjustments
+            WHERE settlement_id=%s
+            """,
+            (settlement["id"],),
+        )
+        total_adjustments = int(cur.fetchone()["total"])
+        cur.execute(
+            """
+            UPDATE settlements
+            SET adjustment_amount_toman=-%s,
+                net_vendor_amount_toman=gross_amount_toman-commission_amount_toman-%s,
+                status='RECONCILED'
+            WHERE id=%s
+            """,
+            (total_adjustments, total_adjustments, settlement["id"]),
+        )
 
         for event_name in (("REFUND_COMPLETED", "PAYMENT_REFUNDED") if fully_refunded else ("REFUND_COMPLETED",)):
             cur.execute(
