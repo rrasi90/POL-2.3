@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+##!/usr/bin/env python3
 """
 POL Environment & Bootstrap Verifier
 Validates:
@@ -59,44 +59,6 @@ EXPECTED_CORE_TABLES = [
     "delegated_permission_grants",
     "permission_audit_events",
 ]
-EXPECTED_TABLE_COUNT = 96
-EXPECTED_CORE_TABLES = [
-    "users",
-    "organizations",
-    "organization_memberships",
-    "user_sessions",
-    "user_devices",
-    "retailers",
-    "vendors",
-    "products",
-    "vendor_products",
-    "vendor_inventory",
-    "vendor_prices",
-    "baskets",
-    "basket_items",
-    "allocation_plans",
-    "allocation_items",
-    "order_groups",
-    "orders",
-    "order_items",
-    "payments",
-    "deliveries",
-    "settlements",
-    "disputes",
-    "support_cases",
-    "invoices",
-    "invoice_items",
-    "notifications",
-    "user_inbox_items",
-    "outbox_events",
-    "daily_inventory_confirmations",
-    "daily_inventory_confirmation_items",
-    "feedback_submissions",
-    "vendor_reliability_events",
-    "product_identity_lifecycle_logs",
-    "returns",
-]
-
 def verify_python():
     version_info = sys.version_info
     ver_str = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
