@@ -65,10 +65,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_refund_idempotency_key
     ON refunds(idempotency_key)
     WHERE idempotency_key IS NOT NULL;
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_active_refund_per_order_v058
-    ON refunds(order_id)
-    WHERE status IN ('PENDING','APPROVED','COMPLETED');
-
 ALTER TABLE settlement_adjustments
     ADD COLUMN IF NOT EXISTS refund_id UUID REFERENCES refunds(id) ON DELETE SET NULL;
 
