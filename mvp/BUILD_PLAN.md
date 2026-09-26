@@ -49,6 +49,7 @@
 - Auth principal-state hardening: bearer access, refresh, direct authorization, and organization switching now require active user + active organization + active membership; regression coverage added.
 - OTP transport contract: `VerifyOTPRequest.mobile_number` now enforces the same E.164 pattern as request-OTP, with explicit HTTP/schema regression coverage.
 - Mobile source parity expanded: Ops mobile now covers risk signals, pilot analytics, catalog-candidate review, and ADMIN_SUPER user/organization status management; Vendor mobile customer/staff management is already source-implemented.
+- Media target binding hardening: migration 048 binds presigned uploads to their authorized target and confirm-upload rejects retargeting; schema + unit regressions added.
 - CI remains an external evidence blocker: latest remediation runs terminate before useful step execution (`steps:null`). No fresh green certification is claimed.
 
 ### BUILD GATE 0 — checklist (Master Instruction §8)
