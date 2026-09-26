@@ -70,6 +70,13 @@ HTTP may also set `X-Correlation-ID`.
 | PUT | `/profile` |
 | GET/PUT | `/membership/profile` (membership_router prefix `/membership`) |
 
+### 3.2.1 Privacy — `privacy.py` (`/privacy`)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/privacy/export` | Authenticated user-owned data snapshot; SHA-256 persisted with request metadata; export payload is not persisted as a duplicate PII artifact |
+| POST | `/privacy/deletion` | Authenticated account de-identification: revoke sessions/devices/consents and clear direct profile PII while preserving business/audit history |
+
 ### 3.3 Baskets — `baskets.py` (`/baskets`)
 
 | Method | Path |
