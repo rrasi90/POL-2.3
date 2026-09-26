@@ -4857,9 +4857,16 @@ class POLApplicationBoundary:
                 "OPS_ADMIN": ["resolve_support", "catalog_operations", "review_candidates", "monitor_vendor_sla"],
                 "SUPER_ADMIN": ["manage_users", "manage_organizations", "broadcasts", "dispute_resolution", "financial_adjustments", "feature_flags"],
             },
-            "source": "MASTER_SYSTEM_ARCHITECTURE.md §4",
+            "delegatable_permissions": sorted(CANONICAL_PERMISSIONS),
+            "delegation_rules": {
+                "manager_permission": "membership.manage",
+                "tenant_scope": "active_organization",
+                "privilege_ceiling": "actor_can_only_delegate_permissions_in_actor_effective_set",
+                "audit": "permission_audit_events_append_only",
+            },
+            "source": "MASTER_SYSTEM_ARCHITECTURE.md §4 + Master Tree VD-15",
         }
-
+    
     def global_returns_list(self, *, status=None, offset=0, limit=50):
         self._require_ops_context()
         params: list = []
