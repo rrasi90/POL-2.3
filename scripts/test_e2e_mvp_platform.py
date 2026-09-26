@@ -669,7 +669,7 @@ def test_reservation_lifecycle_uses_canonical_runtime_commands(postgres_database
             address_snapshot={"address": "G339-EXP"},
             vendor_allocations=[{
                 "vendor_id": alloc["vendor_id"], "vendor_product_id": alloc["vendor_product_id"],
-                "quantity": int(alloc["allocated_quantity"]), "unit_price_toman": int(alloc["unit_price_snapshot_toman"] if False else alloc["unit_price_snapshot_toman"]),
+                "quantity": int(alloc["allocated_quantity"]), "unit_price_toman": int(alloc["unit_price_snapshot_toman"]),
                 "amount_toman": int(alloc["allocated_quantity"]) * int(alloc["unit_price_snapshot_toman"]),
             }],
         )
