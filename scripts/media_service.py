@@ -196,13 +196,16 @@ class MediaService:
             """
             INSERT INTO media_assets (
                 id, storage_provider, storage_bucket, storage_key, mime_type,
-                file_size_bytes, checksum_sha256, status, provenance, uploaded_by_user_id
+                file_size_bytes, checksum_sha256, status, provenance,
+                uploaded_by_user_id, upload_target_type, upload_target_id
             )
-            VALUES (%s,'S3_MINIO',%s,%s,%s,%s,'','UPLOADING',%s,%s)
+            VALUES (%s,'S3_MINIO',%s,%s,%s,%s,'','UPLOADING',%s,%s,%s,%s)
             RETURNING id
             """,
-            (media_id, _bucket(), object_key, mime_type, file_size_bytes,
-             meta["provenance"], user_id),
+            (
+                media_id, _bucket(), object_key, mime_type, file_size_bytes,
+                meta["provenance"], user_id, target_type.upper(), target_id,
+            ),
         )
 
         s3 = _s3_client()
@@ -235,6 +238,12 @@ class MediaService:
         if not media:
             raise MediaError("Media upload not found or not owned by current user.")
 
+        bound_type = str(media.get("upload_target_type") or "").upper()
+        bound_id = str(media.get("upload_target_id") or "")
+        requested_type = target_type.upper()
+        requested_id = str(target_id)
+        if bound_type and (bound_type != requested_type or bound_id != requested_id):
+            raise MediaError("Upload confirmation target does not match the authorized presign target.")
         meta = _authorize_target(cur, user_id, organization_id, target_type, target_id)
         s3 = _s3_client()
         bucket = media["storage_bucket"]
