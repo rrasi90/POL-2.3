@@ -1492,14 +1492,18 @@ class DisputeService:
         if approved > 0:
             cur.execute(
                 """
-                SELECT 1 FROM refunds
+                SELECT COALESCE(SUM(amount_toman),0) AS completed_refund
+                FROM refunds
                 WHERE dispute_id=%s AND status='COMPLETED'
-                LIMIT 1
                 """,
                 (dispute_id,),
             )
-            if not cur.fetchone():
-                raise ValueError("Resolved disputes with a positive award require a completed refund before closure.")
+            completed_refund = int(cur.fetchone()["completed_refund"])
+            if completed_refund != approved:
+                raise ValueError(
+                    "Resolved disputes with a positive award require a completed refund "
+                    "whose total amount exactly equals the approved award."
+                )
         cur.execute(
             "UPDATE disputes SET dispute_status='CLOSED', closed_at=now() WHERE id=%s RETURNING *",
             (dispute_id,),
