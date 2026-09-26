@@ -166,6 +166,7 @@ class CanonicalBasketAllocationService:
                 master_product_id=str(row["product_id"]),
                 requested_quantity=int(row["requested_quantity"]),
                 packaging_unit=str(row["requested_unit"]),
+                pack_quantity=int(row["pack_quantity"]),
             )
             for row in basket_rows
         ]
@@ -226,6 +227,7 @@ class CanonicalBasketAllocationService:
                 vendor_id=str(row["vendor_id"]),
                 master_product_id=str(row["product_id"]),
                 packaging_unit=str(row["packaging_unit"]),
+                pack_quantity=int(row["pack_quantity"]),
                 price_toman=int(row["price_toman"]),
                 physical_quantity=int(row["physical_quantity"]),
                 reserved_quantity=int(row["reserved_quantity"]),
