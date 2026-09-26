@@ -132,6 +132,7 @@ def ensure_base_fixtures():
     conn.close()
 
 import pytest
+from scripts.reservation_service import ReservationService, ReservationConflictError
 
 @pytest.fixture(autouse=True)
 def setup_concurrency_fixtures():
@@ -330,6 +331,61 @@ def test_concurrency_3_checkout_different_keys_scarce_stock():
     assert len(rejected) == 1, f"Expected exactly 1 rejected due to stock, got {len(rejected)}: {results}"
 
     print(f"  [PASS] Concurrency 3 passed: Semantic race between distinct keys correctly arbitrated by inventory atomicity ({placed[0][0]} won, {rejected[0][0]} rejected).")
+
+def test_concurrency_10_reservation_service_scarce_stock_race():
+    """G-340: real concurrent ReservationService calls arbitrate the same scarce inventory row."""
+    setup_conn = get_conn()
+    cur = setup_conn.cursor()
+    p_id, vp_id, tag = str(uuid.uuid4()), str(uuid.uuid4()), uuid.uuid4().hex[:8]
+    cur.execute("INSERT INTO products (id, master_sku, canonical_name_fa, brand_id, category_id, subcategory_id) VALUES (%s,%s,%s,%s,%s,%s)", (p_id, f"POL-G340-{tag}", "G340", BRAND_1, CAT_1, SUBCAT_1))
+    cur.execute("INSERT INTO vendor_products (id, vendor_id, product_id, vendor_sku, packaging_unit, pack_quantity) VALUES (%s,%s,%s,%s,'CARTON',1)", (vp_id,VND_A,p_id,f"SKU-G340-{tag}"))
+    cur.execute("INSERT INTO vendor_inventory (id, vendor_product_id, physical_quantity, reserved_quantity) VALUES (%s,%s,1,0)", (str(uuid.uuid4()),vp_id))
+    setup_conn.commit(); setup_conn.close()
+    barrier = threading.Barrier(2); results=[]
+    def reserve_worker(name):
+        conn=get_conn(); cur=conn.cursor(cursor_factory=RealDictCursor)
+        barrier.wait()
+        try:
+            reservation=ReservationService.reserve(cur,vendor_product_id=vp_id,quantity=1,idempotency_key=f"g340-{name}-{tag}")
+            conn.commit(); results.append((name,"RESERVED",str(reservation["id"])))
+        except Exception as exc:
+            conn.rollback(); results.append((name,type(exc).__name__))
+        finally: conn.close()
+    t1=threading.Thread(target=reserve_worker,args=("A",)); t2=threading.Thread(target=reserve_worker,args=("B",))
+    t1.start(); t2.start(); t1.join(); t2.join()
+    assert sum(r[1]=="RESERVED" for r in results)==1, results
+    check=get_conn(); q=check.cursor()
+    q.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s",(vp_id,)); assert q.fetchone()[0]==1
+    q.execute("SELECT COUNT(*) FROM inventory_reservations WHERE vendor_product_id=%s AND status='ACTIVE'",(vp_id,)); assert q.fetchone()[0]==1
+    check.close()
+
+def test_concurrency_11_reservation_idempotency_same_key():
+    """G-341: DB unique key arbitrates two concurrent reservations using the same idempotency key."""
+    setup_conn=get_conn(); cur=setup_conn.cursor()
+    p_id,vp_id,tag=str(uuid.uuid4()),str(uuid.uuid4()),uuid.uuid4().hex[:8]
+    cur.execute("INSERT INTO products (id, master_sku, canonical_name_fa, brand_id, category_id, subcategory_id) VALUES (%s,%s,%s,%s,%s,%s)", (p_id,f"POL-G341-{tag}","G341",BRAND_1,CAT_1,SUBCAT_1))
+    cur.execute("INSERT INTO vendor_products (id,vendor_id,product_id,vendor_sku,packaging_unit,pack_quantity) VALUES (%s,%s,%s,%s,'CARTON',1)", (vp_id,VND_A,p_id,f"SKU-G341-{tag}"))
+    cur.execute("INSERT INTO vendor_inventory (id,vendor_product_id,physical_quantity,reserved_quantity) VALUES (%s,%s,5,0)", (str(uuid.uuid4()),vp_id))
+    setup_conn.commit(); setup_conn.close()
+    key=f"g341-shared-{tag}"; barrier=threading.Barrier(2); results=[]
+    def reserve_same_key(name):
+        conn=get_conn(); cur=conn.cursor(cursor_factory=RealDictCursor); barrier.wait()
+        try:
+            res=ReservationService.reserve(cur,vendor_product_id=vp_id,quantity=2,idempotency_key=key)
+            conn.commit(); results.append((name,"RESERVED",str(res["id"]),bool(res.get("idempotent_replay"))))
+        except Exception as exc:
+            conn.rollback(); results.append((name,type(exc).__name__))
+        finally: conn.close()
+    t1=threading.Thread(target=reserve_same_key,args=("A",)); t2=threading.Thread(target=reserve_same_key,args=("B",))
+    t1.start(); t2.start(); t1.join(); t2.join()
+    assert len([r for r in results if r[1]=="RESERVED"])==2, results
+    ids={r[2] for r in results if r[1]=="RESERVED"}; assert len(ids)==1
+    assert sum(bool(r[3]) for r in results if r[1]=="RESERVED")==1
+    check=get_conn(); q=check.cursor();
+    q.execute("SELECT COUNT(*),MAX(reserved_quantity) FROM inventory_reservations ir JOIN vendor_inventory vi ON vi.vendor_product_id=ir.vendor_product_id WHERE ir.idempotency_key=%s",(key,));
+    cnt,_=q.fetchone(); assert cnt==1
+    q.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s",(vp_id,)); assert q.fetchone()[0]==2
+    check.close()
 
 def test_concurrency_4_vendor_accept_race():
     print("\n[CONCURRENCY 4] Vendor Accept Race (Two concurrent workers accepting SUBMITTED order)...")
