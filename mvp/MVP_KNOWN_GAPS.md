@@ -266,3 +266,11 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** retailer-side payment evidence now requires `RETAILER_OWNER`; verification now requires `VENDOR_OWNER` or authorized ops/admin roles. Vendor-side evidence collection remains available for the evidence types already defined by the API contract.
 - **Regression proof:** `scripts/test_http_payment_evidence.py` adds explicit Retailer Staff submission rejection and Vendor Staff verification rejection.
 - **Status:** SOURCE REMEDIATED / FRESH CI PENDING
+
+
+## G-043 — Presigned media upload target retargeting (SECURITY GAP — REMEDIATED — 2026-09-26)
+
+- **Finding:** the presign request authorized one target, but confirm-upload accepted a caller-supplied target independently; an upload could therefore be rebound to another object accessible to the same actor.
+- **Resolution:** migration `048_bind_media_upload_target.sql` binds `upload_target_type` + `upload_target_id` to the presigned asset. Confirmation rejects any target mismatch before storage finalization.
+- **Regression proof:** `scripts/test_media_service.py::test_presigned_upload_target_cannot_be_retargeted` plus schema assertions for migration 048.
+- **Status:** SOURCE REMEDIATED / FRESH CI PENDING
