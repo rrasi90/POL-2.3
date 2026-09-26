@@ -441,7 +441,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-309 | P1 | Cross-midnight operating windows do not resolve the previous weekday after midnight. | RESOLVED — source logic introduced with G-308; regression e64ea3bd |
 | G-310 | P1 | Overnight `order_cutoff_at` lacks day-offset/instant semantics. | RESOLVED — source ad8b827e; regression 570a6452 |
 | G-311 | P1 | Daily/hourly vendor capacity is check-then-act and lacks atomic reservation/invariant enforcement. | RESOLVED — transactional advisory lock 4f6f8aec; regression 59f83384 |
-| G-312 | P1 | Admin audit immutability is not DB-enforced against UPDATE/DELETE. | OPEN |
+| G-312 | P1 | Admin audit immutability is not DB-enforced against UPDATE/DELETE. | RESOLVED — migration 049 / 6dd3791e; regression 03979c4c |
 | G-313 | P1 | Inventory audit history can be cascaded away through `vendor_product_id`. | OPEN |
 | G-314 | P1 | Notification retention/expiry is not canonically populated and no auto-archive worker is evidenced. | OPEN |
 | G-315 | P1 | Privacy export/account-deletion lifecycle lacks a runtime API/workflow. | OPEN |
@@ -572,3 +572,10 @@ At the end of each closed item, the ledger must contain:
 - **Source commit:** `4f6f8ae64408669d92d6abd2fbf44e7e144f26c0`
 - **Regression commit:** `59f83384ebf8122b4729c8c56aa1932e832d3ab9`
 - **Verification state:** SOURCE FIX + CONCURRENCY REGRESSION PERSISTED; fresh CI remains separately blocked.
+
+### G-312 Closure Record
+- **Resolution:** migration `049_admin_audit_immutability.sql` installs a PostgreSQL trigger that rejects UPDATE and DELETE on `admin_audit_logs`, making the audit trail append-only at the database boundary.
+- **Regression:** `test_admin_audit_logs_are_db_immutable` proves INSERT succeeds, UPDATE is rejected, DELETE is rejected, and the original row remains intact.
+- **Migration commit:** `6dd3791e78224c6e8f14582a529a894a649c1d06`
+- **Regression commit:** `03979c4c096fcec695d8cfbb1e972f68c3040cc9`
+- **Verification state:** SOURCE + DATABASE CONSTRAINT + REGRESSION PERSISTED; fresh CI remains separate.
