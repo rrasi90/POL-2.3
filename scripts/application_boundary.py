@@ -1325,24 +1325,48 @@ class POLApplicationBoundary:
         if not self.context.organization_id:
             raise PermissionError("Payment evidence requires an active organization context.")
 
-        # Locate the order and its payment
-        self.cur.execute(
-            """
-            SELECT o.id AS order_id, o.retailer_id, o.vendor_id,
-                   p.id AS payment_id, p.payment_status, p.retailer_id AS pay_retailer_id,
-                   p.vendor_id AS pay_vendor_id
-            FROM orders o
-            JOIN payments p ON p.order_id = o.id
-            WHERE o.id = %s
-            ORDER BY p.created_at DESC, p.id DESC
-            LIMIT 1
-            FOR UPDATE OF p
-            """,
-            (order_id,),
-        )
-        row = self.cur.fetchone()
+        # Locate exactly one payment. An order with multiple payment records
+        # must identify the intended payment explicitly.
+        if payment_id:
+            self.cur.execute(
+                """
+                SELECT o.id AS order_id, o.retailer_id, o.vendor_id,
+                       p.id AS payment_id, p.payment_status,
+                       p.retailer_id AS pay_retailer_id,
+                       p.vendor_id AS pay_vendor_id,
+                       p.amount_toman AS payment_amount_toman
+                FROM orders o
+                JOIN payments p ON p.order_id=o.id
+                WHERE o.id=%s AND p.id=%s
+                FOR UPDATE OF p
+                """,
+                (order_id, payment_id),
+            )
+            row=self.cur.fetchone()
+        else:
+            self.cur.execute(
+                """
+                SELECT o.id AS order_id, o.retailer_id, o.vendor_id,
+                       p.id AS payment_id, p.payment_status,
+                       p.retailer_id AS pay_retailer_id,
+                       p.vendor_id AS pay_vendor_id,
+                       p.amount_toman AS payment_amount_toman
+                FROM orders o
+                JOIN payments p ON p.order_id=o.id
+                WHERE o.id=%s
+                ORDER BY p.created_at DESC, p.id DESC
+                LIMIT 2
+                FOR UPDATE OF p
+                """,
+                (order_id,),
+            )
+            rows=self.cur.fetchall()
+            if len(rows) != 1:
+                raise ValueError("Explicit payment_id is required when an order has multiple payment records.")
+            row=rows[0]
+
         if not row:
-            raise ValueError(f"Order {order_id} not found or has no payment.")
+            raise ValueError(f"Order {order_id} not found or selected payment does not exist.")
 
         # Tenant check: actor must belong to the retailer or vendor org of this order
         pay_retailer_id = str(row["pay_retailer_id"])
@@ -1375,6 +1399,11 @@ class POLApplicationBoundary:
         )
         if not self.cur.fetchone():
             raise PermissionError("Actor is not an authorized member of this order's retailer or vendor tenant.")
+
+        if int(amount_toman) <= 0:
+            raise ValueError("Payment evidence amount must be positive.")
+        if int(amount_toman) > int(row["payment_amount_toman"]):
+            raise ValueError("Payment evidence amount exceeds the selected payment amount.")
 
         if evidence_type == "RECEIPT_IMAGE" and not evidence_media_id:
             raise ValueError("RECEIPT_IMAGE requires evidence_media_id.")
