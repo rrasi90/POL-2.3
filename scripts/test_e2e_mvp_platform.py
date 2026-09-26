@@ -564,6 +564,11 @@ def test_retailer_pre_acceptance_cancellation_releases_reservation(postgres_data
         assert int(cur.fetchone()["reserved_quantity"]) == 0
         cur.execute("SELECT event_name FROM outbox_events WHERE aggregate_type='ORDER' AND aggregate_id=%s", (order_id,))
         assert any(row["event_name"] == "ORDER_CANCELLED" for row in cur.fetchall())
+        cur.execute(
+            "SELECT event_name FROM outbox_events WHERE aggregate_type='INVENTORY_RESERVATION' AND aggregate_id=%s",
+            (reservation_id,),
+        )
+        assert any(row["event_name"] == "INVENTORY_RESERVATION_RELEASED" for row in cur.fetchall())
 
     with transaction(postgres_database) as cur:
         replay = CanonicalRetailerOrderService.cancel_order(
