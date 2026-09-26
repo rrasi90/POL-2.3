@@ -94,3 +94,10 @@ Source remediation is substantially advanced and the branch has additional defen
 **G-057 HTTP Referral Redemption:** the HTTP redemption endpoint now executes the canonical retailer first-touch attribution service with deterministic idempotency; new HTTP regression covers creation and replay.
 
 These are source-level closures. They are not marked as fresh CI PASS because current GitHub Actions executions still terminate before reporting any workflow step.
+
+## Post-reaudit Source Finding Closed — G-058 — 2026-09-26
+
+- `membership_permissions()` had a projection-only RBAC drift: legacy/direct `GRANTED` rows denied by the target-role delegation ceiling could still appear in its reported `effective_permissions`.
+- The projection now applies the same canonical-key and target-role deny filters as `effective_permissions()`.
+- Existing regression `test_historical_owner_only_grant_cannot_become_effective` now protects both runtime evaluation and management projection.
+- This is a source-level remediation. Fresh CI certification remains blocked by the current GitHub Actions execution/evidence issue.
