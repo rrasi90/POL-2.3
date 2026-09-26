@@ -29,8 +29,8 @@
 
 - **Contract:** `/api/v1/inbox/items*`
 - **Current implementation:** `GET /api/v1/inbox/items`, `PATCH /api/v1/inbox/items/{item_id}/read`, and `PATCH /api/v1/inbox/items/read-all`, alongside `/api/v1/notifications` and preferences.
-- **Evidence:** HTTP notification tests cover listing, unread count, deep links, tenant-scoped mark-read, idempotent mark-all-read, and read-state projection; current verification CI is green.
-- **Status:** RESOLVED for source + automated CI evidence.
+- **Evidence:** HTTP notification tests cover listing, unread count, deep links, tenant-scoped mark-read, idempotent mark-all-read, and read-state projection. Historical CI evidence exists for an earlier verified commit; fresh remediation CI is currently blocked before useful job-step execution.
+- **Status:** RESOLVED for source + historical automated evidence; fresh post-remediation CI remains blocked.
 
 ## G-005 — Notification read/deep-link projection (RESOLVED)
 
