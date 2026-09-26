@@ -961,3 +961,104 @@ def test_p0_verify_otp_rejects_user_mismatch_for_same_phone(auth_env):
     finally:
         cur.execute("DELETE FROM otp_challenges WHERE id = %s", (otp_id,))
         conn.rollback()
+
+
+# =========================================================
+# Remediation: active principal enforcement for bearer and refresh tokens
+# =========================================================
+
+def _insert_active_session(cur, user_id, org_id):
+    sess_id = str(uuid.uuid4())
+    access_token = encode_access_token(user_id, sess_id, org_id, "RETAILER_OWNER")
+    refresh_token = generate_refresh_token()
+    cur.execute(
+        """
+        INSERT INTO user_sessions
+            (id, user_id, active_organization_id, token_hash, refresh_token_hash, status, expires_at)
+        VALUES (%s, %s, %s, %s, %s, 'ACTIVE', now() + interval '30 days')
+        """,
+        (sess_id, user_id, org_id, hash_token(access_token), hash_token(refresh_token)),
+    )
+    return sess_id, access_token, refresh_token
+
+
+def test_access_token_rejects_inactive_user(auth_env):
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    sess_id, access_token, _ = _insert_active_session(cur, user_id, org_a)
+    conn.commit()
+
+    try:
+        cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s;", (user_id,))
+        conn.commit()
+        with pytest.raises(AuthError, match="inactive"):
+            validate_access_token(cur, access_token)
+    finally:
+        cur.execute("UPDATE users SET is_active = TRUE WHERE id = %s;", (user_id,))
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+        conn.commit()
+
+
+def test_access_token_rejects_inactive_organization(auth_env):
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    sess_id, access_token, _ = _insert_active_session(cur, user_id, org_a)
+    conn.commit()
+
+    try:
+        cur.execute("UPDATE organizations SET status = 'SUSPENDED' WHERE id = %s;", (org_a,))
+        conn.commit()
+        with pytest.raises(AuthError, match="Organization is not active"):
+            validate_access_token(cur, access_token)
+    finally:
+        cur.execute("UPDATE organizations SET status = 'ACTIVE' WHERE id = %s;", (org_a,))
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+        conn.commit()
+
+
+def test_refresh_token_rejects_inactive_user(auth_env):
+    from scripts.auth_boundary import InvalidRefreshTokenError
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    sess_id, _, refresh_token = _insert_active_session(cur, user_id, org_a)
+    conn.commit()
+
+    try:
+        cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s;", (user_id,))
+        conn.commit()
+        with pytest.raises(InvalidRefreshTokenError, match="inactive"):
+            AuthService.refresh_access_token(cur, refresh_token)
+    finally:
+        cur.execute("UPDATE users SET is_active = TRUE WHERE id = %s;", (user_id,))
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+        conn.commit()
+
+
+def test_refresh_token_rejects_inactive_organization(auth_env):
+    from scripts.auth_boundary import InvalidRefreshTokenError
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    sess_id, _, refresh_token = _insert_active_session(cur, user_id, org_a)
+    conn.commit()
+
+    try:
+        cur.execute("UPDATE organizations SET status = 'SUSPENDED' WHERE id = %s;", (org_a,))
+        conn.commit()
+        with pytest.raises(InvalidRefreshTokenError, match="Organization is not active"):
+            AuthService.refresh_access_token(cur, refresh_token)
+    finally:
+        cur.execute("UPDATE organizations SET status = 'ACTIVE' WHERE id = %s;", (org_a,))
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+        conn.commit()
