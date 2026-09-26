@@ -621,6 +621,15 @@ class CanonicalReturnService:
         if target_status == "REFUND_PENDING" and (next_refund_amount is None or int(next_refund_amount) <= 0):
             raise ReturnStateError("A positive approved refund amount is required before REFUND_PENDING.")
 
+        if target_status == "CLOSED" and current == "REFUND_PENDING":
+            cur.execute(
+                "SELECT status FROM refunds WHERE return_id=%s ORDER BY created_at DESC LIMIT 1 FOR UPDATE",
+                (return_id,),
+            )
+            latest_refund = cur.fetchone()
+            if not latest_refund or latest_refund["status"] != "COMPLETED":
+                raise ReturnStateError("REFUND_PENDING RMA cannot be closed before its refund is completed.")
+
         cur.execute(
             """
             UPDATE returns
