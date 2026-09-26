@@ -503,23 +503,23 @@ This section is the persistent intake ledger for findings previously identified 
 | G-418 | P2 | Refund schema documentation lags executable migration provenance fields. | OPEN |
 | G-419 | P2 | Refund idempotency is path-specific (dispute vs return) and lacks a cross-path single-refund invariant. | OPEN |
 | G-420 | P2 | RMA admission is not explicitly constrained to delivered orders. | OPEN |
-| G-421 | P1 | Dispute-create request contract does not fully match the canonical claim/evidence requirements. | OPEN |
-| G-422 | P1 | Dispute admission does not enforce DELIVERED + four-hour eligibility. | OPEN |
-| G-423 | P1 | `evidence_media_id` is optional at runtime although canonical dispute admission requires evidence. | OPEN |
-| G-424 | P1 | No item-level dispute scope (`dispute_items`, quantities, item amount/reason). | OPEN |
-| G-425 | P1 | `approved_amount_toman` has no invariant bounding it to the claim. | OPEN |
-| G-426 | P1 | Resolution outcome has no enforced relationship to approved/refunded amount. | OPEN |
-| G-427 | P1 | Dispute resolution lifecycle OPEN→INVESTIGATING→RESOLVED→CLOSED is absent from runtime. | OPEN |
-| G-428 | P1 | Canonical `PATCH /api/v1/disputes/{id}/resolve` is absent. | OPEN |
-| G-429 | P1 | Open Dispute can attach to an inappropriate settlement status; active-settlement selection is not state-aware. | OPEN |
-| G-430 | P1 | Dispute-open and settlement close/payout have a concurrency race; settlement is not locked/state-conditioned atomically. | OPEN |
-| G-431 | P1 | `orders.dispute_status` projection cannot be maintained across the full dispute lifecycle. | OPEN |
-| G-432 | P1 | Dispute-open event payload carries incorrect/insufficient aggregate and amount data. | OPEN |
-| G-433 | P1 | Runtime and canonical dispute event naming are inconsistent. | OPEN |
-| G-434 | P2 | Dispute lacks an independent immutable transition-history stream. | OPEN |
-| G-435 | P2 | Ops assignment/investigation is modeled in DB but lacks the corresponding runtime command. | OPEN |
-| G-436 | P2 | Dispute evidence ownership/provenance is not enforced at admission. | OPEN |
-| G-437 | P2 | Dispute creation lacks true HTTP idempotency/fingerprint replay semantics. | OPEN |
+| G-421 | P1 | Dispute-create request contract does not fully match the canonical claim/evidence requirements. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-422 | P1 | Dispute admission does not enforce DELIVERED + four-hour eligibility. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-423 | P1 | `evidence_media_id` is optional at runtime although canonical dispute admission requires evidence. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-424 | P1 | No item-level dispute scope (`dispute_items`, quantities, item amount/reason). | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-425 | P1 | `approved_amount_toman` has no invariant bounding it to the claim. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-426 | P1 | Resolution outcome has no enforced relationship to approved/refunded amount. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-427 | P1 | Dispute resolution lifecycle OPEN→INVESTIGATING→RESOLVED→CLOSED is absent from runtime. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-428 | P1 | Canonical `PATCH /api/v1/disputes/{id}/resolve` is absent. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-429 | P1 | Open Dispute can attach to an inappropriate settlement status; active-settlement selection is not state-aware. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-430 | P1 | Dispute-open and settlement close/payout have a concurrency race; settlement is not locked/state-conditioned atomically. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-431 | P1 | `orders.dispute_status` projection cannot be maintained across the full dispute lifecycle. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-432 | P1 | Dispute-open event payload carries incorrect/insufficient aggregate and amount data. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-433 | P1 | Runtime and canonical dispute event naming are inconsistent. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-434 | P2 | Dispute lacks an independent immutable transition-history stream. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-435 | P2 | Ops assignment/investigation is modeled in DB but lacks the corresponding runtime command. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-436 | P2 | Dispute evidence ownership/provenance is not enforced at admission. | RESOLVED — see dispute-chain closure record (2026-09-26) |
+| G-437 | P2 | Dispute creation lacks true HTTP idempotency/fingerprint replay semantics. | RESOLVED — see dispute-chain closure record (2026-09-26) |
 | G-438 | P1 | Delivery OTP is not actually mandatory for the DISPATCHED→DELIVERED transition. | RESOLVED — see closure record below (2026-09-26) |
 | G-439 | P1 | Delivery OTP is returned to the vendor caller, exposing a secret that should remain with the delivery recipient/proof flow. | RESOLVED — see closure record below (2026-09-26) |
 
@@ -541,6 +541,50 @@ This section is the persistent intake ledger for findings previously identified 
 - The tip carried committed corruption from the interrupted run (45 collection errors; "fresh CI blocked" note in this ledger): spliced `from __future__` import in `fulfillment_service.py`, orphan `)` in `delivery_exceptions.py`/`refund_service.py`, stray backslash-n lines in `test_delegated_permissions.py`, parametrize decorators attached to wrong tests in `test_batch3_contract_matrix.py`/`test_e2e_mvp_platform.py`, and migration 062 referencing a nonexistent `disputes.created_at`. All repaired (`3e0b2bc`, `971e07e`).
 - pol_test schema was behind the migration chain (060–071); applied locally. 062 required the index fix above before it could apply anywhere.
 - Suite trajectory on this line: 430/637 (2026-09-26 baseline after corruption repair) → **544/637** after Block 58 closure + schema sync. Remaining 93 failures concentrate in the still-OPEN Block 56/57 chains (refund/RMA/dispute/payment), e2e platform, concurrency and worker clusters — these are the next remediation units, each requiring the READ→ROOT-CAUSE→PATCH→TEST cycle; none may be closed by test-editing alone.
+
+
+### Dispute chain closure record — G-421..G-437 (2026-09-26)
+- **Revalidation:** the interrupted remediation had wired the full HTTP/boundary
+  layer (`POST /orders/{id}/disputes`, `POST /disputes/{id}/investigate`,
+  `PATCH /disputes/{id}/resolve`, `POST /disputes/{id}/close`) and DB schema
+  (dispute_items, dispute_events append-only, idempotency columns, migration 062
+  adjudication invariants) but the domain implementation was never committed:
+  `DisputeService.open_dispute_v2/investigate_dispute/resolve_canonical/
+  close_canonical` were referenced by `canonical_dispute.py` and did not exist,
+  so every dispute creation 500'd. Additionally the boundary passed
+  `str(None)` ("None") as the idempotency key for key-less requests, and
+  `orders.dispute_status_check` did not carry the canonical INVESTIGATING/RESOLVED
+  vocabulary.
+- **Resolution:** canonical domain chain implemented in `DisputeService`:
+  admission (DELIVERED gate, 4h filing window per operational_config, mandatory
+  READY/owner/order-bound evidence re-bound to DISPUTE on admission, item-level
+  scope validated against order items, key+fingerprint idempotency with
+  mismatch-422 and cross-key same-payload replay, state-aware settlement attach
+  under FOR UPDATE with status-conditioned update and CLOSED rejection),
+  investigation (OPEN->INVESTIGATING with ops assignment), resolution
+  (INVESTIGATING-only, outcome/amount invariants mirroring 062, settlement
+  SHORTAGE_DEDUCTION adjustment, replay-safe), close (RESOLVED->CLOSED with
+  pre-checked refund-total invariant as 422). Every transition writes the
+  append-only dispute_events stream and the orders dispute_status projection
+  (migration 072 widens the projection vocabulary). Outbox is limited to the two
+  templated canonical events (DISPUTE_OPENED -> vendor org, DISPUTE_RESOLVED ->
+  both parties).
+- **Files changed:** `scripts/domain_services.py`, `scripts/application_boundary.py`,
+  `migrations/072_orders_dispute_status_projection.sql`.
+- **Test evidence:** `scripts/test_http_returns_disputes.py` 18/18 (open/tenant
+  query/list, expired window 422, evidence-required, staff-overreach 403,
+  investigate/resolve/reconcile with settlement_adjustments row
+  SHORTAGE_DEDUCTION + applied_by audit, idempotent resolution
+  (second call same result, single adjustment), non-ops resolve 403,
+  resolution-cannot-exceed-claim 422).
+- **Verification state:** SOURCE PATCH + REGRESSION + HTTP EVIDENCE on
+  `remediation/master-gap-closure-2026-09-26`; concurrency evidence is
+  code-level (row locks + status-conditioned updates); dedicated concurrent
+  dispute race test remains a follow-up evidence item.
+- **OPEN_DECISION carried:** MUTUAL_AGREEMENT award has no settlement
+  adjustment mapping in the canonical docs (adjustment_type enum has no
+  matching semantic); implemented as award-without-adjustment pending an
+  explicit settlement-mapping decision.
 
 ## D. Recovery-control rule for G-321..G-407
 

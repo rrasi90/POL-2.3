@@ -1088,7 +1088,7 @@ class POLApplicationBoundary:
             items=normalized_items,
             actor_user_id=str(self.context.user_id),
             organization_id=str(self.context.organization_id),
-            idempotency_key=str(idempotency_key),
+            idempotency_key=(str(idempotency_key) if idempotency_key else None),
         )
 
 
