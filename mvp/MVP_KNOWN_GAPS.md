@@ -336,3 +336,25 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** role-aware delegation ceilings now explicitly block owner-only capabilities such as VENDOR_STAFF order acceptance and membership management.
 - **Regression proof:** scripts/test_delegated_permissions.py::test_owner_only_permissions_cannot_be_delegated_to_vendor_staff.
 - **Status:** SOURCE REMEDIATED / FRESH CI PENDING
+
+
+## G-052 — Delegated Permission Ceiling Must Hold at Evaluation Time
+**Class:** Security / RBAC / Defense-in-Depth  
+**Finding:** Earlier hardening blocked new grants of owner-only permissions to restricted roles, but a legacy or directly seeded GRANTED row could still be added to effective_permissions() and become active.  
+**Remediation:** Effective-permission evaluation now filters delegated grants through the canonical role delegation-deny ceiling and ignores unknown/non-canonical delegated permission keys. The membership-management response exposes the same target-role-aware delegation ceiling.  
+**Regression:** `scripts/test_delegated_permissions.py` covers both the direct legacy-grant path and the exposed delegatable-permission catalog.  
+**Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
+
+## G-053 — Product Media Authorization Must Be Vendor-Product Scoped
+**Class:** Security / Multi-Tenancy / Media Provenance  
+**Finding:** Product media authorization previously checked only that the actor belonged to a vendor/operator organization. A vendor member could therefore attempt to attach media to an unrelated Master Product outside that vendor's active product relationship. Operator uploads also inherited VENDOR_UPLOADED provenance.  
+**Remediation:** Vendor product-media authorization now requires an active `vendor_products` relationship for the target Master Product in the actor's organization. Operator-authorized product media is recorded with `POL_OWNED` provenance; canonical OPS and legacy aliases are accepted consistently.  
+**Regression:** `scripts/test_media_service.py` covers vendor ownership, unrelated-tenant rejection and operator provenance.  
+**Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
+
+## G-054 — Legacy In-Flight Media Uploads Must Fail Closed
+**Class:** Security / Upload Integrity / Migration Safety  
+**Finding:** Migration 048 introduced upload target binding, but pre-migration `UPLOADING` rows with a null target could otherwise reach confirmation because the runtime validator treated a missing binding as implicitly acceptable.  
+**Remediation:** Confirm-upload now rejects any `UPLOADING` asset without an immutable target binding. Migration 048 invalidates legacy unbound `UPLOADING` rows as `DELETED` and adds a PostgreSQL CHECK invariant requiring both target fields for every in-flight upload.  
+**Regression:** `scripts/test_media_service.py` covers missing-binding rejection.  
+**Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
