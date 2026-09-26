@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from scripts.api.dependencies import get_application_boundary
 from scripts.api.main import app
+from scripts.api.errors import ConflictError
 
 
 @pytest.fixture
@@ -96,6 +97,29 @@ def test_checkout_route_returns_canonical_order_contract(client):
     assert body["success"] is True
     assert body["data"]["order_group_id"] == str(plan_id)
     assert body["data"]["group_status"] == "ACTIVE"
+
+
+class _ConflictBoundary:
+    def checkout_from_allocation_plan(self, **kwargs):
+        raise ConflictError("STALE_BASKET_VERSION: basket v2 != plan v1")
+
+
+def test_checkout_stale_basket_returns_canonical_409(client, monkeypatch):
+    from scripts.api.dependencies import get_application_boundary
+    monkeypatch.setitem(app.dependency_overrides, get_application_boundary, lambda: _ConflictBoundary())
+    response = client.post(
+        "/api/v1/orders",
+        headers={"Idempotency-Key": str(uuid4())},
+        json={
+            "allocation_plan_id": str(uuid4()),
+            "delivery_address": "Ahvaz, Naderi, Test Street 1",
+            "preferred_payment_method": "POS_DRIVER",
+        },
+    )
+    assert response.status_code == 409
+    assert response.json()["success"] is False
+    assert response.json()["error"]["code"] == "CONFLICT"
+    assert "STALE_BASKET_VERSION" in response.json()["error"]["message"]
 
 
 def test_checkout_requires_uuid4_idempotency_key(client):
