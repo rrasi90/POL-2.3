@@ -360,6 +360,69 @@ def verify_foreign_keys_and_indexes(conn):
     assert cur.fetchone() is not None, "organization_id missing on vendors"
     print(" - retailers and vendors canonical organization_id verified")
 
+def verify_delegated_permission_schema(conn):
+    """Verify migration 047 D-026/VD-15 schema invariants."""
+    cur = conn.cursor()
+
+    for table in ("delegated_permission_grants", "permission_audit_events"):
+        cur.execute(
+            """
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema='public' AND table_name=%s
+            """,
+            (table,),
+        )
+        assert cur.fetchone() is not None, f"{table} table missing after migration 047"
+
+    cur.execute(
+        """
+        SELECT indexname
+        FROM pg_indexes
+        WHERE tablename='delegated_permission_grants'
+          AND indexname='idx_delegated_permission_active'
+        """
+    )
+    assert cur.fetchone() is not None, "active delegated-permission index missing"
+
+    cur.execute(
+        """
+        SELECT indexname
+        FROM pg_indexes
+        WHERE tablename='delegated_permission_grants'
+          AND indexname='uq_delegated_permission_membership_key'
+        """
+    )
+    assert cur.fetchone() is not None, "delegated-permission membership/key uniqueness missing"
+
+    cur.execute(
+        """
+        SELECT tgname
+        FROM pg_trigger
+        WHERE tgrelid='permission_audit_events'::regclass
+          AND tgname='trg_permission_audit_no_update'
+        """
+    )
+    assert cur.fetchone() is not None, "permission audit append-only trigger missing"
+
+    cur.execute(
+        """
+        SELECT conname, pg_get_constraintdef(oid)
+        FROM pg_constraint
+        WHERE conrelid='delegated_permission_grants'::regclass
+          AND contype='c'
+        """
+    )
+    grant_checks = " ".join(row[1].lower() for row in cur.fetchall())
+    assert "granted" in grant_checks and "revoked" in grant_checks, "grant status CHECK missing"
+    assert "inventory.scan" in grant_checks and "membership.manage" in grant_checks, (
+        "canonical delegated permission keys missing from DB CHECK"
+    )
+
+    print(" - migration 047 delegated permission tables, uniqueness, permission keys, and append-only audit guard verified")
+    cur.close()
+
+
 def test_postgres_migrations():
     """Canonical test entry point for pytest."""
     conn = get_connection()
@@ -374,12 +437,14 @@ def test_postgres_migrations():
     verify_tables(conn)
     verify_constraints(conn)
     verify_foreign_keys_and_indexes(conn)
+    verify_delegated_permission_schema(conn)
 
     # Path 2: Incremental upgrade (001+002, then 003)
     run_upgrade_test(conn)
     verify_tables(conn)
     verify_constraints(conn)
     verify_foreign_keys_and_indexes(conn)
+    verify_delegated_permission_schema(conn)
 
     conn.close()
 
