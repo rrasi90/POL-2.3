@@ -328,3 +328,11 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** mobile CI now uses Node 22.23.1; mvp/package.json and the lockfile declare Node >=22.13.0.
 - **Evidence:** Expo's current SDK reference lists 22.13.x as the minimum Node.js version for SDK 57.
 - **Status:** SOURCE REMEDIATED / FRESH CI EXECUTION BLOCKED BEFORE STEPS
+
+
+## G-051 — Delegated permission could reintroduce owner-only capabilities (SECURITY / RBAC — REMEDIATED — 2026-09-26)
+
+- **Finding:** removing an owner-only capability from a staff role's baseline permission set did not by itself prevent an owner from re-granting that capability through delegated permissions.
+- **Resolution:** role-aware delegation ceilings now explicitly block owner-only capabilities such as VENDOR_STAFF order acceptance and membership management.
+- **Regression proof:** scripts/test_delegated_permissions.py::test_owner_only_permissions_cannot_be_delegated_to_vendor_staff.
+- **Status:** SOURCE REMEDIATED / FRESH CI PENDING
