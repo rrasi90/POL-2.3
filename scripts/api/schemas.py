@@ -70,6 +70,9 @@ class RetailerPartialAcceptanceDeclineRequest(APIBaseModel):
     reason: str | None = Field(default=None, max_length=1000)
 
 
+class PrivacyExportRequest(APIBaseModel):
+    include_activity_counts: bool = True
+
 class ProfileUpdateRequest(APIBaseModel):
     display_name: str | None = None
     email: str | None = None
