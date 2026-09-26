@@ -373,3 +373,11 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 **Remediation:** `CanonicalSupportService.create_case()` now verifies active membership and requires the related order to resolve through its retailer or vendor organization to the active support tenant before insertion.  
 **Regression:** `scripts/test_http_support.py` creates an order under another retailer organization and verifies support creation is rejected with HTTP 403.  
 **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
+
+
+## G-057 — HTTP Referral Redemption Must Materialize Attribution
+**Class:** Functional Correctness / Referral Lifecycle / API-Domain Contract  
+**Finding:** The HTTP `POST /api/v1/referrals/{referral_id}/redeem` boundary previously treated redemption as a vendor-side counter increment and did not execute the canonical retailer first-touch attribution flow required by D-016.  
+**Remediation:** The boundary now resolves the active retailer from the authenticated organization, loads the canonical referral independently of vendor tenant, and delegates redemption to `VendorReferralService.redeem_referral()` using a deterministic HTTP idempotency key. This persists `vendor_referral_attributions` and emits the canonical analytics outbox event while keeping retailer first-touch uniqueness.  
+**Regression:** New `scripts/test_http_referrals.py` verifies first redemption creates an attribution and a repeated HTTP redemption replays without incrementing the quota twice.  
+**Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
