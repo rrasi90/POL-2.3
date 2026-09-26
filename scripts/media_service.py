@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import math
 import os
 import uuid
 from datetime import datetime, timezone
@@ -276,6 +277,105 @@ class MediaService:
             "object_key": object_key,
             "expires_in_seconds": expires,
         }
+
+    @staticmethod
+    def presign_resumable(cur, *, user_id: str, organization_id: str, mime_type: str,
+                          file_size_bytes: int, target_type: str, target_id: str,
+                          filename: str | None = None, part_size_bytes: int = 1024 * 1024) -> dict:
+        if mime_type not in ALLOWED_MIME_TYPES:
+            raise MediaError("Only JPEG, PNG and WebP uploads are allowed.")
+        if file_size_bytes <= 0 or file_size_bytes > MAX_UPLOAD_BYTES:
+            raise MediaError("Upload size must be between 1 byte and 5 MB.")
+        if part_size_bytes < 262144 or part_size_bytes > 5242880:
+            raise MediaError("Part size must be between 256 KB and 5 MB.")
+        meta = _authorize_target(cur, user_id, organization_id, target_type, target_id)
+        media_id = str(uuid.uuid4())
+        object_key = f"quarantine/{organization_id}/{media_id}"
+        part_count = max(1, math.ceil(file_size_bytes / part_size_bytes))
+        if part_count > 10000:
+            raise MediaError("Upload requires too many multipart parts.")
+        cur.execute(
+            """
+            INSERT INTO media_assets (
+                id, storage_provider, storage_bucket, storage_key, bucket_name, object_key,
+                mime_type, file_size_bytes, checksum_sha256, status, provenance,
+                uploaded_by_user_id, upload_target_type, upload_target_id
+            )
+            VALUES (%s,'S3_MINIO',%s,%s,%s,%s,%s,%s,NULL,'UPLOADING',%s,%s,%s,%s)
+            RETURNING id
+            """,
+            (media_id, _bucket(), object_key, _bucket(), object_key, mime_type, file_size_bytes,
+             meta["provenance"], user_id, target_type.upper(), target_id),
+        )
+        s3 = _s3_client()
+        created = s3.create_multipart_upload(Bucket=_bucket(), Key=object_key, ContentType=mime_type)
+        upload_id = created["UploadId"]
+        try:
+            cur.execute(
+                """INSERT INTO media_upload_sessions
+                   (media_asset_id, provider_upload_id, part_size_bytes, part_count)
+                   VALUES (%s,%s,%s,%s) RETURNING id""",
+                (media_id, upload_id, part_size_bytes, part_count),
+            )
+            session_id = str(cur.fetchone()["id"])
+        except Exception:
+            try:
+                s3.abort_multipart_upload(Bucket=_bucket(), Key=object_key, UploadId=upload_id)
+            finally:
+                raise
+        expires = int(os.getenv("POL_MEDIA_PRESIGN_TTL_SECONDS", "300"))
+        urls = [{
+            "part_number": part_number,
+            "upload_url": s3.generate_presigned_url(
+                ClientMethod="upload_part",
+                Params={"Bucket": _bucket(), "Key": object_key, "UploadId": upload_id, "PartNumber": part_number},
+                ExpiresIn=expires,
+            ),
+        } for part_number in range(1, part_count + 1)]
+        return {
+            "session_id": session_id, "media_id": media_id, "object_key": object_key,
+            "part_size_bytes": part_size_bytes, "part_count": part_count,
+            "expires_in_seconds": expires, "parts": urls,
+        }
+
+    @staticmethod
+    def complete_resumable(cur, *, user_id: str, organization_id: str, session_id: str, parts: list[dict]) -> dict:
+        cur.execute(
+            """
+            SELECT s.*, ma.storage_bucket, ma.storage_key, ma.status AS media_status
+            FROM media_upload_sessions s
+            JOIN media_assets ma ON ma.id = s.media_asset_id
+            WHERE s.id=%s AND ma.uploaded_by_user_id=%s
+            FOR UPDATE OF s, ma
+            """,
+            (session_id, user_id),
+        )
+        session = cur.fetchone()
+        if not session:
+            raise MediaError("Resumable upload session not found.")
+        if session["status"] == "COMPLETED":
+            return {"session_id": str(session["id"]), "media_id": str(session["media_asset_id"]), "status": "COMPLETED"}
+        if session["status"] != "OPEN" or session["media_status"] != "UPLOADING":
+            raise MediaError("Resumable upload session is not open.")
+        by_number = {}
+        for part in parts:
+            number = int(part["part_number"])
+            if number in by_number:
+                raise MediaError("Multipart parts must not repeat a part number.")
+            by_number[number] = str(part["etag"])
+        if sorted(by_number) != list(range(1, int(session["part_count"]) + 1)):
+            raise MediaError("Every expected multipart part must be supplied exactly once.")
+        s3 = _s3_client()
+        s3.complete_multipart_upload(
+            Bucket=session["storage_bucket"], Key=session["storage_key"],
+            UploadId=session["provider_upload_id"],
+            MultipartUpload={"Parts": [{"ETag": etag, "PartNumber": number} for number, etag in sorted(by_number.items())]},
+        )
+        cur.execute(
+            "UPDATE media_upload_sessions SET status='COMPLETED', completed_at=now() WHERE id=%s RETURNING id",
+            (session_id,),
+        )
+        return {"session_id": str(session_id), "media_id": str(session["media_asset_id"]), "status": "COMPLETED", "needs_processing": True}
 
     @staticmethod
     def confirm_upload(cur, *, user_id: str, organization_id: str, media_id: str,
