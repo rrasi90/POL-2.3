@@ -2723,7 +2723,7 @@ class POLApplicationBoundary:
 
         self.cur.execute(
             """
-            SELECT DISTINCT
+            SELECT      
                 pi.id AS identifier_id,
                 pi.identifier_type,
                 pi.identifier_value,
@@ -2824,7 +2824,7 @@ class POLApplicationBoundary:
                 FROM vendor_products vp
                 LEFT JOIN product_candidates pc ON pc.id = vp.candidate_id
                 WHERE vp.vendor_id=%s AND vp.vendor_sku=%s
-                FOR UPDATE
+                FOR UPDATE OF vp
                 """,
                 (vendor_id, candidate_vendor_sku),
             )
@@ -2991,7 +2991,7 @@ class POLApplicationBoundary:
                     normalized,
                     candidate_vendor_sku,
                     proposed_title.strip(),
-                    str(vendor_id),
+                    str(vendor["user_id"]) if vendor else None,
                     str(self.context.organization_id),
                     "PRODUCT_CANDIDATE_CREATED:" + candidate_id,
                 ),

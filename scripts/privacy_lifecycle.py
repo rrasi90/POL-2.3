@@ -7,6 +7,8 @@ import json
 import re
 from datetime import datetime, timezone
 
+from psycopg2.extras import Json
+
 
 class PrivacyLifecycleError(ValueError):
     """Raised when a privacy request cannot be completed."""
@@ -158,7 +160,7 @@ class PrivacyLifecycleService:
             (
                 user_id,
                 digest,
-                {"export_version": "1.0", "record_count": len(snapshot["memberships"]) + len(snapshot["devices"]) + len(snapshot["consents"])},
+                Json({"export_version": "1.0", "record_count": len(snapshot["memberships"]) + len(snapshot["devices"]) + len(snapshot["consents"])}),
             ),
         )
         request = dict(cur.fetchone())
@@ -294,6 +296,6 @@ class PrivacyLifecycleService:
             WHERE id = %s
             RETURNING id, request_type, status, requested_at, started_at, completed_at, result_summary;
             """,
-            ({"deidentified_user": True, "sessions_revoked": True, "financial_history_preserved": True}, request["id"]),
+            (Json({"deidentified_user": True, "sessions_revoked": True, "financial_history_preserved": True}), request["id"]),
         )
         return {"request": dict(cur.fetchone())}

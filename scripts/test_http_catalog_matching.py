@@ -320,6 +320,7 @@ def test_unknown_barcode_creates_quarantined_candidate_idempotently():
         if data:
             with conn:
                 with conn.cursor() as cur:
+                    cur.execute("DELETE FROM vendor_products WHERE vendor_id=%s AND candidate_id IS NOT NULL", (data["vendor_id"],))
                     cur.execute("DELETE FROM product_candidates WHERE vendor_id=%s", (data["vendor_id"],))
                     cur.execute("DELETE FROM vendor_inventory WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s)", (data["vendor_id"],))
                     cur.execute("DELETE FROM vendor_prices WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s)", (data["vendor_id"],))

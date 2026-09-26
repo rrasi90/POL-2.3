@@ -389,6 +389,7 @@ def test_vendor_barcode_match_and_unknown_candidate_flow(api_env):
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 data = _seed_vendor(cur, uuid4().hex[:8])
+                cur.execute("DELETE FROM product_identifiers WHERE identifier_type='EAN13' AND identifier_value IN ('6260123456789','6260123456790')")
                 cur.execute("INSERT INTO product_identifiers (product_id, identifier_type, identifier_value, identifier_scope, packaging_scope) VALUES (%s, 'EAN13', '6260123456789', 'GLOBAL', 'UNIT')", (data['product_id'],))
                 cur.execute("INSERT INTO product_identifiers (product_id, identifier_type, identifier_value, identifier_scope, packaging_scope) VALUES (%s, 'EAN13', '6260123456790', 'GLOBAL', 'UNIT')", (data['product_id'],))
         client = TestClient(app)

@@ -152,7 +152,7 @@ class CanonicalBasketAllocationService:
 
         cur.execute(
             """
-            SELECT id, product_id, requested_quantity, requested_unit
+            SELECT id, product_id, requested_quantity, requested_unit, pack_quantity
             FROM basket_items
             WHERE basket_id = %s
             ORDER BY created_at, id
