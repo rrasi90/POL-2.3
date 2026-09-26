@@ -113,3 +113,9 @@ These are source-level closures. They are not marked as fresh CI PASS because cu
 - **G-061 Vendor Referral create contract drift:** D-016 requires vendor-created referral codes/links with retailer first-touch attribution at redemption. The HTTP schema previously required an unrelated retailer target, the boundary bypassed `VendorReferralService.create_referral`, and the V-08 web page used the wrong `code` field while an older test redeemed as a vendor.
 - The canonical service now owns code generation/validation (`POLV-XXXXXXXX`), optional quota/expiry, and creation; the API schema/route/boundary follow that contract; the web page sends and projects `referral_code`; HTTP lifecycle tests redeem under retailer identity and verify attribution/quota behavior.
 - This is a source-level closure. Fresh CI remains unverified because current Actions jobs terminate before useful step execution.
+
+## Post-reaudit Source Finding Closed — G-062 — 2026-09-26
+
+- **G-062 Field Task lifecycle transition gap:** `field_tasks` exposed a finite status vocabulary but the application update path allowed arbitrary status jumps. The canonical transition graph is now enforced server-side and represented in `08_DATA/Data_Schema.md` and `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md`; the web task editor offers only valid next states.
+- Regression `test_task_cannot_roll_back_from_in_progress_to_assigned` verifies invalid rollback rejection and state preservation.
+- Source-level closure only; current Actions infrastructure still prevents fresh CI certification.
