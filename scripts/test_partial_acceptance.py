@@ -203,6 +203,14 @@ def test_retailer_approval_reconciles_order_inventory_amounts_and_outbox(pg_conn
                 proposal_id=proposal["proposal_id"],
             )
             assert result["order_status"] == "PARTIALLY_ACCEPTED"
+            cur.execute(
+                "SELECT event_name FROM outbox_events WHERE aggregate_type='INVENTORY_RESERVATION' AND aggregate_id=%s ORDER BY event_name",
+                (data["reservation_id"],),
+            )
+            reservation_events = {row["event_name"] for row in cur.fetchall()}
+            assert "INVENTORY_RESERVATION_CONSUMED" in reservation_events
+            assert "INVENTORY_RESERVATION_RELEASED" in reservation_events
+
             assert result["total_amount_toman"] == 3500000
             assert result["changed_item_count"] == 1
             assert result["consumed_reservation_count"] == 1
