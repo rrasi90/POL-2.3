@@ -497,6 +497,22 @@ def verify_financial_dispute_remediation(conn):
         )
         assert cur.fetchone() is not None, f"Index {index_name} missing"
 
+    for table, constraint_name in (
+        ("deliveries", "chk_delivery_otp_attempt_count_max_v068"),
+        ("deliveries", "chk_delivery_otp_format_v068"),
+        ("order_items", "chk_order_item_accepted_quantity_v068"),
+        ("order_items", "chk_order_item_delivered_quantity_v068"),
+    ):
+        cur.execute(
+            """
+            SELECT 1
+            FROM pg_constraint
+            WHERE conrelid=%s::regclass AND conname=%s
+            """,
+            (table, constraint_name),
+        )
+        assert cur.fetchone() is not None, f"Constraint {constraint_name} missing"
+
     for table, trigger_name in (
         ("dispute_events", "trg_dispute_events_append_only_v058"),
         ("disputes", "trg_validate_dispute_adjudication_v062"),
