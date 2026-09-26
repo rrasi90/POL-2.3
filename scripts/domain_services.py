@@ -475,7 +475,7 @@ class AllocationService:
                 total_estimated_toman, status, input_hash, algorithm_version, expires_at
             ) VALUES (
                 %s, %s, %s, 'MULTI_VENDOR_MIN_FRAGMENTATION', %s,
-                %s, 'CONFIRMED', %s, 'v1.0', now() + interval '15 minutes'
+                %s, 'CONFIRMED', %s, 'v1.1', now() + interval '15 minutes'
             ) RETURNING *;
         """, (plan_id, basket_id, basket_version, vendor_count, total_toman, inp_hash))
         return cur.fetchone()
