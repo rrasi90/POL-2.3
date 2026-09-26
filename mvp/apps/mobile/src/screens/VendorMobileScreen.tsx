@@ -12,6 +12,15 @@ type Referral = { id: string; status?: string | null; referral_code?: string | n
 type Settlement = { id: string; settlement_number?: string | null; status?: string | null; amount_toman?: number | string | null };
 type Customer = { retailer_id: string; store_name?: string | null; city?: string | null; neighborhood?: string | null; user_id?: string | null; full_name?: string | null; phone_number?: string | null; order_count?: number | null; last_order_at?: string | null };
 type Staff = { membership_id: string; user_id: string; phone_number?: string | null; full_name?: string | null; role?: "VENDOR_OWNER" | "VENDOR_STAFF" | null; status?: "INVITED" | "ACTIVE" | "SUSPENDED" | "REVOKED" | null; is_primary?: boolean | null };
+type PermissionGrant = { id: string; permission_key: string; status: "GRANTED" | "REVOKED"; granted_at?: string | null; revoked_at?: string | null };
+type PermissionDetail = {
+  membership_id: string;
+  full_name?: string | null;
+  role?: string | null;
+  grantable_permissions: string[];
+  delegated_grants: PermissionGrant[];
+  effective_permissions: string[];
+};
 type Daily = { status?: string | null; lines?: Array<{ id: string; vendor_product_id?: string | null; product_id?: string | null; product_name?: string | null; expected_quantity?: number | null; confirmed_quantity?: number | null }> };
 
 function rows<T>(data: unknown, key: string): T[] {
@@ -43,6 +52,10 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
   const [dailyEdits, setDailyEdits] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [permissionMemberId, setPermissionMemberId] = useState<string | null>(null);
+  const [permissionDetail, setPermissionDetail] = useState<PermissionDetail | null>(null);
+  const [permissionKey, setPermissionKey] = useState("");
+  const [permissionReason, setPermissionReason] = useState("");
 
   const loadOrders = useCallback(async () => {
     const d = await api.get<unknown>("/api/v1/orders?limit=50&offset=0");
@@ -140,6 +153,49 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
     finally { setLoading(false); }
   }
 
+  async function loadStaffPermissions(membershipId: string): Promise<void> {
+    if (props.role !== "VENDOR_OWNER") { setError("فقط مالک فروشنده می‌تواند مجوزهای تفویضی را مدیریت کند."); return; }
+    setPermissionMemberId(membershipId);
+    setLoading(true); setError(null);
+    try {
+      const d = await api.get<PermissionDetail>("/api/v1/vendors/staff/" + membershipId + "/permissions");
+      setPermissionDetail(d);
+      setPermissionKey(d.grantable_permissions[0] || "");
+      setPermissionReason("");
+    } catch (e) {
+      setPermissionDetail(null);
+      setError(e instanceof Error ? e.message : "دریافت مجوزهای تفویضی ناموفق بود");
+    } finally { setLoading(false); }
+  }
+
+  async function grantStaffPermission(): Promise<void> {
+    if (!permissionMemberId || !permissionKey || !permissionReason.trim()) return;
+    setLoading(true); setError(null);
+    try {
+      await api.post("/api/v1/vendors/staff/" + permissionMemberId + "/permissions", {
+        permission_key: permissionKey,
+        reason: permissionReason.trim(),
+        client: "ANDROID",
+      });
+      await loadStaffPermissions(permissionMemberId);
+    } catch (e) { setError(e instanceof Error ? e.message : "اعطای مجوز ناموفق بود"); }
+    finally { setLoading(false); }
+  }
+
+  async function revokeStaffPermission(permission: string): Promise<void> {
+    if (!permissionMemberId || !permissionReason.trim()) return;
+    setLoading(true); setError(null);
+    try {
+      await api.post(
+        "/api/v1/vendors/staff/" + permissionMemberId + "/permissions/" + encodeURIComponent(permission) + "/revoke",
+        { reason: permissionReason.trim(), client: "ANDROID" },
+      );
+      await loadStaffPermissions(permissionMemberId);
+    } catch (e) { setError(e instanceof Error ? e.message : "لغو مجوز ناموفق بود"); }
+    finally { setLoading(false); }
+  }
+
+
   return (
     <Screen>
       <Title badge={props.role}>فروشنده موبایل</Title>
@@ -220,6 +276,37 @@ export function VendorMobileScreen(props: { role: Extract<Role, "VENDOR_OWNER" |
                   <Btn label="فعال" onPress={() => void updateStaff(member.membership_id, { status: "ACTIVE" })} disabled={loading} />
                   <Btn label="تعلیق" tone="ghost" onPress={() => void updateStaff(member.membership_id, { status: "SUSPENDED" })} disabled={loading} />
                   <Btn label="لغو" tone="ghost" onPress={() => void updateStaff(member.membership_id, { status: "REVOKED" })} disabled={loading} />
+                  <Btn label="مجوزها" tone="ghost" onPress={() => void loadStaffPermissions(member.membership_id)} disabled={loading} />
+                </View>
+              ) : null}
+              {permissionMemberId === member.membership_id && member.status === "ACTIVE" && props.role === "VENDOR_OWNER" && permissionDetail ? (
+                <View style={styles.permissionBox}>
+                  <Text style={styles.h2}>Effective Access</Text>
+                  <Text style={styles.meta}>{permissionDetail.effective_permissions.length} مجوز مؤثر</Text>
+                  <View style={styles.row}>
+                    {permissionDetail.effective_permissions.map((permission) => (
+                      <StatusChip key={permission} label={permission} tone="info" />
+                    ))}
+                  </View>
+                  <Text style={styles.meta}>مجوزهای قابل اعطا</Text>
+                  <View style={styles.row}>
+                    {permissionDetail.grantable_permissions
+                      .filter((permission) => !permissionDetail.delegated_grants.some((g) => g.permission_key === permission && g.status === "GRANTED"))
+                      .map((permission) => (
+                        <Btn key={permission} label={permission} tone={permissionKey === permission ? "primary" : "ghost"} onPress={() => setPermissionKey(permission)} />
+                      ))}
+                  </View>
+                  <Input label="دلیل" value={permissionReason} onChangeText={setPermissionReason} />
+                  <Btn label="اعطای مجوز" onPress={() => void grantStaffPermission()} disabled={!permissionKey || !permissionReason.trim() || loading} />
+                  {permissionDetail.delegated_grants.map((grant) => (
+                    <View key={grant.id} style={styles.permissionRow}>
+                      <StatusChip label={grant.status} tone={grant.status === "GRANTED" ? "ok" : "info"} />
+                      <Text style={styles.meta}>{grant.permission_key}</Text>
+                      {grant.status === "GRANTED" ? (
+                        <Btn label="لغو" tone="ghost" onPress={() => void revokeStaffPermission(grant.permission_key)} disabled={loading || !permissionReason.trim()} />
+                      ) : null}
+                    </View>
+                  ))}
                 </View>
               ) : null}
             </Card>
@@ -249,6 +336,8 @@ function makeStyles(colors: Palette) {
   return StyleSheet.create({
   tabs: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
   row: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
+  permissionBox: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  permissionRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
   h2: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 4 },
   meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18 },
   metric: { color: colors.text, fontSize: 20, fontWeight: "700", marginVertical: spacing.sm },
