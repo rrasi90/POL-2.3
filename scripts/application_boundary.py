@@ -209,7 +209,7 @@ class POLApplicationBoundary:
               AND om.organization_id = %s
               AND om.status = 'ACTIVE'
               AND o.status = 'ACTIVE'
-              AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
+              AND om.role = 'RETAILER_OWNER'
             LIMIT 1
             """,
             (allocation_plan_id, self.context.user_id, self.context.organization_id),
