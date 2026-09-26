@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from psycopg2.extras import Json
 
 from scripts.api.errors import ConflictError
+from scripts.reservation_service import ReservationService
 
 from scripts.sla_calendar import (
     VENDOR_ACCEPTANCE_SLA_HOURS,
@@ -253,27 +254,17 @@ class RevalidationCheckoutService:
                 order_item = cur.fetchone()
                 order_item_id = str(order_item["id"])
 
-                cur.execute(
-                    """
-                    INSERT INTO inventory_reservations (
-                        id, vendor_product_id, order_id, order_item_id, quantity, status,
-                        idempotency_key, expires_at
-                    ) VALUES (%s,%s,%s,%s,%s,'ACTIVE',%s,%s);
-                    """,
-                    (str(uuid.uuid4()), alloc["vendor_product_id"], ord_id, order_item_id,
-                     alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_product_id']}", chk["expires_at"]),
+                reservation = ReservationService.reserve(
+                    cur,
+                    vendor_product_id=alloc["vendor_product_id"],
+                    quantity=int(alloc["quantity"]),
+                    idempotency_key=f"res-{idempotency_key}-{alloc['vendor_product_id']}",
+                    expires_at=chk["expires_at"],
+                    order_id=ord_id,
+                    order_item_id=order_item_id,
                 )
-                cur.execute(
-                    """
-                    UPDATE vendor_inventory
-                    SET reserved_quantity = reserved_quantity + %s
-                    WHERE vendor_product_id = %s
-                      AND physical_quantity - reserved_quantity >= %s;
-                    """,
-                    (alloc["quantity"], alloc["vendor_product_id"], alloc["quantity"]),
-                )
-                if cur.rowcount != 1:
-                    raise ValueError(f"Inventory reservation race detected for SKU {alloc['vendor_product_id']}")
+                if reservation.get("idempotent_replay") and str(reservation["status"]) != "ACTIVE":
+                    raise ValueError("Reservation idempotency replay is not an active reservation.")
 
         cur.execute(
             """
