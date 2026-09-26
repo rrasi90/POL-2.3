@@ -442,7 +442,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-310 | P1 | Overnight `order_cutoff_at` lacks day-offset/instant semantics. | RESOLVED — source ad8b827e; regression 570a6452 |
 | G-311 | P1 | Daily/hourly vendor capacity is check-then-act and lacks atomic reservation/invariant enforcement. | RESOLVED — transactional advisory lock 4f6f8aec; regression 59f83384 |
 | G-312 | P1 | Admin audit immutability is not DB-enforced against UPDATE/DELETE. | RESOLVED — migration 049 / 6dd3791e; regression 03979c4c |
-| G-313 | P1 | Inventory audit history can be cascaded away through `vendor_product_id`. | OPEN |
+| G-313 | P1 | Inventory audit history can be cascaded away through `vendor_product_id`. | RESOLVED — migration 050 / 4a87a750; regression b3008be1 |
 | G-314 | P1 | Notification retention/expiry is not canonically populated and no auto-archive worker is evidenced. | OPEN |
 | G-315 | P1 | Privacy export/account-deletion lifecycle lacks a runtime API/workflow. | OPEN |
 | G-316 | P1 | Runtime media schema diverges from canonical media specification; approval/provenance/media-type/checksum semantics are incomplete. | OPEN |
@@ -579,3 +579,10 @@ At the end of each closed item, the ledger must contain:
 - **Migration commit:** `6dd3791e78224c6e8f14582a529a894a649c1d06`
 - **Regression commit:** `03979c4c096fcec695d8cfbb1e972f68c3040cc9`
 - **Verification state:** SOURCE + DATABASE CONSTRAINT + REGRESSION PERSISTED; fresh CI remains separate.
+
+### G-313 Closure Record
+- **Resolution:** `inventory_audit_log.vendor_product_id` now uses `ON DELETE RESTRICT` in migration `050_inventory_audit_history_restrict.sql`, so a referenced Vendor Product cannot be physically deleted while audit history exists.
+- **Regression:** `test_inventory_audit_history_blocks_vendor_product_delete` inserts a real audit row, attempts deletion, and verifies both the history row and Vendor Product remain.
+- **Migration commit:** `4a87a750f0ee80d9d31589ffe1d480fcbe3814df`
+- **Regression commit:** `b3008be1e847085bddd5ede3222f1f8d0558285f`
+- **Verification state:** SOURCE + DB FK + REGRESSION PERSISTED; fresh CI remains separate.
