@@ -23,4 +23,4 @@ ALTER TABLE refunds
         (source_type = 'DISPUTE' AND dispute_id IS NOT NULL)
         OR
         (source_type = 'RMA' AND return_id IS NOT NULL)
-    );
+    ) NOT VALID;
