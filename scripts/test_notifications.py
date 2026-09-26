@@ -14,6 +14,8 @@ import uuid
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+from scripts.notification_retention_worker import archive_expired_inbox_items
+
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
@@ -75,11 +77,13 @@ def test_notifications():
             VALUES (%s, %s, %s, 'سفارش جدید ثبت شد', 'سفارش شماره ORD-202609-0012 دریافت گردید.', 'ORDERS', '/orders/' || %s, FALSE);
         """, (inbox_id, user_id, notif_id, event_payload["order_id"]))
 
-        cur.execute("SELECT is_read, category FROM user_inbox_items WHERE id = %s;", (inbox_id,))
+        cur.execute("SELECT is_read, category, created_at, expires_at FROM user_inbox_items WHERE id = %s;", (inbox_id,))
         inbox_item = cur.fetchone()
         assert inbox_item["is_read"] is False
         assert inbox_item["category"] == "ORDERS"
-        print("  [PASS] User inbox item created in unread state.")
+        assert inbox_item["expires_at"] is not None
+        assert inbox_item["expires_at"] > inbox_item["created_at"]
+        print("  [PASS] User inbox item created in unread state with retention expiry.")
 
         print("\n[TEST 3] Recording Channel Deliveries (INBOX, PUSH, SMS)...")
         # INBOX is seeded by the canonical notification trigger. The test adds
@@ -139,7 +143,18 @@ def test_notifications():
         assert cur.fetchone()["title"] == "بار شما بارگیری شد"
         print("  [PASS] External SMS failure did not compromise notification integrity (Decoupled!).")
 
-        print("\n[TEST 6] Marking Inbox Item as Read...")
+        print("\n[TEST 6] Expiring and auto-archiving an Inbox Item...")
+        cur.execute(
+            "UPDATE user_inbox_items SET expires_at = now() - interval '1 second' WHERE id = %s",
+            (inbox_id,),
+        )
+        archived = archive_expired_inbox_items(cur)
+        assert archived == 1
+        cur.execute("SELECT is_archived FROM user_inbox_items WHERE id = %s", (inbox_id,))
+        assert cur.fetchone()["is_archived"] is True
+        print("  [PASS] Expired inbox item was auto-archived by the retention worker.")
+
+        print("\n[TEST 7] Marking Inbox Item as Read...")
         cur.execute("""
             UPDATE user_inbox_items
             SET is_read = TRUE, read_at = now()
