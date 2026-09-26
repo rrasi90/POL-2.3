@@ -1,6 +1,6 @@
 """POL operational policies for checkout integrity and operational realism."""
 
-from datetime import datetime, timezone, time
+from datetime import datetime, timezone, time, timedelta
 from zoneinfo import ZoneInfo
 
 
@@ -33,6 +33,52 @@ def _local_day_bounds(now_utc: datetime, tz_name: str):
     return local_now, postgres_weekday, local_midnight.astimezone(timezone.utc), next_midnight.astimezone(timezone.utc)
 
 
+def _resolve_operating_window(cur, vendor_id: str, now_utc: datetime, fallback_tz_name: str):
+    """Resolve the active operating window in the window row's own timezone."""
+    cur.execute(
+        """
+        SELECT id, timezone, weekday, opens_at, closes_at, order_cutoff_at, effective_from
+        FROM vendor_operating_windows
+        WHERE vendor_id = %s
+          AND is_active = TRUE
+          AND effective_from <= now()
+          AND (effective_until IS NULL OR effective_until > now())
+        ORDER BY effective_from DESC, id ASC;
+        """,
+        (vendor_id,),
+    )
+    windows = cur.fetchall()
+    if not windows:
+        return None
+
+    matches = []
+    for window in windows:
+        tz_name = window["timezone"] or fallback_tz_name or "Asia/Tehran"
+        try:
+            tz = ZoneInfo(tz_name)
+        except Exception as exc:
+            raise AllocationIntegrityError(f"Invalid vendor timezone: {tz_name}") from exc
+
+        local_now = now_utc.astimezone(tz)
+        current_time = local_now.timetz().replace(tzinfo=None)
+        current_weekday = (local_now.weekday() + 1) % 7
+        opens_at = window["opens_at"]
+        closes_at = window["closes_at"]
+        overnight = opens_at > closes_at
+        business_weekday = (
+            (current_weekday - 1) % 7
+            if overnight and current_time <= closes_at
+            else current_weekday
+        )
+        if int(window["weekday"]) != business_weekday:
+            continue
+        matches.append((window, local_now, current_time, overnight))
+
+    if not matches:
+        return None
+    return matches[0]
+
+
 def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
     """Apply configured vendor hours/capacity using the vendor's own timezone/day boundary."""
     _, vendor_units = _vendor_allocated_totals(vendor_allocations)
@@ -56,41 +102,7 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
         tz_name = (capacity["timezone"] if capacity and capacity["timezone"] else "Asia/Tehran")
         local_now, local_weekday, day_start_utc, next_day_start_utc = _local_day_bounds(now_utc, tz_name)
 
-        cur.execute(
-            """
-            SELECT timezone, opens_at, closes_at, order_cutoff_at
-            FROM vendor_operating_windows
-            WHERE vendor_id = %s
-              AND weekday = %s
-              AND is_active = TRUE
-              AND effective_from <= now()
-              AND (effective_until IS NULL OR effective_until > now())
-            ORDER BY effective_from DESC
-            LIMIT 1;
-            """,
-            (vendor_id, local_weekday),
-        )
-        window = cur.fetchone()
-
-        if window and window["timezone"]:
-            if window["timezone"] != tz_name:
-                tz_name = window["timezone"]
-                local_now, local_weekday, day_start_utc, next_day_start_utc = _local_day_bounds(now_utc, tz_name)
-            cur.execute(
-                """
-                SELECT timezone, opens_at, closes_at, order_cutoff_at
-                FROM vendor_operating_windows
-                WHERE vendor_id = %s
-                  AND weekday = %s
-                  AND is_active = TRUE
-                  AND effective_from <= now()
-                  AND (effective_until IS NULL OR effective_until > now())
-                ORDER BY effective_from DESC
-                LIMIT 1;
-                """,
-                (vendor_id, local_weekday),
-            )
-            window = cur.fetchone()
+        window_match = _resolve_operating_window(cur, vendor_id, now_utc, tz_name)
 
         if capacity:
             if capacity["max_orders_per_day"] is not None:
@@ -131,13 +143,12 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
                         f"{recent_units + requested_units} > {capacity['max_pick_units_per_hour']}"
                     )
 
-        if window:
-            current_time = local_now.timetz().replace(tzinfo=None)
+        if window_match:
+            window, window_local_now, current_time, overnight = window_match
             opens_at = window["opens_at"]
             closes_at = window["closes_at"]
             cutoff = window["order_cutoff_at"]
 
-            # Support a business day that crosses midnight (e.g. 22:00-02:00).
             if opens_at <= closes_at:
                 in_window = opens_at <= current_time <= closes_at
             else:
