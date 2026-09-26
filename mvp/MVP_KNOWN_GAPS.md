@@ -62,7 +62,7 @@ Authenticated /api/v1/ops/analytics and /api/v1/ops/analytics/weekly routes now 
 
 ## G-010 — Staff/access management V-11 / permission APIs (RESOLVED)
 
-Vendor staff list/invite/update is implemented with owner-only mutations, tenant scoping, last-owner protection and audit logs. /api/v1/ops/permissions exposes the canonical RBAC catalog, and vendor staff UI is live.
+Vendor staff list/invite/update is implemented with owner-only mutations, tenant scoping, last-owner protection and audit logs. D-026/VD-15 is now source-implemented with tenant-scoped delegated grant/revoke, effective-permission evaluation, privilege ceiling, append-only permission audit, and Web + Android Permission Editor surfaces.
 
 
 ## G-011 — Admin broadcasts / SLA overrides / category admin (RESOLVED)
@@ -257,4 +257,12 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Finding:** access-token validation trusted an ACTIVE session + ACTIVE membership without independently checking `users.is_active` and `organizations.status`; refresh-token validation had the same omission.
 - **Resolution:** `validate_access_token` now requires active user + active organization + active membership. `AuthService.refresh_access_token` enforces the same principal checks before issuing a new access token or rotating the refresh token.
 - **Regression proof:** `scripts/test_auth_contract.py` now covers inactive-user and inactive-organization rejection for both bearer access tokens and refresh tokens.
+- **Status:** SOURCE REMEDIATED / FRESH CI PENDING
+
+
+## G-042 — Payment evidence / verification role drift (SECURITY GAP — REMEDIATED — 2026-09-26)
+
+- **Finding:** payment evidence submission previously allowed `RETAILER_STAFF`; payment verification previously allowed `VENDOR_STAFF`, exceeding the current payment responsibility boundary.
+- **Resolution:** retailer-side payment evidence now requires `RETAILER_OWNER`; verification now requires `VENDOR_OWNER` or authorized ops/admin roles. Vendor-side evidence collection remains available for the evidence types already defined by the API contract.
+- **Regression proof:** `scripts/test_http_payment_evidence.py` adds explicit Retailer Staff submission rejection and Vendor Staff verification rejection.
 - **Status:** SOURCE REMEDIATED / FRESH CI PENDING
