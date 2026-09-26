@@ -236,8 +236,9 @@ The active human-readable design authority is `13_PRODUCT_DESIGN/50_POL_MASTER_P
 - Fresh GitHub Actions executions continue to terminate with failed jobs whose step lists are empty, including reruns. Therefore current-head CI certification remains **blocked by execution/evidence**, not marked PASS.
 - Main remains unchanged; these changes are isolated to the remediation branch/PR.
 
-- Latest post-reaudit source head: `f3b0c9bb08f4808bc16140d0d3b5514d853ce76f`.
+- Latest post-reaudit source head: `52e5c79c5874aa53f15af8a0048c945f8e234298`.
 - Additional closure after the prior checkpoint: G-055 Field Task HTTP/boundary contract alignment; G-056 Support related-order tenant binding.
 - Regression coverage added in `scripts/test_http_field_tasks.py` and `scripts/test_http_support.py`.
 
 - Fresh CI executions on the latest head continue to fail before any workflow step is reported (`steps=[]`); this remains an execution/evidence blocker, not a source-level PASS/FAIL determination.
+- G-057 HTTP referral redemption is now wired to canonical first-touch attribution with deterministic idempotency; `scripts/test_http_referrals.py` covers creation + replay.
