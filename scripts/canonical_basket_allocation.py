@@ -334,6 +334,7 @@ class CanonicalBasketAllocationService:
 
         return {
             "allocation_plan_id": plan_id,
+            "basket_version": int(basket["version"]),
             "strategy": "MULTI_VENDOR_MIN_FRAGMENTATION",
             "vendor_count": int(plan.vendor_count),
             "allocated_vendors": allocated_vendors,
