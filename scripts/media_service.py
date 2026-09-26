@@ -101,23 +101,60 @@ def _authorize_target(cur, user_id: str, organization_id: str, target_type: str,
     target = target_type.upper()
 
     if target == "PRODUCT":
-        cur.execute("SELECT id FROM products WHERE id=%s AND is_active=TRUE", (target_id,))
-        if not cur.fetchone():
-            raise MediaError("Target product not found.")
         cur.execute(
             """
             SELECT 1
+            FROM products
+            WHERE id=%s AND is_active=TRUE
+            """,
+            (target_id,),
+        )
+        if not cur.fetchone():
+            raise MediaError("Target product not found.")
+
+        cur.execute(
+            """
+            SELECT om.role
             FROM organization_memberships om
             JOIN organizations o ON o.id=om.organization_id
-            WHERE om.user_id=%s AND om.organization_id=%s AND om.status='ACTIVE'
+            WHERE om.user_id=%s
+              AND om.organization_id=%s
+              AND om.status='ACTIVE'
               AND o.status='ACTIVE'
-              AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF','OPS_ADMIN','ADMIN_SUPER')
+            LIMIT 1
             """,
             (user_id, organization_id),
         )
-        if not cur.fetchone():
+        membership = cur.fetchone()
+        if not membership:
             raise PermissionError("Not authorized to attach media to this product.")
-        return {"provenance": "VENDOR_UPLOADED"}
+
+        role = str(membership["role"])
+        canonical_ops_roles = {"OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN"}
+        if role in canonical_ops_roles:
+            return {"provenance": "POL_OWNED"}
+
+        if role in {"VENDOR_OWNER", "VENDOR_STAFF"}:
+            cur.execute(
+                """
+                SELECT 1
+                FROM vendor_products vp
+                JOIN vendors v ON v.id=vp.vendor_id
+                JOIN organizations o ON o.id=v.organization_id
+                WHERE vp.product_id=%s
+                  AND v.organization_id=%s
+                  AND o.status='ACTIVE'
+                  AND v.status='ACTIVE'
+                LIMIT 1
+                """,
+                (target_id, organization_id),
+            )
+            if cur.fetchone():
+                return {"provenance": "VENDOR_UPLOADED"}
+
+        raise PermissionError(
+            "Not authorized to attach media to this product from the active organization."
+        )
 
     table_map = {
         "VENDOR": (
