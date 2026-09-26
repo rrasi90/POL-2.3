@@ -7,7 +7,8 @@ in domain_services.py.
 FastAPI architecture: this module is imported by application_boundary.py only.
 """
 
-from __future__ import annotations
+from __future__ from scripts.media_service import MediaService, validate_ready_attachment
+import annotations
 
 from datetime import datetime, timezone
 from uuid import uuid4, uuid5, NAMESPACE_URL
@@ -349,6 +350,15 @@ def confirm_delivery(cur, *, user_id, organization_id, order_id, recipient_name=
         raise ValueError(f"Unsupported proof type: {proof_type}.")
     if proof_type == "PHOTO_PROOF" and not proof_media_id:
         raise ValueError("PHOTO_PROOF requires proof_media_id.")
+    if proof_media_id:
+        validate_ready_attachment(
+            cur,
+            media_id=str(proof_media_id),
+            user_id=str(user_id),
+            organization_id=str(organization_id),
+            target_type="DELIVERY",
+            target_id=str(delivery_id),
+        )
 
     cur.execute(
         """
