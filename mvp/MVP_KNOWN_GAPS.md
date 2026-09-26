@@ -312,3 +312,11 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** order.accept was removed from the VENDOR_STAFF baseline permission set; vendor owner retains it.
 - **Regression proof:** scripts/test_delegated_permissions.py::test_vendor_staff_role_does_not_receive_order_accept_permission.
 - **Status:** SOURCE REMEDIATED / FRESH CI PENDING
+
+
+## G-049 — Retailer staff formal-dispute opening overreach (SECURITY / RBAC — REMEDIATED — 2026-09-26)
+
+- **Finding:** the formal dispute-open path enforced retailer tenancy but did not independently restrict the actor to RETAILER_OWNER, allowing a retailer staff membership to invoke the client-facing dispute command.
+- **Resolution:** both the HTTP route and the application boundary now require an active RETAILER_OWNER membership in an active retailer organization.
+- **Regression proof:** scripts/test_http_returns_disputes.py::TestDisputeOpen::test_retailer_staff_cannot_open_formal_dispute.
+- **Status:** SOURCE REMEDIATED / FRESH CI PENDING
