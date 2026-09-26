@@ -129,9 +129,13 @@ ROLE_DELEGATION_DENY = {
     # Removing them from the baseline is not sufficient because historical or new
     # delegated grants otherwise could reintroduce the capability.
     "VENDOR_STAFF": frozenset({"order.accept", "membership.manage", "payment.record"}),
-    "RETAILER_STAFF": frozenset({"membership.manage", "payment.record"}),
+    "RETAILER_STAFF": frozenset({"order.accept", "membership.manage", "payment.record"}),
     "FIELD_ACTIVATOR": frozenset({"membership.manage", "payment.record", "order.accept"}),
 }
+
+
+def _denied_delegated_permissions(role: str) -> frozenset[str]:
+    return ROLE_DELEGATION_DENY.get(canonical_role(role), frozenset())
 
 
 def canonical_role(role: str) -> str:
@@ -184,7 +188,13 @@ def effective_permissions(cur, user_id: str, organization_id: str) -> dict:
         """,
         (membership["membership_id"],),
     )
-    permissions.update(row["permission_key"] for row in cur.fetchall())
+    denied = _denied_delegated_permissions(role)
+    permissions.update(
+        row["permission_key"]
+        for row in cur.fetchall()
+        if row["permission_key"] in CANONICAL_PERMISSIONS
+        and row["permission_key"] not in denied
+    )
 
     return {
         "membership_id": str(membership["membership_id"]),
@@ -243,7 +253,7 @@ def grant_permission(
         raise ValueError(f"Target membership role must be {target_role}.")
 
     target_canonical_role = canonical_role(target["role"])
-    if permission_key in ROLE_DELEGATION_DENY.get(target_canonical_role, frozenset()):
+    if permission_key in _denied_delegated_permissions(target_canonical_role):
         raise PermissionError(
             f"Permission '{permission_key}' cannot be delegated to {target_canonical_role}."
         )
@@ -454,8 +464,12 @@ def membership_permissions(cur, actor_user_id: str, organization_id: str, target
         "phone_number": target["phone_number"],
         "role": target["role"],
         "base_permissions": base,
-        "delegatable_permissions": list(CANONICAL_PERMISSIONS),
-        "grantable_permissions": sorted(actor["permissions"]),
+        "delegatable_permissions": sorted(
+            set(CANONICAL_PERMISSIONS) - set(_denied_delegated_permissions(target["role"]))
+        ),
+        "grantable_permissions": sorted(
+            set(actor["permissions"]) - set(_denied_delegated_permissions(target["role"]))
+        ),
         "delegated_grants": grants,
         "effective_permissions": sorted(granted),
     }
