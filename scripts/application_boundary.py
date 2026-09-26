@@ -2844,7 +2844,11 @@ class POLApplicationBoundary:
             SELECT ma.id, ma.storage_key, ma.mime_type, pm.is_primary, pm.display_order
             FROM product_media pm
             JOIN media_assets ma ON ma.id = pm.media_asset_id
-            WHERE pm.product_id = %s::uuid AND ma.status = 'READY'
+            WHERE pm.product_id = %s::uuid
+              AND ma.status = 'READY'
+              AND ma.provenance IN ('VENDOR_UPLOADED', 'MANUFACTURER_PROVIDED', 'POL_OWNED')
+              AND pm.approval_status = 'APPROVED'
+              AND pm.approval_status <> 'PRIVATE_REFERENCE'
             ORDER BY pm.is_primary DESC, pm.display_order
             """,
             (product_id,),
