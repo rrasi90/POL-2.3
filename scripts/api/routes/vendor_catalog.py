@@ -7,7 +7,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from scripts.api.dependencies import get_application_boundary, require_roles
+from scripts.api.dependencies import get_application_boundary, require_permission, require_roles
 from scripts.api.errors import success_payload
 from scripts.api.schemas import (
     VendorCatalogCreateRequest,
