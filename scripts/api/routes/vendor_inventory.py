@@ -6,7 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from scripts.api.dependencies import get_application_boundary, require_permission, require_roles
+from scripts.api.dependencies import get_application_boundary, require_permission
 from scripts.api.errors import success_payload
 from scripts.api.schemas import (
     VendorInventoryContinuousScanRequest,
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/vendors/inventory", tags=["inventory"])
 def continuous_scan(
     payload: VendorInventoryContinuousScanRequest,
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
+    _auth: Annotated[dict, Depends(require_permission("inventory.scan"))] = None,
 ):
     return success_payload(
         boundary.vendor_inventory_continuous_scan(
@@ -40,7 +40,7 @@ def continuous_scan(
 def publish_inventory(
     payload: VendorInventoryPublishRequest,
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
+    _auth: Annotated[dict, Depends(require_permission("catalog.manage"))] = None,
 ):
     return success_payload(
         boundary.vendor_inventory_publish(session_id=payload.session_id)
