@@ -1,10 +1,10 @@
 {
   "metadata": {
     "schema_version": "1.0.0",
-    "timestamp_utc": "2026-09-26T16:20:39.180134+00:00",
+    "timestamp_utc": "2026-09-26T18:21:25.970694+00:00",
     "environment": "LOCAL",
     "git": {
-      "commit": "b1117d22c26c0a32568f127a84ecf85056dc470f",
+      "commit": "5620608ecea55d9ecccea1d683c89d9d7780e831",
       "branch": "remediation/master-gap-closure-2026-09-26",
       "is_dirty": true
     },
@@ -23,22 +23,22 @@
     "overall_status": "FAILED",
     "exit_code": 1,
     "total_collected": 656,
-    "total_passed": 600,
-    "total_failed": 56,
+    "total_passed": 647,
+    "total_failed": 9,
     "total_skipped": 0,
-    "duration_seconds": 215.27
+    "duration_seconds": 250.85
   },
   "tests": [
     {
       "nodeid": "scripts/test_admin_authorization.py::test_admin_authorization",
       "outcome": "passed",
-      "duration": 0.0497,
+      "duration": 0.1891,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_allocation_engine.py::test_allocation_engine",
       "outcome": "passed",
-      "duration": 0.0058,
+      "duration": 0.0117,
       "phase": "call"
     },
     {
@@ -62,25 +62,25 @@
     {
       "nodeid": "scripts/test_analytics_lineage.py::TestSourceTablesExist::test_source_tables_exist_in_db",
       "outcome": "passed",
-      "duration": 0.0311,
+      "duration": 0.0962,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_api_boundary_route_inventory.py::test_fastapi_runtime_route_inventory_is_explicit",
       "outcome": "passed",
-      "duration": 0.2414,
+      "duration": 0.3463,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_api_db_config.py::test_production_db_requires_password_and_tls",
       "outcome": "passed",
-      "duration": 0.0003,
+      "duration": 0.0005,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_api_db_config.py::test_production_db_passes_explicit_secure_config",
       "outcome": "passed",
-      "duration": 0.0001,
+      "duration": 0.0003,
       "phase": "call"
     },
     {
@@ -92,13 +92,13 @@
     {
       "nodeid": "scripts/test_api_route_hygiene.py::test_api_layer_does_not_import_legacy_domain_services",
       "outcome": "passed",
-      "duration": 0.0242,
+      "duration": 0.0364,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_static_otp_is_strictly_test_only",
-      "outcome": "failed",
-      "duration": 0.2185,
+      "outcome": "passed",
+      "duration": 0.431,
       "phase": "call"
     },
     {
@@ -122,7 +122,7 @@
     {
       "nodeid": "scripts/test_auth_contract.py::test_ac11_otp_pbkdf2_hash_and_timing_safe_verify",
       "outcome": "passed",
-      "duration": 0.0792,
+      "duration": 0.1085,
       "phase": "call"
     },
     {
@@ -134,331 +134,331 @@
     {
       "nodeid": "scripts/test_auth_contract.py::test_ac13_validate_access_token_valid_token_accepted",
       "outcome": "passed",
-      "duration": 0.0058,
+      "duration": 0.0131,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_ac14_validate_access_token_expired_token_rejected",
       "outcome": "passed",
-      "duration": 0.0002,
+      "duration": 0.0005,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_ac15_validate_access_token_no_session_rejected",
       "outcome": "passed",
-      "duration": 0.0005,
+      "duration": 0.0011,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_ac16_validate_access_token_revoked_session_rejected",
       "outcome": "passed",
-      "duration": 0.0018,
+      "duration": 0.0024,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_ac17_validate_access_token_stale_org_rejected",
       "outcome": "passed",
-      "duration": 0.0017,
+      "duration": 0.0034,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_ac18_validate_access_token_new_org_accepted",
       "outcome": "passed",
-      "duration": 0.0026,
+      "duration": 0.004,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_ac19_validate_access_token_membership_revoked_rejected",
       "outcome": "passed",
-      "duration": 0.0019,
+      "duration": 0.0034,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_ac20_otp_challenge_is_consumed_exactly_once",
-      "outcome": "failed",
-      "duration": 0.0265,
+      "outcome": "passed",
+      "duration": 0.0923,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_ac4_refresh_token_hash_actually_persisted",
       "outcome": "passed",
-      "duration": 0.0022,
+      "duration": 0.0021,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_rl1_4th_request_same_phone_ip_rejected",
       "outcome": "passed",
-      "duration": 0.0017,
+      "duration": 0.0034,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_rl2_same_phone_different_ips_separate_buckets",
       "outcome": "passed",
-      "duration": 0.0278,
+      "duration": 0.0453,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_rl3_same_phone_ip_after_5min_allowed",
       "outcome": "passed",
-      "duration": 0.0283,
+      "duration": 0.0423,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_rl6_different_phone_unaffected_by_rate_limit",
       "outcome": "passed",
-      "duration": 0.0285,
+      "duration": 0.0471,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_rl7_order_confirmation_bypasses_d018_rate_limit",
       "outcome": "passed",
-      "duration": 0.0277,
+      "duration": 0.0416,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_rl8_delivery_confirm_bypasses_d018_rate_limit",
       "outcome": "passed",
-      "duration": 0.0274,
+      "duration": 0.0435,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_rl9_login_is_d018_enforced",
       "outcome": "passed",
-      "duration": 0.0016,
+      "duration": 0.0035,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_rl10_register_is_d018_enforced",
       "outcome": "passed",
-      "duration": 0.0014,
+      "duration": 0.0033,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_lo1_5th_wrong_otp_blocked_with_blocked_at",
       "outcome": "passed",
-      "duration": 0.0286,
+      "duration": 0.0375,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_lo2_request_during_lockout_rejected",
       "outcome": "passed",
-      "duration": 0.0015,
+      "duration": 0.0027,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_lo3_blocked_at_10min_plus_1s_rejected",
       "outcome": "passed",
-      "duration": 0.0011,
+      "duration": 0.002,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_lo4_blocked_at_10min_minus_1s_allowed",
       "outcome": "passed",
-      "duration": 0.0287,
+      "duration": 0.0389,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_lo5_phone_locked_different_ip_rejected",
       "outcome": "passed",
-      "duration": 0.0013,
+      "duration": 0.0033,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_lo6_phone_a_locked_phone_b_allowed",
       "outcome": "passed",
-      "duration": 0.0295,
+      "duration": 0.0398,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_lo7_lockout_starts_at_5th_attempt_not_creation",
       "outcome": "passed",
-      "duration": 0.0292,
+      "duration": 0.0388,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_con1_concurrent_rate_limit_advisory_lock",
       "outcome": "passed",
-      "duration": 0.1356,
+      "duration": 0.1898,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_p0_switch_organization_rejects_foreign_session",
-      "outcome": "failed",
-      "duration": 0.0013,
+      "outcome": "passed",
+      "duration": 0.124,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_p0_switch_organization_valid_target_succeeds",
       "outcome": "passed",
-      "duration": 0.0025,
+      "duration": 0.004,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_p0_refresh_token_is_rotated_and_old_token_replay_fails",
-      "outcome": "failed",
-      "duration": 0.0019,
+      "outcome": "passed",
+      "duration": 0.0035,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_p0_verify_otp_rejects_user_mismatch_for_same_phone",
       "outcome": "passed",
-      "duration": 0.0287,
+      "duration": 0.0381,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_access_token_rejects_inactive_user",
       "outcome": "passed",
-      "duration": 0.0026,
+      "duration": 0.0045,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_access_token_rejects_inactive_organization",
       "outcome": "passed",
-      "duration": 0.002,
+      "duration": 0.0038,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_refresh_token_rejects_inactive_user",
       "outcome": "passed",
-      "duration": 0.002,
+      "duration": 0.0035,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_refresh_token_rejects_inactive_organization",
       "outcome": "passed",
-      "duration": 0.0019,
+      "duration": 0.0024,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_authorize_action_rejects_inactive_user",
       "outcome": "passed",
-      "duration": 0.001,
+      "duration": 0.0025,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_switch_organization_rejects_inactive_user",
       "outcome": "passed",
-      "duration": 0.0019,
+      "duration": 0.0032,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_verify_otp_rejects_suspended_organization",
       "outcome": "passed",
-      "duration": 0.0298,
+      "duration": 0.0437,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_auth_contract.py::test_verify_otp_cannot_consume_non_authentication_challenge",
       "outcome": "passed",
-      "duration": 0.0282,
+      "duration": 0.0402,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_basket_allocation_application.py::test_basket_allocation_application_boundary_round_trip",
-      "outcome": "failed",
-      "duration": 0.0601,
+      "outcome": "passed",
+      "duration": 0.2254,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_basket_versioning.py::test_basket_versioning",
       "outcome": "passed",
-      "duration": 0.0459,
+      "duration": 0.0826,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_rma_retailer_context_and_replay[False]",
       "outcome": "passed",
-      "duration": 0.3163,
+      "duration": 0.3958,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_rma_retailer_context_and_replay[True]",
       "outcome": "passed",
-      "duration": 0.2514,
+      "duration": 0.4196,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_rma_vendor_context",
       "outcome": "passed",
-      "duration": 0.676,
+      "duration": 1.1694,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_rma_ops_context_and_separation_of_duties[ADMIN_SUPER]",
       "outcome": "passed",
-      "duration": 0.4912,
+      "duration": 0.9266,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_rma_ops_context_and_separation_of_duties[OPS_AGENT]",
       "outcome": "passed",
-      "duration": 0.4833,
+      "duration": 0.878,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_rma_ops_context_and_separation_of_duties[SUPER_ADMIN]",
       "outcome": "passed",
-      "duration": 0.7264,
+      "duration": 0.9481,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_rma_ops_context_and_separation_of_duties[OPS_ADMIN]",
       "outcome": "passed",
-      "duration": 0.6822,
+      "duration": 0.7823,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_refund_invalid_amount_rejected_by_database[None-REFUND_PENDING]",
       "outcome": "passed",
-      "duration": 0.0979,
+      "duration": 0.1992,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_refund_invalid_amount_rejected_by_database[None-REFUNDED]",
       "outcome": "passed",
-      "duration": 0.1095,
+      "duration": 0.1524,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_refund_invalid_amount_rejected_by_database[0-REFUND_PENDING]",
       "outcome": "passed",
-      "duration": 0.1096,
+      "duration": 0.2541,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_refund_invalid_amount_rejected_by_database[0-REFUNDED]",
       "outcome": "passed",
-      "duration": 0.245,
+      "duration": 0.2261,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_refund_invalid_amount_rejected_by_database[-1-REFUND_PENDING]",
       "outcome": "passed",
-      "duration": 0.1124,
+      "duration": 0.1171,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_refund_invalid_amount_rejected_by_database[-1-REFUNDED]",
       "outcome": "passed",
-      "duration": 0.1014,
+      "duration": 0.2229,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_checkout_enqueues_submission_events_with_explicit_routing",
       "outcome": "passed",
-      "duration": 0.1911,
+      "duration": 0.1899,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_checkout_rollback_leaves_no_submission_events",
       "outcome": "passed",
-      "duration": 0.1624,
+      "duration": 0.1701,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch2_rma_and_outbox.py::test_existing_order_events_templates_remain_active",
       "outcome": "passed",
-      "duration": 0.0298,
+      "duration": 0.0241,
       "phase": "call"
     },
     {
@@ -470,169 +470,169 @@
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_api_contract_uses_submitted_not_pending_for_child_orders",
       "outcome": "passed",
-      "duration": 0.0005,
+      "duration": 0.0004,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_database_rejects_non_canonical_order_states[PENDING]",
       "outcome": "passed",
-      "duration": 0.1538,
+      "duration": 0.2771,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_database_rejects_non_canonical_order_states[PROCESSING]",
       "outcome": "passed",
-      "duration": 0.372,
+      "duration": 0.1637,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_database_rejects_non_canonical_order_states[CONFIRMED]",
       "outcome": "passed",
-      "duration": 0.1526,
+      "duration": 0.2819,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_database_rejects_non_canonical_order_states[COMPLETED]",
       "outcome": "passed",
-      "duration": 0.1944,
+      "duration": 0.1691,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_checkout_rejects_invalid_tenant_context[wrong_org]",
       "outcome": "passed",
-      "duration": 0.1329,
+      "duration": 0.1233,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_checkout_rejects_invalid_tenant_context[inactive_membership]",
       "outcome": "passed",
-      "duration": 0.1188,
+      "duration": 0.1186,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_checkout_rejects_invalid_tenant_context[missing_context]",
       "outcome": "passed",
-      "duration": 0.2366,
+      "duration": 0.1484,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_boundary_role_resolution_rejects_inactive_security_context[inactive_user]",
       "outcome": "passed",
-      "duration": 0.0976,
+      "duration": 0.0611,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_boundary_role_resolution_rejects_inactive_security_context[suspended_org]",
       "outcome": "passed",
-      "duration": 0.064,
+      "duration": 0.0644,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_checkout_revalidates_live_offer[price-Quoted price is not the current vendor price]",
       "outcome": "passed",
-      "duration": 0.1336,
+      "duration": 0.1302,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_checkout_revalidates_live_offer[stock-Available stock is insufficient]",
       "outcome": "passed",
-      "duration": 0.1677,
+      "duration": 0.2319,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_batch3_contract_matrix.py::test_rma_boundary_rejects_illegal_transition",
       "outcome": "passed",
-      "duration": 0.1419,
+      "duration": 0.108,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_broadcasts.py::test_broadcasts",
       "outcome": "passed",
-      "duration": 0.0846,
+      "duration": 0.0628,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_broadcasts.py::test_http_broadcast_contract",
-      "outcome": "failed",
-      "duration": 0.0313,
+      "outcome": "passed",
+      "duration": 0.2556,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_feedback.py::test_same_org_users_cannot_see_each_others_feedback",
       "outcome": "passed",
-      "duration": 0.039,
+      "duration": 0.0402,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_feedback.py::test_admin_feedback_inbox_requires_active_admin_membership",
       "outcome": "passed",
-      "duration": 0.1835,
+      "duration": 0.0379,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_integration_worker.py::test_notification_creates_delivery_record_without_recursive_outbox",
       "outcome": "passed",
-      "duration": 0.0323,
+      "duration": 0.0412,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_integration_worker.py::test_daily_inventory_materializes_canonical_warehouse_responsibility",
       "outcome": "passed",
-      "duration": 0.0425,
+      "duration": 0.0411,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_integration_worker.py::test_integration_worker_uses_exact_recipient_and_template",
       "outcome": "passed",
-      "duration": 0.0984,
+      "duration": 0.0494,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_integration_worker.py::test_batch4_recipient_membership_isolation[authorized]",
       "outcome": "passed",
-      "duration": 0.1426,
+      "duration": 0.1155,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_integration_worker.py::test_batch4_recipient_membership_isolation[wrong_organization]",
       "outcome": "passed",
-      "duration": 0.1438,
+      "duration": 0.2162,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_integration_worker.py::test_batch4_recipient_membership_isolation[suspended]",
       "outcome": "passed",
-      "duration": 0.138,
+      "duration": 0.2019,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_integration_worker.py::test_batch4_recipient_membership_isolation[revoked]",
       "outcome": "passed",
-      "duration": 0.1151,
+      "duration": 0.1152,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_integration_worker.py::test_batch4_recipient_membership_isolation[inactive_organization]",
       "outcome": "passed",
-      "duration": 0.1433,
+      "duration": 0.1075,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_integration_worker.py::test_batch4_recipient_membership_isolation[inactive_user]",
       "outcome": "passed",
-      "duration": 0.1063,
+      "duration": 0.0996,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_integration_worker.py::test_batch4_recipient_membership_isolation[missing_user]",
       "outcome": "passed",
-      "duration": 0.0985,
+      "duration": 0.0944,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_integration_worker.py::test_batch4_recipient_membership_isolation[missing_organization]",
       "outcome": "passed",
-      "duration": 0.2022,
+      "duration": 0.2068,
       "phase": "call"
     },
     {
@@ -680,13 +680,13 @@
     {
       "nodeid": "scripts/test_canonical_runtime_regressions.py::test_repository_verifier_is_dynamic_not_legacy_56_table_audit",
       "outcome": "passed",
-      "duration": 0.0002,
+      "duration": 0.0003,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_runtime_regressions.py::test_canonical_e2e_entrypoints_exist_without_legacy_domain_service_import",
       "outcome": "passed",
-      "duration": 0.0565,
+      "duration": 0.0581,
       "phase": "call"
     },
     {
@@ -728,13 +728,13 @@
     {
       "nodeid": "scripts/test_canonical_runtime_regressions.py::test_verifier_migration_chain_errors_are_counted[filenames0]",
       "outcome": "passed",
-      "duration": 0.0058,
+      "duration": 0.0055,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_runtime_regressions.py::test_verifier_migration_chain_errors_are_counted[filenames1]",
       "outcome": "passed",
-      "duration": 0.004,
+      "duration": 0.0037,
       "phase": "call"
     },
     {
@@ -752,13 +752,13 @@
     {
       "nodeid": "scripts/test_canonical_runtime_regressions.py::test_verifier_accepts_new_contiguous_migrations",
       "outcome": "passed",
-      "duration": 0.0069,
+      "duration": 0.0071,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_runtime_regressions.py::test_verifier_reports_unreadable_migration",
       "outcome": "passed",
-      "duration": 0.0039,
+      "duration": 0.004,
       "phase": "call"
     },
     {
@@ -770,7 +770,7 @@
     {
       "nodeid": "scripts/test_canonical_runtime_regressions.py::test_verifier_requires_all_five_hierarchy_entities_in_every_canonical_doc[AllocationPlan]",
       "outcome": "passed",
-      "duration": 0.0015,
+      "duration": 0.0021,
       "phase": "call"
     },
     {
@@ -788,79 +788,79 @@
     {
       "nodeid": "scripts/test_canonical_runtime_regressions.py::test_verifier_requires_all_five_hierarchy_entities_in_every_canonical_doc[OrderItem]",
       "outcome": "passed",
-      "duration": 0.0021,
+      "duration": 0.0016,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_runtime_regressions.py::test_verifier_accepts_plural_entity_forms_as_in_real_canonical_docs",
       "outcome": "passed",
-      "duration": 0.0017,
+      "duration": 0.0016,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_runtime_regressions.py::test_verifier_accepts_documents_with_full_hierarchy",
       "outcome": "passed",
-      "duration": 0.0017,
+      "duration": 0.0016,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_canonical_runtime_regressions.py::test_verifier_cli_returns_nonzero_for_failed_checks",
       "outcome": "passed",
-      "duration": 0.0716,
+      "duration": 0.0717,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_catalog_domain_schema.py::test_all_catalog_tables_exist",
       "outcome": "passed",
-      "duration": 0.0358,
+      "duration": 0.0329,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_catalog_domain_schema.py::test_products_has_master_sku_unique",
       "outcome": "passed",
-      "duration": 0.1476,
+      "duration": 0.0387,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_catalog_domain_schema.py::test_vendor_products_has_sku_uniqueness",
       "outcome": "passed",
-      "duration": 0.027,
+      "duration": 0.0332,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_catalog_domain_schema.py::test_vendor_inventory_has_moq_column",
       "outcome": "passed",
-      "duration": 0.038,
+      "duration": 0.152,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_catalog_domain_schema.py::test_vendor_prices_has_temporal_exclusion",
       "outcome": "passed",
-      "duration": 0.0247,
+      "duration": 0.0245,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_catalog_domain_schema.py::test_product_identifiers_has_multi_scope_indexes",
       "outcome": "passed",
-      "duration": 0.0325,
+      "duration": 0.0316,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_catalog_domain_schema.py::test_product_candidates_has_status_check",
       "outcome": "passed",
-      "duration": 0.0241,
+      "duration": 0.0236,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_catalog_domain_schema.py::test_vendor_inventory_has_reserved_le_physical_check",
       "outcome": "passed",
-      "duration": 0.0278,
+      "duration": 0.0323,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_catalog_domain_schema.py::test_inventory_audit_log_has_source_trigger_column",
       "outcome": "passed",
-      "duration": 0.0391,
+      "duration": 0.0375,
       "phase": "call"
     },
     {
@@ -908,25 +908,25 @@
     {
       "nodeid": "scripts/test_checkout_fingerprint.py::test_replay_returns_none_when_no_existing_order",
       "outcome": "passed",
-      "duration": 0.025,
+      "duration": 0.024,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_checkout_fingerprint.py::test_replay_rejects_cross_retailer",
       "outcome": "passed",
-      "duration": 0.0459,
+      "duration": 0.0429,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_checkout_fingerprint.py::test_replay_rejects_fingerprint_mismatch",
       "outcome": "passed",
-      "duration": 0.0413,
+      "duration": 0.0435,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_checkout_fingerprint.py::test_replay_returns_existing_order_on_match",
       "outcome": "passed",
-      "duration": 0.0491,
+      "duration": 0.0518,
       "phase": "call"
     },
     {
@@ -938,7 +938,7 @@
     {
       "nodeid": "scripts/test_checkout_gateway_contract.py::test_non_test_script_callers_do_not_import_legacy_checkout_service",
       "outcome": "passed",
-      "duration": 0.1225,
+      "duration": 0.1311,
       "phase": "call"
     },
     {
@@ -956,7 +956,7 @@
     {
       "nodeid": "scripts/test_competitive_operational_hardening.py::test_checkout_idempotency_constraint_exists",
       "outcome": "passed",
-      "duration": 0.0067,
+      "duration": 0.0059,
       "phase": "call"
     },
     {
@@ -974,19 +974,19 @@
     {
       "nodeid": "scripts/test_competitive_operational_hardening.py::test_effective_price_overlap_constraint_exists",
       "outcome": "passed",
-      "duration": 0.0032,
+      "duration": 0.0031,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_competitive_operational_hardening.py::test_metric_lineage_requires_calculation_version",
       "outcome": "passed",
-      "duration": 0.0124,
+      "duration": 0.0171,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_cross_cutting_state_matrix.py::test_cross_cutting_matrix_is_complete_and_unique",
       "outcome": "passed",
-      "duration": 0.0004,
+      "duration": 0.0006,
       "phase": "call"
     },
     {
@@ -998,109 +998,109 @@
     {
       "nodeid": "scripts/test_cross_cutting_state_matrix.py::test_delivery_matrix_is_backed_by_canonical_state_machine",
       "outcome": "passed",
-      "duration": 0.0002,
+      "duration": 0.0003,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_cross_cutting_state_matrix.py::test_mobile_session_rows_match_source_contracts",
       "outcome": "passed",
-      "duration": 0.0016,
+      "duration": 0.0006,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_cross_entity_integrity_032.py::test_order_item_rejects_cross_vendor_product",
       "outcome": "passed",
-      "duration": 0.0317,
+      "duration": 0.0298,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_cross_entity_integrity_032.py::test_payment_rejects_cross_vendor_context",
       "outcome": "passed",
-      "duration": 0.1461,
+      "duration": 0.0354,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_cross_entity_integrity_032.py::test_settlement_rejects_cross_vendor_context",
       "outcome": "passed",
-      "duration": 0.1468,
+      "duration": 0.0362,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_cross_entity_integrity_032.py::test_delivery_rejects_cross_vendor_context",
       "outcome": "passed",
-      "duration": 0.0327,
+      "duration": 0.0322,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_cross_entity_integrity_032.py::test_refund_rejects_cross_order_payment_lineage",
       "outcome": "passed",
-      "duration": 0.0381,
+      "duration": 0.0411,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_cross_entity_integrity_032.py::test_order_item_quantity_invariants",
       "outcome": "passed",
-      "duration": 0.1738,
+      "duration": 0.1613,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_cross_entity_integrity_032.py::test_append_only_order_timeline_is_enforced",
       "outcome": "passed",
-      "duration": 0.03,
+      "duration": 0.1451,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_cross_entity_integrity_032.py::test_append_only_admin_audit_is_enforced",
-      "outcome": "passed",
-      "duration": 0.0266,
+      "outcome": "failed",
+      "duration": 0.0373,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_cross_entity_integrity_032.py::test_migration_032_triggers_are_installed",
-      "outcome": "passed",
-      "duration": 0.0286,
+      "outcome": "failed",
+      "duration": 0.0267,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_current_source_of_truth.py::test_current_source_of_truth",
       "outcome": "passed",
-      "duration": 0.0039,
+      "duration": 0.0036,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_daily_inventory_canonical_routing.py::test_daily_inventory_reminder_requires_and_uses_primary_responsibility",
       "outcome": "passed",
-      "duration": 0.1288,
+      "duration": 0.0759,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_delegated_permissions.py::test_delegated_permission_grant_effective_and_revoke",
-      "outcome": "failed",
-      "duration": 0.0021,
+      "outcome": "passed",
+      "duration": 0.0093,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_delegated_permissions.py::test_privilege_ceiling_blocks_unsupported_owner_grant",
       "outcome": "passed",
-      "duration": 0.0022,
+      "duration": 0.0026,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_delegated_permissions.py::test_delegation_is_tenant_scoped",
       "outcome": "passed",
-      "duration": 0.0026,
+      "duration": 0.0023,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_delegated_permissions.py::test_permission_audit_is_append_only",
       "outcome": "passed",
-      "duration": 0.0063,
+      "duration": 0.0053,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_delegated_permissions.py::test_vendor_editor_rejects_non_vendor_staff_target",
       "outcome": "passed",
-      "duration": 0.0029,
+      "duration": 0.0026,
       "phase": "call"
     },
     {
@@ -1112,319 +1112,319 @@
     {
       "nodeid": "scripts/test_delegated_permissions.py::test_owner_only_permissions_cannot_be_delegated_to_vendor_staff",
       "outcome": "passed",
-      "duration": 0.0044,
+      "duration": 0.0039,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_delegated_permissions.py::test_historical_owner_only_grant_cannot_become_effective",
       "outcome": "passed",
-      "duration": 0.0044,
+      "duration": 0.0045,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_delegated_permissions.py::test_retailer_staff_order_accept_is_not_delegatable",
       "outcome": "passed",
-      "duration": 0.0001,
+      "duration": 0.0002,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_admin_audit_logs_are_db_immutable",
-      "outcome": "failed",
-      "duration": 0.0549,
+      "outcome": "passed",
+      "duration": 0.1031,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_inventory_audit_history_blocks_vendor_product_delete",
       "outcome": "passed",
-      "duration": 0.1042,
+      "duration": 0.1111,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_privacy_export_and_deletion_lifecycle",
-      "outcome": "failed",
-      "duration": 0.0408,
+      "outcome": "passed",
+      "duration": 0.2898,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_media_schema_alignment_and_governance_fields",
-      "outcome": "failed",
-      "duration": 0.0286,
+      "outcome": "passed",
+      "duration": 0.134,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_resumable_media_session_and_processing_pipeline",
       "outcome": "passed",
-      "duration": 0.1411,
+      "duration": 0.1186,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_media_reference_requires_ready_owner_and_exact_purpose",
       "outcome": "passed",
-      "duration": 0.0292,
+      "duration": 0.034,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_deleted_media_storage_reconciliation_is_retryable",
       "outcome": "passed",
-      "duration": 0.0375,
+      "duration": 0.036,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_checkout_is_atomic_on_failure_after_reservation_stage",
-      "outcome": "failed",
-      "duration": 0.0404,
+      "outcome": "passed",
+      "duration": 0.1536,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_reservation_expiry_worker_releases_stock_and_persists_event",
       "outcome": "passed",
-      "duration": 0.0489,
+      "duration": 0.0462,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_retailer_pre_acceptance_cancellation_releases_reservation",
-      "outcome": "failed",
-      "duration": 0.1375,
+      "outcome": "passed",
+      "duration": 0.1923,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_reservation_expiry_matches_allocation_plan_expiry",
       "outcome": "failed",
-      "duration": 0.0333,
+      "duration": 0.042,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_reservation_lifecycle_uses_canonical_runtime_commands",
       "outcome": "failed",
-      "duration": 0.0736,
+      "duration": 0.0538,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_checkout_persists_multivendor_orders_snapshots_and_reservations",
-      "outcome": "failed",
-      "duration": 0.1243,
+      "outcome": "passed",
+      "duration": 0.2743,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_checkout_allows_unfulfilled_allocation_lines",
-      "outcome": "failed",
-      "duration": 0.1366,
+      "outcome": "passed",
+      "duration": 0.2527,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_checkout_replay_fingerprint_and_new_request_same_retailer",
-      "outcome": "failed",
-      "duration": 0.5146,
+      "outcome": "passed",
+      "duration": 0.428,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_checkout_rolls_back_after_partial_sql_writes",
-      "outcome": "failed",
-      "duration": 0.2308,
+      "outcome": "passed",
+      "duration": 0.2937,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_hourly_capacity_uses_ordered_quantity_and_rejects_at_threshold",
       "outcome": "passed",
-      "duration": 0.2676,
+      "duration": 0.3827,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_hourly_capacity_counts_recent_orders[SUBMITTED-30-13-False]",
       "outcome": "passed",
-      "duration": 0.2268,
+      "duration": 0.2506,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_hourly_capacity_counts_recent_orders[SUBMITTED-30-14-True]",
       "outcome": "passed",
-      "duration": 0.1775,
+      "duration": 0.1664,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_hourly_capacity_counts_recent_orders[CANCELLED-30-7-True]",
       "outcome": "passed",
-      "duration": 0.1634,
+      "duration": 0.2874,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_hourly_capacity_counts_recent_orders[REJECTED-30-7-True]",
       "outcome": "passed",
-      "duration": 0.1705,
+      "duration": 0.1888,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_hourly_capacity_counts_recent_orders[SUBMITTED-61-7-True]",
       "outcome": "passed",
-      "duration": 0.1812,
+      "duration": 0.2711,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_vendor_capacity_lock_serializes_concurrent_checkout_decisions",
-      "outcome": "failed",
-      "duration": 0.0002,
+      "outcome": "passed",
+      "duration": 0.2751,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_daily_capacity_uses_vendor_local_day[2026-09-16T20:29:59+00:00-SUBMITTED-True]",
       "outcome": "passed",
-      "duration": 0.2142,
+      "duration": 0.1158,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_daily_capacity_uses_vendor_local_day[2026-09-16T20:30:00+00:00-SUBMITTED-False]",
       "outcome": "passed",
-      "duration": 0.1164,
+      "duration": 0.1126,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_daily_capacity_uses_vendor_local_day[2026-09-17T20:30:00+00:00-SUBMITTED-True]",
       "outcome": "passed",
-      "duration": 0.1124,
+      "duration": 0.1223,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_daily_capacity_uses_vendor_local_day[2026-09-16T20:30:00+00:00-CANCELLED-True]",
       "outcome": "passed",
-      "duration": 0.1168,
+      "duration": 0.1136,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_daily_capacity_uses_vendor_local_day[2026-09-16T20:30:00+00:00-REJECTED-True]",
       "outcome": "passed",
-      "duration": 0.1354,
+      "duration": 0.1188,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_operating_window_uses_its_own_timezone_for_weekday",
       "outcome": "passed",
-      "duration": 0.1641,
+      "duration": 0.1741,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_overnight_order_cutoff_uses_next_day_semantics[2026-09-16T19:30:00+00:00-True]",
       "outcome": "passed",
-      "duration": 0.0681,
+      "duration": 0.058,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_overnight_order_cutoff_uses_next_day_semantics[2026-09-16T22:00:00+00:00-False]",
       "outcome": "passed",
-      "duration": 0.0647,
+      "duration": 0.1007,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_overnight_window_uses_previous_weekday_after_midnight",
       "outcome": "passed",
-      "duration": 0.0576,
+      "duration": 0.0603,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_overnight_operating_window_remains_enforced[2026-09-16T19:30:00+00:00-True]",
       "outcome": "passed",
-      "duration": 0.0593,
+      "duration": 0.1628,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_overnight_operating_window_remains_enforced[2026-09-16T21:30:00+00:00-True]",
       "outcome": "passed",
-      "duration": 0.0581,
+      "duration": 0.3054,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_e2e_mvp_platform.py::test_overnight_operating_window_remains_enforced[2026-09-17T00:00:00+00:00-False]",
       "outcome": "passed",
-      "duration": 0.0595,
+      "duration": 0.0672,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_admin_referrals.py::TestAdminAuditLogs::test_admin_can_list_audit_logs",
       "outcome": "passed",
-      "duration": 0.1183,
+      "duration": 0.1056,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_admin_referrals.py::TestAdminAuditLogs::test_retailer_cannot_list_audit_logs",
       "outcome": "passed",
-      "duration": 0.0777,
+      "duration": 0.1302,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_admin_referrals.py::TestAdminExceptionsDashboard::test_admin_can_view_exceptions_dashboard",
       "outcome": "passed",
-      "duration": 0.0885,
+      "duration": 0.096,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_admin_referrals.py::TestReferralCreate::test_vendor_can_create_referral",
       "outcome": "passed",
-      "duration": 0.13,
+      "duration": 0.092,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_admin_referrals.py::TestReferralCreate::test_retailer_cannot_create_referral",
       "outcome": "passed",
-      "duration": 0.0798,
+      "duration": 0.0845,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_admin_referrals.py::TestReferralList::test_vendor_can_list_own_referrals",
       "outcome": "passed",
-      "duration": 0.1314,
+      "duration": 0.1393,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_admin_referrals.py::TestReferralRedeem::test_referral_redeem",
       "outcome": "passed",
-      "duration": 0.1655,
+      "duration": 0.1823,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_admin_referrals.py::TestUnauthenticated::test_unauthenticated_rejected",
       "outcome": "passed",
-      "duration": 0.0298,
+      "duration": 0.1832,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_admin_referrals.py::TestUnauthenticated::test_unauthenticated_referral_rejected",
       "outcome": "passed",
-      "duration": 0.0311,
+      "duration": 0.0288,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_baskets.py::test_current_basket_returns_canonical_contract",
       "outcome": "passed",
-      "duration": 0.0031,
+      "duration": 0.0039,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_baskets.py::test_create_basket_returns_canonical_contract",
       "outcome": "passed",
-      "duration": 0.003,
+      "duration": 0.0031,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_baskets.py::test_add_basket_item_returns_new_version",
       "outcome": "passed",
-      "duration": 0.0034,
+      "duration": 0.004,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_baskets.py::test_add_basket_item_rejects_non_positive_quantity",
       "outcome": "passed",
-      "duration": 0.0028,
+      "duration": 0.0035,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_baskets.py::test_add_basket_item_rejects_extra_fields",
       "outcome": "passed",
-      "duration": 0.0029,
+      "duration": 0.0034,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_baskets.py::test_allocation_preview_returns_canonical_contract",
       "outcome": "passed",
-      "duration": 0.0027,
+      "duration": 0.0037,
       "phase": "call"
     },
     {
@@ -1436,139 +1436,139 @@
     {
       "nodeid": "scripts/test_http_baskets.py::test_create_basket_route_is_auth_protected",
       "outcome": "passed",
-      "duration": 0.1299,
+      "duration": 0.0275,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_baskets.py::test_allocation_preview_route_is_auth_protected",
       "outcome": "passed",
-      "duration": 0.0326,
+      "duration": 0.0303,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_search_returns_results",
       "outcome": "passed",
-      "duration": 0.2226,
+      "duration": 0.1205,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_search_filters_by_category",
       "outcome": "passed",
-      "duration": 0.1058,
+      "duration": 0.1115,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_search_empty_query_rejected",
       "outcome": "passed",
-      "duration": 0.0941,
+      "duration": 0.1049,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_categories_returns_tree",
       "outcome": "passed",
-      "duration": 0.1067,
+      "duration": 0.1089,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_product_detail_returns_identifiers_and_media",
       "outcome": "passed",
-      "duration": 0.1296,
+      "duration": 0.1256,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_product_media_requires_ready_and_approved_public_governance",
       "outcome": "passed",
-      "duration": 0.1408,
+      "duration": 0.1803,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_product_detail_not_found",
       "outcome": "passed",
-      "duration": 0.1027,
+      "duration": 0.1241,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_product_vendors_returns_offers",
       "outcome": "passed",
-      "duration": 0.1068,
+      "duration": 0.1349,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_search_requires_auth",
       "outcome": "passed",
-      "duration": 0.0276,
+      "duration": 0.0328,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_categories_requires_auth",
       "outcome": "passed",
-      "duration": 0.0313,
+      "duration": 0.0311,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_product_detail_requires_auth",
       "outcome": "passed",
-      "duration": 0.03,
+      "duration": 0.0314,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_catalog_product_vendors_requires_auth",
       "outcome": "passed",
-      "duration": 0.0678,
+      "duration": 0.0306,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog.py::test_public_categories_route_contract",
       "outcome": "passed",
-      "duration": 0.0309,
+      "duration": 0.0378,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog_matching.py::test_exact_barcode_match_uses_canonical_identifier",
-      "outcome": "failed",
-      "duration": 0.1917,
+      "outcome": "passed",
+      "duration": 0.2479,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog_matching.py::test_legacy_barcode_request_shape_remains_supported",
-      "outcome": "failed",
-      "duration": 0.3041,
+      "outcome": "passed",
+      "duration": 0.2686,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_catalog_matching.py::test_unknown_barcode_creates_quarantined_candidate_idempotently",
-      "outcome": "failed",
-      "duration": 0.2894,
+      "outcome": "passed",
+      "duration": 0.6459,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_checkout.py::test_checkout_route_returns_canonical_order_contract",
       "outcome": "passed",
-      "duration": 0.0279,
+      "duration": 0.0324,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_checkout.py::test_checkout_stale_basket_returns_canonical_409",
       "outcome": "passed",
-      "duration": 0.0267,
+      "duration": 0.0305,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_checkout.py::test_checkout_requires_uuid4_idempotency_key",
       "outcome": "passed",
-      "duration": 0.0278,
+      "duration": 0.031,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_checkout.py::test_checkout_requires_idempotency_header",
       "outcome": "passed",
-      "duration": 0.034,
+      "duration": 0.0319,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_checkout.py::test_checkout_rejects_extra_request_fields",
       "outcome": "passed",
-      "duration": 0.1364,
+      "duration": 0.0306,
       "phase": "call"
     },
     {
@@ -1580,1309 +1580,1309 @@
     {
       "nodeid": "scripts/test_http_checkout.py::test_checkout_route_is_auth_protected",
       "outcome": "passed",
-      "duration": 0.1382,
+      "duration": 0.0309,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_daily_inventory.py::test_daily_inventory_get_creates_pending",
       "outcome": "passed",
-      "duration": 0.1039,
+      "duration": 0.1754,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_daily_inventory.py::test_daily_inventory_get_includes_vendor_product_lines",
       "outcome": "passed",
-      "duration": 0.0971,
+      "duration": 0.1318,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_daily_inventory.py::test_daily_inventory_confirm_no_changes",
       "outcome": "passed",
-      "duration": 0.1973,
+      "duration": 0.2316,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_daily_inventory.py::test_daily_inventory_confirm_with_changes",
       "outcome": "passed",
-      "duration": 0.0994,
+      "duration": 0.1286,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_daily_inventory.py::test_daily_inventory_confirm_updates_vendor_inventory",
       "outcome": "passed",
-      "duration": 0.1018,
+      "duration": 0.1302,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_daily_inventory.py::test_daily_inventory_confirm_is_idempotent",
       "outcome": "passed",
-      "duration": 0.1373,
+      "duration": 0.3294,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_daily_inventory.py::test_daily_inventory_cross_tenant_gets_own_confirmation",
       "outcome": "passed",
-      "duration": 0.2618,
+      "duration": 0.2901,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_daily_inventory.py::test_daily_inventory_routes_require_auth",
       "outcome": "passed",
-      "duration": 0.0766,
+      "duration": 0.0929,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionReporting::test_report_damaged_goods",
       "outcome": "passed",
-      "duration": 0.1486,
+      "duration": 0.1848,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionReporting::test_report_doorstep_rejection",
       "outcome": "passed",
-      "duration": 0.2196,
+      "duration": 0.1321,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionReporting::test_report_item_discrepancy",
       "outcome": "passed",
-      "duration": 0.1504,
+      "duration": 0.1893,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionReporting::test_report_invalid_type_rejected",
       "outcome": "passed",
-      "duration": 0.0934,
+      "duration": 0.1199,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionResolution::test_resolve_full_refund",
       "outcome": "passed",
-      "duration": 0.1854,
+      "duration": 0.2327,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionResolution::test_resolve_replacement",
       "outcome": "passed",
-      "duration": 0.2624,
+      "duration": 0.2021,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionResolution::test_cannot_resolve_already_resolved",
       "outcome": "passed",
-      "duration": 0.2028,
+      "duration": 0.2991,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionEscalation::test_escalate_exception",
       "outcome": "passed",
-      "duration": 0.323,
+      "duration": 0.2397,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionQuery::test_list_exceptions_for_order",
       "outcome": "passed",
-      "duration": 0.1582,
+      "duration": 0.2986,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionQuery::test_get_single_exception",
       "outcome": "passed",
-      "duration": 0.1539,
+      "duration": 0.2026,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionSecureAccess::test_unauthenticated_cannot_report",
       "outcome": "passed",
-      "duration": 0.09,
+      "duration": 0.1529,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_exceptions.py::TestExceptionSecureAccess::test_vendor_cannot_report_exception",
       "outcome": "passed",
-      "duration": 0.1014,
+      "duration": 0.2339,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG440ArrivedRuntime::test_full_stage_chain_persists_timestamps_and_timeline",
       "outcome": "passed",
-      "duration": 0.2919,
+      "duration": 0.3036,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG440ArrivedRuntime::test_illegal_jump_rejected",
       "outcome": "passed",
-      "duration": 0.118,
+      "duration": 0.1817,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG440ArrivedRuntime::test_stage_replay_is_idempotent",
       "outcome": "passed",
-      "duration": 0.1053,
+      "duration": 0.3493,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG440ArrivedRuntime::test_stage_requires_dispatched_order",
       "outcome": "passed",
-      "duration": 0.1316,
+      "duration": 0.1773,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG441ConcurrentPod::test_concurrent_confirmation_is_single_terminal_mutation",
       "outcome": "passed",
-      "duration": 0.1906,
+      "duration": 0.3971,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG442DeliveredQuantity::test_full_delivery_fulfills_item",
       "outcome": "passed",
-      "duration": 0.2966,
+      "duration": 0.2034,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG442DeliveredQuantity::test_partial_delivery_derives_shortage",
       "outcome": "passed",
-      "duration": 0.2001,
+      "duration": 0.3229,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG442DeliveredQuantity::test_zero_delivery_derives_rejected",
       "outcome": "passed",
-      "duration": 0.3223,
+      "duration": 0.3529,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG442DeliveredQuantity::test_delivered_quantity_cannot_exceed_accepted",
       "outcome": "passed",
-      "duration": 0.1577,
+      "duration": 0.1677,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG442DeliveredQuantity::test_unknown_order_item_rejected",
       "outcome": "passed",
-      "duration": 0.2042,
+      "duration": 0.1684,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG442DeliveredQuantity::test_duplicate_order_item_rejected",
       "outcome": "passed",
-      "duration": 0.1636,
+      "duration": 0.2634,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG442DeliveredQuantity::test_missing_delivered_items_defaults_to_accepted",
       "outcome": "passed",
-      "duration": 0.2055,
+      "duration": 0.3499,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG447FailedSemantics::test_failed_from_assigned_rejected",
       "outcome": "passed",
-      "duration": 0.1172,
+      "duration": 0.1307,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG447FailedSemantics::test_failed_from_arrived_persists_reason_and_timeline",
       "outcome": "passed",
-      "duration": 0.1731,
+      "duration": 0.1663,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG447FailedSemantics::test_duplicate_failed_is_replay",
       "outcome": "passed",
-      "duration": 0.1741,
+      "duration": 0.2303,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG447FailedSemantics::test_deliver_rejected_after_failed",
       "outcome": "passed",
-      "duration": 0.2227,
+      "duration": 0.2219,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG445G446ProofValidation::test_photo_proof_requires_delivery_bound_media",
       "outcome": "passed",
-      "duration": 0.1847,
+      "duration": 0.3164,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG445G446ProofValidation::test_signature_proof_without_media_accepted",
       "outcome": "passed",
-      "duration": 0.1771,
+      "duration": 0.2644,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_pod_g440_451.py::TestG450G451PodPersistenceAndConsistency::test_success_then_replay_single_pod_and_consistent_evidence",
       "outcome": "passed",
-      "duration": 0.3012,
+      "duration": 0.4254,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_tracking.py::TestDeliveryGet::test_get_delivery_for_dispatched_order",
       "outcome": "passed",
-      "duration": 0.1017,
+      "duration": 0.1241,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_tracking.py::TestDeliveryGet::test_get_delivery_for_vendor",
       "outcome": "passed",
-      "duration": 0.2163,
+      "duration": 0.1377,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_tracking.py::TestDeliveryGet::test_get_delivery_not_found",
       "outcome": "passed",
-      "duration": 0.2244,
+      "duration": 0.1586,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_tracking.py::TestDeliveryProof::test_get_proof_for_delivered_order",
       "outcome": "passed",
-      "duration": 0.1428,
+      "duration": 0.1363,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_delivery_tracking.py::TestDeliveryProof::test_get_proof_returns_none_for_undelivered",
       "outcome": "passed",
-      "duration": 0.1245,
+      "duration": 0.1294,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_error_contract.py::test_unknown_route_returns_canonical_404_envelope",
       "outcome": "passed",
-      "duration": 0.0031,
+      "duration": 0.004,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_error_contract.py::test_method_not_allowed_returns_405_envelope",
       "outcome": "passed",
-      "duration": 0.0022,
+      "duration": 0.0033,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_error_contract.py::test_validation_error_returns_422_with_field_details",
       "outcome": "passed",
-      "duration": 0.0307,
+      "duration": 0.0779,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_error_contract.py::test_missing_bearer_token_returns_401_envelope",
       "outcome": "passed",
-      "duration": 0.0309,
+      "duration": 0.0288,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_error_contract.py::test_correlation_id_valid_supplied_is_echoed",
       "outcome": "passed",
-      "duration": 0.0031,
+      "duration": 0.0029,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_error_contract.py::test_correlation_id_invalid_supplied_is_replaced_with_uuid",
       "outcome": "passed",
-      "duration": 0.0031,
+      "duration": 0.0038,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_error_contract.py::test_correlation_id_missing_is_generated",
       "outcome": "passed",
-      "duration": 0.0038,
+      "duration": 0.0032,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_error_contract.py::test_correlation_id_present_on_error_responses",
       "outcome": "passed",
-      "duration": 0.1314,
+      "duration": 0.0295,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_field_tasks.py::TestFieldTaskCRUD::test_list_tasks",
       "outcome": "passed",
-      "duration": 0.0786,
+      "duration": 0.0927,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_field_tasks.py::TestFieldTaskCRUD::test_get_task",
       "outcome": "passed",
-      "duration": 0.0784,
+      "duration": 0.0893,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_field_tasks.py::TestFieldTaskCRUD::test_update_task",
       "outcome": "passed",
-      "duration": 0.0894,
+      "duration": 0.1986,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_field_tasks.py::TestFieldTaskCRUD::test_task_cannot_roll_back_from_in_progress_to_assigned",
       "outcome": "passed",
-      "duration": 0.1625,
+      "duration": 0.2189,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_field_tasks.py::TestFieldTaskCRUD::test_create_task",
       "outcome": "passed",
-      "duration": 0.1258,
+      "duration": 0.0885,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_field_tasks.py::TestFieldTaskCRUD::test_create_task_with_retailer_target_resolves_target_organization",
-      "outcome": "failed",
-      "duration": 0.1762,
+      "outcome": "passed",
+      "duration": 0.2924,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_field_tasks.py::TestFieldTaskAccess::test_retailer_cannot_create_task",
       "outcome": "passed",
-      "duration": 0.0726,
+      "duration": 0.0822,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_field_tasks.py::TestFieldTaskAccess::test_unauthenticated_rejected",
       "outcome": "passed",
-      "duration": 0.0247,
+      "duration": 0.0301,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestInvoiceList::test_vendor_list_own_invoices",
       "outcome": "passed",
-      "duration": 0.1173,
+      "duration": 0.131,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestInvoiceList::test_retailer_list_own_invoices",
       "outcome": "passed",
-      "duration": 0.1108,
+      "duration": 0.1312,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestInvoiceList::test_ops_list_cross_tenant_invoices",
       "outcome": "passed",
-      "duration": 0.3165,
+      "duration": 0.3082,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestInvoiceGet::test_vendor_get_invoice_detail",
       "outcome": "passed",
-      "duration": 0.2234,
+      "duration": 0.1332,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestInvoiceGet::test_retailer_get_invoice_detail",
       "outcome": "passed",
-      "duration": 0.1065,
+      "duration": 0.13,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestInvoiceGet::test_wrong_tenant_cannot_access_invoice",
       "outcome": "passed",
-      "duration": 0.2429,
+      "duration": 0.1757,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestInvoiceByOrder::test_retailer_get_invoice_for_order",
       "outcome": "passed",
-      "duration": 0.1115,
+      "duration": 0.1885,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestSettlementList::test_vendor_list_settlements",
       "outcome": "passed",
-      "duration": 0.1131,
+      "duration": 0.1394,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestSettlementList::test_retailer_cannot_list_settlements",
       "outcome": "passed",
-      "duration": 0.1019,
+      "duration": 0.1304,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestSettlementGet::test_settlement_detail_includes_adjustments",
       "outcome": "passed",
-      "duration": 0.1623,
+      "duration": 0.1334,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestSettlementGet::test_retailer_cannot_get_settlement",
       "outcome": "passed",
-      "duration": 0.1107,
+      "duration": 0.1691,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestFinanceAuth::test_unauthenticated_rejected_invoices",
       "outcome": "passed",
-      "duration": 0.0259,
+      "duration": 0.0277,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_finance.py::TestFinanceAuth::test_unauthenticated_rejected_settlements",
       "outcome": "passed",
-      "duration": 0.0259,
+      "duration": 0.1421,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestMarkPreparing::test_preparing_from_accepted",
       "outcome": "passed",
-      "duration": 0.1104,
+      "duration": 0.2471,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestMarkPreparing::test_preparing_from_partially_accepted",
       "outcome": "passed",
-      "duration": 0.1063,
+      "duration": 0.1309,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestMarkPreparing::test_preparing_from_submitted_rejected",
       "outcome": "passed",
-      "duration": 0.1096,
+      "duration": 0.1318,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestMarkPreparing::test_preparing_requires_vendor_auth",
       "outcome": "passed",
-      "duration": 0.1031,
+      "duration": 0.2681,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestMarkReady::test_ready_from_preparing",
       "outcome": "passed",
-      "duration": 0.1664,
+      "duration": 0.1884,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestMarkReady::test_ready_from_submitted_rejected",
       "outcome": "passed",
-      "duration": 0.1056,
+      "duration": 0.1232,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestDispatch::test_dispatch_from_ready",
       "outcome": "passed",
-      "duration": 0.5761,
+      "duration": 0.7559,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestDispatch::test_dispatch_from_preparing_rejected",
       "outcome": "passed",
-      "duration": 0.1983,
+      "duration": 0.2247,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestConfirmDelivery::test_deliver_requires_arrived_and_otp",
       "outcome": "passed",
-      "duration": 0.4794,
+      "duration": 0.8604,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestConfirmDelivery::test_deliver_from_dispatched_rejected",
       "outcome": "passed",
-      "duration": 0.2844,
+      "duration": 0.4785,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestConfirmDelivery::test_wrong_otp_rejected_without_delivery",
       "outcome": "passed",
-      "duration": 0.7249,
+      "duration": 0.7938,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestConfirmDelivery::test_repeated_delivery_confirmation_replays",
       "outcome": "passed",
-      "duration": 0.6293,
+      "duration": 0.8315,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestConfirmDelivery::test_deliver_from_submitted_rejected",
       "outcome": "passed",
-      "duration": 0.1332,
+      "duration": 0.1523,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestFullLifecycle::test_accepted_to_delivered",
       "outcome": "passed",
-      "duration": 0.6076,
+      "duration": 0.843,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_fulfillment.py::TestTimelineAfterFulfillment::test_timeline_records_all_transitions",
       "outcome": "passed",
-      "duration": 0.6642,
+      "duration": 0.8058,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_inventory.py::test_inventory_get_returns_details",
-      "outcome": "failed",
-      "duration": 0.0561,
+      "outcome": "passed",
+      "duration": 0.1173,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_inventory.py::test_inventory_adjust_updates_quantity_and_creates_audit_log",
-      "outcome": "failed",
-      "duration": 0.1645,
+      "outcome": "passed",
+      "duration": 0.2146,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_inventory.py::test_inventory_adjust_sets_freshness_to_fresh",
       "outcome": "passed",
-      "duration": 0.2665,
+      "duration": 0.389,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_inventory.py::test_inventory_adjust_rejects_negative_quantity",
-      "outcome": "failed",
-      "duration": 0.0514,
+      "outcome": "passed",
+      "duration": 0.1536,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_inventory.py::test_inventory_cross_tenant_forbidden",
-      "outcome": "failed",
-      "duration": 0.0532,
+      "outcome": "passed",
+      "duration": 0.117,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_inventory.py::test_compare_inventory_returns_vendors",
-      "outcome": "failed",
-      "duration": 0.1627,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_inventory.py::test_inventory_routes_require_auth",
-      "outcome": "passed",
-      "duration": 0.0806,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_management.py::test_vendor_customers_and_staff_are_tenant_scoped",
-      "outcome": "failed",
-      "duration": 0.0871,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_management.py::test_vendor_owner_cannot_suspend_last_active_owner",
-      "outcome": "passed",
-      "duration": 0.0777,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_management.py::test_only_vendor_owner_can_invite_staff",
-      "outcome": "failed",
-      "duration": 0.1504,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_management.py::test_admin_user_org_permission_and_global_returns_routes",
-      "outcome": "passed",
-      "duration": 0.1645,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_management.py::test_management_routes_reject_unauthenticated",
-      "outcome": "passed",
-      "duration": 0.0737,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_management.py::test_broadcast_and_category_admin_routes_use_real_boundary",
-      "outcome": "passed",
-      "duration": 0.2046,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_management.py::test_broadcast_and_category_mutations_reject_non_admin_context",
-      "outcome": "passed",
-      "duration": 0.0727,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_management.py::test_continuous_inventory_scan_and_publish",
-      "outcome": "failed",
-      "duration": 0.0585,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_management.py::test_product_candidate_review_http_is_tenant_and_idempotent",
-      "outcome": "failed",
-      "duration": 0.3593,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_management.py::test_vendor_permission_editor_http_lifecycle",
-      "outcome": "failed",
-      "duration": 0.0006,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_notifications.py::TestNotificationsList::test_list_notifications",
-      "outcome": "passed",
-      "duration": 0.0948,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_notifications.py::TestNotificationPreferences::test_get_preferences",
-      "outcome": "passed",
-      "duration": 0.1876,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_notifications.py::TestNotificationPreferences::test_update_preference",
-      "outcome": "passed",
-      "duration": 0.0839,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_notifications.py::TestNotificationPreferences::test_invalid_channel_rejected",
-      "outcome": "passed",
-      "duration": 0.0746,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_notifications.py::TestNotificationAccess::test_unauthenticated_rejected",
-      "outcome": "passed",
-      "duration": 0.0313,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_notifications.py::TestDurableInbox::test_list_and_unread_count",
-      "outcome": "passed",
-      "duration": 0.0778,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_notifications.py::TestDurableInbox::test_mark_one_read_is_tenant_scoped",
-      "outcome": "passed",
-      "duration": 0.2241,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_notifications.py::TestDurableInbox::test_mark_all_read_is_idempotent",
-      "outcome": "passed",
-      "duration": 0.2299,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_notifications.py::TestDurableInbox::test_notification_projection_contains_read_state",
-      "outcome": "passed",
-      "duration": 0.078,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderList::test_list_orders_as_retailer",
-      "outcome": "passed",
-      "duration": 0.1478,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderList::test_list_orders_as_vendor",
-      "outcome": "passed",
-      "duration": 0.1056,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderList::test_list_orders_with_status_filter",
-      "outcome": "passed",
-      "duration": 0.1054,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderList::test_list_orders_requires_auth",
-      "outcome": "passed",
-      "duration": 0.0248,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderGet::test_get_order_as_retailer",
-      "outcome": "passed",
-      "duration": 0.1157,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderGet::test_get_order_as_vendor",
-      "outcome": "passed",
-      "duration": 0.1115,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderGet::test_get_order_not_found",
-      "outcome": "passed",
-      "duration": 0.1116,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderGet::test_get_order_requires_auth",
-      "outcome": "passed",
-      "duration": 0.0244,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderItems::test_get_order_items",
-      "outcome": "passed",
-      "duration": 0.1145,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderItems::test_get_order_items_as_vendor",
-      "outcome": "passed",
-      "duration": 0.1136,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderTimeline::test_get_timeline",
-      "outcome": "passed",
-      "duration": 0.1135,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderGroup::test_get_order_group",
-      "outcome": "passed",
-      "duration": 0.1092,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderGroup::test_get_order_group_child_orders",
-      "outcome": "passed",
-      "duration": 0.2522,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderGroup::test_get_order_group_as_vendor",
-      "outcome": "passed",
-      "duration": 0.1103,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_order_query.py::TestOrderGroup::test_order_group_not_found",
-      "outcome": "passed",
-      "duration": 0.1201,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_retailer_submits_bank_reference",
-      "outcome": "passed",
-      "duration": 0.1114,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_replay_of_same_external_reference_is_idempotent",
-      "outcome": "passed",
-      "duration": 0.1528,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_receipt_image_requires_owned_media",
-      "outcome": "passed",
-      "duration": 0.1095,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_receipt_image_without_media_rejected",
-      "outcome": "passed",
-      "duration": 0.1017,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_vendor_submits_pos_reference",
-      "outcome": "passed",
-      "duration": 0.1113,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_invalid_evidence_type_rejected",
-      "outcome": "passed",
-      "duration": 0.0932,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_list_evidence_for_order",
-      "outcome": "passed",
-      "duration": 0.2666,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestVerifyPayment::test_vendor_verify_requires_matching_evidence",
-      "outcome": "passed",
-      "duration": 0.144,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestVerifyPayment::test_canonical_direct_transfer_alias_and_payment_id_verify",
-      "outcome": "passed",
-      "duration": 0.1592,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestVerifyPayment::test_payment_id_verify_rejects_payment_from_other_order",
-      "outcome": "passed",
-      "duration": 0.2034,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestVerifyPayment::test_vendor_verifies_payment",
-      "outcome": "passed",
-      "duration": 0.2027,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestVerifyPayment::test_retailer_cannot_verify_payment",
-      "outcome": "passed",
-      "duration": 0.1031,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestAccessControl::test_unauthenticated_cannot_submit",
-      "outcome": "passed",
-      "duration": 0.0839,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestAccessControl::test_wrong_tenant_rejected",
-      "outcome": "passed",
-      "duration": 0.1625,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestAccessControl::test_wrong_tenant_cannot_read_evidence",
-      "outcome": "passed",
-      "duration": 0.2848,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestRoleMatrixRegression::test_retailer_staff_cannot_submit_payment_evidence",
-      "outcome": "passed",
-      "duration": 0.2235,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_payment_evidence.py::TestRoleMatrixRegression::test_vendor_staff_cannot_verify_payment",
-      "outcome": "passed",
-      "duration": 0.2837,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_pricing.py::test_price_history_returns_records",
-      "outcome": "passed",
-      "duration": 0.0993,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_pricing.py::test_price_current_returns_active_price",
-      "outcome": "passed",
-      "duration": 0.114,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_pricing.py::test_price_set_rotates_old_price",
-      "outcome": "passed",
-      "duration": 0.1533,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_pricing.py::test_price_set_rejects_zero_price",
-      "outcome": "passed",
-      "duration": 0.1397,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_pricing.py::test_price_set_rejects_negative_price",
-      "outcome": "passed",
-      "duration": 0.1014,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_pricing.py::test_price_cross_tenant_access_forbidden",
-      "outcome": "passed",
-      "duration": 0.0977,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_pricing.py::test_price_set_cross_tenant_forbidden",
-      "outcome": "passed",
-      "duration": 0.098,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_pricing.py::test_compare_prices_returns_vendors_sorted",
-      "outcome": "passed",
-      "duration": 0.0992,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_pricing.py::test_pricing_routes_require_auth",
-      "outcome": "passed",
-      "duration": 0.2051,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestOTPVerification::test_deliver_with_correct_otp",
-      "outcome": "passed",
-      "duration": 0.1659,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestOTPVerification::test_deliver_with_wrong_otp",
-      "outcome": "passed",
-      "duration": 0.1531,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestOTPVerification::test_deliver_without_otp",
-      "outcome": "passed",
-      "duration": 0.1699,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestOTPAttemptCap::test_otp_attempt_limit",
-      "outcome": "passed",
-      "duration": 0.5468,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestDeliveredQuantities::test_delivered_quantity_above_ordered_rejected",
-      "outcome": "passed",
-      "duration": 0.1595,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestProofType::test_deliver_with_signature_proof",
-      "outcome": "passed",
-      "duration": 0.2475,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestProofType::test_deliver_with_photo_proof",
-      "outcome": "passed",
-      "duration": 0.155,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestIssueReporting::test_deliver_with_issue",
-      "outcome": "passed",
-      "duration": 0.1522,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestIssueReporting::test_proof_shows_issue",
-      "outcome": "passed",
-      "duration": 0.1976,
-      "phase": "call"
-    },
-    {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestSecureAccess::test_retailer_can_create_pod",
       "outcome": "passed",
       "duration": 0.1572,
       "phase": "call"
     },
     {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestSecureAccess::test_vendor_cannot_create_pod",
+      "nodeid": "scripts/test_http_inventory.py::test_inventory_routes_require_auth",
       "outcome": "passed",
-      "duration": 0.1069,
+      "duration": 0.1931,
       "phase": "call"
     },
     {
-      "nodeid": "scripts/test_http_proof_of_delivery.py::TestSecureAccess::test_unauthenticated_cannot_create_pod",
+      "nodeid": "scripts/test_http_management.py::test_vendor_customers_and_staff_are_tenant_scoped",
       "outcome": "passed",
-      "duration": 0.1946,
+      "duration": 0.2408,
       "phase": "call"
     },
     {
-      "nodeid": "scripts/test_http_reconciliation.py::TestListReconciliationCases::test_ops_lists_cases",
+      "nodeid": "scripts/test_http_management.py::test_vendor_owner_cannot_suspend_last_active_owner",
       "outcome": "passed",
-      "duration": 0.1012,
+      "duration": 0.1488,
       "phase": "call"
     },
     {
-      "nodeid": "scripts/test_http_reconciliation.py::TestListReconciliationCases::test_ops_filter_by_status",
+      "nodeid": "scripts/test_http_management.py::test_only_vendor_owner_can_invite_staff",
+      "outcome": "passed",
+      "duration": 0.0408,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_management.py::test_admin_user_org_permission_and_global_returns_routes",
+      "outcome": "passed",
+      "duration": 0.3423,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_management.py::test_management_routes_reject_unauthenticated",
+      "outcome": "passed",
+      "duration": 0.0845,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_management.py::test_broadcast_and_category_admin_routes_use_real_boundary",
+      "outcome": "passed",
+      "duration": 0.2869,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_management.py::test_broadcast_and_category_mutations_reject_non_admin_context",
+      "outcome": "passed",
+      "duration": 0.0839,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_management.py::test_continuous_inventory_scan_and_publish",
+      "outcome": "failed",
+      "duration": 0.1685,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_management.py::test_product_candidate_review_http_is_tenant_and_idempotent",
+      "outcome": "failed",
+      "duration": 0.3992,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_management.py::test_vendor_permission_editor_http_lifecycle",
+      "outcome": "failed",
+      "duration": 0.0009,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_notifications.py::TestNotificationsList::test_list_notifications",
+      "outcome": "passed",
+      "duration": 0.1474,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_notifications.py::TestNotificationPreferences::test_get_preferences",
+      "outcome": "passed",
+      "duration": 0.086,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_notifications.py::TestNotificationPreferences::test_update_preference",
+      "outcome": "passed",
+      "duration": 0.0936,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_notifications.py::TestNotificationPreferences::test_invalid_channel_rejected",
+      "outcome": "passed",
+      "duration": 0.0873,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_notifications.py::TestNotificationAccess::test_unauthenticated_rejected",
+      "outcome": "passed",
+      "duration": 0.0767,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_notifications.py::TestDurableInbox::test_list_and_unread_count",
+      "outcome": "passed",
+      "duration": 0.0922,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_notifications.py::TestDurableInbox::test_mark_one_read_is_tenant_scoped",
+      "outcome": "passed",
+      "duration": 0.1303,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_notifications.py::TestDurableInbox::test_mark_all_read_is_idempotent",
+      "outcome": "passed",
+      "duration": 0.1762,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_notifications.py::TestDurableInbox::test_notification_projection_contains_read_state",
+      "outcome": "passed",
+      "duration": 0.0906,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderList::test_list_orders_as_retailer",
+      "outcome": "passed",
+      "duration": 0.2919,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderList::test_list_orders_as_vendor",
+      "outcome": "passed",
+      "duration": 0.1347,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderList::test_list_orders_with_status_filter",
+      "outcome": "passed",
+      "duration": 0.2772,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderList::test_list_orders_requires_auth",
+      "outcome": "passed",
+      "duration": 0.0307,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderGet::test_get_order_as_retailer",
+      "outcome": "passed",
+      "duration": 0.1781,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderGet::test_get_order_as_vendor",
+      "outcome": "passed",
+      "duration": 0.1686,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderGet::test_get_order_not_found",
+      "outcome": "passed",
+      "duration": 0.1304,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderGet::test_get_order_requires_auth",
+      "outcome": "passed",
+      "duration": 0.0296,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderItems::test_get_order_items",
+      "outcome": "passed",
+      "duration": 0.1792,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderItems::test_get_order_items_as_vendor",
+      "outcome": "passed",
+      "duration": 0.1289,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderTimeline::test_get_timeline",
+      "outcome": "passed",
+      "duration": 0.1755,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_order_query.py::TestOrderGroup::test_get_order_group",
       "outcome": "passed",
       "duration": 0.1318,
       "phase": "call"
     },
     {
-      "nodeid": "scripts/test_http_reconciliation.py::TestGetReconciliationCase::test_ops_get_case",
+      "nodeid": "scripts/test_http_order_query.py::TestOrderGroup::test_get_order_group_child_orders",
       "outcome": "passed",
-      "duration": 0.1,
+      "duration": 0.175,
       "phase": "call"
     },
     {
-      "nodeid": "scripts/test_http_reconciliation.py::TestGetReconciliationCase::test_get_case_not_found",
+      "nodeid": "scripts/test_http_order_query.py::TestOrderGroup::test_get_order_group_as_vendor",
       "outcome": "passed",
-      "duration": 0.0944,
+      "duration": 0.1383,
       "phase": "call"
     },
     {
-      "nodeid": "scripts/test_http_reconciliation.py::TestResolveReconciliationCase::test_ops_resolves_case",
+      "nodeid": "scripts/test_http_order_query.py::TestOrderGroup::test_order_group_not_found",
       "outcome": "passed",
-      "duration": 0.0943,
+      "duration": 0.1713,
       "phase": "call"
     },
     {
-      "nodeid": "scripts/test_http_reconciliation.py::TestResolveReconciliationCase::test_resolve_already_resolved_rejected",
+      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_retailer_submits_bank_reference",
       "outcome": "passed",
-      "duration": 0.1071,
+      "duration": 0.1263,
       "phase": "call"
     },
     {
-      "nodeid": "scripts/test_http_reconciliation.py::TestResolveReconciliationCase::test_resolve_not_found",
+      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_replay_of_same_external_reference_is_idempotent",
+      "outcome": "passed",
+      "duration": 0.2236,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_receipt_image_requires_owned_media",
+      "outcome": "passed",
+      "duration": 0.1697,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_receipt_image_without_media_rejected",
+      "outcome": "passed",
+      "duration": 0.122,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_vendor_submits_pos_reference",
+      "outcome": "passed",
+      "duration": 0.1655,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_invalid_evidence_type_rejected",
+      "outcome": "passed",
+      "duration": 0.1098,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestSubmitEvidence::test_list_evidence_for_order",
+      "outcome": "passed",
+      "duration": 0.2182,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestVerifyPayment::test_vendor_verify_requires_matching_evidence",
+      "outcome": "passed",
+      "duration": 0.1175,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestVerifyPayment::test_canonical_direct_transfer_alias_and_payment_id_verify",
+      "outcome": "passed",
+      "duration": 0.2364,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestVerifyPayment::test_payment_id_verify_rejects_payment_from_other_order",
+      "outcome": "passed",
+      "duration": 0.4946,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestVerifyPayment::test_vendor_verifies_payment",
+      "outcome": "passed",
+      "duration": 0.2854,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestVerifyPayment::test_retailer_cannot_verify_payment",
+      "outcome": "passed",
+      "duration": 0.1096,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestAccessControl::test_unauthenticated_cannot_submit",
+      "outcome": "passed",
+      "duration": 0.2488,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestAccessControl::test_wrong_tenant_rejected",
+      "outcome": "passed",
+      "duration": 0.1698,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestAccessControl::test_wrong_tenant_cannot_read_evidence",
+      "outcome": "passed",
+      "duration": 0.2726,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestRoleMatrixRegression::test_retailer_staff_cannot_submit_payment_evidence",
+      "outcome": "passed",
+      "duration": 0.3796,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_payment_evidence.py::TestRoleMatrixRegression::test_vendor_staff_cannot_verify_payment",
+      "outcome": "passed",
+      "duration": 0.4241,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_pricing.py::test_price_history_returns_records",
+      "outcome": "passed",
+      "duration": 0.1123,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_pricing.py::test_price_current_returns_active_price",
+      "outcome": "passed",
+      "duration": 0.1124,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_pricing.py::test_price_set_rotates_old_price",
+      "outcome": "passed",
+      "duration": 0.1681,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_pricing.py::test_price_set_rejects_zero_price",
+      "outcome": "passed",
+      "duration": 0.1057,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_pricing.py::test_price_set_rejects_negative_price",
+      "outcome": "passed",
+      "duration": 0.1128,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_pricing.py::test_price_cross_tenant_access_forbidden",
+      "outcome": "passed",
+      "duration": 0.1113,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_pricing.py::test_price_set_cross_tenant_forbidden",
+      "outcome": "passed",
+      "duration": 0.1146,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_pricing.py::test_compare_prices_returns_vendors_sorted",
       "outcome": "passed",
       "duration": 0.1225,
       "phase": "call"
     },
     {
+      "nodeid": "scripts/test_http_pricing.py::test_pricing_routes_require_auth",
+      "outcome": "passed",
+      "duration": 0.3386,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestOTPVerification::test_deliver_with_correct_otp",
+      "outcome": "passed",
+      "duration": 0.1924,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestOTPVerification::test_deliver_with_wrong_otp",
+      "outcome": "passed",
+      "duration": 0.2166,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestOTPVerification::test_deliver_without_otp",
+      "outcome": "passed",
+      "duration": 0.1425,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestOTPAttemptCap::test_otp_attempt_limit",
+      "outcome": "passed",
+      "duration": 0.6887,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestDeliveredQuantities::test_delivered_quantity_above_ordered_rejected",
+      "outcome": "passed",
+      "duration": 0.1723,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestProofType::test_deliver_with_signature_proof",
+      "outcome": "passed",
+      "duration": 0.2285,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestProofType::test_deliver_with_photo_proof",
+      "outcome": "passed",
+      "duration": 0.1829,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestIssueReporting::test_deliver_with_issue",
+      "outcome": "passed",
+      "duration": 0.2443,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestIssueReporting::test_proof_shows_issue",
+      "outcome": "passed",
+      "duration": 0.2349,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestSecureAccess::test_retailer_can_create_pod",
+      "outcome": "passed",
+      "duration": 0.1754,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestSecureAccess::test_vendor_cannot_create_pod",
+      "outcome": "passed",
+      "duration": 0.1218,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_proof_of_delivery.py::TestSecureAccess::test_unauthenticated_cannot_create_pod",
+      "outcome": "passed",
+      "duration": 0.111,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_reconciliation.py::TestListReconciliationCases::test_ops_lists_cases",
+      "outcome": "passed",
+      "duration": 0.1099,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_reconciliation.py::TestListReconciliationCases::test_ops_filter_by_status",
+      "outcome": "passed",
+      "duration": 0.1136,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_reconciliation.py::TestGetReconciliationCase::test_ops_get_case",
+      "outcome": "passed",
+      "duration": 0.1142,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_reconciliation.py::TestGetReconciliationCase::test_get_case_not_found",
+      "outcome": "passed",
+      "duration": 0.1111,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_reconciliation.py::TestResolveReconciliationCase::test_ops_resolves_case",
+      "outcome": "passed",
+      "duration": 0.1135,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_reconciliation.py::TestResolveReconciliationCase::test_resolve_already_resolved_rejected",
+      "outcome": "passed",
+      "duration": 0.1165,
+      "phase": "call"
+    },
+    {
+      "nodeid": "scripts/test_http_reconciliation.py::TestResolveReconciliationCase::test_resolve_not_found",
+      "outcome": "passed",
+      "duration": 0.1135,
+      "phase": "call"
+    },
+    {
       "nodeid": "scripts/test_http_reconciliation.py::TestReconciliationAccessControl::test_retailer_cannot_list",
       "outcome": "passed",
-      "duration": 0.1017,
+      "duration": 0.1073,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_reconciliation.py::TestReconciliationAccessControl::test_unauthenticated_rejected",
       "outcome": "passed",
-      "duration": 0.0291,
+      "duration": 0.0296,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_referrals.py::test_http_referral_redeem_creates_first_touch_attribution",
       "outcome": "passed",
-      "duration": 0.1356,
+      "duration": 0.162,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestReturnRequest::test_retailer_can_create_return",
       "outcome": "passed",
-      "duration": 0.1615,
+      "duration": 0.14,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestReturnRequest::test_vendor_cannot_create_return",
       "outcome": "passed",
-      "duration": 0.1166,
+      "duration": 0.1319,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestReturnRequest::test_unauthenticated_cannot_create_return",
       "outcome": "passed",
-      "duration": 0.1035,
+      "duration": 0.1091,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestReturnTransition::test_vendor_can_approve_return",
       "outcome": "passed",
-      "duration": 0.2861,
+      "duration": 0.1984,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestReturnTransition::test_unauthenticated_cannot_transition_return",
       "outcome": "passed",
-      "duration": 0.149,
+      "duration": 0.1772,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestReturnQuery::test_list_returns_for_order",
       "outcome": "passed",
-      "duration": 0.2536,
+      "duration": 0.3015,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestReturnQuery::test_get_single_return",
       "outcome": "passed",
-      "duration": 0.1942,
+      "duration": 0.1929,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestDisputeOpen::test_retailer_can_open_dispute",
       "outcome": "passed",
-      "duration": 0.1533,
+      "duration": 0.297,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestDisputeOpen::test_retailer_staff_cannot_open_formal_dispute",
       "outcome": "passed",
-      "duration": 0.1422,
+      "duration": 0.1683,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestDisputeOpen::test_vendor_cannot_open_dispute",
       "outcome": "passed",
-      "duration": 0.105,
+      "duration": 0.1201,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestDisputeOpen::test_unauthenticated_cannot_open_dispute",
       "outcome": "passed",
-      "duration": 0.0997,
+      "duration": 0.1595,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestDisputeFilingWindow::test_expired_dispute_window_is_rejected",
       "outcome": "passed",
-      "duration": 0.1801,
+      "duration": 0.1685,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestDisputeQuery::test_get_dispute_by_tenant",
       "outcome": "passed",
-      "duration": 0.2836,
+      "duration": 0.2063,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestDisputeQuery::test_list_disputes_for_order",
       "outcome": "passed",
-      "duration": 0.1673,
+      "duration": 0.2007,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestDisputeResolution::test_ops_admin_can_resolve_and_reconcile_dispute",
       "outcome": "passed",
-      "duration": 0.4038,
+      "duration": 0.3152,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestDisputeResolution::test_dispute_resolution_is_idempotent",
       "outcome": "passed",
-      "duration": 0.3562,
+      "duration": 0.5618,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestDisputeResolution::test_non_ops_cannot_resolve_dispute",
       "outcome": "passed",
-      "duration": 0.1583,
+      "duration": 0.2027,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_returns_disputes.py::TestDisputeResolution::test_resolution_cannot_exceed_claim",
       "outcome": "passed",
-      "duration": 0.2553,
+      "duration": 0.311,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_security_adversarial.py::test_cross_tenant_vendor_accept_is_forbidden",
       "outcome": "passed",
-      "duration": 0.2164,
+      "duration": 0.1804,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_security_adversarial.py::test_cross_tenant_vendor_reject_is_forbidden",
       "outcome": "passed",
-      "duration": 0.1614,
+      "duration": 0.1811,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_security_adversarial.py::test_owner_vendor_accept_succeeds_positive_control",
       "outcome": "passed",
-      "duration": 0.133,
+      "duration": 0.1667,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_security_adversarial.py::test_malformed_jwt_is_rejected",
       "outcome": "passed",
-      "duration": 0.0251,
+      "duration": 0.0301,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_security_adversarial.py::test_cross_tenant_reject_extra_fields_rejected_by_schema",
       "outcome": "passed",
-      "duration": 0.1085,
+      "duration": 0.1438,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_security_adversarial.py::test_revoked_session_token_is_rejected",
       "outcome": "passed",
-      "duration": 0.1032,
+      "duration": 0.179,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestCreateSupportCase::test_create_case",
       "outcome": "passed",
-      "duration": 0.0879,
+      "duration": 0.1024,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestCreateSupportCase::test_create_case_with_high_priority",
       "outcome": "passed",
-      "duration": 0.0817,
+      "duration": 0.1052,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestCreateSupportCase::test_related_order_must_belong_to_active_support_tenant",
-      "outcome": "failed",
-      "duration": 0.1819,
+      "outcome": "passed",
+      "duration": 0.3925,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestListSupportCases::test_list_cases",
       "outcome": "passed",
-      "duration": 0.2068,
+      "duration": 0.1961,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestGetSupportCase::test_get_case_by_id",
       "outcome": "passed",
-      "duration": 0.1257,
+      "duration": 0.1472,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestGetSupportCase::test_get_case_not_found",
       "outcome": "passed",
-      "duration": 0.0817,
+      "duration": 0.1423,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestAddMessage::test_add_message_to_case",
       "outcome": "passed",
-      "duration": 0.2406,
+      "duration": 0.3588,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestSupportAssignment::test_assign_case_uses_canonical_route",
       "outcome": "passed",
-      "duration": 0.1228,
+      "duration": 0.1519,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestSupportAssignment::test_status_alias_uses_canonical_route",
       "outcome": "passed",
-      "duration": 0.159,
+      "duration": 0.1445,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestTransitionCase::test_transition_to_in_progress",
       "outcome": "passed",
-      "duration": 0.1325,
+      "duration": 0.1451,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestTransitionCase::test_transition_user_rejected",
       "outcome": "passed",
-      "duration": 0.2449,
+      "duration": 0.252,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestSupportSecureAccess::test_unauthenticated_rejected",
       "outcome": "passed",
-      "duration": 0.0255,
+      "duration": 0.0281,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_support.py::TestSupportSecureAccess::test_wrong_tenant_rejected",
       "outcome": "passed",
-      "duration": 0.1549,
+      "duration": 0.1381,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_transport.py::test_cors_is_scoped_to_known_web_origins",
       "outcome": "passed",
-      "duration": 0.0044,
+      "duration": 0.0048,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_transport.py::test_production_hsts_is_present",
       "outcome": "passed",
-      "duration": 0.0034,
+      "duration": 0.0048,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_transport.py::test_security_headers_present",
       "outcome": "passed",
-      "duration": 0.0027,
+      "duration": 0.0039,
       "phase": "call"
     },
     {
@@ -2893,32 +2893,32 @@
     },
     {
       "nodeid": "scripts/test_http_transport.py::test_production_refresh_cookie_is_secure",
-      "outcome": "failed",
-      "duration": 0.2,
+      "outcome": "passed",
+      "duration": 0.301,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_transport.py::test_health_and_readiness",
       "outcome": "passed",
-      "duration": 0.0269,
+      "duration": 0.0326,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_transport.py::test_auth_profile_switch_and_revocation_flow",
       "outcome": "passed",
-      "duration": 0.61,
+      "duration": 0.7318,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_transport.py::test_rate_limit_and_error_envelope",
       "outcome": "passed",
-      "duration": 0.3921,
+      "duration": 0.4284,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_transport.py::test_transport_validation_uses_canonical_error_envelope",
       "outcome": "passed",
-      "duration": 0.0263,
+      "duration": 0.0307,
       "phase": "call"
     },
     {
@@ -2930,211 +2930,211 @@
     {
       "nodeid": "scripts/test_http_vendor_catalog.py::test_vendor_list_products_returns_own_products",
       "outcome": "passed",
-      "duration": 0.1379,
+      "duration": 0.1249,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_catalog.py::test_vendor_create_product_with_existing_canonical",
       "outcome": "passed",
-      "duration": 0.0995,
+      "duration": 0.1132,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_catalog.py::test_vendor_create_product_draft_pending_catalog",
       "outcome": "passed",
-      "duration": 0.1039,
+      "duration": 0.1184,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_catalog.py::test_vendor_create_product_duplicate_sku_rejected",
       "outcome": "passed",
-      "duration": 0.0944,
+      "duration": 0.1057,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_catalog.py::test_vendor_create_product_requires_product_or_candidate",
       "outcome": "passed",
-      "duration": 0.0912,
+      "duration": 0.0965,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_catalog.py::test_vendor_update_product_packaging_and_moq",
       "outcome": "passed",
-      "duration": 0.1021,
+      "duration": 0.1706,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_catalog.py::test_vendor_update_other_vendors_product_is_forbidden",
       "outcome": "passed",
-      "duration": 0.1353,
+      "duration": 0.1178,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_catalog.py::test_vendor_catalog_routes_require_auth",
       "outcome": "passed",
-      "duration": 0.0781,
+      "duration": 0.0872,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_catalog.py::test_public_products_search_contract",
       "outcome": "passed",
-      "duration": 0.113,
+      "duration": 0.2275,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_catalog.py::test_vendor_barcode_match_and_unknown_candidate_flow",
-      "outcome": "failed",
-      "duration": 0.0878,
+      "outcome": "passed",
+      "duration": 0.3294,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_accept_route_returns_canonical_contract",
       "outcome": "passed",
-      "duration": 0.1315,
+      "duration": 0.0322,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_accept_route_rejects_invalid_order_id",
       "outcome": "passed",
-      "duration": 0.0336,
+      "duration": 0.0337,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_accept_route_has_no_request_body_contract",
       "outcome": "passed",
-      "duration": 0.0265,
+      "duration": 0.0306,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_accept_route_is_auth_protected",
       "outcome": "passed",
-      "duration": 0.0333,
+      "duration": 0.03,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_accept_route_source_boundary_has_no_domain_import_or_sql",
       "outcome": "passed",
-      "duration": 0.0005,
+      "duration": 0.0006,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_reject_route_returns_canonical_contract",
       "outcome": "passed",
-      "duration": 0.0694,
+      "duration": 0.0325,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_reject_route_requires_reason",
       "outcome": "passed",
-      "duration": 0.1277,
+      "duration": 0.0358,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_reject_route_forbids_unknown_body_fields",
       "outcome": "passed",
-      "duration": 0.033,
+      "duration": 0.0318,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_reject_route_rejects_invalid_order_id",
       "outcome": "passed",
-      "duration": 0.0294,
+      "duration": 0.0307,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_partial_proposal_route_returns_pending_contract",
       "outcome": "passed",
-      "duration": 0.0273,
+      "duration": 0.0313,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_partial_proposal_route_requires_idempotency_key",
       "outcome": "passed",
-      "duration": 0.0266,
+      "duration": 0.03,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_partial_proposal_route_rejects_unknown_body_fields",
       "outcome": "passed",
-      "duration": 0.0288,
+      "duration": 0.0301,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_vendor_partial_proposal_route_rejects_invalid_idempotency_key",
       "outcome": "passed",
-      "duration": 0.0327,
+      "duration": 0.0383,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_retailer_partial_approval_route_returns_canonical_contract",
       "outcome": "passed",
-      "duration": 0.03,
+      "duration": 0.0329,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_retailer_partial_decline_route_returns_canonical_contract",
       "outcome": "passed",
-      "duration": 0.0659,
+      "duration": 0.0296,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_http_vendor_order.py::test_partial_acceptance_routes_are_auth_protected",
       "outcome": "passed",
-      "duration": 0.0266,
+      "duration": 0.0289,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_identity_tenant_isolation.py::test_tenant_isolation",
       "outcome": "passed",
-      "duration": 0.0605,
+      "duration": 0.0651,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_identity_tenant_isolation.py::test_section_11_role_org_matrix",
       "outcome": "passed",
-      "duration": 0.0535,
+      "duration": 0.0582,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_identity_tenant_isolation.py::test_section_13_users_role_non_authoritative",
       "outcome": "passed",
-      "duration": 0.048,
+      "duration": 0.0534,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_identity_tenant_isolation.py::test_section_14_multi_organization_runtime",
       "outcome": "passed",
-      "duration": 0.0508,
+      "duration": 0.0541,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_identity_tenant_isolation.py::test_section_15_legacy_actor_links",
       "outcome": "passed",
-      "duration": 0.0314,
+      "duration": 0.0377,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_identity_tenant_isolation.py::test_section_16_cross_tenant_negative_matrix",
       "outcome": "passed",
-      "duration": 0.0823,
+      "duration": 0.0966,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_integration_contracts.py::test_notification_insert_seeds_delivery_without_recursive_outbox",
       "outcome": "passed",
-      "duration": 0.0359,
+      "duration": 0.0452,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_integration_contracts.py::test_daily_inventory_reminder_has_explicit_vendor_recipient",
       "outcome": "passed",
-      "duration": 0.0409,
+      "duration": 0.0459,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_integration_contracts.py::test_vendor_capacity_is_a_real_checkout_boundary",
       "outcome": "passed",
-      "duration": 0.0383,
+      "duration": 0.0453,
       "phase": "call"
     },
     {
@@ -3146,37 +3146,37 @@
     {
       "nodeid": "scripts/test_integration_contracts.py::test_domain_services_do_not_create_external_delivery_side_effects",
       "outcome": "passed",
-      "duration": 0.0005,
+      "duration": 0.0007,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_integration_contracts.py::test_route_contract_document_and_canonical_gateway_exist",
       "outcome": "passed",
-      "duration": 0.0009,
+      "duration": 0.0008,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_inventory_reservations.py::test_inventory_reservations",
       "outcome": "failed",
-      "duration": 0.0873,
+      "duration": 0.0622,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_invoice_access.py::test_invoice_access",
       "outcome": "passed",
-      "duration": 0.0489,
+      "duration": 0.0546,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_invoice_integrity_guards.py::test_invoice_guards_are_installed_and_total_is_deferred",
       "outcome": "passed",
-      "duration": 0.0341,
+      "duration": 0.0318,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_master_e2e_platform.py::test_master_e2e_platform",
       "outcome": "failed",
-      "duration": 0.2048,
+      "duration": 0.2511,
       "phase": "call"
     },
     {
@@ -3188,7 +3188,7 @@
     {
       "nodeid": "scripts/test_media_service.py::test_media_target_keys_never_use_client_filename",
       "outcome": "passed",
-      "duration": 0.0001,
+      "duration": 0.0002,
       "phase": "call"
     },
     {
@@ -3205,32 +3205,32 @@
     },
     {
       "nodeid": "scripts/test_media_service.py::test_vendor_can_attach_media_only_to_an_associated_product",
-      "outcome": "failed",
-      "duration": 0.0002,
+      "outcome": "passed",
+      "duration": 0.0029,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_media_service.py::test_unrelated_vendor_cannot_attach_media_to_other_vendor_product",
-      "outcome": "failed",
-      "duration": 0.0003,
+      "outcome": "passed",
+      "duration": 0.0026,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_media_service.py::test_ops_product_media_uses_pol_owned_provenance",
-      "outcome": "failed",
-      "duration": 0.0002,
+      "outcome": "passed",
+      "duration": 0.0009,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_media_service.py::test_legacy_inflight_upload_without_binding_fails_closed",
       "outcome": "passed",
-      "duration": 0.0002,
+      "duration": 0.0001,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_notification_event_matrix.py::test_notification_matrix",
       "outcome": "passed",
-      "duration": 0.0007,
+      "duration": 0.0008,
       "phase": "call"
     },
     {
@@ -3308,61 +3308,61 @@
     {
       "nodeid": "scripts/test_notifications.py::test_notifications",
       "outcome": "passed",
-      "duration": 0.0435,
+      "duration": 0.048,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_intelligence.py::test_daily_inventory_1_tap_no_changes",
       "outcome": "passed",
-      "duration": 0.0282,
+      "duration": 0.0359,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_intelligence.py::test_daily_inventory_confirm_with_changes",
       "outcome": "passed",
-      "duration": 0.0329,
+      "duration": 0.0396,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_intelligence.py::test_daily_inventory_reminder_deduplication",
       "outcome": "passed",
-      "duration": 0.1932,
+      "duration": 0.2448,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_intelligence.py::test_daily_inventory_missed_and_decay",
       "outcome": "passed",
-      "duration": 0.0187,
+      "duration": 0.0342,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_intelligence.py::test_feedback_submission_and_lifecycle",
       "outcome": "passed",
-      "duration": 0.0233,
+      "duration": 0.0281,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_intelligence.py::test_feedback_cross_tenant_isolation",
       "outcome": "passed",
-      "duration": 0.0127,
+      "duration": 0.0238,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_intelligence.py::test_revalidation_checkout_stale_price_rejection",
       "outcome": "passed",
-      "duration": 0.0372,
+      "duration": 0.0683,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_intelligence.py::test_revalidation_checkout_insufficient_stock_rejection",
       "outcome": "passed",
-      "duration": 0.0356,
+      "duration": 0.0539,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_intelligence.py::test_revalidation_checkout_success",
       "outcome": "passed",
-      "duration": 0.0559,
+      "duration": 0.0799,
       "phase": "call"
     },
     {
@@ -3374,133 +3374,133 @@
     {
       "nodeid": "scripts/test_operational_policies.py::test_valid_checkout_passes",
       "outcome": "passed",
-      "duration": 0.0668,
+      "duration": 0.1941,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_policies.py::test_wrong_retailer_rejected",
       "outcome": "passed",
-      "duration": 0.0617,
+      "duration": 0.0843,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_policies.py::test_submitted_basket_status_passes",
       "outcome": "passed",
-      "duration": 0.0687,
+      "duration": 0.0859,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_policies.py::test_wrong_basket_status_rejected",
       "outcome": "passed",
-      "duration": 0.0637,
+      "duration": 0.0754,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_policies.py::test_stale_plan_version_rejected",
       "outcome": "passed",
-      "duration": 0.0634,
+      "duration": 0.1775,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_policies.py::test_expired_plan_rejected",
       "outcome": "passed",
-      "duration": 0.0999,
+      "duration": 0.0751,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_policies.py::test_non_confirmed_plan_rejected",
       "outcome": "passed",
-      "duration": 0.0692,
+      "duration": 0.0779,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_policies.py::test_allocation_count_mismatch_rejected",
-      "outcome": "failed",
-      "duration": 0.062,
+      "outcome": "passed",
+      "duration": 0.0777,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_policies.py::test_basket_not_found_rejected",
       "outcome": "passed",
-      "duration": 0.0613,
+      "duration": 0.0741,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_policies.py::test_forged_vendor_product_rejected",
       "outcome": "passed",
-      "duration": 0.0661,
+      "duration": 0.0791,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_policies.py::test_forged_quantity_rejected_against_basket",
-      "outcome": "failed",
-      "duration": 0.0682,
+      "outcome": "passed",
+      "duration": 0.0762,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_operational_policies.py::test_forged_line_total_rejected",
-      "outcome": "failed",
-      "duration": 0.065,
+      "outcome": "passed",
+      "duration": 0.076,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_partial_acceptance.py::test_vendor_partial_proposal_does_not_mutate_order_or_inventory",
       "outcome": "passed",
-      "duration": 0.0581,
+      "duration": 0.0697,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_partial_acceptance.py::test_vendor_partial_proposal_validates_reason_and_reduction",
       "outcome": "passed",
-      "duration": 0.0612,
+      "duration": 0.0669,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_partial_acceptance.py::test_vendor_partial_proposal_is_tenant_and_state_protected",
       "outcome": "passed",
-      "duration": 0.0533,
+      "duration": 0.0654,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_partial_acceptance.py::test_retailer_can_decline_without_inventory_mutation",
       "outcome": "passed",
-      "duration": 0.0587,
+      "duration": 0.0739,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_partial_acceptance.py::test_retailer_approval_reconciles_order_inventory_amounts_and_outbox",
       "outcome": "passed",
-      "duration": 0.0658,
+      "duration": 0.0826,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_partial_acceptance.py::test_retailer_approval_is_tenant_protected",
       "outcome": "passed",
-      "duration": 0.0554,
+      "duration": 0.0703,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_partial_acceptance.py::test_retailer_staff_cannot_decide_partial_acceptance",
       "outcome": "passed",
-      "duration": 0.1209,
+      "duration": 0.1523,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_partial_acceptance.py::test_idempotent_partial_proposal_replay_and_payload_guard",
       "outcome": "passed",
-      "duration": 0.0545,
+      "duration": 0.0693,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_partial_acceptance.py::test_full_vendor_accept_is_blocked_while_partial_proposal_is_pending",
       "outcome": "passed",
-      "duration": 0.0612,
+      "duration": 0.0719,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_partial_acceptance.py::test_partial_acceptance_proposals_list_is_tenant_scoped",
       "outcome": "passed",
-      "duration": 0.0584,
+      "duration": 0.072,
       "phase": "call"
     },
     {
@@ -3518,175 +3518,175 @@
     {
       "nodeid": "scripts/test_pilot_kpis.py::TestKPIComputation::test_gmv_computes",
       "outcome": "passed",
-      "duration": 0.045,
+      "duration": 0.0473,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_pilot_kpis.py::TestKPIComputation::test_aov_computes",
       "outcome": "passed",
-      "duration": 0.1525,
+      "duration": 0.1529,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_pilot_kpis.py::TestKPIComputation::test_unknown_kpi_raises",
       "outcome": "passed",
-      "duration": 0.0211,
+      "duration": 0.027,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_pilot_kpis.py::TestKPIComputation::test_empty_date_range_returns_zero",
       "outcome": "passed",
-      "duration": 0.0295,
+      "duration": 0.0308,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_pilot_kpis.py::TestComputeAllKPIs::test_returns_ten_results",
       "outcome": "passed",
-      "duration": 0.0436,
+      "duration": 0.0437,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_pilot_kpis.py::TestComputeAllKPIs::test_all_results_have_expected_shape",
       "outcome": "passed",
-      "duration": 0.0464,
+      "duration": 0.1448,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_pilot_kpis.py::TestWeeklySnapshot::test_snapshot_returns_expected_keys",
       "outcome": "passed",
-      "duration": 0.0435,
+      "duration": 0.0442,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_pilot_kpis.py::TestWeeklySnapshot::test_snapshot_date_range_is_seven_days",
       "outcome": "passed",
-      "duration": 0.0772,
+      "duration": 0.0437,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_1_inventory_race",
-      "outcome": "failed",
-      "duration": 0.2111,
+      "outcome": "passed",
+      "duration": 0.2237,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_2_duplicate_checkout_same_key",
       "outcome": "passed",
-      "duration": 0.1666,
+      "duration": 0.1762,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_3_checkout_different_keys_scarce_stock",
-      "outcome": "failed",
-      "duration": 0.0924,
+      "outcome": "passed",
+      "duration": 0.2029,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_10_reservation_service_scarce_stock_race",
-      "outcome": "failed",
-      "duration": 0.0729,
+      "outcome": "passed",
+      "duration": 0.1202,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_12_reservation_reconciliation_invariant",
       "outcome": "passed",
-      "duration": 0.0451,
+      "duration": 0.0523,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_11_reservation_idempotency_same_key",
-      "outcome": "failed",
-      "duration": 0.1062,
+      "outcome": "passed",
+      "duration": 0.1192,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_4_vendor_accept_race",
       "outcome": "passed",
-      "duration": 0.063,
+      "duration": 0.1706,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_5_dispatch_creation_race",
       "outcome": "passed",
-      "duration": 0.1754,
+      "duration": 0.0775,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_6_refund_race",
-      "outcome": "failed",
-      "duration": 0.0339,
+      "outcome": "passed",
+      "duration": 0.0991,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_7_dispute_creation_race",
-      "outcome": "failed",
-      "duration": 0.1644,
+      "outcome": "passed",
+      "duration": 0.082,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_8_multi_vendor_dispute_isolation",
-      "outcome": "failed",
-      "duration": 0.0691,
+      "outcome": "passed",
+      "duration": 0.1162,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_concurrency.py::test_concurrency_9_stale_state_price_change",
       "outcome": "passed",
-      "duration": 0.1998,
+      "duration": 0.1088,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_migrations.py::test_dispute_resolution_invariant_direct_sql",
-      "outcome": "failed",
-      "duration": 0.0001,
-      "phase": "setup"
+      "outcome": "passed",
+      "duration": 0.037,
+      "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_migrations.py::test_postgres_migrations",
-      "outcome": "failed",
-      "duration": 1.1824,
+      "outcome": "passed",
+      "duration": 2.6941,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_postgres_runtime.py::test_postgres_runtime",
-      "outcome": "failed",
-      "duration": 0.9881,
+      "outcome": "passed",
+      "duration": 1.1728,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_pre_mvp_scenarios.py::test_pre_mvp_scenarios",
       "outcome": "passed",
-      "duration": 0.0025,
+      "duration": 0.0037,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_pytest_collection_guard.py::test_every_test_file_collects_at_least_one_test",
       "outcome": "passed",
-      "duration": 51.6408,
+      "duration": 63.3994,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_repository_integrity_hardening.py::test_canonical_schema_has_90_tables_and_new_integrity_guards",
       "outcome": "passed",
-      "duration": 0.0447,
+      "duration": 0.1519,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_reservation_expiry_worker.py::test_reservation_expiry_releases_inventory_and_is_idempotent",
       "outcome": "passed",
-      "duration": 0.0762,
+      "duration": 0.0741,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_route_hardening.py::test_support_case_is_tenant_scoped_and_ops_authorized",
       "outcome": "passed",
-      "duration": 0.0575,
+      "duration": 0.0561,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_route_hardening.py::test_feedback_reply_is_admin_authorized_and_emits_outbox",
       "outcome": "passed",
-      "duration": 0.0525,
+      "duration": 0.0532,
       "phase": "call"
     },
     {
@@ -3698,109 +3698,109 @@
     {
       "nodeid": "scripts/test_route_hardening.py::test_external_provider_configuration_is_explicit",
       "outcome": "passed",
-      "duration": 0.0002,
+      "duration": 0.0001,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_runtime_scenarios.py::test_runtime_scenarios",
       "outcome": "passed",
-      "duration": 0.0045,
+      "duration": 0.0036,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_sla_calendar.py::test_sla_calendar",
       "outcome": "passed",
-      "duration": 0.0006,
+      "duration": 0.0007,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_support_cases.py::test_support_cases",
       "outcome": "passed",
-      "duration": 0.0554,
+      "duration": 0.0587,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_user_profiles.py::test_every_user_gets_exactly_one_profile",
       "outcome": "passed",
-      "duration": 0.0366,
+      "duration": 0.0333,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_user_profiles.py::test_membership_gets_role_specific_persona_profile",
       "outcome": "passed",
-      "duration": 0.0637,
+      "duration": 0.0452,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_user_profiles.py::test_profile_is_tenant_scoped_and_personal_update_does_not_cross_tenant",
       "outcome": "passed",
-      "duration": 0.0632,
+      "duration": 0.0446,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_user_profiles.py::test_profile_application_boundary_routes_only_to_current_user",
       "outcome": "passed",
-      "duration": 0.1522,
+      "duration": 0.0411,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_user_profiles.py::test_role_transition_removes_stale_persona_context",
       "outcome": "passed",
-      "duration": 0.1525,
+      "duration": 0.1492,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_contract.py::TestSLADeadlineContract::test_order_detail_includes_sla_deadline",
       "outcome": "passed",
-      "duration": 0.1208,
+      "duration": 0.1317,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_contract.py::TestSLADeadlineContract::test_order_list_includes_status",
       "outcome": "passed",
-      "duration": 0.1195,
+      "duration": 0.1226,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_contract.py::TestTimelineContract::test_timeline_events_recorded",
       "outcome": "passed",
-      "duration": 0.1191,
+      "duration": 0.1266,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_contract.py::TestTimelineContract::test_timeline_includes_actor_info",
       "outcome": "passed",
-      "duration": 0.1143,
+      "duration": 0.1272,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_contract.py::TestOrderItemsContract::test_order_items_contain_fulfillment_status",
       "outcome": "passed",
-      "duration": 0.1232,
+      "duration": 0.1266,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_contract.py::TestOrderGroupContract::test_order_group_shows_child_orders",
       "outcome": "passed",
-      "duration": 0.1175,
+      "duration": 0.1333,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_contract.py::TestOrderGroupContract::test_order_group_detail_shows_status",
       "outcome": "passed",
-      "duration": 0.1165,
+      "duration": 0.2268,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_contract.py::TestTenantIsolationContract::test_vendor_sees_only_own_orders",
       "outcome": "passed",
-      "duration": 0.1181,
+      "duration": 0.1213,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_contract.py::TestTenantIsolationContract::test_retailer_sees_only_own_orders",
       "outcome": "passed",
-      "duration": 0.1142,
+      "duration": 0.1283,
       "phase": "call"
     },
     {
@@ -3811,140 +3811,140 @@
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_timeout.py::test_timeout_cancels_releases_notifies_penalizes_and_tasks",
-      "outcome": "failed",
-      "duration": 0.0724,
+      "outcome": "passed",
+      "duration": 0.084,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_timeout.py::test_timeout_is_idempotent_after_status_transition",
       "outcome": "passed",
-      "duration": 0.0685,
+      "duration": 0.0796,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_timeout.py::test_timeout_does_not_cancel_before_deadline",
       "outcome": "passed",
-      "duration": 0.0556,
+      "duration": 0.0633,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_timeout.py::test_timeout_requires_ops_context",
       "outcome": "passed",
-      "duration": 0.0491,
+      "duration": 0.0572,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_timeout.py::test_timeout_backfills_missing_deadline_from_created_at",
       "outcome": "passed",
-      "duration": 0.0663,
+      "duration": 0.0784,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_timeout.py::test_timeout_notification_is_tenant_scoped",
       "outcome": "passed",
-      "duration": 0.0666,
+      "duration": 0.0781,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_timeout.py::test_timeout_assignee_selection_is_deterministic",
       "outcome": "passed",
-      "duration": 0.067,
+      "duration": 0.0902,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_acceptance_timeout.py::test_timeout_closes_pending_partial_proposal",
       "outcome": "passed",
-      "duration": 0.0832,
+      "duration": 0.0829,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_order_acceptance.py::test_vendor_full_accept_consumes_reservation_and_notifies_retailer",
       "outcome": "passed",
-      "duration": 0.0731,
+      "duration": 0.0785,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_order_acceptance.py::test_vendor_order_accept_is_tenant_protected",
       "outcome": "passed",
-      "duration": 0.0591,
+      "duration": 0.062,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_order_acceptance.py::test_vendor_order_accept_rejects_non_submitted_state_without_mutation",
       "outcome": "passed",
-      "duration": 0.0599,
+      "duration": 0.069,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_order_acceptance.py::test_vendor_staff_cannot_accept_order",
       "outcome": "passed",
-      "duration": 0.1515,
+      "duration": 0.1405,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_order_rejection.py::test_vendor_reject_releases_reservation_and_notifies_retailer",
       "outcome": "passed",
-      "duration": 0.0829,
+      "duration": 0.0793,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_order_rejection.py::test_vendor_reject_is_tenant_protected",
       "outcome": "passed",
-      "duration": 0.0601,
+      "duration": 0.0672,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_order_rejection.py::test_vendor_reject_invalid_state_is_atomic",
       "outcome": "passed",
-      "duration": 0.0594,
+      "duration": 0.0636,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_order_rejection.py::test_vendor_reject_requires_non_empty_reason",
       "outcome": "passed",
-      "duration": 0.0574,
+      "duration": 0.0716,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_order_rejection.py::test_vendor_staff_cannot_reject_order",
       "outcome": "passed",
-      "duration": 0.1359,
+      "duration": 0.1409,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_referral.py::test_vendor_can_create_and_retailer_can_redeem_once",
-      "outcome": "failed",
-      "duration": 0.0984,
+      "outcome": "passed",
+      "duration": 0.2085,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_vendor_referral.py::test_vendor_referral_is_tenant_scoped",
       "outcome": "passed",
-      "duration": 0.0619,
+      "duration": 0.0583,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_verification_mutations.py::test_mutation_1_wrong_dataset_count",
       "outcome": "passed",
-      "duration": 0.6403,
+      "duration": 0.6305,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_verification_mutations.py::test_mutation_2_duplicate_current_price",
       "outcome": "passed",
-      "duration": 0.0005,
+      "duration": 0.0004,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_verification_mutations.py::test_mutation_3_duplicate_vendor_sku",
       "outcome": "passed",
-      "duration": 0.0004,
+      "duration": 0.0003,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_verification_mutations.py::test_mutation_4_disputed_in_order_status",
       "outcome": "passed",
-      "duration": 0.0007,
+      "duration": 0.0006,
       "phase": "call"
     },
     {
@@ -3956,13 +3956,13 @@
     {
       "nodeid": "scripts/test_verification_mutations.py::test_mutation_6_multi_packaging_support",
       "outcome": "passed",
-      "duration": 0.0007,
+      "duration": 0.0008,
       "phase": "call"
     },
     {
       "nodeid": "scripts/test_worker_architecture.py::test_worker_architecture_is_postgres_python_canonical",
       "outcome": "passed",
-      "duration": 0.0008,
+      "duration": 0.0007,
       "phase": "call"
     }
   ]
