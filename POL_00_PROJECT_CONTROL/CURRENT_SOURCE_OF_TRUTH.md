@@ -235,3 +235,7 @@ The active human-readable design authority is `13_PRODUCT_DESIGN/50_POL_MASTER_P
 - Regression coverage added/extended in `scripts/test_delegated_permissions.py` and `scripts/test_media_service.py`.
 - Fresh GitHub Actions executions continue to terminate with failed jobs whose step lists are empty, including reruns. Therefore current-head CI certification remains **blocked by execution/evidence**, not marked PASS.
 - Main remains unchanged; these changes are isolated to the remediation branch/PR.
+
+- Latest post-reaudit source head: `a17bc51e0370f47cf831dab9fa2eab4294a6c9bb`.
+- Additional closure after the prior checkpoint: G-055 Field Task HTTP/boundary contract alignment; G-056 Support related-order tenant binding.
+- Regression coverage added in `scripts/test_http_field_tasks.py` and `scripts/test_http_support.py`.
