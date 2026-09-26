@@ -195,6 +195,25 @@ def test_rma_ops_context_and_separation_of_duties(postgres_database, rma_case, r
         assert refund["status"] == "COMPLETED"
         assert refund["refund_method"] == "VENDOR_CASH_DIRECT"
         assert refund["amount_toman"] == 1000
+        cur.execute("SELECT payment_status FROM payments WHERE id=%s", (refund["payment_id"],))
+        assert cur.fetchone()["payment_status"] == "SUCCESS"
+        cur.execute(
+            """
+            SELECT event_name
+            FROM outbox_events
+            WHERE aggregate_id=%s
+              AND event_name IN ('REFUND_CREATED','REFUND_COMPLETED','PAYMENT_REFUNDED')
+            ORDER BY event_name
+            """,
+            (str(refund["id"]),),
+        )
+        assert [row["event_name"] for row in cur.fetchall()] == ["REFUND_COMPLETED"]
+
+        cur.execute(
+            "SELECT event_name FROM outbox_events WHERE aggregate_id=%s AND event_name='REFUND_CREATED'",
+            (str(refund["id"]),),
+        )
+        assert cur.fetchone() is not None
 
 
 @pytest.mark.parametrize("status", ["REFUND_PENDING", "REFUNDED"])
