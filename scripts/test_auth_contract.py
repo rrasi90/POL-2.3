@@ -1119,3 +1119,58 @@ def test_switch_organization_rejects_inactive_user(auth_env):
         cur.execute("UPDATE users SET is_active = TRUE WHERE id = %s;", (user_id,))
         cur.execute("DELETE FROM user_sessions WHERE id = %s;", (session_id,))
         conn.commit()
+
+
+def test_verify_otp_rejects_suspended_organization(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+
+    cur.execute("SELECT phone_number FROM users WHERE id=%s;", (user_id,))
+    phone = cur.fetchone()["phone_number"]
+
+    # A valid LOGIN challenge must still be unusable when the selected
+    # organization is suspended.
+    AuthService.request_otp(cur, phone, "127.0.0.77", "LOGIN")
+    cur.execute("UPDATE organizations SET status='SUSPENDED' WHERE id=%s;", (org_a,))
+    conn.commit()
+    try:
+        with pytest.raises(PermissionError, match="active membership"):
+            AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+    finally:
+        cur.execute("UPDATE organizations SET status='ACTIVE' WHERE id=%s;", (org_a,))
+        cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s;", (phone,))
+        conn.commit()
+
+
+def test_verify_otp_cannot_consume_non_authentication_challenge(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+
+    cur.execute("SELECT phone_number FROM users WHERE id=%s;", (user_id,))
+    phone = cur.fetchone()["phone_number"]
+
+    cur.execute(
+        """
+        INSERT INTO otp_challenges
+            (id, phone_number, code_hash, purpose, ip_address, attempts_count,
+             max_attempts, status, expires_at)
+        VALUES (%s,%s,%s,'ORDER_CONFIRMATION','127.0.0.78',0,5,'PENDING',now()+interval '2 minutes')
+        """,
+        (str(uuid.uuid4()), phone, store_otp_hash("1234")),
+    )
+    conn.commit()
+
+    try:
+        with pytest.raises(ValueError, match="No pending OTP challenge"):
+            AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+    finally:
+        cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s;", (phone,))
+        conn.commit()
