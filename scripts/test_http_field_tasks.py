@@ -90,6 +90,29 @@ class TestFieldTaskCRUD:
                             json={"status": "IN_PROGRESS", "notes": "Updated notes"})
         assert resp.status_code == 200
 
+    def test_task_cannot_roll_back_from_in_progress_to_assigned(self, client):
+        data = _seed()
+        first = client.patch(
+            f"/api/v1/field/tasks/{data['ft_id']}",
+            headers={"Authorization": f"Bearer {data['token']}"},
+            json={"status": "IN_PROGRESS"},
+        )
+        assert first.status_code == 200
+
+        second = client.patch(
+            f"/api/v1/field/tasks/{data['ft_id']}",
+            headers={"Authorization": f"Bearer {data['token']}"},
+            json={"status": "ASSIGNED"},
+        )
+        assert second.status_code == 422
+
+        current = client.get(
+            f"/api/v1/field/tasks/{data['ft_id']}",
+            headers={"Authorization": f"Bearer {data['token']}"},
+        )
+        assert current.status_code == 200
+        assert current.json()["data"]["status"] == "IN_PROGRESS"
+
     def test_create_task(self, client):
         data = _seed("ADMIN_SUPER")
         resp = client.post("/api/v1/field/tasks",
