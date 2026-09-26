@@ -72,7 +72,13 @@ def _validate_bound_upload_target(media: dict, target_type: str, target_id: str)
     bound_id = str(media.get("upload_target_id") or "")
     requested_type = target_type.upper()
     requested_id = str(target_id)
-    if bound_type and (bound_type != requested_type or bound_id != requested_id):
+
+    # Every in-flight upload must have an immutable authorization binding.
+    # Historical rows created before migration 048 are therefore fail-closed.
+    if str(media.get("status") or "").upper() == "UPLOADING" and (not bound_type or not bound_id):
+        raise MediaError("Upload confirmation is missing its authorized target binding.")
+
+    if bound_type != requested_type or bound_id != requested_id:
         raise MediaError("Upload confirmation target does not match the authorized presign target.")
 
 
