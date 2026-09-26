@@ -3845,60 +3845,42 @@ class POLApplicationBoundary:
 
     # ── Referral Management (Stage 34) ────────────────────────────
 
-    def referral_create(self, *, referred_retailer_id, referral_code):
+    def referral_create(self, *, referral_code=None, max_redemptions=None, expires_at=None):
+        """Create a vendor referral through the canonical D-016 service."""
         if not self.context.organization_id:
             raise PermissionError("Referral creation requires an organization context.")
+
         self.cur.execute(
             """
-            SELECT 1
-            FROM organization_memberships om
-            JOIN organizations o ON o.id = om.organization_id
-            WHERE om.user_id = %s
-              AND om.organization_id = %s
-              AND om.status = 'ACTIVE'
-              AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
+            SELECT v.id
+            FROM vendors v
+            JOIN organizations o ON o.id = v.organization_id
+            JOIN organization_memberships om
+              ON om.organization_id = v.organization_id
+             AND om.user_id = %s
+             AND om.status = 'ACTIVE'
+             AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
+            WHERE v.organization_id = %s
+              AND v.status = 'ACTIVE'
               AND o.org_type = 'VENDOR'
               AND o.status = 'ACTIVE'
-            LIMIT 1;
+            ORDER BY v.id
+            LIMIT 1
             """,
             (self.context.user_id, self.context.organization_id),
         )
-        if not self.cur.fetchone():
-            raise PermissionError("Only active vendor members may create referrals.")
-
-        self.cur.execute(
-            "SELECT id FROM vendors WHERE organization_id = %s AND status = 'ACTIVE'",
-            (self.context.organization_id,),
-        )
         vendor = self.cur.fetchone()
         if not vendor:
-            raise ValueError("No active vendor found for this organization.")
+            raise PermissionError("Only active vendor members may create referrals.")
 
-        self.cur.execute(
-            "SELECT id FROM retailers WHERE id = %s",
-            (referred_retailer_id,),
+        return VendorReferralService.create_referral(
+            self.cur,
+            self.context.user_id,
+            str(vendor["id"]),
+            referral_code=referral_code,
+            max_redemptions=max_redemptions,
+            expires_at=expires_at,
         )
-        if not self.cur.fetchone():
-            raise ValueError("Referred retailer not found.")
-
-        referral_id = str(uuid4())
-        self.cur.execute(
-            """
-            INSERT INTO vendor_referrals
-                (id, vendor_id, referral_code, status, created_by_user_id)
-            VALUES (%s, %s, %s, 'ACTIVE', %s)
-            RETURNING id, vendor_id, referral_code, status, created_at
-            """,
-            (referral_id, str(vendor["id"]), referral_code, self.context.user_id),
-        )
-        row = self.cur.fetchone()
-        return {
-            "id": str(row["id"]),
-            "vendor_id": str(row["vendor_id"]),
-            "referral_code": row["referral_code"],
-            "status": row["status"],
-            "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-        }
 
     def referral_list(self, *, offset=0, limit=50):
         if not self.context.organization_id:
