@@ -229,7 +229,7 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] ≥3 mobile QA cycles evidenced: Cycle 1 run `35884012647`; Cycle 2 run `35886815013` (23/23); Cycle 3 run `35893284378` (11/11 regression + 23/23 functional + Expo config/export)  
 
 ### Phase 4 (Global QA)
-- [x] Full pytest/verification suite **fresh at current HEAD** — run 35884012589 SUCCESS; artifact `pol-test-results` SHA-256 `016c9dc96bb8e45dd1f89ae17f26d7efdc49809b8effac1d3edc9d92049ec839`  
+- [ ] Full pytest/verification suite **fresh at current HEAD** — historical run 35884012589 was green, but current remediation runs fail before useful step execution (`steps: null`); fresh certification remains pending.
 - [x] Web typecheck + lint + build (lint 0 errors, 15 warnings pre-existing)  
 - [x] Live e2e smoke — auth/profile/notif/catalog/orders/invoices/storefront/search/field/referrals/settlements/daily-inv; post-remediation LOCAL-02 covers basket→allocation→checkout→order (16/16)  
 - [x] Structural audit checklist green  
