@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 
 from psycopg2.extras import Json
 
+from scripts.api.errors import ConflictError
+
 from scripts.sla_calendar import (
     VENDOR_ACCEPTANCE_SLA_HOURS,
     calculate_sla_deadline,
@@ -51,7 +53,7 @@ class RevalidationCheckoutService:
         if chk["basket_status"] in ("SUBMITTED", "ABANDONED", "EXPIRED"):
             raise ValueError(f"Basket status {chk['basket_status']} cannot accept a new checkout.")
         if chk["version"] != chk["basket_version"]:
-            raise ValueError(f"Stale basket checkout: basket v{chk['version']} != plan v{chk['basket_version']}")
+            raise ConflictError(f"STALE_BASKET_VERSION: basket v{chk['version']} != plan v{chk['basket_version']}")
         if chk["expires_at"] < datetime.now(timezone.utc):
             raise ValueError("Allocation plan has expired (15-minute TTL exceeded).")
         if not vendor_allocations:
