@@ -263,10 +263,18 @@ class ReturnTransitionRequest(APIBaseModel):
     approved_refund_amount_toman: int | None = Field(default=None, ge=0)
 
 
+class DisputeItemRequest(APIBaseModel):
+    order_item_id: UUID
+    quantity: int = Field(gt=0)
+    claimed_amount_toman: int = Field(gt=0)
+    reason_code: str = Field(min_length=1, max_length=50)
+
+
 class DisputeOpenRequest(APIBaseModel):
     claimed_amount_toman: int = Field(gt=0)
     description: str = Field(min_length=1, max_length=2000)
-    evidence_media_id: UUID | None = None
+    evidence_media_id: UUID
+    items: list[DisputeItemRequest] = Field(min_length=1)
 
 
 class PaymentEvidenceRequest(APIBaseModel):
@@ -442,6 +450,21 @@ class DisputeResolveRequest(APIBaseModel):
         "MUTUAL_AGREEMENT",
     ]
     approved_amount_toman: int = Field(ge=0)
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class RefundIssueRequest(APIBaseModel):
+    dispute_id: UUID
+    amount_toman: int = Field(gt=0)
+    payment_id: UUID | None = None
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class RefundApproveRequest(APIBaseModel):
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class RefundCompleteRequest(APIBaseModel):
     reason: str = Field(min_length=1, max_length=1000)
 
 
