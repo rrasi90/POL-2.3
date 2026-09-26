@@ -97,9 +97,9 @@
 | V-08 | Referral (attribution only) | `/vendor/referrals` | VENDOR_* | `/referrals*` | doc 22 L443–449; D-016 | VERIFIED |
 | V-09 | Customers | `/vendor/customers` | VENDOR_* | `GET /vendors/customers` | doc 22 L451–455; MT VD-09 | IMPLEMENTED |
 | V-10 | Reconciliation / documents | `/vendor/settlements` | VENDOR_OWNER | `/vendors/settlements`, invoices | doc 22 L457–461; MT VD-06/10/13 | VERIFIED |
-| V-11 | Staff / access + Permission Editor | `/vendor/staff` | VENDOR_OWNER | `GET/POST/PATCH /vendors/staff*` + `/vendors/staff/{membership_id}/permissions*` | doc 22 L463–468; MT VD-07/15; D-026 | IMPLEMENTED (Web + Android; fresh runtime QA pending) |
+| V-11 | Staff / access + Permission Editor | `/vendor/staff` | VENDOR_OWNER | `GET/POST/PATCH /vendors/staff*` + `/vendors/staff/{membership_id}/permissions*` | doc 22 L463–468; MT VD-07/15; D-026 | IMPLEMENTED |
 | V-12 | Vendor profile | `/profile` vendor ctx | VENDOR_* | profile/context | doc 22 L470–475; MT VD-12 | VERIFIED |
-| V-14 | Storefront management | `/vendor/storefront` | VENDOR_OWNER | storefront read; write → GAP | MT VD-14; D-024 | VERIFIED |
+| V-14 | Storefront visibility / management boundary | `/vendor/storefront` | VENDOR_OWNER | storefront read; MVP write scope is not contractually defined | MT VD-14; D-024 | IMPLEMENTED |
 | V-16 | Barcode / continuous scan | (mobile) | VENDOR_STAFF + inv.scan | match-barcode, continuous-scan **CONTRACT** | MT VD-16; D-028 | NOT_APPLICABLE |
 | V-17 | Financial activity | `/vendor/finance` | VENDOR_OWNER | settlements/invoices D-021 | MT VD-17 | IMPLEMENTED |
 
@@ -129,7 +129,7 @@
 | O-04 | RMA / dispute workbench | `/ops/rma` | OPS_AGENT | `GET /ops/returns` + per-order returns/disputes | doc 22 L510–516 | IMPLEMENTED |
 | O-05 | Support workbench | `/ops/support` | OPS_AGENT | `/support/cases*` | doc 22 L518–524; MT OP-05 | IMPLEMENTED |
 | O-06 | Reconciliation | `/ops/reconciliation` | OPS_AGENT | `/finance/reconciliation*` | doc 22 L526–530; MT OP-03; G-015 | IMPLEMENTED |
-| O-07 | Risk / reliability | `/ops/risk` | OPS_AGENT | exceptions dashboard + reconciliation signals | doc 22 L532–537; MT OP-07/08 | IMPLEMENTED / LIMITED |
+| O-07 | Risk / reliability | `/ops/risk` | OPS_AGENT | exceptions dashboard + reconciliation signals; no synthetic risk score | doc 22 L532–537; MT OP-07/08 | IMPLEMENTED |
 | O-08 | Notification operations | `/ops/notifications` | OPS_AGENT | notifications list + GAP provider ops | doc 22 L539–543 | IMPLEMENTED |
 | O-09 | Pilot analytics | `/ops/analytics` | OPS_AGENT | `GET /ops/analytics`, `/ops/analytics/weekly` | doc 22 L545–554; KPI SSoT | IMPLEMENTED |
 | O-10 | Admin / context | `/ops/admin` | OPS_AGENT, ADMIN_SUPER | `/admin/audit-logs`, `/admin/exceptions/dashboard` | doc 22 L556–561; MT OP-10 | IMPLEMENTED |
@@ -211,7 +211,7 @@
 | V-08 | GET `/vendor/referrals` 200 | GET `/referrals` 200 | PASS | 5 |
 | V-10 | GET `/vendor/settlements` 200 | GET `/vendors/settlements` 200 | PASS | 5 |
 | V-12 | `/profile` vendor ctx (SH-PROFILE-01 route) | GET `/profile/context` + `/profile` 200 (vendor token) | PASS | 5 |
-| V-14 | GET `/vendor/storefront` 200 | storefront read 200 (write remains GAP D-024) | PASS | 5 |
+| V-14 | GET `/vendor/storefront` 200 | storefront read 200 (MVP write scope not contractually defined by D-024) | PASS | 5 |
 | F-01 | GET `/field` 200 | GET `/field/tasks` 200 | PASS | 5 |
 
 Non-admin RBAC spot-check: retailer token → GET `/admin/audit-logs` **403** (expected). Structural audit: `window_loc=0 console_log=0 fake_success=0`.
@@ -231,12 +231,12 @@ Non-admin RBAC spot-check: retailer token → GET `/admin/audit-logs` **403** (e
 | Family | Count | PENDING | IMPLEMENTED | VERIFIED | GAP | BLOCKED | N/A |
 |--------|------:|--------:|------------:|---------:|----:|--------:|----:|
 | Shared/Auth | 6 | 0 | 0 | 6 | 0 | 0 | 0 |
-| Retailer | 20 | 0 | 13 | 6 | 1 | 0 | 0 |
-| Vendor | 16 | 0 | 7 | 6 | 2 | 0 | 1 |
-| Ops | 13 | 0 | 8 | 0 | 5 | 0 | 0 |
+| Retailer | 21 | 0 | 15 | 6 | 0 | 0 | 0 |
+| Vendor | 15 | 0 | 8 | 6 | 0 | 0 | 1 |
+| Ops | 13 | 0 | 13 | 0 | 0 | 0 | 0 |
 | Field | 5 | 0 | 4 | 1 | 0 | 0 | 0 |
 | Corporate | 8 | 0 | 8 | 0 | 0 | 0 | 0 |
-| **Total** | **68** | **0** | **40** | **19** | **8** | **0** | **1** |
+| **Total** | **68** | **0** | **48** | **19** | **0** | **0** | **1** |
 
 **Cycle 1 (2026-09-22):** typecheck exit 0; `next build` exit 0 (50 routes).  
 **Cycle 2 (2026-09-22):** closed R-09C/D/E + O-03 → IMPLEMENTED; typecheck exit 0; `next build` exit 0 (50 routes incl. `/ops/[type]/[id]`).  
@@ -258,7 +258,7 @@ A mobile implementation is not promoted to VERIFIED until its required QA/eviden
 | Operations foundation | O-01/O-02/O-06/O-10 | apps/mobile/src/screens/OpsMobileScreen.tsx | IMPLEMENTED |
 | Field-first | F-01…F-05 | existing FieldTaskList/Detail/AssistedOrder screens + OfflineBanner | IMPLEMENTED |
 | Barcode | R-03B/V-16, D-028 | canonical API matching/candidate workflow implemented; device camera transport remains client/runtime scope | IMPLEMENTED |
-| Remaining mobile parity | selected applicable surfaces such as candidate review, vendor customer/staff management and deeper Ops/admin workflows | not all mobile screens are ported; backend source is authoritative | OPEN / PARTIAL |
+| Remaining mobile parity | selected management and operational surfaces | source implementation is present; current gate is fresh runtime/device verification | REVERIFY |
 
 Verification requirements:
 - .github/workflows/pol-mvp-mobile.yml
