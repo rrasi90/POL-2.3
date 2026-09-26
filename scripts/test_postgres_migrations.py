@@ -488,7 +488,8 @@ def verify_financial_dispute_remediation(conn):
         ("refunds", "uq_refund_idempotency_key"),
         ("refunds", "uq_refund_per_dispute_v063"),
         ("refunds", "uq_refund_per_return_v063"),
-        ("refunds", "uq_refund_settlement_adjustment_v058"),
+        ("settlement_adjustments", "uq_refund_settlement_adjustment_v058"),
+        ("payment_evidence", "idx_payment_evidence_media_v064"),
     ):
         cur.execute(
             "SELECT 1 FROM pg_indexes WHERE tablename=%s AND indexname=%s",
