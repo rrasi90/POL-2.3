@@ -462,7 +462,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-334 | P1 | Allocation-result identity/hash does not fully cover canonical input/decision identity. | RESOLVED_CODE / EXECUTION_PENDING — source 6dcaa74c/9377e38a/b8b673ea/0c759d1c/a3d0a358/cba145bd; regression 12964486 |
 | G-335 | P1 | Allocation regression coverage is incomplete for adversarial/tie/packing cases. | RESOLVED_CODE / EXECUTION_PENDING — regression 12964486 |
 | G-336 | P1 | Reservation-expiry worker/runtime path is not fully evidenced as canonical. | RESOLVED_CODE / EXECUTION_PENDING — worker existing + boundary 621b170a; regression 3ecea65c |
-| G-337 | P1 | Retailer cancellation/release of active reservation is incomplete. | OPEN |
+| G-337 | P1 | Retailer cancellation/release of active reservation is incomplete. | RESOLVED_CODE / EXECUTION_PENDING — service d5c4716b; boundary 1043c57c; route 98e9ddb1; regression c8cd55c7 |
 | G-338 | P1 | Reservation time semantics are not fully aligned with the canonical checkout/Journey timing contract. | OPEN |
 | G-339 | P1 | Reservation lifecycle tests rely too heavily on direct SQL seeding rather than canonical runtime commands. | OPEN |
 | G-340 | P1 | Reservation concurrency is not fully verified through the real runtime path. | OPEN |
@@ -722,3 +722,10 @@ At the end of each closed item, the ledger must contain:
 - **Boundary commit:** `621b170a81da5967fbff1d2df286388c8d03b9a3`
 - **Regression commit:** `3ecea65c1b58378dc2acbd91b829fd95e8567cef`
 - **Verification state:** source + regression persisted; fresh PostgreSQL execution/central scheduler evidence remains pending.
+
+### G-337 Closure Record
+- **Resolution:** added canonical retailer-side `SUBMITTED → CANCELLED` command. It validates active retailer tenancy, locks the order and its reservations, atomically decrements reserved stock, releases ACTIVE reservations, updates `cancellation_reason`, emits `ORDER_CANCELLED` to vendor recipients and returns an idempotent replay for already-cancelled orders.
+- **HTTP:** `POST /api/v1/orders/{order_id}/cancel` for `RETAILER_OWNER/RETAILER_STAFF`.
+- **Source commits:** service `d5c4716b3a1106fe0fb21b31a55a0deb75d27db9`, boundary `1043c57c5810f36cc246ac15107b47ffd9e62fe7`, route `98e9ddb121a5919c50fc7f1f2659db7df979594d`.
+- **Regression:** `test_retailer_pre_acceptance_cancellation_releases_reservation` commit `c8cd55c7c21a04054da85a7426b8df203b8dfeee`.
+- **Verification state:** source + route + regression persisted; fresh runtime execution remains pending.
