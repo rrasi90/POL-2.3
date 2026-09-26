@@ -442,6 +442,10 @@ class VendorInventoryPublishRequest(APIBaseModel):
     session_id: str = Field(min_length=1, max_length=128)
 
 
+class DisputeTransitionReasonRequest(APIBaseModel):
+    reason: str | None = Field(default=None, max_length=1000)
+
+
 class DisputeResolveRequest(APIBaseModel):
     outcome: Literal[
         "ADJUSTED_SHORTAGE",
