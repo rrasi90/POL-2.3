@@ -447,7 +447,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-315 | P1 | Privacy export/account-deletion lifecycle lacks a runtime API/workflow. | RESOLVED — migration 052 / 1603218e; service c8d01227; HTTP a74da82a; route registry 7ee49596; regression 1fbf3511 |
 | G-316 | P1 | Runtime media schema diverges from canonical media specification; approval/provenance/media-type/checksum semantics are incomplete. | RESOLVED — migration 053 / 6fa46ec8; service 3ff27c8f; schema docs bd5d5261; regression f5f5b0df |
 | G-317 | P1 | Public product-media serving lacks canonical approval/provenance/private-reference gating. | RESOLVED — query e1991dd5; regression 31f2c994 |
-| G-318 | P1 | Canonical media ingestion pipeline (presign → confirm → validate → process → thumbnail/resumable) is not fully implemented/evidenced. | OPEN |
+| G-318 | P1 | Canonical media ingestion pipeline (presign → confirm → validate → process → thumbnail/resumable) is not fully implemented/evidenced. | RESOLVED_CODE / EXTERNAL_EVIDENCE_PENDING — migration b6cb7877; service 6ccc1618→3af490e5; API 2564d61; regression 408639c5→6ccc1618 |
 | G-319 | P1 | POD/dispute media references lack READY + ownership + tenant + purpose validation. | OPEN |
 | G-320 | P2 | DB media DELETED lifecycle lacks explicit object-storage reconciliation. | OPEN |
 | G-325 | P1 | Basket/allocation stale-version handling and checkout consistency require complete canonical enforcement. | OPEN |
@@ -624,3 +624,16 @@ At the end of each closed item, the ledger must contain:
 - **Source commit:** `e1991dd58f318b44f9c4bfb4dbd749e88eacbce0`
 - **Regression commit:** `31f2c994b466f8c1982b02749d38357c91561cad`
 - **Verification state:** SOURCE + PUBLIC-READ GATE + REGRESSION PERSISTED; fresh runtime/CI execution remains pending.
+
+### G-318 Closure Record
+- **Resolution:** resumable S3-compatible multipart sessions/parts are persisted, presigned part URLs are issued, multipart completion is validated for contiguous unique parts, and trusted processing now performs magic-byte/decode validation, explicit metadata/EXIF stripping, WebP conversion, SHA-256 calculation and 150×150 WebP thumbnail generation in `media_variants`.
+- **HTTP:** `POST /api/v1/media/resumable/init` and `POST /api/v1/media/resumable/complete` are registered in the FastAPI route inventory and canonical API map/contract.
+- **Regression:** `test_resumable_media_session_and_processing_pipeline` uses a fake S3 provider to exercise multipart session creation, completion, final processing and thumbnail persistence. Live S3/MinIO evidence cannot be certified in this environment without provider execution.
+- **Migration commit:** `b6cb7877ab86200d16b3c3a613fd6c03da5ca4e2`
+- **Service commits:** `53180faf2f2ddfad599ea34010b52e902bcd74f1`, `3af490e5bb916dbd78d4cee520d3728e98f36e32`, `6ccc1618d9a0b341f6395d4569cd2d3de184a063`
+- **API route commit:** `2564d61a37749a93c1634ac5b8f64c1154758a80`
+- **Route inventory:** `d44638a30bc2fe38457a6d78648cf2a5925b0aad`
+- **API map:** `6087dae3e96261d16ec07fbb3457f2aca10b55b7`
+- **API contract:** `4c60fbe40065169d936552f2b4e35d4a7bbc04cd`
+- **Regression commits:** `408639c57feae3a747a46fc2d3c128b81121e230`, `6ccc1618d9a0b341f6395d4569cd2d3de184a063`
+- **Verification state:** code and fake-provider regression persisted; live S3/MinIO runtime evidence + fresh CI remain pending.
