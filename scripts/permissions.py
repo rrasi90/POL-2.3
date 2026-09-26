@@ -432,6 +432,7 @@ def membership_permissions(cur, actor_user_id: str, organization_id: str, target
         "phone_number": target["phone_number"],
         "role": target["role"],
         "base_permissions": base,
+        "delegatable_permissions": list(CANONICAL_PERMISSIONS),
         "delegated_grants": grants,
         "effective_permissions": sorted(granted),
     }
