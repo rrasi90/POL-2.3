@@ -4149,17 +4149,76 @@ class POLApplicationBoundary:
         d["updated_at"] = d["updated_at"].isoformat() if d["updated_at"] else None
         return d
 
-    def field_task_create(self, *, task_type, assigned_to_user_id, target_organization_id=None, notes=None):
-        """Create a field task (admin/operator only)."""
+    def field_task_create(
+        self,
+        *,
+        task_type,
+        assigned_to_user_id,
+        retailer_id=None,
+        vendor_id=None,
+        target_organization_id=None,
+        notes=None,
+    ):
+        """Create a field task (admin/operator only) with an explicit target entity."""
         self._require_ops_context()
+
+        if retailer_id and vendor_id:
+            raise ValueError("A field task cannot target both a retailer and a vendor.")
+        if target_organization_id and (retailer_id or vendor_id):
+            raise ValueError("Use retailer_id/vendor_id or target_organization_id, not both.")
+
         self.cur.execute(
-            """
-            SELECT 1 FROM users WHERE id = %s
-            """,
+            "SELECT id, is_active FROM users WHERE id = %s",
             (assigned_to_user_id,),
         )
-        if not self.cur.fetchone():
+        assigned = self.cur.fetchone()
+        if not assigned:
             raise ValueError("Assigned user not found.")
+        if not assigned["is_active"]:
+            raise ValueError("Assigned user is inactive.")
+
+        resolved_target_organization_id = target_organization_id
+        if retailer_id:
+            self.cur.execute(
+                """
+                SELECT r.organization_id
+                FROM retailers r
+                JOIN organizations o ON o.id = r.organization_id
+                WHERE r.id = %s
+                  AND o.status = 'ACTIVE'
+                """,
+                (retailer_id,),
+            )
+            target = self.cur.fetchone()
+            if not target:
+                raise KeyError("Target retailer not found or inactive.")
+            resolved_target_organization_id = str(target["organization_id"])
+
+        if vendor_id:
+            self.cur.execute(
+                """
+                SELECT v.organization_id
+                FROM vendors v
+                JOIN organizations o ON o.id = v.organization_id
+                WHERE v.id = %s
+                  AND v.status = 'ACTIVE'
+                  AND o.status = 'ACTIVE'
+                """,
+                (vendor_id,),
+            )
+            target = self.cur.fetchone()
+            if not target:
+                raise KeyError("Target vendor not found or inactive.")
+            resolved_target_organization_id = str(target["organization_id"])
+
+        if resolved_target_organization_id:
+            self.cur.execute(
+                "SELECT id FROM organizations WHERE id=%s AND status='ACTIVE'",
+                (resolved_target_organization_id,),
+            )
+            if not self.cur.fetchone():
+                raise KeyError("Target organization not found or inactive.")
+
         self.cur.execute(
             """
             INSERT INTO field_tasks (task_type, assigned_to_user_id, target_organization_id, notes)
@@ -4167,7 +4226,7 @@ class POLApplicationBoundary:
             RETURNING id, task_type, target_organization_id, assigned_to_user_id,
                       status, due_date, completed_at, notes, created_at, updated_at
             """,
-            (task_type, assigned_to_user_id, target_organization_id, notes),
+            (task_type, assigned_to_user_id, resolved_target_organization_id, notes),
         )
         row = self.cur.fetchone()
         d = dict(row)
