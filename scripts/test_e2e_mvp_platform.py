@@ -606,6 +606,53 @@ def freeze_policy_clock(monkeypatch, instant):
     ("2026-09-16T20:30:00+00:00", "CANCELLED", True),
     ("2026-09-16T20:30:00+00:00", "REJECTED", True),
 ])
+def test_vendor_capacity_lock_serializes_concurrent_checkout_decisions(
+    postgres_database, checkout_catalog, monkeypatch,
+):
+    """G-311: vendor capacity checks hold a transaction-scoped advisory lock until commit."""
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    retailer_id = checkout_catalog["lines"][0]["retailer_id"]
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            "UPDATE vendor_capacity_profiles SET timezone='Asia/Tehran', max_orders_per_day=1 WHERE vendor_id=%s",
+            (vendor_id,),
+        )
+        # Keep the test focused on capacity rather than operating windows.
+        cur.execute("DELETE FROM vendor_operating_windows WHERE vendor_id=%s", (vendor_id,))
+
+    freeze_policy_clock(monkeypatch, datetime(2026, 9, 16, 12, tzinfo=timezone.utc))
+    allocations = [{"vendor_id": vendor_id, "quantity": 7, "amount_toman": 3100000}]
+    conn1 = psycopg2.connect(**postgres_database)
+    conn1.autocommit = False
+    try:
+        with conn1.cursor(cursor_factory=RealDictCursor) as cur1:
+            validate_vendor_operational_capacity(cur1, allocations)
+            cur1.execute(
+                "INSERT INTO orders (order_number, retailer_id, vendor_id, total_amount_toman) VALUES (%s,%s,%s,%s)",
+                (f"POL-G311-{uuid4().hex[:12]}", retailer_id, vendor_id, 3100000),
+            )
+
+            conn2 = psycopg2.connect(**postgres_database)
+            conn2.autocommit = False
+            try:
+                with conn2.cursor(cursor_factory=RealDictCursor) as cur2:
+                    cur2.execute("SET LOCAL lock_timeout = '150ms'")
+                    with pytest.raises(psycopg2.errors.LockNotAvailable):
+                        validate_vendor_operational_capacity(cur2, allocations)
+                    conn2.rollback()
+            finally:
+                conn2.close()
+
+            conn1.commit()
+
+        with transaction(postgres_database) as cur3:
+            with pytest.raises(AllocationIntegrityError, match="daily order capacity exhausted: 2 > 1"):
+                validate_vendor_operational_capacity(cur3, allocations)
+    finally:
+        if conn1.closed == 0:
+            conn1.rollback()
+        conn1.close()
+
 def test_daily_capacity_uses_vendor_local_day(
     postgres_database, checkout_catalog, checkout_request, monkeypatch, created_at, status, allowed,
 ):
