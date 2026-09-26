@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 
 
@@ -193,7 +194,8 @@ class PrivacyLifecycleService:
         # Preserve business, financial and immutable audit history. Remove or
         # revoke direct personal/security data that is not needed for history.
         tombstone = f"Deleted User {str(user['id'])[:8]}"
-        tombstone_phone = f"+privacy-{str(user['id']).replace('-', '')[:13]}"
+        digits = re.sub(r"\D", "", str(user["id"]))
+        tombstone_phone = "+000" + digits[:11]
         cur.execute(
             """
             UPDATE user_profiles
