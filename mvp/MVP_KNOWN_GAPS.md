@@ -250,3 +250,11 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - Resolution: reads require active retailer/vendor tenant membership; submissions require an active user; repeated external references return the existing evidence for the same payment with idempotent_replay=true, while cross-payment reuse is rejected.
 - Regression coverage: wrong-tenant read plus same-reference replay HTTP tests.
 - Status: RESOLVED in source; fresh CI certification remains separate.
+
+
+## G-041 — Bearer/refresh token validity after principal deactivation (SECURITY GAP — REMEDIATED — 2026-09-26)
+
+- **Finding:** access-token validation trusted an ACTIVE session + ACTIVE membership without independently checking `users.is_active` and `organizations.status`; refresh-token validation had the same omission.
+- **Resolution:** `validate_access_token` now requires active user + active organization + active membership. `AuthService.refresh_access_token` enforces the same principal checks before issuing a new access token or rotating the refresh token.
+- **Regression proof:** `scripts/test_auth_contract.py` now covers inactive-user and inactive-organization rejection for both bearer access tokens and refresh tokens.
+- **Status:** SOURCE REMEDIATED / FRESH CI PENDING
