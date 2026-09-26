@@ -4694,7 +4694,7 @@ class POLApplicationBoundary:
         before = self.cur.fetchone()
         if not before:
             raise KeyError("Vendor membership not found.")
-        if before["role"] == "VENDOR_OWNER" and (role == "VENDOR_STAFF" or status == "REVOKED"):
+        if before["role"] == "VENDOR_OWNER" and (role == "VENDOR_STAFF" or status in {"SUSPENDED", "REVOKED"}):
             self.cur.execute(
                 """
                 SELECT COUNT(*) AS owners
