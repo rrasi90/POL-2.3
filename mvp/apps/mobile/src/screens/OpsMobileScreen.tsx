@@ -331,11 +331,15 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
                 <StatusChip label={o.status || "—"} tone={o.status === "ACTIVE" ? "ok" : "info"} />
                 <Text style={styles.h2}>{o.name || o.id}</Text>
                 <Text style={styles.meta}>نوع: {o.org_type || "—"} · عضویت‌ها: {String(o.membership_count ?? 0)}</Text>
-                <Btn
-                  label={o.status === "ACTIVE" ? "تعلیق سازمان" : "فعال‌سازی سازمان"}
-                  tone="ghost"
-                  onPress={() => void updateOrganization(o.id, o.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE")}
-                />
+                {o.status === "ACTIVE" || o.status === "SUSPENDED" ? (
+                  <Btn
+                    label={o.status === "ACTIVE" ? "تعلیق سازمان" : "فعال‌سازی سازمان"}
+                    tone="ghost"
+                    onPress={() => void updateOrganization(o.id, o.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE")}
+                  />
+                ) : (
+                  <Text style={styles.meta}>برای وضعیت فعلی، mutation استاندارد موبایل تعریف نشده است.</Text>
+                )}
               </Card>
             ))
           )
