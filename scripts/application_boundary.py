@@ -30,6 +30,7 @@ from scripts.operational_config import PILOT_COMMISSION_RATE
 from scripts.returns_rma import CanonicalReturnService
 from scripts.media_service import MediaService
 from scripts.user_profiles import UserProfileService
+from scripts.privacy_lifecycle import PrivacyLifecycleService
 from scripts.vendor_referral import VendorReferralService
 from scripts.vendor_acceptance_timeout_worker import VendorAcceptanceTimeoutWorker
 FIELD_TASK_TRANSITIONS = {
@@ -92,6 +93,12 @@ class POLApplicationBoundary:
             target_type=target_type,
             target_id=str(target_id),
         )
+
+    def privacy_export(self):
+        return PrivacyLifecycleService.request_export(self.cur, self.context.user_id)
+
+    def privacy_delete_account(self):
+        return PrivacyLifecycleService.request_deletion(self.cur, self.context.user_id)
 
     def profile_get(self):
         return UserProfileService.get_my_profile(
