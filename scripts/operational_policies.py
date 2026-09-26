@@ -156,8 +156,22 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
 
             if not in_window:
                 raise AllocationIntegrityError(f"Vendor {vendor_id} is outside its operating window.")
-            if cutoff and current_time > cutoff:
-                raise AllocationIntegrityError(f"Vendor {vendor_id} order cutoff has passed.")
+            if cutoff:
+                business_date = window_local_now.date()
+                if overnight and current_time <= closes_at:
+                    business_date -= timedelta(days=1)
+
+                cutoff_date = business_date
+                if overnight and cutoff < opens_at:
+                    cutoff_date += timedelta(days=1)
+
+                cutoff_at = datetime.combine(
+                    cutoff_date,
+                    cutoff,
+                    tzinfo=window_local_now.tzinfo,
+                )
+                if window_local_now > cutoff_at:
+                    raise AllocationIntegrityError(f"Vendor {vendor_id} order cutoff has passed.")
 
 
 def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retailer_id: str,
