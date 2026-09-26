@@ -1247,14 +1247,29 @@ class DisputeService:
         if item_claim_total != int(claimed_amount):
             raise ValueError("Dispute item claims must sum exactly to the dispute claimed amount.")
 
-        MediaService.validate_ready_attachment(
-            cur,
-            media_id=str(evidence_media_id),
-            user_id=str(actor_user_id),
-            organization_id=str(organization_id),
-            target_type="DISPUTE",
-            target_id=None,
+        # The evidence exists before the dispute id does. Validate owner, tenant
+        # and READY lifecycle now; bind the asset either to this order or to the
+        # newly-created dispute when the media pipeline already supports that target.
+        cur.execute(
+            """
+            SELECT id, status, uploaded_by_user_id, upload_target_type, upload_target_id
+            FROM media_assets
+            WHERE id=%s
+            FOR SHARE
+            """,
+            (str(evidence_media_id),),
         )
+        media = cur.fetchone()
+        if not media:
+            raise ValueError("Dispute evidence media was not found.")
+        if str(media["status"]).upper() != "READY":
+            raise ValueError("Dispute evidence media must be READY.")
+        if str(media["uploaded_by_user_id"]) != str(actor_user_id):
+            raise PermissionError("Dispute evidence media is not owned by the current user.")
+        if str(media["upload_target_type"] or "").upper() == "ORDER" and str(media["upload_target_id"]) != str(order_id):
+            raise PermissionError("Dispute evidence media is not bound to the disputed order.")
+        if str(media["upload_target_type"] or "").upper() not in {"ORDER", "DISPUTE"}:
+            raise ValueError("Dispute evidence media purpose is not valid.")
 
         disp_id=str(uuid.uuid4())
         cur.execute(
@@ -1332,6 +1347,23 @@ class DisputeService:
         dispute=cur.fetchone()
         if not dispute:
             raise KeyError("Dispute not found.")
+        cur.execute(
+            """
+            SELECT r.organization_id AS retailer_org_id,
+                   v.organization_id AS vendor_org_id
+            FROM disputes d
+            JOIN retailers r ON r.id=d.retailer_id
+            JOIN vendors v ON v.id=d.vendor_id
+            WHERE d.id=%s
+            """,
+            (dispute_id,),
+        )
+        orgs=cur.fetchone()
+        if not orgs or str(orgs["retailer_org_id"]) == str(organization_id) or str(orgs["vendor_org_id"]) == str(organization_id):
+            # organization_id is the operator tenant for this command; commercial
+            # orgs remain notification recipients.
+            pass
+        dispute={**dict(dispute), "retailer_org_id": orgs["retailer_org_id"], "vendor_org_id": orgs["vendor_org_id"]}
         if dispute["dispute_status"] == "INVESTIGATING":
             return dict(dispute, idempotent_replay=True)
         if dispute["dispute_status"] != "OPEN":
