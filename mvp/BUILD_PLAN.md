@@ -341,7 +341,7 @@ Update MATRIX / API_MAP / GAPS when a status changes. Never mark VERIFIED withou
 ### 2026-09-26 remediation re-audit overlay
 
 - Current remediation branch: `remediation/full-closure-2026-09-25`.
-- Current head at checkpoint: `63c0368e576c160e15bf246192cbef2543235ee7`.
+- Current head at checkpoint: `194daf012ee5a8312f335ebc0123d0865aca263b`.
 - Additional source hardening completed after the prior audit: owner-only basket/checkout, owner-only partial acceptance and vendor acceptance/rejection, formal dispute opening, role-aware delegated-permission ceilings, auth organization-switch regression, and Expo SDK 57 Node toolchain alignment.
 - Expo SDK 57 requires Node.js 22.13.x minimum; mobile CI now uses Node 22.23.1 and the monorepo declares Node >=22.13.0.
 - Do not use historical 497/497, 526/526, or prior mobile CI success as current-head certification.
