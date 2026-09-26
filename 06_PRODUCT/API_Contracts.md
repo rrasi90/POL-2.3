@@ -557,7 +557,7 @@
   "target_organization_id": "7d91e843-c03b-4191-87aa-29775089c93a"
 }
 ```
-* **پاسخ موفق (200 OK):** توکن JWT جدید با ادعای `org_id` و `role` سازمان مقصد صادر می‌شود. در implementation فعلی refresh token rotate می‌شود و hash ذخیره‌شده با مقدار جدید جایگزین می‌شود؛ rotation policy طبق D-018 هنوز TBD است.
+* **پاسخ موفق (200 OK):** توکن JWT جدید با ادعای `org_id` و `role` سازمان مقصد صادر می‌شود. پیاده‌سازی فعلی در `switch_organization` refresh token را rotate نمی‌کند؛ rotation در endpoint `POST /auth/refresh` انجام می‌شود. سیاست نهایی rotation طبق D-018 هنوز TBD است.
 ```json
 {
   "success": true,
