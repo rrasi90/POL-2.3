@@ -367,7 +367,13 @@ def run_master_e2e_test():
             **driver_metadata,
         )
         deliv_id = dispatch_res["delivery_id"]
-        otp_code = dispatch_res["delivery_otp"]
+        # OTP is a secret and is intentionally not returned by the production
+        # dispatch contract. The integration test reads it directly from the
+        # isolated test database to verify the subsequent confirmation flow.
+        cur.execute("SELECT delivery_otp FROM deliveries WHERE id = %s;", (deliv_id,))
+        otp_row = cur.fetchone()
+        assert otp_row and otp_row["delivery_otp"]
+        otp_code = otp_row["delivery_otp"]
         assert dispatch_res["delivery_status"] == "ASSIGNED"
 
         for stage in ("PICKED_UP", "IN_TRANSIT", "ARRIVED"):
@@ -481,8 +487,63 @@ def run_master_e2e_test():
         # -------------------------------------------------------------
         # 10. Formal Dispute Isolation & Settlement Hold
         # -------------------------------------------------------------
-        print("\n[STEP 10] Formal Dispute Opening via DisputeService: Settlement Hold & Blast Radius Isolation...")
-        disp_id = DisputeService.open_dispute(cur, ord_a_id, ret_id, vnda_id, settle_id, 1200000, 'Damaged goods: 2 cartons')
+        print("\n[STEP 10] Formal Dispute Opening via Canonical Application Boundary: Evidence + Items + Idempotency...")
+        dispute_media_id = str(uuid.uuid4())
+        cur.execute(
+            """
+            INSERT INTO media_assets (
+                id, storage_provider, storage_bucket, storage_key,
+                mime_type, file_size_bytes, checksum_sha256, status,
+                provenance, uploaded_by_user_id, upload_target_type, upload_target_id
+            )
+            VALUES (
+                %s,'S3_COMPATIBLE','pol-media',%s,'image/jpeg',2048,%s,
+                'READY','POL_OWNED',%s,'ORDER',%s
+            )
+            """,
+            (
+                dispute_media_id,
+                f"e2e/disputes/{dispute_media_id}.jpg",
+                "b" * 64,
+                u_ret_owner,
+                ord_a_id,
+            ),
+        )
+
+        cur.execute(
+            """
+            SELECT id, delivered_quantity, unit_price_toman
+            FROM order_items
+            WHERE order_id=%s
+              AND vendor_id = %s
+            ORDER BY created_at ASC
+            LIMIT 1
+            """,
+            (ord_a_id, vnda_id),
+        )
+        dispute_item = cur.fetchone()
+        assert dispute_item and int(dispute_item["delivered_quantity"] or 0) >= 2
+        assert 1200000 <= 2 * int(dispute_item["unit_price_toman"])
+
+        dispute_boundary = POLApplicationBoundary(
+            cur,
+            ApplicationContext(u_ret_owner, org_ret, corr_id),
+        )
+        dispute_result = dispute_boundary.dispute_open(
+            order_id=ord_a_id,
+            claimed_amount_toman=1200000,
+            description='Damaged goods: 2 cartons',
+            evidence_media_id=dispute_media_id,
+            items=[{
+                "order_item_id": str(dispute_item["id"]),
+                "quantity": 2,
+                "claimed_amount_toman": 1200000,
+                "reason_code": "DAMAGE",
+            }],
+            idempotency_key=str(uuid.uuid4()),
+        )
+        disp_id = str(dispute_result["id"])
+        assert dispute_result["dispute_status"] == "OPEN"
 
         cur.execute("SELECT order_status, dispute_status FROM orders WHERE id = %s;", (ord_a_id,))
         ord_status_check = cur.fetchone()
@@ -491,7 +552,7 @@ def run_master_e2e_test():
 
         cur.execute("SELECT status FROM settlements WHERE id = %s;", (settle_id,))
         assert cur.fetchone()["status"] == "DISPUTED"
-        print("  [PASS] Dispute opened via DisputeService: order_status remained DELIVERED, dispute_status projected to OPEN, settlement locked in DISPUTED.")
+        print("  [PASS] Canonical dispute opened with READY evidence, line-item claim, idempotency and settlement hold.")
 
         # -------------------------------------------------------------
         # 11. Transactional Outbox to Notification & User Inbox
