@@ -457,6 +457,7 @@ def submit_payment_evidence(
     order_id: UUID,
     payload: PaymentEvidenceRequest,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "VENDOR_OWNER"))] = None,
 ):
     return success_payload(
         boundary.submit_payment_evidence(
@@ -475,6 +476,7 @@ def record_direct_transfer(
     order_id: UUID,
     payload: PaymentEvidenceRequest,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "VENDOR_OWNER"))] = None,
 ):
     return success_payload(
         boundary.submit_payment_evidence(
@@ -482,6 +484,7 @@ def record_direct_transfer(
             evidence_type=payload.evidence_type,
             reference_number=payload.reference_number,
             amount_toman=payload.amount_toman,
+            evidence_media_id=str(payload.evidence_media_id) if payload.evidence_media_id else None,
             notes=payload.notes,
         )
     )
