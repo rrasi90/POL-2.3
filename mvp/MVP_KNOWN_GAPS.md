@@ -450,7 +450,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-318 | P1 | Canonical media ingestion pipeline (presign → confirm → validate → process → thumbnail/resumable) is not fully implemented/evidenced. | RESOLVED_CODE / EXTERNAL_EVIDENCE_PENDING — migration b6cb7877; service 6ccc1618→3af490e5; API 2564d61; regression 408639c5→6ccc1618 |
 | G-319 | P1 | POD/dispute media references lack READY + ownership + tenant + purpose validation. | RESOLVED — validator b7c4e56a; dispute 7c078b5f; POD 891778b1; regression a0a5d55b |
 | G-320 | P2 | DB media DELETED lifecycle lacks explicit object-storage reconciliation. | RESOLVED_CODE / PROVIDER_EVIDENCE_PENDING — migration 2b7c4d6e; worker 47656dc4; regression fd611fe5 |
-| G-325 | P1 | Basket/allocation stale-version handling and checkout consistency require complete canonical enforcement. | OPEN |
+| G-325 | P1 | Basket/allocation stale-version handling and checkout consistency require complete canonical enforcement. | RESOLVED — gateway/revalidation source; stale regression already persisted |
 | G-326 | P1 | Stale-checkout must return a canonical 409 Conflict contract. | OPEN |
 | G-327 | P1 | Checkout must be atomic across allocation/order/reservation mutations. | OPEN |
 | G-328 | P1 | Client/server basket-allocation-checkout state coherence is incomplete. | OPEN |
@@ -652,3 +652,8 @@ At the end of each closed item, the ledger must contain:
 - **Worker commits:** `f9bbfeb2f9cc57e076432187d90f052f1f05b864`, `47656dc4f869536e8c9732f594fde950175a46e7`
 - **Regression commit:** `fd611fe54a12043b6b3b846bb527b134bf13250a`
 - **Verification state:** code + fake-provider regression persisted; live S3/MinIO execution remains pending.
+
+### G-325 Closure Record
+- **Resolution:** canonical checkout now serializes on the idempotency key, locks basket + allocation plan with `FOR UPDATE`, verifies current basket version equals allocation-plan basket version, and independently revalidates allocation payload against the persisted plan before creating orders/reservations. Basket mutation itself remains optimistic-version guarded.
+- **Existing regression:** `test_stale_plan_version_rejected` verifies current basket v2 cannot consume a plan generated at v1; gateway/revalidation contain the same invariant in the real checkout path.
+- **Verification state:** source + regression evidence persisted; fresh execution remains pending.
