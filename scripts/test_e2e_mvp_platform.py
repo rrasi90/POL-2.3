@@ -144,6 +144,35 @@ def checkout_catalog(postgres_database):
     }
 
 
+def test_admin_audit_logs_are_db_immutable(
+    postgres_database, checkout_catalog,
+):
+    """G-312: PostgreSQL rejects UPDATE/DELETE while permitting append-only INSERT."""
+    actor_user_id = checkout_catalog["context"].user_id
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    with transaction(postgres_database) as cur:
+        row = insert_row(
+            cur, "admin_audit_logs", actor_user_id=actor_user_id, action="TEST_MUTATION",
+            target_entity_type="VENDOR", target_entity_id=vendor_id, reason="immutability regression",
+        )
+        audit_id = str(row["id"])
+
+    with transaction(postgres_database) as cur:
+        with pytest.raises(psycopg2.Error, match="admin_audit_logs are immutable"):
+            cur.execute(
+                "UPDATE admin_audit_logs SET reason='tampered' WHERE id=%s",
+                (audit_id,),
+            )
+
+    with transaction(postgres_database) as cur:
+        with pytest.raises(psycopg2.Error, match="admin_audit_logs are immutable"):
+            cur.execute("DELETE FROM admin_audit_logs WHERE id=%s", (audit_id,))
+
+    with transaction(postgres_database) as cur:
+        cur.execute("SELECT reason FROM admin_audit_logs WHERE id=%s", (audit_id,))
+        assert cur.fetchone()["reason"] == "immutability regression"
+
+
 def persist_request(cur, catalog):
     basket = insert_row(cur, "baskets", retailer_id=catalog["retailer_id"], status="OPEN", version=1)
     basket_items = []
