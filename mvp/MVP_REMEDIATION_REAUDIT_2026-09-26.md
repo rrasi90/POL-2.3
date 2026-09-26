@@ -119,3 +119,9 @@ These are source-level closures. They are not marked as fresh CI PASS because cu
 - **G-062 Field Task lifecycle transition gap:** `field_tasks` exposed a finite status vocabulary but the application update path allowed arbitrary status jumps. The canonical transition graph is now enforced server-side and represented in `08_DATA/Data_Schema.md` and `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md`; the web task editor offers only valid next states.
 - Regression `test_task_cannot_roll_back_from_in_progress_to_assigned` verifies invalid rollback rejection and state preservation.
 - Source-level closure only; current Actions infrastructure still prevents fresh CI certification.
+
+## Post-reaudit Source Finding Closed — G-063 — 2026-09-26
+
+- **G-063 Last active vendor owner suspension:** vendor staff management previously prevented only demotion/revocation of the last active `VENDOR_OWNER`; suspension could still remove the final active owner. The safeguard now rejects suspension of the last active owner unless another active owner exists.
+- Regression `test_vendor_owner_cannot_suspend_last_active_owner` verifies HTTP rejection and preserved ACTIVE membership state.
+- Source-level closure only; fresh CI remains unavailable because the repository's Actions jobs terminate before executing workflow steps.
