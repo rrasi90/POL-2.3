@@ -656,6 +656,34 @@ def test_operating_window_uses_its_own_timezone_for_weekday(
         with pytest.raises(AllocationIntegrityError, match="outside its operating window"):
             validate_vendor_operational_capacity(cur, allocations)
 
+@pytest.mark.parametrize("instant,allowed", [
+    ("2026-09-17T19:30:00+00:00", True),
+    ("2026-09-17T22:00:00+00:00", False),
+])
+def test_overnight_order_cutoff_uses_next_day_semantics(
+    postgres_database, checkout_catalog, monkeypatch, instant, allowed,
+):
+    """G-310: a 01:00 cutoff on a 22:00-02:00 window belongs to the next local day."""
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            "UPDATE vendor_capacity_profiles SET timezone='Asia/Tehran' WHERE vendor_id=%s",
+            (vendor_id,),
+        )
+        insert_row(
+            cur, "vendor_operating_windows", vendor_id=vendor_id, weekday=3,
+            timezone="Asia/Tehran", opens_at="22:00", closes_at="02:00",
+            order_cutoff_at="01:00", is_active=True,
+        )
+    freeze_policy_clock(monkeypatch, datetime.fromisoformat(instant))
+    allocations = [{"vendor_id": vendor_id, "quantity": 7, "amount_toman": 3100000}]
+    with transaction(postgres_database) as cur:
+        if allowed:
+            validate_vendor_operational_capacity(cur, allocations)
+        else:
+            with pytest.raises(AllocationIntegrityError, match="order cutoff has passed"):
+                validate_vendor_operational_capacity(cur, allocations)
+
 def test_overnight_window_uses_previous_weekday_after_midnight(
     postgres_database, checkout_catalog, monkeypatch,
 ):
