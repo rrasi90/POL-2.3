@@ -10,7 +10,7 @@
 
 ## ۱. زنجیره کانونیکال مهاجرت پایگاه داده (Canonical Migration Chain)
 
-زنجیره مایگریشن پایگاه داده پلتفرم پُل شامل ۳ فایل ترتیبی DDL و قطعی است:
+زنجیره مایگریشن پایگاه داده پلتفرم پُل یک زنجیره forward-only و ترتیبی است و در remediation branch تا migration `047_delegated_permissions_and_audit.sql` امتداد یافته است:
 
 ```text
 migrations/001_initial_schema.sql
@@ -18,12 +18,19 @@ migrations/001_initial_schema.sql
 migrations/002_platform_core_schema.sql
        ↓ (۱۹ جدول هسته پلتفرم: سازمان‌ها، عضویت‌ها، نشست‌ها، اعلانات، تیکت‌ها، رزرو موجودی و فاکتور)
 migrations/003_contract_reconciliation.sql
-       ↓ (تطبیق نقش‌های کانونیکال ADMIN_SUPER/OPS_AGENT، تریگر انطباق نقش به سازمان، سازگاری وضعیت‌های تخصیص و رفع محدودیت‌های legacy تک‌مالکیتی)
-مجموع کل: ۵۶ جدول کانونیکال در PostgreSQL 18.4 با تفکیک کامل Tenant Isolation
+       ↓ (تطبیق نقش‌ها و قیود پایه)
+migrations/004 … migrations/031
+       ↓ (تطبیق‌ها و سخت‌سازی‌های forward-only پیشین)
+migrations/032 … migrations/046
+       ↓ (integrity، fulfillment، checkout، inventory، notification، candidate/barcode hardening)
+migrations/047_delegated_permissions_and_audit.sql
+       ↓ (delegated permission grants/revokes + append-only permission audit)
+
+**Authority note:** این مانیفست باید از زنجیره واقعی migrationها عقب نماند؛ تغییرات بعدی باید فقط با migration شماره‌دار جدید ثبت شوند. فهرست جدول‌های legacy این سند ممکن است نیازمند refresh مستقل داشته باشد و نباید آن را به‌عنوان شمارش فعلی جدول‌ها تلقی کرد.
 ```
 
 > **اصل تغییرناپذیری مایگریشن‌ها:**  
-> فایل‌های `001` و `002` پس از اعمال تاریخی تغییر نمی‌کنند؛ کلیه تطبیق‌ها، رفع تناقض‌ها و سخت‌سازی‌های امنیتی صرفاً از طریق مایگریشن پیش‌رونده `003_contract_reconciliation.sql` اعمال شده است.
+> فایل‌های migration تاریخی پس از اعمال نباید rewrite شوند. کلیه تطبیق‌ها، رفع تناقض‌ها و سخت‌سازی‌های بعدی باید صرفاً از طریق migrationهای forward-only شماره‌دار بعدی (تا `047` در این branch) اعمال شوند.
 
 ---
 
@@ -114,7 +121,7 @@ FIELD_ACTIVATOR
 
 ## ۴. قواعد و قیود تحمیل‌شده در سطح دیتابیس (Database-Enforced Invariants)
 
-مایگریشن `003_contract_reconciliation.sql` این قواعد را به صورت قطعی در پایگاه داده تضمین می‌کند:
+مایگریشن `003_contract_reconciliation.sql` قواعد پایه IAM و tenant را تضمین می‌کند؛ migrationهای بعدی نیز قیود تخصصی دامنه را به‌صورت افزایشی enforce می‌کنند.
 
 1. **انطباق نقش و نوع سازمان (Trigger `trg_enforce_org_membership_role_invariant`):**
    - نقش‌های `RETAILER_OWNER` و `RETAILER_STAFF` منحصراً در سازمان‌های `RETAILER` مجاز هستند.
