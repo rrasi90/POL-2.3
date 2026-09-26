@@ -97,6 +97,13 @@ migrations/047_delegated_permissions_and_audit.sql
 
 ---
 
+### Remediation additions — migration 048
+
+| تغییر | حوزه | نکته حاکمیتی |
+|---|---|---|
+| `media_assets.upload_target_type` + `upload_target_id` | Media / Object Binding | target presign در DB به asset متصل می‌شود؛ confirm-upload target mismatch را reject می‌کند |
+| `idx_media_assets_upload_target` | Media / Integrity | lookup/index برای target binding جدید؛ nullable برای سازگاری با رکوردهای تاریخی |
+
 ### Remediation additions — migration 047
 
 این دو جدول در migration `047_delegated_permissions_and_audit.sql` برای اجرای D-026 / VD-15 اضافه شده‌اند. آن‌ها به inventory تاریخی ۵۶ جدول legacy در بالا الحاق می‌شوند؛ این بخش عمداً شمارش کل فعلی schema را ادعا یا بازتعریف نمی‌کند.
