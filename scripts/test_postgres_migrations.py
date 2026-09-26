@@ -515,6 +515,8 @@ def verify_financial_dispute_remediation(conn):
         assert cur.fetchone() is not None, f"Constraint {constraint_name} missing"
 
     for table, trigger_name in (
+        ("admin_audit_logs", "trg_admin_audit_append_only_v069"),
+        ("inventory_audit_log", "trg_inventory_audit_append_only_v069"),
         ("dispute_events", "trg_dispute_events_append_only_v058"),
         ("disputes", "trg_validate_dispute_adjudication_v062"),
         ("refunds", "trg_completed_refund_payment_v058"),
