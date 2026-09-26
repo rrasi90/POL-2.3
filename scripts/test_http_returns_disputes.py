@@ -357,7 +357,7 @@ class TestDisputeOpen:
             with verify_conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(
                     "SELECT event_name, target_user_id, target_organization_id FROM outbox_events WHERE event_name = %s AND aggregate_id = %s",
-                    ("DISPUTE_OPENED", data["oi"]),
+                    ("DISPUTE_OPENED", body["data"]["id"]),
                 )
                 events = cur.fetchall()
                 assert events and all(e["target_user_id"] and e["target_organization_id"] for e in events)
@@ -438,7 +438,10 @@ class TestDisputeFilingWindow:
 
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            headers={"Authorization": f"Bearer {data['r_token']}"},
+            headers={
+                "Authorization": f"Bearer {data['r_token']}",
+                "Idempotency-Key": str(uuid4()),
+            },
             json=_dispute_payload(data, 1000000, "Expired dispute window", 2),
         )
         assert resp.status_code == 422
@@ -448,7 +451,10 @@ class TestDisputeQuery:
         data = _seed_delivered_order(uuid4().hex[:8])
         create_resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            headers={"Authorization": f"Bearer {data['r_token']}"},
+            headers={
+                "Authorization": f"Bearer {data['r_token']}",
+                "Idempotency-Key": str(uuid4()),
+            },
             json=_dispute_payload(data, 100000, "Dispute for testing get", 1),
         )
         dispute_id = create_resp.json()["data"]["id"]
@@ -463,7 +469,10 @@ class TestDisputeQuery:
         data = _seed_delivered_order(uuid4().hex[:8])
         client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            headers={"Authorization": f"Bearer {data['r_token']}"},
+            headers={
+                "Authorization": f"Bearer {data['r_token']}",
+                "Idempotency-Key": str(uuid4()),
+            },
             json=_dispute_payload(data, 100000, "Dispute for listing", 1),
         )
         resp = client.get(
