@@ -47,30 +47,46 @@ class RefundService:
         dedupe = event_id
         cur.execute(
             """
-            INSERT INTO outbox_events (
-                id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
-                target_organization_id,dedupe_key,channel_hint
-            )
-            VALUES (
-                gen_random_uuid(),%s,%s,'REFUND',%s,%s,'PENDING',%s,%s,'INBOX'
-            )
-            ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+            SELECT om.user_id
+            FROM organization_memberships om
+            JOIN users u ON u.id=om.user_id
+            WHERE om.organization_id=%s AND om.status='ACTIVE' AND u.is_active=TRUE
+            ORDER BY om.user_id
             """,
-            (
-                event_id,
-                event_name,
-                str(refund["id"]),
-                Json({
-                    "refund_id": str(refund["id"]),
-                    "order_id": str(refund["order_id"]),
-                    "dispute_id": str(refund["dispute_id"]) if refund["dispute_id"] else None,
-                    "amount_toman": int(refund["amount_toman"]),
-                    "status": refund["status"],
-                    "actor_user_id": actor_user_id,
-                }),
-                organization_id,
-                dedupe,
-            ),
+            (organization_id,),
+        )
+        recipients = cur.fetchall()
+        for rec in recipients:
+            recipient_key = f"{event_name}:{refund['id']}:{organization_id}:{rec['user_id']}"
+            payload_json = Json({
+                "refund_id": str(refund["id"]),
+                "order_id": str(refund["order_id"]),
+                "dispute_id": str(refund["dispute_id"]) if refund["dispute_id"] else None,
+                "amount_toman": int(refund["amount_toman"]),
+                "status": refund["status"],
+                "actor_user_id": actor_user_id,
+            })
+            cur.execute(
+                """
+                INSERT INTO outbox_events (
+                    id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                    target_user_id,target_organization_id,dedupe_key,channel_hint
+                )
+                VALUES (
+                    gen_random_uuid(),%s,%s,'REFUND',%s,%s,'PENDING',%s,%s,%s,'INBOX'
+                )
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    f"{event_name}:{refund['id']}:{rec['user_id']}",
+                    event_name,
+                    str(refund["id"]),
+                    payload_json,
+                    rec["user_id"],
+                    organization_id,
+                    recipient_key,
+                ),
+            )
         )
 
     @classmethod
@@ -411,14 +427,12 @@ class RefundService:
             SELECT r.*
             FROM refunds r
             JOIN retailers rt ON rt.id=r.retailer_id
-            JOIN vendors v ON v.id=r.order_id::uuid
             WHERE r.id=%s
+              AND rt.organization_id = %s
             """,
-            (refund_id,),
+            (refund_id, organization_id),
         )
         refund = cur.fetchone()
-        # Vendor join above is intentionally not relied upon for tenant access;
-        # the order/dispute settlement is checked below.
         if not refund:
             raise KeyError("Refund not found.")
         return dict(refund)
