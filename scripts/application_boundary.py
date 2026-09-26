@@ -336,7 +336,11 @@ class POLApplicationBoundary:
         }
 
     def retailer_order_cancel(self, *, order_id, reason='RETAILER_CANCELLED'):
-        self._verify_retailer_actor_for_order(order_id)
+        self.cur.execute("SELECT retailer_id FROM orders WHERE id=%s", (order_id,))
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError(f"Order {order_id} not found.")
+        self._verify_retailer_actor(row["retailer_id"])
         return CanonicalRetailerOrderService.cancel_order(
             self.cur, user_id=self.context.user_id, organization_id=self.context.organization_id,
             order_id=order_id, reason=reason,
