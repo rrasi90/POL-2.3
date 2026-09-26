@@ -133,14 +133,38 @@ class ReservationService:
         if not updated:
             raise ReservationServiceError("Inventory became unavailable while reserving.")
 
+        cur.execute(
+            """
+            INSERT INTO outbox_events (
+                id,event_id,event_name,aggregate_type,aggregate_id,payload,
+                status,target_user_id,target_organization_id,dedupe_key,channel_hint
+            )
+            VALUES (
+                gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_CREATED',
+                'INVENTORY_RESERVATION',%s,
+                jsonb_build_object(
+                    'reservation_id',%s,'vendor_product_id',%s,'order_id',%s,
+                    'order_item_id',%s,'quantity',%s,'expires_at',%s,'idempotency_key',%s
+                ),
+                'PENDING',NULL,NULL,%s,'INBOX'
+            )
+            ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+            """,
+            (
+                reservation_id, reservation_id, vendor_product_id, order_id,
+                order_item_id, quantity, expiry, key,
+                f"reservation-created:{reservation_id}"
+            ),
+        )
+
         return {
-                    "id": reservation_id,
-                    "vendor_product_id": vendor_product_id,
-                    "order_id": order_id,
-                    "order_item_id": order_item_id,
-                    "quantity": quantity,
-                    "status": "ACTIVE",
-                    "idempotency_key": key,
-                    "expires_at": expiry,
+            "id": reservation_id,
+            "vendor_product_id": vendor_product_id,
+            "order_id": order_id,
+            "order_item_id": order_item_id,
+            "quantity": quantity,
+            "status": "ACTIVE",
+            "idempotency_key": key,
+            "expires_at": expiry,
             "idempotent_replay": False,
         }
