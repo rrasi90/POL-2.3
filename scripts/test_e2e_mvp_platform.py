@@ -657,8 +657,8 @@ def test_operating_window_uses_its_own_timezone_for_weekday(
             validate_vendor_operational_capacity(cur, allocations)
 
 @pytest.mark.parametrize("instant,allowed", [
-    ("2026-09-17T19:30:00+00:00", True),
-    ("2026-09-17T22:00:00+00:00", False),
+    ("2026-09-16T19:30:00+00:00", True),
+    ("2026-09-16T22:00:00+00:00", False),
 ])
 def test_overnight_order_cutoff_uses_next_day_semantics(
     postgres_database, checkout_catalog, monkeypatch, instant, allowed,
