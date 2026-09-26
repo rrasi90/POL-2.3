@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Header, status
 
 from scripts.api.dependencies import get_application_boundary, require_roles
 from scripts.api.errors import success_payload
-from scripts.api.schemas import DisputeOpenRequest, DisputeResolveRequest
+from scripts.api.schemas import DisputeOpenRequest, DisputeResolveRequest, DisputeTransitionReasonRequest
 
 
 router = APIRouter(prefix="/orders", tags=["disputes"])
@@ -48,7 +48,7 @@ def list_disputes_for_order(
 @disputes_router.post("/{dispute_id}/investigate")
 def investigate_dispute(
     dispute_id: UUID,
-    payload: DisputeResolveRequest,
+    payload: DisputeTransitionReasonRequest,
     boundary=Depends(get_application_boundary),
     _auth=Depends(require_roles("OPS_AGENT","OPS_ADMIN","ADMIN_SUPER","SUPER_ADMIN")),
 ):
@@ -88,7 +88,7 @@ def resolve_dispute(
 @disputes_router.post("/{dispute_id}/close")
 def close_dispute(
     dispute_id: UUID,
-    payload: DisputeResolveRequest,
+    payload: DisputeTransitionReasonRequest,
     boundary=Depends(get_application_boundary),
     _auth=Depends(require_roles("OPS_AGENT","OPS_ADMIN","ADMIN_SUPER","SUPER_ADMIN")),
 ):
