@@ -945,6 +945,28 @@ class POLApplicationBoundary:
         if not self.context.organization_id:
             raise PermissionError("Dispute open requires an organization context.")
 
+        self.cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN organizations org ON org.id = om.organization_id
+            JOIN users u ON u.id = om.user_id
+            WHERE om.user_id = %s
+              AND om.organization_id = %s
+              AND om.status = 'ACTIVE'
+              AND om.role = 'RETAILER_OWNER'
+              AND org.org_type = 'RETAILER'
+              AND org.status = 'ACTIVE'
+              AND u.is_active = TRUE
+            LIMIT 1
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        if not self.cur.fetchone():
+            raise PermissionError(
+                "Formal dispute opening requires an active RETAILER_OWNER membership."
+            )
+
         # Client-facing dispute creation uses the same canonical domain service
         # as the master E2E so settlement, filing-window and outbox rules cannot diverge.
         from scripts.canonical_dispute import CanonicalDisputeService
