@@ -178,3 +178,13 @@ python scripts/run_verification_suite.py
 # 5. Inspect generated machine-readable artifact
 cat artifacts/pol-test-results.json
 ```
+
+
+## Remediation verification additions — 2026-09-26
+
+| Suite | Purpose | Status |
+| :--- | :--- | :---: |
+| `scripts/test_delegated_permissions.py` | D-026/VD-15 effective permissions, privilege ceiling, tenant isolation, grant/revoke idempotency, append-only permission audit | SOURCE READY / FRESH CI PENDING |
+| `scripts/test_media_service.py` | media magic bytes, upload limits, deterministic object keys, presign target binding against retargeting | SOURCE READY / FRESH CI PENDING |
+| `scripts/test_auth_contract.py` | inactive user/org rejection for access and refresh tokens; direct authorization and org-switch guards | SOURCE READY / FRESH CI PENDING |
+| `scripts/test_http_payment_evidence.py` | payment evidence/verification role matrix regression | SOURCE READY / FRESH CI PENDING |
