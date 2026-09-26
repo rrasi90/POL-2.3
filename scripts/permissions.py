@@ -91,6 +91,7 @@ BASE_ROLE_PERMISSIONS = {
         "inventory.scan",
         "price.view",
         "order.view",
+        "order.accept",
         "order.fulfillment",
         "delivery.dispatch",
     }),
