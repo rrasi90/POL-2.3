@@ -1033,6 +1033,451 @@ class DisputeService:
         }
 
 
+    @staticmethod
+    def _record_dispute_event(cur, dispute_id, from_status, to_status, actor_user_id,
+                              organization_id, reason=None, event_data=None):
+        cur.execute(
+            """
+            INSERT INTO dispute_events
+                (dispute_id, from_status, to_status, actor_user_id,
+                 actor_organization_id, reason, event_data)
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+            """,
+            (
+                dispute_id, from_status, to_status, actor_user_id,
+                organization_id, reason, Json(event_data or {}),
+            ),
+        )
+
+    @staticmethod
+    def _notify_dispute_transition(cur, dispute, event_name, actor_user_id, payload):
+        recipients = [
+            (dispute["retailer_org_id"], ("RETAILER_OWNER", "RETAILER_STAFF")),
+            (dispute["vendor_org_id"], ("VENDOR_OWNER", "VENDOR_STAFF")),
+        ]
+        for org_id, roles in recipients:
+            cur.execute(
+                """
+                SELECT om.user_id
+                FROM organization_memberships om
+                JOIN users u ON u.id=om.user_id
+                JOIN organizations o ON o.id=om.organization_id
+                WHERE om.organization_id=%s
+                  AND om.status='ACTIVE'
+                  AND u.is_active=TRUE
+                  AND o.status='ACTIVE'
+                  AND om.role=ANY(%s)
+                ORDER BY om.user_id
+                """,
+                (org_id, list(roles)),
+            )
+            for rec in cur.fetchall():
+                dedupe=f"{event_name}:{dispute['id']}:{org_id}:{rec['user_id']}"
+                event_payload=dict(payload)
+                event_payload["actor_user_id"]=str(actor_user_id)
+                cur.execute(
+                    """
+                    INSERT INTO outbox_events
+                        (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                         target_user_id,target_organization_id,dedupe_key,channel_hint)
+                    VALUES
+                        (gen_random_uuid(),gen_random_uuid(),%s,'DISPUTE',%s,%s,'PENDING',
+                         %s,%s,%s,'INBOX')
+                    ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                    """,
+                    (
+                        event_name, str(dispute["id"]), Json(event_payload),
+                        rec["user_id"], org_id, dedupe,
+                    ),
+                )
+
+    @classmethod
+    def open_dispute_v2(
+        cls, cur, *, order_id, retailer_id, vendor_id, claimed_amount,
+        description, evidence_media_id, items, actor_user_id, organization_id,
+        idempotency_key,
+    ):
+        if not organization_id:
+            raise PermissionError("Dispute requires an organization context.")
+        if not idempotency_key:
+            raise ValueError("Dispute creation requires an idempotency key.")
+        if claimed_amount <= 0:
+            raise ValueError("Dispute claimed amount must be positive.")
+        if not evidence_media_id:
+            raise ValueError("Dispute evidence is required.")
+        if not items:
+            raise ValueError("At least one dispute item is required.")
+
+        fingerprint = hashlib.sha256(json.dumps({
+            "order_id": str(order_id),
+            "claimed_amount_toman": int(claimed_amount),
+            "description": str(description).strip(),
+            "evidence_media_id": str(evidence_media_id),
+            "items": sorted([
+                {
+                    "order_item_id": str(x["order_item_id"]),
+                    "quantity": int(x["quantity"]),
+                    "claimed_amount_toman": int(x["claimed_amount_toman"]),
+                    "reason_code": str(x["reason_code"]),
+                } for x in items
+            ], key=lambda x: x["order_item_id"]),
+        }, sort_keys=True).encode()).hexdigest()
+
+        cur.execute(
+            """
+            SELECT d.*, r.organization_id AS retailer_org_id,
+                   v.organization_id AS vendor_org_id
+            FROM disputes d
+            JOIN retailers r ON r.id=d.retailer_id
+            JOIN vendors v ON v.id=d.vendor_id
+            WHERE d.idempotency_key=%s
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (idempotency_key,),
+        )
+        existing = cur.fetchone()
+        if existing:
+            if str(existing["retailer_id"]) != str(retailer_id):
+                raise PermissionError("Dispute replay does not belong to the active retailer.")
+            if existing["idempotency_fingerprint"] != fingerprint:
+                raise ValueError("Dispute idempotency key was reused with different request data.")
+            return dict(existing, idempotent_replay=True)
+
+        cur.execute(
+            """
+            SELECT o.id, o.order_status, o.retailer_id, o.vendor_id,
+                   r.organization_id AS retailer_org_id,
+                   v.organization_id AS vendor_org_id
+            FROM orders o
+            JOIN retailers r ON r.id=o.retailer_id
+            JOIN vendors v ON v.id=o.vendor_id
+            WHERE o.id=%s
+              AND o.retailer_id=%s
+              AND o.vendor_id=%s
+              AND r.organization_id=%s
+              AND v.organization_id IS NOT NULL
+            FOR UPDATE
+            """,
+            (order_id, retailer_id, vendor_id, organization_id),
+        )
+        order = cur.fetchone()
+        if not order:
+            raise KeyError("Order not found or not in the active retailer tenant.")
+        if order["order_status"] != "DELIVERED":
+            raise ValueError("Dispute can only be opened for a delivered order.")
+
+        cur.execute(
+            """
+            SELECT id, delivered_at, delivery_status
+            FROM deliveries
+            WHERE order_id=%s
+              AND delivery_status='DELIVERED'
+              AND delivered_at IS NOT NULL
+            ORDER BY delivered_at DESC
+            LIMIT 1
+            """,
+            (order_id,),
+        )
+        delivery = cur.fetchone()
+        if not delivery:
+            raise ValueError("Delivered timestamp is required to open a dispute.")
+        if delivery["delivered_at"] < datetime.now(timezone.utc) - timedelta(hours=4):
+            raise ValueError("The four-hour dispute filing window has expired.")
+
+        cur.execute(
+            """
+            SELECT id, status
+            FROM settlements
+            WHERE order_id=%s AND vendor_id=%s
+              AND status IN ('CALCULATED','RECONCILED')
+            ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (order_id, vendor_id),
+        )
+        settlement = cur.fetchone()
+        if not settlement:
+            raise ValueError("No dispute-eligible settlement exists for this order.")
+
+        cur.execute(
+            """
+            SELECT 1 FROM disputes
+            WHERE order_id=%s
+              AND dispute_status IN ('OPEN','INVESTIGATING','RESOLVED')
+            LIMIT 1
+            """,
+            (order_id,),
+        )
+        if cur.fetchone():
+            raise ValueError("An active or unresolved dispute already exists for this order.")
+
+        cur.execute(
+            """
+            SELECT oi.id, oi.delivered_quantity, oi.ordered_quantity, oi.unit_price_toman
+            FROM order_items oi
+            WHERE oi.order_id=%s
+            FOR UPDATE
+            """,
+            (order_id,),
+        )
+        order_items = {str(x["id"]): x for x in cur.fetchall()}
+        if not order_items:
+            raise ValueError("Disputed order has no order items.")
+
+        normalized_items=[]
+        item_claim_total=0
+        for raw in items:
+            item_id=str(raw["order_item_id"])
+            if item_id not in order_items:
+                raise ValueError("Dispute item does not belong to the order.")
+            qty=int(raw["quantity"])
+            item_claim=int(raw["claimed_amount_toman"])
+            if qty <= 0 or item_claim <= 0:
+                raise ValueError("Dispute item quantity and claim must be positive.")
+            delivered=int(order_items[item_id]["delivered_quantity"] or 0)
+            if qty > delivered:
+                raise ValueError("Dispute quantity cannot exceed delivered quantity.")
+            if item_claim > qty * int(order_items[item_id]["unit_price_toman"]):
+                raise ValueError("Dispute item claim exceeds delivered line value.")
+            item_claim_total += item_claim
+            normalized_items.append((item_id, qty, item_claim, str(raw["reason_code"])))
+
+        if item_claim_total != int(claimed_amount):
+            raise ValueError("Dispute item claims must sum exactly to the dispute claimed amount.")
+
+        MediaService.validate_ready_attachment(
+            cur,
+            media_id=str(evidence_media_id),
+            user_id=str(actor_user_id),
+            organization_id=str(organization_id),
+            target_type="DISPUTE",
+            target_id=None,
+        )
+
+        disp_id=str(uuid.uuid4())
+        cur.execute(
+            """
+            INSERT INTO disputes
+                (id,order_id,retailer_id,vendor_id,dispute_status,
+                 claimed_amount_toman,approved_amount_toman,evidence_media_id,
+                 description,idempotency_key,idempotency_fingerprint,created_by_user_id)
+            VALUES (%s,%s,%s,%s,'OPEN',%s,0,%s,%s,%s,%s,%s)
+            RETURNING *
+            """,
+            (
+                disp_id, order_id, retailer_id, vendor_id, claimed_amount,
+                evidence_media_id, description.strip(), idempotency_key,
+                fingerprint, actor_user_id,
+            ),
+        )
+        dispute=dict(cur.fetchone())
+        for item_id, qty, item_claim, reason_code in normalized_items:
+            cur.execute(
+                """
+                INSERT INTO dispute_items
+                    (dispute_id,order_item_id,quantity,claimed_amount_toman,reason_code)
+                VALUES (%s,%s,%s,%s,%s)
+                """,
+                (disp_id, item_id, qty, item_claim, reason_code),
+            )
+
+        cur.execute(
+            "UPDATE orders SET dispute_status='OPEN', updated_at=now() WHERE id=%s",
+            (order_id,),
+        )
+        cur.execute(
+            "UPDATE settlements SET status='DISPUTED' WHERE id=%s AND status IN ('CALCULATED','RECONCILED')",
+            (settlement["id"],),
+        )
+        if cur.rowcount != 1:
+            raise ValueError("Settlement changed state while opening the dispute.")
+
+        cls._record_dispute_event(
+            cur, disp_id, None, "OPEN", actor_user_id, organization_id,
+            reason="Dispute opened",
+            event_data={"claimed_amount_toman": int(claimed_amount)},
+        )
+        cls._notify_dispute_transition(
+            cur, dict(dispute, retailer_org_id=order["retailer_org_id"], vendor_org_id=order["vendor_org_id"]),
+            "DISPUTE_OPENED",
+            actor_user_id,
+            {"dispute_id": disp_id, "order_id": str(order_id),
+             "claimed_amount_toman": int(claimed_amount)},
+        )
+        dispute["id"]=str(dispute["id"])
+        dispute["idempotent_replay"]=False
+        return dispute
+
+    @classmethod
+    def investigate_dispute(cls, cur, *, dispute_id, actor_user_id, organization_id, reason):
+        if not organization_id:
+            raise PermissionError("Dispute investigation requires an organization context.")
+        # Only operator staff can advance into INVESTIGATING.
+        cur.execute(
+            """
+            SELECT 1 FROM organization_memberships om
+            JOIN organizations o ON o.id=om.organization_id
+            WHERE om.user_id=%s AND om.organization_id=%s
+              AND om.status='ACTIVE' AND o.org_type='OPERATOR' AND o.status='ACTIVE'
+              AND om.role=ANY(%s)
+            LIMIT 1
+            """,
+            (actor_user_id, organization_id, ["OPS_AGENT","OPS_ADMIN","ADMIN_SUPER","SUPER_ADMIN"]),
+        )
+        if not cur.fetchone():
+            raise PermissionError("Only active operator staff may investigate disputes.")
+        cur.execute("SELECT * FROM disputes WHERE id=%s FOR UPDATE", (dispute_id,))
+        dispute=cur.fetchone()
+        if not dispute:
+            raise KeyError("Dispute not found.")
+        if dispute["dispute_status"] == "INVESTIGATING":
+            return dict(dispute, idempotent_replay=True)
+        if dispute["dispute_status"] != "OPEN":
+            raise ValueError("Only OPEN disputes may move to INVESTIGATING.")
+        before=dispute["dispute_status"]
+        cur.execute(
+            "UPDATE disputes SET dispute_status='INVESTIGATING', assigned_ops_user_id=%s WHERE id=%s RETURNING *",
+            (actor_user_id, dispute_id),
+        )
+        updated=cur.fetchone()
+        cls._record_dispute_event(cur, dispute_id, before, "INVESTIGATING", actor_user_id, organization_id, reason)
+        cls._notify_dispute_transition(
+            cur, {**dict(updated), "retailer_org_id": None, "vendor_org_id": None},
+            "DISPUTE_INVESTIGATING", actor_user_id,
+            {"dispute_id": str(dispute_id)}
+        )
+        return dict(updated)
+
+    @classmethod
+    def resolve_canonical(cls, cur, *, dispute_id, actor_user_id, organization_id,
+                          outcome, approved_amount, reason):
+        if not organization_id:
+            raise PermissionError("Dispute resolution requires an organization context.")
+        if approved_amount < 0:
+            raise ValueError("Approved amount cannot be negative.")
+        if not reason or not reason.strip():
+            raise ValueError("Resolution reason is required.")
+        allowed = {"ADJUSTED_SHORTAGE":"SHORTAGE_DEDUCTION","REPLACEMENT_ORDER":None,
+                   "REJECTED_CLAIM":None,"MUTUAL_AGREEMENT":"DAMAGE_COMPENSATION"}
+        if outcome not in allowed:
+            raise ValueError("Unsupported dispute resolution outcome.")
+        cur.execute(
+            """
+            SELECT d.*,
+                   s.id AS settlement_id, s.status AS settlement_status,
+                   s.gross_amount_toman, s.commission_amount_toman,
+                   ro.organization_id AS retailer_org_id,
+                   vo.organization_id AS vendor_org_id
+            FROM disputes d
+            JOIN settlements s ON s.order_id=d.order_id AND s.vendor_id=d.vendor_id
+            JOIN retailers r ON r.id=d.retailer_id
+            JOIN vendors v ON v.id=d.vendor_id
+            JOIN organizations ro ON ro.id=r.organization_id
+            JOIN organizations vo ON vo.id=v.organization_id
+            WHERE d.id=%s
+            ORDER BY s.created_at DESC LIMIT 1
+            FOR UPDATE
+            """,
+            (dispute_id,),
+        )
+        d=cur.fetchone()
+        if not d:
+            raise KeyError("Dispute not found.")
+        if d["dispute_status"] == "RESOLVED":
+            return {"id":str(d["id"]),"dispute_status":"RESOLVED",
+                    "approved_amount_toman":int(d["approved_amount_toman"] or 0),
+                    "resolution_outcome":d["resolution_outcome"],"idempotent_replay":True}
+        if d["dispute_status"] != "INVESTIGATING":
+            raise ValueError("Only INVESTIGATING disputes may be resolved.")
+        if approved_amount > int(d["claimed_amount_toman"]):
+            raise ValueError("Approved amount cannot exceed the claimed amount.")
+        if outcome == "REJECTED_CLAIM" and approved_amount != 0:
+            raise ValueError("Rejected claims must have approved amount 0.")
+
+        adjustment_type=allowed[outcome]
+        if adjustment_type and approved_amount > 0:
+            cur.execute(
+                """
+                INSERT INTO settlement_adjustments
+                    (id,settlement_id,dispute_id,adjustment_type,amount_toman,reason,applied_by_user_id)
+                VALUES (%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (str(uuid4()),d["settlement_id"],dispute_id,adjustment_type,
+                 approved_amount,reason.strip(),actor_user_id),
+            )
+
+        cur.execute(
+            """
+            UPDATE disputes
+            SET dispute_status='RESOLVED',
+                resolution_outcome=%s,
+                approved_amount_toman=%s,
+                assigned_ops_user_id=%s,
+                resolved_at=now()
+            WHERE id=%s
+            RETURNING *
+            """,
+            (outcome, approved_amount, actor_user_id, dispute_id),
+        )
+        resolved=cur.fetchone()
+        projection="RESOLVED_ADJUSTED" if approved_amount > 0 else "RESOLVED_REJECTED"
+        cur.execute("UPDATE orders SET dispute_status=%s, updated_at=now() WHERE id=%s",
+                    (projection,d["order_id"]))
+        cls._record_dispute_event(
+            cur, dispute_id, "INVESTIGATING", "RESOLVED", actor_user_id, organization_id, reason,
+            {"outcome": outcome, "approved_amount_toman": int(approved_amount)},
+        )
+        cls._notify_dispute_transition(
+            cur, d, "DISPUTE_RESOLVED", actor_user_id,
+            {"dispute_id": str(dispute_id), "order_id": str(d["order_id"]),
+             "outcome": outcome, "approved_amount_toman": int(approved_amount)},
+        )
+        return {
+            "id":str(resolved["id"]), "order_id":str(resolved["order_id"]),
+            "dispute_status":"RESOLVED", "resolution_outcome":outcome,
+            "approved_amount_toman":int(approved_amount),
+            "settlement_id":str(d["settlement_id"]),
+            "settlement_status":d["settlement_status"],
+            "idempotent_replay":False,
+        }
+
+    @classmethod
+    def close_canonical(cls, cur, *, dispute_id, actor_user_id, organization_id, reason):
+        cur.execute(
+            "SELECT * FROM disputes WHERE id=%s FOR UPDATE",
+            (dispute_id,),
+        )
+        d=cur.fetchone()
+        if not d:
+            raise KeyError("Dispute not found.")
+        if d["dispute_status"] == "CLOSED":
+            return dict(d, idempotent_replay=True)
+        if d["dispute_status"] != "RESOLVED":
+            raise ValueError("Only RESOLVED disputes may be closed.")
+        approved=int(d["approved_amount_toman"] or 0)
+        if approved > 0:
+            cur.execute(
+                """
+                SELECT 1 FROM refunds
+                WHERE dispute_id=%s AND status='COMPLETED'
+                LIMIT 1
+                """,
+                (dispute_id,),
+            )
+            if not cur.fetchone():
+                raise ValueError("Resolved disputes with a positive award require a completed refund before closure.")
+        cur.execute(
+            "UPDATE disputes SET dispute_status='CLOSED', closed_at=now() WHERE id=%s RETURNING *",
+            (dispute_id,),
+        )
+        closed=cur.fetchone()
+        cur.execute("UPDATE orders SET dispute_status='CLOSED', updated_at=now() WHERE id=%s", (d["order_id"],))
+        cls._record_dispute_event(cur, dispute_id, "RESOLVED", "CLOSED", actor_user_id, organization_id, reason)
+        return dict(closed)
+
+
 class NotificationService:
     """Deprecated facade; delegates to the canonical PostgreSQL outbox worker."""
 
