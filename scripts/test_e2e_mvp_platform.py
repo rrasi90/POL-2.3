@@ -394,6 +394,40 @@ def test_media_reference_requires_ready_owner_and_exact_purpose(postgres_databas
             )
 
 
+def test_deleted_media_storage_reconciliation_is_retryable(postgres_database, checkout_catalog):
+    """G-320: deleted DB media is reconciled to object storage and failures remain retryable."""
+    from scripts.media_storage_reconcile_worker import reconcile_deleted_media
+    user_id = checkout_catalog["context"].user_id
+    asset_id = str(uuid4())
+    variant_id = str(uuid4())
+    class FakeS3:
+        def __init__(self): self.deleted = []
+        def delete_object(self, Bucket, Key): self.deleted.append((Bucket, Key))
+    fake = FakeS3()
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            """INSERT INTO media_assets
+               (id, storage_bucket, storage_key, bucket_name, object_key, mime_type, file_size_bytes, checksum_sha256, status, provenance, uploaded_by_user_id)
+               VALUES (%s, 'pol-media', %s, 'pol-media', %s, 'image/webp', 1024, %s, 'DELETED', 'POL_OWNED', %s)""",
+            (asset_id, f"g320/{asset_id}", f"g320/{asset_id}", "a" * 64, user_id),
+        )
+        cur.execute(
+            """INSERT INTO media_variants
+               (id, source_media_asset_id, variant_type, storage_bucket, storage_key, mime_type, file_size_bytes, width, height, checksum_sha256)
+               VALUES (%s,%s,'THUMBNAIL','pol-media',%s,'image/webp',100,150,150,%s)""",
+            (variant_id, asset_id, f"g320/{variant_id}", "b" * 64),
+        )
+        result = reconcile_deleted_media(cur, s3_client_factory=lambda: fake, batch_size=10)
+        assert result == {"scanned": 1, "reconciled": 1, "failures": 0}
+        assert len(fake.deleted) == 2
+        cur.execute("SELECT storage_deleted_at, storage_delete_error FROM media_assets WHERE id=%s", (asset_id,))
+        asset = cur.fetchone()
+        assert asset["storage_deleted_at"] is not None
+        assert asset["storage_delete_error"] is None
+        cur.execute("SELECT storage_deleted_at FROM media_variants WHERE id=%s", (variant_id,))
+        assert cur.fetchone()["storage_deleted_at"] is not None
+
+
 def persist_request(cur, catalog):
     basket = insert_row(cur, "baskets", retailer_id=catalog["retailer_id"], status="OPEN", version=1)
     basket_items = []
