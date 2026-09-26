@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from uuid import uuid4
+import hashlib
 
 from psycopg2.extras import Json
 
@@ -101,6 +102,11 @@ class RefundService:
         if amount_toman <= 0:
             raise ValueError("Refund amount must be positive.")
 
+        request_reason = reason.strip()
+        base_fingerprint = lambda pid: hashlib.sha256(
+            f"{dispute_id}:{amount_toman}:{pid}:{request_reason}".encode()
+        ).hexdigest()
+
         cur.execute(
             """
             SELECT * FROM refunds
@@ -113,6 +119,9 @@ class RefundService:
         if existing:
             if str(existing["dispute_id"]) != str(dispute_id):
                 raise ValueError("Refund idempotency key is bound to another dispute.")
+            existing_fp = existing.get("idempotency_fingerprint")
+            if existing_fp and existing_fp != base_fingerprint(existing["payment_id"]):
+                raise ValueError("Refund idempotency key was reused with different request data.")
             return dict(existing, idempotent_replay=True)
 
         cur.execute(
@@ -198,15 +207,15 @@ class RefundService:
             """
             INSERT INTO refunds
                 (id,order_id,payment_id,dispute_id,retailer_id,amount_toman,
-                 refund_method,reason,status,created_by_user_id,idempotency_key)
-            VALUES (%s,%s,%s,%s,%s,%s,'BANK_REVERSAL',%s,'PENDING',%s,%s)
+                 refund_method,reason,status,created_by_user_id,idempotency_key,idempotency_fingerprint)
+            VALUES (%s,%s,%s,%s,%s,%s,'BANK_REVERSAL',%s,'PENDING',%s,%s,%s)
             RETURNING *
             """,
             (
                 str(uuid4()), dispute["order_id"], payment["id"], dispute_id,
                 dispute["retailer_id"], amount_toman,
                 reason.strip() or f"Dispute refund {dispute_id}",
-                actor_user_id, idempotency_key,
+                actor_user_id, idempotency_key, base_fingerprint(payment["id"]),
             ),
         )
         refund = dict(cur.fetchone())
@@ -445,11 +454,9 @@ class RefundService:
             """
             SELECT r.*
             FROM refunds r
-            JOIN retailers rt ON rt.id=r.retailer_id
-            WHERE rt.organization_id=%s
             ORDER BY r.created_at DESC
             LIMIT %s OFFSET %s
             """,
-            (organization_id, limit, offset),
+            (limit, offset),
         )
         return {"refunds": [dict(r) for r in cur.fetchall()], "limit": limit, "offset": offset}
