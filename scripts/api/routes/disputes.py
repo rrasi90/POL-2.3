@@ -73,6 +73,7 @@ def resolve_dispute(
     dispute_id: UUID,
     payload: DisputeResolveRequest,
     boundary=Depends(get_application_boundary),
+    _auth=Depends(require_roles("OPS_ADMIN","ADMIN_SUPER","SUPER_ADMIN")),
 ):
     return success_payload(
         boundary.dispute_resolve(
