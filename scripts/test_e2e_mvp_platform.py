@@ -20,7 +20,7 @@ from scripts.migration_runner import apply_migration_chain, get_migration_chain
 from scripts import operational_policies
 from scripts.operational_policies import AllocationIntegrityError, validate_vendor_operational_capacity
 from scripts.privacy_lifecycle import PrivacyLifecycleService
-from scripts.media_service import MediaService
+from scripts.media_service import MediaService, MediaError, validate_ready_attachment
 
 
 @pytest.fixture
@@ -360,6 +360,38 @@ def test_resumable_media_session_and_processing_pipeline(postgres_database, chec
         assert variant["variant_type"] == "THUMBNAIL"
         assert (variant["width"], variant["height"]) == (150, 150)
         assert len(variant["checksum_sha256"]) == 64
+
+
+def test_media_reference_requires_ready_owner_and_exact_purpose(postgres_database, checkout_catalog):
+    """G-319: a media reference must be READY, owned and bound to the exact target type/id."""
+    user_id = checkout_catalog["context"].user_id
+    delivery_id = str(uuid4())
+    with transaction(postgres_database) as cur:
+        media = insert_row(
+            cur, "media_assets", storage_provider="S3_MINIO", storage_bucket="pol-media",
+            storage_key=f"g319/{uuid4()}", bucket_name="pol-media", object_key=f"g319/{uuid4()}",
+            mime_type="image/webp", file_size_bytes=1024, checksum_sha256="a" * 64,
+            status="READY", provenance="POL_OWNED", uploaded_by_user_id=user_id,
+            upload_target_type="DELIVERY", upload_target_id=delivery_id,
+        )
+        validated = validate_ready_attachment(
+            cur, media_id=str(media["id"]), user_id=user_id,
+            organization_id=checkout_catalog["context"].organization_id,
+            target_type="DELIVERY", target_id=delivery_id,
+        )
+        assert validated["status"] == "READY"
+        with pytest.raises(MediaError, match="purpose does not match"):
+            validate_ready_attachment(
+                cur, media_id=str(media["id"]), user_id=user_id,
+                organization_id=checkout_catalog["context"].organization_id,
+                target_type="DISPUTE", target_id=delivery_id,
+            )
+        with pytest.raises(MediaError, match="not bound to the requested target"):
+            validate_ready_attachment(
+                cur, media_id=str(media["id"]), user_id=user_id,
+                organization_id=checkout_catalog["context"].organization_id,
+                target_type="DELIVERY", target_id=str(uuid4()),
+            )
 
 
 def persist_request(cur, catalog):
