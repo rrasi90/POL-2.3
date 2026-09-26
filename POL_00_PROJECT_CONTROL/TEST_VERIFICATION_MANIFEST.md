@@ -48,7 +48,7 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
   2. Python dependency availability (`psycopg2`, `pytest`).
   3. SQL migration chain files (`001_initial_schema.sql`, `002_platform_core_schema.sql`, `003_contract_reconciliation.sql`).
   4. PostgreSQL 18 connection on port 5432/5433 (via `POL_PG_PORT` or `PGPORT`).
-  5. Target database schema integrity (56 canonical tables).
+  5. Target database schema integrity against the declared migration chain and canonical required-table set.
   6. Trigger integrity (`trg_enforce_org_membership_role_invariant`).
 - **CLI Commands:**
   ```bash
@@ -83,11 +83,11 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 
 ---
 
-## 4. Test Suites Master Catalog (20 Suites / 47 Items)
+## 4. Test Suites Master Catalog (Current Branch Registry)
 
 | # | Suite File | Tests | Category | DB Req | Target Domain & Invariants Verified |
 | :-: | :--- | :-: | :---: | :---: | :--- |
-| **01** | `scripts/test_postgres_migrations.py` | 1 | MIGRATION | Real PG 18 | Migration chain integrity; Fresh install (62 tables across 001-004) + Incremental upgrade |
+| **01** | `scripts/test_postgres_migrations.py` | 1 | MIGRATION | Real PG 18 | Dynamic forward-only migration chain; clean install + incremental upgrade; current 047/048 schema assertions |
 | **02** | `scripts/test_postgres_runtime.py` | 1 | RUNTIME | Real PG 18 | 33 Mission-Critical Runtime Scenarios (15 Retailer, 10 Vendor, 8 Allocation/Gov) |
 | **03** | `scripts/test_identity_tenant_isolation.py` | 6 | IAM/ISOLATION | Real PG 18 | Multi-org tenant boundaries; Section 11 role matrix; Section 13 non-authoritative `users.role`; Section 14 multi-org sessions; Section 15 legacy links; Section 16 negative cross-tenant attack matrix |
 | **04** | `scripts/test_postgres_concurrency.py` | 9 | CONCURRENCY | Real PG 18 | 9 ACID race scenarios: inventory race, duplicate checkout, scarce stock, vendor accept, dispatch creation, refund, dispute creation, vendor isolation, stale price |
@@ -147,6 +147,7 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 - **Workflow File:** `.github/workflows/pol-verification.yml`
 - **Trigger:** `push` and `pull_request` on `main`.
 - **Runner:** `ubuntu-latest` with container service `postgres:18-alpine`.
+- **Current remediation status:** source-level suites added for delegated permissions, media target binding, authentication principal-state guards, and payment RBAC. Fresh CI/runtime evidence remains a separate release gate.
 - **Execution Sequence in CI:**
   1. Checkout code (`actions/checkout@v4`).
   2. Setup Python 3.11 (`actions/setup-python@v5`).
