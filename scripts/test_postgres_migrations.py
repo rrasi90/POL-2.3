@@ -472,6 +472,7 @@ def verify_financial_dispute_remediation(conn):
         ("refunds", "created_by_user_id"),
         ("refunds", "source_type"),
         ("settlement_adjustments", "refund_id"),
+        ("payment_evidence", "evidence_media_id"),
     ):
         cur.execute(
             """
@@ -499,6 +500,7 @@ def verify_financial_dispute_remediation(conn):
         ("dispute_events", "trg_dispute_events_append_only_v058"),
         ("disputes", "trg_validate_dispute_adjudication_v062"),
         ("refunds", "trg_completed_refund_payment_v058"),
+        ("payment_evidence", "trg_validate_payment_evidence_media_v064"),
     ):
         cur.execute(
             """
