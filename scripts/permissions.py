@@ -430,7 +430,9 @@ def membership_permissions(cur, actor_user_id: str, organization_id: str, target
     if not target:
         raise KeyError("Target membership not found.")
 
-    base = sorted(BASE_ROLE_PERMISSIONS.get(canonical_role(target["role"]), frozenset()))
+    target_role = canonical_role(target["role"])
+    denied = _denied_delegated_permissions(target_role)
+    base = sorted(BASE_ROLE_PERMISSIONS.get(target_role, frozenset()))
     cur.execute(
         """
         SELECT id, permission_key, status, granted_at, revoked_at,
@@ -454,7 +456,11 @@ def membership_permissions(cur, actor_user_id: str, organization_id: str, target
         if item["revoked_at"]:
             item["revoked_at"] = item["revoked_at"].isoformat()
         grants.append(item)
-        if item["status"] == "GRANTED":
+        if (
+            item["status"] == "GRANTED"
+            and item["permission_key"] in CANONICAL_PERMISSIONS
+            and item["permission_key"] not in denied
+        ):
             granted.add(item["permission_key"])
 
     return {
@@ -465,10 +471,10 @@ def membership_permissions(cur, actor_user_id: str, organization_id: str, target
         "role": target["role"],
         "base_permissions": base,
         "delegatable_permissions": sorted(
-            set(CANONICAL_PERMISSIONS) - set(_denied_delegated_permissions(target["role"]))
+            set(CANONICAL_PERMISSIONS) - set(denied)
         ),
         "grantable_permissions": sorted(
-            set(actor["permissions"]) - set(_denied_delegated_permissions(target["role"]))
+            set(actor["permissions"]) - set(denied)
         ),
         "delegated_grants": grants,
         "effective_permissions": sorted(granted),
