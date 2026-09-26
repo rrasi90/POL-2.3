@@ -82,6 +82,7 @@ const checks = [
     const account = read("screens/AccountMobileScreen.tsx");
     return theme.includes("ThemeProvider") && app.includes("<ThemeProvider>") && account.includes('setMode("night")');
   }],
+  ["Retailer checkout reconciles stale basket conflicts from current server basket", () => { const s = read("screens/RetailerMobileScreen.tsx"); return s.includes("ApiError") && s.includes("e.status === 409") && s.includes("/api/v1/baskets/current") && s.includes("setAllocation(null)"); }],
   ["F-03 catalog uses the required q parameter and canonical product fields", () => {
     const s = read("screens/AssistedOrderScreen.tsx");
     return s.includes("if (!q) {") && s.includes("canonical_name_fa") && s.includes("master_sku");
