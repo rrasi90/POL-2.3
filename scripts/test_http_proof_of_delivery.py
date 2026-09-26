@@ -179,6 +179,41 @@ class TestOTPVerification:
         assert resp.json()["success"] is False
 
 
+class TestOTPAttemptCap:
+    def test_otp_attempt_limit(self, client):
+        data = _seed_dispatched(uuid4().hex[:8], "1234")
+        for _ in range(5):
+            resp = client.post(
+                f"/api/v1/orders/{data['oi']}/deliver",
+                headers={"Authorization": f"Bearer {data['r_token']}"},
+                json={"recipient_name": "Reza", "otp_code": "9999"},
+            )
+            assert resp.status_code == 422
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/deliver",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"recipient_name": "Reza", "otp_code": "1234"},
+        )
+        assert resp.status_code == 422
+
+
+class TestDeliveredQuantities:
+    def test_delivered_quantity_above_ordered_rejected(self, client):
+        data = _seed_dispatched(uuid4().hex[:8], "1234")
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/deliver",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={
+                "recipient_name": "Reza",
+                "otp_code": "1234",
+                "delivered_items": [
+                    {"order_item_id": data["item_id"], "delivered_quantity": 11}
+                ],
+            },
+        )
+        assert resp.status_code == 422
+
+
 class TestProofType:
     def test_deliver_with_signature_proof(self, client):
         data = _seed_dispatched(uuid4().hex[:8])
