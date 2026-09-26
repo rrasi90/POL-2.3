@@ -235,7 +235,16 @@ HTTP may also set `X-Correlation-ID`.
 | GET | `/storefront/vendors/{vendor_id}` |
 | GET | `/storefront/vendors/{vendor_id}/products` |
 
-### 3.18 Operational
+### 3.19 Media — `media.py` (`/media`)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/media/presigned-url` | Single-object quarantine upload; confirm validates content before READY |
+| POST | `/media/confirm-upload` | Magic-byte + decode + WebP + metadata stripping + trusted derivative processing |
+| POST | `/media/resumable/init` | S3-compatible multipart upload session with presigned part URLs |
+| POST | `/media/resumable/complete` | Completes multipart session; caller then uses canonical confirm/processing contract |
+
+### 3.20 Operational
 
 | Method | Path |
 |--------|------|
