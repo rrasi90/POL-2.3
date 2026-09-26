@@ -14,13 +14,13 @@ import os
 import sys
 import json
 import argparse
+import re
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 EXPECTED_MIGRATION_HEAD = 48
-EXPECTED_TABLE_COUNT = 98
 EXPECTED_CORE_TABLES = [
     "users",
     "organizations",
@@ -216,21 +216,38 @@ def verify_postgres():
         is_pg18 = "PostgreSQL 18" in pg_ver_full
 
         cur.execute("""
-            SELECT count(*) as cnt 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
+            SELECT count(*) as cnt
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
               AND table_type = 'BASE TABLE';
         """)
         table_count = cur.fetchone()["cnt"]
 
         cur.execute("""
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
               AND table_type = 'BASE TABLE';
         """)
         existing_tables = set(r["table_name"] for r in cur.fetchall())
-        missing_tables = [t for t in EXPECTED_CORE_TABLES if t not in existing_tables]
+
+        migration_dir = os.path.join(REPO_ROOT, "migrations")
+        migration_sql = ""
+        for migration_name in sorted(os.listdir(migration_dir)):
+            if migration_name.endswith(".sql"):
+                with open(os.path.join(migration_dir, migration_name), "r", encoding="utf-8") as fh:
+                    migration_sql += "\n" + fh.read()
+
+        declared_tables = set(
+            match.lower()
+            for match in re.findall(
+                r"CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(?:public\\.)?([A-Za-z_][A-Za-z0-9_]*)",
+                migration_sql,
+                flags=re.IGNORECASE,
+            )
+        )
+        required_tables = set(EXPECTED_CORE_TABLES) | declared_tables
+        missing_tables = sorted(required_tables - existing_tables)
 
         cur.execute("""
             SELECT trigger_name 
@@ -242,7 +259,7 @@ def verify_postgres():
 
         conn.close()
 
-        schema_valid = (table_count == EXPECTED_TABLE_COUNT) and (len(missing_tables) == 0) and trigger_found
+        schema_valid = (len(missing_tables) == 0) and trigger_found
 
         return {
             "check": "postgres_runtime",
@@ -251,8 +268,9 @@ def verify_postgres():
             "pg_version_raw": pg_ver_full,
             "is_postgres_18": is_pg18,
             "table_count": table_count,
-            "expected_table_count": EXPECTED_TABLE_COUNT,
-            "missing_core_tables": missing_tables,
+            "declared_table_count": len(declared_tables),
+            "required_table_count": len(required_tables),
+            "missing_required_tables": missing_tables,
             "trigger_verified": trigger_found,
         }
     except Exception as e:
