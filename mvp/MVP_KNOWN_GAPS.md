@@ -461,7 +461,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-333 | P1 | Allocation behavior for K>=3 vendors is not fully covered by deterministic tests. | RESOLVED_CODE / EXECUTION_PENDING — regression 12964486 |
 | G-334 | P1 | Allocation-result identity/hash does not fully cover canonical input/decision identity. | RESOLVED_CODE / EXECUTION_PENDING — source 6dcaa74c/9377e38a/b8b673ea/0c759d1c/a3d0a358/cba145bd; regression 12964486 |
 | G-335 | P1 | Allocation regression coverage is incomplete for adversarial/tie/packing cases. | RESOLVED_CODE / EXECUTION_PENDING — regression 12964486 |
-| G-336 | P1 | Reservation-expiry worker/runtime path is not fully evidenced as canonical. | OPEN |
+| G-336 | P1 | Reservation-expiry worker/runtime path is not fully evidenced as canonical. | RESOLVED_CODE / EXECUTION_PENDING — worker existing + boundary 621b170a; regression 3ecea65c |
 | G-337 | P1 | Retailer cancellation/release of active reservation is incomplete. | OPEN |
 | G-338 | P1 | Reservation time semantics are not fully aligned with the canonical checkout/Journey timing contract. | OPEN |
 | G-339 | P1 | Reservation lifecycle tests rely too heavily on direct SQL seeding rather than canonical runtime commands. | OPEN |
@@ -716,3 +716,9 @@ At the end of each closed item, the ledger must contain:
 - **Resolution:** Adversarial tie/pack reproducibility is covered for 100 repeated allocations with reversed SKU input order.
 - **Evidence:** Test 13F in scripts/test_allocation_engine.py; commit 129644862a13550f610e6e4ef8f53b71ae9b3563
 - **Verification state:** code/regression persisted; fresh CI/runtime execution remains pending.
+
+### G-336 Closure Record
+- **Resolution:** canonical `ReservationExpiryWorker.process_expired` now serves as the reservation-expiry command path; it claims due ACTIVE reservations with row locks, locks inventory, rejects reserved-quantity underflow, releases inventory, transitions reservation to EXPIRED, writes inventory audit evidence and emits `INVENTORY_RESERVATION_EXPIRED` to the outbox in the same transaction. The application boundary exposes this as an Ops maintenance command.
+- **Boundary commit:** `621b170a81da5967fbff1d2df286388c8d03b9a3`
+- **Regression commit:** `3ecea65c1b58378dc2acbd91b829fd95e8567cef`
+- **Verification state:** source + regression persisted; fresh PostgreSQL execution/central scheduler evidence remains pending.
