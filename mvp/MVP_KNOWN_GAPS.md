@@ -444,7 +444,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-312 | P1 | Admin audit immutability is not DB-enforced against UPDATE/DELETE. | RESOLVED — migration 049 / 6dd3791e; regression 03979c4c |
 | G-313 | P1 | Inventory audit history can be cascaded away through `vendor_product_id`. | RESOLVED — migration 050 / 4a87a750; regression b3008be1 |
 | G-314 | P1 | Notification retention/expiry is not canonically populated and no auto-archive worker is evidenced. | RESOLVED — migration 051 / d209963c; worker 63adf6d1; regression 061c7d88 |
-| G-315 | P1 | Privacy export/account-deletion lifecycle lacks a runtime API/workflow. | OPEN |
+| G-315 | P1 | Privacy export/account-deletion lifecycle lacks a runtime API/workflow. | RESOLVED — migration 052 / 1603218e; service c8d01227; HTTP a74da82a; route registry 7ee49596; regression 1fbf3511 |
 | G-316 | P1 | Runtime media schema diverges from canonical media specification; approval/provenance/media-type/checksum semantics are incomplete. | OPEN |
 | G-317 | P1 | Public product-media serving lacks canonical approval/provenance/private-reference gating. | OPEN |
 | G-318 | P1 | Canonical media ingestion pipeline (presign → confirm → validate → process → thumbnail/resumable) is not fully implemented/evidenced. | OPEN |
@@ -594,3 +594,18 @@ At the end of each closed item, the ledger must contain:
 - **Worker commit:** `63adf6d11911afebfc6fa0daf67b491250350a73`
 - **Regression commit:** `061c7d883c37b63f9ba89beb7d890bb0f5e88886`
 - **Verification state:** SOURCE + DB RETENTION RULE + WORKER + REGRESSION PERSISTED; fresh CI remains separate.
+
+### G-315 Closure Record
+- **Resolution:** added canonical `privacy_requests` lifecycle, authenticated export endpoint and authenticated account-deletion endpoint. Export returns a user-scoped versioned snapshot and persists only its SHA-256; deletion revokes sessions/devices/active consents and de-identifies direct identity/profile data while preserving business/financial/audit referential integrity.
+- **HTTP:** `POST /api/v1/privacy/export`, `POST /api/v1/privacy/deletion`; registered in FastAPI route inventory and canonical API map/contract.
+- **Regression:** `test_privacy_export_and_deletion_lifecycle` covers export scoping, checksum presence, de-identification, session/device/consent revocation, and persistence of membership/history.
+- **Migration commit:** `1603218e6be3b84c30cd53736e3e06c58e43fc5b`
+- **Service commit:** `c8d0122718003d8c184ed9c6d0001207f67451cf`
+- **HTTP route commit:** `a74da82a84864bb491f1764bf1d53e5d7a297f36`
+- **Boundary commit:** `58880d1f392de8710c57a9868362f2eccde369e1`
+- **Schema commit:** `0c34f4ce66189976bc2a066faca05ea7103cfdec`
+- **Route registry commit:** `7ee4959676a73b2a88330008cbf56b8971f84bba`
+- **API map commit:** `b2830f7a16dfa2374cefad6d5c23a14d9817ca59`
+- **API contract commit:** `df6b40d86e3a95dab5bdec381e3d5afdb7f4b86f`
+- **Regression commit:** `1fbf3511d4656422de304eb14d7a8bccc761ef69`
+- **Verification state:** SOURCE + DB LIFECYCLE + HTTP ROUTES + REGRESSION PERSISTED; fresh CI still pending.
