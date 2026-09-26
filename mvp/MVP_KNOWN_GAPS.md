@@ -468,7 +468,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-340 | P1 | Reservation concurrency is not fully verified through the real runtime path. | RESOLVED_CODE / EXECUTION_PENDING — ReservationService dbb01751→dbf9f0a1; concurrency 536f6e7a |
 | G-341 | P1 | Reservation idempotency is not DB-enforced end-to-end. | RESOLVED_CODE / EXECUTION_PENDING — migration 056 a3b976a4; service dbf9f0a1; concurrency 536f6e7a |
 | G-342 | P1 | Reservation and inventory reserved_quantity reconciliation invariant is incomplete. | RESOLVED_CODE / EXECUTION_PENDING — migration 057 43380c08; concurrency ecb42e20 |
-| G-343 | P1 | Reservation lifecycle needs an independent durable event/audit record rather than inference only. | OPEN |
+| G-343 | P1 | Reservation lifecycle needs an independent durable event/audit record rather than inference only. | RESOLVED_CODE / EXECUTION_PENDING — 24b27330/7dde8adf/fa4d1a82 + regressions 3db5ebc5/1474189e/38c10528 |
 | G-179..G-195 | P1/P2 | Earlier Return/RMA and Audit/Event deep-audit findings covering return client contract, cumulative ceilings, refund evidence/approval, replay/idempotency, dispute-outbox routing, audit/event envelope, sequence/lineage, poison-event isolation and read-only Ops behavior. | OPEN |
 
 ## B. Later audit ranges previously found but not atomically recovered into the canonical repo register
@@ -760,3 +760,9 @@ At the end of each closed item, the ledger must contain:
 - **Resolution:** Deferred PostgreSQL constraint trigger enforces vendor_inventory.reserved_quantity = SUM(ACTIVE reservation quantity) at transaction commit; regression proves mismatched direct mutation is rejected.
 - **Evidence:** 43380c08d752e3dcfe4dca70d5d84a3c5ac9a00d; ecb42e201b31ffb7f99222e522cd645b5c2d4421
 - **Verification state:** code + regression persisted; fresh PostgreSQL/CI execution remains pending.
+
+### G-343 Closure Record
+- **Resolution:** reservation lifecycle now emits independent durable outbox events for `INVENTORY_RESERVATION_CREATED`, `INVENTORY_RESERVATION_CONSUMED`, `INVENTORY_RESERVATION_RELEASED`, and `INVENTORY_RESERVATION_EXPIRED`. Release events cover retailer cancellation and vendor acceptance timeout; consumption covers full vendor acceptance and partial acceptance; shortage release in partial acceptance emits a distinct release event. Canonical architecture event catalog has been updated.
+- **Source commits:** `24b273301cc114d31348ea16cbc94c1ab79159f1`, `7dde8adf442d1ea0b205d1407e6c7099c3d6a04f`, `fa4d1a82a37d5daa3e47d631f3c7b33b182bd592`.
+- **Regression commits:** `3db5ebc525cdcdcfc0aa93e532ce319e7b80cb79`, `1474189e4e019e80df4b56a2229feed5aaa7a297`, `38c105283c3d4757d4c84342318e44fbd18abf57`.
+- **Verification state:** source + architecture + regression evidence persisted; fresh PostgreSQL/CI execution remains pending.
