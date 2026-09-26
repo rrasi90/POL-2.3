@@ -170,21 +170,27 @@ class AuthService:
             raise PermissionError("OTP identity does not match requested user.")
 
         cur.execute("""
-            SELECT role
-            FROM organization_memberships
-            WHERE user_id = %s
-              AND organization_id = %s
-              AND status = 'ACTIVE';
+            SELECT m.role, o.status AS organization_status
+            FROM organization_memberships m
+            JOIN organizations o ON o.id = m.organization_id
+            WHERE m.user_id = %s
+              AND m.organization_id = %s
+              AND m.status = 'ACTIVE'
+              AND o.status = 'ACTIVE';
         """, (user_id, active_org_id))
         requested_membership = cur.fetchone()
         if not requested_membership:
             raise PermissionError("User has no active membership in the selected organization.")
 
-        # Serialize verification on the active challenge so one OTP cannot be
-        # accepted successfully by concurrent requests.
+        # Serialize verification on the active login/register challenge so an
+        # OTP minted for ORDER_CONFIRMATION / DELIVERY_CONFIRM can never become
+        # an authentication credential.
         cur.execute("""
             SELECT * FROM otp_challenges
-            WHERE phone_number = %s AND status = 'PENDING' AND expires_at > now()
+            WHERE phone_number = %s
+              AND purpose IN ('LOGIN', 'REGISTER')
+              AND status = 'PENDING'
+              AND expires_at > now()
             ORDER BY created_at DESC
             LIMIT 1
             FOR UPDATE;
