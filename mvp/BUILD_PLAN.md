@@ -15,7 +15,7 @@
 | Step | Name | Status | Notes |
 |------|------|--------|-------|
 | 1 | Infra / DB | **DONE** (2026-09-23) | Host PostgreSQL 18 owns schema: `pol` (live API, 95 tables, migrations 001–031 applied) + `pol_test` (suite, 95 tables). Docker container `pol_test` = 0 tables (ignore). Full research suite collected 497 tests. |
-| 2 | Open decisions | **PARTIAL** | Resolved: D-014/015/016/017/021–025 and barcode/runtime remediation. Remaining explicit decisions: D-018 refresh-token rotation policy, invoice timing, D-024 storefront write scope, plus external design/observability/provider dependencies → §2. |
+| 2 | Open decisions | **PARTIAL** | Remaining explicit decisions: D-018 refresh-token rotation policy, invoice timing, plus external design/observability/provider dependencies → §2. D-024 is read/order scope; D-026 delegated permissions are implemented pending fresh runtime evidence. |
 | 3 | Phase 0 + GATE 0 | **DONE** | Artifacts + skeleton; typecheck/build green. |
 | 4 | Phase 1 foundation + design system | **DONE** | tokens, ui package, shell, middleware role gates. |
 | 5 | Full Web MVP | **IMPLEMENTED / PARTIAL E2E** | Current screen matrix remains the authoritative capability ledger; management/customer/staff/candidate surfaces are now source-implemented. Historical cycle-5 counts remain historical evidence only. |
@@ -80,7 +80,7 @@
 | PG 18 canonical | D-015 | **RESOLVED** | host PG 18.2 |
 | Refresh-token rotation | D-018 note | **SOURCE IMPLEMENTED / POLICY OPEN** | Current source rotates refresh tokens and rejects replay; product/security policy remains an explicit D-018 decision and is not inferred from implementation |
 | Invoice timing | consolidated plan | **OPEN** | default: invoice on order ACCEPTED per existing finance routes; confirm before finance e2e |
-| Storefront write fields | D-024 | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
+| Storefront write scope | D-024 Vendor Discovery | **READ/ORDER ONLY** | D-024 defines the storefront as a first-class read/order surface. No canonical storefront-write field contract exists; do not invent one. |
 | Delegated permissions | ops permissions | **SOURCE IMPLEMENTED / POLICY OPEN** | OP-11 exposes the canonical permission catalog; delegated permission assignment remains unspecified and is not invented. |
 | Design-tool / OpenPencil MCP | WAVE-02 | **BLOCKED_EXTERNAL** | start OpenPencil app or continue without design-board WAVE-02 |
 | Catalog path `/products/search` vs `/catalog/search` | G-003 | **RESOLVED / DUAL COMPATIBILITY** | both canonical public HTTP paths are registered; current retailer screen uses `/catalog/search` |
