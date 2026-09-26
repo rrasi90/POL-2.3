@@ -259,6 +259,36 @@ def test_privacy_export_and_deletion_lifecycle(postgres_database, checkout_catal
         assert cur.fetchone()["status"] == "COMPLETED"
 
 
+def test_media_schema_alignment_and_governance_fields(postgres_database, checkout_catalog):
+    """G-316: canonical media storage aliases and product-media governance fields exist at DB boundary."""
+    user_id = checkout_catalog["context"].user_id
+    product_id = checkout_catalog["lines"][0]["product_id"]
+    with transaction(postgres_database) as cur:
+        media = insert_row(
+            cur, "media_assets", storage_provider="S3_MINIO", storage_bucket="pol-media",
+            storage_key=f"quarantine/g316/{uuid4()}", bucket_name="pol-media",
+            object_key=f"quarantine/g316/{uuid4()}", mime_type="image/webp",
+            file_size_bytes=1024, status="UPLOADING", provenance="VENDOR_UPLOADED",
+            uploaded_by_user_id=user_id,
+        )
+        cur.execute("SELECT storage_bucket, bucket_name, storage_key, object_key, checksum_sha256 FROM media_assets WHERE id=%s", (media["id"],))
+        stored = cur.fetchone()
+        assert stored["bucket_name"] == stored["storage_bucket"]
+        assert stored["object_key"] == stored["storage_key"]
+        assert stored["checksum_sha256"] is None
+
+        pm = insert_row(
+            cur, "product_media", product_id=product_id, media_asset_id=media["id"],
+            media_type="PRIMARY_IMAGE", source_provenance="VENDOR_UPLOADED",
+            approval_status="PENDING", is_primary=False, display_order=0,
+        )
+        cur.execute("SELECT media_type, source_provenance, approval_status FROM product_media WHERE id=%s", (pm["id"],))
+        row = cur.fetchone()
+        assert row["media_type"] == "PRIMARY_IMAGE"
+        assert row["source_provenance"] == "VENDOR_UPLOADED"
+        assert row["approval_status"] == "PENDING"
+
+
 def persist_request(cur, catalog):
     basket = insert_row(cur, "baskets", retailer_id=catalog["retailer_id"], status="OPEN", version=1)
     basket_items = []
