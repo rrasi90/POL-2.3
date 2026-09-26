@@ -43,7 +43,7 @@ def create_order(
     payload: CheckoutRequest,
     idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=128),
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER"))] = None,
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "RETAILER_STAFF"))] = None,
 ):
     return success_payload(
         boundary.checkout_from_allocation_plan(
@@ -129,7 +129,7 @@ def approve_partial_acceptance(
     order_id: UUID,
     proposal_id: UUID,
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER"))] = None,
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "RETAILER_STAFF"))] = None,
 ):
     return success_payload(
         boundary.retailer_partial_acceptance_approve(
