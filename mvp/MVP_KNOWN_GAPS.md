@@ -439,7 +439,7 @@ This section is the persistent intake ledger for findings previously identified 
 |---|---:|---|---|
 | G-308 | P1 | Operating-window selection can resolve weekday from capacity timezone before applying the window timezone; deterministic cross-timezone semantics are incomplete. | RESOLVED — source fix a4683721; regression 4fc8804e |
 | G-309 | P1 | Cross-midnight operating windows do not resolve the previous weekday after midnight. | RESOLVED — source logic introduced with G-308; regression e64ea3bd |
-| G-310 | P1 | Overnight `order_cutoff_at` lacks day-offset/instant semantics. | OPEN |
+| G-310 | P1 | Overnight `order_cutoff_at` lacks day-offset/instant semantics. | RESOLVED — source ad8b827e; regression 570a6452 |
 | G-311 | P1 | Daily/hourly vendor capacity is check-then-act and lacks atomic reservation/invariant enforcement. | OPEN |
 | G-312 | P1 | Admin audit immutability is not DB-enforced against UPDATE/DELETE. | OPEN |
 | G-313 | P1 | Inventory audit history can be cascaded away through `vendor_product_id`. | OPEN |
@@ -558,3 +558,10 @@ At the end of each closed item, the ledger must contain:
 - **Regression:** `test_overnight_window_uses_previous_weekday_after_midnight`
 - **Test commit:** `e64ea3bdade1c14b57b6134740d19e94eb731f0f`
 - **Verification state:** SOURCE LOGIC + REGRESSION ADDED; fresh CI remains separate.
+
+### G-310 Closure Record
+- **Resolution:** cutoff is now evaluated as a timezone-aware local instant; overnight windows place a cutoff earlier than the opening time on the following business day.
+- **Regression:** `test_overnight_order_cutoff_uses_next_day_semantics` verifies Wednesday 23:00 is allowed and Thursday 01:30 is rejected for a Wednesday 22:00→02:00 window with a 01:00 cutoff.
+- **Source commit:** `ad8b827eab465c2d337368f3219ad31bb1da4fa5`
+- **Regression commit:** `570a645286823e469d0a527888d20dc58da2fed9`
+- **Verification state:** SOURCE FIX + REGRESSION PERSISTED; fresh CI remains separate.
