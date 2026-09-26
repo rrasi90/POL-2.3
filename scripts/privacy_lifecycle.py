@@ -40,7 +40,7 @@ class PrivacyLifecycleService:
 
         cur.execute(
             """
-            SELECT id, display_name, avatar_media_asset_id, email,
+            SELECT user_id, id, display_name, avatar_media_asset_id, email,
                    preferred_language, timezone, bio, profile_status,
                    onboarding_completed_at, last_seen_at, created_at, updated_at
             FROM user_profiles

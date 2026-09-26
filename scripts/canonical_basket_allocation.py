@@ -206,7 +206,8 @@ class CanonicalBasketAllocationService:
                    vp_price.price_toman,
                    vi.physical_quantity,
                    vi.reserved_quantity,
-                   vi.moq
+                   vi.moq,
+                       vp.pack_quantity
             FROM vendor_products vp
             JOIN vendors v ON v.id = vp.vendor_id
             JOIN organizations o ON o.id = v.organization_id

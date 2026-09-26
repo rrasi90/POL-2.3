@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from uuid import uuid4
 
+import pytest
 import psycopg2
 from psycopg2.extras import RealDictCursor
 

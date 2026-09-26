@@ -444,7 +444,7 @@ def test_checkout_is_atomic_on_failure_after_reservation_stage(postgres_database
         CanonicalBasketAllocationService.add_item(
             cur, catalog["context"].user_id, catalog["context"].organization_id,
             basket["basket_id"], catalog["lines"][0]["product_id"], 3,
-            catalog["lines"][0]["pack_quantity"], 1
+            catalog["lines"][0]["pack_quantity_snapshot"], 1
         )
         preview = CanonicalBasketAllocationService.allocation_preview(
             cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"]
@@ -599,7 +599,7 @@ def test_reservation_expiry_matches_allocation_plan_expiry(postgres_database, ch
         CanonicalBasketAllocationService.add_item(
             cur, catalog["context"].user_id, catalog["context"].organization_id,
             basket["basket_id"], catalog["lines"][0]["product_id"], 1,
-            catalog["lines"][0]["pack_quantity"], 1
+            catalog["lines"][0]["pack_quantity_snapshot"], 1
         )
         preview = CanonicalBasketAllocationService.allocation_preview(
             cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"]
@@ -636,7 +636,7 @@ def test_reservation_lifecycle_uses_canonical_runtime_commands(postgres_database
         basket = CanonicalBasketAllocationService.create_basket(cur, catalog["context"].user_id, catalog["context"].organization_id)
         CanonicalBasketAllocationService.add_item(
             cur, catalog["context"].user_id, catalog["context"].organization_id,
-            basket["basket_id"], catalog["lines"][0]["product_id"], 1, catalog["lines"][0]["pack_quantity"], 1,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 1, catalog["lines"][0]["pack_quantity_snapshot"], 1,
         )
         preview = CanonicalBasketAllocationService.allocation_preview(cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"])
         plan_id = preview["allocation_plan_id"]
@@ -673,7 +673,7 @@ def test_reservation_lifecycle_uses_canonical_runtime_commands(postgres_database
         basket = CanonicalBasketAllocationService.create_basket(cur, catalog["context"].user_id, catalog["context"].organization_id)
         CanonicalBasketAllocationService.add_item(
             cur, catalog["context"].user_id, catalog["context"].organization_id,
-            basket["basket_id"], catalog["lines"][0]["product_id"], 1, catalog["lines"][0]["pack_quantity"], 1,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 1, catalog["lines"][0]["pack_quantity_snapshot"], 1,
         )
         preview = CanonicalBasketAllocationService.allocation_preview(cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"])
         plan_id = preview["allocation_plan_id"]
