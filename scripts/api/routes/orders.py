@@ -490,7 +490,7 @@ def verify_payment(
     order_id: UUID,
     payload: PaymentVerifyRequest | None = None,
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "VENDOR_OWNER"))] = None,
+    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN", "VENDOR_OWNER"))] = None,
 ):
     return success_payload(
         boundary.verify_payment(
@@ -506,7 +506,7 @@ def verify_payment_by_id(
     payment_id: UUID,
     payload: PaymentVerifyRequest | None = None,
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "OPS_ADMIN", "VENDOR_OWNER", "SUPER_ADMIN"))] = None,
+    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN", "VENDOR_OWNER"))] = None,
 ):
     return success_payload(
         boundary.verify_payment(
