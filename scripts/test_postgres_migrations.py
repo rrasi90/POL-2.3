@@ -420,6 +420,29 @@ def verify_delegated_permission_schema(conn):
     )
 
     print(" - migration 047 delegated permission tables, uniqueness, permission keys, and append-only audit guard verified")
+    cur.execute(
+        """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name='media_assets'
+          AND column_name IN ('upload_target_type','upload_target_id')
+        ORDER BY column_name
+        """
+    )
+    media_target_columns = [row[0] for row in cur.fetchall()]
+    assert media_target_columns == ["upload_target_id", "upload_target_type"], (
+        "migration 048 media target binding columns missing"
+    )
+    cur.execute(
+        """
+        SELECT indexname
+        FROM pg_indexes
+        WHERE tablename='media_assets'
+          AND indexname='idx_media_assets_upload_target'
+        """
+    )
+    assert cur.fetchone() is not None, "media upload-target binding index missing"
+
     cur.close()
 
 
