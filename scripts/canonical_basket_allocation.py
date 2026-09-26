@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+
 from scripts.allocation_engine import (
     BasketItem,
     MultiVendorAllocationEngine,
@@ -250,12 +253,46 @@ class CanonicalBasketAllocationService:
                 "No orderable vendor allocation is currently available for this basket."
             )
 
+        canonical_input = {
+            "basket_id": str(basket_id),
+            "basket_version": int(basket["version"]),
+            "items": [
+                {
+                    "basket_item_id": str(row["id"]),
+                    "product_id": str(row["product_id"]),
+                    "requested_quantity": int(row["requested_quantity"]),
+                    "requested_unit": str(row["requested_unit"]),
+                    "pack_quantity": int(row["pack_quantity"]),
+                }
+                for row in basket_rows
+            ],
+            "vendors": [
+                {"id": str(v), "name": vendors[v].name, "mov_toman": vendors[v].mov_toman,
+                 "reputation_score": vendors[v].reputation_score}
+                for v in sorted(vendors)
+            ],
+            "vendor_skus": [
+                {
+                    "id": str(s.id), "vendor_id": str(s.vendor_id), "product_id": str(s.master_product_id),
+                    "packaging_unit": str(s.packaging_unit), "pack_quantity": int(s.pack_quantity),
+                    "price_toman": int(s.price_toman), "physical_quantity": int(s.physical_quantity),
+                    "reserved_quantity": int(s.reserved_quantity), "moq": int(s.moq),
+                }
+                for s in sorted(vendor_skus, key=lambda x: (x.vendor_id, x.master_product_id, x.packaging_unit, x.pack_quantity, x.id))
+            ],
+            "decision_hash": plan.decision_hash,
+            "algorithm_version": "v1.1",
+        }
+        input_hash = hashlib.sha256(
+            json.dumps(canonical_input, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
         plan_row = AllocationService.create_plan(
             cur,
             str(basket_id),
             int(basket["version"]),
             int(plan.vendor_count),
             int(plan.total_amount_toman),
+            input_hash=input_hash,
         )
         plan_id = str(plan_row["id"])
 
