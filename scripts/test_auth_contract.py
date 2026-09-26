@@ -888,6 +888,49 @@ def test_p0_switch_organization_rejects_foreign_session(auth_env):
         conn.commit()
 
 
+def test_p0_switch_organization_valid_target_succeeds(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    org_b = auth_env["org_b"]
+
+    session_id = str(uuid.uuid4())
+    access = encode_access_token(user_id, session_id, org_a, "RETAILER_OWNER")
+    cur.execute(
+        """
+        INSERT INTO user_sessions
+            (id, user_id, active_organization_id, token_hash, status, expires_at)
+        VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days')
+        """,
+        (session_id, user_id, org_a, hash_token(access)),
+    )
+    conn.commit()
+
+    try:
+        result = AuthService.switch_organization(cur, user_id, org_b, session_id)
+        assert result["session"]["id"] == session_id
+        assert str(result["session"]["active_organization_id"]) == str(org_b)
+        assert result["session"]["status"] == "ACTIVE"
+
+        claims = decode_access_token(result["access_token"])
+        assert claims["sub"] == user_id
+        assert claims["sid"] == session_id
+        assert claims["org_id"] == str(org_b)
+        assert claims["role"] == "VENDOR_OWNER"
+
+        cur.execute(
+            "SELECT active_organization_id FROM user_sessions WHERE id = %s",
+            (session_id,),
+        )
+        assert str(cur.fetchone()["active_organization_id"]) == str(org_b)
+    finally:
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (session_id,))
+        conn.commit()
+
+
 def test_p0_refresh_token_is_rotated_and_old_token_replay_fails(auth_env):
     from scripts.domain_services import AuthService
 
