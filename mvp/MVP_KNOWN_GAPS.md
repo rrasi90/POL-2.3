@@ -440,7 +440,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-308 | P1 | Operating-window selection can resolve weekday from capacity timezone before applying the window timezone; deterministic cross-timezone semantics are incomplete. | RESOLVED — source fix a4683721; regression 4fc8804e |
 | G-309 | P1 | Cross-midnight operating windows do not resolve the previous weekday after midnight. | RESOLVED — source logic introduced with G-308; regression e64ea3bd |
 | G-310 | P1 | Overnight `order_cutoff_at` lacks day-offset/instant semantics. | RESOLVED — source ad8b827e; regression 570a6452 |
-| G-311 | P1 | Daily/hourly vendor capacity is check-then-act and lacks atomic reservation/invariant enforcement. | OPEN |
+| G-311 | P1 | Daily/hourly vendor capacity is check-then-act and lacks atomic reservation/invariant enforcement. | RESOLVED — transactional advisory lock 4f6f8aec; regression 59f83384 |
 | G-312 | P1 | Admin audit immutability is not DB-enforced against UPDATE/DELETE. | OPEN |
 | G-313 | P1 | Inventory audit history can be cascaded away through `vendor_product_id`. | OPEN |
 | G-314 | P1 | Notification retention/expiry is not canonically populated and no auto-archive worker is evidenced. | OPEN |
@@ -565,3 +565,10 @@ At the end of each closed item, the ledger must contain:
 - **Source commit:** `ad8b827eab465c2d337368f3219ad31bb1da4fa5`
 - **Regression commit:** `570a645286823e469d0a527888d20dc58da2fed9`
 - **Verification state:** SOURCE FIX + REGRESSION PERSISTED; fresh CI remains separate.
+
+### G-311 Closure Record
+- **Resolution:** each vendor capacity decision now acquires a transaction-scoped PostgreSQL advisory lock before reading the capacity counters; vendor IDs are processed in sorted order to avoid multi-vendor lock-order deadlocks. The lock is held through the canonical checkout transaction, so capacity validation and subsequent order insertion cannot race for the same vendor.
+- **Regression:** `test_vendor_capacity_lock_serializes_concurrent_checkout_decisions` proves the second transaction cannot enter the capacity check while the first transaction holds the vendor capacity lock, then observes the committed order and rejects the second decision at capacity 1.
+- **Source commit:** `4f6f8ae64408669d92d6abd2fbf44e7e144f26c0`
+- **Regression commit:** `59f83384ebf8122b4729c8c56aa1932e832d3ab9`
+- **Verification state:** SOURCE FIX + CONCURRENCY REGRESSION PERSISTED; fresh CI remains separately blocked.
