@@ -1178,3 +1178,25 @@ CREATE INDEX IF NOT EXISTS idx_retailers_org ON retailers(organization_id);
 CREATE INDEX IF NOT EXISTS idx_vendors_org ON vendors(organization_id);
 
 ```
+
+
+## Remediation reconciliation — 2026-09-26
+
+### Media governance
+The runtime media contract now includes order/dispute/delivery/payment target binding, READY-state validation, uploader ownership checks, product-media approval metadata, resumable/presigned ingestion, and storage reconciliation. New READY media assets require a valid lowercase SHA-256 checksum; legacy rows may remain nullable for historical compatibility.
+
+### Financial evidence
+Payment evidence may select an explicit payment when an order has multiple payment records. Receipt images require READY media whose target is the same order or payment and whose uploader is the active actor.
+
+### Dispute / refund
+Dispute creation requires READY evidence, line-item claims, delivered-order admission and the active four-hour filing window. Resolution is canonicalized through INVESTIGATING → RESOLVED → CLOSED. Refunds are idempotent, payment-linked, source-scoped, auditable and evented; full payment refunds mark the payment REFUNDED, while partial refunds do not.
+
+### Delivery
+Dispatch no longer returns delivery OTP secrets. POD confirmation locks the active ARRIVED delivery, bounds OTP attempts, validates item-level delivered quantities, and applies DB-level quantity/OTP invariants.
+
+### Audit / history
+Administrative audit and inventory audit history are append-only. Inventory audit rows retain history even when a vendor-product parent is later deleted.
+
+### Notification retention
+Expired inbox cleanup has a daily scheduler entry point and a repository workflow. Deployment still requires the repository database secret to be configured.
+
