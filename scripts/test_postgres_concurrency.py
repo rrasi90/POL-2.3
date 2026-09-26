@@ -798,6 +798,8 @@ def main():
         test_concurrency_7_dispute_creation_race,
         test_concurrency_8_multi_vendor_dispute_isolation,
         test_concurrency_9_stale_state_price_change,
+        test_concurrency_10_reservation_service_scarce_stock_race,
+        test_concurrency_11_reservation_idempotency_same_key,
     ]
 
     for test in tests:
