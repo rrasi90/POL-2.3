@@ -359,6 +359,22 @@ def test_concurrency_10_reservation_service_scarce_stock_race():
     q.execute("SELECT COUNT(*) FROM inventory_reservations WHERE vendor_product_id=%s AND status='ACTIVE'",(vp_id,)); assert q.fetchone()[0]==1
     check.close()
 
+def test_concurrency_12_reservation_reconciliation_invariant():
+    """G-342: DB rejects an inventory reserved_quantity mismatch at transaction commit."""
+    conn = get_conn(); cur = conn.cursor()
+    p_id, vp_id = str(uuid.uuid4()), str(uuid.uuid4())
+    cur.execute("INSERT INTO products (id, master_sku, canonical_name_fa, brand_id, category_id, subcategory_id) VALUES (%s,%s,%s,%s,%s,%s)", (p_id, f"POL-G342-{uuid.uuid4().hex[:8]}", "G342", BRAND_1, CAT_1, SUBCAT_1))
+    cur.execute("INSERT INTO vendor_products (id,vendor_id,product_id,vendor_sku,packaging_unit,pack_quantity) VALUES (%s,%s,%s,%s,'CARTON',1)", (vp_id,VND_A,p_id,f"SKU-G342-{uuid.uuid4().hex[:8]}"))
+    cur.execute("INSERT INTO vendor_inventory (id,vendor_product_id,physical_quantity,reserved_quantity) VALUES (%s,%s,10,0)", (str(uuid.uuid4()),vp_id))
+    conn.commit()
+    cur.execute("UPDATE vendor_inventory SET reserved_quantity=1 WHERE vendor_product_id=%s",(vp_id,))
+    with pytest.raises(psycopg2.errors.CheckViolation):
+        conn.commit()
+    conn.rollback()
+    cur.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s",(vp_id,))
+    assert cur.fetchone()[0] == 0
+    conn.close()
+
 def test_concurrency_11_reservation_idempotency_same_key():
     """G-341: DB unique key arbitrates two concurrent reservations using the same idempotency key."""
     setup_conn=get_conn(); cur=setup_conn.cursor()
@@ -800,6 +816,7 @@ def main():
         test_concurrency_9_stale_state_price_change,
         test_concurrency_10_reservation_service_scarce_stock_race,
         test_concurrency_11_reservation_idempotency_same_key,
+        test_concurrency_12_reservation_reconciliation_invariant,
     ]
 
     for test in tests:
