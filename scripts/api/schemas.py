@@ -221,7 +221,7 @@ class FieldTaskCreateRequest(APIBaseModel):
 
 
 class FieldTaskUpdateRequest(APIBaseModel):
-    status: str | None = Field(default=None, max_length=20)
+    status: Literal["ASSIGNED", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"] | None = None
     notes: str | None = Field(default=None, max_length=2000)
 
 
