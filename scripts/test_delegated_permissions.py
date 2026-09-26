@@ -245,3 +245,10 @@ def test_vendor_editor_rejects_non_vendor_staff_target(permission_env):
             client="test",
             target_role="VENDOR_STAFF",
         )
+
+def test_vendor_staff_role_does_not_receive_order_accept_permission():
+    from scripts.permissions import BASE_ROLE_PERMISSIONS
+
+    assert "order.accept" not in BASE_ROLE_PERMISSIONS["VENDOR_STAFF"]
+    assert "order.accept" in BASE_ROLE_PERMISSIONS["VENDOR_OWNER"]
+\n
