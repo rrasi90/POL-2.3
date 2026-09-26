@@ -82,6 +82,23 @@ class POLApplicationBoundary:
             filename=filename,
         )
 
+    def media_presign_resumable(self, *, mime_type, file_size_bytes, target_type, target_id, filename=None):
+        if not self.context.organization_id:
+            raise PermissionError("Media upload requires an active organization context.")
+        return MediaService.presign_resumable(
+            self.cur, user_id=self.context.user_id, organization_id=self.context.organization_id,
+            mime_type=mime_type, file_size_bytes=file_size_bytes, target_type=target_type,
+            target_id=str(target_id), filename=filename,
+        )
+
+    def media_complete_resumable(self, *, session_id, parts):
+        if not self.context.organization_id:
+            raise PermissionError("Media completion requires an active organization context.")
+        return MediaService.complete_resumable(
+            self.cur, user_id=self.context.user_id, organization_id=self.context.organization_id,
+            session_id=str(session_id), parts=[item if isinstance(item, dict) else item.model_dump() for item in parts],
+        )
+
     def media_confirm_upload(self, *, media_id, target_type, target_id):
         if not self.context.organization_id:
             raise PermissionError("Media confirmation requires an active organization context.")
