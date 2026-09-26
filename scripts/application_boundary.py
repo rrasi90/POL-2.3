@@ -1394,8 +1394,16 @@ class POLApplicationBoundary:
                 raise ValueError("Payment evidence media must be READY.")
             if str(media["uploaded_by_user_id"]) != str(self.context.user_id):
                 raise PermissionError("Payment evidence media is not owned by the current actor.")
-            if str(media["upload_target_type"] or "").upper() == "ORDER" and str(media["upload_target_id"]) != str(row["order_id"]):
-                raise PermissionError("Payment evidence media is not bound to this order.")
+            target_type = str(media["upload_target_type"] or "").upper()
+            target_id = str(media["upload_target_id"]) if media["upload_target_id"] else None
+            if target_type == "ORDER":
+                if target_id != str(row["order_id"]):
+                    raise PermissionError("Payment evidence media is not bound to this order.")
+            elif target_type == "PAYMENT":
+                if target_id != str(row["payment_id"]):
+                    raise PermissionError("Payment evidence media is not bound to this payment.")
+            else:
+                raise PermissionError("Payment evidence media must be bound to this order or payment.")
 
         evidence_id = str(uuid4())
         self.cur.execute(
