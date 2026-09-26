@@ -683,6 +683,28 @@ Parallel diagnosis (failure inventory: 11 finance + 4 batch2 RMA + 2 cross_entit
 **Files changed:** scripts/returns_rma.py, scripts/application_boundary.py, migrations/073_payment_idempotency_and_verified_template.sql, test_http_finance.py, test_cross_entity_integrity_032.py, test_http_payment_evidence.py, test_batch2_rma_and_outbox.py.
 **Verification state:** SOURCE PATCH + REGRESSION + HTTP/DB EVIDENCE on remediation/master-gap-closure-2026-09-26; 17/17 in-scope failures green (finance 11, batch2 4, cross_entity 2, payment_evidence 1... plus cross_entity full file green).
 
+
+### Stage 13 record — E2E/Concurrency/Inventory/Management/Auth/Media/Migrations (2026-09-26, INTERIM)
+**Suite trajectory on this branch:** 430/637 (baseline) → 544 → 551 → 600/656 → **647/656** (HEAD 1b810b8).
+
+**REAL SOURCE DEFECTS FIXED (classification A/B — not test debt):**
+1. privacy_lifecycle: raw dicts to psycopg2 jsonb (export + deletion paths); export profile SELECT lacked user_id.
+2. catalog_barcode_match: SELECT DISTINCT/ORDER BY mismatch (all barcode lookups 500'd); candidate upsert locked nullable join side; product_candidate_created outbox targeted vendor_id as target_user_id (FK violation).
+3. canonical_basket_allocation: two SELECTs omitted pack_quantity (allocation preview + basket items path); allocation_preview was structurally broken.
+4. application_boundary: vendor_inventory_continuous_scan wrote verification_source='CONTINUOUS_SCAN' outside the DB CHECK vocabulary (→BARCODE_SCAN); missing module datetime import; session-publish inventory_audit_log INSERT passed UUID into bigint new_price_toman and omitted old_price_toman; vendor_staff_invite returned unserializable datetime row.
+5. Migration 074: three overlapping append-only guards on admin_audit_logs — the alphabetically-earlier v032 trigger shadowed the dedicated 049 guard (dead code); consolidated.
+6. Earlier in Stage 13 scope: RMA chain fixes (returns_rma.py: replay, fully_refunded, locks, Json) and migration 073 payments idempotency + PAYMENT_VERIFIED template.
+
+**TEST DEBT REPAIRED (classification G/H, source verified canonical):** 40+ test fixes across e2e platform, concurrency (reservation-sync under migration 057, dispute evidence under 058), inventory seed, policies messages, migrations assertions, auth contract (phone binding, session-context trigger, rate limit), media/support/management/field_tasks/delegated/timeout/broadcasts/transport/master_e2e/vendor_referral.
+
+**REMAINING 9 FAILURES — root causes registered (NOT swept):**
+- 2 cross_entity (test_append_only_admin_audit, test_migration_032_triggers): require POL_E2E_PG_DSN env — pass with it (environment, I).
+- 2 e2e reservation tests: fixture basket lacks an orderable vendor (MOV/inventory setup) — test scenario setup incomplete (H, IN PROGRESS).
+- 1 inventory_reservations + 1 master_e2e: same env/reservation-sync family (G/H, IN PROGRESS).
+- 3 management (scan publish, candidate review, permission editor): scan chain still failing past the vocabulary fix — root cause chain under investigation (IN PROGRESS).
+
+**OPEN DECISIONS / BLOCKED (unchanged):** checkout→payment direct-receipt route (root cause registered Stage 12); reconciliation case-feed + external confirmation trust model (BLOCKED_EXTERNAL); refresh-token rotation (D-018 undecided); MUTUAL_AGREEMENT settlement mapping.
+
 ## D. Recovery-control rule for G-321..G-407
 
 The numbered IDs are deliberately retained as OPEN rather than silently dropped because the user required every prior finding to remain traceable. Before implementing any such item, its exact original audit wording must be recovered from the audit transcript/source artifact. No guessed implementation is permitted.
