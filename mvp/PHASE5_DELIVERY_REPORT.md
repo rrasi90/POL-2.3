@@ -1,6 +1,6 @@
 # POL MVP — Phase 5 Delivery Report
 
-**Date:** 2026-09-24  
+**Date:** 2026-09-26  
 **Branch:** `main`  
 **Report baseline:** remediation branch current source; historical baseline retained only as provenance.  
 **Report policy:** this is a living delivery report; do not store a mutable "current HEAD" claim here. Repository HEAD is authoritative via Git.  
@@ -154,7 +154,7 @@ No current test/build result is claimed from this audit because the available Gi
 
 ---
 
-*Phase 5 delivery artifacts remain open because Night visual verification, live basket→checkout/order lifecycle evidence, idempotency replay, and final reconciliation are not yet evidenced. Mobile QA Cycle 3 and current backend verification are green on commit `f8ef267e`.*
+*Historical Phase 5 runtime evidence is preserved above for provenance. Current remediation source is not yet runtime-certified at the latest HEAD because the available GitHub Actions runs fail before useful step execution (`steps: null`). Fresh CI/runtime certification remains an explicit release gate.*
 
 
 ### Remediation continuation — 2026-09-26
