@@ -241,7 +241,7 @@ def verify_postgres():
         declared_tables = set(
             match.lower()
             for match in re.findall(
-                r"CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(?:public\\.)?([A-Za-z_][A-Za-z0-9_]*)",
+                r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?([A-Za-z_][A-Za-z0-9_]*)",
                 migration_sql,
                 flags=re.IGNORECASE,
             )
