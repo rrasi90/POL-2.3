@@ -267,3 +267,43 @@ def test_owner_only_permissions_cannot_be_delegated_to_vendor_staff(permission_e
                 client="test",
             )
 \n
+def test_historical_owner_only_grant_cannot_become_effective(permission_env):
+    env = permission_env
+    env["cur"].execute(
+        """
+        INSERT INTO delegated_permission_grants
+            (id, membership_id, permission_key, status, granted_by_user_id, reason)
+        VALUES (%s, %s, 'order.accept', 'GRANTED', %s, 'legacy fixture')
+        """,
+        (str(uuid4()), env["staff_membership_id"], env["owner_id"]),
+    )
+
+    effective = effective_permissions(
+        env["cur"],
+        env["staff_id"],
+        env["vendor_org_id"],
+    )
+    assert "order.accept" not in effective["permissions"]
+
+    with pytest.raises(PermissionError, match="not granted"):
+        require_permission(
+            env["cur"],
+            env["staff_id"],
+            env["vendor_org_id"],
+            "order.accept",
+        )
+
+    details = membership_permissions(
+        env["cur"],
+        env["owner_id"],
+        env["vendor_org_id"],
+        env["staff_membership_id"],
+    )
+    assert "order.accept" not in details["effective_permissions"]
+    assert "order.accept" not in details["delegatable_permissions"]
+
+
+def test_retailer_staff_order_accept_is_not_delegatable():
+    from scripts.permissions import ROLE_DELEGATION_DENY
+
+    assert "order.accept" in ROLE_DELEGATION_DENY["RETAILER_STAFF"]
