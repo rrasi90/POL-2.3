@@ -127,7 +127,7 @@ def _seed_support(suffix, *, include_ops=False):
         rt = encode_access_token(ru, rs, ro, "RETAILER_OWNER")
         vt = encode_access_token(vu, vs, vo, "VENDOR_OWNER")
         ot = encode_access_token(ou, os_s, oo, "OPS_AGENT") if include_ops else None
-        return {"r_token": rt, "v_token": vt, "o_token": ot, "ru": ru, "ro": ro, "vu": vu, "vo": vo, "ou": ou, "oo": oo}
+        return {"r_token": rt, "v_token": vt, "o_token": ot, "ru": ru, "ro": ro, "vu": vu, "vo": vo, "vi": vi, "ou": ou, "oo": oo}
     finally:
         conn.close()
 

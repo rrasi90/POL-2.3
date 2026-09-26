@@ -172,6 +172,7 @@ class TestFieldTaskCRUD:
             assert body["data"]["target_organization_id"] == target_org
         finally:
             with conn.cursor() as cur:
+                cur.execute("DELETE FROM field_tasks WHERE target_organization_id=%s", (target_org,))
                 cur.execute("DELETE FROM retailers WHERE id=%s", (target_retailer,))
                 cur.execute("DELETE FROM organization_memberships WHERE organization_id=%s", (target_org,))
                 cur.execute("DELETE FROM organizations WHERE id=%s", (target_org,))

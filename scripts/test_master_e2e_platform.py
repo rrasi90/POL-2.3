@@ -24,6 +24,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# request_otp only exposes the deterministic test_code when ENVIRONMENT == "test".
+os.environ.setdefault("ENVIRONMENT", "test")
+
 import uuid
 import datetime
 import psycopg2
@@ -512,11 +515,12 @@ def run_master_e2e_test():
 
         cur.execute(
             """
-            SELECT id, delivered_quantity, unit_price_toman
-            FROM order_items
-            WHERE order_id=%s
-              AND vendor_id = %s
-            ORDER BY created_at ASC
+            SELECT oi.id, oi.delivered_quantity, oi.unit_price_toman
+            FROM order_items oi
+            JOIN vendor_products vp ON vp.id = oi.vendor_product_id
+            WHERE oi.order_id=%s
+              AND vp.vendor_id = %s
+            ORDER BY oi.created_at ASC
             LIMIT 1
             """,
             (ord_a_id, vnda_id),

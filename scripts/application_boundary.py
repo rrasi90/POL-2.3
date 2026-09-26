@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import uuid4
 
+from datetime import datetime, timezone
+
 from psycopg2.extras import Json
 
 from scripts.checkout_gateway import CanonicalCheckoutGateway
@@ -61,6 +63,16 @@ class ApplicationContext:
     user_id: str
     organization_id: str | None
     correlation_id: str
+
+
+def _jsonable_row(row):
+    """Return a JSON-safe copy of a DB row (datetimes -> ISO strings)."""
+    from datetime import datetime as _dt
+
+    return {
+        key: (value.isoformat() if isinstance(value, _dt) else value)
+        for key, value in dict(row).items()
+    }
 
 
 class POLApplicationBoundary:
@@ -3488,7 +3500,7 @@ class POLApplicationBoundary:
                 SET physical_quantity=%s, updated_at=now(),
                     freshness_status='FRESH',
                     inventory_confidence='CONFIRMED_TODAY',
-                    verification_source='CONTINUOUS_SCAN',
+                    verification_source='BARCODE_SCAN',
                     last_confirmed_at=now()
                 WHERE vendor_product_id=%s
                 """,
@@ -3500,7 +3512,7 @@ class POLApplicationBoundary:
                 INSERT INTO vendor_inventory
                     (vendor_product_id,inventory_unit,physical_quantity,reserved_quantity,freshness_status,
                      inventory_confidence,verification_source,last_confirmed_at)
-                VALUES (%s,%s,%s,0,'FRESH','CONFIRMED_TODAY','CONTINUOUS_SCAN',now())
+                VALUES (%s,%s,%s,0,'FRESH','CONFIRMED_TODAY','BARCODE_SCAN',now())
                 """,
                 (vendor_product_id, packaging_unit, physical_quantity),
             )
@@ -3599,12 +3611,13 @@ class POLApplicationBoundary:
             self.cur.execute(
                 """
                 INSERT INTO inventory_audit_log
-                    (vendor_id,vendor_product_id,old_quantity,new_quantity,new_price_toman,source_trigger,reference_id,actor_user_id)
-                SELECT %s,vi.vendor_product_id,vi.physical_quantity,vi.physical_quantity,%s,'SESSION_PUBLISH',%s,%s
+                    (vendor_id,vendor_product_id,old_quantity,new_quantity,old_price_toman,new_price_toman,source_trigger,reference_id,actor_user_id)
+                SELECT %s,vi.vendor_product_id,vi.physical_quantity,vi.physical_quantity,%s,%s,'SESSION_PUBLISH',%s,%s
                 FROM vendor_inventory vi
                 WHERE vi.vendor_product_id=%s
                 """,
-                (vendor["id"],item["vendor_product_id"],session_id.strip(),self.context.user_id,item["vendor_product_id"]),
+                (vendor["id"],item["vendor_product_id"],session_id.strip(),
+                 item["unit_price_toman"],item["unit_price_toman"],item["vendor_product_id"]),
             )
 
         self.cur.execute(
@@ -4915,12 +4928,12 @@ class POLApplicationBoundary:
             (
                 self.context.user_id,
                 membership_id,
-                Json(row),
+                Json(_jsonable_row(row)),
                 "vendor staff invitation",
                 self.context.correlation_id,
             ),
         )
-        return row
+        return _jsonable_row(row)
 
     def vendor_staff_update(self, *, membership_id, role=None, status=None):
         self._require_vendor_owner()

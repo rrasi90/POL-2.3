@@ -7,7 +7,7 @@ import psycopg2
 import pytest
 from psycopg2.extras import RealDictCursor
 
-from scripts.media_service import MAX_UPLOAD_BYTES, MediaError, _magic_mime, _target_key, _validate_bound_upload_target
+from scripts.media_service import MAX_UPLOAD_BYTES, MediaError, _authorize_target, _magic_mime, _target_key, _validate_bound_upload_target
 
 
 def test_media_magic_bytes_are_strict():

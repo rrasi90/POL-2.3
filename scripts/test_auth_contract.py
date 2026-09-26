@@ -41,6 +41,7 @@ from scripts.auth_boundary import (
     hash_token,
     store_otp_hash,
     verify_otp_hash,
+    InvalidRefreshTokenError,
 )
 from scripts.operational_config import (
     OTP_MAX_ATTEMPTS,
@@ -163,6 +164,10 @@ def test_static_otp_is_strictly_test_only(auth_env, monkeypatch):
     # Explicit test environment may expose the deterministic fixture code.
     monkeypatch.setenv("ENVIRONMENT", "test")
     monkeypatch.delenv("POL_ENV", raising=False)
+    # Stay under the 3-per-5-min phone+IP rate limit: clear prior challenges
+    # before each request_otp call below.
+    cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
+    auth_env["conn"].commit()
     first = AuthService.request_otp(cur, phone, ip, "LOGIN")
     assert first["test_code"] == "1234"
     cur.execute(
@@ -178,6 +183,8 @@ def test_static_otp_is_strictly_test_only(auth_env, monkeypatch):
             monkeypatch.setenv("ENVIRONMENT", env)
         else:
             monkeypatch.delenv("ENVIRONMENT", raising=False)
+        cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
+        auth_env["conn"].commit()
         result = AuthService.request_otp(cur, phone, ip, "LOGIN")
         assert "test_code" not in result
         cur.execute(
@@ -439,25 +446,32 @@ def test_ac20_otp_challenge_is_consumed_exactly_once(auth_env):
     user_id = auth_env["user_id"]
     org_a = auth_env["org_a"]
     phone = "+989161110030"
+    # verify_otp enforces phone↔user binding: the challenge is created under a
+    # fixed phone, so point the fixture user at that phone for this test.
+    cur.execute("SELECT phone_number FROM users WHERE id = %s;", (user_id,))
+    original_phone = cur.fetchone()["phone_number"]
     otp_id = str(uuid.uuid4())
-    cur.execute("""
-        INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
-        VALUES (%s, %s, %s, 'LOGIN', '10.0.0.30', 0, 5, 'PENDING', now() + interval '2 minutes');
-    """, (otp_id, phone, store_otp_hash("1234")))
-    conn.commit()
-    from scripts.domain_services import AuthService
-    first = AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
-    assert first["access_token"]
-    cur.execute("SELECT status FROM otp_challenges WHERE id = %s;", (otp_id,))
-    assert cur.fetchone()["status"] == "VERIFIED"
     try:
-        AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
-        raise AssertionError("OTP was accepted more than once")
-    except ValueError as e:
-        assert "No pending OTP challenge" in str(e)
+        cur.execute("UPDATE users SET phone_number=%s WHERE id=%s;", (phone, user_id))
+        cur.execute("""
+            INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
+            VALUES (%s, %s, %s, 'LOGIN', '10.0.0.30', 0, 5, 'PENDING', now() + interval '2 minutes');
+        """, (otp_id, phone, store_otp_hash("1234")))
+        conn.commit()
+        from scripts.domain_services import AuthService
+        first = AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+        assert first["access_token"]
+        cur.execute("SELECT status FROM otp_challenges WHERE id = %s;", (otp_id,))
+        assert cur.fetchone()["status"] == "VERIFIED"
+        try:
+            AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+            raise AssertionError("OTP was accepted more than once")
+        except ValueError as e:
+            assert "No pending OTP challenge" in str(e)
     finally:
         cur.execute("DELETE FROM user_sessions WHERE user_id = %s;", (user_id,))
         cur.execute("DELETE FROM otp_challenges WHERE id = %s;", (otp_id,))
+        cur.execute("UPDATE users SET phone_number=%s WHERE id=%s;", (original_phone, user_id))
         conn.commit()
 
 
@@ -870,6 +884,16 @@ def test_p0_switch_organization_rejects_foreign_session(auth_env):
         "VALUES (%s, %s, 'RETAILER_OWNER', 'Foreign Session User', TRUE)",
         (foreign_user, foreign_phone),
     )
+    # The DB trigger requires a session's active organization to be an ACTIVE
+    # membership of its user; grant the foreign user a membership in org_b so
+    # the session insert succeeds and the test can exercise the real rejection
+    # path (switch_organization called with a mismatched user).
+    foreign_membership = str(uuid.uuid4())
+    cur.execute(
+        "INSERT INTO organization_memberships (id, organization_id, user_id, role, status, is_primary) "
+        "VALUES (%s, %s, %s, 'VENDOR_OWNER', 'ACTIVE', FALSE)",
+        (foreign_membership, org_b, foreign_user),
+    )
     foreign_session = str(uuid.uuid4())
     cur.execute(
         "INSERT INTO user_sessions "
@@ -884,6 +908,7 @@ def test_p0_switch_organization_rejects_foreign_session(auth_env):
             AuthService.switch_organization(cur, user_id, org_b, foreign_session)
     finally:
         cur.execute("DELETE FROM user_sessions WHERE id = %s", (foreign_session,))
+        cur.execute("DELETE FROM organization_memberships WHERE id = %s", (foreign_membership,))
         cur.execute("DELETE FROM users WHERE id = %s", (foreign_user,))
         conn.commit()
 

@@ -93,6 +93,12 @@ def _seed_inventory(cur, suffix, qty=100, reserved=10):
     cur.execute("INSERT INTO vendor_inventory (vendor_product_id, inventory_unit, physical_quantity, reserved_quantity, moq, freshness_status) "
                 "VALUES (%s, 'CARTON', %s, %s, 1, 'FRESH')",
                 (vendor_product_id, qty, reserved))
+    if reserved:
+        # Migration 057 reconciliation invariant: reserved_quantity must equal
+        # the sum of ACTIVE inventory_reservations for this vendor product.
+        cur.execute("INSERT INTO inventory_reservations (vendor_product_id, quantity, status, expires_at) "
+                    "VALUES (%s, %s, 'ACTIVE', now() + interval '1 day')",
+                    (vendor_product_id, reserved))
 
     session_id = _create_session(cur, user_id, org_id)
     token = encode_access_token(user_id, session_id, org_id, "VENDOR_OWNER")

@@ -11,6 +11,7 @@ import os
 from uuid import uuid4
 import sys
 import psycopg2
+import pytest
 from psycopg2 import sql
 
 # Ensure UTF-8 output
@@ -343,7 +344,7 @@ def verify_foreign_keys_and_indexes(conn):
     assert "vendor_id" in idx_c_def and "barcode" in idx_c_def, (
         f"Expected vendor_id+barcode candidate guard, got: {idx_c[1]}"
     )
-    assert "status = 'pending_review'" in idx_c_def, (
+    assert "pending_review" in idx_c_def.lower().replace("::text", ""), (
         f"Expected PENDING_REVIEW predicate, got: {idx_c[1]}"
     )
     print(" - pending vendor barcode concurrency index verified")
@@ -515,7 +516,7 @@ def verify_financial_dispute_remediation(conn):
         assert cur.fetchone() is not None, f"Constraint {constraint_name} missing"
 
     for table, trigger_name in (
-        ("admin_audit_logs", "trg_admin_audit_append_only_v069"),
+        ("admin_audit_logs", "trg_admin_audit_logs_immutable"),
         ("inventory_audit_log", "trg_inventory_audit_append_only_v069"),
         ("dispute_events", "trg_dispute_events_append_only_v058"),
         ("disputes", "trg_validate_dispute_adjudication_v062"),
@@ -547,8 +548,16 @@ def verify_financial_dispute_remediation(conn):
     print(" - financial/dispute remediation 058-062 schema, indexes, triggers and template verified")
 
 
-def test_dispute_resolution_invariant_direct_sql(conn):
+def test_dispute_resolution_invariant_direct_sql():
     """Exercise the PostgreSQL adjudication guard directly with a minimal aggregate."""
+    conn = get_connection()
+    try:
+        _run_dispute_resolution_invariant(conn)
+    finally:
+        conn.close()
+
+
+def _run_dispute_resolution_invariant(conn):
     cur = conn.cursor()
 
     # Build only the minimum FK-compatible aggregate. Session trigger replication
@@ -624,8 +633,8 @@ def test_dispute_resolution_invariant_direct_sql(conn):
     cur.execute(
         """
         INSERT INTO media_assets
-            (id,storage_key,file_size_bytes,status,provenance,uploaded_by_user_id)
-        VALUES (gen_random_uuid(),%s,1024,'READY','POL_OWNED',%s)
+            (id,storage_key,file_size_bytes,status,provenance,checksum_sha256,uploaded_by_user_id)
+        VALUES (gen_random_uuid(),%s,1024,'READY','POL_OWNED',repeat('a',64),%s)
         RETURNING id
         """,
         (f"migration-test/{uuid4().hex}.jpg", users["RETAILER_OWNER"]),

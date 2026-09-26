@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import uuid
 
+import psycopg2
 import pytest
 from fastapi.testclient import TestClient
 from psycopg2.extras import RealDictCursor
@@ -152,6 +153,16 @@ def test_production_refresh_cookie_is_secure(monkeypatch):
     monkeypatch.setenv("POL_CORS_ORIGINS", "https://app.example.com")
     monkeypatch.setenv("POL_JWT_SECRET", "test-secret-key-for-auth-contract-tests-only-32bytes!!")
     from scripts.api.main import create_app
+
+    # With ENVIRONMENT=production the canonical DB guard requires a password and
+    # SSL transport. This test only exercises cookie flags, so substitute a
+    # plain local test connection for the route dependency.
+    import scripts.api.db as api_db
+
+    def _local_test_connection():
+        return psycopg2.connect(dbname="pol_test", host="127.0.0.1", port=5432, user="postgres")
+
+    monkeypatch.setattr(api_db, "get_runtime_connection", _local_test_connection)
 
     production_client = TestClient(create_app(), raise_server_exceptions=False)
     phone, _, _, user_id = _seed_user()

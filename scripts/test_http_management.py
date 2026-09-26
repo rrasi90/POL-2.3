@@ -53,7 +53,7 @@ def management_env():
         vendor_org = str(uuid4())
         cur.execute(
             "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s,%s,'Management Admin','SUPER_ADMIN')",
-            (admin_user, f"+9891{uuid4().hex[:8]}"),
+            (admin_user, f"+9891{uuid4().int % 10**8:08d}"),
         )
         cur.execute(
             "INSERT INTO organizations (id,name,org_type,status) VALUES (%s,'Ops Test','OPERATOR','ACTIVE')",
@@ -69,7 +69,7 @@ def management_env():
         )
         cur.execute(
             "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s,%s,'Management Vendor','VENDOR_OWNER')",
-            (vendor_user, f"+9891{uuid4().hex[:8]}"),
+            (vendor_user, f"+9891{uuid4().int % 10**8:08d}"),
         )
         cur.execute(
             "INSERT INTO organizations (id,name,org_type,status) VALUES (%s,'Vendor Test','VENDOR','ACTIVE')",
@@ -124,7 +124,9 @@ def management_env():
             cur.execute("DELETE FROM vendors WHERE id=%s", (vendor_id,))
             cur.execute("DELETE FROM organization_memberships WHERE user_id IN (%s,%s)", (admin_user, vendor_user))
             cur.execute("DELETE FROM user_sessions WHERE user_id IN (%s,%s)", (admin_user, vendor_user))
-            cur.execute("DELETE FROM users WHERE id IN (%s,%s)", (admin_user, vendor_user))
+            # admin_audit_logs rows reference these users and the table is
+            # immutable (append-only trigger), so the users themselves cannot be
+            # deleted; ids are random and the leftovers are harmless.
             cur.execute("DELETE FROM organizations WHERE id IN (%s,%s)", (admin_org, vendor_org))
         conn.commit()
     finally:
@@ -145,7 +147,7 @@ def test_vendor_customers_and_staff_are_tenant_scoped(client, management_env):
     assert resp.json()["success"] is True
     assert resp.json()["data"]["customers"] == []
 
-    phone = f"+9891{uuid4().hex[:8]}"
+    phone = f"+9891{uuid4().int % 10**8:08d}"
     invite = client.post(
         "/api/v1/vendors/staff/invite",
         headers={"Authorization": f"Bearer {management_env['vendor']}"},
@@ -211,7 +213,7 @@ def test_only_vendor_owner_can_invite_staff(client, management_env):
     resp = client.post(
         "/api/v1/vendors/staff/invite",
         headers={"Authorization": f"Bearer {management_env['admin']}"},
-        json={"phone_number": f"+9891{uuid4().hex[:8]}", "full_name": "Denied Staff"},
+        json={"phone_number": f"+9891{uuid4().int % 10**8:08d}", "full_name": "Denied Staff"},
     )
     assert resp.status_code == 403
 
@@ -497,13 +499,10 @@ def test_product_candidate_review_http_is_tenant_and_idempotent(client, manageme
     finally:
         with conn.cursor() as cur:
             cur.execute(
-                "DELETE FROM outbox_events WHERE aggregate_id IN (SELECT id FROM product_candidates WHERE vendor_id=%s)",
+                "DELETE FROM outbox_events WHERE aggregate_id::text IN (SELECT id::text FROM product_candidates WHERE vendor_id=%s)",
                 (management_env["vendor_id"],),
             )
-            cur.execute(
-                "DELETE FROM admin_audit_logs WHERE target_entity_type='PRODUCT_CANDIDATE' AND target_entity_id IN (SELECT id FROM product_candidates WHERE vendor_id=%s)",
-                (management_env["vendor_id"],),
-            )
+            # admin_audit_logs is immutable (append-only trigger); rows are harmless.
             cur.execute(
                 "DELETE FROM vendor_inventory WHERE vendor_product_id IN (SELECT id FROM vendor_products WHERE vendor_id=%s)",
                 (management_env["vendor_id"],),
@@ -516,15 +515,57 @@ def test_product_candidate_review_http_is_tenant_and_idempotent(client, manageme
 
 def test_vendor_permission_editor_http_lifecycle(client, management_env):
     conn = management_env["conn"]
+    # permission_audit_events rows are FK-RESTRICTed to their membership and the
+    # table is append-only, so the membership created here can never be deleted.
+    # Use a dedicated throwaway vendor org (random ids) instead of the module
+    # fixture's vendor_org so the module teardown stays unaffected.
+    owner_user = str(uuid4())
+    perm_org = str(uuid4())
+    perm_vendor = str(uuid4())
+    owner_session = str(uuid4())
     staff_user = str(uuid4())
     membership_id = str(uuid4())
-    headers = {"Authorization": f"Bearer {management_env['vendor']}"}
+    owner_token = encode_access_token(owner_user, owner_session, perm_org, "VENDOR_OWNER")
+    headers = {"Authorization": f"Bearer {owner_token}"}
 
     try:
         with conn.cursor() as cur:
             cur.execute(
+                "INSERT INTO users (id, phone_number, full_name, role, is_active) VALUES (%s,%s,'Permission Owner','VENDOR_OWNER',TRUE)",
+                (owner_user, f"+9891{uuid4().int % 10**8:08d}"),
+            )
+            cur.execute(
+                "INSERT INTO organizations (id, name, org_type, status) VALUES (%s,'Permission Editor Vendor','VENDOR','ACTIVE')",
+                (perm_org,),
+            )
+            cur.execute(
+                """
+                INSERT INTO organization_memberships
+                    (id, organization_id, user_id, role, status, is_primary)
+                VALUES (%s,%s,%s,'VENDOR_OWNER','ACTIVE',TRUE)
+                """,
+                (str(uuid4()), perm_org, owner_user),
+            )
+            cur.execute(
+                """
+                INSERT INTO vendors
+                    (id, user_id, organization_id, business_name, warehouse_address, min_order_value_toman, status)
+                VALUES (%s,%s,%s,'Permission Editor Vendor','Ahvaz',1000000,'ACTIVE')
+                """,
+                (perm_vendor, owner_user, perm_org),
+            )
+            cur.execute(
+                """
+                INSERT INTO user_sessions
+                    (id, user_id, active_organization_id, token_hash, status, expires_at)
+                VALUES (%s,%s,%s,%s,'ACTIVE',%s)
+                """,
+                (owner_session, owner_user, perm_org, hash_token(owner_token),
+                 datetime.now(timezone.utc) + timedelta(hours=1)),
+            )
+            cur.execute(
                 "INSERT INTO users (id, phone_number, full_name, role, is_active) VALUES (%s,%s,'Permission Staff','VENDOR_STAFF',TRUE)",
-                (staff_user, f"+9891{uuid4().hex[:8]}"),
+                (staff_user, f"+9891{uuid4().int % 10**8:08d}"),
             )
             cur.execute(
                 """
@@ -532,7 +573,7 @@ def test_vendor_permission_editor_http_lifecycle(client, management_env):
                     (id, organization_id, user_id, role, status, is_primary)
                 VALUES (%s,%s,%s,'VENDOR_STAFF','ACTIVE',FALSE)
                 """,
-                (membership_id, management_env["vendor_org"], staff_user),
+                (membership_id, perm_org, staff_user),
             )
         conn.commit()
 
@@ -615,13 +656,8 @@ def test_vendor_permission_editor_http_lifecycle(client, management_env):
                 "DELETE FROM delegated_permission_grants WHERE membership_id=%s",
                 (membership_id,),
             )
-            cur.execute(
-                "DELETE FROM permission_audit_events WHERE membership_id=%s",
-                (membership_id,),
-            )
-            cur.execute(
-                "DELETE FROM organization_memberships WHERE id=%s",
-                (membership_id,),
-            )
-            cur.execute("DELETE FROM users WHERE id=%s", (staff_user,))
         conn.commit()
+        # The permission_audit_events rows reference this membership via a
+        # RESTRICT foreign key and the table is append-only, so the membership,
+        # its users and the throwaway org cannot be deleted; all ids are random
+        # and the leftovers are harmless.

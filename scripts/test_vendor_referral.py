@@ -91,11 +91,21 @@ def test_vendor_can_create_and_retailer_can_redeem_once():
         assert event["target_user_id"] is None
         assert str(event["target_organization_id"]) == vendor_org
 
-        processed = CanonicalIntegrationWorker.process_pending(cur, limit=20)
-        assert processed >= 1
+        # The worker drains the shared outbox oldest-first, so a single generic
+        # pass can starve this test's event behind unrelated pending rows.
+        # Loop until THIS referral event reaches PUBLISHED (bounded attempts).
+        referral_event_id = f"vendor_referral_redeemed:{attribution['id']}"
+        for _ in range(10):
+            cur.execute(
+                "SELECT status FROM outbox_events WHERE event_id=%s",
+                (referral_event_id,),
+            )
+            if cur.fetchone()["status"] == "PUBLISHED":
+                break
+            CanonicalIntegrationWorker.process_pending(cur, limit=100)
         cur.execute(
             "SELECT status FROM outbox_events WHERE event_id=%s",
-            (f"vendor_referral_redeemed:{attribution['id']}",),
+            (referral_event_id,),
         )
         assert cur.fetchone()["status"] == "PUBLISHED"
     finally:

@@ -93,8 +93,7 @@ def permission_env():
         conn.rollback()
         cur.execute("DELETE FROM delegated_permission_grants WHERE membership_id IN (%s,%s,%s)",
                     (owner_membership_id, staff_membership_id, other_membership_id))
-        cur.execute("DELETE FROM permission_audit_events WHERE membership_id IN (%s,%s,%s)",
-                    (owner_membership_id, staff_membership_id, other_membership_id))
+        # permission_audit_events is append-only (trigger); rows are harmless.
         cur.execute("DELETE FROM organization_memberships WHERE id IN (%s,%s,%s)",
                     (owner_membership_id, staff_membership_id, other_membership_id))
         cur.execute("DELETE FROM organizations WHERE id IN (%s,%s)", (vendor_org_id, other_org_id))
@@ -107,12 +106,22 @@ def permission_env():
 def test_delegated_permission_grant_effective_and_revoke(permission_env):
     env = permission_env
 
+    # inventory.adjust is a VENDOR_STAFF baseline permission: it must be
+    # effective without any grant, and therefore is not a valid revoke
+    # round-trip target. price.manage is grantable but not baseline.
+    effective_baseline = effective_permissions(
+        env["cur"],
+        env["staff_id"],
+        env["vendor_org_id"],
+    )
+    assert "inventory.adjust" in effective_baseline["permissions"]
+
     with pytest.raises(PermissionError, match="not granted"):
         require_permission(
             env["cur"],
             env["staff_id"],
             env["vendor_org_id"],
-            "inventory.adjust",
+            "price.manage",
         )
 
     granted = grant_permission(
@@ -120,8 +129,8 @@ def test_delegated_permission_grant_effective_and_revoke(permission_env):
         env["owner_id"],
         env["vendor_org_id"],
         env["staff_membership_id"],
-        "inventory.adjust",
-        "warehouse lead needs stock correction authority",
+        "price.manage",
+        "warehouse lead needs price management authority",
         client="test",
     )
     assert granted["status"] == "GRANTED"
@@ -131,6 +140,8 @@ def test_delegated_permission_grant_effective_and_revoke(permission_env):
         env["staff_id"],
         env["vendor_org_id"],
     )
+    assert "price.manage" in effective["permissions"]
+    # Baseline permission remains present alongside the delegated grant.
     assert "inventory.adjust" in effective["permissions"]
 
     details = membership_permissions(
@@ -140,6 +151,7 @@ def test_delegated_permission_grant_effective_and_revoke(permission_env):
         env["staff_membership_id"],
     )
     assert details["role"] == "VENDOR_STAFF"
+    assert "price.manage" in details["effective_permissions"]
     assert "inventory.adjust" in details["effective_permissions"]
 
     revoked = revoke_permission(
@@ -147,7 +159,7 @@ def test_delegated_permission_grant_effective_and_revoke(permission_env):
         env["owner_id"],
         env["vendor_org_id"],
         env["staff_membership_id"],
-        "inventory.adjust",
+        "price.manage",
         "temporary duty ended",
         client="test",
     )
@@ -158,7 +170,7 @@ def test_delegated_permission_grant_effective_and_revoke(permission_env):
             env["cur"],
             env["staff_id"],
             env["vendor_org_id"],
-            "inventory.adjust",
+            "price.manage",
         )
 
 

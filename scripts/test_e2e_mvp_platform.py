@@ -276,6 +276,7 @@ def test_media_schema_alignment_and_governance_fields(postgres_database, checkou
             object_key=f"quarantine/g316/{uuid4()}", mime_type="image/webp",
             file_size_bytes=1024, status="UPLOADING", provenance="VENDOR_UPLOADED",
             uploaded_by_user_id=user_id,
+            upload_target_type="PRODUCT", upload_target_id=product_id,
         )
         cur.execute("SELECT storage_bucket, bucket_name, storage_key, object_key, checksum_sha256 FROM media_assets WHERE id=%s", (media["id"],))
         stored = cur.fetchone()
@@ -531,7 +532,7 @@ def test_retailer_pre_acceptance_cancellation_releases_reservation(postgres_data
     reservation_id = str(uuid4())
     with transaction(postgres_database) as cur:
         cur.execute(
-            """INSERT INTO order_groups (id, retailer_id, status) VALUES (%s,%s,'ACTIVE')""",
+            """INSERT INTO order_groups (id, retailer_id, group_status, total_amount_toman) VALUES (%s,%s,'ACTIVE',3100000)""",
             (order_group_id, retailer_id),
         )
         cur.execute(
@@ -541,11 +542,21 @@ def test_retailer_pre_acceptance_cancellation_releases_reservation(postgres_data
             (order_id, f"G337-{order_id[:8]}", order_group_id, retailer_id, line["vendor_id"], 3100000),
         )
         cur.execute("UPDATE vendor_inventory SET reserved_quantity=10 WHERE vendor_product_id=%s", (line["vendor_product_id"],))
+        order_item_id = str(uuid4())
+        cur.execute(
+            """INSERT INTO order_items
+               (id, order_id, product_id, vendor_product_id, product_name_snapshot,
+                brand_name_snapshot, vendor_sku_snapshot, ordered_quantity,
+                unit_price_toman, total_line_amount_toman)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,10,500000,5000000)""",
+            (order_item_id, order_id, line["product_id"], line["vendor_product_id"],
+             "G337 product", "G337 brand", "G337-SKU"),
+        )
         cur.execute(
             """INSERT INTO inventory_reservations
-               (id,order_id,vendor_product_id,quantity,status,idempotency_key,expires_at)
-               VALUES (%s,%s,%s,10,'ACTIVE',%s,now()+interval '15 minutes')""",
-            (reservation_id, order_id, line["vendor_product_id"], f"g337-{reservation_id}"),
+               (id, order_id, order_item_id, vendor_product_id, quantity, status, idempotency_key, expires_at)
+               VALUES (%s,%s,%s,%s,10,'ACTIVE',%s,now()+interval '15 minutes')""",
+            (reservation_id, order_id, order_item_id, line["vendor_product_id"], f"g337-{reservation_id}"),
         )
         result = CanonicalRetailerOrderService.cancel_order(
             cur, user_id=user_id, organization_id=org_id, order_id=order_id,
@@ -796,6 +807,8 @@ def fingerprint(request):
 
 
 def assert_checkout(cur, catalog, request, result):
+    cur.execute("SELECT expires_at FROM allocation_plans WHERE id = %s", (request["plan_id"],))
+    plan_expires_at = cur.fetchone()["expires_at"]
     group_id = result["order_group_id"]
     UUID(str(group_id))
     assert result["order_count"] == 2
@@ -878,7 +891,7 @@ def assert_checkout(cur, catalog, request, result):
             assert str(reservation["order_item_id"]) == str(items_by_offer[line["vendor_product_id"]]["id"])
             assert reservation["released_at"] is reservation["consumed_at"] is None
             assert reservation["created_at"] == group["created_at"]
-            assert reservation["expires_at"] - reservation["created_at"] == timedelta(minutes=15)
+            assert reservation["expires_at"] == plan_expires_at
     assert Counter(seen_products) == Counter({line["product_id"]: 1 for line in catalog["lines"]})
 
 
@@ -908,6 +921,7 @@ def test_checkout_persists_multivendor_orders_snapshots_and_reservations(
         )] == [1, 2, 3, 3, 1]
         assert Counter(row["event_name"] for row in state["outbox_events"]) == Counter({
             "ORDER_GROUP_SUBMITTED": 1, "ORDER_SUBMITTED": 2,
+            "INVENTORY_RESERVATION_CREATED": 3,
         })
         cur.execute("UPDATE products SET canonical_name_fa = 'Changed live product'")
         cur.execute("UPDATE brands SET name_fa = 'Changed live brand'")
@@ -949,7 +963,12 @@ def test_checkout_allows_unfulfilled_allocation_lines(postgres_database, checkou
     assert result["order_count"] == 2
     with transaction(postgres_database) as cur:
         cur.execute(
-            "SELECT count(*) AS c FROM order_items WHERE order_group_id = %s",
+            """
+            SELECT count(*) AS c
+            FROM order_items oi
+            JOIN orders o ON o.id = oi.order_id
+            WHERE o.order_group_id = %s
+            """,
             (result["order_group_id"],),
         )
         assert cur.fetchone()["c"] == 2
@@ -1010,6 +1029,7 @@ def test_checkout_replay_fingerprint_and_new_request_same_retailer(
         assert after["outbox_events"] != before["outbox_events"]
         assert Counter(row["event_name"] for row in after["outbox_events"]) == Counter({
             "ORDER_GROUP_SUBMITTED": 2, "ORDER_SUBMITTED": 4,
+            "INVENTORY_RESERVATION_CREATED": 6,
         })
 
 
@@ -1050,7 +1070,7 @@ def test_checkout_rolls_back_after_partial_sql_writes(
             POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
     assert json.loads(failure.value.diag.message_detail) == {
         "groups": 1, "orders": 2, "items": 3, "reservations": 3,
-        "reserved_quantity": 12, "idempotency": 1, "outbox": 0,
+        "reserved_quantity": 12, "idempotency": 1, "outbox": 2,
     }
     with transaction(postgres_database) as cur:
         assert snapshot(cur) == before
@@ -1068,6 +1088,7 @@ def test_checkout_rolls_back_after_partial_sql_writes(
         )] == [1, 2, 3, 3, 1]
         assert Counter(row["event_name"] for row in after["outbox_events"]) == Counter({
             "ORDER_GROUP_SUBMITTED": 1, "ORDER_SUBMITTED": 2,
+            "INVENTORY_RESERVATION_CREATED": 3,
         })
 
 def test_hourly_capacity_uses_ordered_quantity_and_rejects_at_threshold(
@@ -1151,7 +1172,7 @@ def test_vendor_capacity_lock_serializes_concurrent_checkout_decisions(
 ):
     """G-311: vendor capacity checks hold a transaction-scoped advisory lock until commit."""
     vendor_id = checkout_catalog["lines"][0]["vendor_id"]
-    retailer_id = checkout_catalog["lines"][0]["retailer_id"]
+    retailer_id = checkout_catalog["retailer_id"]
     with transaction(postgres_database) as cur:
         cur.execute(
             "UPDATE vendor_capacity_profiles SET timezone='Asia/Tehran', max_orders_per_day=1 WHERE vendor_id=%s",
@@ -1167,9 +1188,15 @@ def test_vendor_capacity_lock_serializes_concurrent_checkout_decisions(
     try:
         with conn1.cursor(cursor_factory=RealDictCursor) as cur1:
             validate_vendor_operational_capacity(cur1, allocations)
+            # Child orders require an existing parent order group (migration 021/023 context guard).
+            group_id = str(uuid4())
             cur1.execute(
-                "INSERT INTO orders (order_number, retailer_id, vendor_id, total_amount_toman) VALUES (%s,%s,%s,%s)",
-                (f"POL-G311-{uuid4().hex[:12]}", retailer_id, vendor_id, 3100000),
+                "INSERT INTO order_groups (id, retailer_id, group_status, total_amount_toman) VALUES (%s,%s,'ACTIVE',3100000)",
+                (group_id, retailer_id),
+            )
+            cur1.execute(
+                "INSERT INTO orders (order_number, order_group_id, retailer_id, vendor_id, total_amount_toman, created_at) VALUES (%s,%s,%s,%s,%s,%s)",
+                (f"POL-G311-{uuid4().hex[:12]}", group_id, retailer_id, vendor_id, 3100000, datetime(2026, 9, 16, 10, tzinfo=timezone.utc)),
             )
 
             conn2 = psycopg2.connect(**postgres_database)
