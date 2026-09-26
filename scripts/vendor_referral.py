@@ -70,9 +70,9 @@ class VendorReferralService:
 
     @classmethod
     def create_referral(cls, cur, actor_user_id: str, vendor_id: str,
-                        referral_code: str | None = None,
                         max_redemptions: int | None = None,
-                        expires_at=None) -> dict:
+                        expires_at=None,
+                        referral_code: str | None = None) -> dict:
         """Create the canonical vendor referral code/link.
 
         D-016 does not bind a referral to a specific retailer at creation time.
