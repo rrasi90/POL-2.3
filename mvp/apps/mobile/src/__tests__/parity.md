@@ -8,10 +8,10 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 | Shared/Auth | SH-AUTH-01/02, SH-PROFILE-01, SH-NOTIF-01/02 | src/screens/LoginScreen.tsx + AccountMobileScreen.tsx | auth OTP, profile/context, notifications, notification preferences | IMPLEMENTED |
 | Retailer | R-02, R-03, R-06, R-07, R-08, R-10, R-11, R-12, R-16, R-17, R-18 | RetailerMobileScreen.tsx + OrderDetailMobileScreen.tsx + SupportMobileScreen.tsx | catalog/search, vendor search/storefront, basket/allocation/checkout, orders/detail/timeline, returns/disputes, support cases/messages, invoices | IMPLEMENTED |
 | Vendor | V-01, V-02, V-03, V-06, V-07, V-08, V-10, V-17 | VendorMobileScreen.tsx + OrderDetailMobileScreen.tsx | order queue/actions, partial acceptance, items/timeline, inventory, daily inventory, referrals, settlements, invoices | IMPLEMENTED |
-| Ops | O-01, O-02, O-06, O-10 | src/screens/OpsMobileScreen.tsx | exceptions dashboard, orders, reconciliation, audit logs | IMPLEMENTED (ADMIN_SUPER audit) |
+| Ops | O-01, O-02, O-06, O-07, O-08, O-09, O-10, OP-13 | src/screens/OpsMobileScreen.tsx + SupportMobileScreen.tsx | exceptions/risk signals, orders, reconciliation, analytics, notifications, audit logs, catalog-candidate review | IMPLEMENTED (role-scoped; fresh QA pending) |
 | Field | F-01…F-05 | FieldTaskList/Detail/AssistedOrderScreen.tsx + OfflineBanner | field tasks, healthz | IMPLEMENTED |
 | Barcode | R-03B / V-16 | canonical API exists; no device camera adapter yet | POST `/api/v1/products/match-barcode` + candidate workflow | IMPLEMENTED / CAMERA RUNTIME SCOPE |
-| Vendor Customers/Staff | V-09 / V-11 | canonical management HTTP exists; mobile UI remains unported | GET `/api/v1/vendors/customers`, GET/POST/PATCH `/api/v1/vendors/staff*` | IMPLEMENTED SOURCE / MOBILE UI SCOPE |
+| Vendor Customers/Staff | V-09 / V-11 | VendorMobileScreen.tsx | customer search + staff list/invite/status actions | IMPLEMENTED / fresh QA pending |
 | Retailer order detail / returns / support | R-09…R-13 | order detail, return/dispute submission and support are implemented; remaining notifications/profile are shared | routes available per API map | IMPLEMENTED foundation |
 
 ## Mobile-wide rules
@@ -19,7 +19,7 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 - No Driver App (D-023).
 - D-028 barcode matching semantics are now canonical in HTTP/domain code; a device camera adapter may feed the canonical endpoint without creating a second matching contract.
 - F-05 MVP is request-failure state + healthz retry. No rich offline sync is claimed.
-- Role is taken from backend membership context; client does not infer permissions.
+- Role is taken from backend membership context; client does not infer permissions. Admin mutations remain server-authoritative and are exposed in mobile only for roles accepted by the canonical API.
 - Checkout uses the Idempotency-Key header.
 - Light/Night token sets exist centrally; profile/notifications/preferences are shared across authenticated roles; full screen-by-screen Night verification remains a QA task until visual evidence is recorded.
 - Three Phase-3 QA cycles are evidenced historically; fresh certification must be re-established after the current remediation branch because the latest CI reruns fail before useful step execution.
