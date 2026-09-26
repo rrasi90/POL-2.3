@@ -656,6 +656,31 @@ def test_operating_window_uses_its_own_timezone_for_weekday(
         with pytest.raises(AllocationIntegrityError, match="outside its operating window"):
             validate_vendor_operational_capacity(cur, allocations)
 
+def test_overnight_window_uses_previous_weekday_after_midnight(
+    postgres_database, checkout_catalog, monkeypatch,
+):
+    """G-309: after midnight, an overnight window belongs to the previous local business day."""
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            "UPDATE vendor_capacity_profiles SET timezone='Asia/Tehran' WHERE vendor_id=%s",
+            (vendor_id,),
+        )
+        # Wednesday overnight window: 22:00 -> Thursday 02:00.
+        insert_row(
+            cur, "vendor_operating_windows", vendor_id=vendor_id, weekday=3,
+            timezone="Asia/Tehran", opens_at="22:00", closes_at="02:00", is_active=True,
+        )
+        # A Thursday daytime row would make the old lookup reject at 01:00.
+        insert_row(
+            cur, "vendor_operating_windows", vendor_id=vendor_id, weekday=4,
+            timezone="Asia/Tehran", opens_at="08:00", closes_at="18:00", is_active=True,
+        )
+    freeze_policy_clock(monkeypatch, datetime(2026, 9, 17, 21, 30, tzinfo=timezone.utc))
+    allocations = [{"vendor_id": vendor_id, "quantity": 7, "amount_toman": 3100000}]
+    with transaction(postgres_database) as cur:
+        validate_vendor_operational_capacity(cur, allocations)
+
 def test_overnight_operating_window_remains_enforced(
     postgres_database, checkout_catalog, monkeypatch, instant, allowed,
 ):
