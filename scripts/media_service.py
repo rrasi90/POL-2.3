@@ -249,15 +249,16 @@ class MediaService:
         cur.execute(
             """
             INSERT INTO media_assets (
-                id, storage_provider, storage_bucket, storage_key, mime_type,
+                id, storage_provider, storage_bucket, storage_key,
+                bucket_name, object_key, mime_type,
                 file_size_bytes, checksum_sha256, status, provenance,
                 uploaded_by_user_id, upload_target_type, upload_target_id
             )
-            VALUES (%s,'S3_MINIO',%s,%s,%s,%s,'','UPLOADING',%s,%s,%s,%s)
+            VALUES (%s,'S3_MINIO',%s,%s,%s,%s,%s,%s,%s,'UPLOADING',%s,%s,%s,%s)
             RETURNING id
             """,
             (
-                media_id, _bucket(), object_key, mime_type, file_size_bytes,
+                media_id, _bucket(), object_key, _bucket(), object_key, mime_type, file_size_bytes,
                 meta["provenance"], user_id, target_type.upper(), target_id,
             ),
         )
@@ -352,6 +353,8 @@ class MediaService:
             UPDATE media_assets
             SET storage_key=%s,
                 storage_bucket=%s,
+                object_key=%s,
+                bucket_name=%s,
                 mime_type='image/webp',
                 file_size_bytes=%s,
                 width=%s,
@@ -363,7 +366,7 @@ class MediaService:
             RETURNING *
             """,
             (
-                final_key, bucket, len(final_bytes), processed.width, processed.height,
+                final_key, bucket, final_key, bucket, len(final_bytes), processed.width, processed.height,
                 checksum, meta["provenance"], media_id,
             ),
         )
@@ -374,11 +377,24 @@ class MediaService:
             cur.execute(
                 """
                 INSERT INTO product_media
-                    (id, product_id, media_asset_id, is_primary, display_order)
-                VALUES (%s,%s,%s,FALSE,0)
-                ON CONFLICT (product_id, media_asset_id) DO NOTHING
+                    (id, product_id, media_asset_id, media_type, source_provenance,
+                     approval_status, approved_by_user_id, approved_at, is_primary, display_order)
+                VALUES (
+                    %s,%s,%s,'PRIMARY_IMAGE',%s,
+                    CASE WHEN %s = 'POL_OWNED' THEN 'APPROVED' ELSE 'PENDING' END,
+                    CASE WHEN %s = 'POL_OWNED' THEN %s ELSE NULL END,
+                    CASE WHEN %s = 'POL_OWNED' THEN now() ELSE NULL END,
+                    FALSE,0
+                )
+                ON CONFLICT (product_id, media_asset_id) DO UPDATE SET
+                    media_type=EXCLUDED.media_type,
+                    source_provenance=EXCLUDED.source_provenance
                 """,
-                (str(uuid.uuid4()), target_id, media_id),
+                (
+                    str(uuid.uuid4()), target_id, media_id, meta["provenance"],
+                    meta["provenance"], meta["provenance"], user_id,
+                    meta["provenance"],
+                ),
             )
         elif target == "CANDIDATE":
             cur.execute(
