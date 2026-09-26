@@ -437,7 +437,7 @@ This section is the persistent intake ledger for findings previously identified 
 
 | ID | Severity | Finding | Status |
 |---|---:|---|---|
-| G-308 | P1 | Operating-window selection can resolve weekday from capacity timezone before applying the window timezone; deterministic cross-timezone semantics are incomplete. | OPEN |
+| G-308 | P1 | Operating-window selection can resolve weekday from capacity timezone before applying the window timezone; deterministic cross-timezone semantics are incomplete. | RESOLVED — source fix a4683721; regression 4fc8804e |
 | G-309 | P1 | Cross-midnight operating windows do not resolve the previous weekday after midnight. | OPEN |
 | G-310 | P1 | Overnight `order_cutoff_at` lacks day-offset/instant semantics. | OPEN |
 | G-311 | P1 | Daily/hourly vendor capacity is check-then-act and lacks atomic reservation/invariant enforcement. | OPEN |
@@ -544,3 +544,11 @@ At the end of each closed item, the ledger must contain:
 - **Commit**
 - **Verification state**
 
+
+### G-308 Closure Record
+- **Resolution:** Operating-window lookup now evaluates active windows using each row's own timezone and derives the business weekday from that timezone before applying the window.
+- **Files changed:** `scripts/operational_policies.py`, `scripts/test_e2e_mvp_platform.py`
+- **Regression:** `test_operating_window_uses_its_own_timezone_for_weekday`
+- **Source commit:** `a468372131a738b503e9167a52fbb5e2485f2125`
+- **Test commit:** `4fc8804e2e13aec0669726c215d9e4beddd446c4`
+- **Verification state:** SOURCE PATCH + REGRESSION ADDED; fresh CI execution remains separately pending.
