@@ -18,6 +18,7 @@ from scripts.application_boundary import ApplicationContext, POLApplicationBound
 from scripts.migration_runner import apply_migration_chain, get_migration_chain
 from scripts import operational_policies
 from scripts.operational_policies import AllocationIntegrityError, validate_vendor_operational_capacity
+from scripts.privacy_lifecycle import PrivacyLifecycleService
 
 
 @pytest.fixture
@@ -197,6 +198,65 @@ def test_inventory_audit_history_blocks_vendor_product_delete(
         assert cur.fetchone()["n"] == 1
         cur.execute("SELECT COUNT(*) AS n FROM vendor_products WHERE id=%s", (vendor_product_id,))
         assert cur.fetchone()["n"] == 1
+
+
+def test_privacy_export_and_deletion_lifecycle(postgres_database, checkout_catalog):
+    """G-315: export is authenticated/user-scoped; deletion revokes security data and preserves business history."""
+    user_id = checkout_catalog["context"].user_id
+    organization_id = checkout_catalog["context"].organization_id
+    with transaction(postgres_database) as cur:
+        device = insert_row(
+            cur, "user_devices", user_id=user_id, device_fingerprint=f"g315-{uuid4().hex}",
+            device_type="WEB", push_token="secret-push-token", is_active=True,
+        )
+        insert_row(
+            cur, "data_consents", user_id=user_id, organization_id=organization_id,
+            consent_type="MARKETING_PUSH", status="GRANTED", source="TEST", version="1.0",
+            granted_at=datetime.now(timezone.utc),
+        )
+        export_result = PrivacyLifecycleService.request_export(cur, user_id)
+        assert export_result["request"]["status"] == "COMPLETED"
+        assert export_result["data"]["user"]["id"] == user_id
+        assert export_result["data"]["profile"]["user_id"] == user_id
+        assert export_result["data"]["memberships"][0]["organization_id"] == organization_id
+        assert export_result["data"]["devices"][0]["id"] == device["id"]
+        assert export_result["request"]["export_sha256"]
+        assert len(export_result["request"]["export_sha256"]) == 64
+
+    with transaction(postgres_database) as cur:
+        deletion = PrivacyLifecycleService.request_deletion(cur, user_id)
+        assert deletion["request"]["status"] == "COMPLETED"
+
+        cur.execute("SELECT phone_number, full_name, is_active FROM users WHERE id=%s", (user_id,))
+        user = cur.fetchone()
+        assert user["is_active"] is False
+        assert user["full_name"].startswith("Deleted User ")
+        assert user["phone_number"].startswith("+000")
+
+        cur.execute("SELECT profile_status, email, bio, avatar_media_asset_id FROM user_profiles WHERE user_id=%s", (user_id,))
+        profile = cur.fetchone()
+        assert profile["profile_status"] == "SUSPENDED"
+        assert profile["email"] is None
+        assert profile["bio"] is None
+        assert profile["avatar_media_asset_id"] is None
+
+        cur.execute("SELECT status, refresh_token_hash FROM user_sessions WHERE user_id=%s", (user_id,))
+        assert all(row["status"] == "REVOKED" and row["refresh_token_hash"] is None for row in cur.fetchall())
+
+        cur.execute("SELECT is_active, push_token FROM user_devices WHERE id=%s", (device["id"],))
+        device_after = cur.fetchone()
+        assert device_after["is_active"] is False
+        assert device_after["push_token"] is None
+
+        cur.execute("SELECT status FROM data_consents WHERE user_id=%s", (user_id,))
+        assert all(row["status"] == "REVOKED" for row in cur.fetchall())
+
+        cur.execute("SELECT count(*) AS n FROM organization_memberships WHERE user_id=%s", (user_id,))
+        assert cur.fetchone()["n"] >= 1
+
+        # The user record and membership survive as business identity history; no hard delete occurs.
+        cur.execute("SELECT status FROM privacy_requests WHERE user_id=%s AND request_type='DELETION'", (user_id,))
+        assert cur.fetchone()["status"] == "COMPLETED"
 
 
 def persist_request(cur, catalog):
