@@ -144,12 +144,18 @@ class DispatchRequest(APIBaseModel):
     driver_phone: str | None = Field(default=None, max_length=32)
 
 
+class DeliveredItemRequest(APIBaseModel):
+    order_item_id: UUID
+    delivered_quantity: int = Field(ge=0)
+
+
 class DeliveryConfirmRequest(APIBaseModel):
     recipient_name: str | None = Field(default=None, max_length=200)
     otp_code: str | None = Field(default=None, pattern=r"^\d{4}$")
     proof_type: Literal["OTP_CODE", "PHYSICAL_SIGNATURE", "STORE_STAMP", "PHOTO_PROOF"] = "OTP_CODE"
     proof_media_id: str | None = Field(default=None, max_length=64)
     issue_reported: str | None = Field(default=None, max_length=500)
+    delivered_items: list[DeliveredItemRequest] | None = Field(default=None, max_length=500)
 
 
 class MediaPresignRequest(APIBaseModel):
