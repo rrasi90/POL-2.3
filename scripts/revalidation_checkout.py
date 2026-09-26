@@ -258,10 +258,10 @@ class RevalidationCheckoutService:
                     INSERT INTO inventory_reservations (
                         id, vendor_product_id, order_id, order_item_id, quantity, status,
                         idempotency_key, expires_at
-                    ) VALUES (%s,%s,%s,%s,%s,'ACTIVE',%s,now() + interval '15 minutes');
+                    ) VALUES (%s,%s,%s,%s,%s,'ACTIVE',%s,%s);
                     """,
                     (str(uuid.uuid4()), alloc["vendor_product_id"], ord_id, order_item_id,
-                     alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_product_id']}"),
+                     alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_product_id']}", chk["expires_at"]),
                 )
                 cur.execute(
                     """
