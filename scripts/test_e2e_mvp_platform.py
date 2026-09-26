@@ -431,34 +431,47 @@ def test_deleted_media_storage_reconciliation_is_retryable(postgres_database, ch
 
 
 def test_checkout_is_atomic_on_failure_after_reservation_stage(postgres_database, checkout_catalog, monkeypatch):
-    """G-327: a failure after order/reservation mutations rolls back the entire checkout transaction."""
+    """G-327: a failure after order/reservation mutations rolls back the whole checkout transaction."""
     from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
     catalog = checkout_catalog
-    boundary = POLApplicationBoundary(catalog["context"])
     with transaction(postgres_database) as cur:
-        basket = CanonicalBasketAllocationService.create_basket(cur, catalog["context"].user_id, catalog["context"].organization_id)
-        boundary.cur = cur
-        boundary.basket_add_item(
-            basket_id=basket["basket_id"], product_id=catalog["lines"][0]["product_id"],
-            quantity=3, pack_quantity=catalog["lines"][0]["pack_quantity"], expected_version=1,
+        basket = CanonicalBasketAllocationService.create_basket(
+            cur, catalog["context"].user_id, catalog["context"].organization_id
         )
-        preview = CanonicalBasketAllocationService.allocation_preview(cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"])
+        CanonicalBasketAllocationService.add_item(
+            cur, catalog["context"].user_id, catalog["context"].organization_id,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 3,
+            catalog["lines"][0]["pack_quantity"], 1
+        )
+        preview = CanonicalBasketAllocationService.allocation_preview(
+            cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"]
+        )
         plan_id = preview["allocation_plan_id"]
-        monkeypatch.setattr(RevalidationCheckoutService, "_enqueue_submission_events", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("G327 injected failure")))
-        allocations = [{
-            "vendor_id": catalog["lines"][0]["vendor_id"],
-            "vendor_product_id": catalog["lines"][0]["vendor_product_id"],
-            "quantity": 3, "unit_price_toman": catalog["lines"][0]["unit_price_toman"],
-            "amount_toman": 3 * catalog["lines"][0]["unit_price_toman"],
-        }]
-        with pytest.raises(RuntimeError, match="G327 injected failure"):
+
+    allocations = [{
+        "vendor_id": catalog["lines"][0]["vendor_id"],
+        "vendor_product_id": catalog["lines"][0]["vendor_product_id"],
+        "quantity": 3, "unit_price_toman": catalog["lines"][0]["unit_price_toman"],
+        "amount_toman": 3 * catalog["lines"][0]["unit_price_toman"],
+    }]
+    monkeypatch.setattr(
+        RevalidationCheckoutService, "_enqueue_submission_events",
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("G327 injected failure"))
+    )
+    with pytest.raises(RuntimeError, match="G327 injected failure"):
+        with transaction(postgres_database) as cur:
             CanonicalCheckoutGateway.checkout(
                 cur, basket["basket_id"], plan_id, catalog["retailer_id"], str(uuid4()),
                 {"address": "G327"}, allocations,
             )
+
+    with transaction(postgres_database) as cur:
         cur.execute("SELECT COUNT(*) AS n FROM order_groups WHERE basket_id=%s", (basket["basket_id"],))
         assert cur.fetchone()["n"] == 0
-        cur.execute("SELECT COUNT(*) AS n FROM inventory_reservations WHERE order_id IN (SELECT id FROM orders WHERE order_group_id=%s)", (uuid4(),))
+        cur.execute(
+            "SELECT COUNT(*) AS n FROM inventory_reservations ir JOIN orders o ON o.id=ir.order_id WHERE o.order_group_id IS NOT NULL AND ir.vendor_product_id=%s",
+            (catalog["lines"][0]["vendor_product_id"],),
+        )
         assert cur.fetchone()["n"] == 0
         cur.execute("SELECT status FROM allocation_plans WHERE id=%s", (plan_id,))
         assert cur.fetchone()["status"] == "CONFIRMED"
