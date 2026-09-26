@@ -318,10 +318,11 @@ def test_resumable_media_session_and_processing_pipeline(postgres_database, chec
 
     user_id = checkout_catalog["context"].user_id
     org_id = checkout_catalog["context"].organization_id
+    target_id = str(uuid4())
     with transaction(postgres_database) as cur:
         init = MediaService.presign_resumable(
             cur, user_id=user_id, organization_id=org_id, mime_type="image/jpeg",
-            file_size_bytes=len(fake.raw), target_type="VENDOR", target_id=str(uuid4()),
+            file_size_bytes=len(fake.raw), target_type="VENDOR", target_id=target_id,
         )
         assert init["part_count"] == 1
         assert len(init["parts"]) == 1
@@ -335,13 +336,12 @@ def test_resumable_media_session_and_processing_pipeline(postgres_database, chec
         assert complete["status"] == "COMPLETED"
 
     with transaction(postgres_database) as cur:
-        media = cur.execute if False else None
         cur.execute("SELECT status, checksum_sha256 FROM media_assets WHERE id=%s", (init["media_id"],))
         row = cur.fetchone()
         assert row["status"] == "UPLOADING"
         MediaService.confirm_upload(
             cur, user_id=user_id, organization_id=org_id, media_id=init["media_id"],
-            target_type="VENDOR", target_id=str(uuid4()),
+            target_type="VENDOR", target_id=target_id,
         )
 
         cur.execute(
