@@ -66,6 +66,17 @@ def _magic_mime(raw: bytes) -> str:
     raise MediaError("Unsupported or invalid image file signature.")
 
 
+def _validate_bound_upload_target(media: dict, target_type: str, target_id: str) -> None:
+    """Reject confirm-upload retargeting after a presign has been authorized."""
+    bound_type = str(media.get("upload_target_type") or "").upper()
+    bound_id = str(media.get("upload_target_id") or "")
+    requested_type = target_type.upper()
+    requested_id = str(target_id)
+    if bound_type and (bound_type != requested_type or bound_id != requested_id):
+        raise MediaError("Upload confirmation target does not match the authorized presign target.")
+
+
+
 def _target_key(target_type: str, target_id: str, media_id: str) -> str:
     target = target_type.upper()
     if target == "PRODUCT":
@@ -238,12 +249,7 @@ class MediaService:
         if not media:
             raise MediaError("Media upload not found or not owned by current user.")
 
-        bound_type = str(media.get("upload_target_type") or "").upper()
-        bound_id = str(media.get("upload_target_id") or "")
-        requested_type = target_type.upper()
-        requested_id = str(target_id)
-        if bound_type and (bound_type != requested_type or bound_id != requested_id):
-            raise MediaError("Upload confirmation target does not match the authorized presign target.")
+        _validate_bound_upload_target(media, target_type, target_id)
         meta = _authorize_target(cur, user_id, organization_id, target_type, target_id)
         s3 = _s3_client()
         bucket = media["storage_bucket"]
