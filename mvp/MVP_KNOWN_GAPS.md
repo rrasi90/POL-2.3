@@ -416,3 +416,10 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** the application boundary now enforces the canonical transition graph: `ASSIGNED -> IN_PROGRESS/FAILED/CANCELLED`; `IN_PROGRESS -> COMPLETED/FAILED/CANCELLED`; `FAILED -> IN_PROGRESS/CANCELLED`; `COMPLETED` and `CANCELLED` are terminal for status. The HTTP schema constrains the status vocabulary and the Field Task detail UI only offers valid next states while still allowing notes updates.
 - **Regression proof:** `scripts/test_http_field_tasks.py::TestFieldTaskCRUD::test_task_cannot_roll_back_from_in_progress_to_assigned` verifies server rejection and state preservation after an invalid rollback.
 - **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
+
+## G-063 — Last Active Vendor Owner Suspension Gap (IAM / TENANT INTEGRITY — REMEDIATED — 2026-09-26)
+
+- **Finding:** `vendor_staff_update` protected the last active `VENDOR_OWNER` from demotion/revocation but allowed that same last owner to be suspended, potentially leaving the vendor organization without any active owner and therefore without an operator able to manage staff/access.
+- **Resolution:** the last-owner safeguard now treats `SUSPENDED` exactly like `REVOKED`/demotion. At least one other active vendor owner must exist before an active owner can be suspended, revoked, or demoted.
+- **Regression proof:** `scripts/test_http_management.py::test_vendor_owner_cannot_suspend_last_active_owner` verifies HTTP rejection and membership state preservation.
+- **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
