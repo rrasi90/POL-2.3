@@ -320,3 +320,11 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** both the HTTP route and the application boundary now require an active RETAILER_OWNER membership in an active retailer organization.
 - **Regression proof:** scripts/test_http_returns_disputes.py::TestDisputeOpen::test_retailer_staff_cannot_open_formal_dispute.
 - **Status:** SOURCE REMEDIATED / FRESH CI PENDING
+
+
+## G-050 — Expo SDK 57 CI Node-runtime mismatch (TOOLCHAIN — REMEDIATED — 2026-09-26)
+
+- **Finding:** the mobile verification workflow used Node 20 while the repository's Expo SDK 57 stack requires Node 22.13.x or newer.
+- **Resolution:** mobile CI now uses Node 22.23.1; mvp/package.json and the lockfile declare Node >=22.13.0.
+- **Evidence:** Expo's current SDK reference lists 22.13.x as the minimum Node.js version for SDK 57.
+- **Status:** SOURCE REMEDIATED / FRESH CI EXECUTION BLOCKED BEFORE STEPS
