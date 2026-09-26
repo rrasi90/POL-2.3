@@ -32,6 +32,16 @@ from scripts.media_service import MediaService
 from scripts.user_profiles import UserProfileService
 from scripts.vendor_referral import VendorReferralService
 from scripts.vendor_acceptance_timeout_worker import VendorAcceptanceTimeoutWorker
+from scripts.permissions import (
+    BASE_ROLE_PERMISSIONS,
+    CANONICAL_PERMISSIONS,
+    effective_permissions,
+    grant_permission,
+    membership_permissions,
+    permission_audit,
+    require_permission,
+    revoke_permission,
+)
 
 
 @dataclass(frozen=True)
@@ -4646,6 +4656,70 @@ class POLApplicationBoundary:
             ),
         )
         return after
+
+    def delegated_permissions_list(self, *, membership_id):
+        if not self.context.organization_id:
+            raise PermissionError("Delegated permissions require an active organization context.")
+        return membership_permissions(
+            self.cur,
+            self.context.user_id,
+            self.context.organization_id,
+            str(membership_id),
+        )
+
+    def delegated_permission_grant(
+        self,
+        *,
+        membership_id,
+        permission_key,
+        reason,
+        client=None,
+    ):
+        if not self.context.organization_id:
+            raise PermissionError("Delegated permissions require an active organization context.")
+        return grant_permission(
+            self.cur,
+            self.context.user_id,
+            self.context.organization_id,
+            str(membership_id),
+            permission_key,
+            reason,
+            client=client,
+        )
+
+    def delegated_permission_revoke(
+        self,
+        *,
+        membership_id,
+        permission_key,
+        reason,
+        client=None,
+    ):
+        if not self.context.organization_id:
+            raise PermissionError("Delegated permissions require an active organization context.")
+        return revoke_permission(
+            self.cur,
+            self.context.user_id,
+            self.context.organization_id,
+            str(membership_id),
+            permission_key,
+            reason,
+            client=client,
+        )
+
+    def delegated_permission_audit(self, *, membership_id=None, limit=100):
+        if not self.context.organization_id:
+            raise PermissionError("Delegated permissions require an active organization context.")
+        return {
+            "items": permission_audit(
+                self.cur,
+                self.context.user_id,
+                self.context.organization_id,
+                target_membership_id=str(membership_id) if membership_id else None,
+                limit=limit,
+            ),
+            "limit": limit,
+        }
 
     def admin_users_list(self, *, query=None, offset=0, limit=50):
         self._require_admin_management()
