@@ -346,6 +346,14 @@ def confirm_delivery(
             kwargs["proof_media_id"] = payload.proof_media_id
         if payload.issue_reported:
             kwargs["issue_reported"] = payload.issue_reported
+        if payload.delivered_items:
+            kwargs["delivered_items"] = [
+                {
+                    "order_item_id": str(item.order_item_id),
+                    "delivered_quantity": item.delivered_quantity,
+                }
+                for item in payload.delivered_items
+            ]
     return success_payload(boundary.retailer_confirm_delivery(**kwargs))
 
 
