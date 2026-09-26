@@ -388,3 +388,10 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** the membership projection now applies the same canonical-permission and target-role deny-ceiling filters as runtime authorization before reporting an effective delegated permission.
 - **Regression proof:** `scripts/test_delegated_permissions.py::test_historical_owner_only_grant_cannot_become_effective` asserts that a legacy owner-only grant does not appear in the projected effective permissions.
 - **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
+
+## G-059 — Organization-Switch Refresh-Token Documentation Drift (CONTRACT / AUTH — REMEDIATED — 2026-09-26)
+
+- **Finding:** `06_PRODUCT/API_Contracts.md` stated that `POST /auth/switch-organization` rotates and replaces the refresh-token hash, while the actual `AuthService.switch_organization()` implementation only updates the active organization and issues a new access token.
+- **Resolution:** API documentation now reflects the implementation: refresh rotation occurs on `POST /auth/refresh`; organization switching does not rotate the refresh token. D-018 remains the governing open policy decision and no new behavior was invented.
+- **Regression / evidence:** source-contract inspection confirms the documented response and implementation path are aligned; future policy changes must be recorded as a superseding D-018 decision before changing either behavior.
+- **Status:** **SOURCE/DOC REMEDIATED / FRESH CI PENDING**
