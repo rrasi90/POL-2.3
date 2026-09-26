@@ -202,6 +202,7 @@ def grant_permission(
     permission_key: str,
     reason: str,
     client: str | None = None,
+    target_role: str | None = None,
 ) -> dict:
     if permission_key not in CANONICAL_PERMISSIONS:
         raise ValueError("Unknown permission.")
@@ -230,6 +231,8 @@ def grant_permission(
         raise KeyError("Target membership not found.")
     if target["status"] != "ACTIVE" or target["organization_status"] != "ACTIVE":
         raise ValueError("Target membership must be active.")
+    if target_role and target["role"] != target_role:
+        raise ValueError(f"Target membership role must be {target_role}.")
 
     cur.execute(
         """
@@ -305,6 +308,7 @@ def revoke_permission(
     permission_key: str,
     reason: str,
     client: str | None = None,
+    target_role: str | None = None,
 ) -> dict:
     if permission_key not in CANONICAL_PERMISSIONS:
         raise ValueError("Unknown permission.")
@@ -327,6 +331,8 @@ def revoke_permission(
     target = cur.fetchone()
     if not target:
         raise KeyError("Target membership not found.")
+    if target_role and target["role"] != target_role:
+        raise ValueError(f"Target membership role must be {target_role}.")
 
     cur.execute(
         """
