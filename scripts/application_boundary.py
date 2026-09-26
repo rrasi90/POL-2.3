@@ -16,6 +16,7 @@ from scripts.canonical_feedback import CanonicalFeedbackService
 from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
 from scripts.canonical_partial_acceptance import CanonicalPartialAcceptanceService
 from scripts.canonical_vendor_order import CanonicalVendorOrderService
+from scripts.canonical_retailer_order import CanonicalRetailerOrderService
 from scripts.canonical_support import CanonicalSupportService
 from scripts.fulfillment_service import (
     mark_preparing as _mark_preparing,
@@ -333,6 +334,13 @@ class POLApplicationBoundary:
             ],
             "idempotent_replay": bool(result.get("idempotent_replay", False)),
         }
+
+    def retailer_order_cancel(self, *, order_id, reason='RETAILER_CANCELLED'):
+        self._verify_retailer_actor_for_order(order_id)
+        return CanonicalRetailerOrderService.cancel_order(
+            self.cur, user_id=self.context.user_id, organization_id=self.context.organization_id,
+            order_id=order_id, reason=reason,
+        )
 
     def vendor_order_accept(self, *, order_id):
         return CanonicalVendorOrderService.accept_order(
