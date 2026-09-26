@@ -252,3 +252,18 @@ def test_vendor_staff_role_does_not_receive_order_accept_permission():
     assert "order.accept" not in BASE_ROLE_PERMISSIONS["VENDOR_STAFF"]
     assert "order.accept" in BASE_ROLE_PERMISSIONS["VENDOR_OWNER"]
 \n
+
+def test_owner_only_permissions_cannot_be_delegated_to_vendor_staff(permission_env):
+    env = permission_env
+    for permission_key in ("order.accept", "membership.manage"):
+        with pytest.raises(PermissionError, match="cannot be delegated"):
+            grant_permission(
+                env["cur"],
+                env["owner_id"],
+                env["vendor_org_id"],
+                env["staff_membership_id"],
+                permission_key,
+                "role ceiling regression",
+                client="test",
+            )
+\n
