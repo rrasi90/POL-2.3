@@ -451,7 +451,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-319 | P1 | POD/dispute media references lack READY + ownership + tenant + purpose validation. | RESOLVED — validator b7c4e56a; dispute 7c078b5f; POD 891778b1; regression a0a5d55b |
 | G-320 | P2 | DB media DELETED lifecycle lacks explicit object-storage reconciliation. | RESOLVED_CODE / PROVIDER_EVIDENCE_PENDING — migration 2b7c4d6e; worker 47656dc4; regression fd611fe5 |
 | G-325 | P1 | Basket/allocation stale-version handling and checkout consistency require complete canonical enforcement. | RESOLVED — gateway/revalidation source; stale regression already persisted |
-| G-326 | P1 | Stale-checkout must return a canonical 409 Conflict contract. | OPEN |
+| G-326 | P1 | Stale-checkout must return a canonical 409 Conflict contract. | RESOLVED — 409 mapper 7f11226a; stale exception 2f221746; HTTP regression af860ce5 |
 | G-327 | P1 | Checkout must be atomic across allocation/order/reservation mutations. | OPEN |
 | G-328 | P1 | Client/server basket-allocation-checkout state coherence is incomplete. | OPEN |
 | G-329 | P1 | DB/runtime evidence for stale/concurrent basket/checkout invariants is incomplete. | OPEN |
@@ -657,3 +657,10 @@ At the end of each closed item, the ledger must contain:
 - **Resolution:** canonical checkout now serializes on the idempotency key, locks basket + allocation plan with `FOR UPDATE`, verifies current basket version equals allocation-plan basket version, and independently revalidates allocation payload against the persisted plan before creating orders/reservations. Basket mutation itself remains optimistic-version guarded.
 - **Existing regression:** `test_stale_plan_version_rejected` verifies current basket v2 cannot consume a plan generated at v1; gateway/revalidation contain the same invariant in the real checkout path.
 - **Verification state:** source + regression evidence persisted; fresh execution remains pending.
+
+### G-326 Closure Record
+- **Resolution:** introduced `ConflictError` as the canonical stale/competing-state transport error; FastAPI maps it to HTTP 409 with error code `CONFLICT`. Stale basket/plan validation raises `STALE_BASKET_VERSION` through this path.
+- **Regression:** `test_checkout_stale_basket_returns_canonical_409` verifies the POST checkout route returns 409, `success=false`, error code `CONFLICT`, and the stale-version code in the message.
+- **Source commits:** `7f11226aeba931e71dec8131258dc9bb3940c33b`, `2f221746aa0e06a09c6aa62df6827c91be496aa6`
+- **Regression commit:** `af860ce59840e8ade8243384275680babce27847`
+- **Verification state:** HTTP contract + exception mapping + regression persisted; fresh runtime/CI execution remains pending.
