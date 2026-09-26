@@ -381,3 +381,10 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 **Remediation:** The boundary now resolves the active retailer from the authenticated organization, loads the canonical referral independently of vendor tenant, and delegates redemption to `VendorReferralService.redeem_referral()` using a deterministic HTTP idempotency key. This persists `vendor_referral_attributions` and emits the canonical analytics outbox event while keeping retailer first-touch uniqueness.  
 **Regression:** New `scripts/test_http_referrals.py` verifies first redemption creates an attribution and a repeated HTTP redemption replays without incrementing the quota twice.  
 **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
+
+## G-058 — Delegated Permission Projection Drift (SECURITY / RBAC — REMEDIATED — 2026-09-26)
+
+- **Finding:** `membership_permissions()` previously added every `GRANTED` delegated permission to its reported `effective_permissions`, even when the target role's canonical delegation ceiling denied that capability or the key was non-canonical. This could make the management projection disagree with the runtime `effective_permissions()` evaluator.
+- **Resolution:** the membership projection now applies the same canonical-permission and target-role deny-ceiling filters as runtime authorization before reporting an effective delegated permission.
+- **Regression proof:** `scripts/test_delegated_permissions.py::test_historical_owner_only_grant_cannot_become_effective` asserts that a legacy owner-only grant does not appear in the projected effective permissions.
+- **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
