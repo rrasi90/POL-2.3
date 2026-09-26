@@ -4852,7 +4852,7 @@ class POLApplicationBoundary:
         return {
             "roles": {
                 "RETAILER_OWNER": ["invite_staff", "manage_store_profile", "place_orders", "confirm_delivery", "submit_payment_evidence", "open_disputes", "view_invoices"],
-                "RETAILER_STAFF": ["build_basket", "view_orders", "confirm_delivery"],
+                "RETAILER_STAFF": ["view_orders", "confirm_delivery"],
                 "VENDOR_OWNER": ["manage_catalog", "set_prices", "update_inventory", "accept_reject_orders", "assign_drivers", "view_settlements", "manage_staff"],
                 "VENDOR_STAFF": ["review_orders", "mark_preparing", "mark_ready", "dispatch", "confirm_inventory"],
                 "FIELD_ACTIVATOR": ["register_retailer_lead", "verify_coordinates", "complete_onboarding", "log_field_visits"],
