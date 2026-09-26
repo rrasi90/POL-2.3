@@ -101,3 +101,9 @@ These are source-level closures. They are not marked as fresh CI PASS because cu
 - The projection now applies the same canonical-key and target-role deny filters as `effective_permissions()`.
 - Existing regression `test_historical_owner_only_grant_cannot_become_effective` now protects both runtime evaluation and management projection.
 - This is a source-level remediation. Fresh CI certification remains blocked by the current GitHub Actions execution/evidence issue.
+
+## Post-reaudit Source Finding Closed — G-059 / G-060 — 2026-09-26
+
+- **G-059:** `POST /auth/switch-organization` documentation incorrectly claimed refresh-token rotation. The API contract now documents the actual implementation: organization switch changes the active organization and issues a new access token; refresh-token rotation remains on `POST /auth/refresh`, while D-018 remains the open policy decision.
+- **G-060:** operator invoice-list scope was narrower than the approved finance/RBAC contract. `invoices_list()` now gives active operator administration the intended read-only cross-tenant invoice visibility, while retailer/vendor paths remain organization-scoped. A new HTTP regression covers the operator list path.
+- These closures are source/contract-level. Current GitHub Actions runs continue to terminate before useful workflow steps, so no fresh CI PASS is claimed.
