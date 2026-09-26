@@ -3981,46 +3981,58 @@ class POLApplicationBoundary:
         }
 
     def referral_redeem(self, *, referral_id):
+        """Redeem a vendor referral as first-touch attribution for the current retailer."""
         if not self.context.organization_id:
             raise PermissionError("Referral redemption requires an organization context.")
+
         self.cur.execute(
             """
-            SELECT vr.id, vr.vendor_id, vr.status, vr.redemption_count,
-                   vr.max_redemptions
-            FROM vendor_referrals vr
-            JOIN vendors v ON v.id = vr.vendor_id
-            WHERE vr.id = %s AND v.organization_id = %s
+            SELECT r.id AS retailer_id
+            FROM retailers r
+            JOIN organizations o ON o.id=r.organization_id
+            JOIN organization_memberships om
+              ON om.organization_id=r.organization_id
+             AND om.user_id=%s
+             AND om.status='ACTIVE'
+             AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+            WHERE r.organization_id=%s
+              AND o.status='ACTIVE'
+            ORDER BY r.id
+            LIMIT 1
             """,
-            (referral_id, self.context.organization_id),
+            (self.context.user_id, self.context.organization_id),
         )
-        row = self.cur.fetchone()
-        if not row:
-            raise KeyError("Referral not found.")
-        referral = dict(row)
-        if referral["status"] != "ACTIVE":
-            raise ValueError(f"Referral is in '{referral['status']}' status and cannot be redeemed.")
-        if referral["max_redemptions"] is not None and referral["redemption_count"] >= referral["max_redemptions"]:
-            raise ValueError("Referral redemption limit reached.")
+        retailer = self.cur.fetchone()
+        if not retailer:
+            raise PermissionError("Referral redemption requires an active retailer membership.")
+
         self.cur.execute(
             """
-            UPDATE vendor_referrals
-            SET status = 'ACTIVE',
-                redemption_count = redemption_count + 1,
-                updated_at = now()
-            WHERE id = %s
-            RETURNING id, vendor_id, referral_code, status, redemption_count, updated_at
+            SELECT vr.id, vr.vendor_id, vr.referral_code, vr.status
+            FROM vendor_referrals vr
+            JOIN vendors v ON v.id=vr.vendor_id
+            JOIN organizations o ON o.id=v.organization_id
+            WHERE vr.id=%s
+              AND o.status='ACTIVE'
+            FOR UPDATE
             """,
             (referral_id,),
         )
-        updated = self.cur.fetchone()
-        return {
-            "id": str(updated["id"]),
-            "vendor_id": str(updated["vendor_id"]),
-            "referral_code": updated["referral_code"],
-            "status": updated["status"],
-            "redemption_count": int(updated["redemption_count"]),
-            "updated_at": updated["updated_at"].isoformat() if updated["updated_at"] else None,
-        }
+        referral = self.cur.fetchone()
+        if not referral:
+            raise KeyError("Referral not found.")
+
+        request_key = (
+            f"HTTP_REFERRAL_REDEEM:{str(referral_id)}:"
+            f"{str(retailer['retailer_id'])}"
+        )
+        return VendorReferralService.redeem_referral(
+            self.cur,
+            self.context.user_id,
+            str(retailer["retailer_id"]),
+            referral["referral_code"],
+            request_key,
+        )
 
     def daily_inventory_confirm_with_changes(self, confirmation_date: str, changes: list):
         """Confirm with item quantity changes (tenant-scoped)."""
