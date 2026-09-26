@@ -21,6 +21,7 @@ from scripts import operational_policies
 from scripts.operational_policies import AllocationIntegrityError, validate_vendor_operational_capacity
 from scripts.privacy_lifecycle import PrivacyLifecycleService
 from scripts.media_service import MediaService, MediaError, validate_ready_attachment
+from scripts.canonical_retailer_order import CanonicalRetailerOrderService
 from scripts.checkout_gateway import CanonicalCheckoutGateway
 from scripts.reservation_expiry_worker import ReservationExpiryWorker
 from scripts.revalidation_checkout import RevalidationCheckoutService
@@ -517,6 +518,58 @@ def test_reservation_expiry_worker_releases_stock_and_persists_event(postgres_da
         event = cur.fetchone()
         assert event["event_name"] == "INVENTORY_RESERVATION_EXPIRED"
         assert event["reservation_id"] == reservation_id
+
+
+def test_retailer_pre_acceptance_cancellation_releases_reservation(postgres_database, checkout_catalog):
+    """G-337: retailer can cancel only SUBMITTED orders and active stock reservations are released atomically."""
+    line = checkout_catalog["lines"][0]
+    retailer_id = checkout_catalog["retailer_id"]
+    org_id = checkout_catalog["context"].organization_id
+    user_id = checkout_catalog["context"].user_id
+    order_id = str(uuid4())
+    order_group_id = str(uuid4())
+    reservation_id = str(uuid4())
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            """INSERT INTO order_groups (id, retailer_id, status) VALUES (%s,%s,'ACTIVE')""",
+            (order_group_id, retailer_id),
+        )
+        cur.execute(
+            """INSERT INTO orders
+               (id, order_number, order_group_id, retailer_id, vendor_id, order_status, total_amount_toman)
+               VALUES (%s,%s,%s,%s,%s,'SUBMITTED',%s)""",
+            (order_id, f"G337-{order_id[:8]}", order_group_id, retailer_id, line["vendor_id"], 3100000),
+        )
+        cur.execute("UPDATE vendor_inventory SET reserved_quantity=10 WHERE vendor_product_id=%s", (line["vendor_product_id"],))
+        cur.execute(
+            """INSERT INTO inventory_reservations
+               (id,order_id,vendor_product_id,quantity,status,idempotency_key,expires_at)
+               VALUES (%s,%s,%s,10,'ACTIVE',%s,now()+interval '15 minutes')""",
+            (reservation_id, order_id, line["vendor_product_id"], f"g337-{reservation_id}"),
+        )
+        result = CanonicalRetailerOrderService.cancel_order(
+            cur, user_id=user_id, organization_id=org_id, order_id=order_id,
+        )
+        assert result["order_status"] == "CANCELLED"
+        assert result["released_reservation_count"] == 1
+        cur.execute("SELECT order_status, cancellation_reason FROM orders WHERE id=%s", (order_id,))
+        order = cur.fetchone()
+        assert order["order_status"] == "CANCELLED"
+        assert order["cancellation_reason"] == "RETAILER_CANCELLED"
+        cur.execute("SELECT status, consumed_quantity FROM inventory_reservations WHERE id=%s", (reservation_id,))
+        reservation = cur.fetchone()
+        assert reservation["status"] == "RELEASED"
+        assert int(reservation["consumed_quantity"]) == 0
+        cur.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s", (line["vendor_product_id"],))
+        assert int(cur.fetchone()["reserved_quantity"]) == 0
+        cur.execute("SELECT event_name FROM outbox_events WHERE aggregate_type='ORDER' AND aggregate_id=%s", (order_id,))
+        assert any(row["event_name"] == "ORDER_CANCELLED" for row in cur.fetchall())
+
+    with transaction(postgres_database) as cur:
+        replay = CanonicalRetailerOrderService.cancel_order(
+            cur, user_id=user_id, organization_id=org_id, order_id=order_id,
+        )
+        assert replay["idempotent_replay"] is True
 
 
 def persist_request(cur, catalog):
