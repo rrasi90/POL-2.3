@@ -402,3 +402,10 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** operator invoice listing now uses an explicit read-only global scope (`WHERE 1 = 1`), while retailer/vendor tenants remain strictly organization-scoped.
 - **Regression proof:** `scripts/test_http_finance.py::TestInvoiceList::test_ops_list_cross_tenant_invoices` creates an active `ADMIN_SUPER` operator session and verifies that an invoice belonging to separate retailer/vendor tenants is returned by the operator list endpoint.
 - **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
+
+## G-061 — Vendor Referral Create Contract Drift (API / UI / DOMAIN — REMEDIATED — 2026-09-26)
+
+- **Finding:** the Vendor Referral create path diverged across layers: the UI sent `code`, the HTTP schema required an unrelated `referred_retailer_id`, the application boundary wrote `vendor_referrals` directly instead of using the canonical D-016 service, and an older HTTP regression redeemed a referral using the vendor token rather than a retailer token. This made the V-08 create flow incompatible with the canonical first-touch model.
+- **Resolution:** referral creation now accepts an optional `referral_code` and optional quota/expiry controls, generates a canonical `POLV-XXXXXXXX` code when omitted, validates custom codes in the canonical `VendorReferralService`, and the HTTP boundary delegates to that service. The web client sends/reads `referral_code`. Referral redemption tests now use the retailer identity and verify attribution plus quota behavior.
+- **Contract source:** D-016 — vendor creates a referral code/link; retailer redeems once as first-touch attribution; no reward/wallet engine in MVP.
+- **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
