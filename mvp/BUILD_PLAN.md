@@ -21,15 +21,15 @@
 | 5 | Full Web MVP | **IMPLEMENTED / PARTIAL E2E** | Current screen matrix remains the authoritative capability ledger; management/customer/staff/candidate surfaces are now source-implemented. Historical cycle-5 counts remain historical evidence only. |
 | 6 | Phase 3 Android | **SOURCE IMPLEMENTED / REVERIFY** | Supported mobile parity plus post-remediation LOCAL-01…04 evidence is recorded. Barcode matching backend is implemented; camera transport remains a separate runtime scope. Fresh CI reruns currently fail before step-level execution. |
 | 7 | OpenPencil WAVE-02 | **BLOCKED_EXTERNAL** | MCP `:7600` not listening (app not running). WAVE-01 evidence on disk. |
-| 8 | Global QA + regression | **SOURCE COMPLETE / FRESH CI BLOCKED** | LOCAL-02 16/16 and LOCAL-03 12/12 are recorded PASS; latest pull-request CI runs fail before useful steps. No fresh green certification is claimed. |
+| 8 | Global QA + regression | **SOURCE COMPLETE / FRESH CI BLOCKED** | LOCAL-02 16/16 and LOCAL-03 12/12 are historical device evidence; latest remediation pull-request CI runs fail before useful steps. No fresh green certification is claimed. |
 | 9 | Structural audit | **DONE** (2026-09-23) | `python artifacts/structural_audit.py` → EXIT 0: window_loc=0, console_log=0, fake_success=0 (biz_calc hits all backend). |
 | 10 | Anti-vibe-coding audit | **DONE** (2026-09-23) | same checklist green; rules file restored to `.agents/rules/00-pol-canonical-safety.md`. |
 | 11 | GitHub reconciliation | **DONE (2026-09-23)** | Current code commit `f8ef267e6666a03b483afdd8618585ed82086014` has fresh backend verification CI **SUCCESS** (run 35893284312) and mobile Cycle 3 verification CI **SUCCESS** (run 35893284378). |
 | 12 | Independent 2nd-pass audit | **DONE** | `verify_repository_consistency.py` PASS 8/8 EXIT 0 (D-015/016/017 + hierarchy restored). |
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
-| 14 | Regression | **REVERIFY** | Historical backend/mobile CI was green; post-remediation pull-request reruns are currently failing before useful step execution, so fresh certification is pending. Local regression/E2E evidence is recorded separately. |
+| 14 | Regression | **REVERIFY** | Historical backend/mobile CI was green; current remediation pull-request jobs still fail before useful step execution. Local regression/E2E evidence is historical and separately recorded. |
 | 15 | Repeat until DoD | **OPEN — EVIDENCE/DECISION GATE** | Source-level remediation is advanced; remaining DoD blockers are the explicit decisions in §2, deployment/provider/observability evidence, selected deep mobile parity, and fresh CI certification. |
-| 16 | Phase 5 delivery | **OPEN — FINAL EVIDENCE RECONCILIATION** | Night, live checkout and idempotency local gates are recorded PASS. Remaining closure is fresh CI certification plus explicit product/security/deployment decisions/evidence. |
+| 16 | Phase 5 delivery | **OPEN — FINAL EVIDENCE RECONCILIATION** | Night, live checkout and idempotency device/local gates are historical PASS evidence. Remaining closure is fresh CI certification plus explicit product/security/deployment decisions/evidence. |
 
 ---
 
@@ -337,3 +337,13 @@ MVP is DONE only when **all** hold:
 ```
 
 Update MATRIX / API_MAP / GAPS when a status changes. Never mark VERIFIED without live HTTP evidence.
+
+### 2026-09-26 remediation re-audit overlay
+
+- Current remediation branch: `remediation/full-closure-2026-09-25`.
+- Current head at checkpoint: `63c0368e576c160e15bf246192cbef2543235ee7`.
+- Additional source hardening completed after the prior audit: owner-only basket/checkout, owner-only partial acceptance and vendor acceptance/rejection, formal dispute opening, role-aware delegated-permission ceilings, auth organization-switch regression, and Expo SDK 57 Node toolchain alignment.
+- Expo SDK 57 requires Node.js 22.13.x minimum; mobile CI now uses Node 22.23.1 and the monorepo declares Node >=22.13.0.
+- Do not use historical 497/497, 526/526, or prior mobile CI success as current-head certification.
+- Current GitHub Actions execution remains blocked before useful steps (jobs have empty step metadata and logs are unavailable).
+\n
