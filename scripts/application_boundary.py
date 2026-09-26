@@ -1033,18 +1033,14 @@ class POLApplicationBoundary:
         )
 
         if evidence_media_id:
-            self.cur.execute(
-                """
-                SELECT id
-                FROM media_assets
-                WHERE id=%s
-                  AND uploaded_by_user_id=%s
-                  AND status='READY'
-                """,
-                (evidence_media_id, self.context.user_id),
+            MediaService.validate_ready_attachment(
+                self.cur,
+                media_id=str(evidence_media_id),
+                user_id=self.context.user_id,
+                organization_id=self.context.organization_id,
+                target_type="DISPUTE",
+                target_id=str(disp_id),
             )
-            if not self.cur.fetchone():
-                raise PermissionError("Evidence media must be a READY asset owned by the current user.")
             self.cur.execute(
                 "UPDATE disputes SET evidence_media_id=%s WHERE id=%s",
                 (evidence_media_id, disp_id),
