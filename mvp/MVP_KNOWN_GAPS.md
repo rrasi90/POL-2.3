@@ -453,7 +453,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-325 | P1 | Basket/allocation stale-version handling and checkout consistency require complete canonical enforcement. | RESOLVED — gateway/revalidation source; stale regression already persisted |
 | G-326 | P1 | Stale-checkout must return a canonical 409 Conflict contract. | RESOLVED — 409 mapper 7f11226a; stale exception 2f221746; HTTP regression af860ce5 |
 | G-327 | P1 | Checkout must be atomic across allocation/order/reservation mutations. | RESOLVED_SOURCE/REGRESSION — transactional gateway + rollback test d8e8a5aa |
-| G-328 | P1 | Client/server basket-allocation-checkout state coherence is incomplete. | OPEN |
+| G-328 | P1 | Client/server basket-allocation-checkout state coherence is incomplete. | RESOLVED_CODE / DEVICE_EVIDENCE_PENDING — mobile 753d5e5c; API 2493c647; QA 8f1c2b60 |
 | G-329 | P1 | DB/runtime evidence for stale/concurrent basket/checkout invariants is incomplete. | OPEN |
 | G-330 | P1 | Allocation tie-breaking is not fully deterministic. | OPEN |
 | G-331 | P1 | Allocation tie-selection semantics are incomplete/under-specified in runtime. | OPEN |
@@ -670,3 +670,9 @@ At the end of each closed item, the ledger must contain:
 - **Regression:** `test_checkout_is_atomic_on_failure_after_reservation_stage` now intentionally raises from event enqueue inside a real transaction and verifies zero persisted order groups/reservations, plan remains CONFIRMED, basket remains OPEN, and reserved quantity returns to zero.
 - **Regression commit:** `d8e8a5aa2cb84f6604561beaf41d125acd824ec9`
 - **Verification state:** source + rollback regression persisted; fresh execution/CI remains pending.
+
+### G-328 Closure Record
+- **Resolution:** retailer mobile now tracks the server basket version, receives `basket_version` from allocation preview, and handles canonical HTTP 409 conflicts by invalidating the stale allocation, fetching `/api/v1/baskets/current`, synchronizing local item quantities/IDs and retaining the server version. This prevents the UI from replaying a stale allocation after server rejection.
+- **Source commits:** `753d5e5cc519cc85841f4e742308eb5131fdb9a4`, `2493c6477da5093a2d3c9f49f17b61ece713747b`
+- **QA commit:** `8f1c2b60500c619a100ee71650bf74834c40fae7`
+- **Verification state:** CODE + STATIC MOBILE QA GATE PERSISTED; actual device execution remains pending.
