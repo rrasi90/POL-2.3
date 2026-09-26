@@ -556,6 +556,28 @@ class CanonicalPartialAcceptanceService:
 
             cur.execute(
                 """
+                INSERT INTO outbox_events (
+                    id,event_id,event_name,aggregate_type,aggregate_id,payload,
+                    status,target_user_id,target_organization_id,dedupe_key,channel_hint
+                )
+                VALUES (
+                    gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_CONSUMED','INVENTORY_RESERVATION',%s,
+                    jsonb_build_object(
+                        'reservation_id',%s,'order_id',%s,'vendor_product_id',%s,
+                        'quantity',%s,'reason','PARTIAL_ACCEPTANCE'
+                    ),
+                    'PENDING',NULL,NULL,%s,'INBOX'
+                )
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    reservation["id"], order_id, reservation["vendor_product_id"],
+                    reservation["quantity"], f"reservation-consumed:{reservation['id']}:PARTIAL_ACCEPTANCE"
+                ),
+            )
+
+            cur.execute(
+                """
                 UPDATE order_items
                 SET accepted_quantity = %s,
                     total_line_amount_toman = %s,
