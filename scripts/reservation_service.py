@@ -107,9 +107,7 @@ class ReservationService:
         if not updated:
             raise ReservationServiceError("Inventory became unavailable while reserving.")
 
-        return {**dict(cur.fetchone())} if False else {
-            **dict(
-                {
+        return {
                     "id": reservation_id,
                     "vendor_product_id": vendor_product_id,
                     "order_id": order_id,
@@ -118,7 +116,5 @@ class ReservationService:
                     "status": "ACTIVE",
                     "idempotency_key": key,
                     "expires_at": expiry,
-                }
-            ),
             "idempotent_replay": False,
         }
