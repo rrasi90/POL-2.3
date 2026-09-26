@@ -81,7 +81,7 @@
 | Refresh-token rotation | D-018 note | **SOURCE IMPLEMENTED / POLICY OPEN** | Current source rotates refresh tokens and rejects replay; product/security policy remains an explicit D-018 decision and is not inferred from implementation |
 | Invoice timing | consolidated plan | **OPEN** | default: invoice on order ACCEPTED per existing finance routes; confirm before finance e2e |
 | Storefront write scope | D-024 Vendor Discovery | **READ/ORDER ONLY** | D-024 defines the storefront as a first-class read/order surface. No canonical storefront-write field contract exists; do not invent one. |
-| Delegated permissions | ops permissions | **SOURCE IMPLEMENTED / POLICY OPEN** | OP-11 exposes the canonical permission catalog; delegated permission assignment remains unspecified and is not invented. |
+| Delegated permissions | D-026 / VD-15 | **SOURCE IMPLEMENTED / FRESH QA PENDING** | Canonical permission catalog + tenant-scoped grant/revoke + effective access + append-only audit are implemented; fresh runtime evidence remains pending. |
 | Design-tool / OpenPencil MCP | WAVE-02 | **BLOCKED_EXTERNAL** | start OpenPencil app or continue without design-board WAVE-02 |
 | Catalog path `/products/search` vs `/catalog/search` | G-003 | **RESOLVED / DUAL COMPATIBILITY** | both canonical public HTTP paths are registered; current retailer screen uses `/catalog/search` |
 | Inbox path | G-004 | **RESOLVED** | durable `/inbox/items*` and `/notifications*` projections are both registered; screen uses `/notifications` |
