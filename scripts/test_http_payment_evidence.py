@@ -434,3 +434,87 @@ class TestAccessControl:
         )
         assert resp.status_code == 403
 
+
+
+class TestRoleMatrixRegression:
+    @staticmethod
+    def _member_token(data, org_id, role):
+        conn = _db()
+        user_id = str(uuid4())
+        session_id = None
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role, is_active) "
+                    "VALUES (%s, %s, %s, %s, TRUE)",
+                    (user_id, f"+9891{uuid4().int % 100000000:08d}", "RBAC Staff", role),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships "
+                    "(id, organization_id, user_id, role, status, is_primary) "
+                    "VALUES (%s, %s, %s, %s, 'ACTIVE', FALSE)",
+                    (str(uuid4()), org_id, user_id, role),
+                )
+                session_id = _create_session(cur, user_id, org_id)
+            conn.commit()
+            token = encode_access_token(user_id, session_id, org_id, role)
+            return token, user_id, session_id
+        finally:
+            conn.close()
+
+    def test_retailer_staff_cannot_submit_payment_evidence(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        token, user_id, session_id = self._member_token(data, data["ro"], "RETAILER_STAFF")
+        try:
+            response = client.post(
+                f"/api/v1/orders/{data['oi']}/payments/evidence",
+                headers={"Authorization": f"Bearer {token}"},
+                json={
+                    "evidence_type": "BANK_REFERENCE",
+                    "reference_number": f"STAFF-REJECT-{uuid4().hex[:10]}",
+                    "amount_toman": 5000000,
+                },
+            )
+            assert response.status_code == 403
+        finally:
+            conn = _db()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("DELETE FROM user_sessions WHERE id=%s", (session_id,))
+                    cur.execute("DELETE FROM organization_memberships WHERE user_id=%s", (user_id,))
+                    cur.execute("DELETE FROM users WHERE id=%s", (user_id,))
+                conn.commit()
+            finally:
+                conn.close()
+
+    def test_vendor_staff_cannot_verify_payment(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        evidence = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={
+                "evidence_type": "BANK_REFERENCE",
+                "reference_number": f"STAFF-VERIFY-{uuid4().hex[:10]}",
+                "amount_toman": 5000000,
+            },
+        )
+        assert evidence.status_code == 201
+
+        token, user_id, session_id = self._member_token(data, data["vo"], "VENDOR_STAFF")
+        try:
+            response = client.post(
+                f"/api/v1/orders/{data['oi']}/payments/verify",
+                headers={"Authorization": f"Bearer {token}"},
+                json={},
+            )
+            assert response.status_code == 403
+        finally:
+            conn = _db()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("DELETE FROM user_sessions WHERE id=%s", (session_id,))
+                    cur.execute("DELETE FROM organization_memberships WHERE user_id=%s", (user_id,))
+                    cur.execute("DELETE FROM users WHERE id=%s", (user_id,))
+                conn.commit()
+            finally:
+                conn.close()
