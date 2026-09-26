@@ -463,7 +463,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-335 | P1 | Allocation regression coverage is incomplete for adversarial/tie/packing cases. | RESOLVED_CODE / EXECUTION_PENDING — regression 12964486 |
 | G-336 | P1 | Reservation-expiry worker/runtime path is not fully evidenced as canonical. | RESOLVED_CODE / EXECUTION_PENDING — worker existing + boundary 621b170a; regression 3ecea65c |
 | G-337 | P1 | Retailer cancellation/release of active reservation is incomplete. | RESOLVED_CODE / EXECUTION_PENDING — service d5c4716b; boundary 1043c57c; route 98e9ddb1; regression c8cd55c7 |
-| G-338 | P1 | Reservation time semantics are not fully aligned with the canonical checkout/Journey timing contract. | OPEN |
+| G-338 | P1 | Reservation time semantics are not fully aligned with the canonical checkout/Journey timing contract. | RESOLVED_CODE / EXECUTION_PENDING — source 04e105d5; regression 6f6ae7ae |
 | G-339 | P1 | Reservation lifecycle tests rely too heavily on direct SQL seeding rather than canonical runtime commands. | OPEN |
 | G-340 | P1 | Reservation concurrency is not fully verified through the real runtime path. | OPEN |
 | G-341 | P1 | Reservation idempotency is not DB-enforced end-to-end. | OPEN |
@@ -729,3 +729,10 @@ At the end of each closed item, the ledger must contain:
 - **Source commits:** service `d5c4716b3a1106fe0fb21b31a55a0deb75d27db9`, boundary `1043c57c5810f36cc246ac15107b47ffd9e62fe7`, route `98e9ddb121a5919c50fc7f1f2659db7df979594d`.
 - **Regression:** `test_retailer_pre_acceptance_cancellation_releases_reservation` commit `c8cd55c7c21a04054da85a7426b8df203b8dfeee`.
 - **Verification state:** source + route + regression persisted; fresh runtime execution remains pending.
+
+### G-338 Closure Record
+- **Resolution:** canonical checkout now sets every inventory reservation `expires_at` directly from the locked allocation plan's `expires_at` instant, removing independent `now()+15 minutes` drift.
+- **Regression:** `test_reservation_expiry_matches_allocation_plan_expiry` creates a real plan and checkout and asserts reservation expiry equals plan expiry exactly.
+- **Source commit:** `04e105d59042983dd70a240f3f7c40729efa15d2`
+- **Regression commit:** `6f6ae7ae4f4109087e04b56e81c7683295ef8969`
+- **Verification state:** source + E2E regression persisted; fresh PostgreSQL execution remains pending.
