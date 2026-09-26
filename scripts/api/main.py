@@ -59,6 +59,7 @@ from scripts.api.routes.finance import (
     order_invoice_router as finance_order_invoice_router,
     settlements_router as finance_settlements_router,
     settlement_detail_router as finance_settlement_detail_router,
+    refunds_router as finance_refunds_router,
 )
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -166,6 +167,7 @@ def create_app() -> FastAPI:
     app.include_router(finance_order_invoice_router, prefix="/api/v1")
     app.include_router(finance_settlements_router, prefix="/api/v1")
     app.include_router(finance_settlement_detail_router, prefix="/api/v1")
+    app.include_router(finance_refunds_router, prefix="/api/v1")
     app.include_router(reconciliation_router, prefix="/api/v1")
     app.include_router(admin_router, prefix="/api/v1")
     app.include_router(referrals_router, prefix="/api/v1")
