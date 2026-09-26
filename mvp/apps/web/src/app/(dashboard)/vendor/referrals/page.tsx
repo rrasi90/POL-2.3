@@ -22,7 +22,7 @@ import {
 
 interface ReferralRow {
   id: string;
-  code?: string | null;
+  referral_code?: string | null;
   status?: string | null;
   retailer_id?: string | null;
   referred_entity_type?: string | null;
@@ -67,7 +67,7 @@ export default function VendorReferralsPage() {
     setCreateError(null);
     try {
       const body: Record<string, string> = {};
-      if (code.trim()) body.code = code.trim();
+      if (code.trim()) body.referral_code = code.trim();
       const created = await getApi().post<ReferralRow>("/api/v1/referrals", body);
       setRows((prev) => [created, ...prev]);
       setCode("");
@@ -163,7 +163,7 @@ export default function VendorReferralsPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusChip tone="info">{r.status ?? "—"}</StatusChip>
                   <span className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]" dir="ltr">
-                    {r.code ?? str(r.id)}
+                    {r.referral_code ?? str(r.id)}
                   </span>
                   <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
                     {formatDateTime(r.created_at)}
