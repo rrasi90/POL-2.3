@@ -19,7 +19,7 @@ class RequestOTPRequest(APIBaseModel):
 
 
 class VerifyOTPRequest(APIBaseModel):
-    mobile_number: str = Field(min_length=7, max_length=32)
+    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9]\d{7,14}$")
     otp_code: str = Field(pattern=r"^\d{4}$")
     device_info: dict[str, Any] | None = None
     client_platform: Literal["web", "mobile"] | None = None
