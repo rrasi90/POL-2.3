@@ -465,7 +465,7 @@ This section is the persistent intake ledger for findings previously identified 
 | G-337 | P1 | Retailer cancellation/release of active reservation is incomplete. | RESOLVED_CODE / EXECUTION_PENDING — service d5c4716b; boundary 1043c57c; route 98e9ddb1; regression c8cd55c7 |
 | G-338 | P1 | Reservation time semantics are not fully aligned with the canonical checkout/Journey timing contract. | RESOLVED_CODE / EXECUTION_PENDING — source 04e105d5; regression 6f6ae7ae |
 | G-339 | P1 | Reservation lifecycle tests rely too heavily on direct SQL seeding rather than canonical runtime commands. | RESOLVED_CODE / EXECUTION_PENDING — runtime lifecycle regression 7c3e6d2a |
-| G-340 | P1 | Reservation concurrency is not fully verified through the real runtime path. | OPEN |
+| G-340 | P1 | Reservation concurrency is not fully verified through the real runtime path. | RESOLVED_CODE / EXECUTION_PENDING — ReservationService dbb01751→dbf9f0a1; concurrency 536f6e7a |
 | G-341 | P1 | Reservation idempotency is not DB-enforced end-to-end. | OPEN |
 | G-342 | P1 | Reservation and inventory reserved_quantity reconciliation invariant is incomplete. | OPEN |
 | G-343 | P1 | Reservation lifecycle needs an independent durable event/audit record rather than inference only. | OPEN |
@@ -741,4 +741,10 @@ At the end of each closed item, the ledger must contain:
 ### G-339 Closure Record
 - **Resolution:** Added runtime lifecycle regression: basket/plan/checkout creates real reservation; canonical vendor rejection releases it; second runtime checkout reaches expiry worker and releases stock.
 - **Evidence:** 7c3e6d2a4e9bdc8b91b6c8fd4d8bf6fdbc9b1521
+- **Verification state:** code + regression persisted; fresh PostgreSQL/CI execution remains pending.
+
+
+### G-340 Closure Record
+- **Resolution:** Two real PostgreSQL connections call ReservationService against one scarce inventory row; row locking allows exactly one reservation.
+- **Evidence:** 536f6e7ae653db2b8762dc9accd03416480e7fe5
 - **Verification state:** code + regression persisted; fresh PostgreSQL/CI execution remains pending.
