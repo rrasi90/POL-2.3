@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
-from scripts.api.dependencies import get_application_boundary
+from scripts.api.dependencies import get_application_boundary, require_roles
 from scripts.api.errors import success_payload
 from scripts.api.schemas import DisputeOpenRequest, DisputeResolveRequest
 
@@ -20,6 +20,7 @@ def open_dispute(
     order_id: UUID,
     payload: DisputeOpenRequest,
     boundary=Depends(get_application_boundary),
+    _auth=Depends(require_roles("RETAILER_OWNER")),
 ):
     return success_payload(
         boundary.dispute_open(
