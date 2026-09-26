@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Header, status
 
 from scripts.api.dependencies import get_application_boundary, require_roles
 from scripts.api.errors import success_payload
@@ -19,6 +19,7 @@ disputes_router = APIRouter(prefix="/disputes", tags=["disputes"])
 def open_dispute(
     order_id: UUID,
     payload: DisputeOpenRequest,
+    idempotency_key: str = Header(default=None, alias="Idempotency-Key"),
     boundary=Depends(get_application_boundary),
     _auth=Depends(require_roles("RETAILER_OWNER")),
 ):
@@ -27,7 +28,9 @@ def open_dispute(
             order_id=str(order_id),
             claimed_amount_toman=payload.claimed_amount_toman,
             description=payload.description,
-            evidence_media_id=str(payload.evidence_media_id) if payload.evidence_media_id else None,
+            evidence_media_id=str(payload.evidence_media_id),
+            items=payload.items,
+            idempotency_key=idempotency_key,
         )
     )
 
@@ -39,6 +42,18 @@ def list_disputes_for_order(
 ):
     return success_payload(
         boundary.disputes_list(order_id=str(order_id))
+    )
+
+
+@disputes_router.post("/{dispute_id}/investigate")
+def investigate_dispute(
+    dispute_id: UUID,
+    payload: DisputeResolveRequest,
+    boundary=Depends(get_application_boundary),
+    _auth=Depends(require_roles("OPS_AGENT","OPS_ADMIN","ADMIN_SUPER","SUPER_ADMIN")),
+):
+    return success_payload(
+        boundary.dispute_investigate(dispute_id=str(dispute_id), reason=payload.reason)
     )
 
 
@@ -66,4 +81,17 @@ def resolve_dispute(
             approved_amount_toman=payload.approved_amount_toman,
             reason=payload.reason,
         )
+    )
+
+
+
+@disputes_router.post("/{dispute_id}/close")
+def close_dispute(
+    dispute_id: UUID,
+    payload: DisputeResolveRequest,
+    boundary=Depends(get_application_boundary),
+    _auth=Depends(require_roles("OPS_AGENT","OPS_ADMIN","ADMIN_SUPER","SUPER_ADMIN")),
+):
+    return success_payload(
+        boundary.dispute_close(dispute_id=str(dispute_id), reason=payload.reason)
     )
