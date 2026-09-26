@@ -301,7 +301,7 @@ class CanonicalReturnService:
                  refund_method, reason, status, approved_by_user_id, approved_at,
                  created_by_user_id, return_id, idempotency_key, source_type)
             VALUES
-                (%s,%s,%s,NULL,%s,%s,'BANK_REVERSAL',%s,'APPROVED',%s,now(),%s,%s,%s,'RMA')
+                (%s,%s,%s,NULL,%s,%s,'VENDOR_CASH_DIRECT',%s,'APPROVED',%s,now(),%s,%s,%s,'RMA')
             ON CONFLICT (return_id) WHERE return_id IS NOT NULL DO NOTHING
             RETURNING id
             """,
