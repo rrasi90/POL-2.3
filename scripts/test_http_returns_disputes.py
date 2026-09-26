@@ -320,6 +320,45 @@ class TestDisputeOpen:
                 events = cur.fetchall()
                 assert events and all(e["target_user_id"] and e["target_organization_id"] for e in events)
 
+    def test_retailer_staff_cannot_open_formal_dispute(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                staff_user = str(uuid4())
+                cur.execute(
+                    """
+                    INSERT INTO users (id, phone_number, full_name, role, is_active)
+                    VALUES (%s, %s, 'R Staff', 'RETAILER_STAFF', TRUE)
+                    """,
+                    (staff_user, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO organization_memberships
+                        (id, organization_id, user_id, role, status, is_primary)
+                    VALUES (%s, %s, %s, 'RETAILER_STAFF', 'ACTIVE', FALSE)
+                    """,
+                    (str(uuid4()), data["ro"], staff_user),
+                )
+                session_id = _create_session(cur, staff_user, data["ro"])
+            conn.commit()
+            staff_token = encode_access_token(
+                staff_user, session_id, data["ro"], "RETAILER_STAFF"
+            )
+        finally:
+            conn.close()
+
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={"Authorization": f"Bearer {staff_token}"},
+            json={
+                "claimed_amount_toman": 100000,
+                "description": "Staff must not open a formal dispute",
+            },
+        )
+        assert resp.status_code == 403
+
     def test_vendor_cannot_open_dispute(self, client):
         data = _seed_delivered_order(uuid4().hex[:8])
         resp = client.post(
