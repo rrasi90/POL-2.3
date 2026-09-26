@@ -274,3 +274,11 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Resolution:** migration `048_bind_media_upload_target.sql` binds `upload_target_type` + `upload_target_id` to the presigned asset. Confirmation rejects any target mismatch before storage finalization.
 - **Regression proof:** `scripts/test_media_service.py::test_presigned_upload_target_cannot_be_retargeted` plus schema assertions for migration 048.
 - **Status:** SOURCE REMEDIATED / FRESH CI PENDING
+
+
+## G-044 — Authentication OTP purpose / organization binding (SECURITY GAP — REMEDIATED — 2026-09-26)
+
+- **Finding:** authentication OTP verification selected the latest pending challenge by phone without restricting its purpose to LOGIN/REGISTER, and it did not require the selected organization itself to be ACTIVE.
+- **Resolution:** auth verification now accepts only LOGIN/REGISTER challenges and requires an ACTIVE user, ACTIVE membership, and ACTIVE organization before session creation.
+- **Regression proof:** `scripts/test_auth_contract.py` covers suspended-organization rejection and prevents ORDER_CONFIRMATION challenges from being consumed by authentication verification.
+- **Status:** SOURCE REMEDIATED / FRESH CI PENDING
