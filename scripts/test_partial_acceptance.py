@@ -297,6 +297,53 @@ def test_retailer_approval_is_tenant_protected(pg_connection):
             assert cur.fetchone()["status"] == "ACTIVE"
 
 
+def test_retailer_staff_cannot_decide_partial_acceptance(pg_connection):
+    suffix = uuid4().hex[:10]
+    with pg_connection:
+        with pg_connection.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _setup_order(cur, suffix)
+            proposal = _propose(cur, data)
+
+            staff_user_id = str(uuid4())
+            cur.execute(
+                """
+                INSERT INTO users (id, phone_number, full_name, role, is_active)
+                VALUES (%s, %s, 'Partial Decision Staff', 'RETAILER_STAFF', TRUE)
+                """,
+                (staff_user_id, f"+9891{uuid4().int % 100000000:08d}"),
+            )
+            cur.execute(
+                """
+                INSERT INTO organization_memberships
+                    (id, organization_id, user_id, role, status, is_primary)
+                VALUES (%s, %s, %s, 'RETAILER_STAFF', 'ACTIVE', FALSE)
+                """,
+                (str(uuid4()), data["retailer_org"], staff_user_id),
+            )
+
+            try:
+                with pytest.raises(PermissionError):
+                    POLApplicationBoundary(
+                        cur,
+                        ApplicationContext(
+                            user_id=staff_user_id,
+                            organization_id=data["retailer_org"],
+                            correlation_id=f"staff-decision-{uuid4()}",
+                        ),
+                    ).retailer_partial_acceptance_approve(
+                        order_id=data["order_id"],
+                        proposal_id=proposal["proposal_id"],
+                    )
+
+                cur.execute(
+                    "SELECT status FROM order_partial_acceptance_proposals WHERE id=%s",
+                    (proposal["proposal_id"],),
+                )
+                assert cur.fetchone()["status"] == "PENDING"
+            finally:
+                cur.execute("DELETE FROM users WHERE id=%s", (staff_user_id,))
+
+
 def test_idempotent_partial_proposal_replay_and_payload_guard(pg_connection):
     suffix = uuid4().hex[:10]
     with pg_connection:
