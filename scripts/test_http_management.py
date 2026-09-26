@@ -172,6 +172,41 @@ def test_vendor_customers_and_staff_are_tenant_scoped(client, management_env):
         conn.rollback()
 
 
+def test_vendor_owner_cannot_suspend_last_active_owner(client, management_env):
+    conn = management_env["conn"]
+    membership_id = str(uuid4())
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id
+                FROM organization_memberships
+                WHERE organization_id=%s AND user_id=%s
+                  AND role='VENDOR_OWNER' AND status='ACTIVE'
+                LIMIT 1
+                """,
+                (management_env["vendor_org"], management_env["vendor_user"]),
+            )
+            row = cur.fetchone()
+            assert row is not None
+            membership_id = str(row[0])
+
+        response = client.patch(
+            f"/api/v1/vendors/staff/{membership_id}",
+            headers={"Authorization": f"Bearer {management_env['vendor']}"},
+            json={"status": "SUSPENDED"},
+        )
+        assert response.status_code == 422
+
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT status FROM organization_memberships WHERE id=%s",
+                (membership_id,),
+            )
+            assert cur.fetchone()[0] == "ACTIVE"
+    finally:
+        conn.rollback()
+
 def test_only_vendor_owner_can_invite_staff(client, management_env):
     resp = client.post(
         "/api/v1/vendors/staff/invite",
