@@ -420,12 +420,13 @@ class MediaService:
             image = Image.open(io.BytesIO(raw))
             image.verify()
             image = Image.open(io.BytesIO(raw))
+            image.info.clear()  # Explicit EXIF/metadata stripping before trusted persistence.
             if image.mode in ("RGBA", "LA"):
                 processed = image.convert("RGBA")
             else:
                 processed = image.convert("RGB")
             out = io.BytesIO()
-            processed.save(out, format="WEBP", quality=85, method=6)
+            processed.save(out, format="WEBP", quality=85, method=6, exif=b"")
             final_bytes = out.getvalue()
         except Exception as exc:
             raise MediaError("Uploaded object is not a decodable image.") from exc
@@ -439,6 +440,48 @@ class MediaService:
             Body=final_bytes,
             ContentType="image/webp",
             Metadata={"sha256": checksum, "provenance": meta["provenance"]},
+        )
+
+        thumbnail = processed.copy()
+        try:
+            from PIL import ImageOps
+            thumbnail = ImageOps.fit(thumbnail, (150, 150), method=Image.Resampling.LANCZOS)
+        except Exception as exc:
+            raise MediaError("Failed to generate thumbnail.") from exc
+        thumb_out = io.BytesIO()
+        thumbnail.save(thumb_out, format="WEBP", quality=82, method=6, exif=b"")
+        thumbnail_bytes = thumb_out.getvalue()
+        thumbnail_checksum = hashlib.sha256(thumbnail_bytes).hexdigest()
+        thumbnail_key = final_key.rsplit(".", 1)[0] + "-thumb.webp"
+        s3.put_object(
+            Bucket=bucket,
+            Key=thumbnail_key,
+            Body=thumbnail_bytes,
+            ContentType="image/webp",
+            Metadata={"sha256": thumbnail_checksum, "variant": "THUMBNAIL", "source_media_id": media_id},
+        )
+        cur.execute(
+            """
+            INSERT INTO media_variants (
+                source_media_asset_id, variant_type, storage_bucket, storage_key,
+                mime_type, file_size_bytes, width, height, checksum_sha256
+            )
+            VALUES (%s,'THUMBNAIL',%s,%s,'image/webp',%s,%s,%s,%s)
+            ON CONFLICT (source_media_asset_id, variant_type) DO UPDATE SET
+                storage_bucket=EXCLUDED.storage_bucket,
+                storage_key=EXCLUDED.storage_key,
+                file_size_bytes=EXCLUDED.file_size_bytes,
+                width=EXCLUDED.width,
+                height=EXCLUDED.height,
+                checksum_sha256=EXCLUDED.checksum_sha256
+            """,
+            (media_id, bucket, thumbnail_key, len(thumbnail_bytes),
+             thumbnail.width, thumbnail.height, thumbnail_checksum),
+        )
+        cur.execute(
+            "UPDATE media_upload_sessions SET status='COMPLETED', completed_at=COALESCE(completed_at, now()) "
+            "WHERE media_asset_id=%s AND status='OPEN'",
+            (media_id,),
         )
 
         # Remove the untrusted quarantine object after the trusted derivative is stored.
@@ -520,4 +563,5 @@ class MediaService:
             "file_size_bytes": int(ready["file_size_bytes"]),
             "checksum_sha256": ready["checksum_sha256"],
             "storage_key": ready["storage_key"],
+            "thumbnail": {"storage_key": thumbnail_key, "checksum_sha256": thumbnail_checksum},
         }
