@@ -49,7 +49,7 @@ BEGIN
 
         IF upper(COALESCE(asset.upload_target_type,'')) = 'ORDER'
            AND asset.upload_target_id IS NOT NULL
-           AND asset.upload_target_id <> payment_order_id::text THEN
+           AND asset.upload_target_id::text <> payment_order_id::text THEN
             RAISE EXCEPTION 'PAYMENT_EVIDENCE_MEDIA_ORDER_MISMATCH'
                 USING ERRCODE = '23514';
         END IF;
