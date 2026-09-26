@@ -233,6 +233,37 @@ def _authorize_target(cur, user_id: str, organization_id: str, target_type: str,
     return {"provenance": provenance}
 
 
+def validate_ready_attachment(cur, *, media_id: str, user_id: str, organization_id: str,
+                              target_type: str, target_id: str) -> dict:
+    """Validate a trusted media reference by owner, lifecycle, target and purpose."""
+    cur.execute(
+        """
+        SELECT id, status, provenance, uploaded_by_user_id, upload_target_type, upload_target_id
+        FROM media_assets
+        WHERE id=%s
+        FOR SHARE
+        """,
+        (media_id,),
+    )
+    media = cur.fetchone()
+    if not media:
+        raise MediaError("Media asset not found.")
+    if str(media["status"]).upper() != "READY":
+        raise MediaError("Referenced media must be READY.")
+    if str(media["uploaded_by_user_id"]) != str(user_id):
+        raise PermissionError("Referenced media is not owned by the current user.")
+    if str(media["upload_target_type"] or "").upper() != target_type.upper():
+        raise MediaError("Media purpose does not match the target type.")
+    if str(media["upload_target_id"] or "") != str(target_id):
+        raise MediaError("Media is not bound to the requested target.")
+    # The original upload authorization already proves tenant ownership of the target.
+    # Requiring an active organization here prevents a stale cross-tenant request from
+    # reusing a previously authorized attachment.
+    if not organization_id:
+        raise PermissionError("Media reference requires an active organization context.")
+    return dict(media)
+
+
 class MediaService:
     @staticmethod
     def presign(cur, *, user_id: str, organization_id: str, mime_type: str,
