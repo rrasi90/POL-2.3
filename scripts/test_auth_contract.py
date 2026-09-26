@@ -1062,3 +1062,60 @@ def test_refresh_token_rejects_inactive_organization(auth_env):
         cur.execute("UPDATE organizations SET status = 'ACTIVE' WHERE id = %s;", (org_a,))
         cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
         conn.commit()
+
+
+# =========================================================
+# P0 REGRESSION: DIRECT AUTHORIZATION / ORG SWITCH PRINCIPAL STATE
+# =========================================================
+def test_authorize_action_rejects_inactive_user(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+
+    cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s;", (user_id,))
+    conn.commit()
+    try:
+        with pytest.raises(PermissionError, match="inactive"):
+            AuthService.authorize_action(
+                cur,
+                user_id,
+                org_a,
+                ["RETAILER_OWNER"],
+            )
+    finally:
+        cur.execute("UPDATE users SET is_active = TRUE WHERE id = %s;", (user_id,))
+        conn.commit()
+
+
+def test_switch_organization_rejects_inactive_user(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    org_b = auth_env["org_b"]
+
+    session_id = str(uuid.uuid4())
+    access = encode_access_token(user_id, session_id, org_a, "RETAILER_OWNER")
+    cur.execute(
+        """
+        INSERT INTO user_sessions
+            (id, user_id, active_organization_id, token_hash, status, expires_at)
+        VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days')
+        """,
+        (session_id, user_id, org_a, hash_token(access)),
+    )
+    cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s;", (user_id,))
+    conn.commit()
+
+    try:
+        with pytest.raises(PermissionError, match="inactive"):
+            AuthService.switch_organization(cur, user_id, org_b, session_id)
+    finally:
+        cur.execute("UPDATE users SET is_active = TRUE WHERE id = %s;", (user_id,))
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (session_id,))
+        conn.commit()
