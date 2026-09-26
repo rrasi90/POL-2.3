@@ -358,3 +358,18 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 **Remediation:** Confirm-upload now rejects any `UPLOADING` asset without an immutable target binding. Migration 048 invalidates legacy unbound `UPLOADING` rows as `DELETED` and adds a PostgreSQL CHECK invariant requiring both target fields for every in-flight upload.  
 **Regression:** `scripts/test_media_service.py` covers missing-binding rejection.  
 **Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
+
+
+## G-055 — Field Task HTTP/Boundary Contract Alignment
+**Class:** Runtime Contract / API Integration / Field Operations  
+**Finding:** `/api/v1/field/tasks` passed `retailer_id`/`vendor_id`, while the application boundary previously accepted only `target_organization_id`, creating a transport-to-domain signature mismatch.  
+**Remediation:** `field_task_create()` now accepts the route contract, resolves retailer/vendor targets to their active organization, rejects ambiguous target combinations, and validates the target organization and assigned user state before insertion.  
+**Regression:** `scripts/test_http_field_tasks.py` now creates a real retailer target and verifies the resolved target organization through the HTTP endpoint.  
+**Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
+
+## G-056 — Support Case Related Order Must Be Tenant-Bound
+**Class:** Security / Multi-Tenancy / Referential Integrity  
+**Finding:** Support case creation checked the active support organization but did not independently verify that an optional `related_order_id` belonged to that same retailer/vendor organization. A guessed order UUID could therefore be persisted as a cross-tenant support reference.  
+**Remediation:** `CanonicalSupportService.create_case()` now verifies active membership and requires the related order to resolve through its retailer or vendor organization to the active support tenant before insertion.  
+**Regression:** `scripts/test_http_support.py` creates an order under another retailer organization and verifies support creation is rejected with HTTP 403.  
+**Status:** **SOURCE REMEDIATED / FRESH CI PENDING**
