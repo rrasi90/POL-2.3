@@ -79,6 +79,32 @@ class ReservationService:
         expiry = expires_at or (datetime.now(timezone.utc) + cls.TTL)
         reservation_id = str(uuid4())
 
+        # A concurrent transaction may have committed the same key while this
+        # request waited for the inventory row. Re-check before INSERT so a
+        # legitimate replay is returned instead of surfacing a unique violation.
+        cur.execute(
+            """
+            SELECT id, vendor_product_id, quantity, status, expires_at, order_id, order_item_id
+            FROM inventory_reservations
+            WHERE idempotency_key=%s
+            FOR UPDATE
+            """,
+            (key,),
+        )
+        existing = cur.fetchone()
+        if existing:
+            same = (
+                str(existing["vendor_product_id"]) == str(vendor_product_id)
+                and int(existing["quantity"]) == int(quantity)
+                and str(existing["order_id"] or "") == str(order_id or "")
+                and str(existing["order_item_id"] or "") == str(order_item_id or "")
+            )
+            if not same:
+                raise ReservationConflictError(
+                    "Reservation idempotency key was already used with different reservation parameters."
+                )
+            return {**dict(existing), "id": str(existing["id"]), "idempotent_replay": True}
+
         cur.execute(
             """
             INSERT INTO inventory_reservations (
