@@ -22,7 +22,7 @@
 Fresh pull-request runs triggered by remediation commits are currently **failing before useful step-level execution** (the latest mobile and independent verification runs complete within a few seconds; the independent run exposes no executed job steps). Therefore no new green CI claim is made from those runs until GitHub Actions produces actual step logs.
 
 ### Remaining closure classes
-1. **Open product/security decisions:** D-018 refresh-token policy wording, invoice timing, D-024 storefront write scope.
+1. **Open product/security decisions:** D-018 refresh-token rotation policy and invoice timing. D-024 currently defines storefront as a read/order surface; no separate write contract is canonical.
 2. **Runtime/deployment evidence:** production browser cookie configuration, deployed provider execution, push-provider delivery, production metrics/observability.
 3. **Partial capability:** O-07 risk/reliability and any other explicitly documented limited surfaces.
 4. **Fresh CI certification:** rerun the full backend and mobile gates after the current GitHub Actions execution blocker is cleared.
@@ -51,9 +51,9 @@ Fresh pull-request runs triggered by remediation commits are currently **failing
 | G-006 | Corporate public routes | **RESOLVED** | Current screen matrix and web route set contain the corporate public surfaces. |
 | G-029 | Web token persistence in localStorage | **SOURCE REMEDIATED / BROWSER PENDING** | Access token is memory-only; refresh credential is server-managed HttpOnly/Secure cookie. |
 | G-030 | Browser-to-API CORS policy | **SOURCE REMEDIATED / DEPLOYMENT VERIFY** | Explicit environment-scoped CORS is enforced and wildcard production CORS is rejected. |
-| D-024 | Storefront write fields | **OPEN** | V-14 read-only in MVP; writes = GAP until fields specified |
-| OP-11 | Permission catalog | **SOURCE IMPLEMENTED / POLICY OPEN** | `GET /api/v1/ops/permissions` is live and consumed by the ops screen; delegated permission assignment remains unspecified. |
-| Refresh-token rotation | Stage 10 policy | **OPEN** | do not invent |
+| D-024 | Vendor Discovery / Storefront | **RESOLVED SCOPE** | Storefront is a first-class read/order surface. Any future write fields require an explicit scope extension; D-024 does not define them. |
+| OP-11 | Permission catalog + audit | **SOURCE IMPLEMENTED / FRESH QA PENDING** | Canonical permission catalog, tenant-scoped grant/revoke, effective access, and append-only permission audit are now implemented. |
+| Refresh-token rotation | D-018 policy | **OPEN DECISION** | Runtime behavior must not be promoted to final policy without an explicit decision. |
 | Invoice timing | on ACCEPTED default | **OPEN** | confirm before finance e2e |
 | Phase 3 remaining | Night visual verification + current-device cold relaunch/storage evidence | **OPEN** | D-028 and G-023…G-026 source remediated; execute remaining runtime/device gates |
 | Phase 4 remaining | Live basket POST → allocation → checkout → order lifecycle + idempotency replay | **OPEN** | runtime execution evidence still required |
