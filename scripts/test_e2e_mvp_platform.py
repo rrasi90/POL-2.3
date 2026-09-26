@@ -173,6 +173,32 @@ def test_admin_audit_logs_are_db_immutable(
         assert cur.fetchone()["reason"] == "immutability regression"
 
 
+def test_inventory_audit_history_blocks_vendor_product_delete(
+    postgres_database, checkout_catalog,
+):
+    """G-313: audit history makes vendor-product deletion fail closed."""
+    line = checkout_catalog["lines"][0]
+    vendor_id = line["vendor_id"]
+    vendor_product_id = line["vendor_product_id"]
+    actor_user_id = checkout_catalog["context"].user_id
+    with transaction(postgres_database) as cur:
+        insert_row(
+            cur, "inventory_audit_log", vendor_id=vendor_id, vendor_product_id=vendor_product_id,
+            old_quantity=100, new_quantity=99, old_price_toman=500000, new_price_toman=500000,
+            source_trigger="MANUAL_EDIT", reference_id=f"G313-{uuid4().hex}", actor_user_id=actor_user_id,
+        )
+
+    with transaction(postgres_database) as cur:
+        with pytest.raises(psycopg2.Error):
+            cur.execute("DELETE FROM vendor_products WHERE id=%s", (vendor_product_id,))
+
+    with transaction(postgres_database) as cur:
+        cur.execute("SELECT COUNT(*) AS n FROM inventory_audit_log WHERE vendor_product_id=%s", (vendor_product_id,))
+        assert cur.fetchone()["n"] == 1
+        cur.execute("SELECT COUNT(*) AS n FROM vendor_products WHERE id=%s", (vendor_product_id,))
+        assert cur.fetchone()["n"] == 1
+
+
 def persist_request(cur, catalog):
     basket = insert_row(cur, "baskets", retailer_id=catalog["retailer_id"], status="OPEN", version=1)
     basket_items = []
