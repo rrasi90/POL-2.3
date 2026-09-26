@@ -473,6 +473,7 @@ def submit_payment_evidence(
             evidence_type=payload.evidence_type,
             reference_number=payload.reference_number,
             amount_toman=payload.amount_toman,
+            payment_id=str(payload.payment_id) if payload.payment_id else None,
             evidence_media_id=str(payload.evidence_media_id) if payload.evidence_media_id else None,
             notes=payload.notes,
         )
