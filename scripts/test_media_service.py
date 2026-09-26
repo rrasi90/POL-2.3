@@ -251,3 +251,16 @@ def test_ops_product_media_uses_pol_owned_provenance(media_authorization_env):
         env["product_id"],
     )
     assert result["provenance"] == "POL_OWNED"
+
+
+def test_legacy_inflight_upload_without_binding_fails_closed():
+    try:
+        _validate_bound_upload_target(
+            {"status": "UPLOADING", "upload_target_type": None, "upload_target_id": None},
+            "PRODUCT",
+            str(uuid4()),
+        )
+    except MediaError as exc:
+        assert "authorized target binding" in str(exc)
+    else:
+        raise AssertionError("An unbound in-flight upload must not be confirmable.")
