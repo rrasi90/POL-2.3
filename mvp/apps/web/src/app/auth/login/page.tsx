@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Field, ErrorState } from "@pol/ui";
+import { Button, ErrorState, Field } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import { useAuthStore } from "@/lib/auth/store";
 import type { Role } from "@pol/types";
@@ -56,7 +57,7 @@ export default function LoginPage() {
       const data = await getApi().post<OtpRequest>("/api/v1/auth/request-otp", {
         mobile_number: phone,
       });
-      setInfo(`کد ۴ رقمی تا ${data.expires_in_seconds} ثانیه معتبر است (ارسال مجدد هر ${data.resend_interval_seconds} ثانیه).`);
+      setInfo(`کد ۴ رقمی تا ${data.expires_in_seconds.toLocaleString("fa-IR")} ثانیه دیگر معتبر است.`);
       setStep("otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "ارسال کد ناموفق بود");
@@ -69,7 +70,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     if (otp.length !== 4) {
-      setError("کد باید ۴ رقمی باشد (D-018).");
+      setError("کد تأیید باید دقیقاً ۴ رقم باشد.");
       return;
     }
     setLoading(true);
@@ -107,77 +108,140 @@ export default function LoginPage() {
               : "/retailer";
       router.replace(home);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "کد نادرست است");
+      setError(err instanceof Error ? err.message : "کد تأیید نادرست یا منقضی شده است");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--pol-light-bg-canvas)] px-4">
-      <div className="w-full max-w-sm rounded-[16px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-6 shadow-sm">
-        <h1 className="text-[20px] leading-[28px] font-bold text-[var(--pol-light-text-primary)]">
-          ورود به POL
-        </h1>
-        <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
-          {step === "phone" ? "شماره موبایل خود را وارد کنید" : "کد چهاررقمی ارسال‌شده را وارد کنید"}
-        </p>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-[var(--pol-light-bg-canvas)] px-4 py-12">
+      <div className="w-full max-w-md">
+        {/* Brand Header */}
+        <div className="mb-6 text-center">
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-[var(--pol-light-brand-primary)] text-[20px] font-black text-white shadow-sm">
+              پُ
+            </span>
+            <div className="text-start">
+              <span className="block font-black text-[22px] tracking-tight text-[var(--pol-light-text-primary)]">
+                پُــــل
+              </span>
+              <span className="block text-[11px] font-medium tracking-wide text-[var(--pol-light-text-muted)]">
+                PRECISION COMMERCE
+              </span>
+            </div>
+          </Link>
+        </div>
 
-        {error ? (
-          <div className="mt-4">
-            <ErrorState description={error} />
+        {/* Card */}
+        <div className="rounded-2xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-8 shadow-[var(--pol-shadow-card)]">
+          <h1 className="text-[20px] leading-[28px] font-bold text-[var(--pol-light-text-primary)]">
+            {step === "phone" ? "ورود به سامانه معاملات عمده" : "تأیید شماره تلفن همراه"}
+          </h1>
+          <p className="mt-1.5 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
+            {step === "phone"
+              ? "جهت ورود به حساب کاربری، شماره موبایل خود را وارد نمایید."
+              : `کد چهاررقمی پیامک‌شده به شماره ${phone} را وارد نمایید.`}
+          </p>
+
+          {error ? (
+            <div className="mt-4">
+              <ErrorState description={error} />
+            </div>
+          ) : null}
+
+          {info && step === "otp" ? (
+            <div className="mt-4 rounded-xl border border-[var(--pol-light-brand-primary)]/20 bg-[var(--pol-light-brand-primary)]/5 p-3 text-[12px] text-[var(--pol-light-brand-primary)]">
+              {info}
+            </div>
+          ) : null}
+
+          {step === "phone" ? (
+            <form onSubmit={requestOtp} className="mt-6 flex flex-col gap-4">
+              <Field
+                label="شماره تلفن همراه"
+                inputMode="numeric"
+                autoComplete="tel"
+                placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                required
+                hint="شماره همراه ۱۱ رقمی معتبر"
+                dir="ltr"
+              />
+              <div className="pt-2">
+                <Button type="submit" loading={loading} block size="lg">
+                  دریافت کد یکبار مصرف
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={verifyOtp} className="mt-6 flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+                  کد تأیید ۴ رقمی
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={4}
+                  placeholder="••••"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  required
+                  className="h-12 w-full rounded-xl border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] text-center font-mono text-[22px] font-bold tracking-[0.5em] text-[var(--pol-light-text-primary)] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+                  dir="ltr"
+                  autoFocus
+                />
+                <span className="text-[11px] text-[var(--pol-light-text-muted)]">
+                  اعتبار کد ۱۲۰ ثانیه می‌باشد (D-018)
+                </span>
+              </div>
+
+              <div className="pt-2 flex flex-col gap-2">
+                <Button type="submit" loading={loading} block size="lg">
+                  تأیید و ورود به سامانه
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setStep("phone");
+                    setOtp("");
+                    setError(null);
+                    setInfo(null);
+                  }}
+                >
+                  ویرایش شماره همراه ({phone})
+                </Button>
+              </div>
+            </form>
+          )}
+
+          <div className="mt-6 border-t border-[var(--pol-light-border-subtle)] pt-4 text-center">
+            <span className="text-[11px] text-[var(--pol-light-text-muted)]">
+              پایلوت اهواز · دسترسی بنکداران و تأمین‌کنندگان مواد غذایی
+            </span>
           </div>
-        ) : null}
-        {info && step === "otp" ? (
-          <p className="mt-4 text-[12px] text-[var(--pol-light-semantic-info)]">{info}</p>
-        ) : null}
+        </div>
 
-        {step === "phone" ? (
-          <form onSubmit={requestOtp} className="mt-5 flex flex-col gap-4">
-            <Field
-              label="شماره موبایل"
-              inputMode="numeric"
-              autoComplete="tel"
-              placeholder="09xxxxxxxxx"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-              required
-              hint="مثلاً ۰۹۱۲…"
-            />
-            <Button type="submit" loading={loading} block>
-              ارسال کد
-            </Button>
-          </form>
-        ) : (
-          <form onSubmit={verifyOtp} className="mt-5 flex flex-col gap-4">
-            <Field
-              label="کد تأیید"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={4}
-              placeholder="••••"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              required
-              hint="کد ۴ رقمی — TTL ۱۲۰ ثانیه"
-            />
-            <Button type="submit" loading={loading} block>
-              تأیید و ورود
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setStep("phone");
-                setOtp("");
-                setError(null);
-              }}
-            >
-              ویرایش شماره
-            </Button>
-          </form>
-        )}
+        {/* Footer Links */}
+        <div className="mt-6 flex justify-center gap-4 text-[12px] text-[var(--pol-light-text-muted)]">
+          <Link href="/how" className="hover:text-[var(--pol-light-text-primary)] hover:underline">
+            راهنمای سامانه
+          </Link>
+          <span>·</span>
+          <Link href="/legal" className="hover:text-[var(--pol-light-text-primary)] hover:underline">
+            قوانین و حریم خصوصی
+          </Link>
+          <span>·</span>
+          <Link href="/contact" className="hover:text-[var(--pol-light-text-primary)] hover:underline">
+            پشتیبانی
+          </Link>
+        </div>
       </div>
     </main>
   );
