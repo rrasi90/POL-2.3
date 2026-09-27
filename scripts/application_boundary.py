@@ -1844,6 +1844,25 @@ class POLApplicationBoundary:
             ),
         )
 
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (id, actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s, %s, 'PAYMENT_VERIFIED', 'PAYMENT', %s, %s, %s, %s)
+            """,
+            (
+                str(uuid4()), self.context.user_id, str(updated["id"]),
+                Json({
+                    "payment_id": str(updated["id"]),
+                    "order_id": str(updated["order_id"]),
+                    "amount_toman": int(updated["amount_toman"]),
+                    "verified_by": str(self.context.user_id),
+                }),
+                notes or "direct-transfer payment verified",
+                self.context.correlation_id,
+            ),
+        )
         return {
             "payment_id": str(updated["id"]),
             "status": "SUCCESS",
@@ -4660,6 +4679,19 @@ class POLApplicationBoundary:
         row = dict(self.cur.fetchone())
         row["id"] = str(row["id"])
         row["created_at"] = row["created_at"].isoformat()
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (id, actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s, %s, 'ADMIN_CATEGORY_CREATE', 'CATEGORY', %s, %s, %s, %s)
+            """,
+            (
+                str(uuid4()), self.context.user_id, row["id"],
+                Json(row), 'catalog category created',
+                self.context.correlation_id,
+            ),
+        )
         return row
 
     def admin_category_update(self, *, category_id, name_fa=None, slug=None, icon_url=None, display_order=None):
@@ -4698,6 +4730,18 @@ class POLApplicationBoundary:
         result = dict(row)
         result["id"] = str(result["id"])
         result["created_at"] = result["created_at"].isoformat()
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (id, actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s, %s, 'ADMIN_CATEGORY_UPDATE', 'Category', %s, %s, %s, %s)
+            """,
+            (
+                str(uuid4()), self.context.user_id, result["id"],
+                Json(result), "catalog category updated", self.context.correlation_id,
+            ),
+        )
         return result
 
     # ── Ops Analytics (Stage 38) ───────────────────────────────────
@@ -5425,6 +5469,20 @@ class POLApplicationBoundary:
         for key in ("scheduled_at", "created_at"):
             if row[key]:
                 row[key] = row[key].isoformat()
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (id, actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                str(uuid4()), self.context.user_id, 'ADMIN_BROADCAST_CREATE',
+                'BROADCAST', row["id"],
+                Json(row), 'broadcast draft created',
+                self.context.correlation_id,
+            ),
+        )
         return row
 
     def admin_broadcast_dispatch(self, *, broadcast_id, approve=True):
@@ -5562,6 +5620,27 @@ class POLApplicationBoundary:
             (sent, broadcast_id),
         )
         row = dict(self.cur.fetchone())
+        row["id"] = str(row["id"])
+        audit_row = dict(row)
+        audit_row["estimated_recipient_count"] = (
+            int(audit_row["estimated_recipient_count"]) if audit_row["estimated_recipient_count"] else 0
+        )
+        audit_row["completed_at"] = (
+            audit_row["completed_at"].isoformat() if audit_row["completed_at"] else None
+        )
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (id, actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s, %s, 'ADMIN_BROADCAST_DISPATCH', 'BROADCAST', %s, %s, %s, %s)
+            """,
+            (
+                str(uuid4()), self.context.user_id, broadcast_id,
+                Json(audit_row), "broadcast dispatched",
+                self.context.correlation_id,
+            ),
+        )
         return {
             "id": str(row["id"]),
             "status": row["status"],

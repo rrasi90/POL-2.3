@@ -127,7 +127,6 @@ class CanonicalRetailerOrderService:
                         reservation["vendor_product_id"], reservation["quantity"],
                         f"INVENTORY_RESERVATION_RELEASED:{reservation['id']}",
                         order["vendor_id"],
-                        f"reservation-released:{reservation['id']}:RETAILER_CANCELLED"
                     ),
                 )
 

@@ -371,7 +371,7 @@ class CanonicalReturnService:
 
         cur.execute(
             """
-            SELECT id, order_id, vendor_id
+            SELECT id, order_id, vendor_id, status
             FROM settlements
             WHERE order_id=%s AND vendor_id=%s
             ORDER BY created_at DESC
@@ -383,6 +383,11 @@ class CanonicalReturnService:
         settlement = cur.fetchone()
         if not settlement:
             raise ReturnStateError("No settlement exists for the RMA order.")
+        if settlement["status"] not in ("DISPUTED", "CALCULATED", "RECONCILED"):
+            raise ReturnStateError(
+                f"Settlement is '{settlement['status']}'; RMA refund adjustment "
+                "requires an active settlement."
+            )
 
         cur.execute(
             """

@@ -968,3 +968,25 @@ The following closure claims are based on current runtime/source inspection on t
 
 ### Design note
 The remediation intentionally does **not** enforce one refund record per order. Refund uniqueness is source-scoped (one active refund per dispute or return) while cumulative payment ceilings prevent financial over-refunding across multiple legitimate refund sources.
+
+### G-466 Closure Record — Member Fan-Out Deduplication & Event ID Isolation
+- **Resolution:** Outbox events that fan out to multiple organization members generate unique per-row `event_id` and include member `user_id` in `dedupe_key`, preventing single-recipient truncation or duplicate key conflicts on multi-recipient notifications.
+- **Source commits:** `95f9bb689d27fcfd90a8a407e79a93a3a45a6f9d`, `217e57ce56f26b6865fbf1a5c1385ae52853c46d`
+- **Verification state:** RUNTIME VERIFIED (658/658 PASS).
+
+### G-467 Closure Record — Retailer Cancellation Reservation-Release SQL Parameter Count
+- **Resolution:** Corrected SQL parameter tuple count in `CanonicalRetailerOrderService.cancel_order` for `INVENTORY_RESERVATION_RELEASED` outbox emission (removed redundant extra string argument so 7 parameters match 7 `%s` placeholders).
+- **Verification state:** RUNTIME VERIFIED (`test_retailer_pre_acceptance_cancellation_releases_reservation` PASS).
+
+### G-468 Closure Record — Admin Category Create Audit Log Variable Alignment
+- **Resolution:** Replaced unbound variable `category_id` with `row["id"]` and aligned SQL placeholder count in `POLApplicationBoundary.admin_category_create` `admin_audit_logs` write.
+- **Verification state:** RUNTIME VERIFIED (`test_broadcast_and_category_admin_routes_use_real_boundary` PASS).
+
+### G-469 Closure Record — RMA Settlement Status Guard
+- **Resolution:** Added settlement status verification in `CanonicalReturnService._create_settlement_adjustment` to ensure adjustments only attach to active settlements (`CALCULATED`, `RECONCILED`, `DISPUTED`).
+- **Verification state:** RUNTIME VERIFIED.
+
+### G-470 Closure Record — Verification Suite Autonomous Secret Configuration
+- **Resolution:** Added explicit default `POL_JWT_SECRET` in `scripts/run_verification_suite.py:configure_test_environment()` to prevent unconfigured shell environments from failing auth contracts.
+- **Verification state:** RUNTIME VERIFIED (Suite self-contained, 658/658 PASS).
+

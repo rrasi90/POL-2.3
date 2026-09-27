@@ -53,6 +53,7 @@ def configure_test_environment():
         f"host={pg_host} port={pg_port} dbname=postgres user={os.environ.get('PGUSER', 'postgres')}",
     )
     os.environ.setdefault("ENVIRONMENT", "test")
+    os.environ.setdefault("POL_JWT_SECRET", "test-secret-key-for-auth-contract-tests-only-32bytes!!")
 
 def get_git_info():
     info = {"commit": "unknown", "branch": "unknown", "is_dirty": False}
