@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Field,
@@ -188,68 +189,98 @@ export default function RetailerCheckoutPage() {
 
   if (phase === "success" && result) {
     return (
-      <div className="space-y-5">
-        <header>
-          <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            سفارش ثبت شد
-          </h1>
-          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
-            {result.idempotent_replay
-              ? "این درخواست قبلاً ثبت شده بود (پخش هم‌توانی)."
-              : "سفارش شما با موفقیت ثبت شد."}
-          </p>
+      <div className="space-y-6 pb-10">
+        <header className="border-b border-[var(--pol-light-border-subtle)] pb-5">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <svg className="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
+                سفارش شما با موفقیت ثبت شد
+              </h1>
+              <p className="mt-0.5 text-[13px] text-[var(--pol-light-text-secondary)]">
+                {result.idempotent_replay
+                  ? "این درخواست قبلاً در سیستم ثبت شده بود (پخش هم‌توانی)."
+                  : "سفارش شما به تفکیک تأمین‌کنندگان ارسال گردید."}
+              </p>
+            </div>
+          </div>
         </header>
 
-        <section
-          aria-label="خلاصه ثبت سفارش"
-          className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusChip tone={groupStatusTone[result.group_status] ?? "neutral"}>
-              {groupStatusLabel[result.group_status] ?? result.group_status}
-            </StatusChip>
-            <span className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-              {formatToman(result.total_amount_toman)}
-            </span>
+        <Card className="p-5 shadow-xs space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--pol-light-border-subtle)] pb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] text-[var(--pol-light-text-muted)]">وضعیت گروه سفارش:</span>
+              <StatusChip tone={groupStatusTone[result.group_status] ?? "neutral"}>
+                {groupStatusLabel[result.group_status] ?? result.group_status}
+              </StatusChip>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] text-[var(--pol-light-text-muted)]">مبلغ کل گروه:</span>
+              <span className="text-[16px] font-bold text-[var(--pol-light-text-primary)]">
+                {formatToman(result.total_amount_toman)}
+              </span>
+            </div>
           </div>
-          <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]">
-            شماره گروه سفارش:{" "}
-            <span dir="ltr" className="font-mono text-[12px]">
+
+          <div className="flex flex-wrap items-center justify-between text-[12px] text-[var(--pol-light-text-secondary)]">
+            <span>شماره پیگیری گروه سفارش:</span>
+            <span dir="ltr" className="font-mono text-[13px] font-bold text-[var(--pol-light-text-primary)]">
               {result.order_group_id}
             </span>
-          </p>
-          <ul role="list" className="mt-3 space-y-2">
-            {result.child_orders.map((c) => (
-              <li
-                key={c.order_id}
-                className="flex flex-wrap items-center gap-2 rounded-[8px] border border-[var(--pol-light-border-subtle)] px-3 py-2"
-              >
-                <StatusChip tone={c.order_status === "PENDING" ? "warning" : "info"}>
-                  {c.order_status}
-                </StatusChip>
-                <Link
-                  href={`/retailer/orders/${c.order_id}`}
-                  className="text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
-                >
-                  مشاهده سفارش فروشنده
-                </Link>
-                <span className="ms-auto text-[13px] text-[var(--pol-light-text-primary)]">
-                  {formatToman(c.subtotal_toman)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
+          </div>
 
-        <div className="flex flex-wrap gap-2">
+          <div>
+            <h3 className="text-[13px] font-bold text-[var(--pol-light-text-primary)] mb-2">
+              سفارش‌های تفکیک‌شده به تفکیک فروشنده:
+            </h3>
+            <div className="space-y-2">
+              {result.child_orders.map((c) => (
+                <div
+                  key={c.order_id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-3 text-[13px]"
+                >
+                  <div className="flex items-center gap-3">
+                    <StatusChip tone={c.order_status === "PENDING" ? "warning" : "info"}>
+                      {c.order_status}
+                    </StatusChip>
+                    <Link
+                      href={`/retailer/orders/${c.order_id}`}
+                      className="font-mono text-[12px] font-bold text-[var(--pol-light-brand-primary)] hover:underline"
+                      dir="ltr"
+                    >
+                      {c.order_id.slice(0, 8)}…
+                    </Link>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-[var(--pol-light-text-primary)]">
+                      {formatToman(c.subtotal_toman)}
+                    </span>
+                    <Link
+                      href={`/retailer/orders/${c.order_id}`}
+                      className="text-[12px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+                    >
+                      مشاهده ←
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        <div className="flex flex-wrap gap-3 pt-2">
           <Button onClick={() => router.push(`/retailer/orders/group/${result.order_group_id}`)}>
             مشاهده گروه سفارش
           </Button>
           <Button variant="secondary" onClick={() => router.push("/retailer/orders")}>
-            همه سفارش‌ها
+            فهرست تمام سفارش‌ها
           </Button>
           <Button variant="ghost" onClick={() => router.push("/retailer/catalog")}>
-            ادامه خرید
+            بازگشت به کاتالوگ
           </Button>
         </div>
       </div>
@@ -267,166 +298,172 @@ export default function RetailerCheckoutPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          بررسی تخصیص و تسویه
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]" dir="ltr">
-          {preview.strategy}
+    <div className="space-y-6 pb-10">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--pol-light-border-subtle)] pb-5">
+        <div>
+          <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
+            بررسی تخصیص و تسویه حساب
+          </h1>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            پیش‌نمایش تخصیص هوشمند کالاها بین تأمین‌کنندگان بر اساس موجودی، حداقل سفارش (MOV) و بهترین قیمت
+          </p>
+        </div>
+        <span className="rounded-full bg-[var(--pol-light-surface-subtle)] px-2.5 py-0.5 text-[11px] font-mono text-[var(--pol-light-text-muted)] border border-[var(--pol-light-border-subtle)]" dir="ltr">
+          استراتژی: {preview.strategy}
         </span>
       </header>
 
-      <section
-        aria-label="خلاصه تخصیص"
-        className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-      >
-        <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-          خلاصه تخصیص (از سرور)
-        </h2>
-        <dl className="mt-3 grid gap-3 sm:grid-cols-4">
-          <div>
-            <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-              تعداد فروشنده
-            </dt>
-            <dd className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
+      {/* Allocation Summary Metrics */}
+      <section aria-label="خلاصه تخصیص" className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-4">
+          <Card className="p-4 shadow-2xs">
+            <p className="text-[12px] text-[var(--pol-light-text-secondary)]">تعداد تأمین‌کنندگان</p>
+            <p className="mt-1 text-[20px] font-bold text-[var(--pol-light-text-primary)]">
               {preview.vendor_count.toLocaleString("fa-IR")}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-              اقلام تخصیص‌یافته
-            </dt>
-            <dd className="text-[16px] font-semibold text-[var(--pol-light-semantic-success)]">
-              {preview.summary.total_items_allocated.toLocaleString("fa-IR")}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-              اقلام بدون تخصیص
-            </dt>
-            <dd className="text-[16px] font-semibold text-[var(--pol-light-semantic-danger)]">
-              {preview.summary.total_items_unfulfilled.toLocaleString("fa-IR")}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-              مبلغ کل
-            </dt>
-            <dd className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
-              {formatToman(preview.summary.total_amount_toman)}
-            </dd>
-          </div>
-        </dl>
-
-        <ul role="list" className="mt-4 space-y-2">
-          {preview.allocated_vendors.map((v) => (
-            <li
-              key={v.vendor_id}
-              className="flex flex-wrap items-center gap-2 rounded-[8px] border border-[var(--pol-light-border-subtle)] px-3 py-2"
-            >
-              <span className="text-[13px] font-medium text-[var(--pol-light-text-primary)]">
-                {v.business_name}
-              </span>
-              <StatusChip tone={v.mov_satisfied ? "success" : "warning"}>
-                {v.mov_satisfied ? "حداقل خرید رعایت شده" : "زیر حداقل خرید"}
-              </StatusChip>
-              <span className="text-[12px] text-[var(--pol-light-text-muted)]">
-                {v.allocated_items_count.toLocaleString("fa-IR")} قلم
-                {v.min_order_value_toman > 0
-                  ? ` · MOV ${formatToman(v.min_order_value_toman)}`
-                  : ""}
-              </span>
-              <span className="ms-auto text-[13px] text-[var(--pol-light-text-primary)]">
-                {formatToman(v.subtotal_toman)}
-              </span>
-            </li>
-          ))}
-        </ul>
-
-        {preview.unfulfilled_items.length > 0 ? (
-          <div className="mt-3 rounded-[8px] border border-[var(--pol-light-semantic-danger)]/40 bg-[var(--pol-light-surface-subtle)] p-3">
-            <p className="text-[13px] font-medium text-[var(--pol-light-semantic-danger)]">
-              اقلام بدون تخصیص
             </p>
-            <ul className="mt-1 space-y-0.5">
-              {preview.unfulfilled_items.map((u, i) => (
-                <li
-                  key={`${u.product_id}-${i}`}
-                  className="text-[12px] text-[var(--pol-light-text-secondary)]"
-                  dir="ltr"
-                >
-                  {u.product_id.slice(0, 8)}… ×{u.requested_quantity} — {u.reason_code}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        <div className="mt-3">
-          <Button variant="secondary" size="sm" onClick={() => void runPreview()}>
-            به‌روزرسانی تخصیص
-          </Button>
+          </Card>
+          <Card className="p-4 shadow-2xs">
+            <p className="text-[12px] text-[var(--pol-light-text-secondary)]">اقلام تخصیص‌یافته</p>
+            <p className="mt-1 text-[20px] font-bold text-[var(--pol-light-semantic-success)]">
+              {preview.summary.total_items_allocated.toLocaleString("fa-IR")}
+            </p>
+          </Card>
+          <Card className="p-4 shadow-2xs">
+            <p className="text-[12px] text-[var(--pol-light-text-secondary)]">اقلام بدون تأمین‌کننده</p>
+            <p className="mt-1 text-[20px] font-bold text-[var(--pol-light-semantic-danger)]">
+              {preview.summary.total_items_unfulfilled.toLocaleString("fa-IR")}
+            </p>
+          </Card>
+          <Card className="p-4 shadow-2xs">
+            <p className="text-[12px] text-[var(--pol-light-text-secondary)]">مبلغ کل برآوردشده</p>
+            <p className="mt-1 text-[18px] font-bold text-[var(--pol-light-brand-primary)]">
+              {formatToman(preview.summary.total_amount_toman)}
+            </p>
+          </Card>
         </div>
+
+        {/* Vendor Allocation Breakdown */}
+        <Card className="p-5 shadow-xs">
+          <div className="flex items-center justify-between border-b border-[var(--pol-light-border-subtle)] pb-3 mb-3">
+            <h2 className="text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+              تفکیک تأمین‌کنندگان منتخب
+            </h2>
+            <Button variant="ghost" size="sm" onClick={() => void runPreview()}>
+              به‌روزرسانی تخصیص
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {preview.allocated_vendors.map((v) => (
+              <div
+                key={v.vendor_id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-3 text-[13px]"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="size-2 rounded-full bg-[var(--pol-light-brand-primary)]" />
+                  <span className="font-bold text-[var(--pol-light-text-primary)]">
+                    {v.business_name}
+                  </span>
+                  <StatusChip tone={v.mov_satisfied ? "success" : "warning"}>
+                    {v.mov_satisfied ? "حداقل خرید رعایت شده" : "زیر حداقل خرید (MOV)"}
+                  </StatusChip>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+                    {v.allocated_items_count.toLocaleString("fa-IR")} قلم
+                    {v.min_order_value_toman > 0
+                      ? ` (کف سفارش: ${formatToman(v.min_order_value_toman)})`
+                      : ""}
+                  </span>
+                  <span className="font-bold text-[var(--pol-light-text-primary)]">
+                    {formatToman(v.subtotal_toman)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {preview.unfulfilled_items.length > 0 ? (
+            <div className="mt-4 rounded-[8px] border border-[var(--pol-light-semantic-danger)]/40 bg-[var(--pol-light-surface-subtle)] p-3">
+              <p className="text-[13px] font-bold text-[var(--pol-light-semantic-danger)]">
+                اقلام بدون تخصیص
+              </p>
+              <ul className="mt-1.5 space-y-1">
+                {preview.unfulfilled_items.map((u, i) => (
+                  <li
+                    key={`${u.product_id}-${i}`}
+                    className="text-[12px] text-[var(--pol-light-text-secondary)] font-mono"
+                    dir="ltr"
+                  >
+                    {u.product_id.slice(0, 8)}… ×{u.requested_quantity} — {u.reason_code}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </Card>
       </section>
 
+      {/* Checkout Form */}
       <section aria-label="تکمیل سفارش">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          اطلاعات تحویل و پرداخت
-        </h2>
-        {submitError ? (
-          <div className="mt-3">
-            <ErrorState title="ثبت سفارش ناموفق بود" description={submitError} />
-          </div>
-        ) : null}
-        <form onSubmit={placeOrder} className="mt-4 grid max-w-xl gap-4">
-          <Field
-            label="آدرس تحویل"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            required
-            minLength={5}
-            maxLength={1000}
-            hint="至少 ۵ نویسه — مثلاً نشانی فروشگاه در اهواز"
-            placeholder="استان، شهر، خیابان، پلاک…"
-          />
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="checkout-payment"
-              className="text-[12px] leading-[18px] font-medium text-[var(--pol-light-text-secondary)]"
-            >
-              روش پرداخت ترجیحی
-            </label>
-            <select
-              id="checkout-payment"
-              value={payment}
-              onChange={(e) => setPayment(e.target.value as PaymentMethod)}
-              className="h-10 w-full rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 text-[14px] text-[var(--pol-light-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
-            >
-              {paymentMethods.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" loading={submitting} disabled={submitting}>
-              تأیید و ثبت سفارش
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => router.push("/retailer/basket")}
-              disabled={submitting}
-            >
-              بازگشت به سبد
-            </Button>
-          </div>
-          <p className="text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
-            idempotency_key: {idempotencyKey}
-          </p>
-        </form>
+        <Card className="p-5 shadow-xs">
+          <h2 className="text-[16px] leading-[24px] font-bold text-[var(--pol-light-text-primary)] mb-4">
+            اطلاعات تحویل و روش پرداخت
+          </h2>
+          {submitError ? (
+            <div className="mb-4">
+              <ErrorState title="ثبت سفارش ناموفق بود" description={submitError} />
+            </div>
+          ) : null}
+          <form onSubmit={placeOrder} className="grid max-w-xl gap-4">
+            <Field
+              label="آدرس دقیق تحویل سفارش"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              required
+              minLength={5}
+              maxLength={1000}
+              hint="حداقل ۵ نویسه — مثلاً اهواز، خیابان نادری، نبش خیابان سعدی، فروشگاه شایان"
+              placeholder="استان، شهر، خیابان، پلاک، واحد…"
+            />
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="checkout-payment"
+                className="text-[12px] leading-[18px] font-medium text-[var(--pol-light-text-secondary)]"
+              >
+                روش پرداخت ترجیحی
+              </label>
+              <select
+                id="checkout-payment"
+                value={payment}
+                onChange={(e) => setPayment(e.target.value as PaymentMethod)}
+                className="h-10 w-full rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 text-[14px] text-[var(--pol-light-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)] shadow-2xs"
+              >
+                {paymentMethods.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Button type="submit" loading={submitting} disabled={submitting}>
+                تأیید نهایی و ثبت قطعی سفارش
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => router.push("/retailer/basket")}
+                disabled={submitting}
+              >
+                بازگشت به سبد خرید
+              </Button>
+            </div>
+            <p className="text-[11px] text-[var(--pol-light-text-muted)] font-mono" dir="ltr">
+              idempotency_key: {idempotencyKey}
+            </p>
+          </form>
+        </Card>
       </section>
     </div>
   );

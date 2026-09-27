@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Field,
@@ -156,9 +157,9 @@ export default function RetailerOrderReturnsPage() {
     return (
       <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری مرجوعی‌ها">
         <Skeleton className="h-8 w-64" />
-        <div className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4">
+        <Card className="p-5">
           <Skeleton lines={4} />
-        </div>
+        </Card>
       </div>
     );
   }
@@ -174,56 +175,59 @@ export default function RetailerOrderReturnsPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-start gap-3">
+    <div className="space-y-6 pb-10">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--pol-light-border-subtle)] pb-5">
         <div>
           <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            بازگشت کالا و اختلاف
+            بازگشت کالا و حل اختلاف
           </h1>
-          <p className="mt-1 text-[12px] text-[var(--pol-light-text-muted)]" dir="ltr">
-            order {orderId}
+          <p className="mt-1 text-[12px] text-[var(--pol-light-text-muted)] font-mono" dir="ltr">
+            سفارش #{orderId}
           </p>
         </div>
-        <div className="ms-auto flex flex-wrap gap-2">
-          <Button size="sm" variant="secondary" onClick={() => setReturnOpen((v) => !v)}>
-            {returnOpen ? "بستن فرم" : "درخواست مرجوعی"}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant={returnOpen ? "ghost" : "secondary"} onClick={() => setReturnOpen((v) => !v)}>
+            {returnOpen ? "بستن فرم مرجوعی" : "+ ثبت درخواست مرجوعی"}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setDisputeOpen((v) => !v)}>
-            {disputeOpen ? "بستن فرم" : "ثبت اختلاف"}
+          <Button size="sm" variant={disputeOpen ? "ghost" : "secondary"} onClick={() => setDisputeOpen((v) => !v)}>
+            {disputeOpen ? "بستن فرم اختلاف" : "+ ثبت اختلاف رسمی"}
           </Button>
           <Link
             href={`/retailer/orders/${orderId}`}
-            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
+            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[12px] font-medium text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)]"
           >
-            بازگشت به سفارش
+            ← بازگشت به سفارش
           </Link>
         </div>
       </header>
 
+      {/* Return Request Modal/Card */}
       {returnOpen ? (
-        <section
-          aria-label="درخواست مرجوعی"
-          className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-        >
-          <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-            درخواست مرجوعی
-          </h2>
+        <Card className="p-5 shadow-xs border-[var(--pol-light-brand-primary)]/40 space-y-4">
+          <div>
+            <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+              ثبت درخواست مرجوعی کالا
+            </h2>
+            <p className="text-[12px] text-[var(--pol-light-text-secondary)]">
+              در صورت آسیب‌دیدگی کارتن، انقضای تاریخ مصرف یا مغایرت قلم دریافتی ثبت کنید.
+            </p>
+          </div>
+
           {returnError ? (
-            <div className="mt-3">
-              <ErrorState title="ثبت مرجوعی ناموفق بود" description={returnError} />
-            </div>
+            <ErrorState title="ثبت مرجوعی ناموفق بود" description={returnError} />
           ) : null}
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+
+          <div className="grid gap-3 sm:grid-cols-3">
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="return-reason"
                 className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
               >
-                دلیل
+                علت مرجوعی
               </label>
               <select
                 id="return-reason"
-                className="h-10 w-full rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 text-[14px] text-[var(--pol-light-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+                className="h-10 w-full rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 text-[14px] text-[var(--pol-light-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)] shadow-2xs"
                 value={returnForm.reason_code}
                 onChange={(e) =>
                   setReturnForm((f) => ({ ...f, reason_code: e.target.value }))
@@ -237,7 +241,7 @@ export default function RetailerOrderReturnsPage() {
               </select>
             </div>
             <Field
-              label="تعداد"
+              label="تعداد کارتن یا بسته"
               type="number"
               min={1}
               value={returnForm.quantity}
@@ -245,157 +249,181 @@ export default function RetailerOrderReturnsPage() {
               required
             />
             <Field
-              label="توضیح"
+              label="توضیحات تکمیلی"
               value={returnForm.reason}
               onChange={(e) => setReturnForm((f) => ({ ...f, reason: e.target.value }))}
-              hint="اختیاری"
+              hint="اختیاری — حداکثر ۵۰۰ نویسه"
               maxLength={500}
+              placeholder="توضیح آسیب یا عدم تطابق…"
             />
           </div>
-          <div className="mt-3">
+
+          <div className="flex gap-2 pt-2">
             <Button loading={returning} onClick={() => void createReturn()}>
-              ثبت مرجوعی
+              ثبت نهایی درخواست مرجوعی
+            </Button>
+            <Button variant="ghost" onClick={() => setReturnOpen(false)}>
+              انصراف
             </Button>
           </div>
-        </section>
+        </Card>
       ) : null}
 
+      {/* Dispute Modal/Card */}
       {disputeOpen ? (
-        <section
-          aria-label="ثبت اختلاف"
-          className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-        >
-          <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-            ثبت اختلاف
-          </h2>
+        <Card className="p-5 shadow-xs border-[var(--pol-light-semantic-danger)]/40 space-y-4">
+          <div>
+            <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+              ثبت اختلاف رسمی (Dispute)
+            </h2>
+            <p className="text-[12px] text-[var(--pol-light-text-secondary)]">
+              در صورت عدم توافق با فروشنده یا بروز خطای مالی، موضوع به واحد عملیات پُل ارجاع می‌شود.
+            </p>
+          </div>
+
           {disputeError ? (
-            <div className="mt-3">
-              <ErrorState title="ثبت اختلاف ناموفق بود" description={disputeError} />
-            </div>
+            <ErrorState title="ثبت اختلاف ناموفق بود" description={disputeError} />
           ) : null}
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field
-              label="دلیل"
+              label="عنوان دلیل اختلاف"
               value={disputeForm.reason}
               onChange={(e) => setDisputeForm((f) => ({ ...f, reason: e.target.value }))}
               required
               maxLength={200}
+              placeholder="مثلاً: مغایرت در فاکتور تسویه حساب…"
             />
             <Field
-              label="شرح"
+              label="شرح کامل اختلاف"
               value={disputeForm.description}
               onChange={(e) =>
                 setDisputeForm((f) => ({ ...f, description: e.target.value }))
               }
-              hint="اختیاری"
+              hint="اختیاری — حداکثر ۲۰۰۰ نویسه"
               maxLength={2000}
+              placeholder="جزئیات پیگیری و تماس‌های انجام‌شده…"
             />
           </div>
-          <div className="mt-3">
+
+          <div className="flex gap-2 pt-2">
             <Button loading={disputing} onClick={() => void createDispute()}>
-              ثبت اختلاف
+              ثبت و ارجاع به بازرسی پُل
+            </Button>
+            <Button variant="ghost" onClick={() => setDisputeOpen(false)}>
+              انصراف
             </Button>
           </div>
-        </section>
+        </Card>
       ) : null}
 
-      <section aria-label="مرجوعی‌ها">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          مرجوعی‌ها
+      {/* Returns List */}
+      <section aria-label="مرجوعی‌ها" className="space-y-3">
+        <h2 className="text-[16px] leading-[24px] font-bold text-[var(--pol-light-text-primary)]">
+          درخواست‌های مرجوعی ({returns.length.toLocaleString("fa-IR")})
         </h2>
         {returns.length === 0 ? (
-          <div className="mt-3">
+          <Card variant="subtle" className="p-5">
             <EmptyState
-              title="مرجوعی ثبت نشده"
-              description="برای این سفارش درخواست مرجوعی وجود ندارد."
+              title="مرجوعی ثبت نشده است"
+              description="برای این سفارش تاکنون هیچ درخواست مرجوعی ثبت نگردیده است."
             />
-          </div>
+          </Card>
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
+          <div className="space-y-3">
             {returns.map((r) => (
-              <li
-                key={String(r.id)}
-                className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusChip tone={returnStatusTone[r.status ?? ""] ?? "neutral"}>
-                    {returnStatusLabel[r.status ?? ""] ?? r.status ?? "—"}
-                  </StatusChip>
-                  {r.reason_code ? (
-                    <span className="text-[12px] text-[var(--pol-light-text-secondary)]" dir="ltr">
-                      {r.reason_code}
-                    </span>
-                  ) : null}
-                  <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
+              <Card key={String(r.id)} className="p-4 sm:p-5 shadow-xs space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <StatusChip tone={returnStatusTone[r.status ?? ""] ?? "neutral"}>
+                      {returnStatusLabel[r.status ?? ""] ?? r.status ?? "—"}
+                    </StatusChip>
+                    {r.reason_code ? (
+                      <span className="font-mono text-[11px] rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[var(--pol-light-text-secondary)] border border-[var(--pol-light-border-subtle)]" dir="ltr">
+                        {r.reason_code}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-[11px] text-[var(--pol-light-text-muted)]">
                     {formatDateTime(r.created_at)}
                   </span>
                 </div>
+
                 {r.reason ? (
-                  <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]">
-                    {r.reason}
+                  <p className="text-[13px] text-[var(--pol-light-text-secondary)]">
+                    علت: {r.reason}
                   </p>
                 ) : null}
-                <div className="mt-2 flex flex-wrap gap-3 text-[13px] text-[var(--pol-light-text-primary)]">
-                  {r.quantity != null ? (
-                    <span>تعداد: {Number(r.quantity).toLocaleString("fa-IR")}</span>
-                  ) : null}
-                  {r.requested_amount_toman != null ? (
-                    <span>{formatToman(r.requested_amount_toman)}</span>
-                  ) : null}
+
+                <div className="flex flex-wrap items-center justify-between gap-3 text-[13px] pt-1">
+                  <div className="flex items-center gap-3">
+                    {r.quantity != null ? (
+                      <span className="font-medium text-[var(--pol-light-text-primary)]">
+                        تعداد مرجوعی: {Number(r.quantity).toLocaleString("fa-IR")}
+                      </span>
+                    ) : null}
+                    {r.requested_amount_toman != null ? (
+                      <span className="font-bold text-[var(--pol-light-brand-primary)]">
+                        مبلغ: {formatToman(r.requested_amount_toman)}
+                      </span>
+                    ) : null}
+                  </div>
+
                   {r.resolution_note ? (
-                    <span className="text-[var(--pol-light-text-secondary)]">
-                      {r.resolution_note}
+                    <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+                      نتیجه: {r.resolution_note}
                     </span>
                   ) : null}
                 </div>
-              </li>
+              </Card>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
-      <section aria-label="اختلاف‌ها">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          اختلاف‌ها
+      {/* Disputes List */}
+      <section aria-label="اختلاف‌ها" className="space-y-3">
+        <h2 className="text-[16px] leading-[24px] font-bold text-[var(--pol-light-text-primary)]">
+          اختلاف‌های ثبت‌شده ({disputes.length.toLocaleString("fa-IR")})
         </h2>
         {disputes.length === 0 ? (
-          <div className="mt-3">
+          <Card variant="subtle" className="p-5">
             <EmptyState
-              title="اختلافی ثبت نشده"
-              description="برای این سفارش اختلافی وجود ندارد."
+              title="اختلافی برای این سفارش وجود ندارد"
+              description="این سفارش روند طبیعی خود را بدون طرح اختلاف رسمی طی کرده است."
             />
-          </div>
+          </Card>
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
+          <div className="space-y-3">
             {disputes.map((d) => (
-              <li
-                key={String(d.id)}
-                className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-              >
-                <div className="flex flex-wrap items-center gap-2">
+              <Card key={String(d.id)} className="p-4 sm:p-5 shadow-xs space-y-2 border-[var(--pol-light-semantic-danger)]/20">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-2.5">
                   <StatusChip tone={disputeTone[d.status ?? "NONE"] ?? "neutral"}>
                     {disputeLabel[d.status ?? "NONE"] ?? d.status ?? "—"}
                   </StatusChip>
-                  <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
+                  <span className="text-[11px] text-[var(--pol-light-text-muted)]">
                     {formatDateTime(d.created_at)}
                   </span>
                 </div>
-                <p className="mt-2 text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-                  {d.reason ?? "بدون دلیل"}
+
+                <p className="text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+                  {d.reason ?? "بدون عنوان"}
                 </p>
+
                 {d.description ? (
-                  <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+                  <p className="text-[13px] text-[var(--pol-light-text-secondary)]">
                     {d.description}
                   </p>
                 ) : null}
+
                 {d.claimed_amount_toman != null ? (
-                  <p className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]">
-                    مبلغ ادعا: {formatToman(d.claimed_amount_toman)}
+                  <p className="text-[13px] font-semibold text-[var(--pol-light-semantic-danger)]">
+                    مبلغ ادعاشده: {formatToman(d.claimed_amount_toman)}
                   </p>
                 ) : null}
-              </li>
+              </Card>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>

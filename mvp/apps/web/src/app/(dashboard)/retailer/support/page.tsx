@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Field,
@@ -180,10 +181,15 @@ export default function RetailerSupportPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری پشتیبانی">
-        <Skeleton className="h-8 w-48" />
-        <div className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4">
-          <Skeleton lines={5} />
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری پشتیبانی">
+        <Skeleton className="h-9 w-48" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className="p-6">
+            <Skeleton lines={6} />
+          </Card>
+          <Card className="p-6">
+            <Skeleton lines={6} />
+          </Card>
         </div>
       </div>
     );
@@ -200,40 +206,53 @@ export default function RetailerSupportPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          پشتیبانی
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">R-12</span>
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] md:text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              مرکز پشتیبانی و تیکت‌ها
+            </h1>
+            <span className="rounded-full bg-[var(--pol-light-surface-subtle)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              R-12
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            ارتباط مستقیم با تیم عملیات پُل برای حل مشکلات سفارش و هماهنگی‌ها
+          </p>
+        </div>
         <Button
           size="sm"
-          className="ms-auto"
           onClick={() => setCreateOpen((v) => !v)}
           aria-expanded={createOpen}
         >
-          {createOpen ? "بستن فرم" : "پرونده جدید"}
+          {createOpen ? "انصراف و بستن" : "+ ثبت تیکت جدید"}
         </Button>
       </header>
 
-      {createOpen ? (
-        <section
-          aria-label="ایجاد پرونده"
-          className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-        >
-          <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-            پرونده جدید
+      {/* Create Ticket Modal / Accordion */}
+      {createOpen && (
+        <Card className="p-5 border-[var(--pol-light-brand-primary)] bg-[var(--pol-light-surface-subtle)] shadow-[var(--pol-shadow-md)]">
+          <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+            ثبت پرونده پشتیبانی جدید
           </h2>
-          {createError ? (
+          <p className="mt-0.5 text-[12px] text-[var(--pol-light-text-secondary)]">
+            اطلاعات مورد نیاز را وارد کنید تا کارشناسان پشتیبانی پُل سریع‌تر پاسخگو باشند.
+          </p>
+
+          {createError && (
             <div className="mt-3">
               <ErrorState title="ایجاد پرونده ناموفق بود" description={createError} />
             </div>
-          ) : null}
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          )}
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field
-              label="موضوع"
+              label="موضوع تیکت"
               value={createForm.subject}
               onChange={(e) => setCreateForm((f) => ({ ...f, subject: e.target.value }))}
+              placeholder="مثال: مغایرت در تعداد اقلام تحویلی..."
               required
               maxLength={200}
             />
@@ -242,11 +261,11 @@ export default function RetailerSupportPage() {
                 htmlFor="rs-priority"
                 className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
               >
-                اولویت
+                میزان اولویت
               </label>
               <select
                 id="rs-priority"
-                className="h-10 w-full rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 text-[14px] text-[var(--pol-light-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+                className="h-10 w-full rounded-lg border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 text-[14px] text-[var(--pol-light-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
                 value={createForm.priority}
                 onChange={(e) => setCreateForm((f) => ({ ...f, priority: e.target.value }))}
               >
@@ -263,43 +282,52 @@ export default function RetailerSupportPage() {
               onChange={(e) =>
                 setCreateForm((f) => ({ ...f, related_order_id: e.target.value }))
               }
-              hint="اختیاری"
+              hint="اختیاری — جهت بررسی سریع‌تر"
+              placeholder="مثال: ORD-12345"
               dir="ltr"
             />
           </div>
-          <div className="mt-3">
-            <Button loading={creating} onClick={() => void createCase()}>
-              ایجاد پرونده
+
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setCreateOpen(false)}>
+              انصراف
+            </Button>
+            <Button size="sm" loading={creating} onClick={() => void createCase()}>
+              ثبت و ارسال پرونده
             </Button>
           </div>
-        </section>
-      ) : null}
+        </Card>
+      )}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+      {/* Split View */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
+        {/* Cases List */}
         <section aria-label="فهرست پرونده‌ها" className="space-y-3">
           <SearchField
             label="جستجوی پرونده"
-            placeholder="جستجوی موضوع یا شماره…"
+            placeholder="جستجوی موضوع یا شماره تیکت..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+
           {filtered.length === 0 ? (
             <EmptyState
               title="پرونده‌ای یافت نشد"
-              description="پرونده جدید بسازید یا عبارت جستجو را تغییر دهید."
+              description="تیکت جدیدی ثبت کنید یا عبارت جستجو را تغییر دهید."
             />
           ) : (
-            <ul role="list" className="space-y-2">
-              {filtered.map((c) => (
-                <li key={String(c.id)}>
-                  <button
-                    type="button"
+            <div className="space-y-2.5">
+              {filtered.map((c) => {
+                const isSelected = selectedId === String(c.id);
+                return (
+                  <Card
+                    key={String(c.id)}
                     onClick={() => setSelectedId(String(c.id))}
                     className={[
-                      "w-full rounded-[12px] border p-3 text-start transition-colors duration-[160ms]",
-                      selectedId === String(c.id)
-                        ? "border-[var(--pol-light-brand-primary)] bg-[var(--pol-light-surface-subtle)]"
-                        : "border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] hover:bg-[var(--pol-light-surface-subtle)]",
+                      "cursor-pointer p-4 transition-all duration-150 text-start",
+                      isSelected
+                        ? "border-[var(--pol-light-brand-primary)] bg-[var(--pol-light-surface-subtle)] ring-1 ring-[var(--pol-light-brand-primary)] shadow-[var(--pol-shadow-sm)]"
+                        : "hover:border-[var(--pol-light-border-strong)] hover:bg-[var(--pol-light-surface-subtle)]",
                     ].join(" ")}
                   >
                     <div className="flex flex-wrap items-center gap-2">
@@ -313,32 +341,44 @@ export default function RetailerSupportPage() {
                         {formatDateTime(c.created_at)}
                       </span>
                     </div>
-                    <p className="mt-1.5 text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
+
+                    <p className="mt-2 text-[14px] font-semibold text-[var(--pol-light-text-primary)] line-clamp-1">
                       {c.subject ?? "بدون موضوع"}
                     </p>
-                    <p className="text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
-                      {c.case_number ?? String(c.id)}
-                    </p>
-                  </button>
-                </li>
-              ))}
-            </ul>
+
+                    <div className="mt-1 flex items-center justify-between text-[11px] text-[var(--pol-light-text-muted)]">
+                      <span dir="ltr" className="font-mono">
+                        {c.case_number ?? `CASE-${String(c.id).slice(0, 8)}`}
+                      </span>
+                      {c.related_order_id && (
+                        <span dir="ltr" className="font-mono">
+                          سفارش: {c.related_order_id.slice(0, 8)}...
+                        </span>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </section>
 
-        <section
-          aria-label="جزئیات پرونده"
-          className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-        >
+        {/* Selected Case Detail */}
+        <section aria-label="جزئیات پرونده">
           {!selectedId ? (
-            <EmptyState
-              title="پرونده‌ای انتخاب نشده"
-              description="از فهرست کنار، یک پرونده انتخاب کنید."
-            />
+            <Card className="flex flex-col items-center justify-center p-12 text-center">
+              <span className="text-[36px] mb-2">💬</span>
+              <h3 className="text-[15px] font-semibold text-[var(--pol-light-text-primary)]">
+                پرونده‌ای انتخاب نشده است
+              </h3>
+              <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+                یک تیکت را از ستون کناری برای مشاهده جزئیات و گفتگو انتخاب نمایید.
+              </p>
+            </Card>
           ) : detailState === "loading" ? (
-            <div aria-busy="true" aria-label="در حال بارگذاری جزئیات">
-              <Skeleton lines={5} />
-            </div>
+            <Card className="p-6">
+              <Skeleton lines={6} />
+            </Card>
           ) : detailState === "error" ? (
             <ErrorState
               title="دریافت جزئیات پرونده ناموفق بود"
@@ -346,80 +386,97 @@ export default function RetailerSupportPage() {
               onRetry={() => selectedId && void loadDetail(selectedId)}
             />
           ) : detail ? (
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusChip tone={supportStatusTone[detail.status ?? ""] ?? "neutral"}>
-                  {supportStatusLabel[detail.status ?? ""] ?? detail.status ?? "—"}
-                </StatusChip>
-                <StatusChip tone={supportPriorityTone[detail.priority ?? ""] ?? "neutral"}>
-                  {PRIORITY_LABEL[detail.priority ?? ""] ?? detail.priority ?? "—"}
-                </StatusChip>
-                <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                  {formatDateTime(detail.updated_at)}
+            <Card className="p-5 space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusChip tone={supportStatusTone[detail.status ?? ""] ?? "neutral"}>
+                    {supportStatusLabel[detail.status ?? ""] ?? detail.status ?? "—"}
+                  </StatusChip>
+                  <StatusChip tone={supportPriorityTone[detail.priority ?? ""] ?? "neutral"}>
+                    {PRIORITY_LABEL[detail.priority ?? ""] ?? detail.priority ?? "—"}
+                  </StatusChip>
+                </div>
+                <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+                  به‌روزرسانی: {formatDateTime(detail.updated_at)}
                 </span>
               </div>
+
               <div>
-                <h2 className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
+                <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
                   {detail.subject ?? "بدون موضوع"}
                 </h2>
-                <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
-                  {detail.case_number ?? String(detail.id)}
-                </p>
-                {detail.related_order_id ? (
-                  <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]" dir="ltr">
-                    order: {detail.related_order_id}
-                  </p>
-                ) : null}
-                {detail.resolution_note ? (
-                  <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]">
+                <div className="mt-2 flex flex-wrap gap-4 text-[12px] text-[var(--pol-light-text-secondary)]">
+                  <span dir="ltr" className="font-mono">
+                    کد پیگیری: {detail.case_number ?? String(detail.id)}
+                  </span>
+                  {detail.related_order_id && (
+                    <span dir="ltr" className="font-mono">
+                      سفارش مرتبط: {detail.related_order_id}
+                    </span>
+                  )}
+                </div>
+                {detail.resolution_note && (
+                  <div className="mt-3 rounded-lg border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-3 text-[13px] text-[var(--pol-light-text-secondary)] leading-relaxed">
+                    <strong className="block text-[var(--pol-light-text-primary)] mb-1">
+                      یادداشت رفع مشکل:
+                    </strong>
                     {detail.resolution_note}
-                  </p>
-                ) : null}
+                  </div>
+                )}
               </div>
 
-              <div className="border-t border-[var(--pol-light-border-subtle)] pt-3">
-                <h3 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-                  مکالمه
-                </h3>
-                <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
-                  GET messages در بک‌اند وجود ندارد — فقط پیام‌های این نشست نمایش داده می‌شود.
-                </p>
+              {/* Messages / Discussion */}
+              <div className="border-t border-[var(--pol-light-border-subtle)] pt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+                    پیام‌های نشست
+                  </h3>
+                  <span className="text-[11px] text-[var(--pol-light-text-muted)]">
+                    ارسال زنده به تیم عملیات
+                  </span>
+                </div>
+
                 {sessionMessages.length === 0 ? (
-                  <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]">
-                    پیامی در این نشست ثبت نشده است.
-                  </p>
+                  <div className="rounded-lg border border-dashed border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-4 text-center text-[12px] text-[var(--pol-light-text-secondary)]">
+                    پیام جدیدی در این نشست ثبت نشده است. پاسخ‌های قبلی از طریق پیامک یا بخش وضعیت
+                    اطلاع‌رسانی می‌شوند.
+                  </div>
                 ) : (
-                  <ul role="list" className="mt-2 space-y-2">
+                  <div className="space-y-2.5">
                     {sessionMessages.map((m) => (
-                      <li
+                      <div
                         key={String(m.id)}
-                        className="rounded-[8px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-3"
+                        className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-3.5 space-y-1"
                       >
-                        <p className="text-[13px] text-[var(--pol-light-text-primary)]">
+                        <p className="text-[13px] leading-relaxed text-[var(--pol-light-text-primary)]">
                           {m.message_text}
                         </p>
-                        <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
+                        <div className="flex justify-end text-[10px] text-[var(--pol-light-text-muted)]">
                           {formatDateTime(m.created_at)}
-                        </p>
-                      </li>
+                        </div>
+                      </div>
                     ))}
-                  </ul>
-                )}
-                {messageError ? (
-                  <div className="mt-2">
-                    <ErrorState title="ارسال پیام ناموفق بود" description={messageError} />
                   </div>
-                ) : null}
-                <div className="mt-2 flex flex-col gap-2">
+                )}
+
+                {messageError && (
+                  <ErrorState title="ارسال پیام ناموفق بود" description={messageError} />
+                )}
+
+                {/* Input box */}
+                <div className="space-y-2">
                   <textarea
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     maxLength={5000}
                     rows={3}
-                    placeholder="متن پیام (حداکثر ۵۰۰۰ نویسه)…"
-                    className="min-h-[72px] w-full resize-y rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-2 text-[14px] text-[var(--pol-light-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+                    placeholder="پیام یا توضیحات خود را بنویسید..."
+                    className="min-h-[80px] w-full resize-y rounded-xl border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] p-3 text-[14px] text-[var(--pol-light-text-primary)] placeholder:text-[var(--pol-light-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-[var(--pol-light-text-muted)]">
+                      {messageText.length.toLocaleString("fa-IR")} از ۵,۰۰۰ نویسه
+                    </span>
                     <Button
                       size="sm"
                       loading={sending}
@@ -428,13 +485,10 @@ export default function RetailerSupportPage() {
                     >
                       ارسال پیام
                     </Button>
-                    <span className="text-[11px] text-[var(--pol-light-text-muted)]">
-                      {messageText.length.toLocaleString("fa-IR")}/5000
-                    </span>
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           ) : null}
         </section>
       </div>

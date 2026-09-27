@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Button, EmptyState, ErrorState, Skeleton, StatusChip } from "@pol/ui";
+import { Button, Card, EmptyState, ErrorState, Skeleton, StatusChip } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import {
   formatDateTime,
@@ -81,12 +81,12 @@ export default function RetailerOrderGroupPage() {
     return (
       <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری گروه سفارش">
         <Skeleton className="h-8 w-64" />
-        <div className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4">
+        <Card className="p-5">
           <Skeleton lines={3} />
-        </div>
-        <div className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4">
+        </Card>
+        <Card className="p-5">
           <Skeleton lines={5} />
-        </div>
+        </Card>
       </div>
     );
   }
@@ -104,111 +104,128 @@ export default function RetailerOrderGroupPage() {
   const status = group.group_status ?? "";
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-start gap-3">
+    <div className="space-y-6 pb-10">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--pol-light-border-subtle)] pb-5">
         <div>
           <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            گروه سفارش
+            جزئیات گروه سفارش
           </h1>
           <p className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="text-[13px] text-[var(--pol-light-text-secondary)]" dir="ltr">
+            <span className="font-mono text-[14px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
               {group.id}
             </span>
-            <span className="text-[11px] text-[var(--pol-light-text-muted)]">
-              {formatDateTime(group.created_at)}
+            <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+              · ثبت‌شده در {formatDateTime(group.created_at)}
             </span>
           </p>
         </div>
-        <div className="ms-auto flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" onClick={() => void load()}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => void load()}>
             به‌روزرسانی
           </Button>
           <Link
             href="/retailer/orders"
-            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
+            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[12px] font-medium text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)]"
           >
-            همه سفارش‌ها
+            ← تمام سفارش‌ها
           </Link>
         </div>
       </header>
 
-      <section
-        aria-label="خلاصه گروه"
-        className="flex flex-wrap items-center gap-2 rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-      >
-        <StatusChip tone={groupStatusTone[status] ?? "neutral"}>
-          {groupStatusLabel[status] ?? status ?? "—"}
-        </StatusChip>
-        <span className="text-[13px] text-[var(--pol-light-text-secondary)]">
-          {group.group_order_count != null
-            ? `${group.group_order_count.toLocaleString("fa-IR")} سفارش`
-            : `${children.length.toLocaleString("fa-IR")} سفارش`}
-        </span>
-        <span className="ms-auto text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
-          {formatToman(group.group_total_toman)}
-        </span>
-      </section>
+      {/* Group Summary Card */}
+      <Card className="p-5 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <StatusChip tone={groupStatusTone[status] ?? "neutral"}>
+              {groupStatusLabel[status] ?? status ?? "—"}
+            </StatusChip>
+            <span className="text-[13px] font-medium text-[var(--pol-light-text-secondary)]">
+              {group.group_order_count != null
+                ? `${group.group_order_count.toLocaleString("fa-IR")} سفارش تفکیک‌شده`
+                : `${children.length.toLocaleString("fa-IR")} سفارش تفکیک‌شده`}
+            </span>
+          </div>
 
-      {group.delivery_address ? (
-        <section
-          aria-label="آدرس تحویل"
-          className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-        >
-          <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-            آدرس تحویل
-          </h2>
-          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
-            {group.delivery_address}
-          </p>
-        </section>
-      ) : null}
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] text-[var(--pol-light-text-muted)]">مجموع کل گروه:</span>
+            <span className="text-[18px] font-bold text-[var(--pol-light-brand-primary)]">
+              {formatToman(group.group_total_toman)}
+            </span>
+          </div>
+        </div>
 
-      <section aria-label="سفارش‌های گروه">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          سفارش‌های این گروه
+        {group.delivery_address ? (
+          <div className="mt-3 pt-3 border-t border-[var(--pol-light-border-subtle)] text-[12px] text-[var(--pol-light-text-secondary)]">
+            <span className="font-semibold text-[var(--pol-light-text-primary)]">نشانی تحویل مشترک: </span>
+            <span>{group.delivery_address}</span>
+          </div>
+        ) : null}
+      </Card>
+
+      {/* Child Orders */}
+      <section aria-label="سفارش‌های گروه" className="space-y-3">
+        <h2 className="text-[16px] leading-[24px] font-bold text-[var(--pol-light-text-primary)]">
+          سفارش‌های تفکیک‌شده در این گروه ({children.length.toLocaleString("fa-IR")})
         </h2>
         {children.length === 0 ? (
-          <div className="mt-3">
+          <Card variant="subtle" className="p-5">
             <EmptyState title="سفارشی در این گروه یافت نشد" />
-          </div>
+          </Card>
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
+          <div className="space-y-3">
             {children.map((o) => (
-              <li
+              <Card
                 key={String(o.id)}
-                className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4 transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-subtle)]"
+                variant="interactive"
+                className="p-4 sm:p-5 transition-all duration-[160ms] hover:border-[var(--pol-light-brand-primary)]/40 hover:shadow-card"
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
-                    {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
-                  </StatusChip>
-                  {o.dispute_status && o.dispute_status !== "NONE" ? (
-                    <StatusChip tone="danger">اختلاف</StatusChip>
-                  ) : null}
-                  <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-3">
+                  <div className="flex items-center gap-2">
+                    <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
+                      {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
+                    </StatusChip>
+                    {o.dispute_status && o.dispute_status !== "NONE" ? (
+                      <StatusChip tone="danger">اختلاف</StatusChip>
+                    ) : null}
+                    {o.vendor_name ? (
+                      <span className="font-bold text-[13px] text-[var(--pol-light-text-primary)]">
+                        تأمین‌کننده: {o.vendor_name}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-[12px] text-[var(--pol-light-text-muted)]">
                     {formatDateTime(o.created_at)}
                   </span>
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-3">
-                  <Link
-                    href={`/retailer/orders/${o.id}`}
-                    className="text-[14px] font-semibold text-[var(--pol-light-text-primary)] hover:underline"
-                    dir="ltr"
-                  >
-                    {o.order_number ?? String(o.id)}
-                  </Link>
-                  {o.vendor_name ? (
-                    <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                      {o.vendor_name}
-                    </span>
-                  ) : null}
-                  <span className="ms-auto text-[14px] font-medium text-[var(--pol-light-text-primary)]">
+
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] text-[var(--pol-light-text-muted)]">شماره سفارش:</span>
+                    <Link
+                      href={`/retailer/orders/${o.id}`}
+                      className="font-mono text-[14px] font-bold text-[var(--pol-light-brand-primary)] hover:underline"
+                      dir="ltr"
+                    >
+                      {o.order_number ?? String(o.id)}
+                    </Link>
+                  </div>
+
+                  <span className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
                     {formatToman(o.total_amount_toman)}
                   </span>
                 </div>
-              </li>
+
+                <div className="mt-3 pt-3 border-t border-[var(--pol-light-border-subtle)] flex justify-end">
+                  <Link
+                    href={`/retailer/orders/${o.id}`}
+                    className="text-[12px] font-semibold text-[var(--pol-light-brand-primary)] hover:underline"
+                  >
+                    مشاهده جزئیات سفارش تأمین‌کننده ←
+                  </Link>
+                </div>
+              </Card>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>

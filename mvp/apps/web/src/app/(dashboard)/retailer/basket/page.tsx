@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   QtyStepper,
@@ -100,174 +101,228 @@ export default function RetailerBasketPage() {
 
   if (lines.length === 0) {
     return (
-      <div className="space-y-4">
-        <header>
+      <div className="space-y-6 pb-10">
+        <header className="border-b border-[var(--pol-light-border-subtle)] pb-5">
           <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            سبد خرید
+            سبد خرید یکپارچه
           </h1>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            اقلام انتخابی از کاتالوگ در این بخش تجمیع و آماده ارسال به تأمین‌کنندگان می‌شوند.
+          </p>
         </header>
-        <EmptyState
-          title="سبد خرید خالی است"
-          description="از کاتالوگ کالا انتخاب کنید تا به سبد اضافه شود."
-          actionLabel="رفتن به کاتالوگ"
-          onAction={() => router.push("/retailer/catalog")}
-        />
+        <Card variant="subtle" className="p-8">
+          <EmptyState
+            title="سبد خرید شما خالی است"
+            description="برای شروع خرید، اقلام مورد نیاز فروشگاه خود را از کاتالوگ کالاهای FMCG انتخاب کنید."
+            actionLabel="مشاهده و جستجوی کاتالوگ"
+            onAction={() => router.push("/retailer/catalog")}
+          />
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          سبد خرید
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">
-          {lines.length.toLocaleString("fa-IR")} قلم کالا
-        </span>
-        {serverBasketId ? (
-          <StatusChip tone="info">با سرور همگام شده</StatusChip>
-        ) : (
-          <StatusChip tone="neutral">ذخیره محلی</StatusChip>
-        )}
-      </header>
+    <div className="space-y-6 pb-10">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--pol-light-border-subtle)] pb-5">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
+              سبد خرید یکپارچه
+            </h1>
+            <span className="rounded-full bg-[var(--pol-light-surface-subtle)] px-2.5 py-0.5 text-[12px] font-medium text-[var(--pol-light-text-secondary)] border border-[var(--pol-light-border-subtle)]">
+              {lines.length.toLocaleString("fa-IR")} قلم کالا
+            </span>
+            {serverBasketId ? (
+              <StatusChip tone="success">ثبت‌شده در سرور</StatusChip>
+            ) : (
+              <StatusChip tone="neutral">پیش‌نویس محلی</StatusChip>
+            )}
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            سبد چندفروشنده‌ای پُل کالاها را بهینه تجمیع کرده و پس از تأیید تخصیص بین بهترین تأمین‌کنندگان تقسیم می‌کند.
+          </p>
+        </div>
 
-      <p className="text-[13px] leading-[20px] text-[var(--pol-light-text-secondary)]">
-        سبد یکپارچه چندفروشنده‌ای است (D-014). تقسیم نهایی کالاها بین فروشندگان پس از
-        بررسی تخصیص (allocation-preview) مشخص می‌شود.
-      </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              clear();
+              setServerBasket(null);
+            }}
+            disabled={syncing}
+            className="text-[var(--pol-light-semantic-danger)] hover:bg-[var(--pol-light-semantic-danger)]/10"
+          >
+            خالی کردن سبد
+          </Button>
+        </div>
+      </header>
 
       {syncError ? (
         <ErrorState
-          title="همگام‌سازی سبد ناموفق بود"
+          title="همگام‌سازی سبد با سرور ناموفق بود"
           description={syncError}
           onRetry={() => void pushToServer()}
         />
       ) : null}
+
       {synced && serverBasketId ? (
-        <p
+        <div
           role="status"
-          className="text-[13px] text-[var(--pol-light-semantic-success)]"
+          className="flex items-center gap-2 rounded-[10px] bg-emerald-500/10 p-4 text-[13px] font-medium text-emerald-800 dark:text-emerald-300 border border-emerald-500/30"
         >
-          سبد در سرور ثبت شد. می‌توانید برای بررسی تخصیص ادامه دهید.
-        </p>
+          <svg className="size-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span>سبد خرید در سرور ثبت شد. اکنون می‌توانید پیش‌نمایش تخصیص و تسویه حساب را مشاهده کنید.</span>
+        </div>
       ) : null}
 
-      <ul role="list" className="space-y-2">
-        {lines.map((line) => (
-          <li
-            key={line.product_id}
-            className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-          >
-            <div className="flex flex-wrap items-start gap-3">
-              <div className="min-w-0 flex-1">
-                <Link
-                  href={`/retailer/catalog/${line.product_id}`}
-                  className="text-[14px] font-semibold text-[var(--pol-light-text-primary)] hover:underline"
-                >
-                  {line.name}
-                </Link>
-                <p className="mt-0.5 text-[12px] text-[var(--pol-light-text-muted)]" dir="ltr">
-                  {line.master_sku ?? ""}
-                </p>
-                {line.unit ? (
-                  <p className="mt-0.5 text-[12px] text-[var(--pol-light-text-secondary)]">
-                    واحد: {line.unit}
-                    {line.pack_quantity > 1
-                      ? ` · بسته ${line.pack_quantity.toLocaleString("fa-IR")}`
-                      : ""}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-3">
-                <QtyStepper
-                  value={line.quantity}
-                  min={1}
-                  onChange={(next) => setQuantity(line.product_id, next)}
-                  label={`تعداد ${line.name}`}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeLine(line.product_id)}
-                  aria-label={`حذف ${line.name}`}
-                >
-                  حذف
-                </Button>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      <section
-        aria-label="پیش‌نمایش گروه‌بندی"
-        className="rounded-[12px] border border-dashed border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-4"
-      >
-        <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-          پیش‌نمایش گروه‌بندی (غیرالزام‌آور)
+      {/* Cart Items List */}
+      <section aria-label="اقلام سبد خرید" className="space-y-3">
+        <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+          اقلام سفارش
         </h2>
-        <p className="mt-1 text-[12px] text-[var(--pol-light-text-secondary)]">
-          این نمایش صرفاً اقلام واردشده را نشان می‌دهد؛ تخصیص قطعی پس از allocation-preview
-          دریافت می‌شود.
-        </p>
-        <div className="mt-3 space-y-2">
+
+        <div className="space-y-3">
+          {lines.map((line) => (
+            <Card
+              key={line.product_id}
+              className="p-4 sm:p-5 transition-all duration-[160ms] hover:border-[var(--pol-light-brand-primary)]/40 shadow-xs"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/retailer/catalog/${line.product_id}`}
+                    className="text-[15px] font-bold text-[var(--pol-light-text-primary)] hover:text-[var(--pol-light-brand-primary)] hover:underline leading-[22px]"
+                  >
+                    {line.name}
+                  </Link>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px] text-[var(--pol-light-text-secondary)]">
+                    <span className="font-mono text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
+                      {line.master_sku ?? ""}
+                    </span>
+                    {line.unit ? (
+                      <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 border border-[var(--pol-light-border-subtle)]">
+                        واحد: {line.unit}
+                        {line.pack_quantity > 1
+                          ? ` (بسته ${line.pack_quantity.toLocaleString("fa-IR")} عددی)`
+                          : ""}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 self-end sm:self-center">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[11px] text-[var(--pol-light-text-muted)] mb-1">تعداد بسته:</span>
+                    <QtyStepper
+                      value={line.quantity}
+                      min={1}
+                      onChange={(next) => setQuantity(line.product_id, next)}
+                      label={`تعداد ${line.name}`}
+                    />
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeLine(line.product_id)}
+                    aria-label={`حذف ${line.name}`}
+                    className="text-[var(--pol-light-semantic-danger)] hover:bg-[var(--pol-light-semantic-danger)]/10"
+                  >
+                    <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    حذف
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Multi-Vendor Grouping Preview */}
+      <Card variant="subtle" className="p-5 border-dashed border-[var(--pol-light-border-strong)]">
+        <div className="flex items-center gap-2">
+          <div className="flex size-8 items-center justify-center rounded-[8px] bg-[var(--pol-light-brand-primary)]/10 text-[var(--pol-light-brand-primary)]">
+            <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+              پیش‌نمایش گروه‌بندی چندتأمین‌کننده‌ای (D-014)
+            </h2>
+            <p className="text-[11px] text-[var(--pol-light-text-secondary)]">
+              تقسیم بهینه و قطعی سفارش بین فروشندگان مختلف پس از بررسی استراتژی تخصیص انجام می‌پذیرد.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {groupPreview.map(([vendor, groupLines]) => (
             <div
               key={vendor}
-              className="rounded-[8px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-3"
+              className="rounded-[10px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-3.5 shadow-2xs"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between border-b border-[var(--pol-light-border-subtle)] pb-2">
                 <StatusChip tone="info">{vendor}</StatusChip>
-                <span className="text-[12px] text-[var(--pol-light-text-muted)]">
-                  {groupLines.length.toLocaleString("fa-IR")} قلم
+                <span className="text-[11px] font-medium text-[var(--pol-light-text-muted)]">
+                  {groupLines.length.toLocaleString("fa-IR")} قلم کالا
                 </span>
               </div>
-              <ul className="mt-1.5 space-y-0.5">
+              <ul className="mt-2.5 space-y-1">
                 {groupLines.map((l) => (
                   <li
                     key={l.product_id}
-                    className="flex justify-between text-[13px] text-[var(--pol-light-text-secondary)]"
+                    className="flex justify-between text-[12px] text-[var(--pol-light-text-secondary)]"
                   >
-                    <span>{l.name}</span>
-                    <span>×{l.quantity.toLocaleString("fa-IR")}</span>
+                    <span className="truncate max-w-[200px]">{l.name}</span>
+                    <span className="font-semibold text-[var(--pol-light-text-primary)]">
+                      {l.quantity.toLocaleString("fa-IR")} بسته
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
           ))}
         </div>
-      </section>
+      </Card>
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-[var(--pol-light-border-subtle)] pt-4">
-        <Button
-          onClick={() => void reviewAndCheckout()}
-          loading={syncing}
-          disabled={syncing}
-        >
-          بررسی و ادامه تسویه
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={() => void pushToServer()}
-          loading={syncing}
-          disabled={syncing || lines.length === 0}
-        >
-          ثبت سبد در سرور
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            clear();
-            setServerBasket(null);
-          }}
-          disabled={syncing}
-        >
-          خالی کردن سبد
-        </Button>
-        <Button variant="ghost" onClick={() => router.push("/retailer/catalog")}>
-          ادامه خرید
-        </Button>
+      {/* Action Footer Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--pol-light-border-subtle)] pt-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            onClick={() => void reviewAndCheckout()}
+            loading={syncing}
+            disabled={syncing}
+          >
+            بررسی تخصیص و ادامه تسویه حساب ←
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => void pushToServer()}
+            loading={syncing}
+            disabled={syncing || lines.length === 0}
+          >
+            ثبت سبد در سرور
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => router.push("/retailer/catalog")}>
+            + افزودن کالای بیشتر
+          </Button>
+        </div>
       </div>
     </div>
   );

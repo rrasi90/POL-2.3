@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   SearchField,
@@ -56,15 +57,23 @@ export default function RetailerVendorsPage() {
     if (!query.trim()) return true;
     const q = query.trim().toLowerCase();
     const name = (v.name ?? v.display_name ?? "").toLowerCase();
-    return name.includes(q) || String(v.id).toLowerCase().includes(q) || (v.city ?? "").toLowerCase().includes(q);
+    return (
+      name.includes(q) ||
+      String(v.id).toLowerCase().includes(q) ||
+      (v.city ?? "").toLowerCase().includes(q)
+    );
   });
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری تأمین‌کنندگان">
-        <Skeleton className="h-8 w-48" />
-        <div className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4">
-          <Skeleton lines={5} />
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری تأمین‌کنندگان">
+        <Skeleton className="h-9 w-52" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="p-5">
+              <Skeleton lines={4} />
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -81,60 +90,99 @@ export default function RetailerVendorsPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          تأمین‌کنندگان
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">R-17</span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] md:text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              شبکه تأمین‌کنندگان پُل
+            </h1>
+            <span className="rounded-full bg-[var(--pol-light-surface-subtle)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              R-17
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            مشاهده بنکداران و تأمین‌کنندگان معتبر عضو سامانه و بررسی ویترین اختصاصی
+          </p>
+        </div>
+        <Button variant="secondary" size="sm" onClick={() => void load()}>
           به‌روزرسانی
         </Button>
       </header>
 
-      <SearchField
-        label="جستجوی تأمین‌کننده"
-        placeholder="نام یا شهر…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+      {/* Search and Filter */}
+      <div className="max-w-md">
+        <SearchField
+          label="جستجوی تأمین‌کننده"
+          placeholder="جستجو بر اساس نام بنکدار، نام شرکت یا شهر..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
 
+      {/* Vendors Grid */}
       {filtered.length === 0 ? (
         <EmptyState
           title="تأمین‌کننده‌ای یافت نشد"
-          description="فهرست فروشندگان فعال خالی است ا عبارت جستجو را تغییر دهید."
+          description="فهرست فروشندگان خالی است یا با عبارت جستجو مطابقت ندارد."
         />
       ) : (
-        <ul role="list" className="space-y-2">
-          {filtered.map((v) => (
-            <li key={String(v.id)}>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((v) => {
+            const displayName = v.name ?? v.display_name ?? "تأمین‌کننده بدون نام";
+            const initial = displayName.charAt(0);
+
+            return (
               <Link
+                key={String(v.id)}
                 href={`/retailer/vendors/${v.id}`}
-                className="flex flex-wrap items-center gap-3 rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4 transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-subtle)]"
+                className="group block focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)] rounded-xl"
               >
-                <div>
-                  <p className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-                    {v.name ?? v.display_name ?? "—"}
-                  </p>
-                  <p className="mt-0.5 text-[12px] text-[var(--pol-light-text-secondary)]">
-                    {v.city ?? "—"}
-                    {v.product_count != null
-                      ? ` · ${Number(v.product_count).toLocaleString("fa-IR")} کالا`
-                      : ""}
-                  </p>
-                </div>
-                {v.is_active === false ? (
-                  <StatusChip tone="neutral">غیرفعال</StatusChip>
-                ) : (
-                  <StatusChip tone="success">فعال</StatusChip>
-                )}
-                <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                  {formatDateTime(v.created_at)}
-                </span>
+                <Card className="h-full p-5 transition-all duration-200 group-hover:shadow-[var(--pol-shadow-md)] group-hover:border-[var(--pol-light-border-strong)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--pol-light-surface-subtle)] text-[16px] font-bold text-[var(--pol-light-brand-primary)]">
+                        {initial}
+                      </div>
+                      <div>
+                        <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)] group-hover:text-[var(--pol-light-brand-primary)] transition-colors">
+                          {displayName}
+                        </h2>
+                        {v.city && (
+                          <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
+                            📍 {v.city}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {v.is_active === false ? (
+                      <StatusChip tone="neutral">غیرفعال</StatusChip>
+                    ) : (
+                      <StatusChip tone="success">فعال</StatusChip>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between border-t border-[var(--pol-light-border-subtle)] pt-3 text-[12px]">
+                    <span className="text-[var(--pol-light-text-secondary)]">
+                      {v.product_count != null
+                        ? `${Number(v.product_count).toLocaleString("fa-IR")} کالای فعال`
+                        : "تنوع کالا نامشخص"}
+                    </span>
+                    <span className="text-[var(--pol-light-text-muted)]">
+                      {formatDateTime(v.created_at)}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-end text-[12px] font-medium text-[var(--pol-light-brand-primary)] group-hover:underline">
+                    مشاهده ویترین و کاتالوگ ←
+                  </div>
+                </Card>
               </Link>
-            </li>
-          ))}
-        </ul>
+            );
+          })}
+        </div>
       )}
     </div>
   );

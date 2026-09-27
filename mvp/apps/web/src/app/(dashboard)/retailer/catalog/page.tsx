@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   SearchField,
@@ -167,67 +168,95 @@ export default function RetailerCatalogPage() {
   const hasQuery = debounced.length > 0 || categoryId !== null;
 
   return (
-    <div className="space-y-5">
-      <header>
+    <div className="space-y-6 pb-10">
+      <header className="border-b border-[var(--pol-light-border-subtle)] pb-5">
         <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          کاتالوگ و جستجو
+          کاتالوگ و جستجوی کالا
         </h1>
-        <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
-          جستجوی کالا، انتخاب دسته و مشاهده پیشنهادها
+        <p className="mt-1 text-[13px] leading-[20px] text-[var(--pol-light-text-secondary)]">
+          جستجوی کالاهای FMCG، بررسی برندها، استعلام قیمت و مقایسه موجودی تأمین‌کنندگان
         </p>
       </header>
 
-      <form
-        role="search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void runSearch(query.trim(), categoryId);
-        }}
-        className="flex gap-2"
-      >
-        <SearchField
-          label="جستجوی کالا"
-          placeholder="نام کالا، برند یا SKU…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="flex-1"
-        />
-        <Button type="submit" loading={searchState === "loading"}>
-          جستجو
-        </Button>
-      </form>
+      {/* Search Bar Form */}
+      <Card className="p-4 sm:p-5 shadow-xs">
+        <form
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void runSearch(query.trim(), categoryId);
+          }}
+          className="flex flex-col sm:flex-row gap-3"
+        >
+          <SearchField
+            label="جستجوی کالا"
+            placeholder="نام کالا، برند یا کد SKU (حداقل ۲ حرف)…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="flex-1"
+          />
+          <Button type="submit" loading={searchState === "loading"} className="sm:self-end">
+            <svg
+              className="size-4 me-1.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            جستجو
+          </Button>
+        </form>
+      </Card>
 
-      <section aria-label="دسته‌بندی‌ها">
-        <h2 className="text-[14px] leading-[22px] font-semibold text-[var(--pol-light-text-primary)]">
-          دسته‌بندی‌ها
-        </h2>
+      {/* Category Pills */}
+      <section aria-label="دسته‌بندی‌ها" className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[14px] leading-[22px] font-bold text-[var(--pol-light-text-primary)]">
+            دسته‌بندی‌های کالا
+          </h2>
+          {categoryId ? (
+            <button
+              type="button"
+              onClick={() => setCategoryId(null)}
+              className="text-[12px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+            >
+              پاک کردن فیلتر دسته
+            </button>
+          ) : null}
+        </div>
+
         {catState === "loading" ? (
-          <div className="mt-2 flex flex-wrap gap-2" aria-busy="true">
+          <div className="flex flex-wrap gap-2" aria-busy="true">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-8 w-24 rounded-full" />
             ))}
           </div>
         ) : catState === "error" ? (
-          <div className="mt-2">
-            <ErrorState
-              title="دریافت دسته‌بندی‌ها ناموفق بود"
-              description={catError ?? undefined}
-              onRetry={() => void loadCategories()}
-            />
-          </div>
+          <ErrorState
+            title="دریافت دسته‌بندی‌ها ناموفق بود"
+            description={catError ?? undefined}
+            onRetry={() => void loadCategories()}
+          />
         ) : categories.length === 0 ? (
-          <p className="mt-2 text-[13px] text-[var(--pol-light-text-muted)]">
+          <p className="text-[13px] text-[var(--pol-light-text-muted)]">
             دسته‌بندی‌ای موجود نیست.
           </p>
         ) : (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               className={chipCls(categoryId === null)}
               onClick={() => setCategoryId(null)}
               aria-pressed={categoryId === null}
             >
-              همه
+              همه کالاها
             </button>
             {categories.map((c) => (
               <button
@@ -242,16 +271,20 @@ export default function RetailerCatalogPage() {
             ))}
           </div>
         )}
+
         {categories.length > 0 && categoryId ? (
           (() => {
             const active = categories.find((c) => c.id === categoryId);
             if (!active?.subcategories?.length) return null;
             return (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-1.5 rounded-[10px] bg-[var(--pol-light-surface-subtle)] p-2.5 border border-[var(--pol-light-border-subtle)]">
+                <span className="text-[11px] font-medium text-[var(--pol-light-text-muted)] me-1">
+                  زیردسته‌ها:
+                </span>
                 {active.subcategories.map((sc) => (
                   <span
                     key={sc.id}
-                    className="rounded-[6px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] text-[var(--pol-light-text-secondary)]"
+                    className="rounded-[6px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-2.5 py-1 text-[11px] font-medium text-[var(--pol-light-text-secondary)] shadow-2xs"
                   >
                     {sc.name_fa}
                   </span>
@@ -262,108 +295,124 @@ export default function RetailerCatalogPage() {
         ) : null}
       </section>
 
-      <section aria-label="نتایج جستجو" aria-busy={searchState === "loading"}>
-        <div className="flex items-center gap-2">
-          <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-            نتایج
-          </h2>
-          {activeQuery ? (
-            <span className="text-[12px] text-[var(--pol-light-text-muted)]">
-              برای «{activeQuery}»
-            </span>
-          ) : null}
+      {/* Results Section */}
+      <section aria-label="نتایج جستجو" aria-busy={searchState === "loading"} className="space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--pol-light-border-subtle)] pb-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-[16px] leading-[24px] font-bold text-[var(--pol-light-text-primary)]">
+              نتایج کاتالوگ
+            </h2>
+            {activeQuery ? (
+              <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[12px] text-[var(--pol-light-text-secondary)] border border-[var(--pol-light-border-subtle)]">
+                «{activeQuery}»
+              </span>
+            ) : null}
+          </div>
           {searchState === "ready" ? (
-            <span className="ms-auto text-[12px] text-[var(--pol-light-text-muted)]">
-              {results.length.toLocaleString("fa-IR")} کالا
+            <span className="text-[12px] font-medium text-[var(--pol-light-text-muted)]">
+              {results.length.toLocaleString("fa-IR")} قلم کالا
             </span>
           ) : null}
         </div>
 
         {searchState === "loading" ? (
-          <div className="mt-3 space-y-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-              >
-                <Skeleton className="mb-2 h-4 w-1/3" />
-                <Skeleton lines={1} />
-              </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="p-4">
+                <Skeleton className="mb-2 h-5 w-2/3" />
+                <Skeleton className="mb-3 h-4 w-1/3" />
+                <Skeleton lines={2} />
+              </Card>
             ))}
           </div>
         ) : searchState === "error" ? (
-          <div className="mt-3">
-            <ErrorState
-              title="جستجو ناموفق بود"
-              description={searchError ?? undefined}
-              onRetry={() => void runSearch(debounced, categoryId)}
-            />
-          </div>
+          <ErrorState
+            title="جستجو ناموفق بود"
+            description={searchError ?? undefined}
+            onRetry={() => void runSearch(debounced, categoryId)}
+          />
         ) : !hasQuery ? (
-          <div className="mt-3">
+          <Card variant="subtle" className="p-6">
             <EmptyState
-              title="جستجو کنید"
-              description="عبارتی وارد کنید یا یک دسته انتخاب کنید تا کالاها نمایش داده شوند."
+              title="جستجوی کالا"
+              description="نام کالا یا برند را جستجو کنید یا یکی از دسته‌بندی‌های بالا را انتخاب نمایید."
             />
-          </div>
+          </Card>
         ) : results.length === 0 ? (
-          <div className="mt-3">
+          <Card variant="subtle" className="p-6">
             <EmptyState
               title="کالایی یافت نشد"
-              description="عبارت دیگری امتحان کنید یا فیلتر دسته را بردارید."
-              actionLabel="پاک کردن فیلتر"
+              description="کالایی با مشخصات جستجوشده در کاتالوگ موجود نیست. عبارت دیگری امتحان کنید یا فیلتر دسته‌بندی را حذف نمایید."
+              actionLabel="پاک کردن جستجو"
               onAction={() => {
                 setQuery("");
                 setCategoryId(null);
               }}
             />
-          </div>
+          </Card>
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             {results.map((p) => (
-              <li key={p.id}>
-                <Link
-                  href={`/retailer/catalog/${p.id}`}
-                  className="block rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4 transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-subtle)]"
+              <Link key={p.id} href={`/retailer/catalog/${p.id}`} className="group block">
+                <Card
+                  variant="interactive"
+                  className="h-full p-4 transition-all duration-[160ms] group-hover:border-[var(--pol-light-brand-primary)] group-hover:shadow-card"
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[14px] leading-[22px] font-semibold text-[var(--pol-light-text-primary)]">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h3 className="text-[15px] font-bold text-[var(--pol-light-text-primary)] group-hover:text-[var(--pol-light-brand-primary)] leading-[22px]">
                       {p.canonical_name_fa}
-                    </span>
-                    {p.brand_name ? (
-                      <StatusChip tone="info">{p.brand_name}</StatusChip>
-                    ) : null}
-                    <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
+                    </h3>
+                    <span className="font-mono text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
                       {p.master_sku ?? ""}
                     </span>
                   </div>
-                  <p className="mt-1 text-[12px] text-[var(--pol-light-text-secondary)]">
-                    {[p.category_name, p.subcategory_name].filter(Boolean).join(" · ")}
-                    {p.default_pack_quantity
-                      ? ` — بسته ${p.default_pack_quantity.toLocaleString("fa-IR")} ${p.default_pack_unit ?? p.base_unit ?? ""}`
-                      : ""}
-                  </p>
-                </Link>
-              </li>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {p.brand_name ? (
+                      <StatusChip tone="info">{p.brand_name}</StatusChip>
+                    ) : null}
+                    <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
+                      {[p.category_name, p.subcategory_name].filter(Boolean).join(" · ")}
+                    </span>
+                  </div>
+
+                  {p.default_pack_quantity ? (
+                    <div className="mt-3 inline-flex items-center gap-1 rounded-[6px] bg-[var(--pol-light-surface-subtle)] px-2 py-1 text-[11px] text-[var(--pol-light-text-secondary)] border border-[var(--pol-light-border-subtle)]">
+                      <span>بسته‌بندی:</span>
+                      <span className="font-semibold">
+                        {p.default_pack_quantity.toLocaleString("fa-IR")} {p.default_pack_unit ?? p.base_unit ?? ""}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  <div className="mt-4 pt-3 border-t border-[var(--pol-light-border-subtle)] flex items-center justify-between text-[12px]">
+                    <span className="text-[var(--pol-light-text-muted)]">مشاهده تأمین‌کنندگان</span>
+                    <span className="font-semibold text-[var(--pol-light-brand-primary)] group-hover:translate-x-[-2px] transition-transform">
+                      انتخاب کالا ←
+                    </span>
+                  </div>
+                </Card>
+              </Link>
             ))}
-          </ul>
+          </div>
         )}
 
+        {/* Unified Vendors matching search */}
         {unifiedVendors && unifiedVendors.length > 0 ? (
-          <div className="mt-5">
-            <h3 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-              تأمین‌کنندگان مرتبط
+          <div className="mt-6 space-y-3">
+            <h3 className="text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+              تأمین‌کنندگان منطبق
             </h3>
-            <ul role="list" className="mt-2 space-y-2">
+            <div className="grid gap-2 sm:grid-cols-3">
               {unifiedVendors.map((v) => (
-                <li
-                  key={v.id}
-                  className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-4 py-3 text-[13px] text-[var(--pol-light-text-primary)]"
-                >
-                  {v.business_name ?? v.name ?? v.id}
-                </li>
+                <Card key={v.id} className="p-3 text-[13px] font-medium text-[var(--pol-light-text-primary)]">
+                  <div className="flex items-center gap-2">
+                    <div className="size-2 rounded-full bg-[var(--pol-light-brand-primary)]" />
+                    <span>{v.business_name ?? v.name ?? v.id}</span>
+                  </div>
+                </Card>
               ))}
-            </ul>
+            </div>
           </div>
         ) : null}
       </section>
