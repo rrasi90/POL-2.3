@@ -119,20 +119,26 @@ class VendorAcceptanceTimeoutWorker:
                         id,event_id,event_name,aggregate_type,aggregate_id,payload,
                         status,target_user_id,target_organization_id,dedupe_key,channel_hint
                     )
-                    VALUES (
-                        gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_RELEASED','INVENTORY_RESERVATION',%s,
+                    SELECT gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_RELEASED','INVENTORY_RESERVATION',%s,
                         jsonb_build_object(
                             'reservation_id',%s,'order_id',%s,'vendor_product_id',%s,
                             'quantity',%s,'reason','VENDOR_TIMEOUT'
                         ),
-                        'PENDING',NULL,NULL,%s,'INBOX'
-                    )
+                        'PENDING',om.user_id,om.organization_id,%s || ':' || om.user_id::text,'INBOX'
+                    FROM organization_memberships om
+                    WHERE om.organization_id = (
+                            SELECT v.organization_id FROM vendors v
+                            WHERE v.id = (SELECT o.vendor_id FROM orders o WHERE o.id = %s)
+                          )
+                      AND om.status='ACTIVE'
+                      AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
                     ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
                     """,
                     (
                         reservation["id"], reservation["id"], order_id,
                         reservation["vendor_product_id"], reservation["quantity"],
-                        f"reservation-released:{reservation['id']}:VENDOR_TIMEOUT"
+                        f"reservation-released:{reservation['id']}:VENDOR_TIMEOUT",
+                        order_id,
                     ),
                 )
 

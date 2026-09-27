@@ -320,8 +320,8 @@ class CanonicalReturnService:
                 INSERT INTO outbox_events
                     (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
                      target_organization_id,target_user_id,dedupe_key,channel_hint)
-                SELECT gen_random_uuid(),%s,'REFUND_CREATED','REFUND',%s,
-                       %s::jsonb,'PENDING',om.organization_id,om.user_id,%s,'INBOX'
+                SELECT gen_random_uuid(),gen_random_uuid(),'REFUND_CREATED','REFUND',%s,
+                       %s::jsonb,'PENDING',om.organization_id,om.user_id,%s || ':' || om.user_id::text,'INBOX'
                 FROM organization_memberships om
                 WHERE om.organization_id=(SELECT organization_id FROM retailers WHERE id=%s)
                   AND om.status='ACTIVE'
@@ -329,7 +329,7 @@ class CanonicalReturnService:
                 ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
                 """,
                 (
-                    f"REFUND_CREATED:{refund_id}", str(refund_id),
+                    str(refund_id),
                     json.dumps({"refund_id":str(refund_id),"order_id":str(ret["order_id"]),
                                 "amount_toman":int(amount),"status":"PENDING"}),
                     f"REFUND_CREATED:{refund_id}", ret["retailer_id"],
@@ -447,8 +447,8 @@ class CanonicalReturnService:
                 INSERT INTO outbox_events
                     (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
                      target_organization_id,target_user_id,dedupe_key,channel_hint)
-                SELECT gen_random_uuid(),%s,%s,'REFUND',%s,%s::jsonb,'PENDING',
-                       om.organization_id,om.user_id,%s,'INBOX'
+                SELECT gen_random_uuid(),gen_random_uuid(),%s,'REFUND',%s,%s::jsonb,'PENDING',
+                       om.organization_id,om.user_id,%s || ':' || om.user_id::text,'INBOX'
                 FROM organization_memberships om
                 JOIN retailers r ON r.organization_id=om.organization_id
                 WHERE r.id=%s AND om.status='ACTIVE'
@@ -456,7 +456,7 @@ class CanonicalReturnService:
                 ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
                 """,
                 (
-                    f"{event_name}:{ret['refund_id']}", event_name, str(ret["refund_id"]),
+                    event_name, str(ret["refund_id"]),
                     json.dumps({"refund_id":str(ret["refund_id"]),"order_id":str(ret["order_id"]),
                                 "amount_toman":int(refund["amount_toman"]),"status":"COMPLETED"}),
                     f"{event_name}:{ret['refund_id']}", ret["retailer_id"],
@@ -540,8 +540,8 @@ class CanonicalReturnService:
             INSERT INTO outbox_events
                 (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
                  target_organization_id,target_user_id,dedupe_key,channel_hint)
-            SELECT gen_random_uuid(),%s,'REFUND_APPROVED','REFUND',%s,%s::jsonb,'PENDING',
-                   om.organization_id,om.user_id,%s,'INBOX'
+            SELECT gen_random_uuid(),gen_random_uuid(),'REFUND_APPROVED','REFUND',%s,%s::jsonb,'PENDING',
+                   om.organization_id,om.user_id,%s || ':' || om.user_id::text,'INBOX'
             FROM organization_memberships om
             WHERE om.organization_id=(SELECT organization_id FROM retailers WHERE id=%s)
               AND om.status='ACTIVE'
@@ -549,7 +549,7 @@ class CanonicalReturnService:
             ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
             """,
             (
-                f"REFUND_APPROVED:{ret['refund_id']}", str(ret["refund_id"]),
+                str(ret["refund_id"]),
                 json.dumps({"refund_id":str(ret["refund_id"]),"order_id":str(ret["order_id"]),
                             "amount_toman":int(refund["amount_toman"]),"status":"APPROVED"}),
                 f"REFUND_APPROVED:{ret['refund_id']}", ret["retailer_id"],

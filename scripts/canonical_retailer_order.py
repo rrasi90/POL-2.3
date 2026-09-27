@@ -110,19 +110,23 @@ class CanonicalRetailerOrderService:
                         id,event_id,event_name,aggregate_type,aggregate_id,payload,
                         status,target_user_id,target_organization_id,dedupe_key,channel_hint
                     )
-                    VALUES (
-                        gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_RELEASED','INVENTORY_RESERVATION',%s,
+                    SELECT gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_RELEASED','INVENTORY_RESERVATION',%s,
                         jsonb_build_object(
                             'reservation_id',%s,'order_id',%s,'vendor_product_id',%s,
                             'quantity',%s,'reason','RETAILER_CANCELLED'
                         ),
-                        'PENDING',NULL,NULL,%s,'INBOX'
-                    )
+                        'PENDING',om.user_id,om.organization_id,%s || ':' || om.user_id::text,'INBOX'
+                    FROM organization_memberships om
+                    WHERE om.organization_id = (SELECT v.organization_id FROM vendors v WHERE v.id = %s)
+                      AND om.status='ACTIVE'
+                      AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
                     ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
                     """,
                     (
                         reservation["id"], reservation["id"], order_id,
                         reservation["vendor_product_id"], reservation["quantity"],
+                        f"INVENTORY_RESERVATION_RELEASED:{reservation['id']}",
+                        order["vendor_id"],
                         f"reservation-released:{reservation['id']}:RETAILER_CANCELLED"
                     ),
                 )
@@ -143,7 +147,6 @@ class CanonicalRetailerOrderService:
             raise ValueError("Order cancellation lost its SUBMITTED-state transition.")
 
         dedupe_key = f"ORDER_CANCELLED:{order_id}:RETAILER"
-        event_id = str(uuid5(NAMESPACE_URL, dedupe_key))
         cur.execute(
             """
             INSERT INTO outbox_events (
@@ -151,7 +154,7 @@ class CanonicalRetailerOrderService:
                 status,target_user_id,target_organization_id,dedupe_key,channel_hint
             )
             SELECT
-                gen_random_uuid(),%s,'ORDER_CANCELLED','ORDER',%s,
+                gen_random_uuid(),gen_random_uuid(),'ORDER_CANCELLED','ORDER',%s,
                 jsonb_build_object(
                     'order_id',%s,
                     'order_number',%s,
@@ -159,7 +162,7 @@ class CanonicalRetailerOrderService:
                     'order_status','CANCELLED',
                     'cancellation_reason',%s
                 ),
-                'PENDING',om.user_id,om.organization_id,%s,'INBOX'
+                'PENDING',om.user_id,om.organization_id,%s || ':' || om.user_id::text,'INBOX'
             FROM organization_memberships om
             JOIN organizations org ON org.id=om.organization_id
             WHERE om.organization_id=%s
@@ -169,7 +172,7 @@ class CanonicalRetailerOrderService:
             ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
             """,
             (
-                event_id, order_id, order_id, cancelled["order_number"], str(cancelled["order_group_id"]),
+                order_id, order_id, cancelled["order_number"], str(cancelled["order_group_id"]),
                 normalized_reason, dedupe_key, order["vendor_organization_id"],
             ),
         )
