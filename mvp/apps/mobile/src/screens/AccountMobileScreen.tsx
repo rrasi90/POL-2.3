@@ -156,8 +156,10 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
             <Input label="ایمیل" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" maxLength={254} />
             <Input label="منطقه زمانی" value={timezone} onChangeText={setTimezone} maxLength={100} />
             <Input label="شرح" value={bio} onChangeText={setBio} multiline numberOfLines={4} maxLength={2000} />
-            <Btn label="ذخیره تغییرات" onPress={() => void saveProfile()} loading={loading} disabled={loading} />
-            <Btn label="خروج از حساب" tone="ghost" onPress={() => void logout()} loading={loading} disabled={loading} />
+            <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+              <Btn label="ذخیره تغییرات" onPress={() => void saveProfile()} loading={loading} disabled={loading} />
+              <Btn label="خروج از حساب" tone="danger" onPress={() => void logout()} loading={loading} disabled={loading} />
+            </View>
           </Card>
         ) : tab === "preferences" ? (
           <Card>

@@ -21,9 +21,11 @@ export function Title(props: { children: React.ReactNode; badge?: string }): Rea
     <View style={styles.titleRow}>
       <Text style={styles.title}>{props.children}</Text>
       {props.badge ? (
-        <Text style={styles.badge} accessibilityLabel={props.badge}>
-          {props.badge}
-        </Text>
+        <View style={styles.badgeWrapper}>
+          <Text style={styles.badge} accessibilityLabel={props.badge}>
+            {props.badge}
+          </Text>
+        </View>
       ) : null}
     </View>
   );
@@ -39,22 +41,29 @@ export function Btn(props: {
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
-  tone?: "primary" | "ghost";
+  tone?: "primary" | "ghost" | "danger";
 }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
   const ghost = props.tone === "ghost";
+  const danger = props.tone === "danger";
   return (
     <Pressable
       accessibilityRole="button"
       disabled={props.disabled || props.loading}
       onPress={props.onPress}
-      style={[styles.btn, ghost && styles.btnGhost, (props.disabled || props.loading) && styles.btnDisabled]}
+      style={({ pressed }) => [
+        styles.btn,
+        ghost && styles.btnGhost,
+        danger && styles.btnDanger,
+        (props.disabled || props.loading) && styles.btnDisabled,
+        pressed && !props.disabled && !props.loading && styles.btnPressed,
+      ]}
     >
       {props.loading ? (
         <ActivityIndicator color={ghost ? colors.brand : "#fff"} />
       ) : (
-        <Text style={[styles.btnText, ghost && styles.btnTextGhost]}>{props.label}</Text>
+        <Text style={[styles.btnText, ghost && styles.btnTextGhost, danger && styles.btnTextDanger]}>{props.label}</Text>
       )}
     </Pressable>
   );
@@ -77,16 +86,42 @@ export function Input(props: TextInputProps & { label: string; hint?: string }):
   );
 }
 
-export function StatusChip(props: { label: string; tone?: "neutral" | "warn" | "ok" | "info" }): React.ReactNode {
+export function StatusChip(props: { label: string; tone?: "neutral" | "warn" | "ok" | "info" | "danger" }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
   const tone = props.tone ?? "neutral";
   const bg =
-    tone === "ok" ? colors.successBg : tone === "warn" ? colors.warningBg : tone === "info" ? colors.infoBg : colors.neutralBg;
+    tone === "ok"
+      ? colors.successBg
+      : tone === "warn"
+      ? colors.warningBg
+      : tone === "info"
+      ? colors.infoBg
+      : tone === "danger"
+      ? colors.dangerBg
+      : colors.neutralBg;
   const fg =
-    tone === "ok" ? colors.success : tone === "warn" ? colors.warning : tone === "info" ? colors.brand : colors.textSecondary;
+    tone === "ok"
+      ? colors.success
+      : tone === "warn"
+      ? colors.warning
+      : tone === "info"
+      ? colors.brand
+      : tone === "danger"
+      ? colors.danger
+      : colors.textSecondary;
+  const bc =
+    tone === "ok"
+      ? colors.success + "33"
+      : tone === "warn"
+      ? colors.warning + "33"
+      : tone === "info"
+      ? colors.brand + "33"
+      : tone === "danger"
+      ? colors.danger + "33"
+      : colors.border;
   return (
-    <View style={[styles.chip, { backgroundColor: bg }]}>
+    <View style={[styles.chip, { backgroundColor: bg, borderColor: bc }]}>
       <Text style={[styles.chipText, { color: fg }]}>{props.label}</Text>
     </View>
   );
@@ -116,8 +151,16 @@ function makeStyles(colors: Palette) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg },
     titleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
-    title: { fontSize: 22, fontWeight: "700", color: colors.text },
-    badge: { fontSize: 11, color: colors.textMuted },
+    title: { fontSize: 20, fontWeight: "700", color: colors.text, letterSpacing: -0.3 },
+    badgeWrapper: {
+      backgroundColor: colors.neutralBg,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    badge: { fontSize: 11, fontWeight: "600", color: colors.textSecondary },
     card: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
@@ -125,6 +168,11 @@ function makeStyles(colors: Palette) {
       borderRadius: 12,
       padding: spacing.lg,
       marginBottom: spacing.md,
+      shadowColor: "#0F172A",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04,
+      shadowRadius: 3,
+      elevation: 1,
     },
     btn: {
       backgroundColor: colors.brand,
@@ -136,15 +184,19 @@ function makeStyles(colors: Palette) {
       paddingVertical: spacing.sm,
     },
     btnGhost: { backgroundColor: "transparent", borderWidth: 1, borderColor: colors.border },
-    btnDisabled: { opacity: 0.55 },
+    btnDanger: { backgroundColor: colors.danger },
+    btnDisabled: { opacity: 0.5 },
+    btnPressed: { opacity: 0.8 },
     btnText: { color: "#fff", fontSize: 14, fontWeight: "600" },
     btnTextGhost: { color: colors.brand },
+    btnTextDanger: { color: "#fff" },
     field: { marginBottom: spacing.md },
     label: { fontSize: 12, color: colors.textSecondary, marginBottom: 6, fontWeight: "500" },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 10,
+      minHeight: 44,
       paddingHorizontal: spacing.md,
       paddingVertical: 10,
       fontSize: 15,
@@ -152,7 +204,13 @@ function makeStyles(colors: Palette) {
       backgroundColor: colors.surface,
     },
     hint: { fontSize: 11, color: colors.textMuted, marginTop: 4 },
-    chip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, alignSelf: "flex-start" },
+    chip: {
+      borderWidth: 1,
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      alignSelf: "flex-start",
+    },
     chipText: { fontSize: 11, fontWeight: "600" },
     error: {
       backgroundColor: colors.dangerBg,
@@ -162,7 +220,7 @@ function makeStyles(colors: Palette) {
       padding: spacing.md,
       marginBottom: spacing.md,
     },
-    errorText: { color: colors.danger, fontSize: 13 },
+    errorText: { color: colors.danger, fontSize: 13, lineHeight: 18 },
     emptyTitle: { fontSize: 15, fontWeight: "600", color: colors.text },
     emptyBody: { fontSize: 13, color: colors.textSecondary, marginTop: 6, lineHeight: 20 },
   });

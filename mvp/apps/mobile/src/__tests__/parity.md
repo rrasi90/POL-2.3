@@ -10,7 +10,7 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 | Vendor | V-01, V-02, V-03, V-06, V-07, V-08, V-10, V-17 | VendorMobileScreen.tsx + OrderDetailMobileScreen.tsx | order queue/actions, partial acceptance, items/timeline, inventory, daily inventory, referrals, settlements, invoices | IMPLEMENTED |
 | Ops | O-01, O-02, O-06, O-07, O-08, O-09, O-10, OP-13 | src/screens/OpsMobileScreen.tsx + SupportMobileScreen.tsx | exceptions/risk signals, orders, reconciliation, analytics, notifications, audit logs, catalog-candidate review | IMPLEMENTED (role-scoped; fresh QA pending) |
 | Field | F-01…F-05 | FieldTaskList/Detail/AssistedOrderScreen.tsx + OfflineBanner | field tasks, healthz | IMPLEMENTED |
-| Barcode | R-03B / V-16 | canonical API exists; no device camera adapter yet | POST `/api/v1/products/match-barcode` + candidate workflow | IMPLEMENTED / CAMERA RUNTIME SCOPE |
+| Barcode | R-03B / V-16 | canonical API exists; no device camera adapter yet | POST `/api/v1/products/match-barcode` + candidate workflow | GAP / CONTRACT (CAMERA RUNTIME SCOPE) |
 | Vendor Customers/Staff | V-09 / V-11 | VendorMobileScreen.tsx | customer search + staff list/invite/status actions | IMPLEMENTED / fresh QA pending |
 | Retailer order detail / returns / support | R-09…R-13 | order detail, return/dispute submission and support are implemented; remaining notifications/profile are shared | routes available per API map | IMPLEMENTED foundation |
 
