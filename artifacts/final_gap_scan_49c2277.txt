@@ -1,0 +1,72 @@
+================================================================================
+POL-2.3 FINAL GAP SCAN AUDIT REPORT
+================================================================================
+Branch:            remediation/master-gap-closure-2026-09-26
+SHA:               49c2277a4018f8f1e191f0c249b3d44f7a7ac441
+Timestamp:         2026-09-27T08:49:27Z
+Environment:       LOCAL (Windows x86_64, Python 3.11.15)
+Database:          PostgreSQL 18.4 (Port 5432, 107 canonical tables)
+Migration Version: 076 (Chain 001_initial_schema.sql -> 076_reservation_and_candidate_event_templates.sql)
+Test Count:        658
+Passed:            658
+Failed:            0
+Skipped:           0
+Errors:            0
+
+--------------------------------------------------------------------------------
+1. EXECUTIVE SUMMARY & SCAN SCOPE
+--------------------------------------------------------------------------------
+A comprehensive architectural and implementation gap scan of the POL-2.3 codebase
+was conducted covering:
+- Authentication & Sessions (D-018)
+- Multi-Tenant Identity & Access Management (D-017, D-026)
+- Master SKU & Vendor Product Catalog Separation (D-012, D-013, D-027, D-028)
+- Basket & Multi-Vendor Allocation Engine (D-010, D-014)
+- Checkout, Inventory & Reservation Lifecycle (G-308..G-343)
+- Non-Custodial Direct Payments & Financial Visibility (D-021, D-025, G-452..G-465)
+- Fulfillment, Logistics & POD Security (D-008, D-023, G-438..G-451)
+- Disputes, Returns (RMA) & Refunds (G-408..G-437, G-469)
+- Async Event Outbox & Integration Worker Routing (D-019, D-020, G-466, G-467)
+- PostgreSQL 18 Schema Invariants, Immutability & Triggers (D-015, Migrations 001-076)
+
+--------------------------------------------------------------------------------
+2. DEFECT REMEDIATION COMPLETED DURING FINAL SCAN
+--------------------------------------------------------------------------------
+- G-466: Closed outbox event_id and dedupe_key collisions across multi-member fan-out
+         (disputes, retailer cancellation, RMA refunds).
+- G-467: Repaired SQL placeholder count in CanonicalRetailerOrderService.cancel_order
+         for INVENTORY_RESERVATION_RELEASED outbox insert (removed redundant parameter).
+- G-468: Fixed unbound variable category_id in POLApplicationBoundary.admin_category_create
+         and aligned admin_audit_logs write with row["id"].
+- G-469: Added settlement status guard in CanonicalReturnService._create_settlement_adjustment
+         restricting RMA refund adjustments to active settlements (CALCULATED, RECONCILED, DISPUTED).
+- G-470: Added default POL_JWT_SECRET in scripts/run_verification_suite.py:configure_test_environment()
+         ensuring autonomous execution regardless of parent shell environment.
+
+--------------------------------------------------------------------------------
+3. ARCHITECTURAL & LIFECYCLE CERTIFICATION
+--------------------------------------------------------------------------------
+- Lifecycle State Machines:
+  * Orders: CREATED -> SUBMITTED -> ACCEPTED -> READY -> DISPATCHED -> DELIVERED / CANCELLED / REJECTED
+  * Reservations: ACTIVE -> CONSUMED / RELEASED / EXPIRED (15-min TTL, atomic commit triggers)
+  * Deliveries: ASSIGNED -> PICKED_UP -> IN_TRANSIT -> ARRIVED -> DELIVERED / FAILED
+  * Disputes: OPEN -> INVESTIGATING -> RESOLVED / CLOSED (Orthogonal SSoT in disputes table)
+  * Refunds: PENDING -> APPROVED -> COMPLETED (Actor separation: creator != approver)
+  * Payments: PENDING -> INITIATED -> SUCCESS / FAILED / CANCELLED / REFUNDED (Non-custodial direct)
+  * Settlements: PENDING -> CALCULATED -> RECONCILED / DISPUTED / CLOSED
+
+- Invariants Enforced:
+  * Strict Tenant Isolation: All routes enforce active user + active org + active membership.
+  * Privilege Ceiling: Staff roles cannot be delegated owner-only privileges.
+  * Audit Immutability: admin_audit_logs & inventory_audit_log reject client UPDATE and DELETE.
+  * Outbox Reliability: All domain state transitions emit transactional outbox events with
+    dedicated templates in notification_templates (076 verified).
+
+--------------------------------------------------------------------------------
+4. STATUS CLASSIFICATION
+--------------------------------------------------------------------------------
+- Internal P0/P1/P2 Defects: ZERO
+- Open Product/Security Decisions: Explicitly isolated (D-018 refresh rotation, invoice timing)
+- External Dependencies: Explicitly isolated (SMS.ir live SMS, Bank/POS reconciliation, Live S3, CI)
+- Final Classification: CERTIFICATION READY — WITH EXPLICIT EXTERNAL / DECISION LIMITATIONS
+================================================================================

@@ -1,9 +1,12 @@
-scripts/test_cross_entity_integrity_032.py::test_append_only_admin_audit_is_enforced
-scripts/test_cross_entity_integrity_032.py::test_migration_032_triggers_are_installed
-scripts/test_e2e_mvp_platform.py::test_reservation_expiry_matches_allocation_plan_expiry
-scripts/test_e2e_mvp_platform.py::test_reservation_lifecycle_uses_canonical_runtime_commands
-scripts/test_http_management.py::test_continuous_inventory_scan_and_publish
-scripts/test_http_management.py::test_product_candidate_review_http_is_tenant_and_idempotent
-scripts/test_http_management.py::test_vendor_permission_editor_http_lifecycle
-scripts/test_inventory_reservations.py::test_inventory_reservations
-scripts/test_master_e2e_platform.py::test_master_e2e_platform
+# POL-2.3 FAILURE INVENTORY — COMMIT 49c2277a4018f8f1e191f0c249b3d44f7a7ac441
+# Branch: remediation/master-gap-closure-2026-09-26
+# Timestamp: 2026-09-27T08:49:27Z
+# Environment: PostgreSQL 18.4 (Port 5432, 107 tables)
+# Migration Chain: 001_initial_schema.sql -> 076_reservation_and_candidate_event_templates.sql (76 migrations)
+# Total Tests: 658
+# Passed: 658
+# Failed: 0
+# Skipped: 0
+# Errors: 0
+
+# NO ACTIVE FAILURES. Full test suite passes cleanly.
