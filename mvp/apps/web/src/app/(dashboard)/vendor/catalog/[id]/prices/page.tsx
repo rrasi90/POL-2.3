@@ -5,20 +5,25 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Field,
   Skeleton,
   StatusChip,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import {
-  cardCls,
   formatDateTime,
   formatToman,
   inputCls,
   itemsOf,
-  str,
   type LoadState,
 } from "../../../_shared";
 
@@ -115,11 +120,11 @@ export default function VendorProductPricesPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری قیمت‌ها">
-        <Skeleton className="h-8 w-64" />
-        <div className={cardCls}>
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری قیمت‌ها">
+        <Skeleton className="h-9 w-64" />
+        <Card className="p-6">
           <Skeleton lines={4} />
-        </div>
+        </Card>
       </div>
     );
   }
@@ -135,139 +140,166 @@ export default function VendorProductPricesPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-start gap-3">
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            قیمت کالا
-          </h1>
-          <p className="mt-1 text-[12px] text-[var(--pol-light-text-muted)]" dir="ltr">
-            V-05 · vendor_product {vendorProductId}
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] md:text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              مدیریت و تاریخچه قیمت کالا
+            </h1>
+            <span className="font-mono text-[13px] text-[var(--pol-light-text-secondary)]" dir="ltr">
+              کد کالا: {vendorProductId?.slice(0, 8)}...
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            تعیین قیمت فعال، زمان‌بندی اعمال نرخ‌های جدید و مشاهده سوابق تغییرات
           </p>
         </div>
-        <div className="ms-auto flex flex-wrap gap-2">
+
+        <div className="flex shrink-0 gap-2">
           <Button variant="ghost" size="sm" onClick={() => void load()}>
             به‌روزرسانی
           </Button>
           <Link
             href="/vendor/catalog"
-            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
+            className="inline-flex items-center justify-center rounded-lg border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] font-medium text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)] transition-colors"
           >
-            کاتالوگ
+            کاتالوگ فروشنده
           </Link>
         </div>
       </header>
 
-      <section aria-label="قیمت فعلی" className={cardCls}>
-        <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-          قیمت فعلی
-        </h2>
-        <p className="mt-2 text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          {formatToman(current?.price_toman)}
-        </p>
-        {current?.valid_from || current?.valid_to ? (
-          <p className="mt-1 text-[12px] text-[var(--pol-light-text-secondary)]">
-            از {formatDateTime(current.valid_from)} تا {formatDateTime(current.valid_to)}
-          </p>
-        ) : (
-          <p className="mt-1 text-[12px] text-[var(--pol-light-text-muted)]">
-            محدوده اعتبار: —
-          </p>
-        )}
-      </section>
-
-      <section aria-label="ثبت قیمت جدید" className={cardCls}>
-        <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-          ثبت قیمت جدید
-        </h2>
-        {saveError ? (
-          <div className="mt-3">
-            <ErrorState title="ثبت قیمت ناموفق بود" description={saveError} />
+      {/* Current Active Price Card */}
+      <Card className="p-5 bg-[var(--pol-light-surface-subtle)]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-medium text-[var(--pol-light-text-secondary)]">
+                قیمت فعال در بازار پُل
+              </span>
+              <StatusChip tone="success">قیمت رسمی جاری</StatusChip>
+            </div>
+            <div className="mt-2 text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              {formatToman(current?.price_toman)}
+            </div>
           </div>
-        ) : null}
-        {saved ? (
-          <p className="mt-2 text-[13px] text-[var(--pol-light-semantic-success, #15803d)]">
-            قیمت ثبت شد.
-          </p>
-        ) : null}
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+
+          <div className="text-[12px] text-[var(--pol-light-text-secondary)]">
+            {current?.valid_from && (
+              <div>معتبر از: {formatDateTime(current.valid_from)}</div>
+            )}
+            {current?.valid_to && (
+              <div>تا تاریخ: {formatDateTime(current.valid_to)}</div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Update Price Form */}
+      <Card className="p-5 space-y-4">
+        <h2 className="text-[16px] font-bold text-[var(--pol-light-text-primary)]">
+          تعریف نرخ جدید کالا
+        </h2>
+
+        {saveError && (
+          <ErrorState title="خطا در ثبت نرخ جدید" description={saveError} />
+        )}
+
+        {saved && (
+          <div className="rounded-xl border border-emerald-300 bg-emerald-50/50 p-3 text-[13px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
+            ✓ نرخ جدید با موفقیت ثبت و در کاتالوگ فعال گردید.
+          </div>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-3">
           <Field
-            label="قیمت (تومان)"
+            label="قیمت جدید (تومان)"
             type="number"
             min={0}
             value={newPrice}
             onChange={(e) => setNewPrice(e.target.value)}
             required
-            dir="ltr"
+            hint="قیمت فروش ناخالص به سوپرمارکت"
           />
-          <Field
-            label="از تاریخ"
-            type="datetime-local"
-            value={validFrom}
-            onChange={(e) => setValidFrom(e.target.value)}
-            hint="اختیاری"
-          />
-          <Field
-            label="تا تاریخ"
-            type="datetime-local"
-            value={validTo}
-            onChange={(e) => setValidTo(e.target.value)}
-            hint="اختیاری"
-          />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="valid-from" className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+              آغاز اعتبار (اختیاری)
+            </label>
+            <input
+              id="valid-from"
+              type="datetime-local"
+              className={inputCls}
+              value={validFrom}
+              onChange={(e) => setValidFrom(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="valid-to" className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+              پایان اعتبار (اختیاری)
+            </label>
+            <input
+              id="valid-to"
+              type="datetime-local"
+              className={inputCls}
+              value={validTo}
+              onChange={(e) => setValidTo(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="mt-3">
+
+        <div className="flex justify-end pt-2">
           <Button loading={saving} onClick={() => void savePrice()}>
-            ثبت قیمت
+            ثبت و اعمال قیمت جدید
           </Button>
         </div>
-      </section>
+      </Card>
 
-      <section aria-label="تاریخچه قیمت">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          تاریخچه
+      {/* Price History Table */}
+      <section aria-label="تاریخچه قیمت‌ها" className="space-y-3">
+        <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
+          سوابق تغییرات قیمت ({history.length.toLocaleString("fa-IR")} مورد)
         </h2>
+
         {history.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState title="قیمتی ثبت نشده" description="هنوز رکورد قیمتی وجود ندارد." />
-          </div>
+          <EmptyState title="هیچ سابقه‌ای برای قیمت این کالا ثبت نشده است" />
         ) : (
-          <div className="mt-3 overflow-x-auto rounded-[12px] border border-[var(--pol-light-border-subtle)]">
-            <table className="w-full min-w-[480px] border-collapse bg-[var(--pol-light-surface-default)] text-[13px]">
-              <thead>
-                <tr className="border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] text-[12px] text-[var(--pol-light-text-secondary)]">
-                  <th className="px-4 py-2 text-start font-medium">قیمت</th>
-                  <th className="px-4 py-2 text-start font-medium">از</th>
-                  <th className="px-4 py-2 text-start font-medium">تا</th>
-                  <th className="px-4 py-2 text-start font-medium">وضعیت</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((row) => (
-                  <tr
-                    key={String(row.id)}
-                    className="border-b border-[var(--pol-light-border-subtle)] last:border-b-0"
-                  >
-                    <td className="px-4 py-3 text-[var(--pol-light-text-primary)]">
-                      {formatToman(row.price_toman)}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--pol-light-text-secondary)]">
-                      {formatDateTime(row.valid_from)}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--pol-light-text-secondary)]">
-                      {formatDateTime(row.valid_to)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {row.is_current ? (
-                        <StatusChip tone="success">فعلی</StatusChip>
-                      ) : (
-                        <StatusChip tone="neutral">قبلی</StatusChip>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>مبلغ ثبت‌شده</TableHead>
+                <TableHead>وضعیت</TableHead>
+                <TableHead>شروع اعتبار</TableHead>
+                <TableHead>پایان اعتبار</TableHead>
+                <TableHead>تاریخ ثبت</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {history.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell className="font-bold">
+                    {formatToman(row.price_toman)}
+                  </TableCell>
+                  <TableCell>
+                    {row.is_current ? (
+                      <StatusChip tone="success">جاری</StatusChip>
+                    ) : (
+                      <StatusChip tone="neutral">منقضی</StatusChip>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-[12px] text-[var(--pol-light-text-secondary)]">
+                    {formatDateTime(row.valid_from)}
+                  </TableCell>
+                  <TableCell className="text-[12px] text-[var(--pol-light-text-secondary)]">
+                    {formatDateTime(row.valid_to)}
+                  </TableCell>
+                  <TableCell className="text-[12px] text-[var(--pol-light-text-muted)]">
+                    {formatDateTime(row.created_at)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </section>
     </div>

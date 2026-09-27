@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Skeleton,
@@ -12,7 +13,6 @@ import {
 import { getApi } from "@/lib/auth/api";
 import { useAuthStore } from "@/lib/auth/store";
 import {
-  cardCls,
   formatDateTime,
   formatToman,
   itemsOf,
@@ -45,7 +45,6 @@ interface StorefrontProduct {
 /**
  * V-14 storefront management — read-only (D-024).
  * GET /storefront/vendors, GET /storefront/vendors/{id}/products
- * Manage mutations: no storefront-write HTTP in API map → no fake edit success.
  */
 export default function VendorStorefrontPage() {
   const orgId = useAuthStore((s) => s.user?.organization_id);
@@ -102,11 +101,11 @@ export default function VendorStorefrontPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری ویترین">
-        <Skeleton className="h-8 w-48" />
-        <div className={cardCls}>
-          <Skeleton lines={5} />
-        </div>
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری ویترین">
+        <Skeleton className="h-9 w-48" />
+        <Card className="p-6">
+          <Skeleton lines={4} />
+        </Card>
       </div>
     );
   }
@@ -122,138 +121,178 @@ export default function VendorStorefrontPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          مدیریت ویترین
-        </h1>
-        <StatusChip tone="info">D-024 · فقط خواندنی</StatusChip>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">V-14</span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] md:text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              ویترین اختصاصی فروشگاه
+            </h1>
+            <span className="rounded-full bg-[var(--pol-light-surface-subtle)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              V-14 · D-024
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            نمای ویترین عمومی بنکداری شما همان‌گونه که برای خرده‌فروشان و سوپرمارکت‌ها نمایش داده می‌شود
+          </p>
+        </div>
+
+        <Button variant="secondary" size="sm" onClick={() => void load()}>
           به‌روزرسانی
         </Button>
       </header>
 
-      <section
-        aria-label="محدودیت ویرایش"
-        className="rounded-[12px] border border-dashed border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-subtle)] p-4"
-      >
-        <p className="text-[13px] text-[var(--pol-light-text-secondary)]">
-          HTTP نوشتن ویترین (تغییر توضیح، بنر، ترتیب) در API map وجود ندارد. ویرایش شبیه‌سازی
-          نمی‌شود. برای قیمت و موجودی از کاتالوگ استفاده کنید.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <Link
-            href="/vendor/catalog"
-            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
-          >
-            کاتالوگ و قیمت
-          </Link>
-          <Link
-            href="/vendor/inventory"
-            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
-          >
-            موجودی
-          </Link>
+      {/* Scope Notice Banner */}
+      <div className="flex items-start gap-3 rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-4 text-[13px] text-[var(--pol-light-text-secondary)] leading-relaxed">
+        <span className="text-base">ℹ️</span>
+        <div>
+          <strong className="font-semibold text-[var(--pol-light-text-primary)]">راهنما:</strong>{" "}
+          اطلاعات ویترین به صورت خودکار از تنظیمات سازمانی و کاتالوگ فعال استخراج می‌شود. برای تغییر
+          قیمت یا موجودی کالاها از بخش‌های کاتالوگ و مدیریت انبار استفاده فرمایید.
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            <Link
+              href="/vendor/catalog"
+              className="rounded-lg border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1 text-[12px] font-semibold text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)] transition-colors"
+            >
+              کاتالوگ و قیمت‌ها
+            </Link>
+            <Link
+              href="/vendor/inventory"
+              className="rounded-lg border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1 text-[12px] font-semibold text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)] transition-colors"
+            >
+              مدیریت انبار
+            </Link>
+          </div>
         </div>
-      </section>
+      </div>
 
-      <section aria-label="فروشگاه">
-        {vendors.length === 0 ? (
-          <EmptyState
-            title="ویترینی یافت نشد"
-            description="فروشگاهی در storefront ثبت نشده است."
-          />
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {vendors.map((v) => (
+      {/* Vendor Selector */}
+      {vendors.length > 1 && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="انتخاب فروشگاه">
+          {vendors.map((v) => {
+            const isSelected = selected?.id === v.id;
+            return (
               <button
                 key={String(v.id)}
                 type="button"
                 onClick={() => void selectVendor(v)}
                 className={[
-                  "rounded-full border px-3 py-1.5 text-[12px] transition-colors duration-[160ms]",
-                  selected?.id === v.id
-                    ? "border-transparent bg-[var(--pol-light-brand-primary)] text-white"
-                    : "border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)]",
+                  "rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]",
+                  isSelected
+                    ? "bg-[var(--pol-light-brand-primary)] text-white shadow-sm"
+                    : "border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)]",
                 ].join(" ")}
               >
                 {v.name ?? v.display_name ?? String(v.id)}
               </button>
-            ))}
-          </div>
-        )}
-      </section>
+            );
+          })}
+        </div>
+      )}
 
-      {selected ? (
-        <section aria-label="جزئیات فروشگاه" className={cardCls}>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
-              {selected.name ?? selected.display_name ?? "—"}
-            </h2>
-            {selected.is_active === false ? (
-              <StatusChip tone="neutral">غیرفعال</StatusChip>
-            ) : (
-              <StatusChip tone="success">فعال</StatusChip>
-            )}
-            <span className="ms-auto text-[12px] text-[var(--pol-light-text-muted)]">
-              {selected.city ?? "—"} · {formatDateTime(selected.created_at)}
+      {/* Vendor Details Card */}
+      {selected && (
+        <Card className="p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--pol-light-surface-subtle)] text-[22px]">
+                🏪
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
+                    {selected.name ?? selected.display_name ?? "بنکداری"}
+                  </h2>
+                  {selected.is_active === false ? (
+                    <StatusChip tone="neutral">غیرفعال</StatusChip>
+                  ) : (
+                    <StatusChip tone="success">ویترین فعال</StatusChip>
+                  )}
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[var(--pol-light-text-secondary)]">
+                  {selected.city && <span>📍 شهر: {selected.city}</span>}
+                  <span>·</span>
+                  <span>عضویت از {formatDateTime(selected.created_at)}</span>
+                </div>
+              </div>
+            </div>
+
+            <span className="font-mono text-[12px] text-[var(--pol-light-text-muted)]" dir="ltr">
+              ID: {selected.id}
             </span>
           </div>
-          {selected.description ? (
-            <p className="mt-2 text-[13px] leading-[20px] text-[var(--pol-light-text-secondary)]">
+
+          {selected.description && (
+            <p className="mt-4 border-t border-[var(--pol-light-border-subtle)] pt-3 text-[13px] leading-relaxed text-[var(--pol-light-text-secondary)]">
               {selected.description}
             </p>
-          ) : null}
-          <div className="mt-3 text-[12px] text-[var(--pol-light-text-muted)]" dir="ltr">
-            vendor_id={selected.id}
-          </div>
-        </section>
-      ) : null}
+          )}
+        </Card>
+      )}
 
-      <section aria-label="کالاهای ویترین">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          کالاها در ویترین
-        </h2>
+      {/* Storefront Products */}
+      <section aria-label="کالاهای ویترین" className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
+            کالاهای موجود در ویترین ({products.length.toLocaleString("fa-IR")} قلم)
+          </h2>
+          <Link
+            href="/retailer/catalog"
+            className="text-[12px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+          >
+            مشاهده در کاتالوگ سراسری ←
+          </Link>
+        </div>
+
         {products.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState
-              title="کالایی در ویترین نیست"
-              description="پس از فعال‌سازی کالا در کاتالوگ، اینجا نمایش داده می‌شود."
-            />
-          </div>
+          <EmptyState
+            title="کالایی در ویترین نمایش داده نمی‌شود"
+            description="پس از افزودن کالا و ثبت قیمت فعال در کاتالوگ فروشنده، اقلام در این بخش ظاهر می‌شوند."
+          />
         ) : (
-          <ul role="list" className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => (
-              <li key={String(p.id)} className={cardCls}>
-                <div className="flex flex-wrap items-start gap-2">
-                  <p className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-                    {p.product_name ?? p.name ?? "—"}
-                  </p>
-                  {p.is_available === false ? (
-                    <StatusChip tone="warning">ناموجود</StatusChip>
-                  ) : null}
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2 text-[13px] text-[var(--pol-light-text-secondary)]">
-                  <span>{formatToman(p.price_toman)}</span>
-                  {p.stock_quantity != null ? (
-                    <span>
-                      {Number(p.stock_quantity).toLocaleString("fa-IR")}
-                      {p.packaging_unit ? ` ${p.packaging_unit}` : ""}
+              <Card
+                key={String(p.id)}
+                className="flex flex-col justify-between p-4 transition-all duration-200 hover:shadow-[var(--pol-shadow-md)] hover:border-[var(--pol-light-border-strong)]"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-[14px] font-bold text-[var(--pol-light-text-primary)] line-clamp-2">
+                      {p.product_name ?? p.name ?? "—"}
+                    </h3>
+                    {p.is_available === false && (
+                      <StatusChip tone="warning">ناموجود</StatusChip>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between text-[13px]">
+                    <span className="font-bold text-[var(--pol-light-text-primary)]">
+                      {formatToman(p.price_toman)}
                     </span>
-                  ) : null}
+                    {p.stock_quantity != null && (
+                      <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
+                        موجودی: {Number(p.stock_quantity).toLocaleString("fa-IR")}{" "}
+                        {p.packaging_unit ?? "بسته"}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                {p.product_id ? (
-                  <Link
-                    href={`/retailer/catalog/${p.product_id}`}
-                    className="mt-2 inline-block text-[12px] text-[var(--pol-light-brand-primary)] hover:underline"
-                  >
-                    مشاهده عمومی
-                  </Link>
-                ) : null}
-              </li>
+
+                {p.product_id && (
+                  <div className="mt-3 border-t border-[var(--pol-light-border-subtle)] pt-2 text-end">
+                    <Link
+                      href={`/retailer/catalog/${p.product_id}`}
+                      className="text-[12px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+                    >
+                      نمای عمومی کالا ←
+                    </Link>
+                  </div>
+                )}
+              </Card>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>

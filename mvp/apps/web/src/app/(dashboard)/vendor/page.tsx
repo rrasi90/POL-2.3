@@ -2,16 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Button, EmptyState, ErrorState, Skeleton, StatusChip } from "@pol/ui";
+import { Button, Card, EmptyState, ErrorState, Skeleton, StatusChip } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import {
   ageLabel,
   ageTone,
-  cardCls,
   formatDateTime,
   formatToman,
   itemsOf,
-  linkCardCls,
   orderStatusLabel,
   orderStatusTone,
   str,
@@ -37,15 +35,15 @@ const FULFILLMENT_STATUSES = new Set([
 ]);
 
 const navLinks = [
-  { href: "/vendor/orders", title: "صف سفارش‌ها", desc: "پذیرش، رد و پذیرش جزئی" },
-  { href: "/vendor/catalog", title: "کاتالوگ فروشنده", desc: "قیمت و موجودی کالاها" },
-  { href: "/vendor/inventory", title: "موجودی", desc: "PATCH موجودی کالاها" },
-  { href: "/vendor/inventory/daily", title: "تأیید روزانه موجودی", desc: "confirm / confirm-with-changes" },
-  { href: "/vendor/referrals", title: "ارجاع‌ها", desc: "فقط نسبت‌دهی — بدون پاداش (D-016)" },
-  { href: "/vendor/settlements", title: "تسویه و اسناد", desc: "vendor settlements + invoices" },
-  { href: "/vendor/storefront", title: "ویترین", desc: "نمای خواندنی فروشگاه (D-024)" },
-  { href: "/vendor/customers", title: "مشتریان", desc: "G-009 — بدون API" },
-  { href: "/vendor/staff", title: "کارکنان", desc: "G-010 — بدون API" },
+  { href: "/vendor/orders", title: "صف سفارش‌ها", desc: "پذیرش، رد، پذیرش جزئی و رهگیری ارسال", icon: "📋" },
+  { href: "/vendor/inventory/daily", title: "تأیید روزانه موجودی", desc: "مراسم صبحگاهی اعلام موجودی معتبر", icon: "⏰" },
+  { href: "/vendor/catalog", title: "کاتالوگ فروشنده", desc: "مدیریت تنوع کالا و سطوح قیمت‌گذاری", icon: "📦" },
+  { href: "/vendor/inventory", title: "مدیریت انبار و موجودی", desc: "به‌روزرسانی سریع موجودی اقلام", icon: "📊" },
+  { href: "/vendor/settlements", title: "تسویه‌حساب و فاکتورها", desc: "مشاهده دوره‌های تسویه مالی و اسناد", icon: "💳" },
+  { href: "/vendor/customers", title: "فهرست مشتریان", desc: "سوپرمارکت‌ها و خرده‌فروشان طرف قرارداد", icon: "👥" },
+  { href: "/vendor/storefront", title: "ویترین فروشگاه", desc: "نمای عمومی محصولات برای خرده‌فروشان", icon: "🏪" },
+  { href: "/vendor/staff", title: "دسترسی کارکنان", desc: "مدیریت دسترسی‌های پرسنل بنکداری", icon: "🔑" },
+  { href: "/vendor/referrals", title: "ارجاع و بازاریابی", desc: "کدهای معرفی و انتساب فروش", icon: "🔗" },
 ];
 
 /**
@@ -79,18 +77,18 @@ export default function VendorHomePage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری پنل تأمین‌کننده">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid gap-3 sm:grid-cols-3">
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری پنل تأمین‌کننده">
+        <Skeleton className="h-9 w-56" />
+        <div className="grid gap-4 sm:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className={cardCls}>
+            <Card key={i} className="p-5">
               <Skeleton lines={2} />
-            </div>
+            </Card>
           ))}
         </div>
-        <div className={cardCls}>
-          <Skeleton lines={4} />
-        </div>
+        <Card className="p-6">
+          <Skeleton lines={5} />
+        </Card>
       </div>
     );
   }
@@ -107,152 +105,243 @@ export default function VendorHomePage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          پنل تأمین‌کننده
-        </h1>
-        <span className="text-[12px] leading-[18px] text-[var(--pol-light-text-muted)]">
-          صف‌محور — V-01
-        </span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>
-          به‌روزرسانی
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] md:text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              مرکز عملیات بنکداری
+            </h1>
+            <span className="rounded-full bg-[var(--pol-light-surface-subtle)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              V-01 · صف‌محور
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            مدیریت سفارش‌های دریافتی، تأیید موجودی روزانه و فرآیند پردازش و ارسال
+          </p>
+        </div>
+        <Button variant="secondary" size="sm" onClick={() => void load()}>
+          به‌روزرسانی اطلاعات
         </Button>
       </header>
 
-      <section aria-label="خلاصه صف" className="grid gap-3 sm:grid-cols-3">
-        <Link href="/vendor/orders?status=SUBMITTED" className={linkCardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">
-            در انتظار پذیرش
-          </p>
-          <p className="mt-1 text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            {pending.length.toLocaleString("fa-IR")}
-          </p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
-            CREATED + SUBMITTED
-          </p>
+      {/* KPI Highlight Cards */}
+      <section aria-label="خلاصه صف" className="grid gap-4 sm:grid-cols-3">
+        <Link
+          href="/vendor/orders?status=SUBMITTED"
+          className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+        >
+          <Card
+            className={[
+              "p-5 transition-all duration-200 group-hover:shadow-[var(--pol-shadow-md)]",
+              pending.length > 0
+                ? "border-amber-300 bg-amber-50/40 dark:border-amber-700/50 dark:bg-amber-950/20"
+                : "group-hover:border-[var(--pol-light-border-strong)]",
+            ].join(" ")}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-medium text-[var(--pol-light-text-secondary)]">
+                در انتظار پذیرش
+              </span>
+              <span className="text-[20px]">⏳</span>
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-[28px] font-bold text-[var(--pol-light-text-primary)]">
+                {pending.length.toLocaleString("fa-IR")}
+              </span>
+              <span className="text-[12px] text-[var(--pol-light-text-muted)]">سفارش</span>
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
+              نیازمند اقدام فوری تأیید یا رد
+            </p>
+          </Card>
         </Link>
-        <Link href="/vendor/orders?status=ACCEPTED" className={linkCardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">در حال اجرا</p>
-          <p className="mt-1 text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            {fulfilling.length.toLocaleString("fa-IR")}
-          </p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
-            تا DISPATCHED
-          </p>
+
+        <Link
+          href="/vendor/orders?status=ACCEPTED"
+          className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+        >
+          <Card className="p-5 transition-all duration-200 group-hover:shadow-[var(--pol-shadow-md)] group-hover:border-[var(--pol-light-border-strong)]">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-medium text-[var(--pol-light-text-secondary)]">
+                در حال پردازش و ارسال
+              </span>
+              <span className="text-[20px]">🚚</span>
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-[28px] font-bold text-[var(--pol-light-text-primary)]">
+                {fulfilling.length.toLocaleString("fa-IR")}
+              </span>
+              <span className="text-[12px] text-[var(--pol-light-text-muted)]">سفارش</span>
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
+              از آماده‌سازی تا تحویل به ناوگان
+            </p>
+          </Card>
         </Link>
-        <Link href="/vendor/inventory/daily" className={linkCardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">
-            تأیید روزانه موجودی
-          </p>
-          <p className="mt-1 text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            {new Date().toLocaleDateString("fa-IR")}
-          </p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
-            daily inventory confirm
-          </p>
+
+        <Link
+          href="/vendor/inventory/daily"
+          className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+        >
+          <Card className="p-5 transition-all duration-200 group-hover:shadow-[var(--pol-shadow-md)] group-hover:border-[var(--pol-light-border-strong)]">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-medium text-[var(--pol-light-text-secondary)]">
+                تأیید روزانه موجودی
+              </span>
+              <span className="text-[20px]">📋</span>
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-[22px] font-bold text-[var(--pol-light-text-primary)]">
+                {new Date().toLocaleDateString("fa-IR")}
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--pol-light-brand-primary)] group-hover:underline">
+              ثبت موجودی امروز ←
+            </p>
+          </Card>
         </Link>
       </section>
 
-      <section aria-label="اقدامات فوری">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-            نیازمند اقدام
-          </h2>
-          {pending.length > 0 ? (
-            <StatusChip tone="warning">{pending.length.toLocaleString("fa-IR")} مورد</StatusChip>
-          ) : null}
+      {/* Urgent Orders Queue (Needs Action) */}
+      <section aria-label="اقدامات فوری" className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
+              سفارش‌های نیازمند اقدام فوری
+            </h2>
+            {pending.length > 0 && (
+              <StatusChip tone="warning">{pending.length.toLocaleString("fa-IR")} مورد</StatusChip>
+            )}
+          </div>
           <Link
             href="/vendor/orders"
-            className="ms-auto text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
+            className="text-[13px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
           >
-            همه سفارش‌ها
+            مشاهده تمام صف سفارش‌ها ←
           </Link>
         </div>
+
         {pending.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState
-              title="سفارش جدیدی در انتظار نیست"
-              description="وقتی خرده‌فروش سفارش ثبت کند، اینجا نمایش داده می‌شود."
-            />
-          </div>
+          <EmptyState
+            title="هیچ سفارشی معطل اقدام شما نیست"
+            description="سفارش‌های جدید ثبت‌شده توسط خرده‌فروشان بلافاصله در این بخش ظاهر می‌شوند."
+          />
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
+          <div className="grid gap-3">
             {pending.map((o) => (
-              <li key={String(o.id)}>
-                <Link
-                  href={`/vendor/orders/${o.id}`}
-                  className="flex flex-wrap items-center gap-2 rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4 transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-subtle)]"
-                >
-                  <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
-                    {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
-                  </StatusChip>
-                  <span className="text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
-                    {o.order_number ?? String(o.id)}
-                  </span>
-                  <StatusChip tone={ageTone(o.created_at, 4, 12)}>{ageLabel(o.created_at)}</StatusChip>
-                  <span className="ms-auto text-[14px] font-medium text-[var(--pol-light-text-primary)]">
-                    {formatToman(o.total_amount_toman)}
-                  </span>
-                </Link>
-              </li>
+              <Link
+                key={String(o.id)}
+                href={`/vendor/orders/${o.id}`}
+                className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+              >
+                <Card className="p-4 transition-all duration-200 group-hover:shadow-[var(--pol-shadow-md)] group-hover:border-[var(--pol-light-border-strong)]">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
+                        {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
+                      </StatusChip>
+                      <StatusChip tone={ageTone(o.created_at, 4, 12)}>
+                        {ageLabel(o.created_at)}
+                      </StatusChip>
+                      <span className="font-mono text-[14px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
+                        {o.order_number ?? String(o.id)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-[var(--pol-light-border-subtle)] pt-2 sm:border-0 sm:pt-0 sm:gap-4">
+                      <span className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+                        {formatToman(o.total_amount_toman)}
+                      </span>
+                      <span className="text-[12px] font-medium text-[var(--pol-light-brand-primary)] group-hover:underline">
+                        بررسی و پذیرش ←
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
-      <section aria-label="سفارش‌های اخیر">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
+      {/* Recent Orders Overview */}
+      <section aria-label="سفارش‌های اخیر" className="space-y-4">
+        <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
           سفارش‌های اخیر
         </h2>
+
         {orders.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState title="سفارشی وجود ندارد" description="هنوز سفارشی به شما اختصاص نیافته است." />
-          </div>
+          <EmptyState
+            title="هنوز سفارشی دریافت نشده است"
+            description="به محض تخصیص اولین سفارش توسط سیستم توزیع پُل، در این قسمت ثبت خواهد شد."
+          />
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
+          <div className="grid gap-2.5">
             {orders.slice(0, 8).map((o) => (
-              <li
+              <Card
                 key={String(o.id)}
-                className="flex flex-wrap items-center gap-2 rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-3"
+                className="p-3.5 transition-all duration-150 hover:border-[var(--pol-light-border-strong)]"
               >
-                <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
-                  {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
-                </StatusChip>
-                <Link
-                  href={`/vendor/orders/${o.id}`}
-                  className="text-[13px] font-semibold text-[var(--pol-light-text-primary)] hover:underline"
-                  dir="ltr"
-                >
-                  {o.order_number ?? String(o.id)}
-                </Link>
-                {o.dispute_status && o.dispute_status !== "NONE" ? (
-                  <StatusChip tone="danger">
-                    {str(o.dispute_status)}
-                  </StatusChip>
-                ) : null}
-                <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                  {formatDateTime(o.created_at)}
-                </span>
-                <span className="text-[13px] font-medium text-[var(--pol-light-text-primary)]">
-                  {formatToman(o.total_amount_toman)}
-                </span>
-              </li>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
+                      {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
+                    </StatusChip>
+                    <Link
+                      href={`/vendor/orders/${o.id}`}
+                      className="font-mono text-[13px] font-bold text-[var(--pol-light-text-primary)] hover:text-[var(--pol-light-brand-primary)] hover:underline"
+                      dir="ltr"
+                    >
+                      {o.order_number ?? String(o.id)}
+                    </Link>
+                    {o.dispute_status && o.dispute_status !== "NONE" && (
+                      <StatusChip tone="danger">{str(o.dispute_status)}</StatusChip>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[12px] sm:gap-4">
+                    <span className="text-[var(--pol-light-text-muted)]">
+                      {formatDateTime(o.created_at)}
+                    </span>
+                    <span className="font-semibold text-[var(--pol-light-text-primary)]">
+                      {formatToman(o.total_amount_toman)}
+                    </span>
+                  </div>
+                </div>
+              </Card>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
-      <section aria-label="مقصدها">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          دسترسی سریع
+      {/* Quick Navigation Cards */}
+      <section aria-label="دسته‌بندی‌های عملیاتی" className="space-y-4">
+        <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
+          دسترسی سریع عملیاتی
         </h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {navLinks.map((l) => (
-            <Link key={l.href} href={l.href} className={linkCardCls}>
-              <p className="text-[14px] leading-[22px] font-semibold text-[var(--pol-light-text-primary)]">
-                {l.title}
-              </p>
-              <p className="mt-1 text-[12px] text-[var(--pol-light-text-secondary)]">{l.desc}</p>
+            <Link
+              key={l.href}
+              href={l.href}
+              className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+            >
+              <Card className="h-full p-4 transition-all duration-200 group-hover:shadow-[var(--pol-shadow-md)] group-hover:border-[var(--pol-light-border-strong)]">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--pol-light-surface-subtle)] text-[18px]">
+                    {l.icon}
+                  </span>
+                  <div>
+                    <h3 className="text-[14px] font-bold text-[var(--pol-light-text-primary)] group-hover:text-[var(--pol-light-brand-primary)] transition-colors">
+                      {l.title}
+                    </h3>
+                    <p className="mt-0.5 text-[12px] text-[var(--pol-light-text-secondary)] line-clamp-1">
+                      {l.desc}
+                    </p>
+                  </div>
+                </div>
+              </Card>
             </Link>
           ))}
         </div>

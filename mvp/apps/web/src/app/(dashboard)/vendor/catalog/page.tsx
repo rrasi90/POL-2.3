@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   SearchField,
@@ -12,7 +13,6 @@ import {
 } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import {
-  cardCls,
   formatToman,
   itemsOf,
   str,
@@ -72,10 +72,14 @@ export default function VendorCatalogPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری کاتالوگ">
-        <Skeleton className="h-8 w-48" />
-        <div className={cardCls}>
-          <Skeleton lines={5} />
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری کاتالوگ">
+        <Skeleton className="h-9 w-48" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="p-5">
+              <Skeleton lines={4} />
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -92,90 +96,118 @@ export default function VendorCatalogPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          کاتالوگ فروشنده
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">
-          V-04 · {products.length.toLocaleString("fa-IR")} کالا
-        </span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] md:text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              کاتالوگ کالاهای بنکداری
+            </h1>
+            <span className="rounded-full bg-[var(--pol-light-surface-subtle)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              V-04
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            مدیریت قیمت‌های فعال، موجودی و وضعیت نمایش اقلام در سامانه پُل
+          </p>
+        </div>
+
+        <Button variant="secondary" size="sm" onClick={() => void load()}>
           به‌روزرسانی
         </Button>
       </header>
 
-      <SearchField
-        label="جستجوی کالا"
-        placeholder="نام، برند یا SKU…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+      {/* Search and Counts */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="w-full max-w-md">
+          <SearchField
+            label="جستجوی کالا"
+            placeholder="نام کالا، برند یا کد SKU..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+        <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+          {filtered.length.toLocaleString("fa-IR")} از {products.length.toLocaleString("fa-IR")} قلم کالا
+        </span>
+      </div>
 
+      {/* Products Grid */}
       {filtered.length === 0 ? (
         <EmptyState
           title="کالایی یافت نشد"
-          description="کاتالوگ خالی است  عبارت جستجو را تغییر دهید."
+          description="کاتالوگ فروشگاه شما خالی است یا با عبارت جستجو مطابقت ندارد."
         />
       ) : (
-        <ul role="list" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => {
             const vpId = str(p.vendor_product_id ?? p.id, "");
+            const productName = p.product_name ?? p.name ?? "کالای بدون نام";
+
             return (
-              <li
+              <Card
                 key={vpId}
-                className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
+                className="flex flex-col justify-between p-5 transition-all duration-200 hover:shadow-[var(--pol-shadow-md)] hover:border-[var(--pol-light-border-strong)]"
               >
-                <div className="flex flex-wrap items-start gap-2">
-                  <p className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-                    {p.product_name ?? p.name ?? "—"}
-                  </p>
-                  {p.is_active === false ? (
-                    <StatusChip tone="neutral">غیرفعال</StatusChip>
-                  ) : (
-                    <StatusChip tone="success">فعال</StatusChip>
-                  )}
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)] line-clamp-2">
+                      {productName}
+                    </h2>
+                    {p.is_active === false ? (
+                      <StatusChip tone="neutral">غیرفعال</StatusChip>
+                    ) : (
+                      <StatusChip tone="success">فعال</StatusChip>
+                    )}
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-[var(--pol-light-text-secondary)]">
+                    {p.brand_name && <span>برند: {p.brand_name}</span>}
+                    {p.vendor_sku && (
+                      <>
+                        <span>·</span>
+                        <span dir="ltr" className="font-mono">
+                          SKU: {p.vendor_sku}
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between border-t border-[var(--pol-light-border-subtle)] pt-3 text-[13px]">
+                    <div>
+                      <span className="block text-[11px] text-[var(--pol-light-text-secondary)]">
+                        قیمت پایه
+                      </span>
+                      <span className="font-bold text-[var(--pol-light-text-primary)]">
+                        {formatToman(p.price_toman)}
+                      </span>
+                    </div>
+
+                    <div className="text-end">
+                      <span className="block text-[11px] text-[var(--pol-light-text-secondary)]">
+                        موجودی انبار
+                      </span>
+                      <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+                        {Number(p.stock_quantity ?? 0).toLocaleString("fa-IR")}{" "}
+                        {p.packaging_unit ?? "بسته"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                {p.brand_name ? (
-                  <p className="mt-0.5 text-[12px] text-[var(--pol-light-text-secondary)]">
-                    {p.brand_name}
-                  </p>
-                ) : null}
-                <div className="mt-2 flex flex-wrap gap-2 text-[13px] text-[var(--pol-light-text-secondary)]">
-                  <span>{formatToman(p.price_toman)}</span>
-                  {p.stock_quantity != null ? (
-                    <span>
-                      موجودی {Number(p.stock_quantity).toLocaleString("fa-IR")}
-                      {p.packaging_unit ? ` ${p.packaging_unit}` : ""}
-                    </span>
-                  ) : null}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
+
+                <div className="mt-4 border-t border-[var(--pol-light-border-subtle)] pt-3">
                   <Link
                     href={`/vendor/catalog/${vpId}/prices`}
-                    className="rounded-[8px] border border-[var(--pol-light-border-strong)] px-3 py-1.5 text-[12px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
+                    className="inline-flex w-full items-center justify-center rounded-lg bg-[var(--pol-light-surface-subtle)] py-2 text-[12px] font-semibold text-[var(--pol-light-brand-primary)] hover:bg-[var(--pol-light-surface-hover,var(--pol-light-surface-subtle))] transition-colors"
                   >
-                    قیمت
+                    مدیریت و تاریخچه قیمت‌ها ←
                   </Link>
-                  <Link
-                    href="/vendor/inventory"
-                    className="rounded-[8px] border border-[var(--pol-light-border-strong)] px-3 py-1.5 text-[12px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
-                  >
-                    موجودی
-                  </Link>
-                  {p.product_id ? (
-                    <Link
-                      href={`/retailer/catalog/${p.product_id}`}
-                      className="rounded-[8px] border border-[var(--pol-light-border-strong)] px-3 py-1.5 text-[12px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
-                    >
-                      مشاهده در کاتالوگ
-                    </Link>
-                  ) : null}
                 </div>
-              </li>
+              </Card>
             );
           })}
-        </ul>
+        </div>
       )}
     </div>
   );
