@@ -10,6 +10,25 @@ export {
   PermissionDenied,
   type EmptyStateProps,
   type ErrorStateProps,
+  type SkeletonProps,
 } from "./states";
+export {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  type CardProps,
+  type CardVariant,
+} from "./card";
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "./table";
 
 export const UI_PACKAGE = "@pol/ui" as const;

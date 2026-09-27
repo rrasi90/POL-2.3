@@ -22,36 +22,36 @@ export const QtyStepper = forwardRef<HTMLDivElement, QtyStepperProps>(
     const dec = Math.max(min, value - 1);
     const inc = max === undefined ? value + 1 : Math.min(max, value + 1);
     const btn =
-      "flex h-10 w-10 items-center justify-center rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] text-[16px] text-[var(--pol-light-text-primary)] transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-subtle)] focus-visible:outline-2 focus-visible:outline-[var(--pol-light-focus-ring)] disabled:opacity-40";
+      "flex h-10 w-10 items-center justify-center rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] text-[16px] font-bold text-[var(--pol-light-text-primary)] shadow-2xs transition-all duration-[160ms] cursor-pointer hover:bg-[var(--pol-light-surface-subtle)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pol-light-focus-ring)] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 select-none";
 
     return (
       <div
         ref={ref}
         role="group"
         aria-label={label}
-        className={["inline-flex items-center gap-1", className].join(" ")}
+        className={["inline-flex items-center gap-1.5", className].join(" ")}
       >
         <button
           type="button"
           className={btn}
           disabled={disabled || value <= min}
-          aria-label="کاهش"
+          aria-label="کاهش تعداد"
           onClick={() => onChange(dec)}
           {...btnRest}
         >
           −
         </button>
         <span
-          className="min-w-10 text-center text-[14px] tabular-nums text-[var(--pol-light-text-primary)]"
+          className="min-w-10 text-center text-[15px] font-semibold tabular-nums text-[var(--pol-light-text-primary)] select-none"
           aria-live="polite"
         >
-          {value}
+          {value.toLocaleString("fa-IR")}
         </span>
         <button
           type="button"
           className={btn}
           disabled={disabled || (max !== undefined && value >= max)}
-          aria-label="افزایش"
+          aria-label="افزایش تعداد"
           onClick={() => onChange(inc)}
         >
           +
