@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Button, ErrorState, Field, Skeleton, StatusChip } from "@pol/ui";
+import { Button, EmptyState, ErrorState, Field, Skeleton, StatusChip, type StatusTone } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
-import { cardCls, itemsOf, type LoadState } from "../_shared";
+import { cardCls, inputCls, itemsOf, type LoadState } from "../_shared";
 
 type ReviewAction = "APPROVE_CANONICAL" | "MERGE_EXISTING" | "REJECT";
 
@@ -44,12 +44,19 @@ const emptyForm = (): CandidateForm => ({
   canonical_name_fa: "",
 });
 
-function toneForStatus(status: Candidate["status"]): "success" | "warning" | "danger" | "neutral" {
+function toneForStatus(status: Candidate["status"]): StatusTone {
   if (status === "APPROVED_CANONICAL") return "success";
-  if (status === "MERGED_EXISTING") return "success";
+  if (status === "MERGED_EXISTING") return "info";
   if (status === "REJECTED") return "danger";
   return "warning";
 }
+
+const statusLabel: Record<string, string> = {
+  PENDING_REVIEW: "در انتظار بررسی",
+  APPROVED_CANONICAL: "تأیید کانونیکال",
+  MERGED_EXISTING: "ادغام‌شده",
+  REJECTED: "ردشده",
+};
 
 export default function OpsCatalogCandidatesPage() {
   const [rows, setRows] = useState<Candidate[]>([]);
@@ -129,7 +136,7 @@ export default function OpsCatalogCandidatesPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true">
+      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری کاندیداها">
         <Skeleton className="h-8 w-64" />
         <div className={cardCls}><Skeleton lines={8} /></div>
       </div>
@@ -142,20 +149,37 @@ export default function OpsCatalogCandidatesPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          بازبینی کاندیداهای کاتالوگ
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">OP-13 · {rows.length.toLocaleString("fa-IR")} مورد</span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>به‌روزرسانی</Button>
+      <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--pol-light-border-subtle)] pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] leading-[30px] font-bold text-[var(--pol-light-text-primary)]">
+              بازبینی کاندیداهای کاتالوگ
+            </h1>
+            <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              OP-13
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-muted)]">
+            بررسی و اعتبارسنجی اقلام کاتالوگ پیشنهادی تأمین‌کنندگان جهت اتصال به محصولات کانونیکال
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[12px] font-medium text-[var(--pol-light-text-muted)]">
+            {rows.length.toLocaleString("fa-IR")} مورد
+          </span>
+          <Button variant="secondary" size="sm" onClick={() => void load()}>به‌روزرسانی</Button>
+        </div>
       </header>
 
+      {/* Filter bar */}
       <section className={cardCls} aria-label="فیلتر کاندیداها">
-        <div className="grid gap-3 md:grid-cols-[180px_1fr]">
-          <label className="text-[12px] text-[var(--pol-light-text-secondary)]">
-            وضعیت
+        <div className="grid gap-3 sm:grid-cols-[200px_1fr]">
+          <div>
+            <label className="mb-1 block text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+              وضعیت بررسی
+            </label>
             <select
-              className="mt-1 w-full rounded-[10px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-3 py-2 text-[13px]"
+              className={inputCls}
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
             >
@@ -163,29 +187,29 @@ export default function OpsCatalogCandidatesPage() {
               <option value="APPROVED_CANONICAL">تأیید کانونیکال</option>
               <option value="MERGED_EXISTING">ادغام‌شده</option>
               <option value="REJECTED">ردشده</option>
-              <option value="">همه</option>
+              <option value="">همه موارد</option>
             </select>
-          </label>
+          </div>
           <Field
             label="جست‌وجو"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="نام، برند، بارکد یا SKU"
+            placeholder="نام کالا، برند، بارکد یا شناسه SKU..."
           />
         </div>
       </section>
 
       {error ? (
-        <div className="rounded-[12px] border border-[var(--pol-light-semantic-danger)]/40 bg-[var(--pol-light-surface-default)] p-3 text-[13px] text-[var(--pol-light-semantic-danger)]">
+        <div className="rounded-xl border border-[var(--pol-light-semantic-danger)]/30 bg-[var(--pol-light-semantic-danger)]/10 p-3 text-[13px] text-[var(--pol-light-semantic-danger)]">
           {error}
         </div>
       ) : null}
 
       {rows.length === 0 ? (
-        <div className={cardCls}>
-          <p className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">کاندیدایی برای نمایش وجود ندارد.</p>
-          <p className="mt-1 text-[12px] text-[var(--pol-light-text-muted)]">فیلترها را تغییر دهید یا بعداً دوباره بررسی کنید.</p>
-        </div>
+        <EmptyState
+          title="کاندیدایی برای نمایش وجود ندارد"
+          description="با تغییر فیلتر وضعیت یا کلیدواژه جست‌وجو دوباره تلاش کنید."
+        />
       ) : (
         <ul role="list" className="space-y-3">
           {rows.map((candidate) => {
@@ -193,74 +217,112 @@ export default function OpsCatalogCandidatesPage() {
             const pending = candidate.status === "PENDING_REVIEW";
             return (
               <li key={candidate.candidate_id} className={cardCls}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusChip tone={toneForStatus(candidate.status)}>{candidate.status}</StatusChip>
-                  <span className="font-semibold text-[var(--pol-light-text-primary)]">{candidate.proposed_title}</span>
-                  <span className="text-[12px] text-[var(--pol-light-text-muted)]">{candidate.vendor_name ?? candidate.vendor_id}</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusChip tone={toneForStatus(candidate.status)}>
+                      {statusLabel[candidate.status] ?? candidate.status}
+                    </StatusChip>
+                    <span className="font-bold text-[14px] text-[var(--pol-light-text-primary)]">
+                      {candidate.proposed_title}
+                    </span>
+                  </div>
+                  <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+                    فروشنده: <strong className="font-medium text-[var(--pol-light-text-secondary)]">{candidate.vendor_name ?? candidate.vendor_id}</strong>
+                  </span>
                 </div>
 
-                <div className="mt-3 grid gap-2 text-[12px] text-[var(--pol-light-text-secondary)] md:grid-cols-3">
-                  <div>برند پیشنهادی: <span className="font-medium">{candidate.proposed_brand ?? "—"}</span></div>
-                  <div dir="ltr">بارکد: <span className="font-medium">{candidate.barcode ?? "—"}</span></div>
-                  <div dir="ltr">SKU: <span className="font-medium">{candidate.vendor_sku ?? "—"}</span></div>
-                  <div dir="ltr">Candidate ID: {candidate.candidate_id}</div>
-                  <div dir="ltr">Created: {candidate.created_at ?? "—"}</div>
-                  <div dir="ltr">Resolved: {candidate.resolved_at ?? "—"}</div>
+                <div className="mt-3 grid gap-2.5 text-[12px] text-[var(--pol-light-text-secondary)] sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[var(--pol-light-text-muted)]">برند پیشنهادی:</span>
+                    <span className="font-medium text-[var(--pol-light-text-primary)]">{candidate.proposed_brand ?? "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[var(--pol-light-text-muted)]">بارکد:</span>
+                    <span className="font-mono text-[var(--pol-light-text-primary)]" dir="ltr">{candidate.barcode ?? "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[var(--pol-light-text-muted)]">شناسه SKU:</span>
+                    <span className="font-mono text-[var(--pol-light-text-primary)]" dir="ltr">{candidate.vendor_sku ?? "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[var(--pol-light-text-muted)]">شناسه کاندیدا:</span>
+                    <span className="font-mono text-[11px]" dir="ltr">{candidate.candidate_id}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[var(--pol-light-text-muted)]">زمان ایجاد:</span>
+                    <span className="font-mono text-[11px]" dir="ltr">{candidate.created_at ?? "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[var(--pol-light-text-muted)]">زمان تعیین تکلیف:</span>
+                    <span className="font-mono text-[11px]" dir="ltr">{candidate.resolved_at ?? "—"}</span>
+                  </div>
                 </div>
 
                 {candidate.review_notes ? (
-                  <div className="mt-3 rounded-[10px] bg-[var(--pol-light-surface-subtle)] p-3 text-[12px] text-[var(--pol-light-text-secondary)]">
-                    دلیل ثبت‌شده: {candidate.review_notes}
+                  <div className="mt-3 rounded-lg border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-2.5 text-[12px] text-[var(--pol-light-text-secondary)]">
+                    <span className="font-medium text-[var(--pol-light-text-primary)]">توضیحات بازبینی: </span>
+                    {candidate.review_notes}
                   </div>
                 ) : null}
 
                 {pending ? (
-                  <div className="mt-4 border-t border-[var(--pol-light-border-subtle)] pt-4">
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <label className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                        تصمیم
+                  <div className="mt-4 rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)]/50 p-3.5">
+                    <h3 className="mb-3 text-[13px] font-bold text-[var(--pol-light-text-primary)]">
+                      اقدام بازبینی کاندیدا
+                    </h3>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+                          نوع تصمیم
+                        </label>
                         <select
-                          className="mt-1 w-full rounded-[10px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-3 py-2 text-[13px]"
+                          className={inputCls}
                           value={form.action}
                           onChange={(event) => updateForm(candidate.candidate_id, { action: event.target.value as ReviewAction })}
                         >
-                          <option value="REJECT">رد</option>
-                          <option value="MERGE_EXISTING">ادغام با کالای موجود</option>
-                          <option value="APPROVE_CANONICAL">ساخت کالای کانونیکال</option>
+                          <option value="REJECT">رد پیشنهاد</option>
+                          <option value="MERGE_EXISTING">ادغام با کالای کانونیکال موجود</option>
+                          <option value="APPROVE_CANONICAL">ایجاد کالای کانونیکال جدید</option>
                         </select>
-                      </label>
+                      </div>
                       <Field
-                        label="دلیل"
+                        label="علت / مستندات تصمیم"
                         value={form.reason}
                         onChange={(event) => updateForm(candidate.candidate_id, { reason: event.target.value })}
-                        placeholder="دلیل تصمیم"
+                        placeholder="علت رد یا شماره رفرنس..."
                       />
                     </div>
 
                     {form.action === "MERGE_EXISTING" ? (
                       <div className="mt-3">
                         <Field
-                          label="Target Product ID"
+                          label="Target Product ID (شناسه کالای هدف)"
                           value={form.target_product_id}
                           onChange={(event) => updateForm(candidate.candidate_id, { target_product_id: event.target.value })}
                           dir="ltr"
-                          placeholder="UUID"
+                          placeholder="UUID کالای کانونیکال"
                         />
                       </div>
                     ) : null}
 
                     {form.action === "APPROVE_CANONICAL" ? (
-                      <div className="mt-3 grid gap-3 md:grid-cols-2">
-                        <Field label="Brand ID" value={form.brand_id} onChange={(event) => updateForm(candidate.candidate_id, { brand_id: event.target.value })} dir="ltr" placeholder="UUID" />
-                        <Field label="Category ID" value={form.category_id} onChange={(event) => updateForm(candidate.candidate_id, { category_id: event.target.value })} dir="ltr" placeholder="UUID" />
-                        <Field label="Subcategory ID" value={form.subcategory_id} onChange={(event) => updateForm(candidate.candidate_id, { subcategory_id: event.target.value })} dir="ltr" placeholder="UUID" />
-                        <Field label="نام کانونیکال (اختیاری)" value={form.canonical_name_fa} onChange={(event) => updateForm(candidate.candidate_id, { canonical_name_fa: event.target.value })} />
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <Field label="Brand ID" value={form.brand_id} onChange={(event) => updateForm(candidate.candidate_id, { brand_id: event.target.value })} dir="ltr" placeholder="UUID برند" />
+                        <Field label="Category ID" value={form.category_id} onChange={(event) => updateForm(candidate.candidate_id, { category_id: event.target.value })} dir="ltr" placeholder="UUID دسته‌بندی اصلی" />
+                        <Field label="Subcategory ID" value={form.subcategory_id} onChange={(event) => updateForm(candidate.candidate_id, { subcategory_id: event.target.value })} dir="ltr" placeholder="UUID زیردسته" />
+                        <Field label="نام کانونیکال فارسی (اختیاری)" value={form.canonical_name_fa} onChange={(event) => updateForm(candidate.candidate_id, { canonical_name_fa: event.target.value })} placeholder="عنوان استاندارد کانونیکال" />
                       </div>
                     ) : null}
 
-                    <div className="mt-3">
-                      <Button loading={busyId === candidate.candidate_id} disabled={busyId !== null} onClick={() => void review(candidate)}>
-                        ثبت تصمیم
+                    <div className="mt-3.5 flex justify-end">
+                      <Button
+                        size="sm"
+                        variant={form.action === "REJECT" ? "danger" : "primary"}
+                        loading={busyId === candidate.candidate_id}
+                        disabled={busyId !== null}
+                        onClick={() => void review(candidate)}
+                      >
+                        ثبت تصمیم نهایی
                       </Button>
                     </div>
                   </div>

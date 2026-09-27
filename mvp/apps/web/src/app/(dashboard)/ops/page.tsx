@@ -2,15 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Button, ErrorState, Skeleton, StatusChip } from "@pol/ui";
+import { Button, Card, ErrorState, Skeleton, StatusChip } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import {
   ageLabel,
   ageTone,
-  cardCls,
   formatDateTime,
   itemsOf,
-  linkCardCls,
   str,
   type LoadState,
 } from "./_shared";
@@ -41,15 +39,16 @@ interface QueuePreviewItem {
 }
 
 const navLinks = [
-  { href: "/ops/queues", title: "صفوف یکپارچه", desc: "سفارش، پشتیبانی، تطبیق و RMA" },
-  { href: "/ops/support", title: "میز پشتیبانی", desc: "پرونده‌ها، پیام و تغییر وضعیت" },
-  { href: "/ops/reconciliation", title: "تطبیق مالی", desc: "مغایرت‌های پرداخت و تسویه" },
-  { href: "/ops/rma", title: "مرجوعی و اختلاف", desc: "بررسی per-order + شکاف G-013" },
-  { href: "/ops/admin", title: "ادمین / لاگ ممیزی", desc: "داشبورد استثناها + Audit Logs" },
-  { href: "/ops/notifications", title: "عملیات اعلان", desc: "فهرست اعلان‌ها + شکاف Provider" },
-  { href: "/ops/analytics", title: "تحلیل پایلوت", desc: "G-008 — بدون API" },
-  { href: "/ops/risk", title: "ریسک و پایداری", desc: "API محدود → GAP" },
-  { href: "/admin", title: "مدیریت کاربران و سازمان", desc: "G-007 — بدون CRUD" },
+  { href: "/ops/queues", title: "صفوف یکپارچه عملیات", desc: "سفارش‌ها، تیکت‌ها، مغایرت‌ها و RMA", icon: "📋" },
+  { href: "/ops/support", title: "میز پاسخگویی پشتیبانی", desc: "مدیریت تیکت‌ها و مکالمات طرفین", icon: "💬" },
+  { href: "/ops/reconciliation", title: "تطبیق و انطباق مالی", desc: "بررسی عدم تطابق‌های پرداخت و تسویه", icon: "⚖️" },
+  { href: "/ops/rma", title: "مرجوعی‌ها و استرداد کالا", desc: "بررسی شکایات و عودت وجه", icon: "🔄" },
+  { href: "/ops/admin", title: "استثناها و لاگ‌های ممیزی", desc: "داشبورد وقایع سیستمی و Audit Logs", icon: "🛡️" },
+  { href: "/ops/catalog-candidates", title: "تأیید کالاهای کاتالوگ", desc: "بررسی بارکدها و پیشنهادهای بنکداران", icon: "🏷️" },
+  { href: "/ops/notifications", title: "مرکز اعلان‌ها و پیامک", desc: "لاگ پیام‌های سیستمی و تحویل پیامک", icon: "🔔" },
+  { href: "/ops/analytics", title: "داشبورد شاخص‌های کلیدی", desc: "تحلیل شاخص‌های ده‌گانه پایلوت FMCG", icon: "📈" },
+  { href: "/ops/risk", title: "سیگنال‌های ریسک و پایداری", desc: "پایش مغایرت‌های بحرانی و نرخ لغو", icon: "⚠️" },
+  { href: "/admin", title: "مدیریت سازمان‌ها و کاربران", desc: "تنظیمات سیستمی و دسترسی‌های کلان", icon: "⚙️" },
 ];
 
 export default function OpsOverviewPage() {
@@ -90,18 +89,18 @@ export default function OpsOverviewPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری عملیات">
-        <Skeleton className="h-8 w-48" />
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری عملیات">
+        <Skeleton className="h-9 w-52" />
         <div className="grid gap-3 sm:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className={cardCls}>
+            <Card key={i} className="p-4">
               <Skeleton lines={2} />
-            </div>
+            </Card>
           ))}
         </div>
-        <div className={cardCls}>
-          <Skeleton lines={4} />
-        </div>
+        <Card className="p-5">
+          <Skeleton lines={5} />
+        </Card>
       </div>
     );
   }
@@ -120,107 +119,193 @@ export default function OpsOverviewPage() {
   const disputes = dash?.disputes ?? {};
   const cases = dash?.support_cases ?? {};
 
+  const openExCount = ex.open_count ?? 0;
+  const openDispCount = disputes.open_disputes ?? 0;
+  const openCasesCount = cases.open_cases ?? 0;
+
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          عملیات
-        </h1>
-        <span className="text-[12px] leading-[18px] text-[var(--pol-light-text-muted)]">
-          صف‌محور — O-01
-        </span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>
-          به‌روزرسانی
+      {/* Dense Command Header */}
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--pol-light-border-subtle)] pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[20px] md:text-[24px] font-bold text-[var(--pol-light-text-primary)]">
+              اتاق فرمان عملیات مرکزی پُل
+            </h1>
+            <span className="rounded-md bg-rose-100 dark:bg-rose-950/40 px-2 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-400">
+              O-01 · Dense Command
+            </span>
+          </div>
+          <p className="mt-1 text-[12px] text-[var(--pol-light-text-secondary)]">
+            پایش بلادرنگ صفوف استثناها، اختلافات طرفین، تیکت‌های باز و سلامت توزیع کالا
+          </p>
+        </div>
+
+        <Button variant="secondary" size="sm" onClick={() => void load()}>
+          به‌روزرسانی داده‌ها
         </Button>
       </header>
 
-      <section aria-label="خلاصه استثناها" className="grid gap-3 sm:grid-cols-3">
-        <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">
-            استثنای تحویل (باز)
-          </p>
-          <p className="mt-1 text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            {(ex.open_count ?? 0).toLocaleString("fa-IR")}
-          </p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
-            کل {str(ex.total, "0")} · ارتقا {str(ex.escalated_count, "0")}
-          </p>
-        </div>
-        <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">اختلافات باز</p>
-          <p className="mt-1 text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            {(disputes.open_disputes ?? 0).toLocaleString("fa-IR")}
-          </p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
-            کل {str(disputes.total, "0")}
-          </p>
-        </div>
-        <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">
-            پرونده‌های پشتیبانی باز
-          </p>
-          <p className="mt-1 text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            {(cases.open_cases ?? 0).toLocaleString("fa-IR")}
-          </p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
-            کل {str(cases.total, "0")}
-          </p>
-        </div>
+      {/* Primary Exception Counters */}
+      <section aria-label="خلاصه استثناها" className="grid gap-4 sm:grid-cols-3">
+        <Link
+          href="/ops/queues?tab=orders"
+          className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+        >
+          <Card
+            className={[
+              "p-4 transition-all duration-150 group-hover:shadow-[var(--pol-shadow-md)]",
+              openExCount > 0
+                ? "border-rose-300 bg-rose-50/20 dark:border-rose-900/50 dark:bg-rose-950/20"
+                : "",
+            ].join(" ")}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+                استثناهای باز تحویل
+              </span>
+              <StatusChip tone={openExCount > 0 ? "danger" : "neutral"}>
+                {openExCount > 0 ? "نیازمند مداخله" : "عادی"}
+              </StatusChip>
+            </div>
+            <div className="mt-2 text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              {openExCount.toLocaleString("fa-IR")}
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
+              کل: {str(ex.total, "0")} · موارد ارتقایافته: {str(ex.escalated_count, "0")}
+            </p>
+          </Card>
+        </Link>
+
+        <Link
+          href="/ops/queues?tab=rma"
+          className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+        >
+          <Card
+            className={[
+              "p-4 transition-all duration-150 group-hover:shadow-[var(--pol-shadow-md)]",
+              openDispCount > 0
+                ? "border-amber-300 bg-amber-50/20 dark:border-amber-900/50 dark:bg-amber-950/20"
+                : "",
+            ].join(" ")}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+                اختلافات باز سفارش‌ها
+              </span>
+              <StatusChip tone={openDispCount > 0 ? "warning" : "neutral"}>
+                {openDispCount > 0 ? "در حال رسیدگی" : "بدون اختلاف"}
+              </StatusChip>
+            </div>
+            <div className="mt-2 text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              {openDispCount.toLocaleString("fa-IR")}
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
+              از مجموع {str(disputes.total, "0")} مورد ثبت‌شده
+            </p>
+          </Card>
+        </Link>
+
+        <Link
+          href="/ops/support"
+          className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+        >
+          <Card
+            className={[
+              "p-4 transition-all duration-150 group-hover:shadow-[var(--pol-shadow-md)]",
+              openCasesCount > 0
+                ? "border-sky-300 bg-sky-50/20 dark:border-sky-900/50 dark:bg-sky-950/20"
+                : "",
+            ].join(" ")}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+                تیکت‌های باز پشتیبانی
+              </span>
+              <StatusChip tone={openCasesCount > 0 ? "info" : "neutral"}>
+                {openCasesCount > 0 ? "نیازمند پاسخ" : "پاسخ داده‌شده"}
+              </StatusChip>
+            </div>
+            <div className="mt-2 text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              {openCasesCount.toLocaleString("fa-IR")}
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
+              کل پرونده‌های ثبت‌شده: {str(cases.total, "0")}
+            </p>
+          </Card>
+        </Link>
       </section>
 
-      <section aria-label="پیش‌نمایش صف سفارش‌ها">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-            سفارش‌های اخیر
+      {/* Orders Quick Preview Queue */}
+      <section aria-label="پیش‌نمایش صفوف" className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+            آخرین سفارش‌های ورودی به صف عملیات
           </h2>
           <Link
             href="/ops/queues"
-            className="ms-auto text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
+            className="text-[12px] font-semibold text-[var(--pol-light-brand-primary)] hover:underline"
           >
-            همه صف‌ها
+            مشاهده کامل صفوف یکپارچه ←
           </Link>
         </div>
-        {orders.length === 0 ? (
-          <div className="mt-3">
-            <ErrorState
-              title="سفارشی برای نمایش نیست"
-              description="فهرست سفارش‌ها خالی است یا در دسترس نیست."
-              onRetry={() => void load()}
-              retryLabel="تلاش مجدد"
-            />
-          </div>
-        ) : (
-          <ul role="list" className="mt-3 space-y-2">
-            {orders.map((o) => (
-              <li
-                key={o.id}
-                className="flex flex-wrap items-center gap-2 rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-3"
-              >
-                <StatusChip tone="info">{o.subtitle}</StatusChip>
-                <span className="text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
+
+        <Card className="divide-y divide-[var(--pol-light-border-subtle)] p-0 overflow-hidden">
+          {orders.map((o) => (
+            <div
+              key={o.id}
+              className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between hover:bg-[var(--pol-light-surface-subtle)] transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[13px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
                   {o.title}
                 </span>
-                <StatusChip tone={ageTone(o.created_at)}>{ageLabel(o.created_at)}</StatusChip>
-                <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
+                <StatusChip tone="info">{o.subtitle}</StatusChip>
+              </div>
+
+              <div className="flex items-center justify-between gap-4 text-[12px]">
+                <span className="text-[var(--pol-light-text-muted)]">
                   {formatDateTime(o.created_at)}
                 </span>
-              </li>
-            ))}
-          </ul>
-        )}
+                <Link
+                  href={`/ops/orders/${o.id}`}
+                  className="font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+                >
+                  بازرسی پرونده ←
+                </Link>
+              </div>
+            </div>
+          ))}
+        </Card>
       </section>
 
-      <section aria-label="مقصد عملیات">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          دسترسی سریع
+      {/* Operational Modules Navigation Grid */}
+      <section aria-label="ماژول‌های عملیاتی" className="space-y-3">
+        <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+          کنسول‌های مدیریت عملیاتی
         </h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {navLinks.map((l) => (
-            <Link key={l.href} href={l.href} className={linkCardCls}>
-              <p className="text-[14px] leading-[22px] font-semibold text-[var(--pol-light-text-primary)]">
-                {l.title}
-              </p>
-              <p className="mt-1 text-[12px] text-[var(--pol-light-text-secondary)]">{l.desc}</p>
+            <Link
+              key={l.href}
+              href={l.href}
+              className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+            >
+              <Card className="h-full p-4 transition-all duration-150 group-hover:shadow-[var(--pol-shadow-md)] group-hover:border-[var(--pol-light-border-strong)]">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--pol-light-surface-subtle)] text-[16px]">
+                    {l.icon}
+                  </span>
+                  <div>
+                    <h3 className="text-[13px] font-bold text-[var(--pol-light-text-primary)] group-hover:text-[var(--pol-light-brand-primary)] transition-colors">
+                      {l.title}
+                    </h3>
+                    <p className="mt-0.5 text-[11px] text-[var(--pol-light-text-secondary)] line-clamp-1">
+                      {l.desc}
+                    </p>
+                  </div>
+                </div>
+              </Card>
             </Link>
           ))}
         </div>

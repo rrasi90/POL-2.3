@@ -298,201 +298,121 @@ export default function OpsObjectDetailPage() {
 
   return (
     <div className="space-y-5" data-screen="O-03">
-      <header className="flex flex-wrap items-start gap-3">
+      <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--pol-light-border-subtle)] pb-4">
         <div>
-          <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            {TYPE_LABEL[type]} — جزئیات
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/ops/queues"
+              className="text-[12px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+            >
+              ← بازگشت به صف‌ها
+            </Link>
+            <span className="text-[var(--pol-light-text-disabled)]">/</span>
+            <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              {TYPE_LABEL[type]}
+            </span>
+          </div>
+          <h1 className="mt-2 text-[22px] leading-[30px] font-bold text-[var(--pol-light-text-primary)]">
+            جزئیات {TYPE_LABEL[type]}
           </h1>
-          <p className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="text-[13px] text-[var(--pol-light-text-secondary)]" dir="ltr">
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-[12px]">
+            <span className="font-mono font-semibold text-[var(--pol-light-text-primary)]" dir="ltr">
               {str(record.order_number ?? record.case_number, objectIdStr)}
             </span>
-            <span className="text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
+            <span className="text-[var(--pol-light-text-muted)]">·</span>
+            <span className="font-mono text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
               {rawType}/{objectId}
             </span>
-            <span className="text-[11px] text-[var(--pol-light-text-muted)]">
-              {formatDateTime(record.created_at ?? record.opened_at)}
+            <span className="text-[var(--pol-light-text-muted)]">·</span>
+            <span className="text-[var(--pol-light-text-muted)]">
+              ثبت: {formatDateTime(record.created_at ?? record.opened_at)}
             </span>
           </p>
         </div>
-        <div className="ms-auto flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" onClick={() => void load()}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => void load()}>
             به‌روزرسانی
           </Button>
           <Link
             href="/ops/queues"
-            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
+            className="inline-flex h-8 items-center rounded-lg border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 text-[12px] font-medium text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
           >
-            صف‌ها
+            صف‌های کاری
           </Link>
         </div>
       </header>
 
+      {/* Current Status Strip */}
       <section
         aria-label="وضعیت فعلی"
-        className="flex flex-wrap items-center gap-2 rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
+        className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4 shadow-xs"
       >
-        {status ? (
-          <StatusChip
-            tone={
-              type === "orders"
-                ? orderStatusTone[status] ?? "neutral"
+        <div className="flex flex-wrap items-center gap-2">
+          {status ? (
+            <StatusChip
+              tone={
+                type === "orders"
+                  ? orderStatusTone[status] ?? "neutral"
+                  : type === "support"
+                    ? supportStatusTone[status] ?? "neutral"
+                    : "neutral"
+              }
+            >
+              {type === "orders"
+                ? orderStatusLabel[status] ?? status
                 : type === "support"
-                  ? supportStatusTone[status] ?? "neutral"
-                  : "neutral"
-            }
-          >
-            {type === "orders"
-              ? orderStatusLabel[status] ?? status
-              : type === "support"
-                ? supportStatusLabel[status] ?? status
-                : status}
-          </StatusChip>
-        ) : (
-          <StatusChip tone="neutral">{TYPE_LABEL[type]}</StatusChip>
-        )}
-        {type === "orders" && record.dispute_status ? (
-          <StatusChip
-            tone={disputeStatusTone[String(record.dispute_status)] ?? "neutral"}
-          >
-            {disputeStatusLabel[String(record.dispute_status)] ??
-              String(record.dispute_status)}
-          </StatusChip>
-        ) : null}
-        {type === "support" && record.priority ? (
-          <StatusChip tone={supportPriorityTone[String(record.priority)] ?? "neutral"}>
-            {supportPriorityLabel[String(record.priority)] ?? String(record.priority)}
-          </StatusChip>
-        ) : null}
-        <span className="ms-auto text-[13px] text-[var(--pol-light-text-secondary)]">
-          {ageLabel(record.created_at ?? record.opened_at)}{" "}
-          <StatusChip tone={ageTone(record.created_at ?? record.opened_at)}>
-            سن
-          </StatusChip>
-        </span>
-        {record.total_amount_toman != null ? (
-          <span className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
-            {formatToman(record.total_amount_toman)}
+                  ? supportStatusLabel[status] ?? status
+                  : status}
+            </StatusChip>
+          ) : (
+            <StatusChip tone="neutral">{TYPE_LABEL[type]}</StatusChip>
+          )}
+
+          {type === "orders" && record.dispute_status ? (
+            <StatusChip
+              tone={disputeStatusTone[String(record.dispute_status)] ?? "neutral"}
+            >
+              {disputeStatusLabel[String(record.dispute_status)] ??
+                String(record.dispute_status)}
+            </StatusChip>
+          ) : null}
+
+          {type === "support" && record.priority ? (
+            <StatusChip tone={supportPriorityTone[String(record.priority)] ?? "neutral"}>
+              {supportPriorityLabel[String(record.priority)] ?? String(record.priority)}
+            </StatusChip>
+          ) : null}
+        </div>
+
+        <div className="ms-auto flex flex-wrap items-center gap-3">
+          <span className="flex items-center gap-1.5 text-[12px] text-[var(--pol-light-text-secondary)]">
+            <span>سن پرونده:</span>
+            <span className="font-medium text-[var(--pol-light-text-primary)]">
+              {ageLabel(record.created_at ?? record.opened_at)}
+            </span>
+            <StatusChip tone={ageTone(record.created_at ?? record.opened_at)}>
+              سن
+            </StatusChip>
           </span>
-        ) : null}
+
+          {record.total_amount_toman != null ? (
+            <span className="border-s border-[var(--pol-light-border-subtle)] ps-3 font-extrabold tabular-nums text-[16px] text-[var(--pol-light-text-primary)]">
+              {formatToman(record.total_amount_toman)}
+            </span>
+          ) : null}
+        </div>
       </section>
 
       {actionError ? (
         <ErrorState title="عملیات ناموفق بود" description={actionError} />
       ) : null}
 
-      <section aria-label="فیلدها" className={cardCls}>
-        <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-          وضعیت و اطلاعات
-        </h2>
-        <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {Object.entries(record)
-            .filter(([, v]) => v == null || typeof v !== "object")
-            .slice(0, 24)
-            .map(([k, v]) => (
-              <div key={k}>
-                <dt className="text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
-                  {k}
-                </dt>
-                <dd className="text-[13px] text-[var(--pol-light-text-primary)]" dir="auto">
-                  {v == null
-                    ? "—"
-                    : typeof v === "boolean"
-                      ? v
-                        ? "true"
-                        : "false"
-                      : String(v)}
-                </dd>
-              </div>
-            ))}
-        </dl>
-      </section>
-
-      <section aria-label="لینک‌های مرتبط" className={cardCls}>
-        <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-          خرده‌فروش / فروشنده / سفارش
-        </h2>
-        {links.length === 0 ? (
-          <div className="mt-2">
-            <EmptyState title="شیء مرتبط یافت نشد" />
-          </div>
-        ) : (
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {links.map((l) => (
-              <li key={l.href}>
-                <Link
-                  href={l.href}
-                  className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
-                >
-                  {l.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-        {record.retailer_id || record.vendor_id ? (
-          <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-            {record.retailer_id ? (
-              <div>
-                <dt className="text-[11px] text-[var(--pol-light-text-muted)]">retailer_id</dt>
-                <dd className="text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
-                  {String(record.retailer_id)}
-                </dd>
-              </div>
-            ) : null}
-            {record.vendor_id ? (
-              <div>
-                <dt className="text-[11px] text-[var(--pol-light-text-muted)]">vendor_id</dt>
-                <dd className="text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
-                  {String(record.vendor_id)}
-                </dd>
-              </div>
-            ) : null}
-          </dl>
-        ) : null}
-      </section>
-
-      <section aria-label="شواهد" className={cardCls}>
-        <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-          شواهد
-        </h2>
-        {evidenceKeys.length === 0 ? (
-          <div className="mt-2">
-            <EmptyState
-              title="شواهد پیوست ثبت نشده"
-              description="فیلد شواهد/پیوست در پاسخ این شیء وجود ندارد."
-            />
-          </div>
-        ) : (
-          <dl className="mt-2 space-y-2">
-            {evidenceKeys.map((k) => (
-              <div key={k}>
-                <dt className="text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
-                  {k}
-                </dt>
-                <dd className="text-[13px] text-[var(--pol-light-text-primary)]">
-                  {typeof record[k] === "object"
-                    ? JSON.stringify(record[k])
-                    : String(record[k])}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        )}
-      </section>
-
-      <section aria-label="اقدامات مجاز" className={cardCls}>
-        <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-          اقدامات مجاز
-        </h2>
-        {actions.length === 0 ? (
-          <div className="mt-2">
-            <EmptyState
-              title="اقدام HTTP برای این شیء تعریف نشده"
-              description="اقدام فقط از روی قرارداد واقعی؛ بدون ابداع endpoint."
-            />
-          </div>
-        ) : (
+      {/* Allowed Actions Bar */}
+      {actions.length > 0 ? (
+        <section aria-label="اقدامات مجاز" className={cardCls}>
+          <h2 className="text-[13px] font-bold text-[var(--pol-light-text-primary)]">
+            اقدامات مجاز عملیاتی
+          </h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {actions.map((a) => (
               <Button
@@ -507,56 +427,164 @@ export default function OpsObjectDetailPage() {
               </Button>
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {/* Properties DL */}
+      <section aria-label="فیلدها" className={cardCls}>
+        <h2 className="border-b border-[var(--pol-light-border-subtle)] pb-2.5 text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+          مشخصات و صفات موجودیت
+        </h2>
+        <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Object.entries(record)
+            .filter(([, v]) => v == null || typeof v !== "object")
+            .slice(0, 24)
+            .map(([k, v]) => (
+              <div key={k} className="rounded-lg border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)]/40 p-2.5">
+                <dt className="font-mono text-[11px] font-medium text-[var(--pol-light-text-muted)]" dir="ltr">
+                  {k}
+                </dt>
+                <dd className="mt-1 font-mono text-[13px] font-medium text-[var(--pol-light-text-primary)] break-all" dir="auto">
+                  {v == null
+                    ? "—"
+                    : typeof v === "boolean"
+                      ? v
+                        ? "true"
+                        : "false"
+                      : String(v)}
+                </dd>
+              </div>
+            ))}
+        </dl>
+      </section>
+
+      {/* Related Entities Links */}
+      <section aria-label="لینک‌های مرتبط" className={cardCls}>
+        <h2 className="border-b border-[var(--pol-light-border-subtle)] pb-2.5 text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+          طرف‌های مرتبط (خرده‌فروش / تأمین‌کننده / گروه سفارش)
+        </h2>
+        {links.length === 0 ? (
+          <div className="mt-3">
+            <EmptyState title="موجودیت مرتبطی یافت نشد" />
+          </div>
+        ) : (
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {links.map((l) => (
+              <li key={l.href}>
+                <Link
+                  href={l.href}
+                  className="inline-flex h-8 items-center rounded-lg border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 text-[12px] font-medium text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        {record.retailer_id || record.vendor_id ? (
+          <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+            {record.retailer_id ? (
+              <div className="rounded-lg border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)]/40 p-2.5">
+                <span className="block text-[11px] text-[var(--pol-light-text-muted)]">شناسه خرده‌فروش (retailer_id)</span>
+                <span className="font-mono text-[12px] font-medium text-[var(--pol-light-text-primary)]" dir="ltr">
+                  {String(record.retailer_id)}
+                </span>
+              </div>
+            ) : null}
+            {record.vendor_id ? (
+              <div className="rounded-lg border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)]/40 p-2.5">
+                <span className="block text-[11px] text-[var(--pol-light-text-muted)]">شناسه فروشنده (vendor_id)</span>
+                <span className="font-mono text-[12px] font-medium text-[var(--pol-light-text-primary)]" dir="ltr">
+                  {String(record.vendor_id)}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+
+      {/* Evidence Section */}
+      <section aria-label="شواهد" className={cardCls}>
+        <h2 className="border-b border-[var(--pol-light-border-subtle)] pb-2.5 text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+          شواهد و ضمائم پیوست
+        </h2>
+        {evidenceKeys.length === 0 ? (
+          <div className="mt-3">
+            <EmptyState
+              title="مدرک یا شاهدی پیوست نشده است"
+              description="فیلد پیوست یا شواهد در خروجی این رکورد خالی است."
+            />
+          </div>
+        ) : (
+          <dl className="mt-3 space-y-2">
+            {evidenceKeys.map((k) => (
+              <div key={k} className="rounded-lg border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)]/40 p-2.5">
+                <dt className="font-mono text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
+                  {k}
+                </dt>
+                <dd className="mt-1 font-mono text-[12px] text-[var(--pol-light-text-primary)] break-all">
+                  {typeof record[k] === "object"
+                    ? JSON.stringify(record[k])
+                    : String(record[k])}
+                </dd>
+              </div>
+            ))}
+          </dl>
         )}
       </section>
 
+      {/* Assignment Section */}
       <section aria-label="واگذاری" className={cardCls}>
-        <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-          واگذاری
+        <h2 className="border-b border-[var(--pol-light-border-subtle)] pb-2.5 text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+          ارجاع و مسئول پرونده
         </h2>
-        <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]">
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px] text-[var(--pol-light-text-secondary)]">
+          <span>کاربر مسئول:</span>
           {assignmentUser ? (
-            <span dir="ltr">{assignmentUser}</span>
+            <span className="font-mono font-medium text-[var(--pol-light-text-primary)]" dir="ltr">{assignmentUser}</span>
           ) : (
-            "کاربر واگذارشده‌ای در پاسخ ثبت نشده است."
+            <span className="text-[var(--pol-light-text-muted)]">بدون ارجاع مستقیم</span>
           )}
-        </p>
+        </div>
         {record.assigned_organization_id ? (
-          <p className="mt-1 text-[12px] text-[var(--pol-light-text-muted)]" dir="ltr">
-            org: {String(record.assigned_organization_id)}
+          <p className="mt-1 font-mono text-[12px] text-[var(--pol-light-text-muted)]" dir="ltr">
+            سازمان ارجاع: {String(record.assigned_organization_id)}
           </p>
         ) : null}
       </section>
 
-      <section aria-label="گاه‌شمار / ممیزی">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          گاه‌شمار / ممیزی
+      {/* Timeline Section */}
+      <section aria-label="گاه‌شمار / ممیزی" className={cardCls}>
+        <h2 className="border-b border-[var(--pol-light-border-subtle)] pb-2.5 text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+          گاه‌شمار و لاگ وقایع (Audit Trail)
         </h2>
         {timeline.length === 0 ? (
           <div className="mt-3">
             <EmptyState
-              title="رویدادی در دسترس نیست"
-              description="برای این نوع شیء timeline از endpoint واقعی خوانده می‌شود؛ در غیر این صورت خالی است."
+              title="رویداد ثبتی در دسترس نیست"
+              description="گاه‌شمار مستقیماً از لاگ رویدادهای سرور واکشی می‌شود."
             />
           </div>
         ) : (
-          <ol className="mt-3 border-s-2 border-[var(--pol-light-border-subtle)] ps-4">
+          <ol className="mt-4 border-s-2 border-[var(--pol-light-border-subtle)] ps-4 space-y-4">
             {timeline.map((ev) => (
-              <li key={ev.id} className="relative pb-4 last:pb-0">
+              <li key={ev.id} className="relative pb-1">
                 <span
                   aria-hidden
-                  className="absolute -start-[21px] top-1.5 size-2.5 rounded-full bg-[var(--pol-light-brand-primary)]"
+                  className="absolute -start-[21px] top-1.5 size-2.5 rounded-full bg-[var(--pol-light-brand-primary)] ring-4 ring-[var(--pol-light-surface-default)]"
                 />
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[13px] font-medium text-[var(--pol-light-text-primary)]">
-                    {ev.event_type ?? "رویداد"}
-                  </span>
-                  {ev.from_status || ev.to_status ? (
-                    <span className="text-[12px] text-[var(--pol-light-text-secondary)]" dir="ltr">
-                      {ev.from_status ?? "∅"} → {ev.to_status ?? "∅"}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-semibold text-[var(--pol-light-text-primary)]">
+                      {ev.event_type ?? "رویداد"}
                     </span>
-                  ) : null}
-                  <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
+                    {ev.from_status || ev.to_status ? (
+                      <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 font-mono text-[11px] text-[var(--pol-light-text-secondary)]" dir="ltr">
+                        {ev.from_status ?? "∅"} → {ev.to_status ?? "∅"}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-[11px] text-[var(--pol-light-text-muted)]">
                     {formatDateTime(ev.created_at)}
                   </span>
                 </div>

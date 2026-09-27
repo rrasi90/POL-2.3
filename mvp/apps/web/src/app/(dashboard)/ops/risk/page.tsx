@@ -2,9 +2,29 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Button, EmptyState, ErrorState, Skeleton, StatusChip } from "@pol/ui";
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  Skeleton,
+  StatusChip,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
-import { cardCls, itemsOf, type LoadState } from "../_shared";
+import {
+  cardCls,
+  formatDateTime,
+  formatToman,
+  itemsOf,
+  reconStatusLabel,
+  reconStatusTone,
+  type LoadState,
+} from "../_shared";
 
 interface ExceptionsDashboard {
   delivery_exceptions?: { total?: number; open_count?: number; resolved_count?: number; escalated_count?: number };
@@ -50,14 +70,14 @@ export default function OpsRiskPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true">
+      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری سیگنال‌های ریسک">
         <Skeleton className="h-8 w-56" />
-        <div className="grid gap-3 sm:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className={cardCls}><Skeleton lines={2} /></div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className={cardCls}><Skeleton lines={3} /></div>
           ))}
         </div>
-        <div className={cardCls}><Skeleton lines={5} /></div>
+        <div className={cardCls}><Skeleton lines={6} /></div>
       </div>
     );
   }
@@ -72,67 +92,180 @@ export default function OpsRiskPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          ریسک و پایداری عملیاتی
-        </h1>
-        <StatusChip tone="info">O-07 · سیگنال‌های واقعی</StatusChip>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>
-          به‌روزرسانی
-        </Button>
+      <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--pol-light-border-subtle)] pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] leading-[30px] font-bold text-[var(--pol-light-text-primary)]">
+              ریسک و تاب‌آوری عملیاتی
+            </h1>
+            <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              O-07
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-muted)]">
+            پایش آنی نقاط اصطکاک زنجیره تأمین، مغایرت‌های مالی و استثناهای تسویه‌نشده
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => void load()}>
+            به‌روزرسانی
+          </Button>
+        </div>
       </header>
 
-      <div className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-3 text-[12px] leading-[20px] text-[var(--pol-light-text-secondary)]">
-        این صفحه امتیاز ریسک مصنوعی تولید نمی‌کند. فقط شاخص‌های عملیاتی موجود در backend را
-        نمایش می‌دهد؛ مدل امتیازدهی طرف حساب هنوز در قرارداد محصول تعریف نشده است.
+      {/* Operational Policy Callout */}
+      <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-3.5 text-[12px] leading-[20px] text-[var(--pol-light-text-secondary)]">
+        <strong className="font-semibold text-[var(--pol-light-text-primary)]">سیاست محاسبه ریسک: </strong>
+        این کنسول از امتیاز ریسک تصنعی استفاده نمی‌کند و فقط بازتاب‌دهنده رویدادها و موارد باز واقعی در سیستم تحویل، پشتیبانی و تطبیق حسابداری است.
       </div>
 
+      {/* Signal Counters */}
       <section aria-label="سیگنال‌های عملیاتی" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">استثنای تحویل باز</p>
-          <p className="mt-1 text-[24px] font-bold text-[var(--pol-light-text-primary)]">{(delivery.open_count ?? 0).toLocaleString("fa-IR")}</p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">کل {delivery.total ?? 0} · ارجاع‌شده {delivery.escalated_count ?? 0}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">استثناهای تحویل باز</p>
+            {(delivery.open_count ?? 0) > 0 ? (
+              <StatusChip tone="danger">فوری</StatusChip>
+            ) : (
+              <StatusChip tone="success">عادی</StatusChip>
+            )}
+          </div>
+          <p className="mt-2 text-[26px] font-extrabold tabular-nums text-[var(--pol-light-text-primary)]">
+            {(delivery.open_count ?? 0).toLocaleString("fa-IR")}
+          </p>
+          <div className="mt-2 border-t border-[var(--pol-light-border-subtle)] pt-2 text-[11px] text-[var(--pol-light-text-muted)]">
+            کل: {Number(delivery.total ?? 0).toLocaleString("fa-IR")} · ارجاع‌شده: {Number(delivery.escalated_count ?? 0).toLocaleString("fa-IR")}
+          </div>
         </div>
+
         <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">اختلاف باز</p>
-          <p className="mt-1 text-[24px] font-bold text-[var(--pol-light-text-primary)]">{(disputes.open_disputes ?? 0).toLocaleString("fa-IR")}</p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">کل {disputes.total ?? 0}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">اختلافات سفارشات</p>
+            {(disputes.open_disputes ?? 0) > 0 ? (
+              <StatusChip tone="warning">نیازمند بررسی</StatusChip>
+            ) : (
+              <StatusChip tone="neutral">صفر</StatusChip>
+            )}
+          </div>
+          <p className="mt-2 text-[26px] font-extrabold tabular-nums text-[var(--pol-light-text-primary)]">
+            {(disputes.open_disputes ?? 0).toLocaleString("fa-IR")}
+          </p>
+          <div className="mt-2 border-t border-[var(--pol-light-border-subtle)] pt-2 text-[11px] text-[var(--pol-light-text-muted)]">
+            کل اختلافات ثبت‌شده: {Number(disputes.total ?? 0).toLocaleString("fa-IR")}
+          </div>
         </div>
+
         <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">پشتیبانی باز</p>
-          <p className="mt-1 text-[24px] font-bold text-[var(--pol-light-text-primary)]">{(support.open_cases ?? 0).toLocaleString("fa-IR")}</p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">کل {support.total ?? 0}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">پرونده‌های پشتیبانی باز</p>
+            {(support.open_cases ?? 0) > 0 ? (
+              <StatusChip tone="info">در جریان</StatusChip>
+            ) : (
+              <StatusChip tone="neutral">پاک</StatusChip>
+            )}
+          </div>
+          <p className="mt-2 text-[26px] font-extrabold tabular-nums text-[var(--pol-light-text-primary)]">
+            {(support.open_cases ?? 0).toLocaleString("fa-IR")}
+          </p>
+          <div className="mt-2 border-t border-[var(--pol-light-border-subtle)] pt-2 text-[11px] text-[var(--pol-light-text-muted)]">
+            کل پرونده‌ها: {Number(support.total ?? 0).toLocaleString("fa-IR")}
+          </div>
         </div>
+
         <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">تطبیق مالی باز</p>
-          <p className="mt-1 text-[24px] font-bold text-[var(--pol-light-text-primary)]">{recon.length.toLocaleString("fa-IR")}</p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">فهرست زنده از reconciliation</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">مغایرت‌های تطبیق مالی</p>
+            {recon.length > 0 ? (
+              <StatusChip tone="danger">اقدام لازم</StatusChip>
+            ) : (
+              <StatusChip tone="success">تراز</StatusChip>
+            )}
+          </div>
+          <p className="mt-2 text-[26px] font-extrabold tabular-nums text-[var(--pol-light-text-primary)]">
+            {recon.length.toLocaleString("fa-IR")}
+          </p>
+          <div className="mt-2 border-t border-[var(--pol-light-border-subtle)] pt-2 text-[11px] text-[var(--pol-light-text-muted)]">
+            پرونده‌های OPEN در تطبیق مالی
+          </div>
         </div>
       </section>
 
+      {/* Open Reconciliation Table */}
       <section aria-label="موارد تطبیق باز" className={cardCls}>
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">تطبیق‌های مالی باز</h2>
-          <Link href="/ops/reconciliation" className="ms-auto text-[12px] text-[var(--pol-light-brand-primary)]">
-            مشاهده همه
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+              پرونده‌های تطبیق مالی باز
+            </h2>
+            <span className="rounded-full bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              {recon.length.toLocaleString("fa-IR")} مورد
+            </span>
+          </div>
+          <Link
+            href="/ops/reconciliation"
+            className="text-[12px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+          >
+            مشاهده کنسول کامل تطبیق مالی ←
           </Link>
         </div>
+
         {recon.length === 0 ? (
-          <div className="mt-3"><EmptyState title="مورد بازی ثبت نشده" description="در حال حاضر مورد OPEN در reconciliation وجود ندارد." /></div>
+          <div className="py-6">
+            <EmptyState
+              title="مورد باز در تطبیق مالی وجود ندارد"
+              description="تمام تراکنش‌ها و اقلام حسابداری تسویه و تطبیق داده شده‌اند."
+            />
+          </div>
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
-            {recon.map((item) => (
-              <li key={item.id} className="rounded-[10px] border border-[var(--pol-light-border-subtle)] p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusChip tone="warning">{item.status ?? "OPEN"}</StatusChip>
-                  <span className="text-[12px] text-[var(--pol-light-text-muted)]" dir="ltr">{item.id}</span>
-                  <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                    تلاش {item.attempt_count ?? 0}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-3">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>شناسه پرونده</TableHead>
+                  <TableHead>وضعیت</TableHead>
+                  <TableHead>مبلغ انتظاری</TableHead>
+                  <TableHead>مبلغ مشاهده‌شده</TableHead>
+                  <TableHead>دفعات تلاش</TableHead>
+                  <TableHead>زمان ثبت</TableHead>
+                  <TableHead className="text-end">اقدام</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recon.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-mono text-[11px]" dir="ltr">
+                      {item.id}
+                    </TableCell>
+                    <TableCell>
+                      <StatusChip tone={reconStatusTone[item.status ?? ""] ?? "warning"}>
+                        {reconStatusLabel[item.status ?? ""] ?? item.status ?? "OPEN"}
+                      </StatusChip>
+                    </TableCell>
+                    <TableCell className="font-medium tabular-nums">
+                      {item.expected_amount_toman != null ? formatToman(item.expected_amount_toman) : "—"}
+                    </TableCell>
+                    <TableCell className="font-medium tabular-nums">
+                      {item.observed_amount_toman != null ? formatToman(item.observed_amount_toman) : "—"}
+                    </TableCell>
+                    <TableCell className="tabular-nums">
+                      {Number(item.attempt_count ?? 0).toLocaleString("fa-IR")}
+                    </TableCell>
+                    <TableCell className="text-[12px] text-[var(--pol-light-text-muted)]">
+                      {formatDateTime(item.opened_at)}
+                    </TableCell>
+                    <TableCell className="text-end">
+                      <Link
+                        href={`/ops/reconciliation`}
+                        className="inline-flex h-7 items-center rounded-md border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-2.5 text-[11px] font-medium text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
+                      >
+                        بررسی
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </section>
     </div>

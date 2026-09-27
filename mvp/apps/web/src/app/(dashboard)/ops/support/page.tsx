@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Field,
@@ -13,13 +14,9 @@ import {
 import { getApi } from "@/lib/auth/api";
 import {
   ageLabel,
-  ageTone,
-  cardCls,
   formatDateTime,
-  idOf,
   inputCls,
   itemsOf,
-  str,
   supportPriorityLabel,
   supportPriorityTone,
   supportStatusLabel,
@@ -140,9 +137,10 @@ export default function OpsSupportPage() {
     if (!query.trim()) return true;
     const q = query.trim().toLowerCase();
     return (
-      str(c.subject, "").toLowerCase().includes(q) ||
-      str(c.case_number, "").toLowerCase().includes(q) ||
-      str(c.id, "").toLowerCase().includes(q)
+      (c.subject ?? "").toLowerCase().includes(q) ||
+      (c.case_number ?? "").toLowerCase().includes(q) ||
+      String(c.id).toLowerCase().includes(q) ||
+      (c.related_order_id ?? "").toLowerCase().includes(q)
     );
   });
 
@@ -164,20 +162,15 @@ export default function OpsSupportPage() {
     }
   }
 
-  async function transition() {
+  async function changeStatus() {
     if (!selectedId || !transitionTo) return;
     setTransitioning(true);
     setTransitionError(null);
     try {
-      const body: Record<string, string> = { target_status: transitionTo };
+      const body: Record<string, string> = { status: transitionTo };
       if (transitionNote.trim()) body.resolution_note = transitionNote.trim();
-      const updated = await getApi().patch<CaseDetail>(
-        `/api/v1/support/cases/${selectedId}`,
-        body,
-      );
-      setDetail(updated);
-      setTransitionTo("");
-      setTransitionNote("");
+      await getApi().patch(`/api/v1/support/cases/${selectedId}/status`, body);
+      await loadDetail(selectedId);
       await loadList();
     } catch (err) {
       setTransitionError(err instanceof Error ? err.message : "تغییر وضعیت ناموفق بود");
@@ -203,9 +196,14 @@ export default function OpsSupportPage() {
         body.related_order_id = createForm.related_order_id.trim();
       const created = await getApi().post<CaseRow>("/api/v1/support/cases", body);
       setCreateOpen(false);
-      setCreateForm({ subject: "", case_type: "GENERAL", priority: "NORMAL", related_order_id: "" });
+      setCreateForm({
+        subject: "",
+        case_type: "GENERAL",
+        priority: "NORMAL",
+        related_order_id: "",
+      });
       setCases((prev) => [created, ...prev]);
-      setSelectedId(idOf(created));
+      setSelectedId(String(created.id));
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "ایجاد پرونده ناموفق بود");
     } finally {
@@ -215,10 +213,15 @@ export default function OpsSupportPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری پشتیبانی">
-        <Skeleton className="h-8 w-48" />
-        <div className={cardCls}>
-          <Skeleton lines={5} />
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری میز پشتیبانی">
+        <Skeleton className="h-9 w-48" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className="p-5">
+            <Skeleton lines={6} />
+          </Card>
+          <Card className="p-5">
+            <Skeleton lines={6} />
+          </Card>
         </div>
       </div>
     );
@@ -234,73 +237,66 @@ export default function OpsSupportPage() {
     );
   }
 
-  const currentStatus = str(detail?.status, "");
-  const nextStatuses = supportTransitions[currentStatus] ?? [];
+  const allowedTransitions = detail?.status ? supportTransitions[detail.status] ?? [] : [];
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          میز پشتیبانی
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">O-05</span>
-        <Button
-          size="sm"
-          className="ms-auto"
-          onClick={() => setCreateOpen((v) => !v)}
-          aria-expanded={createOpen}
-        >
-          {createOpen ? "بستن فرم" : "پرونده جدید"}
-        </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--pol-light-border-subtle)] pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[20px] md:text-[24px] font-bold text-[var(--pol-light-text-primary)]">
+              میز عملیات پشتیبانی
+            </h1>
+            <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-bold text-[var(--pol-light-text-secondary)]">
+              O-03 · Triage Desk
+            </span>
+          </div>
+          <p className="mt-1 text-[12px] text-[var(--pol-light-text-secondary)]">
+            رسیدگی به تیکت‌های کاربران، تغییر وضعیت پرونده‌ها و ارسال پاسخ‌های رسمی
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => setCreateOpen((v) => !v)}
+            aria-expanded={createOpen}
+          >
+            {createOpen ? "بستن فرم" : "+ پرونده جدید"}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => void loadList()}>
+            به‌روزرسانی
+          </Button>
+        </div>
       </header>
 
-      {createOpen ? (
-        <section aria-label="ایجاد پرونده" className={cardCls}>
-          <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-            پرونده جدید
+      {/* New Case Creation Form */}
+      {createOpen && (
+        <Card className="p-5 border-[var(--pol-light-brand-primary)] bg-[var(--pol-light-surface-subtle)]">
+          <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+            ثبت پرونده پشتیبانی جدید
           </h2>
-          {createError ? (
+          {createError && (
             <div className="mt-3">
               <ErrorState title="ایجاد پرونده ناموفق بود" description={createError} />
             </div>
-          ) : null}
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          )}
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field
-              label="موضوع"
+              label="موضوع پرونده"
               value={createForm.subject}
               onChange={(e) => setCreateForm((f) => ({ ...f, subject: e.target.value }))}
+              placeholder="شرح کوتاه مسئله..."
               required
               maxLength={200}
             />
             <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="support-type"
-                className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
-              >
-                نوع
-              </label>
-              <select
-                id="support-type"
-                className={inputCls}
-                value={createForm.case_type}
-                onChange={(e) => setCreateForm((f) => ({ ...f, case_type: e.target.value }))}
-              >
-                {TYPE_OPTIONS.filter(Boolean).map((t) => (
-                  <option key={t} value={t}>
-                    {supportTypeLabel[t] ?? t}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="support-priority"
-                className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
-              >
+              <label htmlFor="ops-priority" className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
                 اولویت
               </label>
               <select
-                id="support-priority"
+                id="ops-priority"
                 className={inputCls}
                 value={createForm.priority}
                 onChange={(e) => setCreateForm((f) => ({ ...f, priority: e.target.value }))}
@@ -308,6 +304,23 @@ export default function OpsSupportPage() {
                 {PRIORITY_OPTIONS.filter(Boolean).map((p) => (
                   <option key={p} value={p}>
                     {supportPriorityLabel[p] ?? p}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="ops-type" className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+                دسته‌بندی موضوعی
+              </label>
+              <select
+                id="ops-type"
+                className={inputCls}
+                value={createForm.case_type}
+                onChange={(e) => setCreateForm((f) => ({ ...f, case_type: e.target.value }))}
+              >
+                {TYPE_OPTIONS.filter(Boolean).map((t) => (
+                  <option key={t} value={t}>
+                    {supportTypeLabel[t] ?? t}
                   </option>
                 ))}
               </select>
@@ -322,55 +335,67 @@ export default function OpsSupportPage() {
               dir="ltr"
             />
           </div>
-          <div className="mt-3">
-            <Button loading={creating} onClick={() => void createCase()}>
+
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setCreateOpen(false)}>
+              انصراف
+            </Button>
+            <Button size="sm" loading={creating} onClick={() => void createCase()}>
               ایجاد پرونده
             </Button>
           </div>
-        </section>
-      ) : null}
+        </Card>
+      )}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+      {/* Split Triage View */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
+        {/* Cases List Pane */}
         <section aria-label="فهرست پرونده‌ها" className="space-y-3">
-          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+          <div className="grid gap-2 sm:grid-cols-2">
             <SearchField
-              label="جستجوی پرونده"
-              placeholder="جستجوی موضوع یا شماره…"
+              label="جستجو"
+              placeholder="موضوع، شماره یا سفارش..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <select
-              aria-label="فیلتر نوع"
-              className={inputCls}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="">همه انواع</option>
-              {TYPE_OPTIONS.filter(Boolean).map((t) => (
-                <option key={t} value={t}>
-                  {supportTypeLabel[t] ?? t}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="type-filter" className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+                دسته‌بندی موضوعی
+              </label>
+              <select
+                id="type-filter"
+                className={inputCls}
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+              >
+                <option value="">همه دسته‌بندی‌ها</option>
+                {TYPE_OPTIONS.filter(Boolean).map((t) => (
+                  <option key={t} value={t}>
+                    {supportTypeLabel[t] ?? t}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {filtered.length === 0 ? (
             <EmptyState
               title="پرونده‌ای یافت نشد"
-              description="فیلترها را تغییر دهید یا پرونده جدید بسازید."
+              description="فیلترها را تغییر دهید یا پرونده جدید ایجاد نمایید."
             />
           ) : (
-            <ul role="list" className="space-y-2">
-              {filtered.map((c) => (
-                <li key={str(c.id)}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(str(c.id))}
+            <div className="space-y-2">
+              {filtered.map((c) => {
+                const isSelected = selectedId === String(c.id);
+                return (
+                  <Card
+                    key={String(c.id)}
+                    onClick={() => setSelectedId(String(c.id))}
                     className={[
-                      "w-full rounded-[12px] border p-3 text-start transition-colors duration-[160ms]",
-                      selectedId === str(c.id)
-                        ? "border-[var(--pol-light-brand-primary)] bg-[var(--pol-light-surface-subtle)]"
-                        : "border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] hover:bg-[var(--pol-light-surface-subtle)]",
+                      "cursor-pointer p-3.5 transition-all duration-150 text-start",
+                      isSelected
+                        ? "border-[var(--pol-light-brand-primary)] bg-[var(--pol-light-surface-subtle)] ring-1 ring-[var(--pol-light-brand-primary)]"
+                        : "hover:border-[var(--pol-light-border-strong)] hover:bg-[var(--pol-light-surface-subtle)]",
                     ].join(" ")}
                   >
                     <div className="flex flex-wrap items-center gap-2">
@@ -384,29 +409,42 @@ export default function OpsSupportPage() {
                         {ageLabel(c.created_at)}
                       </span>
                     </div>
-                    <p className="mt-1.5 text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
+
+                    <p className="mt-2 text-[14px] font-semibold text-[var(--pol-light-text-primary)] line-clamp-1">
                       {c.subject ?? "بدون موضوع"}
                     </p>
-                    <p className="text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
-                      {c.case_number ?? str(c.id)}
-                    </p>
-                  </button>
-                </li>
-              ))}
-            </ul>
+
+                    <div className="mt-1 flex items-center justify-between text-[11px] text-[var(--pol-light-text-muted)]">
+                      <span dir="ltr" className="font-mono">
+                        {c.case_number ?? String(c.id).slice(0, 8)}
+                      </span>
+                      {c.case_type && (
+                        <span>{supportTypeLabel[c.case_type] ?? c.case_type}</span>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </section>
 
-        <section aria-label="جزئیات پرونده" className={cardCls}>
+        {/* Selected Case Triage & Action Pane */}
+        <section aria-label="رسیدگی به پرونده">
           {!selectedId ? (
-            <EmptyState
-              title="پرونده‌ای انتخاب نشده"
-              description="از فهرست کنار، یک پرونده انتخاب کنید تا جزئیات آن نمایش داده شود."
-            />
+            <Card className="flex flex-col items-center justify-center p-12 text-center">
+              <span className="text-[32px] mb-2">📋</span>
+              <h3 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+                پرونده‌ای انتخاب نشده است
+              </h3>
+              <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+                یک تیکت را برای مشاهده جزئیات، تغییر وضعیت و پاسخگویی انتخاب فرمایید.
+              </p>
+            </Card>
           ) : detailState === "loading" ? (
-            <div aria-busy="true" aria-label="در حال بارگذاری جزئیات">
-              <Skeleton lines={5} />
-            </div>
+            <Card className="p-5">
+              <Skeleton lines={6} />
+            </Card>
           ) : detailState === "error" ? (
             <ErrorState
               title="دریافت جزئیات پرونده ناموفق بود"
@@ -414,181 +452,134 @@ export default function OpsSupportPage() {
               onRetry={() => selectedId && void loadDetail(selectedId)}
             />
           ) : detail ? (
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusChip tone={supportStatusTone[detail.status ?? ""] ?? "neutral"}>
-                  {supportStatusLabel[detail.status ?? ""] ?? detail.status ?? "—"}
-                </StatusChip>
-                <StatusChip tone={supportPriorityTone[detail.priority ?? ""] ?? "neutral"}>
-                  {supportPriorityLabel[detail.priority ?? ""] ?? detail.priority ?? "—"}
-                </StatusChip>
-                <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                  {supportTypeLabel[str(detail.case_type)] ?? detail.case_type ?? "—"}
+            <Card className="p-5 space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusChip tone={supportStatusTone[detail.status ?? ""] ?? "neutral"}>
+                    {supportStatusLabel[detail.status ?? ""] ?? detail.status ?? "—"}
+                  </StatusChip>
+                  <StatusChip tone={supportPriorityTone[detail.priority ?? ""] ?? "neutral"}>
+                    {supportPriorityLabel[detail.priority ?? ""] ?? detail.priority ?? "—"}
+                  </StatusChip>
+                </div>
+                <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+                  به‌روزرسانی: {formatDateTime(detail.updated_at)}
                 </span>
-                <StatusChip tone={ageTone(detail.updated_at, 48, 168)}>
-                  {ageLabel(detail.updated_at)}
-                </StatusChip>
               </div>
 
               <div>
-                <h2 className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
+                <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
                   {detail.subject ?? "بدون موضوع"}
                 </h2>
-                <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
-                  {detail.case_number ?? str(detail.id)}
-                </p>
-                <dl className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                      ایجاد
-                    </dt>
-                    <dd className="text-[13px] text-[var(--pol-light-text-primary)]">
-                      {formatDateTime(detail.created_at)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                      سفارش مرتبط
-                    </dt>
-                    <dd className="text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
-                      {detail.related_order_id ?? "—"}
-                    </dd>
-                  </div>
-                  {detail.resolution_code ? (
-                    <div>
-                      <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                        کد حل
-                      </dt>
-                      <dd className="text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
-                        {detail.resolution_code}
-                      </dd>
-                    </div>
-                  ) : null}
-                  {detail.resolution_note ? (
-                    <div className="sm:col-span-2">
-                      <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                        یادداشت حل
-                      </dt>
-                      <dd className="text-[13px] text-[var(--pol-light-text-primary)]">
-                        {detail.resolution_note}
-                      </dd>
-                    </div>
-                  ) : null}
-                </dl>
+                <div className="mt-2 flex flex-wrap gap-4 text-[12px] text-[var(--pol-light-text-secondary)]">
+                  <span dir="ltr" className="font-mono">
+                    شماره پرونده: {detail.case_number ?? detail.id}
+                  </span>
+                  {detail.related_order_id && (
+                    <span dir="ltr" className="font-mono">
+                      سفارش: {detail.related_order_id}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="border-t border-[var(--pol-light-border-subtle)] pt-3">
-                <h3 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-                  مکالمه
+              {/* Status Transition Control */}
+              {allowedTransitions.length > 0 && (
+                <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-4 space-y-3">
+                  <h3 className="text-[13px] font-bold text-[var(--pol-light-text-primary)]">
+                    تغییر وضعیت پرونده
+                  </h3>
+                  {transitionError && (
+                    <ErrorState title="تغییر وضعیت ناموفق بود" description={transitionError} />
+                  )}
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,2fr)_auto]">
+                    <select
+                      className={inputCls}
+                      value={transitionTo}
+                      onChange={(e) => setTransitionTo(e.target.value)}
+                    >
+                      <option value="">انتخاب وضعیت جدید...</option>
+                      {allowedTransitions.map((t) => (
+                        <option key={t} value={t}>
+                          {supportStatusLabel[t] ?? t}
+                        </option>
+                      ))}
+                    </select>
+                    <Field
+                      label="یادداشت رفع یا تغییر (اختیاری)"
+                      value={transitionNote}
+                      onChange={(e) => setTransitionNote(e.target.value)}
+                      placeholder="علت یا اقدام انجام‌شده..."
+                    />
+                    <div className="flex items-end">
+                      <Button
+                        size="sm"
+                        disabled={!transitionTo || transitioning}
+                        loading={transitioning}
+                        onClick={() => void changeStatus()}
+                      >
+                        ثبت تغییر وضعیت
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Session Messages Discussion */}
+              <div className="border-t border-[var(--pol-light-border-subtle)] pt-4 space-y-4">
+                <h3 className="text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+                  پیام‌های نشست عملیاتی
                 </h3>
-                <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
-                  GET messages در بک‌اند وجود ندارد — فقط پیام‌های این نشست نمایش داده می‌شود.
-                </p>
+
                 {sessionMessages.length === 0 ? (
-                  <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]">
-                    پیامی در این نشست ثبت نشده است.
+                  <p className="text-[12px] text-[var(--pol-light-text-muted)]">
+                    پیامی در این نشست ثبت نشده است. پاسخ جدید به کاربر را وارد نمایید.
                   </p>
                 ) : (
-                  <ul role="list" className="mt-2 space-y-2">
+                  <div className="space-y-2">
                     {sessionMessages.map((m) => (
-                      <li
-                        key={str(m.id)}
-                        className="rounded-[8px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-3"
+                      <div
+                        key={String(m.id)}
+                        className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-3 text-[13px]"
                       >
-                        <p className="text-[13px] text-[var(--pol-light-text-primary)]">
-                          {m.message_text}
-                        </p>
-                        <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
+                        <p className="text-[var(--pol-light-text-primary)]">{m.message_text}</p>
+                        <span className="mt-1 block text-end text-[10px] text-[var(--pol-light-text-muted)]">
                           {formatDateTime(m.created_at)}
-                        </p>
-                      </li>
+                        </span>
+                      </div>
                     ))}
-                  </ul>
-                )}
-                {messageError ? (
-                  <div className="mt-2">
-                    <ErrorState title="ارسال پیام ناموفق بود" description={messageError} />
                   </div>
-                ) : null}
-                <div className="mt-2 flex flex-col gap-2">
+                )}
+
+                {messageError && (
+                  <ErrorState title="ارسال پیام ناموفق بود" description={messageError} />
+                )}
+
+                <div className="space-y-2">
                   <textarea
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     maxLength={5000}
                     rows={3}
-                    placeholder="متن پیام (حداکثر ۵۰۰۰ نویسه)…"
-                    className={[inputCls, "h-auto min-h-[72px] py-2 resize-y"].join(" ")}
+                    placeholder="متن پیام رسمی پشتیبانی به کاربر..."
+                    className="min-h-[72px] w-full resize-y rounded-xl border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] p-3 text-[14px] text-[var(--pol-light-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-[var(--pol-light-text-muted)]">
+                      {messageText.length.toLocaleString("fa-IR")}/5000
+                    </span>
                     <Button
                       size="sm"
                       loading={sending}
                       disabled={!messageText.trim()}
                       onClick={() => void sendMessage()}
                     >
-                      ارسال پیام
+                      ارسال پاسخ رسمی
                     </Button>
-                    <span className="text-[11px] text-[var(--pol-light-text-muted)]">
-                      {messageText.length.toLocaleString("fa-IR")}/5000
-                    </span>
                   </div>
                 </div>
               </div>
-
-              <div className="border-t border-[var(--pol-light-border-subtle)] pt-3">
-                <h3 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-                  تغییر وضعیت
-                </h3>
-                {nextStatuses.length === 0 ? (
-                  <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]">
-                    وضعیت بسته — انتقال مجازی وجود ندارد (سرور مرجع است).
-                  </p>
-                ) : (
-                  <div className="mt-2 space-y-2">
-                    {transitionError ? (
-                      <ErrorState
-                        title="تغییر وضعیت ناموفق بود"
-                        description={transitionError}
-                      />
-                    ) : null}
-                    <div className="flex flex-wrap gap-2">
-                      {nextStatuses.map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => setTransitionTo(s)}
-                          className={[
-                            "rounded-[8px] border px-3 py-1.5 text-[12px] transition-colors duration-[160ms]",
-                            transitionTo === s
-                              ? "border-[var(--pol-light-brand-primary)] bg-[var(--pol-light-surface-subtle)] font-semibold"
-                              : "border-[var(--pol-light-border-strong)] text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)]",
-                          ].join(" ")}
-                        >
-                          {supportStatusLabel[s] ?? s}
-                        </button>
-                      ))}
-                    </div>
-                    <textarea
-                      value={transitionNote}
-                      onChange={(e) => setTransitionNote(e.target.value)}
-                      rows={2}
-                      maxLength={2000}
-                      placeholder="یادداشت حل (اختیاری)…"
-                      className={[inputCls, "h-auto min-h-[56px] py-2 resize-y"].join(" ")}
-                    />
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      loading={transitioning}
-                      disabled={!transitionTo}
-                      onClick={() => void transition()}
-                    >
-                      اعمال وضعیت
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
+            </Card>
           ) : null}
         </section>
       </div>
