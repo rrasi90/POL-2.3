@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, EmptyState, ErrorState, Skeleton, StatusChip } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
-import { cardCls, formatDateTime, formatToman, itemsOf, type LoadState } from "../../_shared";
+import { cardCls, formatDateTime, formatToman, itemsOf, type LoadState } from "../_shared";
 
 interface ReturnRow {
   return_id:string; order_id:string; order_number?:string; status?:string;

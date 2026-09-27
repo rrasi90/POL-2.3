@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, EmptyState, ErrorState, Field, Skeleton, StatusChip } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
-import { cardCls, itemsOf, type LoadState } from "../../_shared";
+import { cardCls, itemsOf, type LoadState } from "../../ops/_shared";
 
 interface Org {
   id: string; name: string; org_type: string; status: string;

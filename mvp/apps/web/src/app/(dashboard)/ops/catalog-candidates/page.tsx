@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, ErrorState, Field, Skeleton, StatusChip } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
-import { cardCls, itemsOf, type LoadState } from "../../_shared";
+import { cardCls, itemsOf, type LoadState } from "../_shared";
 
 type ReviewAction = "APPROVE_CANONICAL" | "MERGE_EXISTING" | "REJECT";
 

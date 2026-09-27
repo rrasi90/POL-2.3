@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ErrorState, Skeleton } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
-import { cardCls, type LoadState } from "../../_shared";
+import { cardCls, type LoadState } from "../_shared";
 
 interface PermissionData { roles?: Record<string,string[]>; source?: string; }
 

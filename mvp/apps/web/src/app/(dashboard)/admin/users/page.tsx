@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, EmptyState, ErrorState, Field, Skeleton, StatusChip } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
-import { cardCls, itemsOf, type LoadState } from "../../_shared";
+import { cardCls, itemsOf, type LoadState } from "../../ops/_shared";
 
 interface UserRow {
   id: string; phone_number?: string; full_name?: string; role?: string;
