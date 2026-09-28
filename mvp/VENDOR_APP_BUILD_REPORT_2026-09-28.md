@@ -4,7 +4,7 @@
 **Repository:** `rrasi90/POL-2.3`  
 **Base:** `main` @ `f90fe3117c1881545e32181381ec50a1a6960f9e`  
 **Working branch:** `feat/vendor-app-production-20260928-v2`  
-**Current HEAD:** `e4f98cb71c09a71b450762207e6ca0b7ff32076a`  
+**Current HEAD:** `44f4d07e69d4741d0c792dab394434d24e36922e`  
 **Pull Request:** #20
 
 ## 0. Gate position
@@ -159,7 +159,7 @@ The native builder now invokes this gate immediately before Expo prebuild.
 
 - Main branch: untouched.
 - PR #20: open, unmerged.
-- Current branch: ahead of main by 61 commits, behind by 0.
+- Current branch: ahead of main by 68 commits, behind by 0.
 - Current HEAD: `7411dba37bda71be544f825dd774f82fc30b9f05`.
 
 ## 8. CI status
@@ -174,11 +174,11 @@ Therefore:
 
 ## 9. Host / staging connectivity status
 
-The stored VPS execution record confirms the existing deployment host and that the deployment stack has previously answered `/healthz`, `/readyz` and API requests successfully.
+The stored VPS execution record confirms the existing deployment host and that the deployment stack has previously answered `/healthz`, `/readyz` and API requests successfully. The observed public endpoint in that record is `http://85.198.50.29`; no HTTPS/TLS endpoint is evidenced there.
 
 The current assistant runtime does not have an SSH/remote-terminal channel into that host. Direct connection attempts from this environment did not establish a live session. A remote desktop/terminal integration is available to connect, but it is not currently connected.
 
-Therefore no current live-host claim is made for this Vendor branch.
+Therefore no current live-host claim is made for this Vendor branch. A new `qa:live` preflight was added so the exact API endpoint can be checked without embedding credentials; the release APK builder additionally requires an HTTPS API endpoint.
 
 ## 10. Final status
 
@@ -191,7 +191,7 @@ Therefore no current live-host claim is made for this Vendor branch.
 | Owner-only acceptance authorization | PASS |
 | Support surface | PASS |
 | Canonical API preservation | PASS |
-| Deterministic pre-APK gate | PASS (wired; source checks inspected) |
+| Deterministic pre-APK gate | PASS (wired; source checks inspected) |\n| Live API preflight harness | PASS (added; execution pending live endpoint access) |
 | Fresh current-head CI | BLOCKED / NOT CERTIFIED |
 | Live VPS verification of this branch | BLOCKED / NOT CONNECTED |
 | Native Expo prebuild | **NOT RUN** |
@@ -202,6 +202,6 @@ Therefore no current live-host claim is made for this Vendor branch.
 
 The Vendor application is now at:
 
-**SOURCE / CONFIG READY → PRE-APK GATE → [next: native APK build]**
+**SOURCE / CONFIG READY → LIVE API/TLS GATE → PRE-APK GATE → [next: native APK build]**
 
 No APK has been generated in this stage.
