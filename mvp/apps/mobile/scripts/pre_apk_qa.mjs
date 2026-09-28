@@ -122,7 +122,7 @@ assert(mockQa.includes("Vendor Staff cannot accept orders") && mockQa.includes("
 assert(dataMode === "live" || dataMode === "mock", "data mode is constrained to live/mock");
 
 const regression = readFileSync(resolve(appDir, "scripts/mobile_regression_qa.mjs"), "utf8");
-assert(regression.includes('tab === "support"'), "regression QA covers vendor support tab");
+assert(regression.includes("Support creation/message validation remains enforced"), "regression QA covers support validation");
 assert(regression.includes("new_physical_quantity"), "regression QA covers inventory mutation field");
 
 console.log("[PRE-APK] Vendor app is at the final source/config gate immediately before APK build.");
