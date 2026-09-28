@@ -149,8 +149,8 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 
 - Historical mobile CI cycles remain evidence, but the current remediation branch must not inherit their green certification automatically because fresh GitHub runs currently fail before useful step execution.
 - D-028 barcode matching is implemented at the canonical API boundary, with legacy and extended request compatibility; camera/device transport remains a client/runtime concern.
-- Mobile Night theme verification and live checkout/idempotency are now recorded as LOCAL-01…04 PASS in the execution tracker; deployment/runtime evidence remains separate.
-- Live basket → allocation → checkout e2e remains pending in the local environment because the current catalog seed/search path and orderability criteria still need live verification. This is an execution task, not a reason to stop other work.
+- Mobile Night theme verification and live checkout/idempotency are recorded in the execution tracker; the 2026-09-28 self-hosted VPS runtime/deep-verification evidence is recorded separately in `deploy/VPS_RUNTIME_VERIFICATION_2026-09-28.md`.
+- Live basket → allocation → checkout e2e remains pending only for the local environment because the current catalog seed/search path and orderability criteria still need local live verification. The same business chain was subsequently verified in the isolated self-hosted VPS deep-verification run and is recorded separately; this is an execution-scope distinction, not a claim that the business flow is globally unverified.
 
 
 ## G-023 — Field assisted catalog empty-query request (RESOLVED)
