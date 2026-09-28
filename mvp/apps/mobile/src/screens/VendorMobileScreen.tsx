@@ -337,6 +337,10 @@ export function VendorMobileScreen(props: {
   }, [tab, financeTab, inventoryTab, moreTab, loadInvoices, loadSettlements, loadCustomers, loadReferrals, loadStaff, loadDaily, loadOrders]);
 
   async function orderAction(orderId: string, actionName: "accept" | "preparing" | "ready"): Promise<void> {
+    if (actionName === "accept" && props.role !== "VENDOR_OWNER") {
+      setError("پذیرش سفارش فقط برای مالک بنکداری مجاز است.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -560,7 +564,7 @@ export function VendorMobileScreen(props: {
         {pendingOrders.length === 0 ? (
           <Empty title="صف سفارش خالی است" description="در حال حاضر سفارشی برای بررسی فوری وجود ندارد." />
         ) : (
-          pendingOrders.slice(0, 3).map((order) => <OrderCard key={order.id} order={order} onOpen={props.onOpenOrder} onAction={orderAction} loading={loading} />)
+          pendingOrders.slice(0, 3).map((order) => <OrderCard key={order.id} order={order} role={props.role} onOpen={props.onOpenOrder} onAction={orderAction} loading={loading} />)
         )}
 
         <SectionHeader title="تازه‌ترین موجودی‌ها" action="مشاهده انبار" onAction={() => setTab("inventory")} />
@@ -850,6 +854,7 @@ function StatusCard(props: { status: string | null | undefined }): React.ReactNo
 
 function OrderCard(props: {
   order: Order;
+  role: "VENDOR_OWNER" | "VENDOR_STAFF";
   onOpen: (orderId: string) => void;
   onAction: (orderId: string, action: "accept" | "preparing" | "ready") => Promise<void>;
   loading: boolean;
@@ -870,8 +875,10 @@ function OrderCard(props: {
       <View style={styles.actionRow}>
         {["SUBMITTED", "CREATED"].includes(status) ? (
           <>
-            <Btn label="پذیرش" onPress={() => void props.onAction(props.order.id, "accept")} disabled={props.loading} />
-            <Btn label="جزئیات / رد" tone="ghost" onPress={() => props.onOpen(props.order.id)} disabled={props.loading} />
+            {props.role === "VENDOR_OWNER" ? (
+              <Btn label="پذیرش" onPress={() => void props.onAction(props.order.id, "accept")} disabled={props.loading} />
+            ) : null}
+            <Btn label={props.role === "VENDOR_OWNER" ? "جزئیات / رد" : "جزئیات"} tone="ghost" onPress={() => props.onOpen(props.order.id)} disabled={props.loading} />
           </>
         ) : null}
         {["ACCEPTED", "PARTIALLY_ACCEPTED"].includes(status) ? (
