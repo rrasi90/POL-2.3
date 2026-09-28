@@ -7,7 +7,7 @@ COPY mvp/package.json mvp/package-lock.json ./
 COPY mvp/apps ./apps
 COPY mvp/packages ./packages
 
-RUN npm ci
+RUN npm ci --workspace=@pol/web --include-workspace-root
 
 ARG NEXT_PUBLIC_API_BASE_URL=
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
@@ -27,7 +27,7 @@ WORKDIR /app/mvp
 COPY --from=build /app/mvp/package.json ./package.json
 COPY --from=build /app/mvp/package-lock.json ./package-lock.json
 COPY --from=build /app/mvp/node_modules ./node_modules
-COPY --from=build /app/mvp/apps ./apps
+COPY --from=build /app/mvp/apps/web ./apps/web
 COPY --from=build /app/mvp/packages ./packages
 
 EXPOSE 3001
