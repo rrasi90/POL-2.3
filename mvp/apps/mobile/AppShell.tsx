@@ -98,7 +98,7 @@ function AppContent<R extends Role>(props: AppShellProps<R>): React.ReactNode {
       ) : route.name === "order-detail" ? (
         <OrderDetailMobileScreen mode={props.orderMode} role={route.role} orderId={route.orderId} onBack={() => setRoute({ name: "workspace", role: route.role })} />
       ) : currentRole ? (
-        {props.workspace({ role: currentRole, onOpenOrder: (orderId) => setRoute({ name: "order-detail", orderId, role: currentRole }) })}
+        props.workspace({ role: currentRole, onOpenOrder: (orderId) => setRoute({ name: "order-detail", orderId, role: currentRole }) })
       ) : (
         <LoginScreen onAuthed={onAuthed} allowedRoles={props.allowedRoles} appName={props.appName} />
       )}
