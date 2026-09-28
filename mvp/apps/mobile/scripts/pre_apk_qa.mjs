@@ -33,6 +33,7 @@ assert(config.slug === "pol-vendor", "vendor Expo slug is canonical");
 assert(config.android?.package === "ir.pol.vendor", "vendor Android package is canonical");
 assert(config.icon === "./assets/vendor-logo.png", "vendor launcher icon uses canonical vendor brand asset");
 assert(config.android?.adaptiveIcon?.foregroundImage === "./assets/vendor-logo.png", "vendor adaptive foreground uses canonical vendor brand asset");
+assert(config.android?.splash?.image === "./assets/vendor-logo.png", "vendor Android splash uses canonical vendor brand asset");
 
 const vendorLogo = resolve(appDir, "assets/vendor-logo.png");
 const logoInfo = pngDimensions(vendorLogo);
