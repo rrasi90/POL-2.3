@@ -8,6 +8,10 @@ module.exports = {
   slug: isVendor ? "pol-vendor" : "pol-market",
   version: "1.0.0",
   extra: { ...(base.extra || {}), appVariant: isVendor ? "vendor" : "retailer" },
+  plugins: [
+    ...(base.plugins || []),
+    "./plugins/withAndroidSizeOptimization.js",
+  ],
   android: {
     ...(base.android || {}),
     package: isVendor ? "ir.pol.vendor" : "ir.pol.market",
