@@ -7,11 +7,12 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 |---|---|---|---|---|
 | Shared/Auth | SH-AUTH-01/02, SH-PROFILE-01, SH-NOTIF-01/02 | src/screens/LoginScreen.tsx + AccountMobileScreen.tsx | auth OTP, profile/context, notifications, notification preferences | IMPLEMENTED |
 | Retailer | R-02, R-03, R-06, R-07, R-08, R-10, R-11, R-12, R-16, R-17, R-18 | RetailerMobileScreen.tsx + OrderDetailMobileScreen.tsx + SupportMobileScreen.tsx | catalog/search, vendor search/storefront, basket/allocation/checkout, orders/detail/timeline, returns/disputes, support cases/messages, invoices | IMPLEMENTED |
-| Vendor | V-01, V-02, V-03, V-06, V-07, V-08, V-09, V-10, V-11, V-14, V-16, V-17 + shared support | VendorMobileScreen.tsx + OrderDetailMobileScreen.tsx + SupportMobileScreen.tsx | order queue/actions, partial acceptance, items/timeline, inventory, daily inventory, referrals, customers, owner-only finance, staff/delegated permissions, storefront preview, barcode lookup/match + candidate flow, support cases/messages | IMPLEMENTED / CAMERA_RUNTIME_GAP for V-16 |
+| Vendor | V-01, V-02, V-03, V-06, V-07, V-08, V-09, V-10, V-11, V-13, V-14, V-16, V-17 + shared support | VendorMobileScreen.tsx + OrderDetailMobileScreen.tsx + SupportMobileScreen.tsx | order queue/actions, partial acceptance, items/timeline, inventory, daily inventory, referrals, customers, owner-only finance with invoice/settlement detail, staff/delegated permissions, storefront preview, barcode lookup/match + candidate flow, continuous scan/publish, support cases/messages | IMPLEMENTED / CAMERA_RUNTIME_GAP for V-16 |
 | Ops | O-01, O-02, O-06, O-07, O-08, O-09, O-10, OP-13 | src/screens/OpsMobileScreen.tsx + SupportMobileScreen.tsx | exceptions/risk signals, orders, reconciliation, analytics, notifications, audit logs, catalog-candidate review | IMPLEMENTED (role-scoped; fresh QA pending) |
 | Field | F-01…F-05 | FieldTaskList/Detail/AssistedOrderScreen.tsx + OfflineBanner | field tasks, healthz | IMPLEMENTED |
 | Barcode | R-03B / V-16 | manual/mock adapter is implemented; native camera/continuous-scan remains device-gated | GET `/api/v1/catalog/barcode/lookup` + POST `/api/v1/products/match-barcode` + product-candidate workflow | IMPLEMENTED / CAMERA RUNTIME GAP |
 | Vendor Customers/Staff | V-09 / V-11 | VendorMobileScreen.tsx | customer search + staff list/invite/status/permission actions | IMPLEMENTED / pre-APK source gate |
+| Vendor Documents/Invoices | V-13 | VendorMobileScreen.tsx | invoice list + invoice detail; settlement read/detail | IMPLEMENTED / pre-APK source gate |
 | Retailer order detail / returns / support | R-09…R-13 | order detail, return/dispute submission and support are implemented; remaining notifications/profile are shared | routes available per API map | IMPLEMENTED foundation |
 
 ## Mobile-wide rules
@@ -27,7 +28,7 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 ## QA evidence
 
 - CI workflow: `.github/workflows/pol-mvp-mobile.yml`
-- Required checks currently wired: mobile typecheck + functional/regression QA + retailer/vendor Expo config validation + deterministic pre-APK release gate + Android export.
+- Required checks currently wired: mobile typecheck + functional/regression QA + executable Vendor mock QA + retailer/vendor Expo config validation + deterministic pre-APK release gate + Android export.
 - CI cycle 1 is evidenced by run `35884012647`. Functional/state-transition/parity QA cycle 2 is evidenced by run `35886815013` with **23/23 deterministic checks passing**; this remains contract/state coverage rather than device-level exploratory QA. Regression/cross-module QA cycle 3 is evidenced by run `35893284378` with **11/11 checks passing**, plus typecheck, Expo config validation and Android export. Visual Night verification remains a separate local gate.
 - Source implementation and QA evidence are tracked separately; do not promote a mobile surface to VERIFIED without current executable evidence.
 
