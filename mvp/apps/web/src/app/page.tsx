@@ -17,14 +17,14 @@ const flowSteps = [
   {
     number: "03",
     label: "سفارش",
-    title: "از checkout تا پیگیری",
-    body: "ثبت سفارش، پذیرش، fulfillment و وضعیت تحویل در یک زنجیره قابل‌ردگیری ادامه پیدا می‌کند.",
+    title: "از ثبت سفارش تا پیگیری",
+    body: "ثبت سفارش، پذیرش، آماده‌سازی و وضعیت تحویل در یک زنجیره قابل‌ردگیری ادامه پیدا می‌کند.",
   },
   {
     number: "04",
     label: "شفافیت",
     title: "تسویه و اختلاف، قابل مشاهده",
-    body: "رویدادهای مالی، شواهد و مغایرت‌ها در همان جریان عملیاتی ثبت و پیگیری می‌شوند.",
+    body: "رویدادهای مالی، شواهد و مغایرت‌ها در همان مسیر عملیاتی ثبت و پیگیری می‌شوند.",
   },
 ];
 
@@ -46,8 +46,8 @@ const roleCards = [
   },
   {
     eyebrow: "برای تأمین‌کنندگان",
-    title: "فروش و عملیات را یکجا ببین",
-    body: "کاتالوگ، قیمت، موجودی، پذیرش سفارش و fulfillment را از یک نقطه کنترل کن.",
+    title: "فروش و عملیات را یکجا مدیریت کن",
+    body: "کاتالوگ، قیمت، موجودی، پذیرش سفارش و آماده‌سازی را از یک نقطه کنترل کن.",
     href: "/vendor",
     cta: "ورود به پنل",
     logo: brandAssets.vendor,
@@ -56,7 +56,7 @@ const roleCards = [
   {
     eyebrow: "برای تیم عملیات",
     title: "استثناها را به‌موقع ببین",
-    body: "صف‌ها، پشتیبانی، reconciliation و audit را بر مبنای وضعیت واقعی عملیات دنبال کن.",
+    body: "صف‌ها، پشتیبانی، تطبیق مالی و سوابق عملیات را بر مبنای وضعیت واقعی دنبال کن.",
     href: "/ops",
     cta: "ورود به عملیات",
     logo: brandAssets.corporate,
@@ -165,19 +165,19 @@ export default function HomePage() {
 
               <div className="pol-node pol-node-a">
                 <span className="pol-node-dot" />
-                <span>Retailer</span>
+                <span>خرده‌فروش</span>
                 <strong>سبد</strong>
               </div>
 
               <div className="pol-node pol-node-b">
                 <span className="pol-node-dot" />
-                <span>Allocation</span>
+                <span>تخصیص سفارش</span>
                 <strong>تخصیص</strong>
               </div>
 
               <div className="pol-node pol-node-c">
                 <span className="pol-node-dot" />
-                <span>Vendor</span>
+                <span>بنکدار</span>
                 <strong>سفارش</strong>
               </div>
 
@@ -204,7 +204,7 @@ export default function HomePage() {
 
               <div className="pol-floating-card pol-floating-card-bottom">
                 <span>OrderGroup</span>
-                <strong>یک سفارش · چند جریان</strong>
+                <strong>یک سبد · چند تأمین‌کننده</strong>
               </div>
             </div>
           </div>
@@ -215,12 +215,12 @@ export default function HomePage() {
               <strong>چند تأمین‌کننده</strong>
             </div>
             <div>
-              <span>یک جریان</span>
+              <span>یک مسیر</span>
               <strong>از سفارش تا تحویل</strong>
             </div>
             <div>
               <span>یک سابقه</span>
-              <strong>برای عملیات و audit</strong>
+              <strong>برای پیگیری عملیات</strong>
             </div>
           </div>
         </section>
@@ -254,11 +254,10 @@ export default function HomePage() {
         <section className="pol-section">
           <div className="pol-container">
             <div className="pol-section-heading pol-section-heading-centered pol-reveal">
-              <span className="pol-overline">ONE NETWORK, THREE PERSPECTIVES</span>
+              <span className="pol-overline">ONE NETWORK, THREE ROLES</span>
               <h2>هر نقش، همان تراکنش؛ با نمای درست خودش.</h2>
               <p>
-                پُل برای سه طرف اصلی workflow، یک زبان مشترک می‌سازد و نمایش را
-                متناسب با مسئولیت هر نقش نگه می‌دارد.
+                پُل برای سه نقش اصلی، یک مسیر مشترک می‌سازد و نمایش را متناسب با مسئولیت هر نقش نگه می‌دارد.
               </p>
             </div>
 
@@ -324,9 +323,9 @@ export default function HomePage() {
               <div className="pol-command-header">
                 <div>
                   <span>LIVE FLOW</span>
-                  <strong>جریان سفارش</strong>
+                  <strong>جریان واقعی سفارش</strong>
                 </div>
-                <span className="pol-live-badge">ONLINE</span>
+                <span className="pol-live-badge">زنده</span>
               </div>
 
               <div className="pol-command-flow">
@@ -350,7 +349,7 @@ export default function HomePage() {
                   <span>۳</span>
                   <div>
                     <strong>ارسال و پیگیری</strong>
-                    <small>قابل رهگیری</small>
+                    <small>قابل پیگیری</small>
                   </div>
                 </div>
               </div>
