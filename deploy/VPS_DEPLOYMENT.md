@@ -96,3 +96,8 @@ The production migration service is `python -m scripts.migrate_prod`.
 ## Landing deployment gate — 2026-09-28
 
 The deployment operator now verifies the new public landing surface after startup, including headline markers and all three canonical `/brand/{asset}` endpoints. A deployment is not considered successful by the operator when any of these checks fail.
+
+
+## Landing runtime asset correction — 2026-09-28
+
+The initial standalone Web image layout exposed a Next.js runtime packaging defect: HTML was served while `/_next/static/*` assets returned 404. The Web Dockerfile now promotes `.next/static` into the Next standalone runtime root and runs the generated `apps/web/server.js` from that root. Canonical POL logos are also copied into the same runtime root for the `/brand/{asset}` route. A fresh VPS build and browser verification are required before declaring the updated landing live.
