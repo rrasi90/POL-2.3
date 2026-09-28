@@ -148,8 +148,7 @@ export default function HomePage() {
               </h1>
 
               <p className="pol-hero-lead">
-                پُل خرده‌فروش و تأمین‌کننده را در یک جریان B2B به هم وصل می‌کند؛ از کشف کالا
-                و موجودی تا سبد، سفارش، fulfillment و پیگیری.
+                پُل خرده‌فروش و تأمین‌کننده را در یک جریان B2B به هم وصل می‌کند؛ از کشف کالا و موجودی تا سبد، سفارش، آماده‌سازی و پیگیری.
               </p>
 
               <div className="pol-hero-actions">
@@ -216,7 +215,7 @@ export default function HomePage() {
               </div>
 
               <div className="pol-floating-card pol-floating-card-bottom">
-                <span>OrderGroup</span>
+                <span>گروه سفارش</span>
                 <strong>یک سبد · چند تأمین‌کننده</strong>
               </div>
             </div>
@@ -246,8 +245,7 @@ export default function HomePage() {
                 <h2>از کشف تا تسویه، مسیر را کوتاه‌تر کن.</h2>
               </div>
               <p>
-                معماری پُل برای حذف پراکندگی طراحی شده است: یک سبد، یک checkout،
-                چند سفارش قابل‌تفکیک و یک زنجیره قابل‌پیگیری.
+                معماری پُل برای حذف پراکندگی طراحی شده است: یک سبد، یک ثبت سفارش، چند سفارش قابل‌تفکیک و یک زنجیره قابل‌پیگیری.
               </p>
             </div>
 
@@ -312,7 +310,7 @@ export default function HomePage() {
               <span className="pol-overline">PRECISION COMMERCE</span>
               <h2>پُل فقط ویترین نیست؛ جریان سفارش را به هم وصل می‌کند.</h2>
               <p>
-                پُل فقط storefront نیست. موجودی، سفارش، پذیرش و تحویل در همان مسیر دیده می‌شوند تا هر نقش، تصویر
+                پُل فقط یک ویترین آنلاین نیست. موجودی، سفارش، پذیرش و تحویل در همان مسیر دیده می‌شوند تا هر نقش، تصویر
                 واضح‌تری از اتفاق بعدی داشته باشد.
               </p>
 
@@ -335,7 +333,7 @@ export default function HomePage() {
             <div className="pol-command-card pol-reveal pol-delay-2">
               <div className="pol-command-header">
                 <div>
-                  <span>LIVE FLOW</span>
+                  <span>LIVE ORDER FLOW</span>
                   <strong>جریان واقعی سفارش</strong>
                 </div>
                 <span className="pol-live-badge">زنده</span>
