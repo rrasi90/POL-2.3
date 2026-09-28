@@ -13,6 +13,7 @@ const PUBLIC_PREFIXES = [
   "/legal",
   "/dev",
   "/_next",
+  "/brand",
 ];
 
 const ROLE_PREFIX: Array<{ prefix: string; roles: string[] }> = [
