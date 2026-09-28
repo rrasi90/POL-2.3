@@ -111,15 +111,12 @@ export default function HomePage() {
               </div>
 
               <h1>
-                تجارت عمده را
-                <span className="pol-gradient-text"> یک مسیر دقیق‌تر</span>
-                کن.
+                خرید عمده،<span className="pol-gradient-text"> یک مسیر روشن.</span>
               </h1>
 
               <p className="pol-hero-lead">
-                پُل، لایه عملیاتی تجارت B2B است؛ جایی که خرده‌فروش، تأمین‌کننده
-                و عملیات، از کشف کالا تا سفارش، fulfillment و پیگیری را در یک
-                جریان منسجم می‌بینند.
+                پُل خرده‌فروش و تأمین‌کننده را در یک جریان B2B به هم وصل می‌کند؛ از کشف کالا
+                و موجودی تا سبد، سفارش، fulfillment و پیگیری.
               </p>
 
               <div className="pol-hero-actions">
@@ -134,7 +131,7 @@ export default function HomePage() {
 
               <div className="pol-hero-note">
                 <span className="pol-note-line" />
-                <span>ساخته‌شده برای workflow واقعی بنکداری B2B</span>
+                <span>برای فروشگاه‌ها، بنکداران و تیم عملیات</span>
               </div>
             </div>
 
@@ -262,11 +259,10 @@ export default function HomePage() {
           <div className="pol-container pol-precision-grid">
             <div className="pol-precision-copy pol-reveal">
               <span className="pol-overline">PRECISION COMMERCE</span>
-              <h2>اطلاعات خوب، وقتی ارزش دارد که وارد تصمیم روزانه شود.</h2>
+              <h2>پُل فقط ویترین نیست؛ جریان سفارش را به هم وصل می‌کند.</h2>
               <p>
-                پُل فقط storefront نیست. داده سفارش، موجودی، پذیرش، تحویل،
-                settlement و dispute را در همان جریان عملیاتی نگه می‌دارد تا تیم
-                بتواند براساس واقعیت تصمیم بگیرد.
+                پُل فقط storefront نیست. موجودی، سفارش، پذیرش و تحویل در همان مسیر دیده می‌شوند تا هر نقش، تصویر
+                واضح‌تری از اتفاق بعدی داشته باشد.
               </p>
 
               <div className="pol-metric-row">
@@ -276,11 +272,11 @@ export default function HomePage() {
                 </div>
                 <div>
                   <strong>02</strong>
-                  <span>تخصیص deterministic</span>
+                  <span>تخصیص چندفروشنده‌ای</span>
                 </div>
                 <div>
                   <strong>03</strong>
-                  <span>رهگیری تا fulfillment</span>
+                  <span>پیگیری تا تحویل</span>
                 </div>
               </div>
             </div>
@@ -289,7 +285,7 @@ export default function HomePage() {
               <div className="pol-command-header">
                 <div>
                   <span>LIVE FLOW</span>
-                  <strong>Order orchestration</strong>
+                  <strong>جریان سفارش</strong>
                 </div>
                 <span className="pol-live-badge">ONLINE</span>
               </div>
@@ -298,7 +294,7 @@ export default function HomePage() {
                 <div className="pol-command-step is-done">
                   <span>۱</span>
                   <div>
-                    <strong>Basket</strong>
+                    <strong>سبد خرید</strong>
                     <small>۳ قلم</small>
                   </div>
                 </div>
@@ -306,23 +302,23 @@ export default function HomePage() {
                 <div className="pol-command-step is-active">
                   <span>۲</span>
                   <div>
-                    <strong>AllocationPlan</strong>
-                    <small>۲ Vendor</small>
+                    <strong>تخصیص سفارش</strong>
+                    <small>۲ تأمین‌کننده</small>
                   </div>
                 </div>
                 <div className="pol-command-arrow">↓</div>
                 <div className="pol-command-step">
                   <span>۳</span>
                   <div>
-                    <strong>OrderGroup</strong>
-                    <small>قابل پیگیری</small>
+                    <strong>ارسال و پیگیری</strong>
+                    <small>قابل رهگیری</small>
                   </div>
                 </div>
               </div>
 
               <div className="pol-command-footer">
-                <span>Idempotency</span>
-                <strong>فعال</strong>
+                <span>سابقه سفارش</span>
+                <strong>ثبت‌شده</strong>
               </div>
             </div>
           </div>
