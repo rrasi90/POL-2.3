@@ -1,164 +1,375 @@
 import Link from "next/link";
-import { Button } from "@pol/ui";
+
+const flowSteps = [
+  {
+    number: "01",
+    label: "کشف",
+    title: "بازار را سریع‌تر پیدا کن",
+    body: "کالا و تأمین‌کننده را در یک فضای B2B منظم ببین؛ بدون اینکه سفارش‌گیری از چند منبع تبدیل به چند مسیر جداگانه شود.",
+  },
+  {
+    number: "02",
+    label: "سبد",
+    title: "یک سبد، چند تأمین‌کننده",
+    body: "سبد چندفروشنده‌ای اقلام را جمع می‌کند و موتور تخصیص، سفارش‌ها را بر اساس ظرفیت و قواعد هر تأمین‌کننده تفکیک می‌کند.",
+  },
+  {
+    number: "03",
+    label: "سفارش",
+    title: "از checkout تا پیگیری",
+    body: "ثبت سفارش، پذیرش، fulfillment و وضعیت تحویل در یک زنجیره قابل‌ردگیری ادامه پیدا می‌کند.",
+  },
+  {
+    number: "04",
+    label: "شفافیت",
+    title: "تسویه و اختلاف، قابل مشاهده",
+    body: "رویدادهای مالی، شواهد و مغایرت‌ها در همان جریان عملیاتی ثبت و پیگیری می‌شوند.",
+  },
+];
+
+const roleCards = [
+  {
+    eyebrow: "برای خرده‌فروشان",
+    title: "خرید عمده، بدون اصطکاک اضافه",
+    body: "کاتالوگ، موجودی، سبد و سفارش را در یک مسیر واحد مدیریت کن.",
+    href: "/retailer",
+    cta: "ورود به بازار",
+  },
+  {
+    eyebrow: "برای تأمین‌کنندگان",
+    title: "فروش و عملیات را یکجا ببین",
+    body: "کاتالوگ، قیمت، موجودی، پذیرش سفارش و fulfillment را از یک نقطه کنترل کن.",
+    href: "/vendor",
+    cta: "ورود به پنل",
+  },
+  {
+    eyebrow: "برای تیم عملیات",
+    title: "استثناها را به‌موقع ببین",
+    body: "صف‌ها، پشتیبانی، reconciliation و audit را بر مبنای وضعیت واقعی عملیات دنبال کن.",
+    href: "/ops",
+    cta: "ورود به عملیات",
+  },
+];
+
+function FlowCard({
+  step,
+}: {
+  step: (typeof flowSteps)[number];
+}) {
+  return (
+    <article className="pol-flow-card">
+      <div className="pol-flow-card-top">
+        <span className="pol-index">{step.number}</span>
+        <span className="pol-chip">{step.label}</span>
+      </div>
+      <h3>{step.title}</h3>
+      <p>{step.body}</p>
+    </article>
+  );
+}
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--pol-light-bg-canvas)] text-[var(--pol-light-text-primary)]">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)]/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2.5">
-              <span className="flex size-9 items-center justify-center rounded-xl bg-[var(--pol-light-brand-primary)] text-[18px] font-black text-white shadow-sm">
-                پُ
-              </span>
-              <span className="font-black text-[20px] tracking-tight text-[var(--pol-light-text-primary)]">
-                پُــــل
-              </span>
+    <div className="pol-landing">
+      <header className="pol-nav">
+        <div className="pol-container pol-nav-inner">
+          <Link href="/" className="pol-brand" aria-label="پُل">
+            <span className="pol-brand-mark">پُ</span>
+            <span className="pol-brand-word">پُــــل</span>
+          </Link>
+
+          <nav className="pol-nav-links" aria-label="ناوبری اصلی">
+            <Link href="/how">چگونه کار می‌کند</Link>
+            <Link href="/retailers">خرده‌فروشان</Link>
+            <Link href="/vendors">تأمین‌کنندگان</Link>
+            <Link href="/pilot">پایلوت اهواز</Link>
+          </nav>
+
+          <div className="pol-nav-actions">
+            <Link href="/auth/login" className="pol-text-link">
+              ورود
             </Link>
-
-            <nav aria-label="پیوندهای اصلی" className="hidden md:flex items-center gap-5 text-[13px] font-medium text-[var(--pol-light-text-secondary)]">
-              <Link href="/about" className="hover:text-[var(--pol-light-brand-primary)]">
-                درباره ما
-              </Link>
-              <Link href="/how" className="hover:text-[var(--pol-light-brand-primary)]">
-                چگونه کار می‌کند
-              </Link>
-              <Link href="/retailers" className="hover:text-[var(--pol-light-brand-primary)]">
-                برای خرده‌فروشان
-              </Link>
-              <Link href="/vendors" className="hover:text-[var(--pol-light-brand-primary)]">
-                برای تأمین‌کنندگان
-              </Link>
-              <Link href="/pilot" className="hover:text-[var(--pol-light-brand-primary)]">
-                پایلوت اهواز
-              </Link>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link href="/auth/login">
-              <Button size="sm">ورود به سامانه</Button>
+            <Link href="/auth/login" className="pol-button pol-button-primary pol-button-small">
+              شروع با شماره موبایل
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="flex-1">
-        <section className="mx-auto max-w-5xl px-6 py-20 text-center md:py-28">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--pol-light-brand-primary)]/20 bg-[var(--pol-light-brand-primary)]/10 px-3.5 py-1 text-[12px] font-semibold text-[var(--pol-light-brand-primary)]">
-            <span>PRECISION COMMERCE</span>
-            <span>·</span>
-            <span>پایلوت فعال اهواز</span>
-          </div>
+      <main>
+        <section className="pol-hero">
+          <div className="pol-hero-orb pol-hero-orb-one" />
+          <div className="pol-hero-orb pol-hero-orb-two" />
 
-          <h1 className="mt-6 text-[36px] font-black leading-[48px] tracking-tight text-[var(--pol-light-text-primary)] sm:text-[46px] sm:leading-[58px]">
-            زیرساخت مدرن سفارش‌گذاری و زنجیره تأمین بنکداری B2B
-          </h1>
-
-          <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-[26px] text-[var(--pol-light-text-secondary)]">
-            پلتفرم سفارش‌گذاری چندفروشنده‌ای برای بنکداران، تأمین‌کنندگان و سوپرمارکت‌ها با تمرکز بر اصالت داده، سرعت سفارش‌گذاری و شفافیت تسویه.
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/auth/login">
-              <Button size="lg" className="px-6 text-[15px]">
-                ورود با شماره موبایل
-              </Button>
-            </Link>
-            <Link href="/retailer">
-              <Button variant="secondary" size="lg" className="px-6 text-[15px]">
-                ورود به بازار خرده‌فروشی
-              </Button>
-            </Link>
-            <Link href="/vendor">
-              <Button variant="ghost" size="lg" className="px-5 text-[15px]">
-                پنل تأمین‌کنندگان
-              </Button>
-            </Link>
-          </div>
-
-          {/* Feature Highlights Grid */}
-          <div className="mt-16 grid gap-6 text-start sm:grid-cols-3">
-            <div className="rounded-2xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-6 shadow-[var(--pol-shadow-card)]">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--pol-light-surface-subtle)] text-[18px]">
-                🛒
+          <div className="pol-container pol-hero-grid">
+            <div className="pol-hero-copy pol-reveal">
+              <div className="pol-kicker">
+                <span className="pol-status-dot" />
+                <span>PRECISION COMMERCE</span>
+                <span className="pol-kicker-separator">·</span>
+                <span>پایلوت فعال اهواز</span>
               </div>
-              <h2 className="mt-4 text-[16px] font-bold text-[var(--pol-light-text-primary)]">
-                سبد چندفروشنده‌ای
-              </h2>
-              <p className="mt-2 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
-                سفارش‌گذاری همزمان از چند تأمین‌کننده در یک سبد خرید یکپارچه با تفکیک خودکار و پیش‌نمایش تخصیص اقلام.
+
+              <h1>
+                تجارت عمده را
+                <span className="pol-gradient-text"> یک مسیر دقیق‌تر</span>
+                کن.
+              </h1>
+
+              <p className="pol-hero-lead">
+                پُل، لایه عملیاتی تجارت B2B است؛ جایی که خرده‌فروش، تأمین‌کننده
+                و عملیات، از کشف کالا تا سفارش، fulfillment و پیگیری را در یک
+                جریان منسجم می‌بینند.
+              </p>
+
+              <div className="pol-hero-actions">
+                <Link href="/auth/login" className="pol-button pol-button-primary">
+                  ورود با شماره موبایل
+                  <span aria-hidden="true">←</span>
+                </Link>
+                <Link href="/how" className="pol-button pol-button-secondary">
+                  ببین پُل چگونه کار می‌کند
+                </Link>
+              </div>
+
+              <div className="pol-hero-note">
+                <span className="pol-note-line" />
+                <span>ساخته‌شده برای workflow واقعی بنکداری B2B</span>
+              </div>
+            </div>
+
+            <div className="pol-hero-visual pol-reveal pol-delay-2" aria-label="نمایش جریان سفارش در پُل">
+              <div className="pol-visual-grid" />
+              <div className="pol-visual-halo" />
+
+              <div className="pol-network-line pol-network-line-a" />
+              <div className="pol-network-line pol-network-line-b" />
+              <div className="pol-network-line pol-network-line-c" />
+
+              <div className="pol-node pol-node-a">
+                <span className="pol-node-dot" />
+                <span>Retailer</span>
+                <strong>سبد</strong>
+              </div>
+
+              <div className="pol-node pol-node-b">
+                <span className="pol-node-dot" />
+                <span>Allocation</span>
+                <strong>تخصیص</strong>
+              </div>
+
+              <div className="pol-node pol-node-c">
+                <span className="pol-node-dot" />
+                <span>Vendor</span>
+                <strong>سفارش</strong>
+              </div>
+
+              <div className="pol-flow-core">
+                <div className="pol-core-ring pol-core-ring-one" />
+                <div className="pol-core-ring pol-core-ring-two" />
+                <div className="pol-core-mark">پُ</div>
+                <div className="pol-core-caption">POL</div>
+              </div>
+
+              <div className="pol-floating-card pol-floating-card-top">
+                <span>موجودی</span>
+                <strong>همین حالا قابل مشاهده</strong>
+              </div>
+
+              <div className="pol-floating-card pol-floating-card-bottom">
+                <span>OrderGroup</span>
+                <strong>یک سفارش · چند جریان</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="pol-container pol-hero-rail">
+            <div>
+              <span>یک سبد</span>
+              <strong>چند تأمین‌کننده</strong>
+            </div>
+            <div>
+              <span>یک جریان</span>
+              <strong>از سفارش تا تحویل</strong>
+            </div>
+            <div>
+              <span>یک سابقه</span>
+              <strong>برای عملیات و audit</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="pol-section pol-section-soft">
+          <div className="pol-container">
+            <div className="pol-section-heading pol-reveal">
+              <div>
+                <span className="pol-overline">HOW POL WORKS</span>
+                <h2>از کشف تا تسویه، مسیر را کوتاه‌تر کن.</h2>
+              </div>
+              <p>
+                معماری پُل برای حذف پراکندگی طراحی شده است: یک سبد، یک checkout،
+                چند سفارش قابل‌تفکیک و یک زنجیره قابل‌پیگیری.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-6 shadow-[var(--pol-shadow-card)]">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--pol-light-surface-subtle)] text-[18px]">
-                ⚡
-              </div>
-              <h2 className="mt-4 text-[16px] font-bold text-[var(--pol-light-text-primary)]">
-                عملیات و پردازش سریع
-              </h2>
-              <p className="mt-2 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
-                پذیرش آنی، رد یا پیشنهاد مقادیر جایگزین، مراسم صبحگاهی تأیید موجودی و داشبورد صف‌محور تأمین‌کنندگان.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-6 shadow-[var(--pol-shadow-card)]">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--pol-light-surface-subtle)] text-[18px]">
-                📊
-              </div>
-              <h2 className="mt-4 text-[16px] font-bold text-[var(--pol-light-text-primary)]">
-                دقت و تسویه مالی شفاف
-              </h2>
-              <p className="mt-2 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
-                تطبیق مالی خودکار، ثبت ممیزی تغییرات قیمت و رهگیری دقیق مرجوعی‌ها بدون واسطه‌گری‌های پیچیده بانکی.
-              </p>
+            <div className="pol-flow-grid">
+              {flowSteps.map((step, index) => (
+                <div
+                  key={step.number}
+                  className={index % 2 === 0 ? "pol-reveal" : "pol-reveal pol-delay-1"}
+                >
+                  <FlowCard step={step} />
+                </div>
+              ))}
             </div>
           </div>
+        </section>
 
-          {/* Architectural badges */}
-          <div className="mt-14 rounded-2xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5">
-            <p className="text-[12px] font-semibold text-[var(--pol-light-text-muted)]">
-              اصول معماری نسخه پایلوت (MVP Constraints)
-            </p>
-            <div className="mt-3 flex flex-wrap justify-center gap-2">
-              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
-                تک‌شهر اهواز (D-001)
-              </span>
-              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
-                سبد چندفروشنده‌ای (D-014)
-              </span>
-              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
-                OTP چهاررقمی (D-018)
-              </span>
-              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
-                تحویل با لینک (D-023)
-              </span>
-              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
-                بدون کیف پول / اسکرو (D-021 / D-025)
-              </span>
+        <section className="pol-section">
+          <div className="pol-container">
+            <div className="pol-section-heading pol-section-heading-centered pol-reveal">
+              <span className="pol-overline">ONE NETWORK, THREE PERSPECTIVES</span>
+              <h2>هر نقش، همان تراکنش؛ با نمای درست خودش.</h2>
+              <p>
+                پُل برای سه طرف اصلی workflow، یک زبان مشترک می‌سازد و نمایش را
+                متناسب با مسئولیت هر نقش نگه می‌دارد.
+              </p>
+            </div>
+
+            <div className="pol-role-grid">
+              {roleCards.map((card, index) => (
+                <article
+                  key={card.title}
+                  className={index === 1 ? "pol-role-card pol-role-card-featured" : "pol-role-card"}
+                >
+                  <div className="pol-role-icon" aria-hidden="true">
+                    {index === 0 ? "↗" : index === 1 ? "◈" : "◎"}
+                  </div>
+                  <span className="pol-overline">{card.eyebrow}</span>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
+                  <Link href={card.href} className="pol-inline-link">
+                    {card.cta}
+                    <span aria-hidden="true">←</span>
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="pol-section pol-precision-section">
+          <div className="pol-container pol-precision-grid">
+            <div className="pol-precision-copy pol-reveal">
+              <span className="pol-overline">PRECISION COMMERCE</span>
+              <h2>اطلاعات خوب، وقتی ارزش دارد که وارد تصمیم روزانه شود.</h2>
+              <p>
+                پُل فقط storefront نیست. داده سفارش، موجودی، پذیرش، تحویل،
+                settlement و dispute را در همان جریان عملیاتی نگه می‌دارد تا تیم
+                بتواند براساس واقعیت تصمیم بگیرد.
+              </p>
+
+              <div className="pol-metric-row">
+                <div>
+                  <strong>01</strong>
+                  <span>یک سبد چندفروشنده‌ای</span>
+                </div>
+                <div>
+                  <strong>02</strong>
+                  <span>تخصیص deterministic</span>
+                </div>
+                <div>
+                  <strong>03</strong>
+                  <span>رهگیری تا fulfillment</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pol-command-card pol-reveal pol-delay-2">
+              <div className="pol-command-header">
+                <div>
+                  <span>LIVE FLOW</span>
+                  <strong>Order orchestration</strong>
+                </div>
+                <span className="pol-live-badge">ONLINE</span>
+              </div>
+
+              <div className="pol-command-flow">
+                <div className="pol-command-step is-done">
+                  <span>۱</span>
+                  <div>
+                    <strong>Basket</strong>
+                    <small>۳ قلم</small>
+                  </div>
+                </div>
+                <div className="pol-command-arrow">↓</div>
+                <div className="pol-command-step is-active">
+                  <span>۲</span>
+                  <div>
+                    <strong>AllocationPlan</strong>
+                    <small>۲ Vendor</small>
+                  </div>
+                </div>
+                <div className="pol-command-arrow">↓</div>
+                <div className="pol-command-step">
+                  <span>۳</span>
+                  <div>
+                    <strong>OrderGroup</strong>
+                    <small>قابل پیگیری</small>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pol-command-footer">
+                <span>Idempotency</span>
+                <strong>فعال</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="pol-cta-section">
+          <div className="pol-container pol-cta-card pol-reveal">
+            <div>
+              <span className="pol-overline">AHVAZ PILOT</span>
+              <h2>پُل را در جریان واقعی سفارش ببین.</h2>
+              <p>
+                از ورود با شماره موبایل شروع کن و مسیر کشف، سبد و سفارش را
+                تجربه کن.
+              </p>
+            </div>
+            <div className="pol-cta-actions">
+              <Link href="/auth/login" className="pol-button pol-button-light">
+                ورود به سامانه
+                <span aria-hidden="true">←</span>
+              </Link>
+              <Link href="/pilot" className="pol-cta-secondary">
+                درباره پایلوت اهواز
+              </Link>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] py-8">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 text-[13px] text-[var(--pol-light-text-muted)]">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-[var(--pol-light-text-primary)]">POL (پُــــل)</span>
-            <span>·</span>
-            <span>پایلوت بنکداری و زنجیره تأمین FMCG</span>
+      <footer className="pol-footer">
+        <div className="pol-container pol-footer-inner">
+          <div className="pol-footer-brand">
+            <span className="pol-brand-mark">پُ</span>
+            <div>
+              <strong>پُــــل</strong>
+              <span>زیرساخت سفارش‌گذاری B2B</span>
+            </div>
           </div>
 
-          <nav aria-label="پیوندهای فوتر" className="flex flex-wrap items-center gap-5">
-            <Link href="/about" className="hover:text-[var(--pol-light-brand-primary)]">درباره ما</Link>
-            <Link href="/how" className="hover:text-[var(--pol-light-brand-primary)]">نحوه کارکرد</Link>
-            <Link href="/contact" className="hover:text-[var(--pol-light-brand-primary)]">تماس با ما</Link>
-            <Link href="/legal" className="hover:text-[var(--pol-light-brand-primary)]">قوانین و امنیت</Link>
+          <nav aria-label="پیوندهای فوتر" className="pol-footer-links">
+            <Link href="/about">درباره ما</Link>
+            <Link href="/how">چگونه کار می‌کند</Link>
+            <Link href="/retailers">خرده‌فروشان</Link>
+            <Link href="/vendors">تأمین‌کنندگان</Link>
+            <Link href="/contact">تماس</Link>
           </nav>
+
+          <span className="pol-footer-meta">© 2026 POL</span>
         </div>
       </footer>
     </div>
