@@ -4,7 +4,7 @@
 **Repository:** `rrasi90/POL-2.3`  
 **Base:** `main` @ `f90fe3117c1881545e32181381ec50a1a6960f9e`  
 **Working branch:** `feat/vendor-app-production-20260928-v2`  
-**Current HEAD:** `7411dba37bda71be544f825dd774f82fc30b9f05`  
+**Current HEAD:** `e4f98cb71c09a71b450762207e6ca0b7ff32076a`  
 **Pull Request:** #20
 
 ## 0. Gate position
@@ -146,6 +146,7 @@ The gate checks:
 - environment-configurable API base URL
 - canonical API v1 usage
 - Vendor workspace and support wiring
+- canonical support case/message route markers
 - owner-only acceptance guards
 - dedicated Vendor entrypoint selection
 - native release command selection
