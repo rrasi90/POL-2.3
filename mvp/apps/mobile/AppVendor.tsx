@@ -1,3 +1,4 @@
+import React from "react";
 import { AppShell, type WorkspaceProps } from "./AppShell";
 import { VendorMobileScreen } from "./src/screens/VendorMobileScreen";
 import type { Role } from "./src/types";
