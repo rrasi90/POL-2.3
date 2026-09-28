@@ -153,12 +153,12 @@ export function SupportMobileScreen(props: { role: Role; onBack?: () => void }):
 
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  caseRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, marginTop: spacing.sm },
+  headerRow: { flexDirection: "row", direction: "rtl", alignItems: "center", justifyContent: "space-between" },
+  caseRow: { flexDirection: "row", direction: "rtl", alignItems: "center", gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, marginTop: spacing.sm },
   message: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, marginTop: spacing.sm },
   grow: { flex: 1, minWidth: 0 },
-  h2: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 4 },
-  body: { color: colors.text, fontSize: 13, lineHeight: 20 },
-  meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18 },
+  h2: { color: colors.text, fontSize: 15, fontWeight: "700", fontFamily: "Vazirmatn-SemiBold", marginBottom: 4, textAlign: "right" },
+  body: { color: colors.text, fontSize: 13, lineHeight: 21, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
+  meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 19, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
   });
 }
