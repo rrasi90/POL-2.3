@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 
 const { mockRequest, resetMockState } = await import("../src/mock/mockTransport.ts");
+const { toAsciiDigits, formatFaNumber, formatTehranDateTime } = await import("../src/i18n/fa.ts");
 
 const owner = { Authorization: "Bearer mock-vendor-owner-token" };
 const staff = { Authorization: "Bearer mock-vendor-staff-token" };
@@ -14,6 +15,12 @@ async function rejects(fn: () => Promise<unknown>, label: string): Promise<void>
 }
 
 resetMockState();
+
+assert.equal(toAsciiDigits("۱۲۳۴٥٦"), "123456");
+assert.ok(formatFaNumber(1234567).includes("۱٬۲۳۴٬۵۶۷"));
+const localizedDate = formatTehranDateTime("2026-09-29T12:00:00Z");
+assert.ok(localizedDate.includes("۱۴۰۵"));
+assert.ok(localizedDate.includes("مهر"));
 
 const orders = await req<{ orders: Array<{ id: string; order_status: string }> }>("GET", "/api/v1/orders");
 assert.equal(orders.orders.length, 5);
