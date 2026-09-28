@@ -7,6 +7,7 @@ module.exports = function withAndroidSizeOptimization(config) {
       ["android.enableShrinkResourcesInReleaseBuilds", "true"],
       ["expo.gif.enabled", "false"],
       ["expo.webp.enabled", "false"],
+      ["reactNativeArchitectures", "arm64-v8a"],
     ]);
 
     const existing = new Map(
