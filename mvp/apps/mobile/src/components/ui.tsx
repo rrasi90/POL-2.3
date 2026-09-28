@@ -61,7 +61,7 @@ export function Btn(props: {
       ]}
     >
       {props.loading ? (
-        <ActivityIndicator color={ghost ? colors.brand : "#fff"} />
+        <ActivityIndicator color={ghost ? colors.brand : colors.onBrand} />
       ) : (
         <Text style={[styles.btnText, ghost && styles.btnTextGhost, danger && styles.btnTextDanger]}>{props.label}</Text>
       )}
@@ -72,13 +72,13 @@ export function Btn(props: {
 export function Input(props: TextInputProps & { label: string; hint?: string }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
-  const { label, hint, ...rest } = props;
+  const { label, hint, direction = "rtl", ...rest } = props;
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         {...rest}
-        style={[styles.input, rest.style]}
+        style={[styles.input, direction === "ltr" && styles.inputLtr, rest.style]}
         placeholderTextColor={colors.textMuted}
       />
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
@@ -149,9 +149,9 @@ export function Empty(props: { title: string; description?: string }): React.Rea
 
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg },
-    titleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
-    title: { fontSize: 20, fontWeight: "700", color: colors.text, letterSpacing: -0.3 },
+    screen: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg, direction: "rtl" },
+    titleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, direction: "rtl" },
+    title: { fontSize: 20, fontWeight: "700", fontFamily: "Vazirmatn-Bold", color: colors.text, letterSpacing: -0.3, textAlign: "right" },
     badgeWrapper: {
       backgroundColor: colors.neutralBg,
       borderColor: colors.border,
@@ -160,7 +160,7 @@ function makeStyles(colors: Palette) {
       paddingHorizontal: 8,
       paddingVertical: 2,
     },
-    badge: { fontSize: 11, fontWeight: "600", color: colors.textSecondary },
+    badge: { fontSize: 11, fontWeight: "600", fontFamily: "Vazirmatn-SemiBold", color: colors.textSecondary, textAlign: "right" },
     card: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
@@ -168,7 +168,7 @@ function makeStyles(colors: Palette) {
       borderRadius: 12,
       padding: spacing.lg,
       marginBottom: spacing.md,
-      shadowColor: "#0F172A",
+      shadowColor: colors.shadow,
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.04,
       shadowRadius: 3,
@@ -187,11 +187,11 @@ function makeStyles(colors: Palette) {
     btnDanger: { backgroundColor: colors.danger },
     btnDisabled: { opacity: 0.5 },
     btnPressed: { opacity: 0.8 },
-    btnText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+    btnText: { color: colors.onBrand, fontSize: 14, fontWeight: "600", fontFamily: "Vazirmatn-SemiBold" },
     btnTextGhost: { color: colors.brand },
-    btnTextDanger: { color: "#fff" },
+    btnTextDanger: { color: colors.onDanger, fontFamily: "Vazirmatn-SemiBold" },
     field: { marginBottom: spacing.md },
-    label: { fontSize: 12, color: colors.textSecondary, marginBottom: 6, fontWeight: "500" },
+    label: { fontSize: 12, color: colors.textSecondary, marginBottom: 6, fontWeight: "500", fontFamily: "Vazirmatn-SemiBold", textAlign: "right" },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
@@ -200,10 +200,14 @@ function makeStyles(colors: Palette) {
       paddingHorizontal: spacing.md,
       paddingVertical: 10,
       fontSize: 15,
+      fontFamily: "Vazirmatn-Regular",
       color: colors.text,
+      textAlign: "right",
+      textAlignVertical: "center",
       backgroundColor: colors.surface,
     },
-    hint: { fontSize: 11, color: colors.textMuted, marginTop: 4 },
+    inputLtr: { textAlign: "left", writingDirection: "ltr" },
+    hint: { fontSize: 11, color: colors.textMuted, marginTop: 4, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
     chip: {
       borderWidth: 1,
       borderRadius: 6,
@@ -211,7 +215,7 @@ function makeStyles(colors: Palette) {
       paddingVertical: 3,
       alignSelf: "flex-start",
     },
-    chipText: { fontSize: 11, fontWeight: "600" },
+    chipText: { fontSize: 11, fontWeight: "600", fontFamily: "Vazirmatn-SemiBold" },
     error: {
       backgroundColor: colors.dangerBg,
       borderColor: colors.danger,
@@ -220,8 +224,8 @@ function makeStyles(colors: Palette) {
       padding: spacing.md,
       marginBottom: spacing.md,
     },
-    errorText: { color: colors.danger, fontSize: 13, lineHeight: 18 },
-    emptyTitle: { fontSize: 15, fontWeight: "600", color: colors.text },
-    emptyBody: { fontSize: 13, color: colors.textSecondary, marginTop: 6, lineHeight: 20 },
+    errorText: { color: colors.danger, fontSize: 13, lineHeight: 20, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
+    emptyTitle: { fontSize: 15, fontWeight: "600", fontFamily: "Vazirmatn-SemiBold", color: colors.text, textAlign: "right" },
+    emptyBody: { fontSize: 13, color: colors.textSecondary, marginTop: 6, lineHeight: 20, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
   });
 }
