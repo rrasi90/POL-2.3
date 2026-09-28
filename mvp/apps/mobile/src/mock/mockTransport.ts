@@ -571,7 +571,7 @@ export async function mockRequest<T>(
   });
 
   if (method === "GET" && pathname === "/api/v1/notifications") return envelope({ notifications: [], limit: 50, offset: 0 });
-  if (method === "GET" && pathname === "/api/v1/notifications/preferences") return envelope({ preferences: { event_name: "ORDER_STATUS_CHANGED", channel: "PUSH", is_enabled: true } });
+  if (method === "GET" && pathname === "/api/v1/notifications/preferences") return envelope([{ user_id: "mock-user", category: "ORDER_STATUS_CHANGED", push_enabled: true, sms_enabled: true }]);
   if (method === "PUT" && pathname === "/api/v1/notifications/preferences") return envelope(body || {});
 
   if (method === "GET" && pathname === "/api/v1/auth/sessions/current") return envelope({ id: "mock-session", status: "ACTIVE", expires_at: new Date(Date.now() + 3600_000).toISOString() });
