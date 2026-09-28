@@ -1881,6 +1881,8 @@ class POLApplicationBoundary:
 
     def invoices_list(self, *, offset=0, limit=50):
         actor_role = self._resolve_actor_role()
+        if actor_role == "VENDOR":
+            self._require_vendor_owner()
         params: list = []
         if actor_role == "RETAILER":
             params.append(self.context.organization_id)
@@ -1916,6 +1918,8 @@ class POLApplicationBoundary:
 
     def invoice_get(self, *, invoice_id):
         actor_role = self._resolve_actor_role()
+        if actor_role == "VENDOR":
+            self._require_vendor_owner()
         self.cur.execute(
             "SELECT * FROM invoices WHERE id = %s",
             (invoice_id,),
