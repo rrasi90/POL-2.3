@@ -12,6 +12,25 @@ export const revalidate = 31536000;
 
 type AssetKey = keyof typeof ASSETS;
 
+async function readBrandAsset(fileName: string): Promise<Buffer> {
+  const candidates = [
+    path.resolve(process.cwd(), "logo", fileName),
+    path.resolve(process.cwd(), "..", "..", "logo", fileName),
+  ];
+
+  let lastError: unknown;
+
+  for (const filePath of candidates) {
+    try {
+      return await readFile(filePath);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError ?? new Error("Brand asset not found");
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ asset: string }> },
@@ -23,10 +42,9 @@ export async function GET(
   }
 
   const fileName = ASSETS[asset as AssetKey];
-  const filePath = path.join(process.cwd(), "logo", fileName);
 
   try {
-    const data = await readFile(filePath);
+    const data = await readBrandAsset(fileName);
     return new NextResponse(new Uint8Array(data), {
       status: 200,
       headers: {
