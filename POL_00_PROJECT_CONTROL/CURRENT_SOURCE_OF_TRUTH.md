@@ -1,10 +1,10 @@
 # POL CURRENT SOURCE OF TRUTH & REPOSITORY GOVERNANCE
 
 **Document ID:** `POL-GOV-001`  
-**Version:** 1.3 (Canonical)  
+**Version:** 1.4 (Canonical)  
 **Status:** `LOCKED / OFFICIAL GOVERNANCE CHARTER`  
 **Effective Milestone:** Sprint 0 & MVP v1.0  
-**Last Audit:** 2026-09-25  
+**Last Audit:** 2026-09-28  
 
 ---
 
@@ -107,7 +107,7 @@ No visual artifact becomes canonical until the corresponding written requirement
 ## 6. Change Management
 
 1. No competing decision registers or shadow PRDs.
-2. Changes to D-001–D-020 require explicit superseding decisions.
+2. Changes to D-001–D-028 require explicit superseding decisions.
 3. Code, migrations, tests and design artifacts must be traceable to current canonical documents.
 4. Generated local artifacts must not be committed to the repository.
 5. Production-readiness claims must distinguish domain verification from HTTP/auth/provider/UI/observability/deployment/recovery implementation.
