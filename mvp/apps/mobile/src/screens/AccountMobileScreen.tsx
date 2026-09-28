@@ -195,12 +195,12 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
 
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
-  themeRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
-  tabs: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
-  row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  h2: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 6 },
-  body: { color: colors.text, fontSize: 13, lineHeight: 20 },
-  meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18, marginBottom: 3 },
-  notice: { color: colors.success, fontSize: 13, marginBottom: spacing.sm },
+  themeRow: { flexDirection: "row", direction: "rtl", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
+  tabs: { flexDirection: "row", direction: "rtl", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
+  row: { flexDirection: "row", direction: "rtl", flexWrap: "wrap", gap: spacing.sm },
+  h2: { color: colors.text, fontSize: 15, fontWeight: "700", fontFamily: "Vazirmatn-SemiBold", marginBottom: 6, textAlign: "right" },
+  body: { color: colors.text, fontSize: 13, lineHeight: 21, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
+  meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 19, fontFamily: "Vazirmatn-Regular", marginBottom: 3, textAlign: "right" },
+  notice: { color: colors.success, fontSize: 13, fontFamily: "Vazirmatn-SemiBold", marginBottom: spacing.sm, textAlign: "right" },
   });
 }
