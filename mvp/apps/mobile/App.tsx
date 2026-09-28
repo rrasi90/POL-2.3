@@ -1,7 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import { Pressable, SafeAreaView, StyleSheet, Text } from "react-native";
-import { getToken, healthz, restoreSession } from "./src/api";
+import { clearSession, getToken, healthz, restoreSession } from "./src/api";
 import { AccountMobileScreen } from "./src/screens/AccountMobileScreen";
 import { AssistedOrderScreen } from "./src/screens/AssistedOrderScreen";
 import { FieldTaskDetailScreen } from "./src/screens/FieldTaskDetailScreen";
@@ -11,6 +11,7 @@ import { OpsMobileScreen } from "./src/screens/OpsMobileScreen";
 import { OrderDetailMobileScreen } from "./src/screens/OrderDetailMobileScreen";
 import { RetailerMobileScreen } from "./src/screens/RetailerMobileScreen";
 import { VendorMobileScreen } from "./src/screens/VendorMobileScreen";
+import { APP_NAME, APP_VARIANT, isAllowedRole } from "./src/appVariant";
 import { ThemeProvider, useTheme, useThemedStyles } from "./src/theme";
 import type { Role, Route } from "./src/types";
 
@@ -31,14 +32,16 @@ function AppContent(): React.ReactNode {
 
   const refresh = useCallback(async () => {
     const restored = await restoreSession();
-    if (restored.restored && restored.role) {
+    if (restored.restored && restored.role && isAllowedRole(restored.role)) {
       const restoredRole = restored.role as Role;
       setRole(restoredRole);
-      setRoute(
-        restoredRole === "FIELD_ACTIVATOR"
-          ? { name: "field" }
-          : { name: "workspace", role: restoredRole },
-      );
+      setRoute({ name: "workspace", role: restoredRole });
+    } else if (restored.restored) {
+      await clearSession();
+      setRole(null);
+      setRoute({ name: "login" });
+      setBooted(true);
+      return;
     } else {
       await healthz();
     }
@@ -50,18 +53,20 @@ function AppContent(): React.ReactNode {
   }, [refresh]);
 
   function onLogout(): void {
+    void clearSession();
     setRole(null);
     setRoute({ name: "login" });
   }
 
   function onAuthed(nextRole: Role): void {
+    if (!isAllowedRole(nextRole)) {
+      void clearSession();
+      setRole(null);
+      setRoute({ name: "login" });
+      return;
+    }
     setRole(nextRole);
-    setRoute(
-      nextRole === "FIELD_ACTIVATOR"
-        ? { name: "field" }
-        : { name: "workspace", role: nextRole },
-    );
-    refresh();
+    setRoute({ name: "workspace", role: nextRole });
   }
 
   if (!booted) return <SafeAreaView style={styles.root} />;
@@ -69,14 +74,16 @@ function AppContent(): React.ReactNode {
   if (!getToken()) {
     return (
       <SafeAreaView style={styles.root}>
-        <LoginScreen onAuthed={onAuthed} />
+        <LoginScreen onAuthed={onAuthed} allowedRoles={APP_VARIANT === "vendor" ? ["VENDOR_OWNER", "VENDOR_STAFF"] : ["RETAILER_OWNER", "RETAILER_STAFF"]} appName={APP_NAME} />
         <StatusBar style={mode === "night" ? "light" : "dark"} />
       </SafeAreaView>
     );
   }
 
   const currentRole =
-    route.name === "workspace" || route.name === "order-detail" || route.name === "account" ? route.role : role;
+    route.name === "workspace" || route.name === "order-detail" || route.name === "account"
+      ? route.role
+      : role;
 
   return (
     <SafeAreaView style={styles.root}>
@@ -91,21 +98,8 @@ function AppContent(): React.ReactNode {
         <AccountMobileScreen
           role={route.role}
           onLogout={onLogout}
-          onBack={() =>
-            setRoute(route.role === "FIELD_ACTIVATOR"
-              ? { name: "field" }
-              : { name: "workspace", role: route.role })
-          }
+          onBack={() => setRoute({ name: "workspace", role: route.role })}
         />
-      ) : route.name === "field" ? (
-        <FieldTaskListScreen
-          onOpenTask={(taskId) => setRoute({ name: "task", taskId })}
-          onAssistedOrder={() => setRoute({ name: "assisted" })}
-        />
-      ) : route.name === "task" ? (
-        <FieldTaskDetailScreen taskId={route.taskId} onBack={() => setRoute({ name: "field" })} />
-      ) : route.name === "assisted" ? (
-        <AssistedOrderScreen onBack={() => setRoute({ name: "field" })} />
       ) : route.name === "order-detail" ? (
         <OrderDetailMobileScreen
           mode={route.role === "VENDOR_OWNER" || route.role === "VENDOR_STAFF" ? "vendor" : "retailer"}
@@ -113,20 +107,18 @@ function AppContent(): React.ReactNode {
           orderId={route.orderId}
           onBack={() => setRoute({ name: "workspace", role: route.role })}
         />
-      ) : currentRole === "RETAILER_OWNER" || currentRole === "RETAILER_STAFF" ? (
+      ) : APP_VARIANT === "retailer" && (currentRole === "RETAILER_OWNER" || currentRole === "RETAILER_STAFF") ? (
         <RetailerMobileScreen
           role={currentRole}
           onOpenOrder={(orderId) => setRoute({ name: "order-detail", orderId, role: currentRole })}
         />
-      ) : currentRole === "VENDOR_OWNER" || currentRole === "VENDOR_STAFF" ? (
+      ) : APP_VARIANT === "vendor" && (currentRole === "VENDOR_OWNER" || currentRole === "VENDOR_STAFF") ? (
         <VendorMobileScreen
           role={currentRole}
           onOpenOrder={(orderId) => setRoute({ name: "order-detail", orderId, role: currentRole })}
         />
-      ) : currentRole === "OPS_AGENT" || currentRole === "ADMIN_SUPER" ? (
-        <OpsMobileScreen role={currentRole} />
       ) : (
-        <LoginScreen onAuthed={onAuthed} />
+        <LoginScreen onAuthed={onAuthed} allowedRoles={APP_VARIANT === "vendor" ? ["VENDOR_OWNER", "VENDOR_STAFF"] : ["RETAILER_OWNER", "RETAILER_STAFF"]} appName={APP_NAME} />
       )}
       <StatusBar style={mode === "night" ? "light" : "dark"} />
     </SafeAreaView>
@@ -134,9 +126,10 @@ function AppContent(): React.ReactNode {
 }
 
 function makeStyles(colors: { bg: string; surface: string; border: string; text: string }) {
-  return StyleSheet.create({  root: { flex: 1, backgroundColor: colors.bg },
-  accountBar: { backgroundColor: colors.bg, paddingHorizontal: 12, paddingTop: 6 },
-  accountButton: { alignSelf: "flex-start", borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  accountText: { color: colors.text, fontSize: 11, fontWeight: "600" },
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.bg },
+    accountBar: { backgroundColor: colors.bg, paddingHorizontal: 12, paddingTop: 6 },
+    accountButton: { alignSelf: "flex-start", borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+    accountText: { color: colors.text, fontSize: 11, fontWeight: "600" },
   });
 }
