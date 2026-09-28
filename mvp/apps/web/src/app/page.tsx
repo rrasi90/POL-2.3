@@ -6,25 +6,25 @@ const flowSteps = [
     number: "01",
     label: "کشف",
     title: "بازار را سریع‌تر پیدا کن",
-    body: "کالا و تأمین‌کننده را در یک فضای B2B منظم ببین؛ بدون اینکه سفارش‌گیری از چند منبع تبدیل به چند مسیر جداگانه شود.",
+    body: "کالایی که می‌خواهی را پیدا کن و از بین گزینه‌ها راحت انتخاب کن؛ دیگر لازم نیست برای هر قلم چند جا سر بزنی.",
   },
   {
     number: "02",
     label: "سبد",
-    title: "یک سبد، چند تأمین‌کننده",
-    body: "سبد چندفروشنده‌ای اقلام را جمع می‌کند و موتور تخصیص، سفارش‌ها را بر اساس ظرفیت و قواعد هر تأمین‌کننده تفکیک می‌کند.",
+    title: "یک سبد، چند بنکدار",
+    body: "همه خریدت را یکجا جمع کن؛ پُل سفارش را بین بنکدارها تقسیم می‌کند و نتیجه را یکجا به تو نشان می‌دهد.",
   },
   {
     number: "03",
     label: "سفارش",
     title: "از ثبت سفارش تا پیگیری",
-    body: "ثبت سفارش، پذیرش، آماده‌سازی و وضعیت تحویل در یک زنجیره قابل‌ردگیری ادامه پیدا می‌کند.",
+    body: "سفارش را ثبت کن، وضعیتش را ببین و تا رسیدنش به فروشگاه از مرحله بعد باخبر باش.",
   },
   {
     number: "04",
     label: "شفافیت",
-    title: "تسویه و اختلاف، قابل مشاهده",
-    body: "رویدادهای مالی، شواهد و مغایرت‌ها در همان مسیر عملیاتی ثبت و پیگیری می‌شوند.",
+    title: "آخرش هم می‌دانی چه شد",
+    body: "وضعیت پرداخت، فاکتور و پیگیری‌های لازم در همان مسیر می‌ماند؛ چیزی گم نمی‌شود.",
   },
 ];
 
@@ -37,8 +37,8 @@ const brandAssets = {
 const roleCards = [
   {
     eyebrow: "برای خرده‌فروشان",
-    title: "خرید عمده، بدون اصطکاک اضافه",
-    body: "کاتالوگ، موجودی، سبد و سفارش را در یک مسیر واحد مدیریت کن.",
+    title: "خرید عمده، راحت‌تر",
+    body: "کالا را پیدا کن، قیمت و موجودی را ببین، سبدت را ببند و سفارش بده.",
     href: "/retailer",
     cta: "ورود به بازار",
     logo: brandAssets.market,
@@ -46,8 +46,8 @@ const roleCards = [
   },
   {
     eyebrow: "برای تأمین‌کنندگان",
-    title: "فروش و عملیات را یکجا مدیریت کن",
-    body: "کاتالوگ، قیمت، موجودی، پذیرش سفارش و آماده‌سازی را از یک نقطه کنترل کن.",
+    title: "فروش را یکجا جمع کن",
+    body: "کالا، قیمت، موجودی و سفارش‌ها را از یک جا مدیریت کن و ببین چه چیزی منتظر اقدام توست.",
     href: "/vendor",
     cta: "ورود به پنل",
     logo: brandAssets.vendor,
@@ -55,8 +55,8 @@ const roleCards = [
   },
   {
     eyebrow: "برای تیم عملیات",
-    title: "استثناها را به‌موقع ببین",
-    body: "صف‌ها، پشتیبانی، تطبیق مالی و سوابق عملیات را بر مبنای وضعیت واقعی دنبال کن.",
+    title: "حواست به کارهای مهم باشد",
+    body: "کارهای عقب‌مانده، پشتیبانی و پیگیری سفارش‌ها را یکجا ببین و سریع‌تر جمعشان کن.",
     href: "/ops",
     cta: "ورود به عملیات",
     logo: brandAssets.corporate,
@@ -138,9 +138,9 @@ export default function HomePage() {
             <div className="pol-hero-copy pol-reveal">
               <div className="pol-kicker">
                 <span className="pol-status-dot" />
-                <span>PRECISION COMMERCE</span>
+                <span>تجارت عمده</span>
                 <span className="pol-kicker-separator">·</span>
-                <span>پایلوت فعال اهواز</span>
+                <span>پایلوت اهواز</span>
               </div>
 
               <h1>
@@ -148,7 +148,7 @@ export default function HomePage() {
               </h1>
 
               <p className="pol-hero-lead">
-                پُل خرده‌فروش و تأمین‌کننده را در یک جریان B2B به هم وصل می‌کند؛ از کشف کالا و موجودی تا سبد، سفارش، آماده‌سازی و پیگیری.
+                پُل فروشگاه‌ها را به بنکدارها و تأمین‌کننده‌ها وصل می‌کند؛ کالا را پیدا می‌کنی، به سبد می‌زنی، سفارش می‌دهی و وضعیتش را دنبال می‌کنی.
               </p>
 
               <div className="pol-hero-actions">
@@ -156,14 +156,14 @@ export default function HomePage() {
                   ورود با شماره موبایل
                   <span aria-hidden="true">←</span>
                 </Link>
-                <Link href="/how" className="pol-button pol-button-secondary">
-                  ببین پُل چگونه کار می‌کند
+                <a href="#how-it-works" className="pol-button pol-button-secondary">
+                  ببین پُل چطور کار می‌کند
                 </Link>
               </div>
 
               <div className="pol-hero-note">
                 <span className="pol-note-line" />
-                <span>برای فروشگاه‌ها، بنکداران و تیم عملیات</span>
+                <span>برای فروشگاه‌ها، بنکدارها و تیم پُل</span>
               </div>
             </div>
 
@@ -177,13 +177,13 @@ export default function HomePage() {
 
               <div className="pol-node pol-node-a">
                 <span className="pol-node-dot" />
-                <span>خرده‌فروش</span>
+                <span>فروشگاه</span>
                 <strong>سبد</strong>
               </div>
 
               <div className="pol-node pol-node-b">
                 <span className="pol-node-dot" />
-                <span>تخصیص سفارش</span>
+                <span>تقسیم سفارش</span>
                 <strong>تخصیص</strong>
               </div>
 
@@ -215,8 +215,8 @@ export default function HomePage() {
               </div>
 
               <div className="pol-floating-card pol-floating-card-bottom">
-                <span>گروه سفارش</span>
-                <strong>یک سبد · چند تأمین‌کننده</strong>
+                <span>سفارش‌های تو</span>
+                <strong>یک سبد · چند بنکدار</strong>
               </div>
             </div>
           </div>
@@ -227,25 +227,25 @@ export default function HomePage() {
               <strong>چند تأمین‌کننده</strong>
             </div>
             <div>
-              <span>یک مسیر</span>
-              <strong>از سفارش تا تحویل</strong>
+              <span>یک سفارش</span>
+              <strong>از ثبت تا تحویل</strong>
             </div>
             <div>
               <span>یک سابقه</span>
-              <strong>برای پیگیری عملیات</strong>
+              <strong>برای پیگیری خرید</strong>
             </div>
           </div>
         </section>
 
-        <section className="pol-section pol-section-soft">
+        <section id="how-it-works" className="pol-section pol-section-soft">
           <div className="pol-container">
             <div className="pol-section-heading pol-reveal">
               <div>
-                <span className="pol-overline">HOW POL WORKS</span>
-                <h2>از کشف تا تسویه، مسیر را کوتاه‌تر کن.</h2>
+                <span className="pol-overline">پُل چطور کار می‌کند؟</span>
+                <h2>از پیدا کردن کالا تا رسیدنش به دستت.</h2>
               </div>
               <p>
-                معماری پُل برای حذف پراکندگی طراحی شده است: یک سبد، یک ثبت سفارش، چند سفارش قابل‌تفکیک و یک زنجیره قابل‌پیگیری.
+                همه‌چیز در یک مسیر جمع می‌شود؛ از انتخاب کالا و بستن سبد تا ثبت سفارش و پیگیری تحویل.
               </p>
             </div>
 
@@ -321,11 +321,11 @@ export default function HomePage() {
                 </div>
                 <div>
                   <strong>02</strong>
-                  <span>تخصیص چندفروشنده‌ای</span>
+                  <span>چند بنکدار در یک سبد</span>
                 </div>
                 <div>
                   <strong>03</strong>
-                  <span>پیگیری تا تحویل</span>
+                  <span>پیگیری تا رسیدن سفارش</span>
                 </div>
               </div>
             </div>
@@ -336,7 +336,7 @@ export default function HomePage() {
                   <span>LIVE ORDER FLOW</span>
                   <strong>جریان واقعی سفارش</strong>
                 </div>
-                <span className="pol-live-badge">زنده</span>
+                <span className="pol-live-badge">در حال انجام</span>
               </div>
 
               <div className="pol-command-flow">
@@ -373,7 +373,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="pol-cta-section">
+        <section className="pol-cta-section" id="pilot">
           <div className="pol-container pol-cta-card pol-reveal">
             <div>
               <span className="pol-overline">AHVAZ PILOT</span>
@@ -389,7 +389,7 @@ export default function HomePage() {
                 <span aria-hidden="true">←</span>
               </Link>
               <Link href="/pilot" className="pol-cta-secondary">
-                درباره پایلوت اهواز
+                بیشتر درباره پُل و پایلوت اهواز
               </Link>
             </div>
           </div>
