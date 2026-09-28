@@ -1,8 +1,8 @@
 """
 POL Platform Canonical PostgreSQL 18 Migration Verification Harness
-Validates migrations/001_initial_schema.sql against real PostgreSQL 18:
-- Executes clean migration on PostgreSQL 18
-- Asserts all 37 canonical domain tables are present in public schema
+Validates the current contiguous migration chain against real PostgreSQL 18:
+- Executes the complete migration chain on PostgreSQL 18
+- Asserts the canonical baseline tables are present and accepts additional tables introduced by later migrations
 - Asserts critical indexes, foreign keys, and check constraints
 - Asserts D-014 Multi-Vendor and NON_CUSTODIAL_DIRECT constraints
 """
@@ -95,6 +95,10 @@ def reset_and_migrate(conn):
     print("Resetting public schema and executing canonical dynamic migration chain...")
     reset_schema(conn, "pol_test")
     chain = get_migration_chain()
+    assert chain, "Canonical migration chain is empty"
+    latest = os.path.basename(chain[-1])
+    latest_number = int(latest.split("_", 1)[0])
+    assert latest_number >= MIN_EXPECTED_MIGRATION_HEAD, f"Migration chain is stale: expected head >= {MIN_EXPECTED_MIGRATION_HEAD}, got {latest}"
     applied, table_count = apply_migration_chain(conn, chain, verbose=True)
     print(f"Dynamic migration chain ({len(applied)} migrations) executed successfully. Total tables: {table_count}")
     return applied
@@ -146,10 +150,11 @@ EXPECTED_19_PLATFORM_TABLES = {
     "admin_audit_logs"
 }
 
-EXPECTED_56_TABLES = EXPECTED_37_TABLES | EXPECTED_19_PLATFORM_TABLES
+EXPECTED_BASE_TABLES = EXPECTED_37_TABLES | EXPECTED_19_PLATFORM_TABLES
+MIN_EXPECTED_MIGRATION_HEAD = 76
 
 def verify_tables(conn):
-    print("\n[VERIFICATION 1] Verifying all 56 canonical + platform tables in public schema...")
+    print("\n[VERIFICATION 1] Verifying canonical baseline tables in public schema...")
     cur = conn.cursor()
     cur.execute("""
         SELECT table_name 
@@ -159,16 +164,16 @@ def verify_tables(conn):
     """)
     tables = {row[0] for row in cur.fetchall()}
     
-    missing = EXPECTED_56_TABLES - tables
-    extra = tables - EXPECTED_56_TABLES
+    missing = EXPECTED_BASE_TABLES - tables
+    extra = tables - EXPECTED_BASE_TABLES
 
-    print(f"Total tables found: {len(tables)} (Expected: {len(EXPECTED_56_TABLES)})")
+    print(f"Total tables found: {len(tables)} (Canonical baseline minimum: {len(EXPECTED_BASE_TABLES)})")
     if missing:
         raise AssertionError(f"Missing expected tables: {missing}")
     if extra:
         print(f"Note: additional tables present: {extra}")
-    assert len(tables) >= 56, f"Expected at least 56 tables, found {len(tables)}"
-    print("[PASS] All 56 canonical + platform tables verified present.")
+    assert len(tables) >= len(EXPECTED_BASE_TABLES), f"Expected at least {len(EXPECTED_BASE_TABLES)} canonical baseline tables, found {len(tables)}"
+    print("[PASS] All canonical baseline tables verified present; additional migration tables are accepted.")
 
 def verify_constraints(conn):
     print("\n[VERIFICATION 2] Verifying domain CHECK constraints and architecture rules...")
@@ -693,7 +698,7 @@ def main():
     try:
         test_postgres_migrations()
         print("\n================================================================")
-        print("ALL CANONICAL MIGRATION TESTS PASSED SUCCESSFULLY (56/56 TABLES)")
+        print("ALL CANONICAL MIGRATION TESTS PASSED SUCCESSFULLY (baseline + current migration chain)")
         print("================================================================")
         sys.exit(0)
     except Exception as e:

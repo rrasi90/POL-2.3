@@ -1,7 +1,7 @@
 # POL Platform Test Verification Manifest
 
 **Document ID:** `POL-TEST-MANIFEST-v1.0`  
-**Date:** September 14, 2026  
+**Date:** September 28, 2026  
 **Status:** **ACTIVE / CANONICAL**  
 **Target Engine:** PostgreSQL 18.x (Native Windows / Docker `postgres:18-alpine`)  
 **Python Runtime:** Python 3.11+ | pytest 8.0+ | psycopg2-binary 2.9.9+  
@@ -46,7 +46,7 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 - **Checks:**
   1. Python runtime version `>= 3.11`.
   2. Python dependency availability (`psycopg2`, `pytest`).
-  3. SQL migration chain files (`001_initial_schema.sql`, `002_platform_core_schema.sql`, `003_contract_reconciliation.sql`).
+  3. SQL migration chain files discovered dynamically from `migrations/001_*.sql` through the current contiguous migration head.
   4. PostgreSQL 18 connection on port 5432/5433 (via `POL_PG_PORT` or `PGPORT`).
   5. Target database schema integrity against the declared migration chain and canonical required-table set.
   6. Trigger integrity (`trg_enforce_org_membership_role_invariant`).
@@ -87,7 +87,7 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 
 | # | Suite File | Tests | Category | DB Req | Target Domain & Invariants Verified |
 | :-: | :--- | :-: | :---: | :---: | :--- |
-| **01** | `scripts/test_postgres_migrations.py` | 1 | MIGRATION | Real PG 18 | Dynamic forward-only migration chain; clean install + incremental upgrade; current 047/048 schema assertions |
+| **01** | `scripts/test_postgres_migrations.py` | 1 | MIGRATION | Real PG 18 | Dynamic forward-only migration chain; clean install + incremental upgrade; current migration-chain schema assertions, including delegated-permission and financial/dispute hardening |
 | **02** | `scripts/test_postgres_runtime.py` | 1 | RUNTIME | Real PG 18 | 33 Mission-Critical Runtime Scenarios (15 Retailer, 10 Vendor, 8 Allocation/Gov) |
 | **03** | `scripts/test_identity_tenant_isolation.py` | 6 | IAM/ISOLATION | Real PG 18 | Multi-org tenant boundaries; Section 11 role matrix; Section 13 non-authoritative `users.role`; Section 14 multi-org sessions; Section 15 legacy links; Section 16 negative cross-tenant attack matrix |
 | **04** | `scripts/test_postgres_concurrency.py` | 9 | CONCURRENCY | Real PG 18 | 9 ACID race scenarios: inventory race, duplicate checkout, scarce stock, vendor accept, dispatch creation, refund, dispute creation, vendor isolation, stale price |
@@ -96,7 +96,7 @@ Machine-Readable Artifact: artifacts/pol-test-results.json
 | **07** | `scripts/test_basket_versioning.py` | 1 | RUNTIME | Real PG 18 | Basket optimistic locking (`version`), allocation plan invalidation on basket mutation |
 | **08** | `scripts/test_broadcasts.py` | 1 | RUNTIME | Real PG 18 | Ops admin broadcast publishing, batch inbox item fan-out, recipient list immutability |
 | **09** | `scripts/test_current_source_of_truth.py` | 1 | STATIC | Static | Architectural SSoT coherence across 7 architecture documents and contracts |
-| **10** | `scripts/test_e2e_mvp_platform.py` | 1 | E2E | Real PG 18 | Master 16-step end-to-end integration lifecycle using `domain_services.py` across all domains |
+| **10** | `scripts/test_e2e_mvp_platform.py` | 1 | E2E | Real PG 18 | Master 16-step end-to-end integration lifecycle through `POLApplicationBoundary` / `CanonicalCheckoutGateway` across all domains |
 | **11** | `scripts/test_inventory_reservations.py` | 1 | RUNTIME | Real PG 18 | Stock reservation state machine, active reservation partial index, over-allocation prevention |
 | **12** | `scripts/test_invoice_access.py` | 1 | ISOLATION | Real PG 18 | Separate invoice entities, multi-vendor split order invoices, financial invariant (`total = SUM(items)`), tenant visibility |
 | **13** | `scripts/test_notification_event_matrix.py` | 1 | STATIC | Static | Notification event matrix verification against domain trigger catalog |

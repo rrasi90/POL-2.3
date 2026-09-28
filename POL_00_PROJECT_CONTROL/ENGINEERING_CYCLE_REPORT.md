@@ -1,4 +1,9 @@
 # POL Engineering Cycle Report
+> [!WARNING]
+> **HISTORICAL / SUPERSEDED**
+>
+> This report records an earlier certification/schema snapshot. It is retained for traceability only. Current implementation authority is `CURRENT_SOURCE_OF_TRUTH.md`, the active Decision Register, the current migration chain, and current runtime evidence.
+
 
 **Document ID:** `POL-CYCLE-REPORT-2026-09-14-OP-INTEL`  
 **Date:** September 14, 2026  

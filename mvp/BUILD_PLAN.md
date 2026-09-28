@@ -3,7 +3,7 @@
 **Contract:** Master Build Instruction (repo root session) + master loop (DISCOVER→PLAN→BUILD→TEST→RECONCILE→AUDIT→FIX→…→DELIVERY)  
 **Root:** `mvp/`  
 **Authorized branch:** `main`  
-**Updated:** 2026-09-23 · Stage 6 mobile QA Cycle 3 closed; remaining executable gates are Night visual verification and live basket→checkout/idempotency E2E  
+**Updated:** 2026-09-28 · Stage 6 mobile QA Cycle 3 closed; remaining executable gates are Night visual verification and live basket→checkout/idempotency E2E  
 **Authority hierarchy:** `DECISION_REGISTER.md` (D-001…D-028 on branch) → CURRENT_SOURCE_OF_TRUTH → this file → module evidence files.
 
 **Rule:** NOT DONE = KEEP WORKING. Do not stop to ask which track. Isolate external deps as `BLOCKED_EXTERNAL` and continue everything else. Later-discovered defects in earlier phases ⇒ reopen, root-cause fix, retest, return.
@@ -14,7 +14,7 @@
 
 | Step | Name | Status | Notes |
 |------|------|--------|-------|
-| 1 | Infra / DB | **DONE** (2026-09-23) | Host PostgreSQL 18 owns schema: `pol` (live API, 95 tables, migrations 001–031 applied) + `pol_test` (suite, 95 tables). Docker container `pol_test` = 0 tables (ignore). Full research suite collected 497 tests. |
+| 1 | Infra / DB | **DONE** (2026-09-23) | Historical baseline only: the earlier `pol` / `pol_test` environment recorded 95 tables under migrations 001–031. Current schema authority is the contiguous migration chain through 076; active table count is runtime-derived. Current remediation artifact evidence is tracked separately and is not copied here as a certification claim. |
 | 2 | Open decisions | **PARTIAL** | Remaining explicit decisions: D-018 refresh-token rotation policy, invoice timing, plus external design/observability/provider dependencies → §2. D-024 is read/order scope; D-026 delegated permissions are implemented pending fresh runtime evidence. |
 | 3 | Phase 0 + GATE 0 | **DONE** | Artifacts + skeleton; typecheck/build green. |
 | 4 | Phase 1 foundation + design system | **DONE** | tokens, ui package, shell, middleware role gates. |

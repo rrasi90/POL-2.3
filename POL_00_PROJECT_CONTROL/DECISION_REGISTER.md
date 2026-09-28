@@ -3,7 +3,7 @@
 **Document ID:** `POL-DEC-001`  
 **Status:** `LOCKED / CANONICAL`  
 **Governance Level:** Lead Product Architect / Founder Approved  
-**Last Audit:** 2026-09-20 (Governance reconciliation against current PR/CI lineage)  
+**Last Audit:** 2026-09-28 (Governance + implementation reconciliation)  
 **Cross-Reference:** `01_RESEARCH/Assumptions_and_Hypotheses.md` (RES-REG-001)  
 
 ---
@@ -19,7 +19,7 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 
 ---
 
-## 2. Canonical Strategic Decision Register (D-001 through D-020)
+## 2. Canonical Strategic Decision Register (D-001 through D-028)
 
 | Decision ID | Canonical Decision Title | Approved Formal Decision | Strategic Rationale & Invariant Guardrail | Affected Canonical Documents |
 |:---:|:---|:---|:---|:---|
@@ -71,7 +71,7 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 - `06_PRODUCT/Technical_Architecture_Spec.md` §3 — OTP digit count, access-token lifetime, rate-limit parameters now authoritative.
 - `08_DATA/IDENTITY_AND_MEMBERSHIP.md` §2.5 — `code_hash` description ("5-digit") is superseded.
 - `06_PRODUCT/API_Contracts.md` §7 — `otp_code` example (6-digit), `expires_in` (86400), rate-limit (3/10min) are superseded.
-- `scripts/operational_config.py` — `OTP_CODE_LENGTH = 6` and `SESSION_TTL_HOURS = 24` are superseded (implementation sync deferred to next engineering batch).
+- `scripts/operational_config.py` — the old `OTP_CODE_LENGTH = 6` / `SESSION_TTL_HOURS = 24` values are superseded; current implementation has been synchronized to the D-018 values.
 - `POL_00_PROJECT_CONTROL/PRE_MVP_100_SCENARIO_STRESS_TEST.md` §32 — 5/hour rate limit superseded.
 
 **Does NOT change:**
@@ -84,12 +84,12 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 - Domain state machines
 - Non-custodial payment
 
-**Downstream synchronization required (next engineering batch):**
+**Implementation synchronization status (2026-09-28):**
 - `06_PRODUCT/Technical_Architecture_Spec.md` — align §3 digit count to 4, clarify §3 token semantics: access token = stateless JWT (15-minute `exp` claim, validated by JWT library per request); refresh session = server-tracked `user_sessions.expires_at` (30-day lifetime). Refresh endpoint §4.1 TBD.
 - `08_DATA/IDENTITY_AND_MEMBERSHIP.md` — update `code_hash` description from "5-digit" to "4-digit". Add semantic note: `user_sessions.expires_at` represents refresh-session expiry (30 days), NOT access-token expiry (15 minutes). Access-token expiry is embedded in the JWT `exp` claim and validated statelessly.
 - `06_PRODUCT/API_Contracts.md` — update §7.1 rate limit to 3/5min per phone+IP, §7.2 `otp_code` example to 4-digit, `expires_in` to 900 (access token only). §7.4 session revocation: session rows live for 30 days (refresh-session lifetime), not 15 minutes.
-- `scripts/operational_config.py` — `OTP_CODE_LENGTH = 4`, `SESSION_TTL_HOURS = 720` (30 days = refresh-session lifetime)
-- `scripts/domain_services.py` — update OTP generation (`secrets.randbelow(10_000):04d`), session expiry (`interval '30 days'` for `user_sessions.expires_at`). Access-token 15-minute expiry is a JWT concern, not a session-row concern.
+- `scripts/operational_config.py` — synchronized to `OTP_CODE_LENGTH = 4` and `SESSION_TTL_HOURS = 720` (30 days = refresh-session lifetime)
+- `scripts/domain_services.py` — current implementation is reconciled to the 4-digit OTP and 30-day refresh-session semantics; access-token 15-minute expiry remains a JWT concern.
 - Auth tests — update expected OTP length, session lifetime assertions to 30 days, add negative test: refresh_token_hash must persist beyond 15 minutes
 - Design specs 26/30 — align OTP input field to 4 digits, add 15-minute countdown, add refresh flow
 - Frontend auth screens — align input length, countdown display, lockout state
