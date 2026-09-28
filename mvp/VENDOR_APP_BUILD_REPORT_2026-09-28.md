@@ -1,10 +1,10 @@
 # POL Vendor Android App — Pre-APK Release Gate
 
-**Date:** 2026-09-28  
+**Date:** 2026-09-29  
 **Repository:** `rrasi90/POL-2.3`  
 **Base:** `main` @ `f90fe3117c1881545e32181381ec50a1a6960f9e`  
 **Working branch:** `feat/vendor-app-production-20260928-v2`  
-**Current HEAD:** `ec77fdf0eae1d91aecc503d90a242aafb01ca1b5`  
+**Functional/config snapshot:** `ec77fdf0eae1d91aecc503d90a242aafb01ca1b5`  
 **Pull Request:** #20
 
 ## 0. Gate position
