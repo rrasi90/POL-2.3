@@ -1758,3 +1758,74 @@ html {
     line-height: 1.95;
   }
 }
+
+/* Final Persian readability pass */
+.pol-hero-lead {
+  max-width: 720px;
+  font-size: 1.04rem;
+  line-height: 2.05;
+  color: var(--pol-light-text-secondary);
+}
+
+.pol-hero-note span:last-child {
+  font-size: 0.78rem;
+}
+
+.pol-section-heading p,
+.pol-precision-copy p,
+.pol-cta-card p {
+  font-size: 0.98rem;
+  line-height: 2.05;
+}
+
+.pol-flow-card p,
+.pol-role-card p {
+  font-size: 0.88rem;
+  line-height: 2;
+}
+
+.pol-section-heading h2,
+.pol-precision-copy h2,
+.pol-cta-card h2 {
+  font-weight: 750;
+}
+
+.pol-nav-links {
+  gap: 28px;
+}
+
+.pol-nav-links a {
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+.pol-button {
+  min-height: 52px;
+  border-radius: 14px;
+  font-weight: 700;
+}
+
+.pol-button-small {
+  min-height: 48px;
+}
+
+@media (max-width: 680px) {
+  .pol-hero-lead {
+    font-size: 0.97rem;
+    line-height: 2;
+  }
+
+  .pol-section-heading p,
+  .pol-precision-copy p,
+  .pol-cta-card p,
+  .pol-flow-card p,
+  .pol-role-card p {
+    font-size: 0.94rem;
+    line-height: 2;
+  }
+
+  .pol-nav-actions .pol-button-small {
+    min-height: 42px;
+    border-radius: 12px;
+  }
+}
