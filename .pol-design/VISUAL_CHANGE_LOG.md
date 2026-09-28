@@ -38,3 +38,4 @@ Observed after VPS deployment: the HTML and CSS rendered, but canonical brand im
 - keeps mobile navigation accessible and touch-friendly.
 
 The canonical design system still uses Vazirmatn for Persian UI. The change is an application-level typographic refinement rather than a design-system replacement.
+\n\n## Landing Pass — Persian-first correction — 2026-09-29\n\nApplied after live VPS observation: public brand assets are now explicitly allowed through the web middleware; landing navigation uses native in-page anchors; public copy is Persian-first; English marketing labels were removed from the landing surface; Persian typography rhythm, line height, weight, and button sizing were refined. Deployment smoke tests were aligned to the current headline and now validate the PNG signature for canonical brand assets.\n
