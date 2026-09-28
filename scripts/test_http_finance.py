@@ -255,6 +255,34 @@ class TestInvoiceList:
         assert len(body["invoices"]) >= 1
         assert body["invoices"][0]["retailer_organization_id"] == data["retailer_org"]
 
+    def test_vendor_staff_cannot_list_invoices(self, client):
+        data = _seed_finance(uuid4().hex[:8])
+        staff_user = str(uuid4())
+        membership_id = str(uuid4())
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role, is_active) VALUES (%s, %s, 'Vendor Staff', 'VENDOR_STAFF', TRUE)",
+                    (staff_user, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status, is_primary) VALUES (%s, %s, %s, 'VENDOR_STAFF', 'ACTIVE', FALSE)",
+                    (membership_id, data["vendor_org"], staff_user),
+                )
+                session_id = _create_session(cur, staff_user, data["vendor_org"])
+            conn.commit()
+            staff_token = encode_access_token(staff_user, session_id, data["vendor_org"], "VENDOR_STAFF")
+            resp = client.get("/api/v1/invoices", headers={"Authorization": f"Bearer {staff_token}"})
+            assert resp.status_code == 403
+        finally:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM user_sessions WHERE user_id=%s", (staff_user,))
+                cur.execute("DELETE FROM organization_memberships WHERE id=%s", (membership_id,))
+                cur.execute("DELETE FROM users WHERE id=%s", (staff_user,))
+            conn.commit()
+            conn.close()
+
     def test_ops_list_cross_tenant_invoices(self, client):
         data = _seed_finance(uuid4().hex[:8])
         op_user = str(uuid4())
@@ -306,6 +334,34 @@ class TestInvoiceGet:
         assert len(inv["items"]) == 1
         assert inv["items"][0]["product_name"] == "Product A"
         assert inv["items"][0]["quantity"] == 10
+
+    def test_vendor_staff_cannot_get_invoice_detail(self, client):
+        data = _seed_finance(uuid4().hex[:8])
+        staff_user = str(uuid4())
+        membership_id = str(uuid4())
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role, is_active) VALUES (%s, %s, 'Vendor Staff Detail', 'VENDOR_STAFF', TRUE)",
+                    (staff_user, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status, is_primary) VALUES (%s, %s, %s, 'VENDOR_STAFF', 'ACTIVE', FALSE)",
+                    (membership_id, data["vendor_org"], staff_user),
+                )
+                session_id = _create_session(cur, staff_user, data["vendor_org"])
+            conn.commit()
+            staff_token = encode_access_token(staff_user, session_id, data["vendor_org"], "VENDOR_STAFF")
+            resp = client.get(f"/api/v1/invoices/{data['invoice_id']}", headers={"Authorization": f"Bearer {staff_token}"})
+            assert resp.status_code == 403
+        finally:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM user_sessions WHERE user_id=%s", (staff_user,))
+                cur.execute("DELETE FROM organization_memberships WHERE id=%s", (membership_id,))
+                cur.execute("DELETE FROM users WHERE id=%s", (staff_user,))
+            conn.commit()
+            conn.close()
 
     def test_retailer_get_invoice_detail(self, client):
         data = _seed_finance(uuid4().hex[:8])
@@ -360,6 +416,34 @@ class TestSettlementList:
         assert isinstance(body["settlements"], list)
         assert len(body["settlements"]) >= 1
         assert body["settlements"][0]["vendor_id"] == data["vendor_id"]
+
+    def test_vendor_staff_cannot_list_settlements(self, client):
+        data = _seed_finance(uuid4().hex[:8])
+        staff_user = str(uuid4())
+        membership_id = str(uuid4())
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role, is_active) VALUES (%s, %s, 'Vendor Staff Settlement', 'VENDOR_STAFF', TRUE)",
+                    (staff_user, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status, is_primary) VALUES (%s, %s, %s, 'VENDOR_STAFF', 'ACTIVE', FALSE)",
+                    (membership_id, data["vendor_org"], staff_user),
+                )
+                session_id = _create_session(cur, staff_user, data["vendor_org"])
+            conn.commit()
+            staff_token = encode_access_token(staff_user, session_id, data["vendor_org"], "VENDOR_STAFF")
+            resp = client.get("/api/v1/vendors/settlements", headers={"Authorization": f"Bearer {staff_token}"})
+            assert resp.status_code == 403
+        finally:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM user_sessions WHERE user_id=%s", (staff_user,))
+                cur.execute("DELETE FROM organization_memberships WHERE id=%s", (membership_id,))
+                cur.execute("DELETE FROM users WHERE id=%s", (staff_user,))
+            conn.commit()
+            conn.close()
 
     def test_retailer_cannot_list_settlements(self, client):
         data = _seed_finance(uuid4().hex[:8])
