@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
 import { api } from "../api";
-import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
+import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip } from "../components/ui";
 import type { Role } from "../types";
-import { spacing, useThemedStyles, type Palette } from "../theme";
+import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 
 type MainTab = "home" | "orders" | "inventory" | "finance" | "more";
 type InventoryTab = "stock" | "daily";
@@ -169,7 +169,7 @@ function toneForOrderStatus(status: string | null | undefined): "neutral" | "war
 
 function MetricCard(props: { label: string; value: string; hint: string; tone?: "neutral" | "warn" | "ok" | "info" }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
-  const { colors } = require("../theme").useTheme();
+  const { colors } = useTheme();
   const accent = props.tone === "warn" ? colors.warning : props.tone === "ok" ? colors.success : props.tone === "info" ? colors.brand : colors.border;
   return (
     <View style={[styles.metricCard, { borderTopColor: accent }]}>
@@ -1003,7 +1003,7 @@ function makeStyles(colors: Palette) {
       marginBottom: spacing.sm,
       marginTop: spacing.sm,
     },
-    sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "750" },
+    sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
     sectionAction: { color: colors.brand, fontSize: 12, fontWeight: "700" },
     quickGrid: { gap: spacing.sm, marginBottom: spacing.lg },
     quickAction: {
