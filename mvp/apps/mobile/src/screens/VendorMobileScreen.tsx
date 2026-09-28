@@ -306,6 +306,15 @@ export function VendorMobileScreen(props: {
   const [candidateBrand, setCandidateBrand] = useState("");
   const [candidateSku, setCandidateSku] = useState("");
   const [candidateCreatedId, setCandidateCreatedId] = useState<string | null>(null);
+  const [scanSessionId, setScanSessionId] = useState("");
+  const [scanProductId, setScanProductId] = useState("");
+  const [scanSku, setScanSku] = useState("");
+  const [scanPackaging, setScanPackaging] = useState("CARTON");
+  const [scanPackQuantity, setScanPackQuantity] = useState("1");
+  const [scanPhysicalQuantity, setScanPhysicalQuantity] = useState("");
+  const [scanUnitPrice, setScanUnitPrice] = useState("");
+  const [scanStatus, setScanStatus] = useState<string | null>(null);
+  const [publishStatus, setPublishStatus] = useState<string | null>(null);
 
   const [customerQuery, setCustomerQuery] = useState("");
   const [invitePhone, setInvitePhone] = useState("");
@@ -392,9 +401,75 @@ export function VendorMobileScreen(props: {
         "/api/v1/catalog/barcode/lookup?barcode=" + encodeURIComponent(value),
       );
       setBarcodeResult(data);
+      if (data.product?.id) setScanProductId(data.product.id);
+      if (data.product?.master_sku) setScanSku(data.product.master_sku);
+      if (data.product?.default_pack_unit) setScanPackaging(data.product.default_pack_unit);
+      if (data.product?.default_pack_quantity) setScanPackQuantity(String(data.product.default_pack_quantity));
     } catch (e) {
       setBarcodeResult(null);
       setError(e instanceof Error ? e.message : "استعلام بارکد ناموفق بود.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitContinuousScan(): Promise<void> {
+    const productId = scanProductId || barcodeResult?.product?.id || "";
+    const sku = scanSku || barcodeResult?.product?.master_sku || "";
+    const packQuantity = Number(toAsciiDigits(scanPackQuantity).replace(/[٬,\s]/g, ""));
+    const physicalQuantity = Number(toAsciiDigits(scanPhysicalQuantity).replace(/[٬,\s]/g, ""));
+    const unitPrice = Number(toAsciiDigits(scanUnitPrice).replace(/[٬,\s]/g, ""));
+    if (!productId || !sku) {
+      setError("ابتدا یک کالای تطبیق‌شده را انتخاب کنید.");
+      return;
+    }
+    if (!Number.isInteger(packQuantity) || packQuantity < 1 || !Number.isInteger(physicalQuantity) || physicalQuantity < 0 || !Number.isFinite(unitPrice) || unitPrice <= 0) {
+      setError("تعداد بسته، موجودی فیزیکی و قیمت را با مقدار معتبر وارد کنید.");
+      return;
+    }
+    const sessionId = scanSessionId || "android-vendor-" + Date.now().toString(36);
+    setScanSessionId(sessionId);
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.post<{ session_id?: string; status?: string }>(
+        "/api/v1/vendors/inventory/continuous-scan",
+        {
+          product_id: productId,
+          vendor_sku: sku,
+          packaging_unit: scanPackaging,
+          pack_quantity: packQuantity,
+          physical_quantity: physicalQuantity,
+          unit_price_toman: unitPrice,
+          session_id: sessionId,
+        },
+      );
+      setScanStatus(data.status || "ثبت شد");
+      setPublishStatus(null);
+      await loadInventory();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ثبت اسکن موجودی ناموفق بود.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function publishContinuousScan(): Promise<void> {
+    if (!scanSessionId) {
+      setError("ابتدا حداقل یک قلم را در یک جلسه اسکن ثبت کنید.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.post<{ status?: string; published_count?: number }>(
+        "/api/v1/vendors/inventory/publish",
+        { session_id: scanSessionId },
+      );
+      setPublishStatus(data.status || (data.published_count != null ? `${data.published_count} قلم منتشر شد` : "منتشر شد"));
+      await loadInventory();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "انتشار موجودی ناموفق بود.");
     } finally {
       setLoading(false);
     }
@@ -765,6 +840,22 @@ export function VendorMobileScreen(props: {
                   <Text style={styles.itemTitle}>{barcodeResult.product.canonical_name_fa || "کالای تطبیق‌شده"}</Text>
                   <Text style={styles.meta}>SKU: {barcodeResult.product.master_sku || "—"} · برند: {barcodeResult.product.brand_name || "—"}</Text>
                   <Text style={styles.meta}>بسته‌بندی: {barcodeResult.product.default_pack_unit || "—"} · تعداد: {numberFa(barcodeResult.product.default_pack_quantity)}</Text>
+                </View>
+              ) : null}
+              {barcodeResult.product ? (
+                <View style={styles.candidatePanel}>
+                  <Text style={styles.itemTitle}>ثبت در موجودی با اسکن</Text>
+                  <Text style={styles.meta}>در این مرحله دوربین واقعی هنوز device-gated است؛ همین فرم همان contract اسکن پیوسته را با داده متصل می‌کند.</Text>
+                  <Input label="SKU فروشنده" value={scanSku} onChangeText={setScanSku} direction="ltr" />
+                  <Input label="واحد بسته‌بندی" value={scanPackaging} onChangeText={setScanPackaging} direction="ltr" />
+                  <Input label="تعداد در بسته" value={scanPackQuantity} onChangeText={setScanPackQuantity} keyboardType="numeric" />
+                  <Input label="موجودی فیزیکی" value={scanPhysicalQuantity} onChangeText={setScanPhysicalQuantity} keyboardType="numeric" />
+                  <Input label="قیمت فروش (تومان)" value={scanUnitPrice} onChangeText={setScanUnitPrice} keyboardType="numeric" />
+                  <Btn label="ثبت در جلسه اسکن" onPress={() => void submitContinuousScan()} loading={loading} disabled={loading} />
+                  {scanSessionId ? <Text style={styles.meta}>جلسه: {scanSessionId}</Text> : null}
+                  {scanStatus ? <Text style={styles.successNote}>وضعیت ثبت: {scanStatus}</Text> : null}
+                  {scanSessionId ? <Btn label="انتشار موجودی جلسه" tone="ghost" onPress={() => void publishContinuousScan()} loading={loading} disabled={loading} /> : null}
+                  {publishStatus ? <Text style={styles.successNote}>وضعیت انتشار: {publishStatus}</Text> : null}
                 </View>
               ) : null}
               {barcodeResult.products?.length ? (
