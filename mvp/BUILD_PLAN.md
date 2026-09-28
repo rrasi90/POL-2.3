@@ -3,7 +3,7 @@
 **Contract:** Master Build Instruction (repo root session) + master loop (DISCOVER→PLAN→BUILD→TEST→RECONCILE→AUDIT→FIX→…→DELIVERY)  
 **Root:** `mvp/`  
 **Authorized branch:** `main`  
-**Updated:** 2026-09-28 · Self-hosted VPS runtime/deep-verification gate passed at `85.198.50.29`; HTTPS/domain cutover remains pending; fresh CI and other pre-release evidence gates remain tracked below.  
+**Updated:** 2026-09-28 · Self-hosted VPS runtime/deep-verification gate passed at `85.198.50.29`; the IP-stage runtime is operational, while HTTPS/domain cutover, fresh CI certification, provider/observability evidence and selected remaining QA/decision gates remain tracked below.  
 **Authority hierarchy:** `DECISION_REGISTER.md` (D-001…D-028 on branch) → CURRENT_SOURCE_OF_TRUTH → this file → module evidence files.
 
 **Rule:** NOT DONE = KEEP WORKING. Do not stop to ask which track. Isolate external deps as `BLOCKED_EXTERNAL` and continue everything else. Later-discovered defects in earlier phases ⇒ reopen, root-cause fix, retest, return.
@@ -292,7 +292,7 @@ MVP is DONE only when **all** hold:
 | B-01 | Real metrics source for `driver-stamford-07020/collector.py` | repo/config/docs: no production metrics feed; collector is sine/random | provide real exporter or mark monitoring demo-only |
 | B-02 | OpenPencil MCP `127.0.0.1:7600` down | not listening; config exists | launch OpenPencil app → then WAVE-02 Golden Components |
 | B-03 | SMS/OTP provider (SMS.ir) live send | no provider creds in workspace | env credentials |
-| B-04 | Live e2e VERIFIED promotion | **PARTIAL UNBLOCKED** (2026-09-23) | API:8000 + Next:3001 up; 19 screens promoted; basket/checkout POST e2e remains Phase 4 |
+| B-04 | Live e2e VERIFIED promotion | **RESOLVED FOR VPS IP-STAGE** (2026-09-28) | Public Nginx→FastAPI routing, authentication, Basket→Allocation→Checkout, idempotency replay and Outbox→Worker were verified on the self-hosted VPS; local screen-matrix promotion remains a separate QA bookkeeping scope. |
 | B-05 | CI green on origin | last workflow runs **failure** | push reconciled commits; fix CI job if still red |
 | B-06 | Docker `pol_test` empty | host PG holds schema | prefer host DSN; optional re-bootstrap into container |
 | B-07 | Grafana :3000 vs Next :3000 | both default 3000 | run Next on 3001 when both up |
