@@ -15,6 +15,13 @@ module.exports = {
   extra: { ...(base.extra || {}), appVariant: isVendor ? "vendor" : "retailer", dataMode: (process.env.EXPO_PUBLIC_DATA_MODE || "live").toLowerCase() },
   plugins: [
     ...(base.plugins || []),
+    ["expo-font", {
+      fonts: [
+        "./assets/fonts/Vazirmatn-Regular.ttf",
+        "./assets/fonts/Vazirmatn-SemiBold.ttf",
+        "./assets/fonts/Vazirmatn-Bold.ttf",
+      ],
+    }],
     "./plugins/withAndroidSizeOptimization.js",
   ],
   android: {
