@@ -27,7 +27,7 @@
     "build:apk:vendor": "node scripts/build_android_variant.mjs vendor",
     "build:aab:retailer": "node scripts/build_android_variant.mjs retailer aab",
     "build:aab:vendor": "node scripts/build_android_variant.mjs vendor aab",
-    "analyze:bundle": "EXPO_ATLAS=true npx expo export --platform android"
+    "analyze:bundle": "node scripts/analyze_bundle.mjs"
   },
   "private": true
 }
