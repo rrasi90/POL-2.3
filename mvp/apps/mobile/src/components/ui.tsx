@@ -69,7 +69,7 @@ export function Btn(props: {
   );
 }
 
-export function Input(props: TextInputProps & { label: string; hint?: string }): React.ReactNode {
+export function Input(props: TextInputProps & { label: string; hint?: string; direction?: "rtl" | "ltr" }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
   const { label, hint, direction, keyboardType, ...rest } = props;
