@@ -146,14 +146,27 @@ LANDING_HTML="$(curl -fsS --max-time 20 http://127.0.0.1/)"
 grep -Fq "خرید عمده" <<<"$LANDING_HTML" || die "landing page value proposition marker missing"
 grep -Fq "یک مسیر روشن" <<<"$LANDING_HTML" || die "landing page headline marker missing"
 
+CSS_ASSET="$(grep -oE '/_next/static/css/[^"]+\.css' /tmp/pol-landing.html 2>/dev/null | head -n1 || true)"
+if [[ -z "$CSS_ASSET" ]]; then
+  curl -fsS --max-time 15 http://127.0.0.1/ >/tmp/pol-landing.html
+  CSS_ASSET="$(grep -oE '/_next/static/css/[^"]+\.css' /tmp/pol-landing.html | head -n1 || true)"
+fi
+[[ -n "$CSS_ASSET" ]] || die "landing CSS asset reference missing"
+curl -fsS --max-time 15 "http://127.0.0.1$CSS_ASSET" -o /tmp/pol-landing.css
+test -s /tmp/pol-landing.css || die "landing CSS asset is empty"
+
 for asset in corporate market vendor; do
   curl -fsS --max-time 15 "http://127.0.0.1/brand/$asset" -o "/tmp/pol-brand-$asset.png"
   test -s "/tmp/pol-brand-$asset.png" || die "brand asset is empty: $asset"
+  PNG_MAGIC="$(xxd -p -l 8 "/tmp/pol-brand-$asset.png")"
+  [[ "$PNG_MAGIC" == "89504e470d0a1a0a" ]] || die "brand asset is not a valid PNG: $asset"
 done
 
 curl -fsS --max-time 15 http://127.0.0.1/ >/tmp/pol-landing.html
 printf 'Landing HTML bytes: '
 wc -c </tmp/pol-landing.html
+printf 'Landing CSS bytes: '
+wc -c </tmp/pol-landing.css
 printf 'Brand asset bytes: corporate='
 wc -c </tmp/pol-brand-corporate.png
 printf ' market='
@@ -173,9 +186,17 @@ if [[ -n "$PUBLIC_BASE_URL" ]]; then
   grep -Fq "خرید عمده" <<<"$PUBLIC_LANDING_HTML" || die "public landing value proposition marker missing"
   grep -Fq "یک مسیر روشن" <<<"$PUBLIC_LANDING_HTML" || die "public landing headline marker missing"
 
+  PUBLIC_HTML="$PUBLIC_LANDING_HTML"
+  PUBLIC_CSS_ASSET="$(grep -oE '/_next/static/css/[^"]+\.css' <<<"$PUBLIC_HTML" | head -n1 || true)"
+  [[ -n "$PUBLIC_CSS_ASSET" ]] || die "public landing CSS asset reference missing"
+  curl -fsS --max-time 20 "$PUBLIC_BASE_URL$PUBLIC_CSS_ASSET" -o /tmp/pol-public-landing.css
+  test -s /tmp/pol-public-landing.css || die "public landing CSS asset is empty"
+
   for asset in corporate market vendor; do
     curl -fsS --max-time 20 "$PUBLIC_BASE_URL/brand/$asset" -o "/tmp/pol-public-brand-$asset.png"
     test -s "/tmp/pol-public-brand-$asset.png" || die "public brand asset is empty: $asset"
+    PUBLIC_PNG_MAGIC="$(xxd -p -l 8 "/tmp/pol-public-brand-$asset.png")"
+    [[ "$PUBLIC_PNG_MAGIC" == "89504e470d0a1a0a" ]] || die "public brand asset is not a valid PNG: $asset"
   done
 fi
 
