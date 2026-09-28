@@ -29,7 +29,11 @@ function pngDimensions(file) {
 
 const originalVariant = process.env.POL_APP_VARIANT;
 const releaseGate = process.env.POL_RELEASE === "1";
+const dataMode = (process.env.EXPO_PUBLIC_DATA_MODE || "live").toLowerCase();
 const apiBaseUrl = (process.env.EXPO_PUBLIC_API_BASE_URL || "").trim();
+if (releaseGate) {
+  assert(dataMode !== "mock", "release build cannot use mock data mode");
+}
 if (releaseGate) {
   assert(apiBaseUrl.length > 0, "release build requires EXPO_PUBLIC_API_BASE_URL; emulator fallback is not allowed");
   const parsedApi = new URL(apiBaseUrl);
