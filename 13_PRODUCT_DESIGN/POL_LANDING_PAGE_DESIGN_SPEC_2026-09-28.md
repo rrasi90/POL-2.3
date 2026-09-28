@@ -65,3 +65,9 @@ The canonical repository logos are served same-origin from `/brand/{asset}` by `
 ## Verification gate
 
 Fresh `npm run typecheck`, `npm run lint`, `npm run build`, route smoke, and desktop/mobile visual capture are required before promoting the new landing surface to a `VERIFIED` visual state.
+
+## 2026-09-29 usability refinement
+
+This implementation pass makes the public landing explicitly Persian-first. In-page navigation uses native anchor targets for deterministic browser behavior; route transitions remain Next.js `Link` navigations. The public brand asset route is included in the middleware allowlist. Typography uses the existing canonical Vazirmatn stack but reduces aggressive negative tracking on Persian headlines and increases readable line-height/body sizing.
+
+The page intentionally uses plain user-facing terms such as «فروشگاه»، «بنکدار»، «سبد خرید» و «پیگیری» instead of exposing internal orchestration vocabulary in the marketing surface.
