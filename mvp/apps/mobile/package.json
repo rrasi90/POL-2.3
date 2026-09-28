@@ -21,7 +21,10 @@
     "start": "expo start",
     "build": "expo export --platform android --output-dir ./dist",
     "qa:functional": "node scripts/mobile_functional_qa.mjs",
-    "qa:regression": "node scripts/mobile_regression_qa.mjs"
+    "qa:regression": "node scripts/mobile_regression_qa.mjs",
+    "build:apk": "node scripts/build_android_variant.mjs",
+    "build:apk:retailer": "node scripts/build_android_variant.mjs retailer",
+    "build:apk:vendor": "node scripts/build_android_variant.mjs vendor"
   },
   "private": true
 }
