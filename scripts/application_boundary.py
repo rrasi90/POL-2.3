@@ -1962,7 +1962,9 @@ class POLApplicationBoundary:
 
     def settlements_list(self, *, offset=0, limit=50):
         actor_role = self._resolve_actor_role()
-        if actor_role != "VENDOR":
+        if actor_role == "VENDOR":
+            self._require_vendor_owner()
+        else:
             raise PermissionError("Settlement listing is restricted to vendor tenants.")
         params = [self.context.organization_id, limit, offset]
         self.cur.execute(
@@ -1988,7 +1990,9 @@ class POLApplicationBoundary:
 
     def settlement_get(self, *, settlement_id):
         actor_role = self._resolve_actor_role()
-        if actor_role != "VENDOR":
+        if actor_role == "VENDOR":
+            self._require_vendor_owner()
+        else:
             raise PermissionError("Settlement detail is restricted to vendor tenants.")
         self.cur.execute(
             """
