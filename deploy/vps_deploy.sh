@@ -126,6 +126,15 @@ echo "[DEPLOY] starting API/worker/web/nginx"
 echo "[DEPLOY] verifying container state"
 "${COMPOSE[@]}" ps
 
+echo "[DEPLOY] waiting for web and API readiness"
+readiness_deadline=$((SECONDS + 45))
+until curl -fsS --max-time 5 http://127.0.0.1/healthz >/dev/null 2>&1 && \
+      curl -fsS --max-time 5 http://127.0.0.1/readyz >/dev/null 2>&1 && \
+      curl -fsSI --max-time 5 http://127.0.0.1/ >/dev/null 2>&1; do
+  (( SECONDS >= readiness_deadline )) && die "timeout waiting for web and API readiness"
+  sleep 2
+done
+
 echo "[DEPLOY] verifying internal readiness"
 curl -fsS --max-time 15 http://127.0.0.1/healthz
 printf '\\n'
