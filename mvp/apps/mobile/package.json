@@ -30,7 +30,8 @@
     "build:aab:vendor": "node scripts/build_android_variant.mjs vendor aab",
     "analyze:bundle": "node scripts/analyze_bundle.mjs",
     "qa:pre-apk": "node scripts/pre_apk_qa.mjs",
-    "qa:live": "node scripts/live_api_preflight.mjs"
+    "qa:live": "node scripts/live_api_preflight.mjs",
+    "qa:mock": "node --experimental-strip-types scripts/mock_transport_qa.mjs"
   },
   "private": true
 }
