@@ -55,10 +55,15 @@ assert.equal(dailyChanged.lines[0].confirmed_quantity, 111);
 
 const invoices = await req<{ invoices: unknown[] }>("GET", "/api/v1/invoices", undefined, owner);
 assert.equal(invoices.invoices.length, 2);
+const invoiceDetail = await req<{ items: unknown[] }>("GET", "/api/v1/invoices/mock-invoice-1", undefined, owner);
+assert.equal(invoiceDetail.items.length, 2);
 await rejects(() => req("GET", "/api/v1/invoices", undefined, staff), "Vendor Staff cannot view invoices");
 
 const settlements = await req<{ settlements: unknown[] }>("GET", "/api/v1/vendors/settlements", undefined, owner);
 assert.equal(settlements.settlements.length, 2);
+const settlementDetail = await req<{ adjustments: unknown[]; net_vendor_amount_toman: number }>("GET", "/api/v1/settlements/mock-settlement-1", undefined, owner);
+assert.equal(settlementDetail.adjustments.length, 1);
+assert.equal(settlementDetail.net_vendor_amount_toman, 16080000);
 await rejects(() => req("GET", "/api/v1/vendors/settlements", undefined, staff), "Vendor Staff cannot view settlements");
 
 const customers = await req<{ customers: unknown[] }>("GET", "/api/v1/vendors/customers?query=اروند", undefined, staff);
