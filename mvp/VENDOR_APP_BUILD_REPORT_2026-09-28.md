@@ -9,7 +9,7 @@
 
 ## 0. Gate position
 
-The branch is intentionally stopped **immediately before native Android APK assembly**.
+The branch is intentionally stopped **immediately before native Android APK assembly**. The final documentation-only commit (`415aec1ff...`) records the release gate without changing application behavior after the functional/config snapshot (`ec77fdf0...`).
 
 This stage covers source/configuration/release-gate work only. It does **not** run:
 - `expo prebuild --clean --platform android`
