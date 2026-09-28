@@ -12,6 +12,7 @@ const PUBLIC_PREFIXES = [
   "/contact",
   "/legal",
   "/dev",
+  "/api/v1",
   "/_next",
 ];
 
@@ -31,8 +32,8 @@ function isPublic(path: string): boolean {
 }
 
 /**
- * UX route gate only — cookies for SSR shell; API remains authoritative.
- * Session cookie written by client auth store mirror (Phase 2 may move to httpOnly).
+ * QA branch: /api/v1 is intentionally public because the Vercel mock server
+ * is the test data source. This does not model backend authorization.
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -46,7 +47,6 @@ export function middleware(request: NextRequest) {
   );
 
   if (!rule) {
-    // unknown app path: require session if any protected area
     if (!session) {
       const url = request.nextUrl.clone();
       url.pathname = "/auth/login";
