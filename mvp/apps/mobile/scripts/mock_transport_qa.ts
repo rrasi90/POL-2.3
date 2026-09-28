@@ -173,3 +173,7 @@ assert.equal(preferences[0].sms_enabled, true);
 await req("PUT", "/api/v1/notifications/preferences", { event_name: "ORDER_STATUS_CHANGED", channel: "PUSH", is_enabled: false }, staff);
 
 console.log("[MOCK-QA PASS] Vendor mock transport exercised successfully across auth, RBAC, orders, inventory, finance, storefront, barcode, scan/publish, support and profile.");
+
+
+const logout = await req<{ success: boolean }>("DELETE", "/api/v1/auth/sessions/current", undefined, staff);
+assert.equal(logout.success, true);
