@@ -27,7 +27,7 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 ## QA evidence
 
 - CI workflow: `.github/workflows/pol-mvp-mobile.yml`
-- Required checks currently wired: mobile typecheck + Expo config validation + Android export.
+- Required checks currently wired: mobile typecheck + functional/regression QA + retailer/vendor Expo config validation + deterministic pre-APK release gate + Android export.
 - CI cycle 1 is evidenced by run `35884012647`. Functional/state-transition/parity QA cycle 2 is evidenced by run `35886815013` with **23/23 deterministic checks passing**; this remains contract/state coverage rather than device-level exploratory QA. Regression/cross-module QA cycle 3 is evidenced by run `35893284378` with **11/11 checks passing**, plus typecheck, Expo config validation and Android export. Visual Night verification remains a separate local gate.
 - Source implementation and QA evidence are tracked separately; do not promote a mobile surface to VERIFIED without current executable evidence.
 
