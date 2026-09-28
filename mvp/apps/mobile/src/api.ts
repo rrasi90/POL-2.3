@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { mockRequest } from "./mock/mockTransport";
 
 export type ApiEnvelope<T> =
   | { success: true; data: T }
@@ -18,6 +19,10 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 }
+
+export const DATA_MODE = (process.env.EXPO_PUBLIC_DATA_MODE ?? "live").toLowerCase();
+const MOCK_MODE = DATA_MODE === "mock";
+export function isMockMode(): boolean { return MOCK_MODE; }
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://10.0.2.2:8000";
 const ACCESS_KEY = "pol.access_token";
@@ -64,6 +69,7 @@ export async function clearSession(): Promise<void> {
 }
 
 async function refreshAccessToken(): Promise<boolean> {
+  if (MOCK_MODE) return false;
   if (!refreshInFlight) {
     refreshInFlight = (async () => {
       const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY);
@@ -125,6 +131,13 @@ async function request<T>(
   if (accessToken) headers.Authorization = "Bearer " + accessToken;
 
   try {
+    if (MOCK_MODE) {
+      const mockHeaders: Record<string, string> = { ...headers };
+      const value = await mockRequest<T>(method, path, body, mockHeaders);
+      setOnline(true);
+      return value;
+    }
+
     const res = await fetch(BASE + path, {
       method,
       headers,
@@ -177,6 +190,11 @@ export const api = {
 
 export async function healthz(): Promise<boolean> {
   try {
+    if (MOCK_MODE) {
+      await mockRequest("GET", "/healthz", undefined, accessToken ? { Authorization: "Bearer " + accessToken } : {});
+      setOnline(true);
+      return true;
+    }
     const res = await fetch(BASE + "/healthz", { method: "GET" });
     setOnline(res.ok);
     return res.ok;
