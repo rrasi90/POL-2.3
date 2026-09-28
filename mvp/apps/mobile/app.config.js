@@ -2,19 +2,37 @@ const base = require("./app.json").expo;
 const variant = (process.env.POL_APP_VARIANT || "retailer").toLowerCase();
 const isVendor = variant === "vendor";
 
+const vendorLogo = "./assets/vendor-logo.png";
+const retailerIcon = "./assets/icon.png";
+
 module.exports = {
   ...base,
   name: isVendor ? "پل بنکدار" : "پل بازار",
   slug: isVendor ? "pol-vendor" : "pol-market",
   version: "1.0.0",
+  icon: isVendor ? vendorLogo : retailerIcon,
+  userInterfaceStyle: "automatic",
   extra: { ...(base.extra || {}), appVariant: isVendor ? "vendor" : "retailer" },
   plugins: [
     ...(base.plugins || []),
     "./plugins/withAndroidSizeOptimization.js",
   ],
+  splash: isVendor
+    ? {
+        image: vendorLogo,
+        resizeMode: "contain",
+        backgroundColor: "#F7F9FC",
+      }
+    : base.splash,
   android: {
     ...(base.android || {}),
     package: isVendor ? "ir.pol.vendor" : "ir.pol.market",
     versionCode: 100,
+    adaptiveIcon: isVendor
+      ? {
+          backgroundColor: "#F7F9FC",
+          foregroundImage: vendorLogo,
+        }
+      : base.android?.adaptiveIcon,
   },
 };
