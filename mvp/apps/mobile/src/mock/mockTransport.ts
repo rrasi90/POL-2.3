@@ -576,6 +576,8 @@ export async function mockRequest<T>(
 
   if (method === "GET" && pathname === "/api/v1/auth/sessions/current") return envelope({ id: "mock-session", status: "ACTIVE", expires_at: new Date(Date.now() + 3600_000).toISOString() });
 
+  if (method === "DELETE" && pathname === "/api/v1/auth/sessions/current") return envelope({ success: true });
+
   if (method === "GET" && pathname === "/healthz") return envelope({ status: "ok", mode: "mock" });
   if (method === "GET" && pathname === "/readyz") return envelope({ status: "ready", mode: "mock" });
   if (method === "GET" && pathname === "/api/v1/categories") return envelope({ categories: [] });
