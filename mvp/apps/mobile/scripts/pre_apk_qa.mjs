@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -8,6 +9,12 @@ const requireFromApp = createRequire(resolve(appDir, "package.json"));
 function assert(condition, message) {
   if (!condition) throw new Error("[PRE-APK FAIL] " + message);
   console.log("[PRE-APK PASS]", message);
+}
+
+function gitBlobSha(file) {
+  const bytes = readFileSync(file);
+  const header = Buffer.from("blob " + bytes.length + "\0");
+  return createHash("sha1").update(Buffer.concat([header, bytes])).digest("hex");
 }
 
 function pngDimensions(file) {
@@ -37,6 +44,7 @@ assert(config.android?.splash?.image === "./assets/vendor-logo.png", "vendor And
 
 const vendorLogo = resolve(appDir, "assets/vendor-logo.png");
 const logoInfo = pngDimensions(vendorLogo);
+assert(gitBlobSha(vendorLogo) === "d6b0bc5c4ea5aa66e0feb739bfc176589d89a182", "vendor logo is byte-identical to the canonical Vendor brand asset");
 assert(logoInfo.width >= 512 && logoInfo.height >= 512, "vendor logo asset has sufficient raster resolution");
 assert(Math.abs(logoInfo.width - logoInfo.height) <= Math.max(logoInfo.width, logoInfo.height) * 0.05, "vendor logo asset is near-square for launcher/splash use");
 
