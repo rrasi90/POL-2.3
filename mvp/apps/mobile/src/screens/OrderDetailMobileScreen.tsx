@@ -472,12 +472,12 @@ export function OrderDetailMobileScreen(props: {
 
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  header: { flexDirection: "row", direction: "rtl", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  row: { flexDirection: "row", direction: "rtl", flexWrap: "wrap", gap: spacing.sm },
   item: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, marginTop: spacing.sm },
-  h2: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 4 },
-  body: { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
-  meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18 },
-  metric: { color: colors.text, fontSize: 20, fontWeight: "700", marginVertical: spacing.sm },
+  h2: { color: colors.text, fontSize: 15, fontWeight: "700", fontFamily: "Vazirmatn-SemiBold", marginBottom: 4, textAlign: "right" },
+  body: { color: colors.textSecondary, fontSize: 13, lineHeight: 21, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
+  meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 19, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
+  metric: { color: colors.text, fontSize: 20, fontWeight: "700", fontFamily: "Vazirmatn-Bold", marginVertical: spacing.sm, textAlign: "right" },
   });
 }
