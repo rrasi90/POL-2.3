@@ -1,4 +1,9 @@
 # گزارش جامع تطبیق قراردادها، ممیزی معماری پلتفرم و گیت زمان اجرای واقعی (POL Final Contract Reconciliation & Platform Runtime Gate Audit)
+> [!WARNING]
+> **HISTORICAL / SUPERSEDED**
+>
+> This report records an earlier certification/schema snapshot. It is retained for traceability only. Current implementation authority is `CURRENT_SOURCE_OF_TRUTH.md`, the active Decision Register, the current migration chain, and current runtime evidence.
+
 
 **شناسه سند:** `POL-GATE-2026-FINAL`  
 **تاریخ صدور:** ۲۳ شهریور ۱۴۰۵ (۱۳ سپتامبر ۲۰۲۶)  
