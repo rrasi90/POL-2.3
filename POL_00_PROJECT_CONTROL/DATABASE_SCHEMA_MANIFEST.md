@@ -10,7 +10,7 @@
 
 ## ۱. زنجیره کانونیکال مهاجرت پایگاه داده (Canonical Migration Chain)
 
-زنجیره مایگریشن پایگاه داده پلتفرم پُل یک زنجیره forward-only و ترتیبی است و در remediation branch تا migration `076_reservation_and_candidate_event_templates.sql` امتداد یافته است:
+زنجیره مایگریشن پایگاه داده پلتفرم پُل یک زنجیره forward-only و ترتیبی است و در main فعلی تا migration `076_reservation_and_candidate_event_templates.sql` امتداد یافته است:
 
 ```text
 migrations/001_initial_schema.sql
