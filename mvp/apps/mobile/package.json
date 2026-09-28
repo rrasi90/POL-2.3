@@ -28,7 +28,8 @@
     "build:aab:retailer": "node scripts/build_android_variant.mjs retailer aab",
     "build:aab:vendor": "node scripts/build_android_variant.mjs vendor aab",
     "analyze:bundle": "node scripts/analyze_bundle.mjs",
-    "qa:pre-apk": "node scripts/pre_apk_qa.mjs"
+    "qa:pre-apk": "node scripts/pre_apk_qa.mjs",
+    "qa:live": "node scripts/live_api_preflight.mjs"
   },
   "private": true
 }
