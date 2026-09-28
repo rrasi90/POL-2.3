@@ -1,0 +1,96 @@
+name: POL Landing Page QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "mvp/apps/web/**"
+      - "mvp/packages/**"
+      - "mvp/package.json"
+      - "mvp/package-lock.json"
+      - "logo/**"
+      - "deploy/Dockerfile.web"
+      - ".github/workflows/pol-landing-qa.yml"
+  push:
+    branches:
+      - "deploy/vps-self-hosted-20260928"
+      - "main"
+    paths:
+      - "mvp/apps/web/**"
+      - "mvp/packages/**"
+      - "mvp/package.json"
+      - "mvp/package-lock.json"
+      - "logo/**"
+      - "deploy/Dockerfile.web"
+      - ".github/workflows/pol-landing-qa.yml"
+
+jobs:
+  web:
+    name: Landing build and standalone runtime
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mvp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22.23.1
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+          cache-dependency-path: mvp/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck --workspace @pol/web
+
+      - name: Lint
+        run: npm run lint --workspace @pol/web
+
+      - name: Build
+        run: npm run build --workspace @pol/web
+
+      - name: Recreate standalone static asset layout
+        run: |
+          set -euo pipefail
+          mkdir -p apps/web/.next/standalone/.next/static
+          cp -R apps/web/.next/static/. apps/web/.next/standalone/.next/static/
+
+      - name: Standalone runtime smoke
+        run: |
+          set -euo pipefail
+          cd apps/web/.next/standalone
+          PORT=3001 HOSTNAME=127.0.0.1 node apps/web/server.js >/tmp/pol-web.log 2>&1 &
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3001/ >/tmp/pol-home.html; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+
+          test "$ready" -eq 1
+          grep -F "خرید عمده" /tmp/pol-home.html
+          grep -F "یک مسیر روشن" /tmp/pol-home.html
+          grep -F "ONE NETWORK, THREE ROLES" /tmp/pol-home.html
+
+          curl -fsS http://127.0.0.1:3001/_next/static/css/ >/dev/null 2>&1 || true
+          css_url="$(grep -oE 'href="/_next/static/css/[^"]+\.css"' /tmp/pol-home.html | head -n1 | sed 's/^href="//;s/"$//')"
+          test -n "$css_url"
+          curl -fsS "http://127.0.0.1:3001$css_url" >/tmp/pol.css
+          test -s /tmp/pol.css
+
+          for asset in corporate market vendor; do
+            curl -fsS -o "/tmp/pol-$asset.png" "http://127.0.0.1:3001/brand/$asset"
+            test -s "/tmp/pol-$asset.png"
+          done
+
+          echo "Landing build + runtime + CSS + brand assets: PASS"
