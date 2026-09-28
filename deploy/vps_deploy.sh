@@ -140,7 +140,26 @@ curl -fsS --max-time 15 http://127.0.0.1/healthz
 printf '\\n'
 curl -fsS --max-time 15 http://127.0.0.1/readyz
 printf '\\n'
-curl -fsSI --max-time 15 http://127.0.0.1/
+
+echo "[DEPLOY] verifying landing page and canonical brand assets"
+LANDING_HTML="$(curl -fsS --max-time 20 http://127.0.0.1/)"
+grep -Fq "خرید عمده" <<<"$LANDING_HTML" || die "landing page value proposition marker missing"
+grep -Fq "یک مسیر روشن" <<<"$LANDING_HTML" || die "landing page headline marker missing"
+
+for asset in corporate market vendor; do
+  curl -fsS --max-time 15 "http://127.0.0.1/brand/$asset" -o "/tmp/pol-brand-$asset.png"
+  test -s "/tmp/pol-brand-$asset.png" || die "brand asset is empty: $asset"
+done
+
+curl -fsS --max-time 15 http://127.0.0.1/ >/tmp/pol-landing.html
+printf 'Landing HTML bytes: '
+wc -c </tmp/pol-landing.html
+printf 'Brand asset bytes: corporate='
+wc -c </tmp/pol-brand-corporate.png
+printf ' market='
+wc -c </tmp/pol-brand-market.png
+printf ' vendor='
+wc -c </tmp/pol-brand-vendor.png
 printf '\\n'
 
 if [[ -n "$PUBLIC_BASE_URL" ]]; then
