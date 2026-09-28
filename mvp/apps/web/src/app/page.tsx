@@ -28,6 +28,12 @@ const flowSteps = [
   },
 ];
 
+const brandAssets = {
+  corporate: "/brand/corporate",
+  market: "/brand/market",
+  vendor: "/brand/vendor",
+} as const;
+
 const roleCards = [
   {
     eyebrow: "برای خرده‌فروشان",
@@ -35,6 +41,8 @@ const roleCards = [
     body: "کاتالوگ، موجودی، سبد و سفارش را در یک مسیر واحد مدیریت کن.",
     href: "/retailer",
     cta: "ورود به بازار",
+    logo: brandAssets.market,
+    logoAlt: "پل مغازه‌دار",
   },
   {
     eyebrow: "برای تأمین‌کنندگان",
@@ -42,6 +50,8 @@ const roleCards = [
     body: "کاتالوگ، قیمت، موجودی، پذیرش سفارش و fulfillment را از یک نقطه کنترل کن.",
     href: "/vendor",
     cta: "ورود به پنل",
+    logo: brandAssets.vendor,
+    logoAlt: "پل بنکدار",
   },
   {
     eyebrow: "برای تیم عملیات",
@@ -49,6 +59,8 @@ const roleCards = [
     body: "صف‌ها، پشتیبانی، reconciliation و audit را بر مبنای وضعیت واقعی عملیات دنبال کن.",
     href: "/ops",
     cta: "ورود به عملیات",
+    logo: brandAssets.corporate,
+    logoAlt: "پُــــل",
   },
 ];
 
@@ -74,9 +86,16 @@ export default function HomePage() {
     <div className="pol-landing">
       <header className="pol-nav">
         <div className="pol-container pol-nav-inner">
-          <Link href="/" className="pol-brand" aria-label="پُل">
-            <span className="pol-brand-mark">پُ</span>
-            <span className="pol-brand-word">پُــــل</span>
+          <Link href="/" className="pol-brand" aria-label="پُــــل">
+            <Image
+              className="pol-brand-logo"
+              src={brandAssets.corporate}
+              alt="پُــــل"
+              width={132}
+              height={44}
+              priority
+              unoptimized
+            />
           </Link>
 
           <nav className="pol-nav-links" aria-label="ناوبری اصلی">
@@ -165,8 +184,17 @@ export default function HomePage() {
               <div className="pol-flow-core">
                 <div className="pol-core-ring pol-core-ring-one" />
                 <div className="pol-core-ring pol-core-ring-two" />
-                <div className="pol-core-mark">پُ</div>
-                <div className="pol-core-caption">POL</div>
+                <div className="pol-core-mark">
+                  <Image
+                    className="pol-core-logo"
+                    src={brandAssets.corporate}
+                    alt="پُــــل"
+                    width={112}
+                    height={48}
+                    unoptimized
+                  />
+                </div>
+                <div className="pol-core-caption">B2B COMMERCE</div>
               </div>
 
               <div className="pol-floating-card pol-floating-card-top">
@@ -240,8 +268,18 @@ export default function HomePage() {
                   key={card.title}
                   className={index === 1 ? "pol-role-card pol-role-card-featured" : "pol-role-card"}
                 >
-                  <div className="pol-role-icon" aria-hidden="true">
-                    {index === 0 ? "↗" : index === 1 ? "◈" : "◎"}
+                  <div className="pol-role-brand-wrap">
+                    <Image
+                      className="pol-role-logo"
+                      src={card.logo}
+                      alt={card.logoAlt}
+                      width={172}
+                      height={64}
+                      unoptimized
+                    />
+                    <span className="pol-role-icon" aria-hidden="true">
+                      {index === 0 ? "↗" : index === 1 ? "◈" : "◎"}
+                    </span>
                   </div>
                   <span className="pol-overline">{card.eyebrow}</span>
                   <h3>{card.title}</h3>
@@ -351,7 +389,14 @@ export default function HomePage() {
       <footer className="pol-footer">
         <div className="pol-container pol-footer-inner">
           <div className="pol-footer-brand">
-            <span className="pol-brand-mark">پُ</span>
+            <Image
+              className="pol-footer-logo"
+              src={brandAssets.corporate}
+              alt="پُــــل"
+              width={120}
+              height={40}
+              unoptimized
+            />
             <div>
               <strong>پُــــل</strong>
               <span>زیرساخت سفارش‌گذاری B2B</span>
