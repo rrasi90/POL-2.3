@@ -54,6 +54,7 @@ Canonical design/build authority:
 | **Async Workers & Event Runtime** | `POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md`, `08_DATA/Event_Architecture.md` | Canonical PostgreSQL 18 transactional outbox + Python worker execution model. | Supersedes BullMQ/Redis Streams as the MVP event transport. |
 | **Pilot Definition & Metrics** | `11_PILOT/Pilot_Strategy.md`, `11_PILOT/KPIs.md`, `11_PILOT/Success_Criteria.md` | Ahvaz pilot parameters and Gate 1 telemetry. | Governs pilot validation. |
 | **Readiness & Certification** | `POL_00_PROJECT_CONTROL/GLOBAL_ENGINEERING_AUDIT_2026-09-14.md`, `POL_00_PROJECT_CONTROL/REPOSITORY_COMPLETION_AUDIT_2026-09-16.md`, `POL_00_PROJECT_CONTROL/CERTIFICATION_ADDENDUM_2026-09-14.md`, `deploy/VPS_RUNTIME_VERIFICATION_2026-09-28.md` | Explicit separation of verified domain core, self-hosted runtime evidence, and remaining production-applicationization gates. | Runtime evidence may certify only the observed VPS/IP-stage scope; HTTPS/domain/provider/observability and fresh CI gates remain separate until verified. |
+| **Deployment & Runtime** | `deploy/docker-compose.vps.yml`, `deploy/VPS_DEPLOYMENT.md`, `deploy/vps_deploy.sh`, `deploy/VPS_DEPLOYMENT_AGENT.md`, `deploy/VPS_RUNTIME_VERIFICATION_2026-09-28.md` | Self-hosted VPS topology, deployment execution, runtime health/readiness, migration execution and deployment safety controls. | Operational evidence is scoped to the observed deployment branch/runtime; it does not override product decisions or certify HTTPS/domain cutover before those gates are verified. |
 
 ---
 
