@@ -214,3 +214,8 @@ Mobile regression/cross-module QA: 20/20 checks passed.
 The `/` landing surface was materially redesigned after the prior visual QA cycle. Therefore the earlier `VERIFIED` landing result is superseded for this new implementation. Current status: `IMPLEMENTED / FRESH_VISUAL_QA_REQUIRED`.
 
 Required fresh evidence: current-branch TypeScript/lint/build, desktop 1440/1280/1024 screenshots, mobile 390/360 screenshots, RTL readability review, canonical logo asset rendering, CTA route smoke, and reduced-motion behavior review.
+
+
+### Verification environment note — 2026-09-28
+
+Fresh GitHub Actions runs for this branch are currently terminating before any job step starts (`runner_id: 0`, empty step list, completion in ~2 seconds). Therefore those failures are treated as CI runner/infrastructure evidence, not as evidence that the landing source itself failed a build step. The landing-specific temporary workflow was removed after confirming this behavior to avoid leaving a permanently red, non-actionable check.
