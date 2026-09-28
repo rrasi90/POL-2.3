@@ -57,6 +57,16 @@ A successful run ends with:
 
 A failed run prints service state and recent logs and points to the immutable deployment log.
 
+## Current verification snapshot — 2026-09-28
+
+The deployment operator has been executed successfully on the self-hosted VPS and subsequently deep-verified. Current observed runtime evidence is recorded in `deploy/VPS_RUNTIME_VERIFICATION_2026-09-28.md`.
+
+Verified at IP-stage: Git synchronization, Docker build, PostgreSQL 18.6, 76 forward-only migrations / 108 base tables, API, worker, Next.js standalone, Nginx, public HTTP health/readiness, canonical API routing, authentication checks, isolated Basket→Checkout/Idempotency/Outbox flow, restart recovery, persistence, and baseline security checks.
+
+`HTTPS_GATE_PENDING` remains intentional until `polmarket.ir` is attached, TLS/443 is configured, the exact HTTPS CORS origin is set, and the production environment gate is changed deliberately.
+
+A repeated external Windows download test previously showed intermittent truncation of the HTML response, while direct Next.js and Nginx retrieval on the VPS remained complete and the public page also loaded successfully. The operator must therefore keep public-page verification evidence, but must not classify this observation as a server-side failure without reproduction inside the VPS path.
+
 ## AI-agent usage
 
 The AI agent should invoke the script rather than reconstructing the deployment procedure from memory. It should report the final commit SHA, service state, migration result, health/readiness result, and log path.
