@@ -651,9 +651,15 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
       deliver: "DELIVERED",
       reject: "REJECTED",
     };
-    if (action === "partial-acceptance-proposals") return envelope({ proposal_id: "prop-qa-001", status: "PROPOSED" }, 201);
-    if (action.includes("approve")) return envelope({ proposal_id: path[3], status: "APPROVED" });
-    if (action.includes("decline")) return envelope({ proposal_id: path[3], status: "DECLINED" });
+    if (action === "partial-acceptance-proposals" && path.length === 3) {
+      return envelope({ proposal_id: "prop-qa-001", status: "PROPOSED" }, 201);
+    }
+    if (action === "partial-acceptance-proposals" && path[4] === "approve") {
+      return envelope({ proposal_id: path[3], status: "APPROVED" });
+    }
+    if (action === "partial-acceptance-proposals" && path[4] === "decline") {
+      return envelope({ proposal_id: path[3], status: "DECLINED" });
+    }
     if (next[action]) return envelope({ ...orders.find((o) => o.id === orderId) ?? orderBase, id: orderId, order_status: next[action], updated_at: "2026-09-28T08:00:00Z" });
     if (action === "returns") return envelope({ id: "ret-qa-001", order_id: orderId, status: "REQUESTED" }, 201);
     if (action === "disputes") return envelope({ id: "disp-qa-001", order_id: orderId, status: "OPEN" }, 201);
@@ -664,6 +670,9 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
 
   if (key.startsWith("orders/") && method === "PATCH") return envelope({ updated: true });
   if (key.startsWith("orders/delivery-exceptions/") && method === "PATCH") return envelope({ updated: true, status: "RESOLVED" });
+  if (key.match(/^orders\/delivery-exceptions\/[^/]+\/(resolve|escalate)$/) && method === "POST") {
+    return envelope({ updated: true, status: path[3] === "resolve" ? "RESOLVED" : "ESCALATED" });
+  }
 
   if (key === "support/cases" && method === "GET") return envelope({ cases: datasetRows(request, cases), total: cases.length });
   if (key === "support/cases" && method === "POST") return envelope({ ...cases[0], id: "case-qa-001", status: "OPEN" }, 201);
@@ -690,6 +699,10 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
   if (key.startsWith("field/tasks/") && method === "GET") return envelope(tasks.find((t) => t.id === path[2]) ?? tasks[0]);
   if (key.startsWith("field/tasks/") && method === "PATCH") return envelope({ ...(tasks.find((t) => t.id === path[2]) ?? tasks[0]), ...(await bodyOf(request)), updated_at: "2026-09-28T08:00:00Z" });
 
+  if (key === "catalog/vendors/products" && method === "POST") {
+    const body = await bodyOf(request);
+    return envelope({ ...offers[0], ...body, vendor_product_id: "vp-qa-created" }, 201);
+  }
   if (key === "catalog/vendors/products" && method === "GET") {
     return envelope({ products: datasetRows(request, offers.map((o, i) => ({
       id: o.vendor_product_id,
@@ -705,6 +718,10 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     }))) });
   }
   if (key.match(/^catalog\/vendors\/products\/[^/]+$/) && method === "GET") return envelope(offers[0]);
+  if (key.match(/^catalog\/vendors\/products\/[^/]+$/) && method === "PATCH") {
+    const body = await bodyOf(request);
+    return envelope({ ...offers[0], ...body, vendor_product_id: path[3] });
+  }
   if (key.match(/^catalog\/vendors\/products\/[^/]+\/prices$/) && method === "GET") return envelope([{ id: "price-001", price_toman: 168000, valid_from: "2026-09-01T00:00:00Z", valid_to: null, status: "ACTIVE" }]);
   if (key.match(/^catalog\/vendors\/products\/[^/]+\/prices$/) && method === "POST") return envelope({ id: "price-qa-001", price_toman: 170000, status: "ACTIVE" }, 201);
   if (key.match(/^catalog\/vendors\/products\/[^/]+\/prices\/current$/) && method === "GET") return envelope({ price_toman: 168000, status: "ACTIVE", valid_from: "2026-09-01T00:00:00Z" });
@@ -766,6 +783,8 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
   }
 
   if (key === "admin/broadcasts" && method === "GET") return envelope({ items: [{ id: "bc-001", title: "اطلاع‌رسانی آزمایشی", status: "DRAFT", audience: "ALL" }], total: 1 });
+  if (key === "admin/broadcasts" && method === "POST") return envelope({ id: "bc-qa-001", title: "اطلاع‌رسانی آزمایشی", status: "DRAFT" }, 201);
+  if (key.match(/^admin\/broadcasts\/[^/]+\/dispatch$/) && method === "POST") return envelope({ id: path[2], status: "DISPATCHED" });
 
   if (key === "healthz" && method === "GET") return envelope({ status: "ok", service: "POL-2.3-Vercel-QA", mode: "mock" });
   if (key === "readyz" && method === "GET") return envelope({ ready: true, dependencies: { mock_data: "ok" } });
