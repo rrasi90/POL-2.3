@@ -58,16 +58,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node apps/web/.next/standalone/apps/web/server.js > /tmp/pol-web.log 2>&1 &
+          PORT=3000 HOSTNAME=127.0.0.1 node apps/web/.next/standalone/apps/web/server.js > /tmp/pol-web.log 2>&1 &
           PID=$!
           trap 'kill "$PID" 2>/dev/null || true' EXIT
 
+          ready=0
           for i in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:3000/ > /tmp/pol-home.html; then
+              ready=1
               break
             fi
             sleep 1
           done
+          test "$ready" -eq 1
 
           grep -F "خرید عمده" /tmp/pol-home.html
           grep -F "یک مسیر روشن" /tmp/pol-home.html
@@ -80,5 +83,8 @@ jobs:
           file /tmp/pol-corporate.png | grep -F "PNG image"
           file /tmp/pol-market.png | grep -F "PNG image"
           file /tmp/pol-vendor.png | grep -F "PNG image"
+          grep -F "برای خرده‌فروشان" /tmp/pol-home.html
+          grep -F "برای تأمین‌کنندگان" /tmp/pol-home.html
+          grep -F "برای تیم عملیات" /tmp/pol-home.html
 
           echo "Landing route and canonical brand assets: PASS"
