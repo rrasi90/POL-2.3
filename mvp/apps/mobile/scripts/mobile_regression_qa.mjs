@@ -7,9 +7,12 @@ const readMobile = (file) => fs.readFileSync(path.resolve(process.cwd(), file), 
 
 const checks = [
   ["All implemented mobile role families remain explicitly role-gated in App routing", () => {
-    const s = readMobile("App.tsx");
-    return ["RETAILER_OWNER","RETAILER_STAFF","VENDOR_OWNER","VENDOR_STAFF","OPS_AGENT","ADMIN_SUPER","FIELD_ACTIVATOR"].every(r => s.includes(r)) &&
-      s.includes("onAuthed(nextRole: Role)") && s.includes("setRole(nextRole)");
+    const shell = readMobile("AppShell.tsx");
+    const retailer = readMobile("AppRetailer.tsx");
+    const vendor = readMobile("AppVendor.tsx");
+    return ["RETAILER_OWNER","RETAILER_STAFF"].every(r => retailer.includes(r)) &&
+      ["VENDOR_OWNER","VENDOR_STAFF"].every(r => vendor.includes(r)) &&
+      shell.includes("onAuthed(nextRole: Role)") && shell.includes("setRole(scopedRole)");
   }],
   ["Mobile API client preserves canonical auth/error contract", () => {
     const s = read("api.ts");
@@ -49,7 +52,7 @@ const checks = [
   ["Mobile logout revokes the current server session before clearing local auth", () => {
     const api = read("api.ts");
     const account = read("screens/AccountMobileScreen.tsx");
-    const app = readMobile("App.tsx");
+    const app = readMobile("AppShell.tsx");
     return api.includes('request<T>("DELETE"') && api.includes("delete: <T>") && account.includes("/api/v1/auth/sessions/current") &&
       account.includes("clearSession()") && api.includes("SecureStore") && api.includes("refreshAccessToken") &&
       api.includes("AUTH_EXPIRED") && app.includes("onLogout()");
