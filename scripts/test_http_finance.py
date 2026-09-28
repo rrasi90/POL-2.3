@@ -463,6 +463,34 @@ class TestSettlementGet:
         assert st["adjustments"][0]["adjustment_type"] == "SHORTAGE_DEDUCTION"
         assert st["adjustments"][0]["amount_toman"] == 50000
 
+    def test_vendor_staff_cannot_get_settlement(self, client):
+        data = _seed_finance(uuid4().hex[:8])
+        staff_user = str(uuid4())
+        membership_id = str(uuid4())
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role, is_active) VALUES (%s, %s, 'Vendor Staff Settlement Detail', 'VENDOR_STAFF', TRUE)",
+                    (staff_user, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status, is_primary) VALUES (%s, %s, %s, 'VENDOR_STAFF', 'ACTIVE', FALSE)",
+                    (membership_id, data["vendor_org"], staff_user),
+                )
+                session_id = _create_session(cur, staff_user, data["vendor_org"])
+            conn.commit()
+            staff_token = encode_access_token(staff_user, session_id, data["vendor_org"], "VENDOR_STAFF")
+            resp = client.get(f"/api/v1/settlements/{data['settlement_id']}", headers={"Authorization": f"Bearer {staff_token}"})
+            assert resp.status_code == 403
+        finally:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM user_sessions WHERE user_id=%s", (staff_user,))
+                cur.execute("DELETE FROM organization_memberships WHERE id=%s", (membership_id,))
+                cur.execute("DELETE FROM users WHERE id=%s", (staff_user,))
+            conn.commit()
+            conn.close()
+
     def test_retailer_cannot_get_settlement(self, client):
         data = _seed_finance(uuid4().hex[:8])
         resp = client.get(f"/api/v1/settlements/{data['settlement_id']}", headers={"Authorization": f"Bearer {data['r_token']}"})
