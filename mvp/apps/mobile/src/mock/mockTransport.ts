@@ -549,13 +549,7 @@ export async function mockRequest<T>(
       throw new Error("Mock invalid inventory scan payload");
     }
 
-    const row = state.inventory.find((item) =>
-      item.vendor_sku === vendorSku && (
-        item.vendor_product_id === String(payload.vendor_product_id || "") ||
-        item.id === String(payload.vendor_product_id || "") ||
-        true
-      )
-    );
+    const row = state.inventory.find((item) => item.vendor_sku === vendorSku);
     if (!row) throw new Error("Mock inventory product not found for continuous scan.");
 
     const session = state.scanSessions[sessionId] || { status: "DRAFT" as const, items: [] };
@@ -580,6 +574,7 @@ export async function mockRequest<T>(
     row.is_stale = false;
 
     return envelope({
+      accepted: true,
       vendor_product_id: row.vendor_product_id,
       available_quantity: row.available_quantity,
       inventory_unit: row.packaging_unit,
