@@ -144,12 +144,10 @@ HTTP transport → authentication/session → ApplicationContext → POLApplicat
 - Authorization SSoT (`organization_memberships.role`)
 - Non-custodial payment model
 
-**Downstream synchronization required (next engineering batch):**
-- `06_PRODUCT/Technical_Architecture_Spec.md` — update §2 runtime row from Node.js to Python, update §2 framework row to reference D-020
-- `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md` — update §1 from "framework-neutral" to "FastAPI (D-020)" as transport adapter
-- `POL_00_PROJECT_CONTROL/GLOBAL_ENGINEERING_AUDIT_2026-09-14.md` §5A — close "production HTTP/API runtime" gate (stack now selected: Python + FastAPI)
-- Docker Compose — update deployment topology to single-runtime Python
-- CI pipeline — update backend build/test to use Python production runtime; frontend Node.js/Next.js toolchain remains unchanged
+**Implementation synchronization status:**
+- Python + FastAPI production-runtime authority is implemented and reflected in the active architecture/boundary documents.
+- Legacy Node.js/NestJS/Fastify wording retained elsewhere is historical reference only and must not be interpreted as an active runtime claim.
+- Frontend Node.js/Next.js remains the client toolchain and is not affected by D-019.
 
 ---
 
@@ -196,13 +194,10 @@ FastAPI → authentication/session → ApplicationContext → POLApplicationBoun
 - Authorization SSoT
 - Frontend architecture
 
-**Downstream synchronization required (next engineering batch):**
-- `06_PRODUCT/Technical_Architecture_Spec.md` — update §2 framework row from NestJS/Fastify to FastAPI
-- `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md` — update §1 transport adapter from "framework-neutral" to "FastAPI"
-- New: `requirements.txt` / `pyproject.toml` — add `fastapi`, `uvicorn` dependencies
-- New: HTTP route module (e.g., `scripts/api/`) — thin FastAPI app mapping routes to `POLApplicationBoundary`
-- Auth middleware — JWT validation, rate limiting, lockout enforcement
-- Docker Compose — add Uvicorn process
+**Implementation synchronization status:**
+- FastAPI is implemented as the production HTTP transport boundary under D-020.
+- The active route/adapter layer calls the canonical application boundary; legacy framework-neutral/NestJS/Fastify text is historical and not an active architecture requirement.
+- Dependency and deployment requirements are represented by the current repository configuration.
 
 ---
 
