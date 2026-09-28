@@ -116,6 +116,14 @@ assert(buildScript.includes('variant === "vendor" ? "index.vendor.ts"'), "APK bu
 assert(buildScript.includes("assembleRelease"), "APK build script uses release Gradle assemble");
 assert(buildScript.includes("finally"), "APK build script restores the default entrypoint");
 
+const mobilePackage = JSON.parse(readFileSync(resolve(appDir, "package.json"), "utf8"));
+const workspaceLock = JSON.parse(readFileSync(resolve(appDir, "..", "..", "package-lock.json"), "utf8"));
+const lockedMobile = workspaceLock.packages?.["apps/mobile"]?.dependencies || {};
+const lockedSecureStore = workspaceLock.packages?.["node_modules/expo-secure-store"];
+assert(mobilePackage.dependencies?.["expo-secure-store"] === "~57.0.4", "expo-secure-store is aligned to Expo SDK 57");
+assert(lockedMobile["expo-secure-store"] === "~57.0.4", "package-lock mobile dependency is aligned to Expo SDK 57");
+assert(lockedSecureStore?.version === "57.0.4", "package-lock resolves expo-secure-store 57.0.4");
+
 const mockTransport = readFileSync(resolve(appDir, "src/mock/mockTransport.ts"), "utf8");
 const mockQa = readFileSync(resolve(appDir, "scripts/mock_transport_qa.ts"), "utf8");
 assert(mockTransport.includes("mockRequest") && mockTransport.includes("resetMockState"), "mock transport is present and resettable");
