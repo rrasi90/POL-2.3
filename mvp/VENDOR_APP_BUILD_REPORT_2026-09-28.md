@@ -9,7 +9,7 @@
 
 ## 0. Gate position
 
-The branch is intentionally stopped **immediately before native Android APK assembly**. The last application-behavior snapshot is `ec77fdf0...`; later commits only record/reconcile the release gate and do not add new runtime capabilities.
+The branch is intentionally stopped **before native Android APK assembly**. The current next stage is deterministic Mock-Data Verification, followed by device/runtime QA and only then APK assembly. The last application-behavior snapshot is `ec77fdf0...`; later commits only record/reconcile the release gate and do not add new runtime capabilities.
 
 This stage covers source/configuration/release-gate work only. It does **not** run:
 - `expo prebuild --clean --platform android`
@@ -63,8 +63,8 @@ The native build remains the next executable step after the pre-APK gate is sati
 - confirmation with declared changes
 
 ### Finance
-- invoices
-- settlement status
+- invoices list + detail
+- settlement list + detail
 - Toman presentation
 - no wallet / escrow surface
 
@@ -74,6 +74,12 @@ The native build remains the next executable step after the pre-APK gate is sati
 - staff invite/status lifecycle
 - delegated permissions
 - effective permission visibility
+
+### Storefront / Scanner
+- Vendor storefront read/preview
+- barcode exact/high-confidence/ambiguous/no-match
+- candidate creation
+- continuous scan submission + inventory publish
 
 ### Shared support
 - support case creation
@@ -153,7 +159,7 @@ The gate checks:
 - restoration of the default entrypoint in the build script
 - regression-QA coverage for the new Vendor authorization guard
 
-The native builder now invokes this gate immediately before Expo prebuild.
+The native builder now invokes this gate immediately before Expo prebuild. Release mode rejects Mock Data mode and requires a non-local HTTPS API endpoint.
 
 ## 7. Repository / PR state
 
@@ -195,6 +201,7 @@ The final branch state is deliberately a **pre-APK release candidate**, not an A
 | Canonical API preservation | PASS |
 | Deterministic pre-APK gate | PASS (wired; source checks inspected) |
 | Live API preflight harness | PASS (added; execution pending live endpoint access) |
+| Mock transport + executable Mock QA | PASS (wired; current CI execution pending) |
 | Fresh current-head CI | BLOCKED / NOT CERTIFIED |
 | Live VPS verification of this branch | BLOCKED / NOT CONNECTED |
 | Native Expo prebuild | **NOT RUN** |
@@ -205,6 +212,6 @@ The final branch state is deliberately a **pre-APK release candidate**, not an A
 
 The Vendor application is now at:
 
-**SOURCE / CONFIG READY → LIVE API/TLS GATE → PRE-APK GATE → [next: native APK build]**
+**AUDIT → MOCK DATA QA → DEVICE QA → PRE-APK GATE → NATIVE APK BUILD → LIVE VPS**
 
 No APK has been generated in this stage.
