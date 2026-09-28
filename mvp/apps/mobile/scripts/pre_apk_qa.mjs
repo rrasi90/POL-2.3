@@ -28,6 +28,14 @@ function pngDimensions(file) {
 }
 
 const originalVariant = process.env.POL_APP_VARIANT;
+const releaseGate = process.env.POL_RELEASE === "1";
+const apiBaseUrl = (process.env.EXPO_PUBLIC_API_BASE_URL || "").trim();
+if (releaseGate) {
+  assert(apiBaseUrl.length > 0, "release build requires EXPO_PUBLIC_API_BASE_URL; emulator fallback is not allowed");
+  const parsedApi = new URL(apiBaseUrl);
+  assert(parsedApi.protocol === "https:", "release build API base URL must use HTTPS");
+  assert(!["localhost", "127.0.0.1", "10.0.2.2"].includes(parsedApi.hostname), "release build API base URL cannot target local/emulator hosts");
+}
 process.env.POL_APP_VARIANT = "vendor";
 const configPath = requireFromApp.resolve("./app.config.js");
 delete requireFromApp.cache[configPath];
@@ -64,6 +72,7 @@ for (const p of [
 const apiSource = readFileSync(resolve(appDir, "src/api.ts"), "utf8");
 assert(!/sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN .*PRIVATE KEY-----/.test(apiSource), "mobile API source contains no obvious hard-coded secrets");
 assert(apiSource.includes("EXPO_PUBLIC_API_BASE_URL"), "API base URL remains environment-configurable");
+if (releaseGate) console.log("[PRE-APK PASS] release build API endpoint is HTTPS and non-local");
 assert(apiSource.includes("/api/v1/"), "mobile API remains on canonical v1 routes");
 
 const vendorSource = readFileSync(resolve(appDir, "src/screens/VendorMobileScreen.tsx"), "utf8");
