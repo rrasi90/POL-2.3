@@ -66,6 +66,9 @@ for (const p of [
   "assets/android-icon-background.png",
   "assets/android-icon-monochrome.png",
   "assets/favicon.png",
+  "assets/fonts/Vazirmatn-Regular.ttf",
+  "assets/fonts/Vazirmatn-SemiBold.ttf",
+  "assets/fonts/Vazirmatn-Bold.ttf",
 ]) {
   const absolute = resolve(appDir, p);
   assert(existsSync(absolute), p + " exists");
@@ -90,11 +93,24 @@ assert(vendorSource.includes("/api/v1/invoices"), "vendor app uses canonical inv
 assert(vendorSource.includes("/api/v1/vendors/settlements"), "vendor app uses canonical settlement route");
 assert(vendorSource.includes("/api/v1/vendors/customers"), "vendor app uses canonical customer route");
 assert(vendorSource.includes("/api/v1/vendors/staff"), "vendor app uses canonical staff route");
+assert(vendorSource.includes("/api/v1/storefront/vendors"), "vendor app includes canonical storefront route");
+assert(vendorSource.includes("/api/v1/catalog/barcode/lookup"), "vendor app includes canonical barcode lookup route");
+assert(vendorSource.includes("/api/v1/products/match-barcode"), "vendor app includes canonical barcode match route");
+assert(vendorSource.includes("/api/v1/vendors/inventory/continuous-scan"), "vendor app includes canonical continuous-scan route");
+assert(vendorSource.includes("/api/v1/vendors/inventory/publish"), "vendor app includes canonical inventory publish route");
+assert(vendorSource.includes("formatTehranDateTime") && vendorSource.includes("todayTehranIso"), "vendor app uses Tehran-localized date/time formatting");
+assert(vendorSource.includes("toAsciiDigits"), "vendor app normalizes Persian/Arabic numeric input for API boundaries");
 
 const buildScript = readFileSync(resolve(appDir, "scripts/build_android_variant.mjs"), "utf8");
 assert(buildScript.includes('variant === "vendor" ? "index.vendor.ts"'), "APK build script selects dedicated vendor entrypoint");
 assert(buildScript.includes("assembleRelease"), "APK build script uses release Gradle assemble");
 assert(buildScript.includes("finally"), "APK build script restores the default entrypoint");
+
+const mockTransport = readFileSync(resolve(appDir, "src/mock/mockTransport.ts"), "utf8");
+const mockQa = readFileSync(resolve(appDir, "scripts/mock_transport_qa.ts"), "utf8");
+assert(mockTransport.includes("mockRequest") && mockTransport.includes("resetMockState"), "mock transport is present and resettable");
+assert(mockQa.includes("Vendor Staff cannot accept orders") && mockQa.includes("Vendor Staff cannot manage prices"), "mock QA covers Vendor Staff RBAC");
+assert(dataMode === "live" || dataMode === "mock", "data mode is constrained to live/mock");
 
 const regression = readFileSync(resolve(appDir, "scripts/mobile_regression_qa.mjs"), "utf8");
 assert(regression.includes('tab === "support"'), "regression QA covers vendor support tab");
