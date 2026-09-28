@@ -29,10 +29,11 @@ MVP_SCREEN_MATRIX.md. Minimum three Phase-3 QA cycles are required.
 
 ## Explicit remaining work
 
-- Remaining mobile screen parity: support, vendor search/storefront, customers/staff and return/dispute write flow.
+- Remaining mobile scope is limited to device/runtime-specific barcode camera verification and any future explicitly approved vendor storefront-write contract. Vendor support, customers and delegated staff access are included in the current Vendor workspace.
 - D-028 barcode camera/matching path remains contract-only until its authoritative request/response contract and runtime dependency are available.
-- Screen-by-screen Night-theme visual verification remains a QA gate.
+- Screen-by-screen Night-theme visual verification remains a device/runtime QA gate.
 - Live basket → allocation → checkout e2e remains a local-environment execution task.
+- `npm run qa:pre-apk --workspace @pol/mobile` is the deterministic source/config gate immediately before native APK build.
 
 
 ## Android installable builds
