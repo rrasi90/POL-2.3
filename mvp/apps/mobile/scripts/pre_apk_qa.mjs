@@ -67,7 +67,9 @@ assert(apiSource.includes("EXPO_PUBLIC_API_BASE_URL"), "API base URL remains env
 assert(apiSource.includes("/api/v1/"), "mobile API remains on canonical v1 routes");
 
 const vendorSource = readFileSync(resolve(appDir, "src/screens/VendorMobileScreen.tsx"), "utf8");
-assert(vendorSource.includes("SupportMobileScreen"), "vendor app includes support surface");
+const supportSource = readFileSync(resolve(appDir, "src/screens/SupportMobileScreen.tsx"), "utf8");
+assert(vendorSource.includes("SupportMobileScreen") && vendorSource.includes("role={props.role}"), "vendor app includes support surface");
+assert(supportSource.includes("/api/v1/support/cases") && supportSource.includes("/messages"), "support surface uses canonical case/message routes");
 assert(vendorSource.includes("/api/v1/orders"), "vendor app uses canonical orders route");
 assert(vendorSource.includes("/api/v1/catalog/vendors/products"), "vendor app uses canonical vendor catalog route");
 assert(vendorSource.includes("/api/v1/inventory/daily/"), "vendor app uses canonical daily inventory route");
