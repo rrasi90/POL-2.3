@@ -43,6 +43,8 @@ type Invoice = {
   invoice_number?: string | null;
   status?: string | null;
   total_amount_toman?: number | string | null;
+  total_amount?: number | string | null;
+  currency?: string | null;
   issued_at?: string | null;
 };
 
@@ -58,6 +60,8 @@ type Settlement = {
   settlement_number?: string | null;
   status?: string | null;
   amount_toman?: number | string | null;
+  net_vendor_amount_toman?: number | string | null;
+  gross_amount_toman?: number | string | null;
 };
 
 type Customer = {
@@ -842,7 +846,7 @@ export function VendorMobileScreen(props: {
                   <Text style={styles.meta}>{dateTimeFa(invoice.issued_at)}</Text>
                 </View>
                 <Text style={styles.itemTitle}>{invoice.invoice_number || invoice.id}</Text>
-                <Text style={styles.metricSmall}>{money(invoice.total_amount_toman)}</Text>
+                <Text style={styles.metricSmall}>{money(invoice.total_amount_toman ?? invoice.total_amount)}</Text>
               </Card>
             ))
           )
@@ -856,7 +860,7 @@ export function VendorMobileScreen(props: {
                   <StatusChip label={statusLabel(settlement.status)} tone={settlement.status === "PAID" ? "ok" : "info"} />
                   <Text style={styles.itemTitle}>{settlement.settlement_number || settlement.id}</Text>
                 </View>
-                <Text style={styles.metricSmall}>{money(settlement.amount_toman)}</Text>
+                <Text style={styles.metricSmall}>{money(settlement.amount_toman ?? settlement.net_vendor_amount_toman ?? settlement.gross_amount_toman)}</Text>
               </Card>
             ))
           )
