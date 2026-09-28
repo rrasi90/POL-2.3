@@ -3,7 +3,7 @@
 **Contract:** Master Build Instruction (repo root session) + master loop (DISCOVER→PLAN→BUILD→TEST→RECONCILE→AUDIT→FIX→…→DELIVERY)  
 **Root:** `mvp/`  
 **Authorized branch:** `main`  
-**Updated:** 2026-09-28 · Stage 6 mobile QA Cycle 3 closed; remaining executable gates are Night visual verification and live basket→checkout/idempotency E2E  
+**Updated:** 2026-09-28 · Self-hosted VPS runtime/deep-verification gate passed at `85.198.50.29`; HTTPS/domain cutover remains pending; fresh CI and other pre-release evidence gates remain tracked below.  
 **Authority hierarchy:** `DECISION_REGISTER.md` (D-001…D-028 on branch) → CURRENT_SOURCE_OF_TRUTH → this file → module evidence files.
 
 **Rule:** NOT DONE = KEEP WORKING. Do not stop to ask which track. Isolate external deps as `BLOCKED_EXTERNAL` and continue everything else. Later-discovered defects in earlier phases ⇒ reopen, root-cause fix, retest, return.
@@ -28,8 +28,8 @@
 | 12 | Independent 2nd-pass audit | **DONE** | `verify_repository_consistency.py` PASS 8/8 EXIT 0 (D-015/016/017 + hierarchy restored). |
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
 | 14 | Regression | **REVERIFY** | Historical backend/mobile CI was green; current remediation pull-request jobs still fail before useful step execution. Local regression/E2E evidence is historical and separately recorded. |
-| 15 | Repeat until DoD | **OPEN — EVIDENCE/DECISION GATE** | Source-level remediation is advanced; remaining DoD blockers are the explicit decisions in §2, deployment/provider/observability evidence, selected deep mobile parity, and fresh CI certification. |
-| 16 | Phase 5 delivery | **OPEN — FINAL EVIDENCE RECONCILIATION** | Night, live checkout and idempotency device/local gates are historical PASS evidence. Remaining closure is fresh CI certification plus explicit product/security/deployment decisions/evidence. |
+| 15 | Repeat until DoD | **OPEN — EVIDENCE/DECISION GATE** | Source-level remediation is advanced. Self-hosted VPS runtime/deep verification is now evidenced as PASS; remaining DoD blockers are explicit product/security decisions, HTTPS/domain cutover, provider/observability evidence, selected deep mobile parity, and fresh CI certification. |
+| 16 | Phase 5 delivery | **OPEN — FINAL EVIDENCE RECONCILIATION** | VPS deployment and deep runtime verification are PASS at the IP-stage. Remaining closure is fresh CI certification, explicit product/security decisions, HTTPS/domain cutover, and provider/observability evidence. |
 
 ---
 
@@ -42,7 +42,7 @@
 | 2 | Web MVP | **DONE (impl + partial e2e)** — 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
 | 3 | Android MVP (Expo) | **SOURCE IMPLEMENTED / REVERIFY** — Field-first plus supported retailer/vendor/ops parity is implemented; selected deep admin/management screens remain web-first; fresh CI evidence is blocked before step execution |
 | 4 | Global QA + Regression | **SOURCE REMEDIATED / FRESH CERTIFICATION BLOCKED** — historical 497/497 remains evidence; current branch needs a useful CI execution before new certification |
-| 5 | Delivery + Final Audit | **OPEN — EVIDENCE RECONCILIATION** — source remediation is advanced; remaining gates are fresh CI, explicit product/security decisions and deployment/provider evidence |
+| 5 | Delivery + Final Audit | **OPEN — EVIDENCE RECONCILIATION** — source remediation is advanced; self-hosted VPS runtime is verified at IP-stage; remaining gates include fresh CI, explicit product/security decisions, HTTPS/domain cutover, and provider/observability evidence |
 
 ### 2026-09-26 remediation continuation
 
@@ -135,7 +135,27 @@ mvp/
 **API base:** `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`  
 **Middleware role gates:** UX only; server remains authoritative.
 
-### Runtime services (this workspace)
+### Current self-hosted VPS runtime snapshot — 2026-09-28
+
+| Service | Runtime | Result |
+|---------|---------|--------|
+| PostgreSQL | Docker / PostgreSQL 18.6 | **PASS — healthy** |
+| Migrations | `python -m scripts.migrate_prod` | **PASS — 76 tracked migrations / 108 base tables** |
+| FastAPI | Docker / Uvicorn :8000 internal | **PASS** |
+| Worker | `python -m scripts.worker_runtime` | **PASS — long-lived, no restart loop observed** |
+| Next.js | Standalone :3001 internal | **PASS** |
+| Nginx | Public :80 | **PASS** |
+| Public health | `http://85.198.50.29/healthz` | **PASS — HTTP 200** |
+| Public readiness | `http://85.198.50.29/readyz` | **PASS — HTTP 200** |
+| Public API | `http://85.198.50.29/api/v1/categories` | **PASS — HTTP 200** |
+| Public Web | `http://85.198.50.29/` | **PASS — HTTP 200 / complete HTML verified from external client** |
+| HTTPS | Domain + TLS 443 | **PENDING** |
+
+Authoritative evidence: `deploy/VPS_RUNTIME_VERIFICATION_2026-09-28.md`.
+
+### Runtime services (historical local workspace snapshot)
+
+The table below is retained for historical traceability from 2026-09-23. It is not the current VPS runtime state.
 
 | Service | Port | Status 2026-09-23 |
 |---------|------|-------------------|
