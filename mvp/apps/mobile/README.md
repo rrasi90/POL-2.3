@@ -38,6 +38,16 @@ MVP_SCREEN_MATRIX.md. Minimum three Phase-3 QA cycles are required.
 
 ## Android installable builds
 
+### Mock-data verification stage
+
+Use the same Vendor UI and API client with deterministic in-memory mock data before connecting to the VPS:
+
+```bash
+EXPO_PUBLIC_DATA_MODE=mock npx expo start
+```
+
+Mock mode covers Vendor OTP login, role boundary, orders/lifecycle, inventory, pricing, daily confirmation, finance, customers, staff/delegated permissions, storefront, barcode lookup/candidate flow, support, profile and notifications. Mock mode is for QA only and is rejected by the Vendor release build gate.
+
 The mobile source produces two independent Android products from the same canonical client:
 
 - **POL Market / پل بازار** — retailer roles only (`RETAILER_OWNER`, `RETAILER_STAFF`), package `ir.pol.market`.
@@ -55,6 +65,8 @@ Outputs:
 - `dist/retailer/POL-Market.apk`
 - `dist/vendor/POL-Vendor.apk`
 
-The Android build uses Expo prebuild + native Gradle `assembleRelease`; Expo export alone is not treated as an installable APK. Vendor release builds require `EXPO_PUBLIC_API_BASE_URL` and the release gate rejects emulator/loopback URLs and non-HTTPS endpoints.
+The Android build uses Expo prebuild + native Gradle `assembleRelease`; Expo export alone is not treated as an installable APK. Vendor release builds require `EXPO_PUBLIC_API_BASE_URL` with HTTPS and reject emulator/loopback URLs and mock data mode.
 
-The role boundary is enforced both at the mobile shell and at OTP-login handling. Backend authorization remains the canonical security boundary.\n\nFor live staging connectivity checks, set `EXPO_PUBLIC_API_BASE_URL` and run `npm run qa:live`. The existing VPS was observed serving `http://85.198.50.29`; that HTTP endpoint is for non-production staging verification only. A TLS/HTTPS endpoint is required before producing a Vendor release APK.
+The role boundary is enforced both at the mobile shell and at OTP-login handling. Backend authorization remains the canonical security boundary.
+
+For live staging connectivity checks, set `EXPO_PUBLIC_API_BASE_URL` and run `npm run qa:live`. The existing VPS was observed serving `http://85.198.50.29`; that HTTP endpoint is for non-production staging verification only. A TLS/HTTPS endpoint is required before producing a Vendor release APK.
