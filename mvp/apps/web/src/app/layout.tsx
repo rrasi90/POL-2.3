@@ -11,8 +11,9 @@ const vazirmatn = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-  title: "POL — بازار عمده‌فروشی",
-  description: "پلتفرم B2B FMCG — MVP",
+  title: "پُــــل | زیرساخت سفارش‌گذاری B2B",
+  description:
+    "پُــــل؛ لایه عملیاتی تجارت B2B برای خرده‌فروشان و تأمین‌کنندگان، از کشف و سبد چندفروشنده‌ای تا سفارش و fulfillment.",
 };
 
 export default function RootLayout({
