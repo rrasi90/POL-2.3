@@ -14,8 +14,8 @@ cd "$ROOT_DIR"
 
 BRANCH="${POL_DEPLOY_BRANCH:-deploy/vps-self-hosted-20260928}"
 COMPOSE=(docker compose --env-file .env -f docker-compose.vps.yml)
-LOG_DIR="${POL_DEPLOY_LOG_DIR:-$ROOT_DIR/deploy/logs}"
-LOCK_FILE="${POL_DEPLOY_LOCK_FILE:-$ROOT_DIR/deploy/.deploy.lock}"
+LOG_DIR="${POL_DEPLOY_LOG_DIR:-$ROOT_DIR/../deploy-logs}"
+LOCK_FILE="${POL_DEPLOY_LOCK_FILE:-$ROOT_DIR/../.pol-deploy.lock}"
 WAIT_SECONDS="${POL_DEPLOY_WAIT_SECONDS:-180}"
 PUBLIC_BASE_URL="${POL_PUBLIC_BASE_URL:-}"
 
@@ -95,9 +95,11 @@ echo "[DEPLOY] starting PostgreSQL only"
 "${COMPOSE[@]}" up -d postgres
 
 echo "[DEPLOY] waiting for PostgreSQL health"
+POSTGRES_CONTAINER_ID="$("${COMPOSE[@]}" ps -q postgres)"
+[[ -n "$POSTGRES_CONTAINER_ID" ]] || die "could not resolve PostgreSQL container"
 deadline=$((SECONDS + WAIT_SECONDS))
 while true; do
-  status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' pol-23-postgres-1 2>/dev/null || true)"
+  status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$POSTGRES_CONTAINER_ID" 2>/dev/null || true)"
   case "$status" in
     healthy)
       echo "[DEPLOY] PostgreSQL healthy"
