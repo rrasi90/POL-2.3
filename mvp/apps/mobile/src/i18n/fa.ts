@@ -39,7 +39,7 @@ export function formatTehranDateTime(value: string | Date | null | undefined): s
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
   try {
-    return new Intl.DateTimeFormat("fa-IR-u-ca-persian-u-nu-arabext", {
+    return new Intl.DateTimeFormat("fa-IR-u-ca-persian-nu-arabext", {
       timeZone: "Asia/Tehran",
       year: "numeric",
       month: "short",
