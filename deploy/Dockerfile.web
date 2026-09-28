@@ -6,6 +6,7 @@ WORKDIR /app/mvp
 COPY mvp/package.json mvp/package-lock.json ./
 COPY mvp/apps ./apps
 COPY mvp/packages ./packages
+COPY logo ./logo
 
 RUN npm ci --workspace=@pol/web --include-workspace-root
 
@@ -29,6 +30,7 @@ COPY --from=build /app/mvp/package-lock.json ./package-lock.json
 COPY --from=build /app/mvp/node_modules ./node_modules
 COPY --from=build /app/mvp/apps/web ./apps/web
 COPY --from=build /app/mvp/packages ./packages
+COPY --from=build /app/mvp/logo ./logo
 
 EXPOSE 3001
 
