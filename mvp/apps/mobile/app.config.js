@@ -28,5 +28,12 @@ module.exports = {
           foregroundImage: vendorLogo,
         }
       : base.android?.adaptiveIcon,
+    splash: isVendor
+      ? {
+          backgroundColor: "#F7F9FC",
+          image: vendorLogo,
+          resizeMode: "contain",
+        }
+      : base.android?.splash,
   },
 };
