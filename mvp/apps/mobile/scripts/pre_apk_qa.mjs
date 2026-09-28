@@ -88,6 +88,9 @@ if (releaseGate) console.log("[PRE-APK PASS] release build API endpoint is HTTPS
 assert(apiSource.includes("/api/v1/"), "mobile API remains on canonical v1 routes");
 
 const vendorSource = readFileSync(resolve(appDir, "src/screens/VendorMobileScreen.tsx"), "utf8");
+const loginSource = readFileSync(resolve(appDir, "src/screens/LoginScreen.tsx"), "utf8");
+assert(loginSource.includes("allowedRoles") && loginSource.includes("این حساب برای اپلیکیشن بنکدار مجاز نیست"), "login enforces the Vendor role allowlist before session persistence");
+
 const supportSource = readFileSync(resolve(appDir, "src/screens/SupportMobileScreen.tsx"), "utf8");
 assert(vendorSource.includes("SupportMobileScreen") && vendorSource.includes("role={props.role}"), "vendor app includes support surface");
 assert(supportSource.includes("/api/v1/support/cases") && supportSource.includes("/messages"), "support surface uses canonical case/message routes");
