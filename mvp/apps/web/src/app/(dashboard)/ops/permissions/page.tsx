@@ -43,7 +43,7 @@ export default function OpsPermissionsPage() {
         role.toLowerCase().includes(q) ||
         perms.some((p) => p.toLowerCase().includes(q)),
     );
-  }, [data?.roles, query]);
+  }, [data, query]);
 
   const totalRoles = data?.roles ? Object.keys(data.roles).length : 0;
 
@@ -86,7 +86,6 @@ export default function OpsPermissionsPage() {
         </div>
       </header>
 
-      {/* Search filter */}
       <section className={cardCls} aria-label="جست‌وجوی مجوزها">
         <Field
           label="جست‌وجو در نقش‌ها و مجوزها"
