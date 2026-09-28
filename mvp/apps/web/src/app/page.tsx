@@ -112,6 +112,19 @@ export default function HomePage() {
             <Link href="/auth/login" className="pol-button pol-button-primary pol-button-small">
               شروع با شماره موبایل
             </Link>
+            <details className="pol-mobile-menu">
+              <summary aria-label="باز کردن منو">
+                <span />
+                <span />
+                <span />
+              </summary>
+              <nav aria-label="منوی موبایل">
+                <Link href="/how">چگونه کار می‌کند</Link>
+                <Link href="/retailers">خرده‌فروشان</Link>
+                <Link href="/vendors">تأمین‌کنندگان</Link>
+                <Link href="/pilot">پایلوت اهواز</Link>
+              </nav>
+            </details>
           </div>
         </div>
       </header>
@@ -155,7 +168,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="pol-hero-visual pol-reveal pol-delay-2" aria-label="نمایش جریان سفارش در پُل">
+            <div className="pol-hero-visual pol-reveal pol-delay-2" role="img" aria-label="نمایش جریان سفارش در پُل">
               <div className="pol-visual-grid" />
               <div className="pol-visual-halo" />
 
