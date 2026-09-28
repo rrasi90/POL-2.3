@@ -24,6 +24,8 @@ export const DATA_MODE = (process.env.EXPO_PUBLIC_DATA_MODE ?? "live").toLowerCa
 const MOCK_MODE = DATA_MODE === "mock";
 export function isMockMode(): boolean { return MOCK_MODE; }
 
+export function getApiBaseUrl(): string { return BASE; }
+
 const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://10.0.2.2:8000";
 const ACCESS_KEY = "pol.access_token";
 const REFRESH_KEY = "pol.refresh_token";
