@@ -219,3 +219,10 @@ Required fresh evidence: current-branch TypeScript/lint/build, desktop 1440/1280
 ### Verification environment note — 2026-09-28
 
 Fresh GitHub Actions runs for this branch are currently terminating before any job step starts (`runner_id: 0`, empty step list, completion in ~2 seconds). Therefore those failures are treated as CI runner/infrastructure evidence, not as evidence that the landing source itself failed a build step. The landing-specific temporary workflow was removed after confirming this behavior to avoid leaving a permanently red, non-actionable check.
+
+
+## Confirmed VPS Render Defect — 2026-09-28
+
+The supplied VPS deployment log confirms that the previous Web runtime served the HTML document successfully but returned HTTP 404 for generated Next.js static CSS, JavaScript chunks, and the generated font asset. This produced the observed unstyled browser rendering. The issue is therefore a Next.js standalone runtime asset-layout defect, not merely a browser styling issue.
+
+The remediation is now in source: the runtime uses the generated standalone root, copies `.next/static` into that root, and packages the canonical `logo/` assets there. Fresh rebuild and browser capture remain required.
