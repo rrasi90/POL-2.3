@@ -56,5 +56,11 @@ jobs:
           EXPO_PUBLIC_APP_VARIANT: vendor
         run: npx expo config --type public
 
+      - name: Pre-APK release gate
+        working-directory: mvp/apps/mobile
+        env:
+          POL_APP_VARIANT: vendor
+        run: npm run qa:pre-apk
+
       - name: Expo Android export
         run: npm run build --workspace @pol/mobile
