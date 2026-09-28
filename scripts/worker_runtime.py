@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import signal
 import time
-from typing import Callable
+from collections.abc import Callable
 
 from scripts.api.db import get_runtime_connection
 from scripts.canonical_integration_worker import CanonicalIntegrationWorker
@@ -20,11 +20,11 @@ def _stop(_signum, _frame) -> None:
     _STOP = True
 
 
-def _run_one(name: str, fn: Callable[[], object]) -> None:
+def _run_one(name: str, fn: Callable) -> None:
     conn = get_runtime_connection()
     try:
         with conn.cursor() as cur:
-            result = fn()
+            result = fn(cur)
         conn.commit()
         print(f"[WORKER] {name}: {result}", flush=True)
     except Exception as exc:
@@ -47,81 +47,26 @@ def main() -> int:
     while not _STOP:
         _run_one(
             "canonical_integration",
-            lambda: CanonicalIntegrationWorker.process_pending if False else _run_canonical(batch_size),
+            lambda cur: CanonicalIntegrationWorker.process_pending(cur, limit=batch_size),
         )
         _run_one(
             "provider_delivery",
-            lambda: ProviderDeliveryWorker.process_pending(_cursor_placeholder, limit=batch_size)
-            if False else _run_provider(batch_size),
+            lambda cur: ProviderDeliveryWorker.process_pending(cur, limit=batch_size),
         )
         _run_one(
             "payment_reconciliation",
-            lambda: PaymentReconciliationWorker.process_pending(_cursor_placeholder, limit=batch_size)
-            if False else _run_payment(batch_size),
+            lambda cur: PaymentReconciliationWorker.process_pending(cur, limit=batch_size),
         )
         _run_one(
             "vendor_acceptance_timeout",
-            lambda: _run_timeout(batch_size),
+            lambda cur: VendorAcceptanceTimeoutWorker.process_expired(cur, limit=batch_size),
         )
-        time.sleep(interval)
 
+        if not _STOP:
+            time.sleep(interval)
+
+    print("[WORKER] shutdown complete", flush=True)
     return 0
-
-
-# These helpers keep each worker invocation explicit and transaction-scoped.
-# They receive a DB cursor from a fresh connection owned by _run_one.
-
-
-def _run_canonical(batch_size: int):
-    conn = get_runtime_connection()
-    raise RuntimeError("internal wiring error")
-
-
-# Placeholder symbol used only to keep static type checkers from treating the
-# lambda branch as a live call; the functions below perform the real work.
-_cursor_placeholder = None
-
-
-def _run_provider(batch_size: int):
-    conn = get_runtime_connection()
-    try:
-        with conn.cursor() as cur:
-            result = ProviderDeliveryWorker.process_pending(cur, limit=batch_size)
-        conn.commit()
-        return result
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
-
-
-def _run_payment(batch_size: int):
-    conn = get_runtime_connection()
-    try:
-        with conn.cursor() as cur:
-            result = PaymentReconciliationWorker.process_pending(cur, limit=batch_size)
-        conn.commit()
-        return result
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
-
-
-def _run_timeout(batch_size: int):
-    conn = get_runtime_connection()
-    try:
-        with conn.cursor() as cur:
-            result = VendorAcceptanceTimeoutWorker.process_expired(cur, limit=batch_size)
-        conn.commit()
-        return result
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
 
 
 if __name__ == "__main__":
