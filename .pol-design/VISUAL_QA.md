@@ -207,3 +207,10 @@ Mobile regression/cross-module QA: 20/20 checks passed.
 - [x] **DIMENSION 7: Absolute Zero Domain / API Changes**
   - Backend API route endpoints, HTTP methods, payloads, and validation constraints untouched.
   - Database schema, Prisma/migration files, and domain models preserved with 100% integrity.
+
+
+## Landing Page Status Reconciliation — 2026-09-28
+
+The `/` landing surface was materially redesigned after the prior visual QA cycle. Therefore the earlier `VERIFIED` landing result is superseded for this new implementation. Current status: `IMPLEMENTED / FRESH_VISUAL_QA_REQUIRED`.
+
+Required fresh evidence: current-branch TypeScript/lint/build, desktop 1440/1280/1024 screenshots, mobile 390/360 screenshots, RTL readability review, canonical logo asset rendering, CTA route smoke, and reduced-motion behavior review.
