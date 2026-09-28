@@ -90,6 +90,29 @@ class TestFieldTaskCRUD:
                             json={"status": "IN_PROGRESS", "notes": "Updated notes"})
         assert resp.status_code == 200
 
+    def test_task_cannot_roll_back_from_in_progress_to_assigned(self, client):
+        data = _seed()
+        first = client.patch(
+            f"/api/v1/field/tasks/{data['ft_id']}",
+            headers={"Authorization": f"Bearer {data['token']}"},
+            json={"status": "IN_PROGRESS"},
+        )
+        assert first.status_code == 200
+
+        second = client.patch(
+            f"/api/v1/field/tasks/{data['ft_id']}",
+            headers={"Authorization": f"Bearer {data['token']}"},
+            json={"status": "ASSIGNED"},
+        )
+        assert second.status_code == 422
+
+        current = client.get(
+            f"/api/v1/field/tasks/{data['ft_id']}",
+            headers={"Authorization": f"Bearer {data['token']}"},
+        )
+        assert current.status_code == 200
+        assert current.json()["data"]["status"] == "IN_PROGRESS"
+
     def test_create_task(self, client):
         data = _seed("ADMIN_SUPER")
         resp = client.post("/api/v1/field/tasks",
@@ -97,6 +120,65 @@ class TestFieldTaskCRUD:
                            json={"task_type": "TRAIN_RETAILER", "assigned_to_user_id": data["uid"]})
         assert resp.status_code == 201
         assert resp.json()["data"]["task_type"] == "TRAIN_RETAILER"
+
+
+    def test_create_task_with_retailer_target_resolves_target_organization(self, client):
+        data = _seed("ADMIN_SUPER")
+        conn = _db()
+        target_org = str(uuid4())
+        target_user = str(uuid4())
+        target_retailer = str(uuid4())
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, 'Target Retailer', 'RETAILER_OWNER')",
+                    (target_user, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    "INSERT INTO organizations (id, name, org_type, status) VALUES (%s, 'Field Target Retailer', 'RETAILER', 'ACTIVE')",
+                    (target_org,),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO organization_memberships
+                        (id, organization_id, user_id, role, status)
+                    VALUES (%s, %s, %s, 'RETAILER_OWNER', 'ACTIVE')
+                    """,
+                    (str(uuid4()), target_org, target_user),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO retailers
+                        (id, user_id, organization_id, store_name, city, neighborhood, address)
+                    VALUES (%s, %s, %s, 'Target Store', 'Ahvaz', 'Target', 'Target Address')
+                    """,
+                    (target_retailer, target_user, target_org),
+                )
+            conn.commit()
+
+            resp = client.post(
+                "/api/v1/field/tasks",
+                headers={"Authorization": f"Bearer {data['token']}"},
+                json={
+                    "task_type": "ONBOARD_RETAILER",
+                    "assigned_to_user_id": data["uid"],
+                    "retailer_id": target_retailer,
+                    "notes": "Target resolution regression",
+                },
+            )
+            assert resp.status_code == 201
+            body = resp.json()
+            assert body["success"] is True
+            assert body["data"]["target_organization_id"] == target_org
+        finally:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM field_tasks WHERE target_organization_id=%s", (target_org,))
+                cur.execute("DELETE FROM retailers WHERE id=%s", (target_retailer,))
+                cur.execute("DELETE FROM organization_memberships WHERE organization_id=%s", (target_org,))
+                cur.execute("DELETE FROM organizations WHERE id=%s", (target_org,))
+                cur.execute("DELETE FROM users WHERE id=%s", (target_user,))
+            conn.commit()
+            conn.close()
 
 
 class TestFieldTaskAccess:

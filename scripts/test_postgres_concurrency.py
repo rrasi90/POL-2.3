@@ -22,6 +22,7 @@ import time
 import uuid
 import psycopg2
 from psycopg2 import errors
+from psycopg2.extras import RealDictCursor
 
 # Ensure UTF-8 output
 if hasattr(sys.stdout, "reconfigure"):
@@ -57,6 +58,16 @@ def get_conn():
 
 def make_uuid(domain: int, item_id: int) -> str:
     return f"{domain:08d}-0000-0000-0000-{item_id:012d}"
+
+def insert_evidence_media(cur, media_id: str) -> str:
+    """Migration 058 fail-closed guard: every dispute must reference READY evidence media."""
+    cur.execute("""
+        INSERT INTO media_assets
+            (id, storage_provider, storage_bucket, storage_key, mime_type, file_size_bytes,
+             status, provenance, checksum_sha256)
+        VALUES (%s, 'S3_MINIO', 'pol-media', %s, 'image/png', 1024, 'READY', 'POL_OWNED', repeat('a', 64))
+    """, (media_id, f"evidence/{media_id}"))
+    return media_id
 
 # Global Fixtures
 U_ADMIN = make_uuid(1, 1)
@@ -132,6 +143,7 @@ def ensure_base_fixtures():
     conn.close()
 
 import pytest
+from scripts.reservation_service import ReservationService, ReservationConflictError
 
 @pytest.fixture(autouse=True)
 def setup_concurrency_fixtures():
@@ -170,13 +182,24 @@ def test_concurrency_1_inventory_race():
         cur = conn.cursor()
         barrier.wait() # Synchronize start
         try:
+            # Migration 057 keeps reserved_quantity reconciled with ACTIVE
+            # inventory_reservations, so the reservation row must be written
+            # in the same transaction as the inventory counter update.
+            cur.execute("""
+                INSERT INTO inventory_reservations (id, vendor_product_id, quantity, status, expires_at)
+                VALUES (%s, %s, 5, 'ACTIVE', now() + interval '1 day')
+            """, (str(uuid.uuid4()), vp_id))
             cur.execute("""
                 UPDATE vendor_inventory
                 SET reserved_quantity = reserved_quantity + 5
                 WHERE vendor_product_id = %s AND (physical_quantity - reserved_quantity) >= 5
             """, (vp_id,))
-            conn.commit()
-            results.append((worker_id, cur.rowcount, "SUCCESS"))
+            if cur.rowcount == 1:
+                conn.commit()
+                results.append((worker_id, 1, "SUCCESS"))
+            else:
+                conn.rollback()
+                results.append((worker_id, 0, "OUT_OF_STOCK"))
         except Exception as e:
             conn.rollback()
             results.append((worker_id, 0, str(e)))
@@ -290,6 +313,13 @@ def test_concurrency_3_checkout_different_keys_scarce_stock():
         idem = f"idem_scarce_{worker_id}_{tag}"
         barrier.wait()
         try:
+            # Migration 057 keeps reserved_quantity reconciled with ACTIVE
+            # inventory_reservations, so the reservation row must be written
+            # in the same transaction as the inventory counter update.
+            cur.execute("""
+                INSERT INTO inventory_reservations (id, vendor_product_id, quantity, status, expires_at)
+                VALUES (%s, %s, 1, 'ACTIVE', now() + interval '1 day')
+            """, (str(uuid.uuid4()), vp_id))
             # Atomic conditional stock reservation
             cur.execute("""
                 UPDATE vendor_inventory
@@ -330,6 +360,77 @@ def test_concurrency_3_checkout_different_keys_scarce_stock():
     assert len(rejected) == 1, f"Expected exactly 1 rejected due to stock, got {len(rejected)}: {results}"
 
     print(f"  [PASS] Concurrency 3 passed: Semantic race between distinct keys correctly arbitrated by inventory atomicity ({placed[0][0]} won, {rejected[0][0]} rejected).")
+
+def test_concurrency_10_reservation_service_scarce_stock_race():
+    """G-340: real concurrent ReservationService calls arbitrate the same scarce inventory row."""
+    setup_conn = get_conn()
+    cur = setup_conn.cursor()
+    p_id, vp_id, tag = str(uuid.uuid4()), str(uuid.uuid4()), uuid.uuid4().hex[:8]
+    cur.execute("INSERT INTO products (id, master_sku, canonical_name_fa, brand_id, category_id, subcategory_id) VALUES (%s,%s,%s,%s,%s,%s)", (p_id, f"POL-G340-{tag}", "G340", BRAND_1, CAT_1, SUBCAT_1))
+    cur.execute("INSERT INTO vendor_products (id, vendor_id, product_id, vendor_sku, packaging_unit, pack_quantity) VALUES (%s,%s,%s,%s,'CARTON',1)", (vp_id,VND_A,p_id,f"SKU-G340-{tag}"))
+    cur.execute("INSERT INTO vendor_inventory (id, vendor_product_id, physical_quantity, reserved_quantity) VALUES (%s,%s,1,0)", (str(uuid.uuid4()),vp_id))
+    setup_conn.commit(); setup_conn.close()
+    barrier = threading.Barrier(2); results=[]
+    def reserve_worker(name):
+        conn=get_conn(); cur=conn.cursor(cursor_factory=RealDictCursor)
+        barrier.wait()
+        try:
+            reservation=ReservationService.reserve(cur,vendor_product_id=vp_id,quantity=1,idempotency_key=f"g340-{name}-{tag}")
+            conn.commit(); results.append((name,"RESERVED",str(reservation["id"])))
+        except Exception as exc:
+            conn.rollback(); results.append((name,type(exc).__name__))
+        finally: conn.close()
+    t1=threading.Thread(target=reserve_worker,args=("A",)); t2=threading.Thread(target=reserve_worker,args=("B",))
+    t1.start(); t2.start(); t1.join(); t2.join()
+    assert sum(r[1]=="RESERVED" for r in results)==1, results
+    check=get_conn(); q=check.cursor()
+    q.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s",(vp_id,)); assert q.fetchone()[0]==1
+    q.execute("SELECT COUNT(*) FROM inventory_reservations WHERE vendor_product_id=%s AND status='ACTIVE'",(vp_id,)); assert q.fetchone()[0]==1
+    check.close()
+
+def test_concurrency_12_reservation_reconciliation_invariant():
+    """G-342: DB rejects an inventory reserved_quantity mismatch at transaction commit."""
+    conn = get_conn(); cur = conn.cursor()
+    p_id, vp_id = str(uuid.uuid4()), str(uuid.uuid4())
+    cur.execute("INSERT INTO products (id, master_sku, canonical_name_fa, brand_id, category_id, subcategory_id) VALUES (%s,%s,%s,%s,%s,%s)", (p_id, f"POL-G342-{uuid.uuid4().hex[:8]}", "G342", BRAND_1, CAT_1, SUBCAT_1))
+    cur.execute("INSERT INTO vendor_products (id,vendor_id,product_id,vendor_sku,packaging_unit,pack_quantity) VALUES (%s,%s,%s,%s,'CARTON',1)", (vp_id,VND_A,p_id,f"SKU-G342-{uuid.uuid4().hex[:8]}"))
+    cur.execute("INSERT INTO vendor_inventory (id,vendor_product_id,physical_quantity,reserved_quantity) VALUES (%s,%s,10,0)", (str(uuid.uuid4()),vp_id))
+    conn.commit()
+    cur.execute("UPDATE vendor_inventory SET reserved_quantity=1 WHERE vendor_product_id=%s",(vp_id,))
+    with pytest.raises(psycopg2.errors.CheckViolation):
+        conn.commit()
+    conn.rollback()
+    cur.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s",(vp_id,))
+    assert cur.fetchone()[0] == 0
+    conn.close()
+
+def test_concurrency_11_reservation_idempotency_same_key():
+    """G-341: DB unique key arbitrates two concurrent reservations using the same idempotency key."""
+    setup_conn=get_conn(); cur=setup_conn.cursor()
+    p_id,vp_id,tag=str(uuid.uuid4()),str(uuid.uuid4()),uuid.uuid4().hex[:8]
+    cur.execute("INSERT INTO products (id, master_sku, canonical_name_fa, brand_id, category_id, subcategory_id) VALUES (%s,%s,%s,%s,%s,%s)", (p_id,f"POL-G341-{tag}","G341",BRAND_1,CAT_1,SUBCAT_1))
+    cur.execute("INSERT INTO vendor_products (id,vendor_id,product_id,vendor_sku,packaging_unit,pack_quantity) VALUES (%s,%s,%s,%s,'CARTON',1)", (vp_id,VND_A,p_id,f"SKU-G341-{tag}"))
+    cur.execute("INSERT INTO vendor_inventory (id,vendor_product_id,physical_quantity,reserved_quantity) VALUES (%s,%s,5,0)", (str(uuid.uuid4()),vp_id))
+    setup_conn.commit(); setup_conn.close()
+    key=f"g341-shared-{tag}"; barrier=threading.Barrier(2); results=[]
+    def reserve_same_key(name):
+        conn=get_conn(); cur=conn.cursor(cursor_factory=RealDictCursor); barrier.wait()
+        try:
+            res=ReservationService.reserve(cur,vendor_product_id=vp_id,quantity=2,idempotency_key=key)
+            conn.commit(); results.append((name,"RESERVED",str(res["id"]),bool(res.get("idempotent_replay"))))
+        except Exception as exc:
+            conn.rollback(); results.append((name,type(exc).__name__))
+        finally: conn.close()
+    t1=threading.Thread(target=reserve_same_key,args=("A",)); t2=threading.Thread(target=reserve_same_key,args=("B",))
+    t1.start(); t2.start(); t1.join(); t2.join()
+    assert len([r for r in results if r[1]=="RESERVED"])==2, results
+    ids={r[2] for r in results if r[1]=="RESERVED"}; assert len(ids)==1
+    assert sum(bool(r[3]) for r in results if r[1]=="RESERVED")==1
+    check=get_conn(); q=check.cursor();
+    q.execute("SELECT COUNT(*),MAX(reserved_quantity) FROM inventory_reservations ir JOIN vendor_inventory vi ON vi.vendor_product_id=ir.vendor_product_id WHERE ir.idempotency_key=%s",(key,));
+    cnt,_=q.fetchone(); assert cnt==1
+    q.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s",(vp_id,)); assert q.fetchone()[0]==2
+    check.close()
 
 def test_concurrency_4_vendor_accept_race():
     print("\n[CONCURRENCY 4] Vendor Accept Race (Two concurrent workers accepting SUBMITTED order)...")
@@ -463,9 +564,16 @@ def test_concurrency_6_refund_race():
         VALUES (%s, %s, %s, %s, %s, 'DELIVERED', 5000000)
     """, (ord_id, f"POL-REF-{tag}", og_id, RET_1, VND_A))
     cur.execute("""
-        INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description)
-        VALUES (%s, %s, %s, %s, 'RESOLVED', 2000000, 'Damaged stock')
-    """, (disp_id, ord_id, RET_1, VND_A))
+        INSERT INTO payments (id, order_id, retailer_id, vendor_id, amount_toman, payment_method, payment_status)
+        VALUES (%s, %s, %s, %s, 5000000, 'ONLINE_MOCK', 'SUCCESS')
+    """, (str(uuid.uuid4()), ord_id, RET_1, VND_A))
+    evidence_id = str(uuid.uuid4())
+    insert_evidence_media(cur, evidence_id)
+    cur.execute("""
+        INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman,
+                              approved_amount_toman, resolution_outcome, description, evidence_media_id)
+        VALUES (%s, %s, %s, %s, 'RESOLVED', 2000000, 2000000, 'ADJUSTED_SHORTAGE', 'Damaged stock', %s)
+    """, (disp_id, ord_id, RET_1, VND_A, evidence_id))
     setup_conn.commit()
     setup_conn.close()
 
@@ -479,9 +587,9 @@ def test_concurrency_6_refund_race():
         barrier.wait()
         try:
             cur.execute("""
-                INSERT INTO refunds (id, order_id, dispute_id, retailer_id, amount_toman, reason, status)
-                VALUES (%s, %s, %s, %s, 2000000, 'Approved dispute refund', 'PENDING')
-            """, (ref_id, ord_id, disp_id, RET_1))
+                INSERT INTO refunds (id, order_id, dispute_id, retailer_id, payment_id, amount_toman, reason, status)
+                VALUES (%s, %s, %s, %s, (SELECT id FROM payments WHERE order_id = %s AND payment_status = 'SUCCESS' LIMIT 1), 2000000, 'Approved dispute refund', 'PENDING')
+            """, (ref_id, ord_id, disp_id, RET_1, ord_id))
             conn.commit()
             results.append((worker_id, "REFUND_CREATED"))
         except psycopg2.IntegrityError as err:
@@ -539,10 +647,12 @@ def test_concurrency_7_dispute_creation_race():
         disp_id = str(uuid.uuid4())
         barrier.wait()
         try:
+            evidence_id = str(uuid.uuid4())
+            insert_evidence_media(cur, evidence_id)
             cur.execute("""
-                INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description)
-                VALUES (%s, %s, %s, %s, 'OPEN', 1500000, 'Missing carton reported')
-            """, (disp_id, ord_id, RET_1, VND_B))
+                INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description, evidence_media_id)
+                VALUES (%s, %s, %s, %s, 'OPEN', 1500000, 'Missing carton reported', %s)
+            """, (disp_id, ord_id, RET_1, VND_B, evidence_id))
             conn.commit()
             results.append((worker_id, "DISPUTE_OPENED"))
         except psycopg2.IntegrityError as err:
@@ -619,10 +729,12 @@ def test_concurrency_8_multi_vendor_dispute_isolation():
         cur = conn.cursor()
         barrier.wait()
         try:
+            evidence_id = str(uuid.uuid4())
+            insert_evidence_media(cur, evidence_id)
             cur.execute("""
-                INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description)
-                VALUES (%s, %s, %s, %s, 'OPEN', 1000000, 'Shortage claim')
-            """, (str(uuid.uuid4()), ord_a, RET_1, VND_A))
+                INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description, evidence_media_id)
+                VALUES (%s, %s, %s, %s, 'OPEN', 1000000, 'Shortage claim', %s)
+            """, (str(uuid.uuid4()), ord_a, RET_1, VND_A, evidence_id))
             cur.execute("UPDATE orders SET dispute_status = 'OPEN' WHERE id = %s", (ord_a,))
             cur.execute("UPDATE settlements SET status = 'DISPUTED' WHERE order_id = %s", (ord_a,))
             conn.commit()
@@ -742,6 +854,9 @@ def main():
         test_concurrency_7_dispute_creation_race,
         test_concurrency_8_multi_vendor_dispute_isolation,
         test_concurrency_9_stale_state_price_change,
+        test_concurrency_10_reservation_service_scarce_stock_race,
+        test_concurrency_11_reservation_idempotency_same_key,
+        test_concurrency_12_reservation_reconciliation_invariant,
     ]
 
     for test in tests:

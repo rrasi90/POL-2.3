@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Skeleton,
@@ -76,10 +77,17 @@ export default function RetailerVendorStorefrontPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری ویترین">
-        <Skeleton className="h-8 w-64" />
-        <div className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4">
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری ویترین">
+        <Skeleton className="h-9 w-64" />
+        <Card className="p-6">
           <Skeleton lines={4} />
+        </Card>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="p-4">
+              <Skeleton lines={4} />
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -95,125 +103,143 @@ export default function RetailerVendorStorefrontPage() {
     );
   }
 
-  const name = vendor.name ?? vendor.display_name ?? "—";
+  const name = vendor.name ?? vendor.display_name ?? "تأمین‌کننده بدون نام";
+  const initial = name.charAt(0);
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-start gap-3">
-        <div>
-          <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-            {name}
-          </h1>
-          <p className="mt-1 flex flex-wrap items-center gap-2">
-            {vendor.city ? (
-              <span className="text-[13px] text-[var(--pol-light-text-secondary)]">
-                {vendor.city}
-              </span>
-            ) : null}
-            <span className="text-[11px] text-[var(--pol-light-text-muted)]">
-              {formatDateTime(vendor.created_at)}
-            </span>
-          </p>
+    <div className="space-y-6">
+      {/* Header Profile Card */}
+      <Card className="p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--pol-light-surface-subtle)] text-[22px] font-bold text-[var(--pol-light-brand-primary)]">
+              {initial}
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-[20px] md:text-[24px] font-bold text-[var(--pol-light-text-primary)]">
+                  {name}
+                </h1>
+                {vendor.is_active === false ? (
+                  <StatusChip tone="neutral">غیرفعال</StatusChip>
+                ) : (
+                  <StatusChip tone="success">تأمین‌کننده فعال</StatusChip>
+                )}
+              </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[12px] text-[var(--pol-light-text-secondary)]">
+                {vendor.city && <span>📍 شهر: {vendor.city}</span>}
+                <span>·</span>
+                <span>عضویت از {formatDateTime(vendor.created_at)}</span>
+                <span>·</span>
+                <span>{products.length.toLocaleString("fa-IR")} قلم کالای عرضه‌شده</span>
+              </div>
+              {vendor.description && (
+                <p className="mt-3 text-[13px] leading-relaxed text-[var(--pol-light-text-secondary)]">
+                  {vendor.description}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex shrink-0 gap-2">
+            <Button variant="ghost" size="sm" onClick={() => void load()}>
+              به‌روزرسانی
+            </Button>
+            <Link
+              href="/retailer/vendors"
+              className="inline-flex items-center justify-center rounded-lg border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] font-medium text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)] transition-colors"
+            >
+              همه تأمین‌کنندگان
+            </Link>
+          </div>
         </div>
-        <div className="ms-auto flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" onClick={() => void load()}>
-            به‌روزرسانی
-          </Button>
-          <Link
-            href="/retailer/vendors"
-            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
-          >
-            همه تأمین‌کنندگان
-          </Link>
-        </div>
-      </header>
+      </Card>
 
-      <section
-        aria-label="خلاصه فروشگاه"
-        className="flex flex-wrap items-center gap-2 rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-      >
-        {vendor.is_active === false ? (
-          <StatusChip tone="neutral">غیرفعال</StatusChip>
-        ) : (
-          <StatusChip tone="success">فعال</StatusChip>
-        )}
-        <span className="text-[13px] text-[var(--pol-light-text-secondary)]">
-          {products.length.toLocaleString("fa-IR")} کالا در ویترین
-        </span>
-      </section>
-
-      {vendor.description ? (
-        <section
-          aria-label="درباره فروشگاه"
-          className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-        >
-          <p className="text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
-            {vendor.description}
-          </p>
-        </section>
-      ) : null}
-
-      <section aria-label="کالاهای فروشگاه">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-            کالاها
-          </h2>
+      {/* Catalog Grid */}
+      <section aria-label="کالاهای فروشگاه" className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
+              ویترین کالاهای عرضه‌شده
+            </h2>
+            <p className="text-[12px] text-[var(--pol-light-text-secondary)]">
+              کالاهای دارای موجودی این بنکدار را مقایسه و سفارش دهید
+            </p>
+          </div>
           <Link
             href="/retailer/catalog"
-            className="ms-auto text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
+            className="text-[13px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
           >
-            جستجوی سراسری کاتالوگ
+            جستجو در تمام کاتالوگ ←
           </Link>
         </div>
+
         {products.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState
-              title="کالایی در ویترین نیست"
-              description="این تأمین‌کننده در حال حاضر کالایی ارائه نمی‌دهد."
-            />
-          </div>
+          <EmptyState
+            title="کالایی در ویترین نیست"
+            description="این تأمین‌کننده در حال حاضر کالای فعالی برای نمایش ندارد."
+          />
         ) : (
-          <ul role="list" className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((p) => (
-              <li
-                key={String(p.id)}
-                className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-              >
-                <div className="flex flex-wrap items-start gap-2">
-                  <p className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-                    {p.product_name ?? p.name ?? "—"}
-                  </p>
-                  {p.is_available === false ? (
-                    <StatusChip tone="warning">ناموجود</StatusChip>
-                  ) : null}
-                </div>
-                {p.brand_name ? (
-                  <p className="mt-0.5 text-[12px] text-[var(--pol-light-text-secondary)]">
-                    {p.brand_name}
-                  </p>
-                ) : null}
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
-                  <span className="font-medium text-[var(--pol-light-text-primary)]">
-                    {formatToman(p.price_toman)}
-                  </span>
-                  {p.stock_quantity != null ? (
-                    <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                      موجودی {Number(p.stock_quantity).toLocaleString("fa-IR")}
-                      {p.packaging_unit ? ` ${p.packaging_unit}` : ""}
-                    </span>
-                  ) : null}
-                </div>
-                {p.product_id ? (
-                  <Link
-                    href={`/retailer/catalog/${p.product_id}`}
-                    className="mt-2 inline-block text-[12px] text-[var(--pol-light-brand-primary)] hover:underline"
-                  >
-                    مقایسه قیمت و فروشندگان
-                  </Link>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {products.map((p) => {
+              const productName = p.product_name ?? p.name ?? "کالای بدون عنوان";
+              return (
+                <Card
+                  key={String(p.id)}
+                  className="flex flex-col justify-between p-4 transition-all duration-200 hover:shadow-[var(--pol-shadow-md)] hover:border-[var(--pol-light-border-strong)]"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-[14px] font-bold text-[var(--pol-light-text-primary)] line-clamp-2">
+                        {productName}
+                      </h3>
+                      {p.is_available === false && (
+                        <StatusChip tone="warning">ناموجود</StatusChip>
+                      )}
+                    </div>
+                    {p.brand_name && (
+                      <span className="mt-1 inline-block text-[12px] text-[var(--pol-light-text-secondary)]">
+                        برند: {p.brand_name}
+                      </span>
+                    )}
+
+                    <div className="mt-3 flex items-center justify-between text-[13px]">
+                      <div>
+                        <span className="block text-[11px] text-[var(--pol-light-text-secondary)]">
+                          قیمت واحد
+                        </span>
+                        <span className="font-bold text-[var(--pol-light-text-primary)]">
+                          {formatToman(p.price_toman)}
+                        </span>
+                      </div>
+                      {p.stock_quantity != null && (
+                        <div className="text-end">
+                          <span className="block text-[11px] text-[var(--pol-light-text-secondary)]">
+                            موجودی
+                          </span>
+                          <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+                            {Number(p.stock_quantity).toLocaleString("fa-IR")}{" "}
+                            {p.packaging_unit ?? "بسته"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {p.product_id && (
+                    <div className="mt-4 border-t border-[var(--pol-light-border-subtle)] pt-3">
+                      <Link
+                        href={`/retailer/catalog/${p.product_id}`}
+                        className="inline-flex w-full items-center justify-center rounded-lg bg-[var(--pol-light-surface-subtle)] py-2 text-[12px] font-semibold text-[var(--pol-light-brand-primary)] hover:bg-[var(--pol-light-surface-hover,var(--pol-light-surface-subtle))] transition-colors"
+                      >
+                        مقایسه قیمت و سفارش کالا
+                      </Link>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
         )}
       </section>
     </div>

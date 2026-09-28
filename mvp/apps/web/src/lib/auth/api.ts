@@ -10,13 +10,11 @@ let client: ApiClient | null = null;
 let refreshInFlight: Promise<boolean> | null = null;
 
 async function tryRefresh(): Promise<boolean> {
-  const { refreshToken } = useAuthStore.getState();
-  if (!refreshToken) return false;
   try {
     const res = await fetch(`${baseUrl()}/api/v1/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken }),
+      credentials: "include",
     });
     if (!res.ok) return false;
     const payload = (await res.json()) as { success?: boolean; data?: RefreshResponse };

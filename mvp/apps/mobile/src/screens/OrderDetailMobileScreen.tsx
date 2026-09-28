@@ -81,6 +81,16 @@ export function OrderDetailMobileScreen(props: {
   const [returnQuantity, setReturnQuantity] = useState("1");
   const [returnNote, setReturnNote] = useState("");
   const [disputeReason, setDisputeReason] = useState("");
+  const [disputeClaimedAmount, setDisputeClaimedAmount] = useState("");
+  const [returnClaimedRefund, setReturnClaimedRefund] = useState("");
+  const [returnItemId, setReturnItemId] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
+  const [dispatchDriverName, setDispatchDriverName] = useState("");
+  const [dispatchVehiclePlate, setDispatchVehiclePlate] = useState("");
+  const [dispatchDriverPhone, setDispatchDriverPhone] = useState("");
+  const [deliveryRecipient, setDeliveryRecipient] = useState("");
+  const [deliveryOtp, setDeliveryOtp] = useState("");
+  const [deliveryStatus, setDeliveryStatus] = useState<string | null>(null);
   const [disputeDescription, setDisputeDescription] = useState("");
 
   const load = useCallback(async () => {
@@ -96,6 +106,15 @@ export function OrderDetailMobileScreen(props: {
       setOrder(o);
       const nextItems = rows<Item>(it, ["items", "data"]);
       setItems(nextItems);
+      setReturnItemId((current) => current || nextItems[0]?.id || "");
+      if (props.mode === "retailer") {
+        try {
+          const delivery = await api.get<{ delivery_status?: string | null }>("/api/v1/orders/" + props.orderId + "/delivery");
+          setDeliveryStatus(delivery.delivery_status || null);
+        } catch {
+          setDeliveryStatus(null);
+        }
+      }
       setTimeline(rows<Timeline>(tl, ["events", "items", "data"]));
       const next: Record<string, string> = {};
       nextItems.forEach((x) => {
@@ -121,7 +140,7 @@ export function OrderDetailMobileScreen(props: {
     void load();
   }, [load]);
 
-  async function act(name: "accept" | "reject" | "preparing" | "ready" | "dispatch" | "deliver"): Promise<void> {
+  async function act(name: "accept" | "preparing" | "ready"): Promise<void> {
     setActing(name);
     setActionError(null);
     try {
@@ -134,18 +153,118 @@ export function OrderDetailMobileScreen(props: {
     }
   }
 
+  function keyV4(): string {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
+      const r = (Math.random() * 16) | 0;
+      const n = ch === "x" ? r : (r & 3) | 8;
+      return n.toString(16);
+    });
+  }
+
+  async function submitReject(): Promise<void> {
+    if (!rejectReason.trim()) {
+      setActionError("دلیل رد سفارش الزامی است.");
+      return;
+    }
+    setActing("reject");
+    setActionError(null);
+    try {
+      await api.post("/api/v1/orders/" + props.orderId + "/reject", { reason: rejectReason.trim() });
+      setRejectReason("");
+      await load();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "رد سفارش ناموفق بود");
+    } finally {
+      setActing(null);
+    }
+  }
+
+  async function submitDispatch(): Promise<void> {
+    if (!dispatchDriverName.trim() || !dispatchVehiclePlate.trim() || !dispatchDriverPhone.trim()) {
+      setActionError("نام راننده، پلاک و تلفن راننده الزامی است.");
+      return;
+    }
+    setActing("dispatch");
+    setActionError(null);
+    try {
+      await api.post("/api/v1/orders/" + props.orderId + "/dispatch", {
+        driver_name: dispatchDriverName.trim(),
+        vehicle_plate: dispatchVehiclePlate.trim(),
+        driver_phone: dispatchDriverPhone.trim(),
+      });
+      await load();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "ثبت ارسال ناموفق بود");
+    } finally {
+      setActing(null);
+    }
+  }
+
+  async function submitDeliveryStage(target: "picked-up" | "in-transit" | "arrived"): Promise<void> {
+    setActing(target);
+    setActionError(null);
+    try {
+      await api.post("/api/v1/orders/" + props.orderId + "/delivery/" + target, {});
+      await load();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "تغییر وضعیت تحویل ناموفق بود");
+    } finally {
+      setActing(null);
+    }
+  }
+
+  async function submitDelivery(): Promise<void> {
+    if (!deliveryRecipient.trim()) {
+      setActionError("نام تحویل‌گیرنده الزامی است.");
+      return;
+    }
+    if (!/^\\d{4}$/.test(deliveryOtp.trim())) {
+      setActionError("کد تحویل باید ۴ رقم باشد.");
+      return;
+    }
+    setActing("deliver");
+    setActionError(null);
+    try {
+      await api.post("/api/v1/orders/" + props.orderId + "/deliver", {
+        recipient_name: deliveryRecipient.trim(),
+        otp_code: deliveryOtp.trim(),
+        proof_type: "OTP_CODE",
+      });
+      setDeliveryRecipient("");
+      setDeliveryOtp("");
+      await load();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "ثبت تحویل ناموفق بود");
+    } finally {
+      setActing(null);
+    }
+  }
+
   async function submitReturn(): Promise<void> {
     const quantity = Number(returnQuantity);
+    const claimedRefund = Number(returnClaimedRefund);
+    if (!returnItemId) {
+      setActionError("یک قلم برای مرجوعی انتخاب کنید.");
+      return;
+    }
     if (!Number.isFinite(quantity) || quantity < 1) {
       setActionError("تعداد مرجوعی باید حداقل ۱ باشد.");
+      return;
+    }
+    if (!Number.isFinite(claimedRefund) || claimedRefund < 0) {
+      setActionError("مبلغ بازپرداخت ادعایی نامعتبر است.");
       return;
     }
     setActing("return");
     setActionError(null);
     try {
-      const body: Record<string, unknown> = { reason_code: returnReason, quantity };
-      if (returnNote.trim()) body.reason = returnNote.trim();
-      await api.post("/api/v1/orders/" + props.orderId + "/returns", body);
+      const key = keyV4();
+      await api.post("/api/v1/orders/" + props.orderId + "/returns", {
+        items: [{ order_item_id: returnItemId, quantity, reason_code: returnReason }],
+        reason: returnNote.trim() || returnReason,
+        idempotency_key: key,
+        claimed_refund_amount_toman: claimedRefund,
+      }, { headers: { "Idempotency-Key": key } });
       await load();
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "ثبت مرجوعی ناموفق بود");
@@ -159,13 +278,24 @@ export function OrderDetailMobileScreen(props: {
       setActionError("دلیل اختلاف الزامی است.");
       return;
     }
+    const claimedAmount = Number(disputeClaimedAmount);
+    if (!Number.isFinite(claimedAmount) || claimedAmount <= 0) {
+      setActionError("مبلغ مورد ادعا باید بیشتر از صفر باشد.");
+      return;
+    }
     setActing("dispute");
     setActionError(null);
     try {
-      const body: Record<string, string> = { reason: disputeReason.trim() };
-      if (disputeDescription.trim()) body.description = disputeDescription.trim();
+      const description = disputeDescription.trim()
+        ? disputeReason.trim() + ": " + disputeDescription.trim()
+        : disputeReason.trim();
+      const body: Record<string, unknown> = {
+        claimed_amount_toman: claimedAmount,
+        description,
+      };
       await api.post("/api/v1/orders/" + props.orderId + "/disputes", body);
       setDisputeReason("");
+      setDisputeClaimedAmount("");
       setDisputeDescription("");
       await load();
     } catch (e) {
@@ -180,10 +310,12 @@ export function OrderDetailMobileScreen(props: {
     setActionError(null);
     try {
       const lines = items.map((x) => ({
-        item_id: x.id,
-        quantity: Number(partial[x.id] ?? x.ordered_quantity ?? 0),
+        order_item_id: x.id,
+        accepted_quantity: Number(partial[x.id] ?? x.ordered_quantity ?? 0),
       }));
-      await api.post("/api/v1/orders/" + props.orderId + "/partial-acceptance-proposals", { items: lines });
+      await api.post("/api/v1/orders/" + props.orderId + "/partial-acceptance-proposals", { items: lines }, {
+        headers: { "Idempotency-Key": keyV4() },
+      });
       await load();
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "ثبت پذیرش جزئی ناموفق بود");
@@ -232,18 +364,26 @@ export function OrderDetailMobileScreen(props: {
         {vendorMode ? (
           <Card>
             <Text style={styles.h2}>اقدامات فروشنده</Text>
+            {["SUBMITTED", "CREATED"].includes(status) ? <Input label="دلیل رد سفارش" value={rejectReason} onChangeText={setRejectReason} maxLength={1000} /> : null}
+            {status === "READY" ? <><Input label="نام راننده" value={dispatchDriverName} onChangeText={setDispatchDriverName} maxLength={100} /><Input label="پلاک خودرو" value={dispatchVehiclePlate} onChangeText={setDispatchVehiclePlate} maxLength={20} /><Input label="تلفن راننده" value={dispatchDriverPhone} onChangeText={setDispatchDriverPhone} maxLength={32} /></> : null}
             <View style={styles.row}>
               {["SUBMITTED", "CREATED"].includes(status) ? (
                 <>
                   <Btn label="پذیرش" onPress={() => void act("accept")} loading={acting === "accept"} disabled={acting !== null} />
-                  <Btn label="رد" tone="ghost" onPress={() => void act("reject")} loading={acting === "reject"} disabled={acting !== null} />
+                  <Btn label="رد" tone="ghost" onPress={() => void submitReject()} loading={acting === "reject"} disabled={acting !== null || !rejectReason.trim()} />
                   <Btn label="پذیرش جزئی" tone="ghost" onPress={() => void submitPartial()} loading={acting === "partial"} disabled={acting !== null} />
                 </>
               ) : null}
               {["ACCEPTED", "PARTIALLY_ACCEPTED"].includes(status) ? <Btn label="آماده‌سازی" onPress={() => void act("preparing")} loading={acting === "preparing"} disabled={acting !== null} /> : null}
               {status === "PREPARING" ? <Btn label="آماده ارسال" onPress={() => void act("ready")} loading={acting === "ready"} disabled={acting !== null} /> : null}
-              {status === "READY" ? <Btn label="ارسال" onPress={() => void act("dispatch")} loading={acting === "dispatch"} disabled={acting !== null} /> : null}
-              {status === "DISPATCHED" ? <Btn label="تحویل" onPress={() => void act("deliver")} loading={acting === "deliver"} disabled={acting !== null} /> : null}
+              {status === "READY" ? <Btn label="ثبت ارسال" onPress={() => void submitDispatch()} loading={acting === "dispatch"} disabled={acting !== null} /> : null}
+              {status === "DISPATCHED" ? (
+                <>
+                  <Btn label="جمع‌آوری شد" onPress={() => void submitDeliveryStage("picked-up")} loading={acting === "picked-up"} disabled={acting !== null} />
+                  <Btn label="در مسیر" onPress={() => void submitDeliveryStage("in-transit")} loading={acting === "in-transit"} disabled={acting !== null} />
+                  <Btn label="رسید" onPress={() => void submitDeliveryStage("arrived")} loading={acting === "arrived"} disabled={acting !== null} />
+                </>
+              ) : null}
             </View>
           </Card>
         ) : null}
@@ -264,15 +404,26 @@ export function OrderDetailMobileScreen(props: {
 
         {props.mode === "retailer" ? (
           <Card>
+            {status === "DISPATCHED" ? (
+              <>
+                <Text style={styles.meta}>وضعیت تحویل: {deliveryStatus || "نامشخص"}؛ پس از رسیدن محموله به وضعیت ARRIVED، کد تحویل را ثبت کنید.</Text>
+                <Input label="نام تحویل‌گیرنده" value={deliveryRecipient} onChangeText={setDeliveryRecipient} maxLength={200} />
+                <Input label="کد تحویل ۴ رقمی" value={deliveryOtp} onChangeText={setDeliveryOtp} keyboardType="numeric" maxLength={4} />
+                <Btn label="ثبت تحویل" tone="ghost" onPress={() => void submitDelivery()} loading={acting === "deliver"} disabled={acting !== null || deliveryStatus !== "ARRIVED" || !deliveryRecipient.trim() || !deliveryOtp.trim()} />
+              </>
+            ) : null}
             <Text style={styles.h2}>بازگشت / اختلاف</Text>
             <Input label="دلیل مرجوعی" value={returnReason} onChangeText={setReturnReason} />
+            {items.length > 0 ? <View style={styles.row}>{items.map((x) => <Btn key={x.id} label={(x.product_name_snapshot || x.id) + (returnItemId === x.id ? " ✓" : "")} tone={returnItemId === x.id ? "primary" : "ghost"} onPress={() => setReturnItemId(x.id)} />)}</View> : null}
             <Input label="تعداد مرجوعی" value={returnQuantity} onChangeText={setReturnQuantity} keyboardType="numeric" />
+            <Input label="مبلغ بازپرداخت ادعایی (تومان)" value={returnClaimedRefund} onChangeText={setReturnClaimedRefund} keyboardType="numeric" />
             <Input label="توضیح مرجوعی" value={returnNote} onChangeText={setReturnNote} multiline numberOfLines={3} maxLength={500} />
             <Btn label="ثبت مرجوعی" onPress={() => void submitReturn()} loading={acting === "return"} disabled={acting !== null} />
             <Text style={styles.meta}>کدهای قراردادی نمونه: DAMAGED، WRONG_ITEM، MISSING_ITEMS، QUALITY، EXPIRED، OTHER</Text>
             <Input label="دلیل اختلاف" value={disputeReason} onChangeText={setDisputeReason} maxLength={200} />
+            <Input label="مبلغ مورد ادعا (تومان)" value={disputeClaimedAmount} onChangeText={setDisputeClaimedAmount} keyboardType="numeric" />
             <Input label="شرح اختلاف" value={disputeDescription} onChangeText={setDisputeDescription} multiline numberOfLines={3} maxLength={2000} />
-            <Btn label="ثبت اختلاف" tone="ghost" onPress={() => void submitDispute()} loading={acting === "dispute"} disabled={acting !== null || !disputeReason.trim()} />
+            <Btn label="ثبت اختلاف" tone="ghost" onPress={() => void submitDispute()} loading={acting === "dispute"} disabled={acting !== null || !disputeReason.trim() || !disputeClaimedAmount.trim()} />
             {returns.length === 0 ? <Empty title="مرجوعی ثبت نشده" description="برای این سفارش مورد بازگشتی از API دریافت نشد." /> : returns.map((x) => (
               <View key={x.id} style={styles.item}>
                 <StatusChip label={x.status || "—"} tone="info" />

@@ -26,6 +26,16 @@ def get_runtime_connection():
     user = os.environ.get("POL_API_DB_USER") or os.environ.get("PGUSER", "postgres")
     password = os.environ.get("POL_API_DB_PASSWORD") or os.environ.get("PGPASSWORD")
     sslmode = os.environ.get("POL_API_DB_SSLMODE", "prefer")
+    environment = os.environ.get("ENVIRONMENT", "").lower()
+
+    if environment in {"prod", "production"}:
+        if not password:
+            raise RuntimeError("Production PostgreSQL requires POL_API_DB_PASSWORD or PGPASSWORD.")
+        if sslmode not in {"require", "verify-ca", "verify-full"}:
+            raise RuntimeError(
+                "Production PostgreSQL requires encrypted transport: "
+                "set POL_API_DB_SSLMODE to require, verify-ca, or verify-full."
+            )
 
     kwargs = {
         "dbname": dbname,

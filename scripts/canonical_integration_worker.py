@@ -13,20 +13,24 @@ class IntegrationWorkerError(RuntimeError):
 
 
 class CanonicalIntegrationWorker:
-    ALLOWED_DIRECT_NOTIFICATION_EVENTS = {
-        "ORDER_GROUP_SUBMITTED",
-        "ORDER_SUBMITTED",
-        "ORDER_ACCEPTED",
-        "ORDER_REJECTED",
-        "ORDER_CANCELLED",
-        "DISPUTE_OPENED",
-        "FEEDBACK_REPLIED",
-        "DAILY_INVENTORY_REMINDER",
-        "PAYMENT_RECONCILED",
-        "RETURN_REQUESTED",
-    }
-
     PASSTHROUGH_EVENTS = {"VENDOR_REFERRAL_REDEEMED"}
+
+    @staticmethod
+    def _preference_category(event_name: str) -> str:
+        name = event_name.upper()
+        if any(k in name for k in ("PAYMENT", "SETTLEMENT", "INVOICE")):
+            return "PAYMENTS"
+        if any(k in name for k in ("DELIVERY", "RETURN", "DISPATCH", "ARRIVED", "PICKED_UP")):
+            return "DELIVERY"
+        if any(k in name for k in ("DISPUTE", "DAMAGE", "SHORTAGE")):
+            return "DISPUTES"
+        if "SUPPORT" in name or "FEEDBACK" in name:
+            return "SUPPORT"
+        if "SECURITY" in name or "OTP" in name:
+            return "SECURITY"
+        if "PROMO" in name or "BROADCAST" in name:
+            return "MARKETING"
+        return "ORDERS"
 
     @staticmethod
     def _render_message(cur, event_name: str, payload: dict):
@@ -66,12 +70,160 @@ class CanonicalIntegrationWorker:
             """
             UPDATE outbox_events
             SET status='FAILED',
+                retry_count=retry_count + 1,
                 payload=%s,
                 last_error=%s,
                 published_at=COALESCE(published_at, now())
-            WHERE id=%s;
+            WHERE id=%s AND status='PENDING';
             """,
             (Json(payload), reason, event["id"]),
+        )
+
+    @classmethod
+    def _process_event(cls, cur, event: dict) -> None:
+        event_name = event["event_name"]
+        payload = event["payload"] or {}
+
+        if event_name in cls.PASSTHROUGH_EVENTS:
+            cur.execute(
+                """
+                UPDATE outbox_events
+                SET status='PUBLISHED', published_at=now()
+                WHERE id=%s AND status='PENDING';
+                """,
+                (event["id"],),
+            )
+            return
+
+        target_user_id = event.get("target_user_id")
+        target_org_id = event.get("target_organization_id")
+        if not target_user_id or not target_org_id:
+            raise IntegrationWorkerError(
+                f"Event {event['event_id']} lacks explicit notification routing."
+            )
+
+        cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN organizations o ON o.id = om.organization_id
+            JOIN users u ON u.id = om.user_id
+            WHERE om.user_id = %s AND om.organization_id = %s
+              AND om.status = 'ACTIVE'
+              AND o.status = 'ACTIVE'
+              AND u.is_active = TRUE
+            FOR SHARE OF om, o, u;
+            """,
+            (target_user_id, target_org_id),
+        )
+        if not cur.fetchone():
+            raise IntegrationWorkerError(
+                "Notification recipient requires an active membership in the target organization."
+            )
+
+        title, body, priority, channel = cls._render_message(cur, event_name, payload)
+        notification_id = str(uuid.uuid4())
+
+        cur.execute(
+            """
+            INSERT INTO notifications (
+                id, user_id, organization_id, event_name, title, body, data_payload, priority
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id;
+            """,
+            (
+                notification_id,
+                str(target_user_id),
+                str(target_org_id),
+                event_name,
+                title,
+                body,
+                Json(payload),
+                priority,
+            ),
+        )
+
+        channel_upper = str(channel).upper()
+        if channel_upper != "INBOX":
+            category = cls._preference_category(event_name)
+            critical = str(priority).upper() == "CRITICAL"
+            if channel_upper == "PUSH":
+                pref_column = "push_enabled"
+            elif channel_upper == "SMS":
+                pref_column = "sms_enabled"
+            else:
+                raise IntegrationWorkerError(f"Unsupported notification channel: {channel}")
+
+            cur.execute(
+                f"""
+                SELECT {pref_column}
+                FROM notification_preferences
+                WHERE user_id=%s AND category=%s
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (str(target_user_id), category),
+            )
+            pref = cur.fetchone()
+            if pref is None:
+                enabled = True
+            else:
+                enabled = bool(
+                    pref[pref_column]
+                    if isinstance(pref, dict)
+                    else pref[0]
+                )
+
+            delivery_status = "PENDING" if (enabled or critical) else "SKIPPED"
+            failure_reason = (
+                None
+                if (enabled or critical)
+                else "User preference disabled this transactional channel."
+            )
+            cur.execute(
+                """
+                INSERT INTO notification_deliveries
+                    (id, notification_id, channel, status, scheduled_at, failure_reason)
+                VALUES (%s,%s,%s,%s,now(),%s)
+                ON CONFLICT (notification_id, channel) DO NOTHING;
+                """,
+                (
+                    str(uuid.uuid4()),
+                    notification_id,
+                    channel_upper,
+                    delivery_status,
+                    failure_reason,
+                ),
+            )
+        else:
+            # Inbox is the canonical durable in-app channel.
+            cur.execute(
+                """
+                INSERT INTO user_inbox_items
+                    (id, user_id, organization_id, notification_id,
+                     title, body, category, deep_link, is_read)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,FALSE)
+                ON CONFLICT DO NOTHING;
+                """,
+                (
+                    str(uuid.uuid4()),
+                    str(target_user_id),
+                    str(target_org_id),
+                    notification_id,
+                    title,
+                    body,
+                    cls._preference_category(event_name),
+                    payload.get("deep_link") or payload.get("href") or None,
+                ),
+            )
+
+        cur.execute(
+            """
+            UPDATE outbox_events
+            SET status='PUBLISHED', published_at=now()
+            WHERE id=%s AND status='PENDING';
+            """,
+            (event["id"],),
         )
 
     @classmethod
@@ -92,91 +244,12 @@ class CanonicalIntegrationWorker:
         processed = 0
 
         for event in events:
-            event_name = event["event_name"]
-            payload = event["payload"] or {}
-
-            if event_name in cls.PASSTHROUGH_EVENTS:
-                cur.execute(
-                    """
-                    UPDATE outbox_events
-                    SET status='PUBLISHED', published_at=now()
-                    WHERE id=%s;
-                    """,
-                    (event["id"],),
-                )
-                processed += 1
-                continue
-
-            if event_name not in cls.ALLOWED_DIRECT_NOTIFICATION_EVENTS:
-                cls._quarantine_unsupported(
-                    cur,
-                    event,
-                    f"Unsupported canonical outbox event: {event_name}",
-                )
-                processed += 1
-                continue
-
-            target_user_id = event.get("target_user_id")
-            target_org_id = event.get("target_organization_id")
-            if not target_user_id or not target_org_id:
-                raise IntegrationWorkerError(
-                    f"Event {event['event_id']} lacks explicit notification routing."
-                )
-
-            cur.execute(
-                """
-                SELECT 1
-                FROM organization_memberships om
-                JOIN organizations o ON o.id = om.organization_id
-                WHERE om.user_id = %s AND om.organization_id = %s
-                  AND om.status = 'ACTIVE' AND o.status = 'ACTIVE'
-                FOR SHARE OF om, o;
-                """,
-                (target_user_id, target_org_id),
-            )
-            if not cur.fetchone():
-                raise IntegrationWorkerError(
-                    "Notification recipient requires an active membership in the target organization."
-                )
-
-            title, body, priority, channel = cls._render_message(cur, event_name, payload)
-            notification_id = str(uuid.uuid4())
-            cur.execute(
-                """
-                INSERT INTO notifications (
-                    id, user_id, organization_id, event_name, title, body, data_payload, priority
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING id;
-                """,
-                (
-                    notification_id,
-                    str(target_user_id),
-                    str(target_org_id),
-                    event_name,
-                    title,
-                    body,
-                    Json(payload),
-                    priority,
-                ),
-            )
-            if channel != "INBOX":
-                cur.execute(
-                    """
-                    INSERT INTO notification_deliveries
-                        (id, notification_id, channel, status, scheduled_at)
-                    VALUES (%s,%s,%s,'PENDING',now())
-                    ON CONFLICT (notification_id, channel) DO NOTHING;
-                    """,
-                    (str(uuid.uuid4()), notification_id, channel),
-                )
-            cur.execute(
-                """
-                UPDATE outbox_events
-                SET status = 'PUBLISHED', published_at = now()
-                WHERE id = %s;
-                """,
-                (event["id"],),
-            )
+            try:
+                cls._process_event(cur, event)
+            except IntegrationWorkerError as exc:
+                # A deterministic integration/configuration error must not poison
+                # the whole polling transaction. Quarantine it and continue.
+                cls._quarantine_unsupported(cur, event, str(exc))
             processed += 1
 
         return processed
@@ -207,14 +280,15 @@ class NotificationDeliveryWorker:
         cur.execute(
             """
             UPDATE notification_deliveries
-            SET status = 'FAILED',
-                attempt_count = attempt_count + 1,
-                last_error = %s,
-                next_retry_at = %s,
-                updated_at = now()
-            WHERE id = %s;
+            SET status='FAILED',
+                attempt_count=attempt_count + 1,
+                failure_reason=%s,
+                last_error=%s,
+                next_retry_at=%s,
+                updated_at=now()
+            WHERE id=%s;
             """,
-            (error, retry_at, str(delivery_id)),
+            (error, error, retry_at, str(delivery_id)),
         )
 
     @staticmethod
@@ -222,12 +296,12 @@ class NotificationDeliveryWorker:
         cur.execute(
             """
             UPDATE notification_deliveries
-            SET status = 'SENT',
-                attempt_count = attempt_count + 1,
-                provider_message_id = %s,
-                sent_at = now(),
-                updated_at = now()
-            WHERE id = %s;
+            SET status='SENT',
+                attempt_count=attempt_count + 1,
+                provider_message_id=%s,
+                sent_at=now(),
+                updated_at=now()
+            WHERE id=%s;
             """,
             (provider_message_id, str(delivery_id)),
         )

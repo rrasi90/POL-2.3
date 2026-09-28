@@ -171,3 +171,88 @@ def test_broadcasts():
 
 if __name__ == "__main__":
     test_broadcasts()
+
+
+
+def test_http_broadcast_contract():
+    from datetime import datetime, timedelta, timezone
+
+    import psycopg2
+    from fastapi.testclient import TestClient
+    from scripts.api.main import app
+    from scripts.api.dependencies import get_application_boundary
+    from scripts.auth_boundary import encode_access_token, hash_token
+
+    # POST /api/v1/admin/broadcasts is now protected by route-level admin auth:
+    # seed a real admin principal (user + OPERATOR org + ACTIVE membership +
+    # ACTIVE session) and present its bearer token.
+    conn = psycopg2.connect(dbname="pol_test", user="postgres", host="127.0.0.1", port=5432)
+    cur = conn.cursor()
+    admin_id = str(uuid.uuid4())
+    org_id = str(uuid.uuid4())
+    membership_id = str(uuid.uuid4())
+    session_id = str(uuid.uuid4())
+    phone = f"+98916{uuid.uuid4().int % 10000000:07d}"
+    cur.execute(
+        "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, 'Broadcast Admin', 'ADMIN_SUPER')",
+        (admin_id, phone),
+    )
+    cur.execute(
+        "INSERT INTO organizations (id, name, org_type, status) VALUES (%s, 'Broadcast Ops', 'OPERATOR', 'ACTIVE')",
+        (org_id,),
+    )
+    cur.execute(
+        "INSERT INTO organization_memberships (id, organization_id, user_id, role, status) "
+        "VALUES (%s, %s, %s, 'ADMIN_SUPER', 'ACTIVE')",
+        (membership_id, org_id, admin_id),
+    )
+    cur.execute(
+        "INSERT INTO user_sessions (id, user_id, active_organization_id, token_hash, status, expires_at) "
+        "VALUES (%s, %s, %s, %s, 'ACTIVE', %s)",
+        (session_id, admin_id, org_id, hash_token(session_id),
+         datetime.now(timezone.utc) + timedelta(hours=1)),
+    )
+    conn.commit()
+    token = encode_access_token(admin_id, session_id, org_id, "ADMIN_SUPER")
+    cur.close()
+    conn.close()
+
+    headers = {"Authorization": f"Bearer {token}"}
+
+    class FakeBoundary:
+        def admin_broadcast_create(self, **kwargs):
+            return {"id": str(uuid.uuid4()), "status": "DRAFT", "estimated_recipient_count": 3, **kwargs}
+        def admin_broadcast_dispatch(self, **kwargs):
+            return {"id": kwargs["broadcast_id"], "status": "COMPLETED", "recipient_count": 3, "idempotent_replay": False}
+
+    app.dependency_overrides[get_application_boundary] = lambda: FakeBoundary()
+    try:
+        client = TestClient(app)
+        created = client.post(
+            "/api/v1/admin/broadcasts",
+            headers=headers,
+            json={"title": "Test", "body": "Hello", "target_criteria": {"org_type": "RETAILER"}},
+        )
+        assert created.status_code == 201
+        bid = created.json()["data"]["id"]
+        dispatched = client.post(
+            f"/api/v1/admin/broadcasts/{bid}/dispatch",
+            headers=headers,
+            json={"approve": True},
+        )
+        assert dispatched.status_code == 200
+        assert dispatched.json()["data"]["status"] == "COMPLETED"
+    finally:
+        app.dependency_overrides.clear()
+        try:
+            conn = psycopg2.connect(dbname="pol_test", user="postgres", host="127.0.0.1", port=5432)
+            cur = conn.cursor()
+            cur.execute("DELETE FROM user_sessions WHERE id=%s", (session_id,))
+            cur.execute("DELETE FROM organization_memberships WHERE id=%s", (membership_id,))
+            cur.execute("DELETE FROM organizations WHERE id=%s", (org_id,))
+            cur.execute("DELETE FROM users WHERE id=%s", (admin_id,))
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception:
+            pass

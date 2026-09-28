@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from uuid import uuid5, NAMESPACE_URL
+from psycopg2.extras import Json
 
 
 class CanonicalVendorOrderService:
@@ -21,6 +22,9 @@ class CanonicalVendorOrderService:
                    o.order_status,
                    o.retailer_id,
                    o.vendor_id,
+                   o.total_amount_toman,
+                   o.rejection_reason,
+                   o.vendor_acceptance_deadline_at,
                    v.organization_id AS vendor_organization_id,
                    v.status AS vendor_status,
                    ro.id AS retailer_organization_id
@@ -35,7 +39,7 @@ class CanonicalVendorOrderService:
             WHERE o.id = %s
               AND om.organization_id = %s
               AND om.status = 'ACTIVE'
-              AND om.role IN ('VENDOR_OWNER', 'VENDOR_STAFF')
+              AND om.role = 'VENDOR_OWNER'
               AND vo.status = 'ACTIVE'
               AND ro.status = 'ACTIVE'
               AND v.status = 'ACTIVE'
@@ -54,10 +58,39 @@ class CanonicalVendorOrderService:
                 "Order vendor does not belong to the active vendor organization."
             )
 
+        if order["order_status"] == "ACCEPTED":
+            cur.execute(
+                """
+                SELECT COUNT(*) AS count
+                FROM inventory_reservations
+                WHERE order_id=%s AND status='CONSUMED'
+                """,
+                (order_id,),
+            )
+            consumed_count = int(cur.fetchone()["count"])
+            return {
+                "order_id": str(order["id"]),
+                "order_number": order["order_number"],
+                "order_group_id": str(order["order_group_id"]),
+                "order_status": "ACCEPTED",
+                "total_amount_toman": int(order["total_amount_toman"]),
+                "accepted_item_count": int(cls._accepted_item_count(cur, order_id)),
+                "reservation_count": consumed_count,
+                "idempotent_replay": True,
+            }
+
         if order["order_status"] != "SUBMITTED":
             raise ValueError(
                 f"Order cannot be accepted from status {order['order_status']}."
             )
+
+        if order["vendor_acceptance_deadline_at"] is not None:
+            cur.execute(
+                "SELECT now() > %s AS expired",
+                (order["vendor_acceptance_deadline_at"],),
+            )
+            if cur.fetchone()["expired"]:
+                raise ValueError("Vendor acceptance deadline has expired.")
 
         cur.execute(
             """
@@ -143,6 +176,30 @@ class CanonicalVendorOrderService:
                 """,
                 (reservation["id"],),
             )
+            cur.execute(
+                """
+                INSERT INTO outbox_events (
+                    id,event_id,event_name,aggregate_type,aggregate_id,payload,
+                    status,target_user_id,target_organization_id,dedupe_key,channel_hint
+                )
+                VALUES (
+                    gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_CONSUMED',
+                    'INVENTORY_RESERVATION',%s,
+                    jsonb_build_object(
+                        'reservation_id',%s,'order_id',%s,'vendor_product_id',%s,
+                        'quantity',%s
+                    ),
+                    'PENDING',NULL,NULL,%s,'INBOX'
+                )
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    reservation["id"], reservation["id"], order_id,
+                    reservation["vendor_product_id"], reservation["quantity"],
+                    f"reservation-consumed:{reservation['id']}"
+                ),
+            )
+
 
         cur.execute(
             """
@@ -166,6 +223,20 @@ class CanonicalVendorOrderService:
             (order_id,),
         )
         accepted = cur.fetchone()
+
+        cur.execute(
+            """
+            INSERT INTO order_timeline_events
+                (order_id, event_type, from_status, to_status, actor_user_id, actor_organization_id, event_data)
+            VALUES (%s,'ORDER_ACCEPTED','SUBMITTED','ACCEPTED',%s,%s,%s)
+            """,
+            (
+                order_id,
+                user_id,
+                organization_id,
+                Json({"source": "vendor_accept"}),
+            ),
+        )
 
         cur.execute(
             """
@@ -254,8 +325,7 @@ class CanonicalVendorOrderService:
 
         reason = (rejection_reason or "").strip()
         if not reason:
-            raise ValueError("Vendor order rejection requires a non-empty reason.")
-
+            raise ValueError("Vendor rejection reason is required.")
         cur.execute(
             """
             SELECT o.id,
@@ -263,6 +333,9 @@ class CanonicalVendorOrderService:
                    o.order_group_id,
                    o.order_status,
                    o.retailer_id,
+                   o.total_amount_toman,
+                   o.rejection_reason,
+                   o.vendor_acceptance_deadline_at,
                    v.organization_id AS vendor_organization_id
             FROM orders o
             JOIN vendors v ON v.id = o.vendor_id
@@ -275,7 +348,7 @@ class CanonicalVendorOrderService:
             WHERE o.id = %s
               AND om.organization_id = %s
               AND om.status = 'ACTIVE'
-              AND om.role IN ('VENDOR_OWNER', 'VENDOR_STAFF')
+              AND om.role = 'VENDOR_OWNER'
               AND vo.status = 'ACTIVE'
               AND ro.status = 'ACTIVE'
               AND v.status = 'ACTIVE'
@@ -294,10 +367,30 @@ class CanonicalVendorOrderService:
                 "Order vendor does not belong to the active vendor organization."
             )
 
+        if order["order_status"] == "REJECTED":
+            return {
+                "order_id": str(order["id"]),
+                "order_number": order["order_number"],
+                "order_group_id": str(order["order_group_id"]),
+                "order_status": "REJECTED",
+                "total_amount_toman": int(order["total_amount_toman"]),
+                "rejection_reason": order.get("rejection_reason"),
+                "released_reservation_count": 0,
+                "idempotent_replay": True,
+            }
+
         if order["order_status"] != "SUBMITTED":
             raise ValueError(
                 f"Order cannot be rejected from status {order['order_status']}."
             )
+
+        if order["vendor_acceptance_deadline_at"] is not None:
+            cur.execute(
+                "SELECT now() > %s AS expired",
+                (order["vendor_acceptance_deadline_at"],),
+            )
+            if cur.fetchone()["expired"]:
+                raise ValueError("Vendor acceptance deadline has expired.")
 
         cur.execute(
             """
@@ -375,6 +468,30 @@ class CanonicalVendorOrderService:
                 """,
                 (reservation["id"],),
             )
+            cur.execute(
+                """
+                INSERT INTO outbox_events (
+                    id,event_id,event_name,aggregate_type,aggregate_id,payload,
+                    status,target_user_id,target_organization_id,dedupe_key,channel_hint
+                )
+                VALUES (
+                    gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_RELEASED',
+                    'INVENTORY_RESERVATION',%s,
+                    jsonb_build_object(
+                        'reservation_id',%s,'order_id',%s,'vendor_product_id',%s,
+                        'quantity',%s,'reason','VENDOR_REJECTED'
+                    ),
+                    'PENDING',NULL,NULL,%s,'INBOX'
+                )
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    reservation["id"], reservation["id"], order_id,
+                    reservation["vendor_product_id"], reservation["quantity"],
+                    f"reservation-released:{reservation['id']}:vendor-reject"
+                ),
+            )
+
 
         cur.execute(
             """
@@ -389,6 +506,30 @@ class CanonicalVendorOrderService:
             (reason, order_id),
         )
         rejected = cur.fetchone()
+
+        cur.execute(
+            """
+            INSERT INTO order_timeline_events
+                (order_id, event_type, from_status, to_status, actor_user_id, actor_organization_id, event_data)
+            VALUES (%s,'ORDER_REJECTED','SUBMITTED','REJECTED',%s,%s,%s)
+            """,
+            (
+                order_id,
+                user_id,
+                organization_id,
+                Json({"source": "vendor_reject"}),
+            ),
+        )
+        cur.execute(
+            """
+            INSERT INTO vendor_reliability_events
+                (vendor_id, event_type, order_id, impact_score, metadata)
+            SELECT o.vendor_id, 'ORDER_REJECTED', o.id, 0.00, %s
+            FROM orders o
+            WHERE o.id = %s
+            """,
+            (Json({"reason": "VENDOR_REJECTED"}), order_id),
+        )
 
         cur.execute(
             """
@@ -459,6 +600,7 @@ class CanonicalVendorOrderService:
             "total_amount_toman": int(rejected["total_amount_toman"]),
             "rejection_reason": rejected["rejection_reason"],
             "released_reservation_count": len(reservations),
+            "idempotent_replay": False,
         }
 
     @staticmethod

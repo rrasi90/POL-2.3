@@ -26,6 +26,19 @@ html[data-theme="light"] {
   --pol-light-semantic-danger: #b91c1c;
   --pol-light-semantic-info: #1d4ed8;
   --pol-light-focus-ring: #2563eb;
+
+  /* Elevation & Shadows (doc 56 §6.3) */
+  --pol-shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --pol-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --pol-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --pol-shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+
+  /* Fallback aliases to protect against typos */
+  --pol-light-warning: var(--pol-light-semantic-warning);
+  --pol-light-success: var(--pol-light-semantic-success);
+  --pol-light-danger: var(--pol-light-semantic-danger);
+  --pol-light-info: var(--pol-light-semantic-info);
+
   color-scheme: light;
 }
 
@@ -50,6 +63,13 @@ html[data-theme="night"] {
   --pol-night-semantic-danger: #f87171;
   --pol-night-semantic-info: #60a5fa;
   --pol-night-focus-ring: #93c5fd;
+
+  /* Night elevation relies on surface luminance layers and subtle ambient glow */
+  --pol-shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --pol-shadow-md: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.5);
+  --pol-shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 12px 24px rgba(0, 0, 0, 0.7);
+  --pol-shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 2px 4px rgba(0, 0, 0, 0.4);
+
   color-scheme: night;
 }
 
@@ -74,6 +94,10 @@ html[data-theme="night"] {
   --pol-light-semantic-danger: var(--pol-night-semantic-danger);
   --pol-light-semantic-info: var(--pol-night-semantic-info);
   --pol-light-focus-ring: var(--pol-night-focus-ring);
+  --pol-light-warning: var(--pol-night-semantic-warning);
+  --pol-light-success: var(--pol-night-semantic-success);
+  --pol-light-danger: var(--pol-night-semantic-danger);
+  --pol-light-info: var(--pol-night-semantic-info);
 }
 
 html,
@@ -82,6 +106,38 @@ body {
   padding: 0;
   background: var(--pol-light-bg-canvas);
   color: var(--pol-light-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tabular numbers for financial and inventory precision (doc 56 §4.3) */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Precision Commerce reusable surface utilities */
+.pol-surface-card {
+  background: var(--pol-light-surface-default);
+  border: 1px solid var(--pol-light-border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--pol-shadow-card);
+  transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+
+.pol-surface-card-interactive {
+  background: var(--pol-light-surface-default);
+  border: 1px solid var(--pol-light-border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--pol-shadow-card);
+  transition: all 160ms ease-out;
+}
+
+.pol-surface-card-interactive:hover {
+  border-color: var(--pol-light-border-strong);
+  box-shadow: var(--pol-shadow-md);
+  background: var(--pol-light-surface-default);
 }
 
 /* Reduced motion (doc 56 §11) */

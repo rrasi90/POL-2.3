@@ -5,13 +5,13 @@ These rules are persistent workspace constraints for Antigravity when working on
 ## Authority
 
 1. `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md`
-2. Canonical product/domain/data/operations documents
+2. `POL_00_PROJECT_CONTROL/CURRENT_SOURCE_OF_TRUTH.md`
 3. `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md`
-4. `13_PRODUCT_DESIGN/14_DESIGN_DECISION_REGISTER.md`
-5. `13_PRODUCT_DESIGN/21_MVP_DESIGN_AND_FRONTEND_READINESS_GATE_2026-09-16.md`
-6. `13_PRODUCT_DESIGN/22_UI_UX_PAGE_AND_SECTION_COMPLETION_SPEC_2026-09-16.md`
-7. `13_PRODUCT_DESIGN/52_POL_PENPOT_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
-8. Visual artifacts
+4. Canonical product/domain/data/operations documents
+5. `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md`
+6. `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+7. `mvp/MVP_SCREEN_MATRIX.md`
+8. `mvp/MVP_API_MAP.md`
 
 Never invent an undocumented business rule. Mark materially unresolved behavior `OPEN`.
 
@@ -101,8 +101,8 @@ Stop and report when:
 
 Before mutation:
 - build a versioned Context Package;
-- record RUN_ID, WAVE_ID, repository HEAD and Penpot revision;
-- probe documented versus observed tool behavior;
+- record RUN_ID, WAVE_ID and repository HEAD;
+- probe documented versus observed execution-tool behavior;
 - define mutation preconditions and postconditions;
 - preserve a rollback reference.
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { StyleSheet, Text } from "react-native";
-import { api, setToken } from "../api";
+import { StyleSheet, Text, View } from "react-native";
+import { api, persistSession } from "../api";
 import { Btn, Card, ErrorBox, Input, Screen, Title } from "../components/ui";
 import { spacing, useThemedStyles, type Palette } from "../theme";
 import type { OtpRequest, Role, VerifyResult } from "../types";
@@ -74,13 +74,14 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void }): React.Re
       const data = await api.post<VerifyResult>("/api/v1/auth/verify-otp", {
         mobile_number: mobileNumber,
         otp_code: otp,
+        client_platform: "mobile",
       });
       const role = normalizeRole(data.current_organization?.role ?? data.role);
       if (!role) {
         setError("نقش کاربر از پاسخ معتبر بک‌اند قابل تعیین نیست.");
         return;
       }
-      setToken(data.access_token);
+      await persistSession(data.access_token, data.refresh_token ?? null, role);
       props.onAuthed(role);
     } catch (err) {
       setError(err instanceof Error ? err.message : "تأیید کد ناموفق بود");
@@ -119,9 +120,12 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void }): React.Re
               maxLength={4}
               autoComplete="one-time-code"
               hint="الگوی بک‌اند: ۴ رقم"
+              style={styles.otpInput}
             />
-            <Btn label="ورود" onPress={() => void verifyOtp()} loading={loading} disabled={otp.length !== 4} />
-            <Btn label="بازگشت" tone="ghost" onPress={() => setStep("phone")} disabled={loading} />
+            <View style={styles.btnStack}>
+              <Btn label="ورود" onPress={() => void verifyOtp()} loading={loading} disabled={otp.length !== 4} />
+              <Btn label="بازگشت و تغییر شماره" tone="ghost" onPress={() => setStep("phone")} disabled={loading} />
+            </View>
           </>
         )}
       </Card>
@@ -131,7 +135,17 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void }): React.Re
 
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
-  sub: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: 20 },
-  info: { fontSize: 12, color: colors.brand, marginBottom: spacing.sm, lineHeight: 18 },
+    sub: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: 20 },
+    info: { fontSize: 12, color: colors.brand, marginBottom: spacing.sm, lineHeight: 18 },
+    otpInput: {
+      textAlign: "center",
+      letterSpacing: 10,
+      fontSize: 22,
+      fontWeight: "700",
+    },
+    btnStack: {
+      marginTop: spacing.xs,
+      gap: spacing.sm,
+    },
   });
 }

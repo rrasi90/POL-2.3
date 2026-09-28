@@ -21,8 +21,9 @@ def create_referral(
 ):
     return success_payload(
         boundary.referral_create(
-            referred_retailer_id=str(payload.referred_retailer_id),
             referral_code=payload.referral_code,
+            max_redemptions=payload.max_redemptions,
+            expires_at=payload.expires_at,
         )
     )
 

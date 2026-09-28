@@ -45,6 +45,14 @@ class _FakeBoundary:
     ):
         return {"basket_id": basket_id, "version": expected_version + 1, "status": "OPEN"}
 
+    def basket_current(self):
+        return {
+            "basket_id": "basket-current",
+            "retailer_id": str(uuid4()),
+            "status": "OPEN",
+            "version": 3,
+            "items": [],
+        }
     def basket_allocation_preview(self, *, basket_id):
         return {
             "allocation_plan_id": str(uuid4()),
@@ -79,6 +87,14 @@ def client():
     finally:
         app.dependency_overrides.clear()
 
+
+def test_current_basket_returns_canonical_contract(client):
+    response = client.get("/api/v1/baskets/current")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    assert body["data"]["status"] == "OPEN"
+    assert body["data"]["version"] == 3
 
 def test_create_basket_returns_canonical_contract(client):
     response = client.post("/api/v1/baskets")

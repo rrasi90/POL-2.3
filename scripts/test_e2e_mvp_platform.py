@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import os
 from collections import Counter
@@ -18,6 +19,12 @@ from scripts.application_boundary import ApplicationContext, POLApplicationBound
 from scripts.migration_runner import apply_migration_chain, get_migration_chain
 from scripts import operational_policies
 from scripts.operational_policies import AllocationIntegrityError, validate_vendor_operational_capacity
+from scripts.privacy_lifecycle import PrivacyLifecycleService
+from scripts.media_service import MediaService, MediaError, validate_ready_attachment
+from scripts.canonical_retailer_order import CanonicalRetailerOrderService
+from scripts.checkout_gateway import CanonicalCheckoutGateway
+from scripts.reservation_expiry_worker import ReservationExpiryWorker
+from scripts.revalidation_checkout import RevalidationCheckoutService
 
 
 @pytest.fixture
@@ -144,6 +151,572 @@ def checkout_catalog(postgres_database):
     }
 
 
+def test_admin_audit_logs_are_db_immutable(
+    postgres_database, checkout_catalog,
+):
+    """G-312: PostgreSQL rejects UPDATE/DELETE while permitting append-only INSERT."""
+    actor_user_id = checkout_catalog["context"].user_id
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    with transaction(postgres_database) as cur:
+        row = insert_row(
+            cur, "admin_audit_logs", actor_user_id=actor_user_id, action="TEST_MUTATION",
+            target_entity_type="VENDOR", target_entity_id=vendor_id, reason="immutability regression",
+        )
+        audit_id = str(row["id"])
+
+    with transaction(postgres_database) as cur:
+        with pytest.raises(psycopg2.Error, match="admin_audit_logs are immutable"):
+            cur.execute(
+                "UPDATE admin_audit_logs SET reason='tampered' WHERE id=%s",
+                (audit_id,),
+            )
+
+    with transaction(postgres_database) as cur:
+        with pytest.raises(psycopg2.Error, match="admin_audit_logs are immutable"):
+            cur.execute("DELETE FROM admin_audit_logs WHERE id=%s", (audit_id,))
+
+    with transaction(postgres_database) as cur:
+        cur.execute("SELECT reason FROM admin_audit_logs WHERE id=%s", (audit_id,))
+        assert cur.fetchone()["reason"] == "immutability regression"
+
+
+def test_inventory_audit_history_survives_vendor_product_delete(
+    postgres_database, checkout_catalog,
+):
+    """G-313: audit history survives vendor-product lifecycle removal.
+
+    Migration 069 declared inventory_audit_log.vendor_product_id nullable with an
+    ON DELETE SET NULL foreign key; migration 075 reconciled the append-only
+    guard with that lifecycle, so removing the product clears the reference on
+    the audit rows instead of failing closed, while the history itself stays
+    append-only and intact.
+    """
+    line = checkout_catalog["lines"][0]
+    vendor_id = line["vendor_id"]
+    vendor_product_id = line["vendor_product_id"]
+    actor_user_id = checkout_catalog["context"].user_id
+    reference_id = f"G313-{uuid4().hex}"
+    with transaction(postgres_database) as cur:
+        insert_row(
+            cur, "inventory_audit_log", vendor_id=vendor_id, vendor_product_id=vendor_product_id,
+            old_quantity=100, new_quantity=99, old_price_toman=500000, new_price_toman=500000,
+            source_trigger="MANUAL_EDIT", reference_id=reference_id, actor_user_id=actor_user_id,
+        )
+
+    with transaction(postgres_database) as cur:
+        cur.execute("DELETE FROM vendor_prices WHERE vendor_product_id=%s", (vendor_product_id,))
+        cur.execute("DELETE FROM vendor_inventory WHERE vendor_product_id=%s", (vendor_product_id,))
+        cur.execute("DELETE FROM vendor_products WHERE id=%s", (vendor_product_id,))
+
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            """
+            SELECT COUNT(*) AS n FROM inventory_audit_log
+            WHERE vendor_id=%s AND reference_id=%s AND vendor_product_id IS NULL
+            """,
+            (vendor_id, reference_id),
+        )
+        assert cur.fetchone()["n"] == 1
+        cur.execute("SELECT COUNT(*) AS n FROM vendor_products WHERE id=%s", (vendor_product_id,))
+        assert cur.fetchone()["n"] == 0
+
+
+def test_privacy_export_and_deletion_lifecycle(postgres_database, checkout_catalog):
+    """G-315: export is authenticated/user-scoped; deletion revokes security data and preserves business history."""
+    user_id = checkout_catalog["context"].user_id
+    organization_id = checkout_catalog["context"].organization_id
+    with transaction(postgres_database) as cur:
+        device = insert_row(
+            cur, "user_devices", user_id=user_id, device_fingerprint=f"g315-{uuid4().hex}",
+            device_type="WEB", push_token="secret-push-token", is_active=True,
+        )
+        insert_row(
+            cur, "data_consents", user_id=user_id, organization_id=organization_id,
+            consent_type="MARKETING_PUSH", status="GRANTED", source="TEST", version="1.0",
+            granted_at=datetime.now(timezone.utc),
+        )
+        export_result = PrivacyLifecycleService.request_export(cur, user_id)
+        assert export_result["request"]["status"] == "COMPLETED"
+        assert export_result["data"]["user"]["id"] == user_id
+        assert export_result["data"]["profile"]["user_id"] == user_id
+        assert export_result["data"]["memberships"][0]["organization_id"] == organization_id
+        assert export_result["data"]["devices"][0]["id"] == device["id"]
+        assert export_result["request"]["export_sha256"]
+        assert len(export_result["request"]["export_sha256"]) == 64
+
+    with transaction(postgres_database) as cur:
+        deletion = PrivacyLifecycleService.request_deletion(cur, user_id)
+        assert deletion["request"]["status"] == "COMPLETED"
+
+        cur.execute("SELECT phone_number, full_name, is_active FROM users WHERE id=%s", (user_id,))
+        user = cur.fetchone()
+        assert user["is_active"] is False
+        assert user["full_name"].startswith("Deleted User ")
+        assert user["phone_number"].startswith("+000")
+
+        cur.execute("SELECT profile_status, email, bio, avatar_media_asset_id FROM user_profiles WHERE user_id=%s", (user_id,))
+        profile = cur.fetchone()
+        assert profile["profile_status"] == "SUSPENDED"
+        assert profile["email"] is None
+        assert profile["bio"] is None
+        assert profile["avatar_media_asset_id"] is None
+
+        cur.execute("SELECT status, refresh_token_hash FROM user_sessions WHERE user_id=%s", (user_id,))
+        assert all(row["status"] == "REVOKED" and row["refresh_token_hash"] is None for row in cur.fetchall())
+
+        cur.execute("SELECT is_active, push_token FROM user_devices WHERE id=%s", (device["id"],))
+        device_after = cur.fetchone()
+        assert device_after["is_active"] is False
+        assert device_after["push_token"] is None
+
+        cur.execute("SELECT status FROM data_consents WHERE user_id=%s", (user_id,))
+        assert all(row["status"] == "REVOKED" for row in cur.fetchall())
+
+        cur.execute("SELECT count(*) AS n FROM organization_memberships WHERE user_id=%s", (user_id,))
+        assert cur.fetchone()["n"] >= 1
+
+        # The user record and membership survive as business identity history; no hard delete occurs.
+        cur.execute("SELECT status FROM privacy_requests WHERE user_id=%s AND request_type='DELETION'", (user_id,))
+        assert cur.fetchone()["status"] == "COMPLETED"
+
+
+def test_media_schema_alignment_and_governance_fields(postgres_database, checkout_catalog):
+    """G-316: canonical media storage aliases and product-media governance fields exist at DB boundary."""
+    user_id = checkout_catalog["context"].user_id
+    product_id = checkout_catalog["lines"][0]["product_id"]
+    with transaction(postgres_database) as cur:
+        media = insert_row(
+            cur, "media_assets", storage_provider="S3_MINIO", storage_bucket="pol-media",
+            storage_key=f"quarantine/g316/{uuid4()}", bucket_name="pol-media",
+            object_key=f"quarantine/g316/{uuid4()}", mime_type="image/webp",
+            file_size_bytes=1024, status="UPLOADING", provenance="VENDOR_UPLOADED",
+            uploaded_by_user_id=user_id,
+            upload_target_type="PRODUCT", upload_target_id=product_id,
+        )
+        cur.execute("SELECT storage_bucket, bucket_name, storage_key, object_key, checksum_sha256 FROM media_assets WHERE id=%s", (media["id"],))
+        stored = cur.fetchone()
+        assert stored["bucket_name"] == stored["storage_bucket"]
+        assert stored["object_key"] == stored["storage_key"]
+        assert stored["checksum_sha256"] is None
+
+        pm = insert_row(
+            cur, "product_media", product_id=product_id, media_asset_id=media["id"],
+            media_type="PRIMARY_IMAGE", source_provenance="VENDOR_UPLOADED",
+            approval_status="PENDING", is_primary=False, display_order=0,
+        )
+        cur.execute("SELECT media_type, source_provenance, approval_status FROM product_media WHERE id=%s", (pm["id"],))
+        row = cur.fetchone()
+        assert row["media_type"] == "PRIMARY_IMAGE"
+        assert row["source_provenance"] == "VENDOR_UPLOADED"
+        assert row["approval_status"] == "PENDING"
+
+
+def test_resumable_media_session_and_processing_pipeline(postgres_database, checkout_catalog, monkeypatch):
+    """G-318: multipart session persists parts; confirmation strips metadata and emits trusted thumbnail."""
+    import scripts.media_service as media_module
+    from PIL import Image
+    class FakeBody:
+        def __init__(self, data): self._io = io.BytesIO(data)
+        def read(self, size=-1): return self._io.read(size)
+    class FakeS3:
+        def __init__(self, raw): self.raw = raw; self.objects = {}; self.upload_id = "upload-g318"
+        def generate_presigned_url(self, **kwargs): return "https://fake.local/upload"
+        def create_multipart_upload(self, **kwargs): return {"UploadId": self.upload_id}
+        def abort_multipart_upload(self, **kwargs): return None
+        def complete_multipart_upload(self, **kwargs): return None
+        def get_object(self, Bucket, Key): return {"Body": FakeBody(self.objects[Key])}
+        def put_object(self, Bucket, Key, Body, **kwargs): self.objects[Key] = Body if isinstance(Body, bytes) else Body.read()
+        def delete_object(self, Bucket, Key): self.objects.pop(Key, None)
+    image = Image.new("RGB", (320, 200), "white")
+    exif = Image.Exif()
+    exif[270] = "PII-G318"
+    raw_out = io.BytesIO()
+    image.save(raw_out, format="JPEG", exif=exif)
+    fake = FakeS3(raw_out.getvalue())
+    monkeypatch.setattr(media_module, "_s3_client", lambda: fake)
+    monkeypatch.setattr(media_module, "_authorize_target", lambda *args, **kwargs: {"provenance": "VENDOR_UPLOADED"})
+
+    user_id = checkout_catalog["context"].user_id
+    org_id = checkout_catalog["context"].organization_id
+    target_id = str(uuid4())
+    with transaction(postgres_database) as cur:
+        init = MediaService.presign_resumable(
+            cur, user_id=user_id, organization_id=org_id, mime_type="image/jpeg",
+            file_size_bytes=len(fake.raw), target_type="VENDOR", target_id=target_id,
+        )
+        assert init["part_count"] == 1
+        assert len(init["parts"]) == 1
+        cur.execute("UPDATE media_assets SET storage_key=%s, storage_bucket=%s, bucket_name=%s, object_key=%s WHERE id=%s",
+                    (init["object_key"], "pol-media", "pol-media", init["object_key"], init["media_id"]))
+        fake.objects[init["object_key"]] = fake.raw
+        complete = MediaService.complete_resumable(
+            cur, user_id=user_id, organization_id=org_id, session_id=init["session_id"],
+            parts=[{"part_number": 1, "etag": "\"etag-g318\""}],
+        )
+        assert complete["status"] == "COMPLETED"
+
+    with transaction(postgres_database) as cur:
+        cur.execute("SELECT status, checksum_sha256 FROM media_assets WHERE id=%s", (init["media_id"],))
+        row = cur.fetchone()
+        assert row["status"] == "UPLOADING"
+        MediaService.confirm_upload(
+            cur, user_id=user_id, organization_id=org_id, media_id=init["media_id"],
+            target_type="VENDOR", target_id=target_id,
+        )
+
+        cur.execute(
+            "SELECT status, mime_type, checksum_sha256 FROM media_assets WHERE id=%s",
+            (init["media_id"],),
+        )
+        media_row = cur.fetchone()
+        assert media_row["status"] == "READY"
+        assert media_row["mime_type"] == "image/webp"
+        assert len(media_row["checksum_sha256"]) == 64
+        cur.execute(
+            "SELECT variant_type, width, height, checksum_sha256 FROM media_variants WHERE source_media_asset_id=%s",
+            (init["media_id"],),
+        )
+        variant = cur.fetchone()
+        assert variant["variant_type"] == "THUMBNAIL"
+        assert (variant["width"], variant["height"]) == (150, 150)
+        assert len(variant["checksum_sha256"]) == 64
+
+
+def test_media_reference_requires_ready_owner_and_exact_purpose(postgres_database, checkout_catalog):
+    """G-319: a media reference must be READY, owned and bound to the exact target type/id."""
+    user_id = checkout_catalog["context"].user_id
+    delivery_id = str(uuid4())
+    with transaction(postgres_database) as cur:
+        media = insert_row(
+            cur, "media_assets", storage_provider="S3_MINIO", storage_bucket="pol-media",
+            storage_key=f"g319/{uuid4()}", bucket_name="pol-media", object_key=f"g319/{uuid4()}",
+            mime_type="image/webp", file_size_bytes=1024, checksum_sha256="a" * 64,
+            status="READY", provenance="POL_OWNED", uploaded_by_user_id=user_id,
+            upload_target_type="DELIVERY", upload_target_id=delivery_id,
+        )
+        validated = validate_ready_attachment(
+            cur, media_id=str(media["id"]), user_id=user_id,
+            organization_id=checkout_catalog["context"].organization_id,
+            target_type="DELIVERY", target_id=delivery_id,
+        )
+        assert validated["status"] == "READY"
+        with pytest.raises(MediaError, match="purpose does not match"):
+            validate_ready_attachment(
+                cur, media_id=str(media["id"]), user_id=user_id,
+                organization_id=checkout_catalog["context"].organization_id,
+                target_type="DISPUTE", target_id=delivery_id,
+            )
+        with pytest.raises(MediaError, match="not bound to the requested target"):
+            validate_ready_attachment(
+                cur, media_id=str(media["id"]), user_id=user_id,
+                organization_id=checkout_catalog["context"].organization_id,
+                target_type="DELIVERY", target_id=str(uuid4()),
+            )
+
+
+def test_deleted_media_storage_reconciliation_is_retryable(postgres_database, checkout_catalog):
+    """G-320: deleted DB media is reconciled to object storage and failures remain retryable."""
+    from scripts.media_storage_reconcile_worker import reconcile_deleted_media
+    user_id = checkout_catalog["context"].user_id
+    asset_id = str(uuid4())
+    variant_id = str(uuid4())
+    class FakeS3:
+        def __init__(self): self.deleted = []
+        def delete_object(self, Bucket, Key): self.deleted.append((Bucket, Key))
+    fake = FakeS3()
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            """INSERT INTO media_assets
+               (id, storage_bucket, storage_key, bucket_name, object_key, mime_type, file_size_bytes, checksum_sha256, status, provenance, uploaded_by_user_id)
+               VALUES (%s, 'pol-media', %s, 'pol-media', %s, 'image/webp', 1024, %s, 'DELETED', 'POL_OWNED', %s)""",
+            (asset_id, f"g320/{asset_id}", f"g320/{asset_id}", "a" * 64, user_id),
+        )
+        cur.execute(
+            """INSERT INTO media_variants
+               (id, source_media_asset_id, variant_type, storage_bucket, storage_key, mime_type, file_size_bytes, width, height, checksum_sha256)
+               VALUES (%s,%s,'THUMBNAIL','pol-media',%s,'image/webp',100,150,150,%s)""",
+            (variant_id, asset_id, f"g320/{variant_id}", "b" * 64),
+        )
+        result = reconcile_deleted_media(cur, s3_client_factory=lambda: fake, batch_size=10)
+        assert result == {"scanned": 1, "reconciled": 1, "failures": 0}
+        assert len(fake.deleted) == 2
+        cur.execute("SELECT storage_deleted_at, storage_delete_error FROM media_assets WHERE id=%s", (asset_id,))
+        asset = cur.fetchone()
+        assert asset["storage_deleted_at"] is not None
+        assert asset["storage_delete_error"] is None
+        cur.execute("SELECT storage_deleted_at FROM media_variants WHERE id=%s", (variant_id,))
+        assert cur.fetchone()["storage_deleted_at"] is not None
+
+
+def test_checkout_is_atomic_on_failure_after_reservation_stage(postgres_database, checkout_catalog, monkeypatch):
+    """G-327: a failure after order/reservation mutations rolls back the whole checkout transaction."""
+    from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
+    catalog = checkout_catalog
+    with transaction(postgres_database) as cur:
+        basket = CanonicalBasketAllocationService.create_basket(
+            cur, catalog["context"].user_id, catalog["context"].organization_id
+        )
+        CanonicalBasketAllocationService.add_item(
+            cur, catalog["context"].user_id, catalog["context"].organization_id,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 3,
+            catalog["lines"][0]["pack_quantity_snapshot"], 1
+        )
+        preview = CanonicalBasketAllocationService.allocation_preview(
+            cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"]
+        )
+        plan_id = preview["allocation_plan_id"]
+
+    allocations = [{
+        "vendor_id": catalog["lines"][0]["vendor_id"],
+        "vendor_product_id": catalog["lines"][0]["vendor_product_id"],
+        "quantity": 3, "unit_price_toman": catalog["lines"][0]["unit_price_toman"],
+        "amount_toman": 3 * catalog["lines"][0]["unit_price_toman"],
+    }]
+    monkeypatch.setattr(
+        RevalidationCheckoutService, "_enqueue_submission_events",
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("G327 injected failure"))
+    )
+    with pytest.raises(RuntimeError, match="G327 injected failure"):
+        with transaction(postgres_database) as cur:
+            CanonicalCheckoutGateway.checkout(
+                cur, basket["basket_id"], plan_id, catalog["retailer_id"], str(uuid4()),
+                {"address": "G327"}, allocations,
+            )
+
+    with transaction(postgres_database) as cur:
+        cur.execute("SELECT COUNT(*) AS n FROM order_groups WHERE basket_id=%s", (basket["basket_id"],))
+        assert cur.fetchone()["n"] == 0
+        cur.execute(
+            "SELECT COUNT(*) AS n FROM inventory_reservations ir JOIN orders o ON o.id=ir.order_id WHERE o.order_group_id IS NOT NULL AND ir.vendor_product_id=%s",
+            (catalog["lines"][0]["vendor_product_id"],),
+        )
+        assert cur.fetchone()["n"] == 0
+        cur.execute("SELECT status FROM allocation_plans WHERE id=%s", (plan_id,))
+        assert cur.fetchone()["status"] == "CONFIRMED"
+        cur.execute("SELECT status FROM baskets WHERE id=%s", (basket["basket_id"],))
+        assert cur.fetchone()["status"] == "OPEN"
+        cur.execute(
+            "SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s",
+            (catalog["lines"][0]["vendor_product_id"],)
+        )
+        assert int(cur.fetchone()["reserved_quantity"]) == 0
+
+
+def test_reservation_expiry_worker_releases_stock_and_persists_event(postgres_database, checkout_catalog):
+    """G-336: the canonical expiry worker expires ACTIVE rows, restores availability and writes a durable event."""
+    line = checkout_catalog["lines"][0]
+    vendor_product_id = line["vendor_product_id"]
+    vendor_id = line["vendor_id"]
+    user_id = checkout_catalog["context"].user_id
+    reservation_id = str(uuid4())
+    with transaction(postgres_database) as cur:
+        cur.execute("UPDATE vendor_inventory SET reserved_quantity=10 WHERE vendor_product_id=%s", (vendor_product_id,))
+        cur.execute("DELETE FROM inventory_reservations WHERE vendor_product_id=%s AND status='ACTIVE'", (vendor_product_id,))
+        cur.execute(
+            """INSERT INTO inventory_reservations
+               (id,vendor_product_id,quantity,status,idempotency_key,expires_at)
+               VALUES (%s,%s,10,'ACTIVE',%s,now()-interval '1 minute')""",
+            (reservation_id, vendor_product_id, f"g336-{reservation_id}"),
+        )
+        result = ReservationExpiryWorker.process_expired(cur, limit=10)
+        assert result["expired_reservation_count"] == 1
+        assert result["released_quantity"] == 10
+        cur.execute("SELECT status,released_at FROM inventory_reservations WHERE id=%s", (reservation_id,))
+        res = cur.fetchone()
+        assert res["status"] == "EXPIRED"
+        assert res["released_at"] is not None
+        cur.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s", (vendor_product_id,))
+        assert int(cur.fetchone()["reserved_quantity"]) == 0
+        cur.execute(
+            "SELECT event_name, aggregate_id, payload->>'reservation_id' AS reservation_id FROM outbox_events WHERE aggregate_type='INVENTORY_RESERVATION' AND aggregate_id=%s",
+            (reservation_id,),
+        )
+        event = cur.fetchone()
+        assert event["event_name"] == "INVENTORY_RESERVATION_EXPIRED"
+        assert event["reservation_id"] == reservation_id
+
+
+def test_retailer_pre_acceptance_cancellation_releases_reservation(postgres_database, checkout_catalog):
+    """G-337: retailer can cancel only SUBMITTED orders and active stock reservations are released atomically."""
+    line = checkout_catalog["lines"][0]
+    retailer_id = checkout_catalog["retailer_id"]
+    org_id = checkout_catalog["context"].organization_id
+    user_id = checkout_catalog["context"].user_id
+    order_id = str(uuid4())
+    order_group_id = str(uuid4())
+    reservation_id = str(uuid4())
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            """INSERT INTO order_groups (id, retailer_id, group_status, total_amount_toman) VALUES (%s,%s,'ACTIVE',3100000)""",
+            (order_group_id, retailer_id),
+        )
+        cur.execute(
+            """INSERT INTO orders
+               (id, order_number, order_group_id, retailer_id, vendor_id, order_status, total_amount_toman)
+               VALUES (%s,%s,%s,%s,%s,'SUBMITTED',%s)""",
+            (order_id, f"G337-{order_id[:8]}", order_group_id, retailer_id, line["vendor_id"], 3100000),
+        )
+        cur.execute("UPDATE vendor_inventory SET reserved_quantity=10 WHERE vendor_product_id=%s", (line["vendor_product_id"],))
+        order_item_id = str(uuid4())
+        cur.execute(
+            """INSERT INTO order_items
+               (id, order_id, product_id, vendor_product_id, product_name_snapshot,
+                brand_name_snapshot, vendor_sku_snapshot, ordered_quantity,
+                unit_price_toman, total_line_amount_toman)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,10,500000,5000000)""",
+            (order_item_id, order_id, line["product_id"], line["vendor_product_id"],
+             "G337 product", "G337 brand", "G337-SKU"),
+        )
+        cur.execute(
+            """INSERT INTO inventory_reservations
+               (id, order_id, order_item_id, vendor_product_id, quantity, status, idempotency_key, expires_at)
+               VALUES (%s,%s,%s,%s,10,'ACTIVE',%s,now()+interval '15 minutes')""",
+            (reservation_id, order_id, order_item_id, line["vendor_product_id"], f"g337-{reservation_id}"),
+        )
+        result = CanonicalRetailerOrderService.cancel_order(
+            cur, user_id=user_id, organization_id=org_id, order_id=order_id,
+        )
+        assert result["order_status"] == "CANCELLED"
+        assert result["released_reservation_count"] == 1
+        cur.execute("SELECT order_status, cancellation_reason FROM orders WHERE id=%s", (order_id,))
+        order = cur.fetchone()
+        assert order["order_status"] == "CANCELLED"
+        assert order["cancellation_reason"] == "RETAILER_CANCELLED"
+        cur.execute("SELECT status, consumed_quantity FROM inventory_reservations WHERE id=%s", (reservation_id,))
+        reservation = cur.fetchone()
+        assert reservation["status"] == "RELEASED"
+        assert int(reservation["consumed_quantity"]) == 0
+        cur.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s", (line["vendor_product_id"],))
+        assert int(cur.fetchone()["reserved_quantity"]) == 0
+        cur.execute("SELECT event_name FROM outbox_events WHERE aggregate_type='ORDER' AND aggregate_id=%s", (order_id,))
+        assert any(row["event_name"] == "ORDER_CANCELLED" for row in cur.fetchall())
+        cur.execute(
+            "SELECT event_name FROM outbox_events WHERE aggregate_type='INVENTORY_RESERVATION' AND aggregate_id=%s",
+            (reservation_id,),
+        )
+        assert any(row["event_name"] == "INVENTORY_RESERVATION_RELEASED" for row in cur.fetchall())
+
+    with transaction(postgres_database) as cur:
+        replay = CanonicalRetailerOrderService.cancel_order(
+            cur, user_id=user_id, organization_id=org_id, order_id=order_id,
+        )
+        assert replay["idempotent_replay"] is True
+
+
+def test_reservation_expiry_matches_allocation_plan_expiry(postgres_database, checkout_catalog):
+    """G-338: canonical checkout derives reservation expiry from the allocation-plan instant."""
+    from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
+    catalog = checkout_catalog
+    with transaction(postgres_database) as cur:
+        basket = CanonicalBasketAllocationService.create_basket(
+            cur, catalog["context"].user_id, catalog["context"].organization_id
+        )
+        CanonicalBasketAllocationService.add_item(
+            cur, catalog["context"].user_id, catalog["context"].organization_id,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 3,
+            catalog["lines"][0]["pack_quantity_snapshot"], 1
+        )
+        preview = CanonicalBasketAllocationService.allocation_preview(
+            cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"]
+        )
+        plan_id = preview["allocation_plan_id"]
+        cur.execute("SELECT expires_at FROM allocation_plans WHERE id=%s", (plan_id,))
+        plan_expiry = cur.fetchone()["expires_at"]
+        cur.execute("SELECT vendor_id, vendor_product_id, allocated_quantity, unit_price_snapshot_toman FROM allocation_items WHERE allocation_plan_id=%s AND status IN ('ALLOCATED','PARTIALLY_ALLOCATED') ORDER BY id LIMIT 1", (plan_id,))
+        alloc = cur.fetchone()
+        assert alloc
+        result = RevalidationCheckoutService.revalidate_and_checkout(
+            cur, basket_id=basket["basket_id"], plan_id=plan_id, retailer_id=catalog["retailer_id"],
+            idempotency_key=str(uuid4()), request_fingerprint=f"g338-{uuid4()}",
+            address_snapshot={"address": "G338"},
+            vendor_allocations=[{
+                "vendor_id": alloc["vendor_id"], "vendor_product_id": alloc["vendor_product_id"],
+                "quantity": int(alloc["allocated_quantity"]), "unit_price_toman": int(alloc["unit_price_snapshot_toman"]),
+                "amount_toman": int(alloc["allocated_quantity"]) * int(alloc["unit_price_snapshot_toman"]),
+            }],
+        )
+        assert result["order_group_id"]
+        cur.execute("SELECT MIN(expires_at) AS expires_at FROM inventory_reservations WHERE order_id IN (SELECT id FROM orders WHERE order_group_id=%s)", (result["order_group_id"],))
+        reservation_expiry = cur.fetchone()["expires_at"]
+        assert reservation_expiry == plan_expiry
+
+
+def test_reservation_lifecycle_uses_canonical_runtime_commands(postgres_database, checkout_catalog):
+    """G-339: reservation create/release/expiry lifecycle is exercised through canonical runtime commands."""
+    from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
+    from scripts.canonical_vendor_order import CanonicalVendorOrderService
+    from scripts.reservation_expiry_worker import ReservationExpiryWorker
+    catalog = checkout_catalog
+    with transaction(postgres_database) as cur:
+        basket = CanonicalBasketAllocationService.create_basket(cur, catalog["context"].user_id, catalog["context"].organization_id)
+        CanonicalBasketAllocationService.add_item(
+            cur, catalog["context"].user_id, catalog["context"].organization_id,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 3, catalog["lines"][0]["pack_quantity_snapshot"], 1,
+        )
+        preview = CanonicalBasketAllocationService.allocation_preview(cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"])
+        plan_id = preview["allocation_plan_id"]
+        cur.execute("SELECT vendor_id, vendor_product_id, allocated_quantity, unit_price_snapshot_toman FROM allocation_items WHERE allocation_plan_id=%s AND status IN ('ALLOCATED','PARTIALLY_ALLOCATED') ORDER BY id LIMIT 1", (plan_id,))
+        alloc = cur.fetchone()
+        assert alloc
+        checkout = RevalidationCheckoutService.revalidate_and_checkout(
+            cur, basket_id=basket["basket_id"], plan_id=plan_id, retailer_id=catalog["retailer_id"],
+            idempotency_key=str(uuid4()), request_fingerprint=f"g339-{uuid4()}",
+            address_snapshot={"address": "G339"},
+            vendor_allocations=[{
+                "vendor_id": alloc["vendor_id"], "vendor_product_id": alloc["vendor_product_id"],
+                "quantity": int(alloc["allocated_quantity"]), "unit_price_toman": int(alloc["unit_price_snapshot_toman"]),
+                "amount_toman": int(alloc["allocated_quantity"]) * int(alloc["unit_price_snapshot_toman"]),
+            }],
+        )
+        order_group_id = checkout["order_group_id"]
+        cur.execute("SELECT id, vendor_id FROM orders WHERE order_group_id=%s LIMIT 1", (order_group_id,))
+        order = cur.fetchone()
+        assert order
+        cur.execute("SELECT om.user_id, v.organization_id FROM vendors v JOIN organization_memberships om ON om.organization_id=v.organization_id WHERE v.id=%s AND om.role='VENDOR_OWNER' AND om.status='ACTIVE' LIMIT 1", (order["vendor_id"],))
+        vendor_actor = cur.fetchone()
+        assert vendor_actor
+        rejected = CanonicalVendorOrderService.reject_order(
+            cur, user_id=str(vendor_actor["user_id"]), organization_id=str(vendor_actor["organization_id"]),
+            order_id=str(order["id"]), rejection_reason="G339_RUNTIME_REJECT",
+        )
+        assert rejected["order_status"] == "REJECTED"
+        cur.execute("SELECT status FROM inventory_reservations WHERE order_id=%s", (order["id"],))
+        assert all(row["status"] == "RELEASED" for row in cur.fetchall())
+
+    # Second runtime-created reservation reaches the expiry worker rather than a SQL-seeded lifecycle state.
+    with transaction(postgres_database) as cur:
+        basket = CanonicalBasketAllocationService.create_basket(cur, catalog["context"].user_id, catalog["context"].organization_id)
+        CanonicalBasketAllocationService.add_item(
+            cur, catalog["context"].user_id, catalog["context"].organization_id,
+            basket["basket_id"], catalog["lines"][0]["product_id"], 3, catalog["lines"][0]["pack_quantity_snapshot"], 1,
+        )
+        preview = CanonicalBasketAllocationService.allocation_preview(cur, catalog["context"].user_id, catalog["context"].organization_id, basket["basket_id"])
+        plan_id = preview["allocation_plan_id"]
+        cur.execute("SELECT vendor_id, vendor_product_id, allocated_quantity, unit_price_snapshot_toman FROM allocation_items WHERE allocation_plan_id=%s AND status IN ('ALLOCATED','PARTIALLY_ALLOCATED') ORDER BY id LIMIT 1", (plan_id,))
+        alloc = cur.fetchone()
+        checkout = RevalidationCheckoutService.revalidate_and_checkout(
+            cur, basket_id=basket["basket_id"], plan_id=plan_id, retailer_id=catalog["retailer_id"],
+            idempotency_key=str(uuid4()), request_fingerprint=f"g339-exp-{uuid4()}",
+            address_snapshot={"address": "G339-EXP"},
+            vendor_allocations=[{
+                "vendor_id": alloc["vendor_id"], "vendor_product_id": alloc["vendor_product_id"],
+                "quantity": int(alloc["allocated_quantity"]), "unit_price_toman": int(alloc["unit_price_snapshot_toman"]),
+                "amount_toman": int(alloc["allocated_quantity"]) * int(alloc["unit_price_snapshot_toman"]),
+            }],
+        )
+        order_group_id = checkout["order_group_id"]
+        cur.execute("SELECT id FROM inventory_reservations WHERE order_id IN (SELECT id FROM orders WHERE order_group_id=%s) LIMIT 1", (order_group_id,))
+        reservation_id = cur.fetchone()["id"]
+        cur.execute("UPDATE inventory_reservations SET expires_at=now()-interval '1 second' WHERE id=%s", (reservation_id,))
+        cur.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s", (alloc["vendor_product_id"],))
+        reserved_before = int(cur.fetchone()["reserved_quantity"])
+        result = ReservationExpiryWorker.process_expired(cur, limit=10)
+        assert result["expired_reservation_count"] == 1
+        cur.execute("SELECT status FROM inventory_reservations WHERE id=%s", (reservation_id,))
+        assert cur.fetchone()["status"] == "EXPIRED"
+        cur.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s", (alloc["vendor_product_id"],))
+        assert int(cur.fetchone()["reserved_quantity"]) == reserved_before - int(alloc["allocated_quantity"])
+
 def persist_request(cur, catalog):
     basket = insert_row(cur, "baskets", retailer_id=catalog["retailer_id"], status="OPEN", version=1)
     basket_items = []
@@ -249,6 +822,8 @@ def fingerprint(request):
 
 
 def assert_checkout(cur, catalog, request, result):
+    cur.execute("SELECT expires_at FROM allocation_plans WHERE id = %s", (request["plan_id"],))
+    plan_expires_at = cur.fetchone()["expires_at"]
     group_id = result["order_group_id"]
     UUID(str(group_id))
     assert result["order_count"] == 2
@@ -297,10 +872,10 @@ def assert_checkout(cur, catalog, request, result):
         cur.execute("SELECT * FROM order_items WHERE order_id = %s", (order["id"],))
         items = cur.fetchall()
         assert len(items) == len(lines)
-        by_offer = {str(item["vendor_product_id"]): item for item in items}
-        assert set(by_offer) == {line["vendor_product_id"] for line in lines}
+        items_by_offer = {str(item["vendor_product_id"]): item for item in items}
+        assert set(items_by_offer) == {line["vendor_product_id"] for line in lines}
         for line in lines:
-            item = dict(by_offer[line["vendor_product_id"]])
+            item = dict(items_by_offer[line["vendor_product_id"]])
             UUID(str(item.pop("id")))
             assert item.pop("created_at") == order["created_at"] == group["created_at"]
             assert item == {
@@ -320,18 +895,18 @@ def assert_checkout(cur, catalog, request, result):
         cur.execute("SELECT * FROM inventory_reservations WHERE order_id = %s", (order["id"],))
         reservations = cur.fetchall()
         assert len(reservations) == len(lines)
-        by_offer = {str(row["vendor_product_id"]): row for row in reservations}
-        assert set(by_offer) == {line["vendor_product_id"] for line in lines}
+        reservations_by_offer = {str(row["vendor_product_id"]): row for row in reservations}
+        assert set(reservations_by_offer) == {line["vendor_product_id"] for line in lines}
         for line in lines:
-            reservation = by_offer[line["vendor_product_id"]]
+            reservation = reservations_by_offer[line["vendor_product_id"]]
             UUID(str(reservation["id"]))
             assert reservation["quantity"] == line["quantity"]
             assert reservation["status"] == "ACTIVE"
             assert reservation["idempotency_key"] == f"res-{request['idempotency_key']}-{line['vendor_product_id']}"
-            assert reservation["order_item_id"] is None
+            assert str(reservation["order_item_id"]) == str(items_by_offer[line["vendor_product_id"]]["id"])
             assert reservation["released_at"] is reservation["consumed_at"] is None
             assert reservation["created_at"] == group["created_at"]
-            assert reservation["expires_at"] - reservation["created_at"] == timedelta(minutes=15)
+            assert reservation["expires_at"] == plan_expires_at
     assert Counter(seen_products) == Counter({line["product_id"]: 1 for line in catalog["lines"]})
 
 
@@ -361,12 +936,66 @@ def test_checkout_persists_multivendor_orders_snapshots_and_reservations(
         )] == [1, 2, 3, 3, 1]
         assert Counter(row["event_name"] for row in state["outbox_events"]) == Counter({
             "ORDER_GROUP_SUBMITTED": 1, "ORDER_SUBMITTED": 2,
+            "INVENTORY_RESERVATION_CREATED": 3,
         })
         cur.execute("UPDATE products SET canonical_name_fa = 'Changed live product'")
         cur.execute("UPDATE brands SET name_fa = 'Changed live brand'")
         cur.execute("UPDATE vendor_products SET vendor_sku = vendor_sku || '-changed', pack_quantity = pack_quantity + 1")
     with transaction(postgres_database) as cur:
         assert_checkout(cur, checkout_catalog, checkout_request, result)
+
+
+def test_checkout_allows_unfulfilled_allocation_lines(postgres_database, checkout_catalog, checkout_request):
+    partial_request = deepcopy(checkout_request)
+    removed_offer = checkout_catalog["lines"][0]["vendor_product_id"]
+    partial_request["vendor_allocations"] = [
+        allocation
+        for allocation in partial_request["vendor_allocations"]
+        if allocation["vendor_product_id"] != removed_offer
+    ]
+
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            """
+            UPDATE allocation_items
+            SET vendor_id = NULL,
+                vendor_product_id = NULL,
+                allocated_quantity = 0,
+                unit_price_snapshot_toman = 0,
+                line_total_toman = 0,
+                status = 'UNFULFILLED'
+            WHERE allocation_plan_id = %s
+              AND vendor_product_id = %s
+            """,
+            (partial_request["plan_id"], removed_offer),
+        )
+
+    with transaction(postgres_database) as cur:
+        result = POLApplicationBoundary(
+            cur, checkout_catalog["context"]
+        ).checkout(**deepcopy(partial_request))
+
+    assert result["order_count"] == 2
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            """
+            SELECT count(*) AS c
+            FROM order_items oi
+            JOIN orders o ON o.id = oi.order_id
+            WHERE o.order_group_id = %s
+            """,
+            (result["order_group_id"],),
+        )
+        assert cur.fetchone()["c"] == 2
+        cur.execute(
+            """
+            SELECT count(*) AS c
+            FROM allocation_items
+            WHERE allocation_plan_id = %s AND status = 'UNFULFILLED'
+            """,
+            (partial_request["plan_id"],),
+        )
+        assert cur.fetchone()["c"] == 1
 
 
 def test_checkout_replay_fingerprint_and_new_request_same_retailer(
@@ -415,6 +1044,7 @@ def test_checkout_replay_fingerprint_and_new_request_same_retailer(
         assert after["outbox_events"] != before["outbox_events"]
         assert Counter(row["event_name"] for row in after["outbox_events"]) == Counter({
             "ORDER_GROUP_SUBMITTED": 2, "ORDER_SUBMITTED": 4,
+            "INVENTORY_RESERVATION_CREATED": 6,
         })
 
 
@@ -455,7 +1085,7 @@ def test_checkout_rolls_back_after_partial_sql_writes(
             POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
     assert json.loads(failure.value.diag.message_detail) == {
         "groups": 1, "orders": 2, "items": 3, "reservations": 3,
-        "reserved_quantity": 12, "idempotency": 1, "outbox": 0,
+        "reserved_quantity": 12, "idempotency": 1, "outbox": 2,
     }
     with transaction(postgres_database) as cur:
         assert snapshot(cur) == before
@@ -473,6 +1103,7 @@ def test_checkout_rolls_back_after_partial_sql_writes(
         )] == [1, 2, 3, 3, 1]
         assert Counter(row["event_name"] for row in after["outbox_events"]) == Counter({
             "ORDER_GROUP_SUBMITTED": 1, "ORDER_SUBMITTED": 2,
+            "INVENTORY_RESERVATION_CREATED": 3,
         })
 
 def test_hourly_capacity_uses_ordered_quantity_and_rejects_at_threshold(
@@ -551,6 +1182,59 @@ def freeze_policy_clock(monkeypatch, instant):
     monkeypatch.setattr(operational_policies, "datetime", FixedDatetime)
 
 
+def test_vendor_capacity_lock_serializes_concurrent_checkout_decisions(
+    postgres_database, checkout_catalog, monkeypatch,
+):
+    """G-311: vendor capacity checks hold a transaction-scoped advisory lock until commit."""
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    retailer_id = checkout_catalog["retailer_id"]
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            "UPDATE vendor_capacity_profiles SET timezone='Asia/Tehran', max_orders_per_day=1 WHERE vendor_id=%s",
+            (vendor_id,),
+        )
+        # Keep the test focused on capacity rather than operating windows.
+        cur.execute("DELETE FROM vendor_operating_windows WHERE vendor_id=%s", (vendor_id,))
+
+    freeze_policy_clock(monkeypatch, datetime(2026, 9, 16, 12, tzinfo=timezone.utc))
+    allocations = [{"vendor_id": vendor_id, "quantity": 7, "amount_toman": 3100000}]
+    conn1 = psycopg2.connect(**postgres_database)
+    conn1.autocommit = False
+    try:
+        with conn1.cursor(cursor_factory=RealDictCursor) as cur1:
+            validate_vendor_operational_capacity(cur1, allocations)
+            # Child orders require an existing parent order group (migration 021/023 context guard).
+            group_id = str(uuid4())
+            cur1.execute(
+                "INSERT INTO order_groups (id, retailer_id, group_status, total_amount_toman) VALUES (%s,%s,'ACTIVE',3100000)",
+                (group_id, retailer_id),
+            )
+            cur1.execute(
+                "INSERT INTO orders (order_number, order_group_id, retailer_id, vendor_id, total_amount_toman, created_at) VALUES (%s,%s,%s,%s,%s,%s)",
+                (f"POL-G311-{uuid4().hex[:12]}", group_id, retailer_id, vendor_id, 3100000, datetime(2026, 9, 16, 10, tzinfo=timezone.utc)),
+            )
+
+            conn2 = psycopg2.connect(**postgres_database)
+            conn2.autocommit = False
+            try:
+                with conn2.cursor(cursor_factory=RealDictCursor) as cur2:
+                    cur2.execute("SET LOCAL lock_timeout = '150ms'")
+                    with pytest.raises(psycopg2.errors.LockNotAvailable):
+                        validate_vendor_operational_capacity(cur2, allocations)
+                    conn2.rollback()
+            finally:
+                conn2.close()
+
+            conn1.commit()
+
+        with transaction(postgres_database) as cur3:
+            with pytest.raises(AllocationIntegrityError, match="daily order capacity exhausted: 2 > 1"):
+                validate_vendor_operational_capacity(cur3, allocations)
+    finally:
+        if conn1.closed == 0:
+            conn1.rollback()
+        conn1.close()
+
 @pytest.mark.parametrize("created_at,status,allowed", [
     ("2026-09-16T20:29:59+00:00", "SUBMITTED", True),
     ("2026-09-16T20:30:00+00:00", "SUBMITTED", False),
@@ -581,6 +1265,80 @@ def test_daily_capacity_uses_vendor_local_day(
             with pytest.raises(AllocationIntegrityError, match="daily order capacity exhausted: 2 > 1"):
                 validate_vendor_operational_capacity(cur, allocations)
 
+
+def test_operating_window_uses_its_own_timezone_for_weekday(
+    postgres_database, checkout_catalog, monkeypatch,
+):
+    """G-308: window timezone, not capacity timezone, determines its business weekday."""
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            "UPDATE vendor_capacity_profiles SET timezone='Asia/Tehran' WHERE vendor_id=%s",
+            (vendor_id,),
+        )
+        # 2026-09-16 20:30 UTC is Thursday 00:00 in Tehran but Wednesday 16:30 in New York.
+        insert_row(
+            cur, "vendor_operating_windows", vendor_id=vendor_id, weekday=3,
+            timezone="America/New_York", opens_at="15:00", closes_at="16:00", is_active=True,
+        )
+    freeze_policy_clock(monkeypatch, datetime(2026, 9, 16, 20, 30, tzinfo=timezone.utc))
+    allocations = [{"vendor_id": vendor_id, "quantity": 7, "amount_toman": 3100000}]
+    with transaction(postgres_database) as cur:
+        with pytest.raises(AllocationIntegrityError, match="outside its operating window"):
+            validate_vendor_operational_capacity(cur, allocations)
+
+@pytest.mark.parametrize("instant,allowed", [
+    ("2026-09-16T19:30:00+00:00", True),
+    ("2026-09-16T22:00:00+00:00", False),
+])
+def test_overnight_order_cutoff_uses_next_day_semantics(
+    postgres_database, checkout_catalog, monkeypatch, instant, allowed,
+):
+    """G-310: a 01:00 cutoff on a 22:00-02:00 window belongs to the next local day."""
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            "UPDATE vendor_capacity_profiles SET timezone='Asia/Tehran' WHERE vendor_id=%s",
+            (vendor_id,),
+        )
+        insert_row(
+            cur, "vendor_operating_windows", vendor_id=vendor_id, weekday=3,
+            timezone="Asia/Tehran", opens_at="22:00", closes_at="02:00",
+            order_cutoff_at="01:00", is_active=True,
+        )
+    freeze_policy_clock(monkeypatch, datetime.fromisoformat(instant))
+    allocations = [{"vendor_id": vendor_id, "quantity": 7, "amount_toman": 3100000}]
+    with transaction(postgres_database) as cur:
+        if allowed:
+            validate_vendor_operational_capacity(cur, allocations)
+        else:
+            with pytest.raises(AllocationIntegrityError, match="order cutoff has passed"):
+                validate_vendor_operational_capacity(cur, allocations)
+
+def test_overnight_window_uses_previous_weekday_after_midnight(
+    postgres_database, checkout_catalog, monkeypatch,
+):
+    """G-309: after midnight, an overnight window belongs to the previous local business day."""
+    vendor_id = checkout_catalog["lines"][0]["vendor_id"]
+    with transaction(postgres_database) as cur:
+        cur.execute(
+            "UPDATE vendor_capacity_profiles SET timezone='Asia/Tehran' WHERE vendor_id=%s",
+            (vendor_id,),
+        )
+        # Wednesday overnight window: 22:00 -> Thursday 02:00.
+        insert_row(
+            cur, "vendor_operating_windows", vendor_id=vendor_id, weekday=3,
+            timezone="Asia/Tehran", opens_at="22:00", closes_at="02:00", is_active=True,
+        )
+        # A Thursday daytime row would make the old lookup reject at 01:00.
+        insert_row(
+            cur, "vendor_operating_windows", vendor_id=vendor_id, weekday=4,
+            timezone="Asia/Tehran", opens_at="08:00", closes_at="18:00", is_active=True,
+        )
+    freeze_policy_clock(monkeypatch, datetime(2026, 9, 17, 21, 30, tzinfo=timezone.utc))
+    allocations = [{"vendor_id": vendor_id, "quantity": 7, "amount_toman": 3100000}]
+    with transaction(postgres_database) as cur:
+        validate_vendor_operational_capacity(cur, allocations)
 
 @pytest.mark.parametrize("instant,allowed", [
     ("2026-09-16T19:30:00+00:00", True),

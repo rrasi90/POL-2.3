@@ -4,120 +4,65 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
-  Field,
-  SearchField,
   Skeleton,
   StatusChip,
 } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import {
-  ageLabel,
-  ageTone,
-  cardCls,
-  disputeStatusLabel,
-  disputeStatusTone,
   formatDateTime,
+  formatToman,
   itemsOf,
-  orderStatusLabel,
-  orderStatusTone,
-  str,
   type LoadState,
 } from "../_shared";
 
-interface OrderRow {
-  id: string;
-  order_number?: string | null;
-  order_status?: string | null;
-  dispute_status?: string | null;
-  created_at?: string | null;
-}
-
 interface ReturnRow {
-  id: string;
-  status?: string | null;
-  reason?: string | null;
-  created_at?: string | null;
-}
-
-interface DisputeRow {
-  id: string;
-  status?: string | null;
-  reason?: string | null;
-  created_at?: string | null;
+  return_id: string;
+  order_id: string;
+  order_number?: string;
+  status?: string;
+  reason?: string;
+  claimed_refund_amount_toman?: number | string | null;
+  approved_refund_amount_toman?: number | string | null;
+  retailer_name?: string;
+  vendor_name?: string;
+  created_at?: string;
 }
 
 export default function OpsRmaPage() {
-  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [rows, setRows] = useState<ReturnRow[]>([]);
   const [state, setState] = useState<LoadState>("loading");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [orderId, setOrderId] = useState("");
-  const [lookupError, setLookupError] = useState<string | null>(null);
-  const [looking, setLooking] = useState(false);
-  const [returns, setReturns] = useState<ReturnRow[]>([]);
-  const [disputes, setDisputes] = useState<DisputeRow[]>([]);
-  const [loadedOrderId, setLoadedOrderId] = useState<string | null>(null);
-  const [detailState, setDetailState] = useState<LoadState>("ready");
+  const [error, setError] = useState<string | null>(null);
 
-  const loadOrders = useCallback(async () => {
+  const load = useCallback(async () => {
     setState("loading");
-    setErrorMessage(null);
+    setError(null);
     try {
-      const data = await getApi().get<unknown>("/api/v1/orders?limit=50&offset=0");
-      setOrders(itemsOf<OrderRow>(data, "orders"));
+      const data = await getApi().get<unknown>("/api/v1/ops/returns?limit=50&offset=0");
+      setRows(itemsOf<ReturnRow>(data, "returns"));
       setState("ready");
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "دریافت سفارش‌ها ناموفق بود");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "دریافت پرونده‌های RMA ناموفق بود");
       setState("error");
     }
   }, []);
 
   useEffect(() => {
-    void loadOrders();
-  }, [loadOrders]);
-
-  const loadForOrder = useCallback(async (id: string) => {
-    setDetailState("loading");
-    setLookupError(null);
-    try {
-      const [r, d] = await Promise.all([
-        getApi().get<unknown>(`/api/v1/orders/${id}/returns`),
-        getApi().get<unknown>(`/api/v1/orders/${id}/disputes`),
-      ]);
-      setReturns(itemsOf<ReturnRow>(r, "returns"));
-      setDisputes(itemsOf<DisputeRow>(d, "disputes"));
-      setLoadedOrderId(id);
-      setDetailState("ready");
-    } catch (err) {
-      setLookupError(err instanceof Error ? err.message : "دریافت مرجوعی/اختلاف ناموفق بود");
-      setDetailState("error");
-    }
-  }, []);
-
-  const filtered = orders.filter((o) => {
-    const active =
-      (typeof o.dispute_status === "string" &&
-        o.dispute_status !== "NONE" &&
-        o.dispute_status !== "CLOSED") ||
-      (typeof o.order_status === "string" &&
-        ["CREATED", "SUBMITTED", "ACCEPTED", "PARTIALLY_ACCEPTED", "PREPARING", "READY", "DISPATCHED"].includes(
-          o.order_status,
-        ));
-    if (!query.trim()) return active || true;
-    const q = query.trim().toLowerCase();
-    return (
-      str(o.order_number, "").toLowerCase().includes(q) || str(o.id, "").toLowerCase().includes(q)
-    );
-  });
+    void load();
+  }, [load]);
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری RMA">
-        <Skeleton className="h-8 w-48" />
-        <div className={cardCls}>
-          <Skeleton lines={5} />
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری مرجوعی‌ها">
+        <Skeleton className="h-9 w-48" />
+        <div className="grid gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="p-5">
+              <Skeleton lines={4} />
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -126,229 +71,122 @@ export default function OpsRmaPage() {
   if (state === "error") {
     return (
       <ErrorState
-        title="دریافت سفارش‌ها ناموفق بود"
-        description={errorMessage ?? undefined}
-        onRetry={() => void loadOrders()}
+        title="دریافت پرونده‌های RMA ناموفق بود"
+        description={error ?? undefined}
+        onRetry={() => void load()}
       />
     );
   }
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          میز RMA / اختلاف
-        </h1>
-        <StatusChip tone="warning">G-013</StatusChip>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">O-04</span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void loadOrders()}>
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--pol-light-border-subtle)] pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[20px] md:text-[24px] font-bold text-[var(--pol-light-text-primary)]">
+              مدیریت مرجوعی و استرداد کالا (RMA)
+            </h1>
+            <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-bold text-[var(--pol-light-text-secondary)]">
+              O-04 · {rows.length.toLocaleString("fa-IR")} پرونده
+            </span>
+          </div>
+          <p className="mt-1 text-[12px] text-[var(--pol-light-text-secondary)]">
+            بررسی علل مرجوعی اقلام معیوب یا تاریخ‌گذشته، حل اختلافات و تأیید مبالغ بازگشت وجه
+          </p>
+        </div>
+
+        <Button variant="secondary" size="sm" onClick={() => void load()}>
           به‌روزرسانی
         </Button>
       </header>
 
-      <div className="rounded-[12px] border border-[var(--pol-light-semantic-warning)]/40 bg-[var(--pol-light-surface-default)] p-3">
-        <p className="text-[13px] leading-[20px] text-[var(--pol-light-text-secondary)]">
-          شکاف G-013: لیست سراسری مرجوعی وجود ندارد — فقط{" "}
-          <code dir="ltr" className="text-[12px]">
-            GET /orders/&#123;order_id&#125;/returns
-          </code>{" "}
-          و disputes per-order. از فهرست سفارش یا شناسه دستی وارد شوید.
-        </p>
+      {/* Scope Disclaimer */}
+      <div className="flex items-start gap-3 rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-4 text-[13px] text-[var(--pol-light-text-secondary)] leading-relaxed">
+        <span className="text-base">ℹ️</span>
+        <div>
+          <strong className="font-semibold text-[var(--pol-light-text-primary)]">فرآیند RMA:</strong>{" "}
+          مرجوعی کالا در سامانه پُل مستلزم تأیید فیزیکی بازگشت کالا به انبار بنکدار و ثبت گواهی عدم
+          تطابق است. تسویه استرداد وجه به صورت خودکار در دوره تسویه بعدی اعمال خواهد شد.
+        </div>
       </div>
 
-      <section aria-label="جستجوی شناسه سفارش" className={cardCls}>
-        <h2 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-          باز کردن با شناسه سفارش
-        </h2>
-        <div className="mt-2 flex flex-wrap items-end gap-2">
-          <Field
-            label="شناسه سفارش"
-            value={orderId}
-            onChange={(e) => setOrderId(e.target.value)}
-            dir="ltr"
-            className="max-w-xs flex-1"
-          />
-          <Button
-            size="sm"
-            loading={looking}
-            disabled={!orderId.trim()}
-            onClick={() => {
-              if (orderId.trim()) void loadForOrder(orderId.trim());
-            }}
-          >
-            باز کردن
-          </Button>
-        </div>
-        {lookupError ? (
-          <div className="mt-3">
-            <ErrorState title="دریافت مرجوعی/اختلاف ناموفق بود" description={lookupError} />
-          </div>
-        ) : null}
-      </section>
+      {/* RMA Cases List */}
+      {rows.length === 0 ? (
+        <EmptyState
+          title="هیچ پرونده مرجوعی فعالی وجود ندارد"
+          description="درخواست‌های عودت کالا ثبت‌شده توسط خرده‌فروشان پس از ارجاع در این بخش نمایش داده می‌شوند."
+        />
+      ) : (
+        <div className="grid gap-3">
+          {rows.map((r) => {
+            const isApproved = r.status === "APPROVED";
+            const isRejected = r.status === "REJECTED";
+            const tone = isApproved ? "success" : isRejected ? "danger" : "warning";
 
-      <section aria-label="نتیجه بررسی per-order">
-        {loadedOrderId ? (
-          <div className={cardCls}>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
-                سفارش
-              </h2>
-              <span className="text-[13px] text-[var(--pol-light-text-secondary)]" dir="ltr">
-                {loadedOrderId}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="ms-auto"
-                onClick={() => {
-                  setLoadedOrderId(null);
-                  setReturns([]);
-                  setDisputes([]);
-                  setLookupError(null);
-                }}
+            return (
+              <Card
+                key={r.return_id}
+                className="p-5 transition-all duration-150 hover:shadow-[var(--pol-shadow-md)] hover:border-[var(--pol-light-border-strong)]"
               >
-                بستن
-              </Button>
-            </div>
-
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <div>
-                <h3 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-                  مرجوعی‌ها
-                </h3>
-                {detailState === "loading" ? (
-                  <div className="mt-2" aria-busy="true">
-                    <Skeleton lines={3} />
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <StatusChip tone={tone}>
+                      {r.status === "APPROVED"
+                        ? "تأییدشده"
+                        : r.status === "REJECTED"
+                          ? "ردشده"
+                          : r.status ?? "در انتظار بررسی"}
+                    </StatusChip>
+                    <span className="font-mono text-[14px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
+                      سفارش: {r.order_number ?? r.order_id}
+                    </span>
+                    <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
+                      {r.retailer_name ?? "خرده‌فروش"} ← {r.vendor_name ?? "بنکدار"}
+                    </span>
                   </div>
-                ) : returns.length === 0 ? (
-                  <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]">
-                    مرجوعی ثبت نشده است.
-                  </p>
-                ) : (
-                  <ul role="list" className="mt-2 space-y-2">
-                    {returns.map((r) => (
-                      <li
-                        key={str(r.id)}
-                        className="rounded-[8px] border border-[var(--pol-light-border-subtle)] p-3"
-                      >
-                        <div className="flex flex-wrap items-center gap-2">
-                          <StatusChip tone="info">{r.status ?? "—"}</StatusChip>
-                          <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                            {formatDateTime(r.created_at)}
-                          </span>
-                        </div>
-                        {r.reason ? (
-                          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
-                            {r.reason}
-                          </p>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
 
-              <div>
-                <h3 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-                  اختلاف‌ها
-                </h3>
-                {detailState === "loading" ? (
-                  <div className="mt-2" aria-busy="true">
-                    <Skeleton lines={3} />
-                  </div>
-                ) : disputes.length === 0 ? (
-                  <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]">
-                    اختلافی ثبت نشده است.
-                  </p>
-                ) : (
-                  <ul role="list" className="mt-2 space-y-2">
-                    {disputes.map((d) => (
-                      <li
-                        key={str(d.id)}
-                        className="rounded-[8px] border border-[var(--pol-light-border-subtle)] p-3"
-                      >
-                        <div className="flex flex-wrap items-center gap-2">
-                          <StatusChip tone={disputeStatusTone[d.status ?? ""] ?? "neutral"}>
-                            {disputeStatusLabel[d.status ?? ""] ?? d.status ?? "—"}
-                          </StatusChip>
-                          <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                            {formatDateTime(d.created_at)}
-                          </span>
-                        </div>
-                        {d.reason ? (
-                          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
-                            {d.reason}
-                          </p>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </section>
-
-      <section aria-label="فهرست سفارش‌ها">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
-            سفارش‌ها
-          </h2>
-          <SearchField
-            label="جستجوی سفارش"
-            placeholder="شماره سفارش…"
-            className="ms-auto w-full max-w-xs"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-        {filtered.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState
-              title="سفارشی یافت نشد"
-              description="عبارت جستجو را تغییر دهید."
-            />
-          </div>
-        ) : (
-          <ul role="list" className="mt-3 space-y-2">
-            {filtered.map((o) => (
-              <li key={str(o.id)} className={cardCls}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
-                    {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
-                  </StatusChip>
-                  <StatusChip tone={disputeStatusTone[o.dispute_status ?? ""] ?? "neutral"}>
-                    {disputeStatusLabel[o.dispute_status ?? ""] ?? o.dispute_status ?? "—"}
-                  </StatusChip>
-                  <StatusChip tone={ageTone(o.created_at)}>{ageLabel(o.created_at)}</StatusChip>
-                  <span className="ms-auto flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
-                      onClick={() => {
-                        setOrderId(str(o.id));
-                        void loadForOrder(str(o.id));
-                      }}
-                    >
-                      بررسی مرجوعی/اختلاف
-                    </button>
-                    <Link
-                      href="/ops/queues"
-                      className="text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
-                    >
-                      صفوف
-                    </Link>
+                  <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+                    {formatDateTime(r.created_at)}
                   </span>
                 </div>
-                <p className="mt-1.5 text-[14px] font-semibold text-[var(--pol-light-text-primary)]" dir="ltr">
-                  {o.order_number ?? str(o.id)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+
+                {r.reason && (
+                  <p className="mt-3 rounded-lg bg-[var(--pol-light-surface-subtle)] p-3 text-[13px] text-[var(--pol-light-text-secondary)] leading-relaxed">
+                    <strong className="text-[var(--pol-light-text-primary)]">علت عودت:</strong> {r.reason}
+                  </p>
+                )}
+
+                <div className="mt-4 flex flex-wrap items-center justify-between border-t border-[var(--pol-light-border-subtle)] pt-3 text-[13px]">
+                  <div className="flex flex-wrap items-center gap-4 text-[12px]">
+                    <span>
+                      مبلغ درخواستی:{" "}
+                      <strong className="text-[var(--pol-light-text-primary)]">
+                        {formatToman(r.claimed_refund_amount_toman)}
+                      </strong>
+                    </span>
+                    {r.approved_refund_amount_toman != null && (
+                      <span>
+                        مبلغ تأییدشده:{" "}
+                        <strong className="text-emerald-600 dark:text-emerald-400">
+                          {formatToman(r.approved_refund_amount_toman)}
+                        </strong>
+                      </span>
+                    )}
+                  </div>
+
+                  <Link
+                    href={`/ops/orders/${r.order_id}`}
+                    className="text-[12px] font-semibold text-[var(--pol-light-brand-primary)] hover:underline"
+                  >
+                    مشاهده جزئیات سفارش ←
+                  </Link>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

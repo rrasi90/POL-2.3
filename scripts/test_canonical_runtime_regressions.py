@@ -1,6 +1,7 @@
 """Regression contracts for the 2026-09-16 repository-wide bug audit."""
 
 import ast
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -58,12 +59,60 @@ def test_unknown_outbox_events_leave_pending_queue_and_enter_failed_quarantine()
     assert "'FAILED'" in migration
 
 
+def test_dispute_open_event_has_canonical_inbox_template():
+    migration = read("migrations/040_dispute_notification_template.sql")
+    assert "'DISPUTE_OPENED'" in migration
+    assert "'INBOX'" in migration
+    assert "notification_templates" in migration
+    assert "allow_opt_out" in migration
+
+
 def test_payment_reconciliation_rejects_conflicting_trusted_evidence():
     src = read("scripts/payment_reconciliation_worker.py")
     assert "conflicting = len(distinct_values) > 1" in src
     assert "conflicting_match = conflicting and matches_expected" in src
     assert "if conflicting_match:" in src
     assert "status='MISMATCH'" in src
+
+
+def test_row_varying_outbox_dedupe_requires_per_row_event_ids():
+    """Guard: a fan-out whose dedupe_key varies per recipient must not reuse one event_id.
+
+    outbox_events.event_id is UNIQUE. Where the recipient set is expanded inside
+    SQL (one row per active organization membership) AND dedupe_key is made
+    row-specific (it carries om.user_id), every row is genuinely inserted, so a
+    single literal event_id makes the second insertion fail with a unique
+    violation and aborts the caller's whole transaction. Rows that share an
+    organization-level dedupe_key are already protected by ON CONFLICT DO
+    NOTHING, so they do not require a per-row identity.
+    """
+    sources = [
+        "scripts/application_boundary.py",
+        "scripts/domain_services.py",
+        "scripts/fulfillment_service.py",
+        "scripts/reservation_expiry_worker.py",
+        "scripts/returns_rma.py",
+    ]
+    per_row_pattern = re.compile(r"SELECT\s+gen_random_uuid\(\)\s*,\s*gen_random_uuid\(\)\s*,")
+    row_varying_blocks = 0
+    for path in sources:
+        src = read(path)
+        for match in re.finditer(r"INSERT INTO outbox_events", src):
+            block = src[match.start():match.start() + 1600]
+            end = block.find('"""')
+            stmt = block[:end] if end != -1 else block
+            if "FROM organization_memberships" not in stmt:
+                continue
+            if "om.user_id::text" not in stmt:
+                # organization-level dedupe_key: ON CONFLICT DO NOTHING wins before
+                # the event_id uniqueness check, so a shared identity is safe.
+                continue
+            row_varying_blocks += 1
+            assert per_row_pattern.search(stmt), (
+                f"{path} fan-out outbox insert with row-varying dedupe_key must "
+                f"generate event_id per row: {stmt[:160]!r}"
+            )
+    assert row_varying_blocks >= 2
 
 
 def test_repository_verifier_is_dynamic_not_legacy_56_table_audit():

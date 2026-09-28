@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+
 from scripts.allocation_engine import (
     BasketItem,
     MultiVendorAllocationEngine,
@@ -24,7 +27,8 @@ class CanonicalBasketAllocationService:
             SELECT r.id AS retailer_id,
                    r.organization_id,
                    r.city,
-                   r.store_name
+                   r.store_name,
+                   om.role
             FROM retailers r
             JOIN organizations o ON o.id = r.organization_id
             JOIN organization_memberships om
@@ -64,9 +68,17 @@ class CanonicalBasketAllocationService:
             raise KeyError("Basket not found in the active retailer organization.")
         return retailer, basket
 
+    @staticmethod
+    def _assert_owner(retailer):
+        if retailer["role"] != "RETAILER_OWNER":
+            raise PermissionError(
+                "Basket modification and allocation require RETAILER_OWNER authority."
+            )
+
     @classmethod
     def create_basket(cls, cur, user_id: str, organization_id: str):
         retailer = cls._retailer_for_context(cur, user_id, organization_id)
+        cls._assert_owner(retailer)
         basket_id = BasketService.create_basket(cur, str(retailer["retailer_id"]))
         return {
             "basket_id": str(basket_id),
@@ -86,7 +98,8 @@ class CanonicalBasketAllocationService:
         pack_quantity: int,
         expected_version: int,
     ):
-        _, basket = cls._basket_for_context(cur, user_id, organization_id, basket_id)
+        retailer, basket = cls._basket_for_context(cur, user_id, organization_id, basket_id)
+        cls._assert_owner(retailer)
         if basket["status"] != "OPEN":
             raise ValueError("Only OPEN baskets can be modified.")
         if quantity <= 0:
@@ -133,12 +146,13 @@ class CanonicalBasketAllocationService:
         retailer, basket = cls._basket_for_context(
             cur, user_id, organization_id, basket_id
         )
+        cls._assert_owner(retailer)
         if basket["status"] != "OPEN":
             raise ValueError("Allocation preview requires an OPEN basket.")
 
         cur.execute(
             """
-            SELECT id, product_id, requested_quantity, requested_unit
+            SELECT id, product_id, requested_quantity, requested_unit, pack_quantity
             FROM basket_items
             WHERE basket_id = %s
             ORDER BY created_at, id
@@ -155,6 +169,7 @@ class CanonicalBasketAllocationService:
                 master_product_id=str(row["product_id"]),
                 requested_quantity=int(row["requested_quantity"]),
                 packaging_unit=str(row["requested_unit"]),
+                pack_quantity=int(row["pack_quantity"]),
             )
             for row in basket_rows
         ]
@@ -191,7 +206,8 @@ class CanonicalBasketAllocationService:
                    vp_price.price_toman,
                    vi.physical_quantity,
                    vi.reserved_quantity,
-                   vi.moq
+                   vi.moq,
+                       vp.pack_quantity
             FROM vendor_products vp
             JOIN vendors v ON v.id = vp.vendor_id
             JOIN organizations o ON o.id = v.organization_id
@@ -215,6 +231,7 @@ class CanonicalBasketAllocationService:
                 vendor_id=str(row["vendor_id"]),
                 master_product_id=str(row["product_id"]),
                 packaging_unit=str(row["packaging_unit"]),
+                pack_quantity=int(row["pack_quantity"]),
                 price_toman=int(row["price_toman"]),
                 physical_quantity=int(row["physical_quantity"]),
                 reserved_quantity=int(row["reserved_quantity"]),
@@ -237,12 +254,46 @@ class CanonicalBasketAllocationService:
                 "No orderable vendor allocation is currently available for this basket."
             )
 
+        canonical_input = {
+            "basket_id": str(basket_id),
+            "basket_version": int(basket["version"]),
+            "items": [
+                {
+                    "basket_item_id": str(row["id"]),
+                    "product_id": str(row["product_id"]),
+                    "requested_quantity": int(row["requested_quantity"]),
+                    "requested_unit": str(row["requested_unit"]),
+                    "pack_quantity": int(row["pack_quantity"]),
+                }
+                for row in basket_rows
+            ],
+            "vendors": [
+                {"id": str(v), "name": vendors[v].name, "mov_toman": vendors[v].mov_toman,
+                 "reputation_score": vendors[v].reputation_score}
+                for v in sorted(vendors)
+            ],
+            "vendor_skus": [
+                {
+                    "id": str(s.id), "vendor_id": str(s.vendor_id), "product_id": str(s.master_product_id),
+                    "packaging_unit": str(s.packaging_unit), "pack_quantity": int(s.pack_quantity),
+                    "price_toman": int(s.price_toman), "physical_quantity": int(s.physical_quantity),
+                    "reserved_quantity": int(s.reserved_quantity), "moq": int(s.moq),
+                }
+                for s in sorted(vendor_skus, key=lambda x: (x.vendor_id, x.master_product_id, x.packaging_unit, x.pack_quantity, x.id))
+            ],
+            "decision_hash": plan.decision_hash,
+            "algorithm_version": "v1.1",
+        }
+        input_hash = hashlib.sha256(
+            json.dumps(canonical_input, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
         plan_row = AllocationService.create_plan(
             cur,
             str(basket_id),
             int(basket["version"]),
             int(plan.vendor_count),
             int(plan.total_amount_toman),
+            input_hash=input_hash,
         )
         plan_id = str(plan_row["id"])
 
@@ -323,6 +374,7 @@ class CanonicalBasketAllocationService:
 
         return {
             "allocation_plan_id": plan_id,
+            "basket_version": int(basket["version"]),
             "strategy": "MULTI_VENDOR_MIN_FRAGMENTATION",
             "vendor_count": int(plan.vendor_count),
             "allocated_vendors": allocated_vendors,

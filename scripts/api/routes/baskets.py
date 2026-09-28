@@ -18,6 +18,10 @@ def create_basket(boundary=Depends(get_application_boundary)):
     return success_payload(boundary.basket_create())
 
 
+@router.get("/current", status_code=status.HTTP_200_OK)
+def current_basket(boundary=Depends(get_application_boundary)):
+    return success_payload(boundary.basket_current())
+
 @router.post("/{basket_id}/items", status_code=status.HTTP_200_OK)
 def add_basket_item(
     basket_id: UUID,

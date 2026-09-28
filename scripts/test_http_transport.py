@@ -5,11 +5,13 @@ from __future__ import annotations
 import os
 import uuid
 
+import psycopg2
 import pytest
 from fastapi.testclient import TestClient
 from psycopg2.extras import RealDictCursor
 
 from scripts.api.main import app
+from scripts.auth_boundary import store_otp_hash
 from scripts.migration_runner import get_connection
 
 
@@ -114,6 +116,16 @@ def test_cors_is_scoped_to_known_web_origins(client):
     assert "access-control-allow-origin" not in blocked.headers
 
 
+def test_production_hsts_is_present(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("POL_CORS_ORIGINS", "https://app.example.com")
+    from scripts.api.main import create_app
+
+    response = TestClient(create_app()).get("/healthz")
+    assert response.status_code == 200
+    assert response.headers.get("Strict-Transport-Security") == "max-age=31536000; includeSubDomains"
+
+
 def test_security_headers_present(client):
     response = client.get("/healthz")
     assert response.status_code == 200
@@ -122,6 +134,66 @@ def test_security_headers_present(client):
     assert response.headers.get("Referrer-Policy") == "no-referrer"
     assert response.headers.get("Permissions-Policy") == "camera=(), microphone=(), geolocation=()"
     assert response.headers.get("X-Correlation-ID")
+
+
+def test_production_cors_configuration_fails_closed(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.delenv("POL_CORS_ORIGINS", raising=False)
+    with pytest.raises(RuntimeError, match="POL_CORS_ORIGINS"):
+        from scripts.api.main import create_app
+        create_app()
+
+    monkeypatch.setenv("POL_CORS_ORIGINS", "*")
+    with pytest.raises(RuntimeError, match="Wildcard CORS"):
+        create_app()
+
+
+def test_production_refresh_cookie_is_secure(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("POL_CORS_ORIGINS", "https://app.example.com")
+    monkeypatch.setenv("POL_JWT_SECRET", "test-secret-key-for-auth-contract-tests-only-32bytes!!")
+    from scripts.api.main import create_app
+
+    # With ENVIRONMENT=production the canonical DB guard requires a password and
+    # SSL transport. This test only exercises cookie flags, so substitute a
+    # plain local test connection for the route dependency.
+    import scripts.api.db as api_db
+
+    def _local_test_connection():
+        return psycopg2.connect(dbname="pol_test", host="127.0.0.1", port=5432, user="postgres")
+
+    monkeypatch.setattr(api_db, "get_runtime_connection", _local_test_connection)
+
+    production_client = TestClient(create_app(), raise_server_exceptions=False)
+    phone, _, _, user_id = _seed_user()
+    try:
+        conn = _conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO otp_challenges (
+                        id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at
+                    ) VALUES (%s,%s,%s,'LOGIN','127.0.0.1',0,5,'PENDING',now() + interval '5 minutes')
+                    """,
+                    (str(uuid.uuid4()), phone, store_otp_hash("1234")),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+
+        response = production_client.post(
+            "/api/v1/auth/verify-otp",
+            json={"mobile_number": phone, "otp_code": "1234", "client_platform": "web"},
+        )
+        assert response.status_code == 200
+        cookie = response.headers.get("set-cookie", "")
+        assert "pol_refresh=" in cookie
+        assert "HttpOnly" in cookie
+        assert "Secure" in cookie
+        assert "SameSite=lax" in cookie
+    finally:
+        _cleanup(phone, user_id)
 
 
 def test_health_and_readiness(client):
@@ -149,13 +221,18 @@ def test_auth_profile_switch_and_revocation_flow(client):
 
         response = client.post(
             "/api/v1/auth/verify-otp",
-            json={"mobile_number": phone, "otp_code": "1234"},
+            json={"mobile_number": phone, "otp_code": "1234", "client_platform": "web"},
         )
         assert response.status_code == 200
         body = response.json()
         assert body["success"] is True
         access_a = body["data"]["access_token"]
-        refresh = body["data"]["refresh_token"]
+        assert "refresh_token" not in body["data"]
+        set_cookie = response.headers.get("set-cookie", "")
+        assert "pol_refresh=" in set_cookie
+        assert "HttpOnly" in set_cookie
+        assert "SameSite=lax" in set_cookie
+
 
         response = client.get(
             "/api/v1/profile",
@@ -165,11 +242,12 @@ def test_auth_profile_switch_and_revocation_flow(client):
 
         response = client.post(
             "/api/v1/auth/refresh",
-            json={"refresh_token": refresh},
         )
         assert response.status_code == 200
-        access_refreshed = response.json()["data"]["access_token"]
+        refresh_payload = response.json()["data"]
+        access_refreshed = refresh_payload["access_token"]
         assert access_refreshed
+        assert "refresh_token" not in refresh_payload
 
         response = client.post(
             "/api/v1/auth/switch-organization",
@@ -206,10 +284,9 @@ def test_auth_profile_switch_and_revocation_flow(client):
 
         refresh_after_revoke = client.post(
             "/api/v1/auth/refresh",
-            json={"refresh_token": refresh},
         )
         assert refresh_after_revoke.status_code == 401
-        assert refresh_after_revoke.json()["error"]["code"] == "SESSION_REVOKED"
+        assert refresh_after_revoke.json()["error"]["code"] == "INVALID_REFRESH_TOKEN"
     finally:
         _cleanup(phone, user_id)
 
@@ -250,3 +327,16 @@ def test_transport_validation_uses_canonical_error_envelope(client):
     assert body["success"] is False
     assert body["error"]["code"] == "VALIDATION_ERROR"
     assert "timestamp" in body["error"]
+
+    
+def test_verify_otp_rejects_non_e164_mobile_number():
+    from pydantic import ValidationError
+    from scripts.api.schemas import VerifyOTPRequest
+
+    with pytest.raises(ValidationError):
+        VerifyOTPRequest(mobile_number="09121234567", otp_code="1234")
+    with pytest.raises(ValidationError):
+        VerifyOTPRequest(mobile_number="989121234567", otp_code="1234")
+
+    request = VerifyOTPRequest(mobile_number="+989121234567", otp_code="1234")
+    assert request.mobile_number == "+989121234567"

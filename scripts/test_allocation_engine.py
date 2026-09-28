@@ -389,6 +389,129 @@ def run_tests():
         failed += 1
 
     # -------------------------------------------------------------
+    # TEST 13A: Total-Order Vendor Tie Break (G-330)
+    # -------------------------------------------------------------
+    print("\n[TEST 13A] Testing deterministic vendor tie-break...")
+    try:
+        vendors = {
+            "va": Vendor(id="va", name="A", mov_toman=0, reputation_score=5.0),
+            "vb": Vendor(id="vb", name="B", mov_toman=0, reputation_score=5.0),
+        }
+        skus = [
+            VendorSKU("sb", "vb", "prod_tie", "CARTON", 100_000, 10, 0),
+            VendorSKU("sa", "va", "prod_tie", "CARTON", 100_000, 10, 0),
+        ]
+        plan = MultiVendorAllocationEngine(vendors, skus).allocate("ret_1", "Ahvaz", [BasketItem("b1", "prod_tie", 1, "CARTON")])
+        assert plan.allocated_items[0].vendor_id == "va"
+        print("  [PASS] Test 13A: vendor-id total-order tie-break verified.")
+        passed += 1
+    except Exception as e:
+        print(f"  [FAIL] Test 13A failed: {e}")
+        failed += 1
+
+    # -------------------------------------------------------------
+    # TEST 13B: SKU-Level Tie Break (G-331)
+    # -------------------------------------------------------------
+    print("\n[TEST 13B] Testing deterministic SKU tie-break...")
+    try:
+        vendors = {"v": Vendor(id="v", name="V", mov_toman=0)}
+        skus = [
+            VendorSKU("sz", "v", "prod_tie", "CARTON", 100_000, 10, 0),
+            VendorSKU("sa", "v", "prod_tie", "CARTON", 100_000, 10, 0),
+        ]
+        plan = MultiVendorAllocationEngine(vendors, skus).allocate("ret_1", "Ahvaz", [BasketItem("b1", "prod_tie", 1, "CARTON")])
+        assert plan.allocated_items[0].vendor_sku_id == "sa"
+        print("  [PASS] Test 13B: SKU-id final tie-break verified.")
+        passed += 1
+    except Exception as e:
+        print(f"  [FAIL] Test 13B failed: {e}")
+        failed += 1
+
+    # -------------------------------------------------------------
+    # TEST 13C: Exact Pack Quantity Match (G-332)
+    # -------------------------------------------------------------
+    print("\n[TEST 13C] Testing exact pack quantity semantics...")
+    try:
+        vendors = {"v": Vendor(id="v", name="V", mov_toman=0)}
+        skus = [
+            VendorSKU("p12", "v", "prod_pack", "CARTON", 120_000, 10, 0, pack_quantity=12),
+            VendorSKU("p24", "v", "prod_pack", "CARTON", 90_000, 10, 0, pack_quantity=24),
+        ]
+        engine = MultiVendorAllocationEngine(vendors, skus)
+        p12 = engine.allocate("ret_1", "Ahvaz", [BasketItem("b1", "prod_pack", 2, "CARTON", pack_quantity=12)])
+        assert p12.allocated_items[0].vendor_sku_id == "p12"
+        p99 = engine.allocate("ret_1", "Ahvaz", [BasketItem("b1", "prod_pack", 2, "CARTON", pack_quantity=99)])
+        assert p99.vendor_count == 0 and p99.unfulfilled_items[0].reason_code == "NO_VENDOR_AVAILABLE"
+        print("  [PASS] Test 13C: exact pack quantity matching verified.")
+        passed += 1
+    except Exception as e:
+        print(f"  [FAIL] Test 13C failed: {e}")
+        failed += 1
+
+    # -------------------------------------------------------------
+    # TEST 13D: Uncapped K>=3 Allocation (G-333)
+    # -------------------------------------------------------------
+    print("\n[TEST 13D] Testing open vendor count at K>=3...")
+    try:
+        vendors = {f"v{i}": Vendor(id=f"v{i}", name=f"V{i}", mov_toman=1_000_000) for i in range(1, 4)}
+        skus = [VendorSKU(f"s{i}", f"v{i}", f"prod_{i}", "CARTON", 1_000_000, 10, 0) for i in range(1, 4)]
+        basket = [BasketItem(f"b{i}", f"prod_{i}", 1, "CARTON") for i in range(1, 4)]
+        plan = MultiVendorAllocationEngine(vendors, skus).allocate("ret_1", "Ahvaz", basket)
+        assert plan.is_fully_fulfilled and plan.vendor_count == 3
+        print("  [PASS] Test 13D: K=3 allocation remains supported.")
+        passed += 1
+    except Exception as e:
+        print(f"  [FAIL] Test 13D failed: {e}")
+        failed += 1
+
+    # -------------------------------------------------------------
+    # TEST 13E: Full Decision Fingerprint (G-334)
+    # -------------------------------------------------------------
+    print("\n[TEST 13E] Testing allocation decision fingerprint...")
+    try:
+        vendors = {"va": Vendor(id="va", name="A", mov_toman=0), "vb": Vendor(id="vb", name="B", mov_toman=0)}
+        skus = [
+            VendorSKU("sb", "vb", "prod_hash", "CARTON", 100_000, 10, 0, pack_quantity=12),
+            VendorSKU("sa", "va", "prod_hash", "CARTON", 100_000, 10, 0, pack_quantity=12),
+        ]
+        b1 = [BasketItem("b1", "prod_hash", 2, "CARTON", pack_quantity=12)]
+        b2 = list(reversed(b1))
+        p1 = MultiVendorAllocationEngine(vendors, skus).allocate("ret_1", "Ahvaz", b1)
+        p2 = MultiVendorAllocationEngine(vendors, list(reversed(skus))).allocate("ret_1", "Ahvaz", b2)
+        assert len(p1.decision_hash) == 64
+        assert p1.decision_hash == p2.decision_hash
+        print("  [PASS] Test 13E: full decision fingerprint verified.")
+        passed += 1
+    except Exception as e:
+        print(f"  [FAIL] Test 13E failed: {e}")
+        failed += 1
+
+    # -------------------------------------------------------------
+    # TEST 13F: Adversarial Tie/Pack Regression (G-335)
+    # -------------------------------------------------------------
+    print("\n[TEST 13F] Testing adversarial tie + pack reproducibility...")
+    try:
+        vendors = {f"v{i}": Vendor(id=f"v{i}", name=f"V{i}", mov_toman=0, reputation_score=5.0) for i in (1, 2, 3)}
+        skus = [
+            VendorSKU("s3", "v3", "prod_adv", "BOX", 100_000, 100, 0, pack_quantity=6),
+            VendorSKU("s1", "v1", "prod_adv", "BOX", 100_000, 100, 0, pack_quantity=6),
+            VendorSKU("s2", "v2", "prod_adv", "BOX", 100_000, 100, 0, pack_quantity=6),
+        ]
+        basket = [BasketItem("b1", "prod_adv", 7, "BOX", pack_quantity=6)]
+        fingerprints = set()
+        selections = set()
+        for _ in range(100):
+            plan = MultiVendorAllocationEngine(vendors, list(reversed(skus))).allocate("ret_1", "Ahvaz", basket)
+            fingerprints.add(plan.decision_hash)
+            selections.add(plan.allocated_items[0].vendor_id)
+        assert len(fingerprints) == 1 and selections == {"v1"}
+        print("  [PASS] Test 13F: adversarial reproducibility verified.")
+        passed += 1
+    except Exception as e:
+        print(f"  [FAIL] Test 13F failed: {e}")
+        failed += 1
+
+    # -------------------------------------------------------------
     # TEST 14: Empty Basket Handled Gracefully
     # -------------------------------------------------------------
     print("\n[TEST 14] Testing Empty Basket Handling...")

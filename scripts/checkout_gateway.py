@@ -65,6 +65,14 @@ class CanonicalCheckoutGateway:
         if not idempotency_key:
             raise ValueError("Checkout requires a non-empty idempotency key.")
 
+        # Serialize the entire checkout transaction for the natural idempotency key.
+        # This turns concurrent identical submissions into deterministic replay
+        # instead of relying on a uniqueness error from order_groups.
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0));",
+            (str(idempotency_key),),
+        )
+
         request_fingerprint = CanonicalCheckoutGateway._fingerprint(
             basket_id=basket_id,
             plan_id=plan_id,

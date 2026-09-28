@@ -19,6 +19,10 @@ from psycopg2.extras import RealDictCursor, Json
 import secrets
 import hashlib as _hashlib
 
+from scripts.revalidation_checkout import RevalidationCheckoutService as CanonicalRevalidationCheckoutService
+from scripts.canonical_integration_worker import CanonicalIntegrationWorker
+from scripts.fulfillment_service import dispatch_order as canonical_dispatch_order, confirm_delivery as canonical_confirm_delivery
+
 from scripts.operational_config import (
     RESERVATION_TTL_MINUTES,
     ALLOCATION_PLAN_TTL_MINUTES,
@@ -104,11 +108,17 @@ class AuthService:
 
         # 3. Generate OTP code
         otp_id = str(uuid.uuid4())
-        is_prod = os.getenv("ENVIRONMENT", "").lower() in ("prod", "production") or os.getenv("POL_ENV", "").lower() in ("prod", "production")
-        if is_prod:
-            code = f"{secrets.randbelow(10_000):04d}"
-        else:
+        environment = os.getenv("ENVIRONMENT", "").lower()
+        pol_environment = os.getenv("POL_ENV", "").lower()
+        is_prod = environment in ("prod", "production") or pol_environment in ("prod", "production")
+        is_test = environment == "test"
+        # Deterministic OTP is strictly test-only. Any non-test environment,
+        # including an unset/unknown environment, must use a cryptographically
+        # random code so a deployment misconfiguration cannot silently expose 1234.
+        if is_test and not is_prod:
             code = "1234"
+        else:
+            code = f"{secrets.randbelow(10_000):04d}"
 
         code_hash = store_otp_hash(code)
         cur.execute("""
@@ -132,24 +142,55 @@ class AuthService:
                 raise RuntimeError("Production OTP delivery failed: SMS provider not configured. Set POL_SMS_ENDPOINT.")
             except ProviderTransientError as exc:
                 raise RuntimeError(f"Production OTP delivery failed: provider transient error. {exc}") from exc
-        else:
-            if isinstance(res, dict):
-                res["test_code"] = code
+        elif is_test and isinstance(res, dict):
+            # Test-only convenience: expose the deterministic code only when the
+            # environment is explicitly set to "test".
+            res["test_code"] = code
 
         return res
 
     @staticmethod
     def verify_otp(cur, phone_number: str, code: str, user_id: str, active_org_id: str) -> dict:
-        """Verify OTP and issue JWT + refresh token. Enforces D-018 brute-force defense.
+        """Verify OTP only for the identity and active membership bound to the phone.
 
-        On 5th failed attempt: status=BLOCKED, blocked_at=now().
-        On success: creates 30-day session, issues 15-min JWT + refresh token.
+        Caller-supplied identity/organization identifiers are independently
+        checked against database truth before any session is created.
         """
-        # Serialize verification on the active challenge so one OTP cannot
-        # be accepted successfully by concurrent requests.
+        cur.execute("""
+            SELECT id
+            FROM users
+            WHERE phone_number = %s
+              AND is_active = TRUE
+            LIMIT 1;
+        """, (phone_number,))
+        phone_user = cur.fetchone()
+        if not phone_user:
+            raise PermissionError("Phone number is not bound to an active user.")
+        if str(phone_user["id"]) != str(user_id):
+            raise PermissionError("OTP identity does not match requested user.")
+
+        cur.execute("""
+            SELECT m.role, o.status AS organization_status
+            FROM organization_memberships m
+            JOIN organizations o ON o.id = m.organization_id
+            WHERE m.user_id = %s
+              AND m.organization_id = %s
+              AND m.status = 'ACTIVE'
+              AND o.status = 'ACTIVE';
+        """, (user_id, active_org_id))
+        requested_membership = cur.fetchone()
+        if not requested_membership:
+            raise PermissionError("User has no active membership in the selected organization.")
+
+        # Serialize verification on the active login/register challenge so an
+        # OTP minted for ORDER_CONFIRMATION / DELIVERY_CONFIRM can never become
+        # an authentication credential.
         cur.execute("""
             SELECT * FROM otp_challenges
-            WHERE phone_number = %s AND status = 'PENDING' AND expires_at > now()
+            WHERE phone_number = %s
+              AND purpose IN ('LOGIN', 'REGISTER')
+              AND status = 'PENDING'
+              AND expires_at > now()
             ORDER BY created_at DESC
             LIMIT 1
             FOR UPDATE;
@@ -173,24 +214,16 @@ class AuthService:
             raise InvalidOTPError(f"Invalid OTP code. Attempt {upd['attempts_count']}/{challenge['max_attempts']}")
 
         cur.execute("""
-            UPDATE otp_challenges SET status = 'VERIFIED', verified_at = now() WHERE id = %s;
+            UPDATE otp_challenges
+            SET status = 'VERIFIED', verified_at = now()
+            WHERE id = %s;
         """, (challenge["id"],))
 
-        # Create session (30-day refresh session)
         sess_id = str(uuid.uuid4())
         refresh_token = generate_refresh_token()
         refresh_hash = hash_token(refresh_token)
+        role = requested_membership["role"]
 
-        cur.execute("""
-            SELECT role FROM organization_memberships
-            WHERE user_id = %s AND organization_id = %s AND status = 'ACTIVE';
-        """, (user_id, active_org_id))
-        mem = cur.fetchone()
-        if not mem:
-            raise PermissionError("User has no active membership in the selected organization.")
-        role = mem["role"]
-
-        # Issue access JWT
         access_token = encode_access_token(user_id, sess_id, active_org_id, role)
         token_hash = hash_token(access_token)
 
@@ -210,15 +243,17 @@ class AuthService:
 
     @staticmethod
     def refresh_access_token(cur, refresh_token: str) -> dict:
-        """Issue a new access JWT using a valid 30-day refresh session.
+        """Rotate a valid refresh token and issue a fresh access token.
 
-        Refresh token is NOT rotated (rotation TBD per D-018).
+        The presented refresh token is single-use. Replay of the old token
+        fails because its persisted hash is atomically replaced.
         """
         token_hash = hash_token(refresh_token)
         cur.execute("""
             SELECT *
             FROM user_sessions
-            WHERE refresh_token_hash = %s;
+            WHERE refresh_token_hash = %s
+            FOR UPDATE;
         """, (token_hash,))
         session = cur.fetchone()
 
@@ -230,21 +265,39 @@ class AuthService:
             raise SessionExpiredError("Refresh session has expired.")
 
         cur.execute("""
-            SELECT role
-            FROM organization_memberships
-            WHERE user_id = %s
-              AND organization_id = %s
-              AND status = 'ACTIVE';
+            SELECT
+                m.role,
+                m.status AS membership_status,
+                u.is_active AS user_is_active,
+                o.status AS organization_status
+            FROM organization_memberships m
+            JOIN users u ON u.id = m.user_id
+            JOIN organizations o ON o.id = m.organization_id
+            WHERE m.user_id = %s
+              AND m.organization_id = %s
+              AND m.status = 'ACTIVE';
         """, (session["user_id"], session["active_organization_id"]))
         membership = cur.fetchone()
         if not membership:
             raise InvalidRefreshTokenError("Refresh session has no active organization membership.")
+        if not membership["user_is_active"]:
+            raise InvalidRefreshTokenError("User is inactive.")
+        if membership["organization_status"] != "ACTIVE":
+            raise InvalidRefreshTokenError("Organization is not active.")
 
+        next_refresh_token = generate_refresh_token()
+        next_refresh_hash = hash_token(next_refresh_token)
         cur.execute("""
             UPDATE user_sessions
-            SET last_activity_at = now()
-            WHERE id = %s;
-        """, (session["id"],))
+            SET refresh_token_hash = %s,
+                last_activity_at = now()
+            WHERE id = %s
+              AND status = 'ACTIVE'
+            RETURNING id;
+        """, (next_refresh_hash, session["id"]))
+        rotated = cur.fetchone()
+        if not rotated:
+            raise InvalidRefreshTokenError("Refresh session is no longer active.")
 
         access_token = encode_access_token(
             str(session["user_id"]),
@@ -255,33 +308,63 @@ class AuthService:
 
         return {
             "access_token": access_token,
+            "refresh_token": next_refresh_token,
             "token_type": "Bearer",
             "expires_in": JWT_ACCESS_TTL_SECONDS,
         }
 
     @staticmethod
     def switch_organization(cur, user_id: str, target_org_id: str, session_id: str) -> dict:
-        """Switch active organization. Returns new JWT with updated org_id + role."""
+        """Switch active organization only on a session owned by the caller."""
         cur.execute("""
-            SELECT role, status FROM organization_memberships
-            WHERE user_id = %s AND organization_id = %s;
+            SELECT id, user_id, status, expires_at
+            FROM user_sessions
+            WHERE id = %s
+            FOR UPDATE;
+        """, (session_id,))
+        session = cur.fetchone()
+        if not session:
+            raise AuthError("Session not found.")
+        if str(session["user_id"]) != str(user_id):
+            raise PermissionError("Session does not belong to authenticated user.")
+        if session["status"] == "REVOKED":
+            raise SessionRevokedError("Session has been revoked.")
+        if session["status"] == "EXPIRED" or session["expires_at"] <= datetime.now(timezone.utc):
+            raise SessionExpiredError("Session has expired.")
+
+        cur.execute("""
+            SELECT
+                m.role,
+                m.status AS membership_status,
+                u.is_active AS user_is_active,
+                o.status AS org_status
+            FROM organization_memberships m
+            JOIN users u ON u.id = m.user_id
+            JOIN organizations o ON o.id = m.organization_id
+            WHERE m.user_id = %s AND m.organization_id = %s;
         """, (user_id, target_org_id))
         mem = cur.fetchone()
-        if not mem or mem["status"] != "ACTIVE":
+        if not mem or mem["membership_status"] != "ACTIVE":
             raise PermissionError("User has no active membership in target organization.")
+        if not mem["user_is_active"]:
+            raise PermissionError("User is inactive.")
+        if mem["org_status"] != "ACTIVE":
+            raise PermissionError("Target organization is not active.")
 
         cur.execute("""
             UPDATE user_sessions
             SET active_organization_id = %s, last_activity_at = now()
-            WHERE id = %s AND status = 'ACTIVE'
+            WHERE id = %s AND user_id = %s AND status = 'ACTIVE'
             RETURNING id, active_organization_id, status;
-        """, (target_org_id, session_id))
-        session = cur.fetchone()
+        """, (target_org_id, session_id, user_id))
+        updated_session = cur.fetchone()
+        if not updated_session:
+            raise AuthError("Session is no longer active.")
 
         new_access_token = encode_access_token(user_id, session_id, target_org_id, mem["role"])
 
         return {
-            "session": session,
+            "session": updated_session,
             "access_token": new_access_token,
         }
 
@@ -319,14 +402,22 @@ class AuthService:
         Supports canonical roles (ADMIN_SUPER, OPS_AGENT) and legacy aliases (SUPER_ADMIN, OPS_ADMIN).
         """
         cur.execute("""
-            SELECT m.role, m.status, o.org_type, o.status as org_status
+            SELECT
+                m.role,
+                m.status,
+                o.org_type,
+                o.status AS org_status,
+                u.is_active AS user_is_active
             FROM organization_memberships m
             JOIN organizations o ON m.organization_id = o.id
+            JOIN users u ON m.user_id = u.id
             WHERE m.user_id = %s AND m.organization_id = %s;
         """, (user_id, active_org_id))
         mem = cur.fetchone()
         if not mem or mem["status"] != "ACTIVE":
             raise PermissionError("Access denied: No active organization membership found.")
+        if not mem["user_is_active"]:
+            raise PermissionError("Access denied: User is inactive.")
         if mem["org_status"] != "ACTIVE":
             raise PermissionError(f"Access denied: Organization status is {mem['org_status']}.")
 
@@ -375,16 +466,16 @@ class BasketService:
 
 class AllocationService:
     @staticmethod
-    def create_plan(cur, basket_id: str, basket_version: int, vendor_count: int, total_toman: int) -> dict:
+    def create_plan(cur, basket_id: str, basket_version: int, vendor_count: int, total_toman: int, input_hash: str | None = None) -> dict:
         plan_id = str(uuid.uuid4())
-        inp_hash = hashlib.sha256(f"{basket_id}:{basket_version}:{total_toman}".encode()).hexdigest()[:16]
+        inp_hash = input_hash or hashlib.sha256(f"{basket_id}:{basket_version}:{total_toman}".encode()).hexdigest()
         cur.execute("""
             INSERT INTO allocation_plans (
                 id, basket_id, basket_version, strategy, vendor_count, 
                 total_estimated_toman, status, input_hash, algorithm_version, expires_at
             ) VALUES (
                 %s, %s, %s, 'MULTI_VENDOR_MIN_FRAGMENTATION', %s,
-                %s, 'CONFIRMED', %s, 'v1.0', now() + interval '15 minutes'
+                %s, 'CONFIRMED', %s, 'v1.1', now() + interval '15 minutes'
             ) RETURNING *;
         """, (plan_id, basket_id, basket_version, vendor_count, total_toman, inp_hash))
         return cur.fetchone()
@@ -399,7 +490,10 @@ class OrderGroupProjector:
         rows = cur.fetchall()
         statuses = [r["order_status"] for r in rows]
 
-        if all(s == 'DELIVERED' for s in statuses):
+        # Empty groups are never completed: COMPLETED requires at least one child order.
+        if not statuses:
+            new_status = 'ACTIVE'
+        elif all(s == 'DELIVERED' for s in statuses):
             new_status = 'COMPLETED'
         elif all(s in ('CANCELLED', 'REJECTED') for s in statuses):
             new_status = 'CANCELLED'
@@ -418,215 +512,799 @@ class OrderGroupProjector:
 
 
 class CheckoutService:
+    """Deprecated compatibility facade; delegates to the canonical checkout path."""
+
     @staticmethod
-    def checkout(cur, basket_id: str, plan_id: str, retailer_id: str, idempotency_key: str, 
+    def checkout(cur, basket_id: str, plan_id: str, retailer_id: str, idempotency_key: str,
                  address_snapshot: dict, vendor_allocations: list) -> dict:
-        # 1. Validate Basket & Plan
-        cur.execute("""
-            SELECT b.version, p.basket_version, p.expires_at, p.status
-            FROM baskets b
-            JOIN allocation_plans p ON p.id = %s
-            WHERE b.id = %s;
-        """, (plan_id, basket_id))
-        chk = cur.fetchone()
-        if not chk:
-            raise ValueError("Basket or Allocation Plan not found.")
-        if chk["version"] != chk["basket_version"]:
-            raise ValueError(f"Stale basket checkout: basket v{chk['version']} != plan v{chk['basket_version']}")
-        if chk["expires_at"] < datetime.now(timezone.utc):
-            raise ValueError("Allocation plan has expired (15-minute TTL exceeded).")
-
-        # 2. Idempotent Reservation & Stock deduction
-        total_toman = sum(v["amount_toman"] for v in vendor_allocations)
-        og_id = str(uuid.uuid4())
-        cur.execute("""
-            INSERT INTO order_groups (
-                id, basket_id, allocation_plan_id, retailer_id, checkout_idempotency_key, 
-                total_amount_toman, order_count, group_status
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, 'ACTIVE'
-            ) RETURNING id;
-        """, (og_id, basket_id, plan_id, retailer_id, idempotency_key, total_toman, len(vendor_allocations)))
-
-        child_orders = []
-        for alloc in vendor_allocations:
-            ord_id = str(uuid.uuid4())
-            res_id = str(uuid.uuid4())
-            ord_num = f"ORD-{uuid.uuid4().hex[:8].upper()}"
-
-            # Child order
-            cur.execute("""
-                INSERT INTO orders (
-                    id, order_group_id, retailer_id, vendor_id, order_number, 
-                    total_amount_toman, order_status, dispute_status, delivery_address_snapshot, correlation_id
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, 'SUBMITTED', 'NONE', %s, %s
-                ) RETURNING *;
-            """, (
-                ord_id, og_id, retailer_id, alloc["vendor_id"], ord_num,
-                alloc["amount_toman"], Json(address_snapshot), f"corr-{og_id[:8]}"
-            ))
-            child_orders.append(cur.fetchone())
-
-            # Inventory reservation
-            cur.execute("""
-                INSERT INTO inventory_reservations (
-                    id, vendor_product_id, order_id, quantity, status, idempotency_key, expires_at
-                ) VALUES (
-                    %s, %s, %s, %s, 'ACTIVE', %s, now() + interval '15 minutes'
-                );
-            """, (res_id, alloc["vendor_product_id"], ord_id, alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_id']}"))
-
-            cur.execute("""
-                UPDATE vendor_inventory 
-                SET reserved_quantity = reserved_quantity + %s
-                WHERE vendor_product_id = %s;
-            """, (alloc["quantity"], alloc["vendor_product_id"]))
-
-        return {"order_group_id": og_id, "orders": child_orders}
+        request_fingerprint = hashlib.sha256(
+            json.dumps(
+                {
+                    "basket_id": basket_id,
+                    "plan_id": plan_id,
+                    "retailer_id": retailer_id,
+                    "vendor_allocations": vendor_allocations,
+                    "address_snapshot": address_snapshot,
+                },
+                sort_keys=True,
+                default=str,
+            ).encode()
+        ).hexdigest()
+        return RevalidationCheckoutService.revalidate_and_checkout(
+            cur=cur,
+            basket_id=basket_id,
+            plan_id=plan_id,
+            retailer_id=retailer_id,
+            idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint,
+            address_snapshot=address_snapshot,
+            vendor_allocations=vendor_allocations,
+        )
 
 
 class FulfillmentService:
-    @staticmethod
-    def dispatch_order(cur, order_id: str, vendor_id: str, driver_metadata: dict) -> str:
-        deliv_id = str(uuid.uuid4())
-        cur.execute("""
-            INSERT INTO deliveries (
-                id, order_id, vendor_id, driver_name, driver_phone, vehicle_plate, delivery_status
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, 'IN_TRANSIT'
-            ) RETURNING id;
-        """, (
-            deliv_id, order_id, vendor_id,
-            driver_metadata["driver_name"], driver_metadata["driver_phone"], driver_metadata["vehicle_plate"]
-        ))
-        cur.execute("""
-            UPDATE orders SET order_status = 'DISPATCHED' WHERE id = %s;
-        """, (order_id,))
-        return deliv_id
+    """Deprecated compatibility facade; requires explicit authenticated actor context."""
 
     @staticmethod
-    def confirm_delivery_otp(cur, delivery_id: str, order_id: str, recipient_name: str) -> None:
-        cur.execute("""
-            INSERT INTO proof_of_delivery (id, delivery_id, proof_type, otp_verified, accepted_by_name, accepted_at)
-            VALUES (%s, %s, 'OTP_CODE', TRUE, %s, now());
-        """, (str(uuid.uuid4()), delivery_id, recipient_name))
+    def dispatch_order(cur, order_id: str, vendor_id: str, driver_metadata: dict,
+                       user_id: str | None = None, organization_id: str | None = None) -> str:
+        if not user_id or not organization_id:
+            raise PermissionError(
+                "Legacy FulfillmentService.dispatch_order requires explicit actor context; "
+                "use scripts.fulfillment_service.dispatch_order directly."
+            )
+        result = canonical_dispatch_order(
+            cur,
+            user_id=user_id,
+            organization_id=organization_id,
+            order_id=order_id,
+            driver_name=driver_metadata.get("driver_name"),
+            driver_phone=driver_metadata.get("driver_phone"),
+            vehicle_plate=driver_metadata.get("vehicle_plate"),
+        )
+        return str(result["delivery_id"])
 
-        cur.execute("""
-            UPDATE deliveries SET delivery_status = 'DELIVERED', delivered_at = now() WHERE id = %s;
-        """, (delivery_id,))
-
-        cur.execute("""
-            UPDATE orders SET order_status = 'DELIVERED' WHERE id = %s;
-        """, (order_id,))
+    @staticmethod
+    def confirm_delivery_otp(cur, delivery_id: str, order_id: str, recipient_name: str,
+                             otp_code: str | None = None, user_id: str | None = None,
+                             organization_id: str | None = None) -> None:
+        if not otp_code or not user_id or not organization_id:
+            raise PermissionError(
+                "Legacy FulfillmentService.confirm_delivery_otp requires authenticated actor context and OTP."
+            )
+        canonical_confirm_delivery(
+            cur,
+            user_id=user_id,
+            organization_id=organization_id,
+            order_id=order_id,
+            recipient_name=recipient_name,
+            otp_code=otp_code,
+        )
 
 
 class PaymentService:
+    """Safe compatibility facade for direct non-custodial payment recording."""
+
     @staticmethod
-    def record_direct_payment(cur, order_id: str, retailer_id: str, vendor_id: str, 
+    def record_direct_payment(cur, order_id: str, retailer_id: str, vendor_id: str,
                               amount_toman: int, verified_by_user_id: str) -> dict:
-        pay_id = str(uuid.uuid4())
-        cur.execute("""
+        if amount_toman <= 0:
+            raise ValueError("Payment amount must be positive.")
+
+        cur.execute(
+            """
+            SELECT id, retailer_id, vendor_id, total_amount_toman
+            FROM orders
+            WHERE id=%s
+            FOR UPDATE
+            """,
+            (order_id,),
+        )
+        order = cur.fetchone()
+        if not order:
+            raise KeyError("Order not found.")
+        if str(order["retailer_id"]) != str(retailer_id) or str(order["vendor_id"]) != str(vendor_id):
+            raise PermissionError("Payment participants do not match the order.")
+
+        # This compatibility service receives the actor explicitly, so bind it
+        # to the retailer tenant before any financial mutation. Authorization
+        # is never inferred from user-supplied ids alone.
+        cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN retailers r ON r.organization_id = om.organization_id
+            JOIN organizations o ON o.id = om.organization_id
+            WHERE om.user_id = %s
+              AND r.id = %s
+              AND om.status = 'ACTIVE'
+              AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+              AND o.status = 'ACTIVE'
+            LIMIT 1
+            """,
+            (verified_by_user_id, retailer_id),
+        )
+        if not cur.fetchone():
+            raise PermissionError("Payment actor is not an authorized member of the retailer tenant.")
+
+        cur.execute(
+            """
             INSERT INTO payments (
-                id, order_id, retailer_id, vendor_id, amount_toman, 
-                payment_method, custody_model, payment_status, reference_number, verified_by, verified_at, paid_at
-            ) VALUES (
-                %s, %s, %s, %s, %s,
-                'DIRECT_BANK_TRANSFER', 'NON_CUSTODIAL_DIRECT', 'SUCCESS', 'TX-778899', %s, now(), now()
-            ) RETURNING *;
-        """, (pay_id, order_id, retailer_id, vendor_id, amount_toman, verified_by_user_id))
-        pay = cur.fetchone()
+                id, order_id, retailer_id, vendor_id, amount_toman,
+                payment_method, custody_model, payment_status
+            )
+            VALUES (%s,%s,%s,%s,%s,'DIRECT_BANK_TRANSFER','NON_CUSTODIAL_DIRECT','PENDING')
+            RETURNING *
+            """,
+            (str(uuid.uuid4()), order_id, retailer_id, vendor_id, amount_toman),
+        )
+        payment = cur.fetchone()
 
-        # Generate settlement at 0% pilot commission (D-006)
-        settle_id = str(uuid.uuid4())
-        cur.execute("""
-            INSERT INTO settlements (
-                id, order_id, vendor_id, gross_amount_toman, commission_rate, 
-                commission_amount_toman, net_vendor_amount_toman, status
-            ) VALUES (
-                %s, %s, %s, %s, %s, 0, %s, 'CALCULATED'
-            ) RETURNING *;
-        """, (settle_id, order_id, vendor_id, amount_toman, PILOT_COMMISSION_RATE, amount_toman))
-        settle = cur.fetchone()
-
-        return {"payment": pay, "settlement": settle}
+        return {
+            "payment": payment,
+            "settlement": None,
+            "requires_evidence": True,
+            "verified_by_user_id": verified_by_user_id,
+        }
 
 
 class DisputeService:
+    """Canonical dispute chain (G-421..G-437).
+
+    Lifecycle: OPEN -> INVESTIGATING -> RESOLVED -> CLOSED.
+    - Admission: DELIVERED-only gate, four-hour filing window, mandatory
+      READY/owner/order-bound evidence media, item-level claim scope,
+      key+fingerprint idempotency, state-aware locked settlement attach.
+    - Every transition writes the append-only `dispute_events` stream and
+      maintains the `orders.dispute_status` projection.
+    - Outbox events are limited to the two templated canonical events
+      (DISPUTE_OPENED, DISPUTE_RESOLVED) so the worker never meets an orphaned
+      contract; INVESTIGATING/CLOSED are covered by dispute_events + audit.
+    """
+
     @staticmethod
-    def open_dispute(cur, order_id: str, retailer_id: str, vendor_id: str, settlement_id: str, 
-                     claimed_amount: int, description: str) -> str:
-        disp_id = str(uuid.uuid4())
-        cur.execute("""
+    def _dispute_fingerprint(parts: dict) -> str:
+        import hashlib
+        import json as _json
+
+        canonical = _json.dumps(parts, sort_keys=True, separators=(",", ":"), default=str)
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _record_dispute_event(cur, *, dispute_id, from_status, to_status,
+                              actor_user_id, organization_id, reason=None,
+                              event_data=None):
+        cur.execute(
+            """
+            INSERT INTO dispute_events (
+                id, dispute_id, from_status, to_status,
+                actor_user_id, actor_organization_id, reason, event_data
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+            """,
+            (
+                str(uuid.uuid4()), dispute_id, from_status, to_status,
+                actor_user_id, organization_id, reason, Json(event_data or {}),
+            ),
+        )
+
+    @staticmethod
+    def _dispute_replay_payload(cur, dispute_id):
+        cur.execute(
+            """
+            SELECT d.id, d.order_id, d.dispute_status, d.claimed_amount_toman,
+                   d.resolution_outcome, d.approved_amount_toman,
+                   s.status AS settlement_status
+            FROM disputes d
+            LEFT JOIN settlements s ON s.order_id = d.order_id
+            WHERE d.id = %s
+            ORDER BY s.created_at DESC NULLS LAST
+            LIMIT 1;
+            """,
+            (dispute_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise ValueError("Dispute not found.")
+        return {
+            "id": str(row["id"]),
+            "dispute_id": str(row["id"]),
+            "order_id": str(row["order_id"]),
+            "dispute_status": row["dispute_status"],
+            "resolution_outcome": row["resolution_outcome"],
+            "approved_amount_toman": row["approved_amount_toman"],
+            "settlement_status": row["settlement_status"],
+            "idempotent_replay": True,
+        }
+
+    @staticmethod
+    def open_dispute(cur, *args, **kwargs):
+        """Legacy dispute writer intentionally disabled.
+
+        All dispute creation must pass through open_dispute_v2 so the evidence,
+        item-level claim, tenant, idempotency, SLA and settlement invariants are
+        applied consistently.
+        """
+        raise RuntimeError(
+            "Legacy DisputeService.open_dispute is disabled; use open_dispute_v2."
+        )
+
+    @staticmethod
+    def open_dispute_v2(cur, *, order_id, retailer_id, vendor_id, claimed_amount,
+                        description, evidence_media_id, items, actor_user_id,
+                        organization_id, idempotency_key=None):
+        from scripts.operational_config import DISPUTE_FILING_WINDOW_HOURS
+
+        if not description or not str(description).strip():
+            raise ValueError("Dispute description is required.")
+        if claimed_amount is None or int(claimed_amount) <= 0:
+            raise ValueError("claimed_amount_toman must be positive.")
+        if not evidence_media_id:
+            raise ValueError("Dispute admission requires evidence_media_id.")
+        if not items:
+            raise ValueError("Dispute admission requires item-level claim scope.")
+
+        normalized_items = []
+        for item in items:
+            order_item_id = str(item.get("order_item_id") or "")
+            quantity = int(item.get("quantity") or 0)
+            item_amount = int(item.get("claimed_amount_toman") or 0)
+            reason_code = str(item.get("reason_code") or "").strip()
+            if not order_item_id or quantity <= 0 or item_amount <= 0 or not reason_code:
+                raise ValueError(
+                    "Each dispute item requires order_item_id, positive quantity, "
+                    "positive claimed_amount_toman and a reason_code."
+                )
+            normalized_items.append({
+                "order_item_id": order_item_id,
+                "quantity": quantity,
+                "claimed_amount_toman": item_amount,
+                "reason_code": reason_code,
+            })
+        claimed_amount = int(claimed_amount)
+
+        fingerprint = DisputeService._dispute_fingerprint({
+            "order_id": order_id,
+            "retailer_id": retailer_id,
+            "vendor_id": vendor_id,
+            "claimed_amount_toman": claimed_amount,
+            "description": description,
+            "evidence_media_id": str(evidence_media_id),
+            "items": normalized_items,
+            "actor_user_id": actor_user_id,
+        })
+
+        if idempotency_key:
+            cur.execute(
+                "SELECT id, idempotency_fingerprint FROM disputes "
+                "WHERE idempotency_key = %s LIMIT 1;",
+                (idempotency_key,),
+            )
+            existing = cur.fetchone()
+            if existing:
+                if existing["idempotency_fingerprint"] != fingerprint:
+                    raise ValueError(
+                        "Idempotency key was already used with a different "
+                        "dispute payload."
+                    )
+                return DisputeService._dispute_replay_payload(cur, existing["id"])
+
+        cur.execute(
+            "SELECT id FROM disputes WHERE idempotency_fingerprint = %s LIMIT 1;",
+            (fingerprint,),
+        )
+        replay = cur.fetchone()
+        if replay:
+            return DisputeService._dispute_replay_payload(cur, replay["id"])
+
+        # G-422: delivered-only gate + four-hour filing window.
+        cur.execute(
+            """
+            SELECT o.order_status, d.id AS delivery_id, d.delivered_at
+            FROM orders o
+            LEFT JOIN deliveries d
+              ON d.order_id = o.id AND d.delivery_status = 'DELIVERED'
+            WHERE o.id = %s AND o.retailer_id = %s AND o.vendor_id = %s
+            FOR UPDATE OF o;
+            """,
+            (order_id, retailer_id, vendor_id),
+        )
+        order = cur.fetchone()
+        if not order:
+            raise ValueError("Order not found for the active retailer tenant.")
+        if order["order_status"] != "DELIVERED" or order["delivery_id"] is None:
+            raise ValueError("Disputes can only be opened for delivered orders.")
+        cur.execute(
+            "SELECT (now() > %s + make_interval(hours => %s)) AS expired;",
+            (order["delivered_at"], DISPUTE_FILING_WINDOW_HOURS),
+        )
+        if cur.fetchone()["expired"]:
+            raise ValueError(
+                "Dispute filing window has expired ("
+                f"{DISPUTE_FILING_WINDOW_HOURS} hours after delivery)."
+            )
+
+        # G-423/G-436: evidence must be READY, owned by the actor and pre-bound
+        # to this order (order-scoped authorization per migration 065).
+        cur.execute(
+            """
+            SELECT id FROM media_assets
+            WHERE id = %s AND status = 'READY'
+              AND uploaded_by_user_id = %s
+              AND upload_target_type = 'ORDER' AND upload_target_id = %s;
+            """,
+            (str(evidence_media_id), actor_user_id, order_id),
+        )
+        if not cur.fetchone():
+            raise ValueError(
+                "Dispute evidence must be READY media owned by the reporter and "
+                "uploaded for this order."
+            )
+
+        # G-424: item-level scope validated against the order's own items.
+        for item in normalized_items:
+            cur.execute(
+                """
+                SELECT id, ordered_quantity
+                FROM order_items
+                WHERE id = %s AND order_id = %s;
+                """,
+                (item["order_item_id"], order_id),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise ValueError("Dispute item does not belong to this order.")
+            if item["quantity"] > int(row["ordered_quantity"]):
+                raise ValueError(
+                    "Disputed quantity exceeds the ordered quantity."
+                )
+
+        claimed_sum = sum(item["claimed_amount_toman"] for item in normalized_items)
+        if claimed_sum > claimed_amount:
+            raise ValueError(
+                "Item-level claimed amounts exceed the claimed dispute amount."
+            )
+
+        # G-429/G-430: state-aware settlement attach under a row lock with a
+        # status-conditioned atomic update.
+        cur.execute(
+            """
+            SELECT id, status FROM settlements
+            WHERE order_id = %s
+            ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE;
+            """,
+            (order_id,),
+        )
+        settlement = cur.fetchone()
+        settlement_status = None
+        if settlement:
+            if settlement["status"] == "CLOSED":
+                raise ValueError(
+                    "Cannot open a dispute against a closed settlement."
+                )
+            if settlement["status"] in ("PENDING", "CALCULATED", "RECONCILED"):
+                cur.execute(
+                    """
+                    UPDATE settlements SET status = 'DISPUTED'
+                    WHERE id = %s
+                      AND status IN ('PENDING','CALCULATED','RECONCILED');
+                    """,
+                    (settlement["id"],),
+                )
+                if cur.rowcount != 1:
+                    raise ValueError(
+                        "Settlement state changed during dispute admission."
+                    )
+            settlement_status = "DISPUTED"
+
+        dispute_id = str(uuid.uuid4())
+        cur.execute(
+            """
             INSERT INTO disputes (
-                id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description
-            ) VALUES (
-                %s, %s, %s, %s, 'OPEN', %s, %s
-            ) RETURNING id;
-        """, (disp_id, order_id, retailer_id, vendor_id, claimed_amount, description))
+                id, order_id, retailer_id, vendor_id, dispute_status,
+                claimed_amount_toman, description, evidence_media_id,
+                created_by_user_id, idempotency_key, idempotency_fingerprint
+            ) VALUES (%s, %s, %s, %s, 'OPEN', %s, %s, %s, %s, %s, %s);
+            """,
+            (
+                dispute_id, order_id, retailer_id, vendor_id, claimed_amount,
+                description, str(evidence_media_id), actor_user_id,
+                idempotency_key, fingerprint,
+            ),
+        )
+        for item in normalized_items:
+            cur.execute(
+                """
+                INSERT INTO dispute_items (
+                    id, dispute_id, order_item_id, quantity,
+                    claimed_amount_toman, reason_code
+                ) VALUES (%s, %s, %s, %s, %s, %s);
+                """,
+                (
+                    str(uuid.uuid4()), dispute_id, item["order_item_id"],
+                    item["quantity"], item["claimed_amount_toman"],
+                    item["reason_code"],
+                ),
+            )
 
-        # Project dispute state onto order while preserving order_status
-        cur.execute("""
-            UPDATE orders SET dispute_status = 'OPEN' WHERE id = %s;
-        """, (order_id,))
+        # Re-bind the evidence to its final aggregate (ORDER -> DISPUTE).
+        cur.execute(
+            """
+            UPDATE media_assets
+            SET upload_target_type = 'DISPUTE', upload_target_id = %s
+            WHERE id = %s AND upload_target_type = 'ORDER'
+              AND upload_target_id = %s;
+            """,
+            (dispute_id, str(evidence_media_id), order_id),
+        )
 
-        # Place hold on settlement
-        cur.execute("""
-            UPDATE settlements SET status = 'DISPUTED' WHERE id = %s;
-        """, (settlement_id,))
+        cur.execute(
+            "UPDATE orders SET dispute_status = 'OPEN', updated_at = now() "
+            "WHERE id = %s;",
+            (order_id,),
+        )
+        DisputeService._record_dispute_event(
+            cur, dispute_id=dispute_id, from_status=None, to_status="OPEN",
+            actor_user_id=actor_user_id, organization_id=organization_id,
+            reason=description,
+            event_data={
+                "order_id": order_id,
+                "claimed_amount_toman": claimed_amount,
+            },
+        )
 
-        # Outbox event
-        cur.execute("""
-            INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status)
-            VALUES (%s, %s, 'DISPUTE_OPENED', 'ORDER', %s, %s, 'PENDING');
-        """, (str(uuid.uuid4()), str(uuid.uuid4()), order_id, Json({"dispute_id": disp_id, "amount_toman": claimed_amount})))
+        # Templated canonical event: notify the vendor organization only (the
+        # dispute is against the vendor; the reporter already knows).
+        cur.execute(
+            """
+            INSERT INTO outbox_events (
+                id, event_id, event_name, aggregate_type, aggregate_id, payload,
+                status, target_user_id, target_organization_id, dedupe_key,
+                channel_hint, created_at
+            )
+            SELECT gen_random_uuid(), gen_random_uuid(), 'DISPUTE_OPENED', 'DISPUTE', %s,
+                   %s::jsonb, 'PENDING', om.user_id, om.organization_id,
+                   %s || ':' || om.user_id::text, 'INBOX', now()
+            FROM organization_memberships om
+            WHERE om.organization_id = (
+                    SELECT organization_id FROM vendors WHERE id = %s
+                  )
+              AND om.status = 'ACTIVE'
+              AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
+            ON CONFLICT (event_name, dedupe_key) WHERE dedupe_key IS NOT NULL
+            DO NOTHING;
+            """,
+            (
+                dispute_id,
+                Json({
+                    "dispute_id": dispute_id,
+                    "order_id": order_id,
+                    "claimed_amount_toman": claimed_amount,
+                }),
+                f"DISPUTE_OPENED:{dispute_id}", vendor_id,
+            ),
+        )
 
-        return disp_id
+        return {
+            "id": dispute_id,
+            "dispute_id": dispute_id,
+            "order_id": order_id,
+            "dispute_status": "OPEN",
+            "claimed_amount_toman": claimed_amount,
+            "description": description,
+            "evidence_media_id": str(evidence_media_id),
+            "items": normalized_items,
+            "settlement_status": settlement_status,
+            "idempotent_replay": False,
+        }
+
+    @staticmethod
+    def investigate_dispute(cur, *, dispute_id, actor_user_id, organization_id,
+                            reason=None):
+        cur.execute(
+            "SELECT id, order_id, dispute_status FROM disputes "
+            "WHERE id = %s FOR UPDATE;",
+            (dispute_id,),
+        )
+        dispute = cur.fetchone()
+        if not dispute:
+            raise KeyError("Dispute not found.")
+        if dispute["dispute_status"] == "INVESTIGATING":
+            return DisputeService._dispute_replay_payload(cur, dispute_id)
+        if dispute["dispute_status"] != "OPEN":
+            raise ValueError(
+                "Cannot investigate a dispute in status "
+                f"'{dispute['dispute_status']}'."
+            )
+        cur.execute(
+            """
+            UPDATE disputes
+            SET dispute_status = 'INVESTIGATING', assigned_ops_user_id = %s
+            WHERE id = %s;
+            """,
+            (actor_user_id, dispute_id),
+        )
+        cur.execute(
+            "UPDATE orders SET dispute_status = 'INVESTIGATING', updated_at = now() "
+            "WHERE id = %s;",
+            (dispute["order_id"],),
+        )
+        DisputeService._record_dispute_event(
+            cur, dispute_id=dispute_id, from_status="OPEN",
+            to_status="INVESTIGATING", actor_user_id=actor_user_id,
+            organization_id=organization_id, reason=reason,
+        )
+        return {
+            "id": str(dispute["id"]),
+            "dispute_id": str(dispute["id"]),
+            "dispute_status": "INVESTIGATING",
+            "assigned_ops_user_id": str(actor_user_id),
+            "idempotent_replay": False,
+        }
+
+    @staticmethod
+    def resolve_dispute(cur, *args, **kwargs):
+        """Legacy dispute resolver intentionally disabled."""
+        raise RuntimeError(
+            "Legacy DisputeService.resolve_dispute is disabled; use resolve_canonical."
+        )
+
+    @staticmethod
+    def resolve_canonical(cur, *, dispute_id, actor_user_id, organization_id,
+                          outcome, approved_amount, reason=None):
+        allowed_outcomes = ("ADJUSTED_SHORTAGE", "REPLACEMENT_ORDER",
+                            "REJECTED_CLAIM", "MUTUAL_AGREEMENT")
+        if outcome not in allowed_outcomes:
+            raise ValueError(
+                f"Invalid resolution outcome: {outcome}. Must be one of "
+                f"{allowed_outcomes}."
+            )
+        approved_amount = int(approved_amount)
+        if approved_amount < 0:
+            raise ValueError("approved_amount_toman cannot be negative.")
+        # G-426 (mirrors the migration-062 boundary invariants):
+        if outcome in ("REJECTED_CLAIM", "REPLACEMENT_ORDER") and approved_amount != 0:
+            raise ValueError(
+                f"{outcome} resolutions must carry a zero cash award."
+            )
+        if outcome == "ADJUSTED_SHORTAGE" and approved_amount <= 0:
+            raise ValueError(
+                "ADJUSTED_SHORTAGE resolutions require a positive award."
+            )
+
+        cur.execute(
+            """
+            SELECT id, order_id, dispute_status, claimed_amount_toman
+            FROM disputes
+            WHERE id = %s
+            FOR UPDATE;
+            """,
+            (dispute_id,),
+        )
+        dispute = cur.fetchone()
+        if not dispute:
+            raise KeyError("Dispute not found.")
+        if dispute["dispute_status"] == "RESOLVED":
+            cur.execute(
+                "SELECT resolution_outcome, approved_amount_toman FROM disputes "
+                "WHERE id = %s;",
+                (dispute_id,),
+            )
+            row = cur.fetchone()
+            if (row["resolution_outcome"] == outcome
+                    and int(row["approved_amount_toman"] or 0) == approved_amount):
+                return DisputeService._dispute_replay_payload(cur, dispute_id)
+            raise ValueError(
+                "Dispute is already resolved with a different outcome/amount."
+            )
+        if dispute["dispute_status"] != "INVESTIGATING":
+            raise ValueError(
+                "Dispute resolution requires the INVESTIGATING state."
+            )
+        if approved_amount > int(dispute["claimed_amount_toman"]):
+            raise ValueError("Resolution cannot exceed the claimed amount.")
+
+        # G-429/G-430: state-aware settlement read under row lock.
+        cur.execute(
+            """
+            SELECT id, status FROM settlements
+            WHERE order_id = %s
+            ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE;
+            """,
+            (dispute["order_id"],),
+        )
+        settlement = cur.fetchone()
+        if not settlement:
+            raise ValueError("No settlement exists for the disputed order.")
+        if settlement["status"] == "CLOSED":
+            raise ValueError(
+                "Cannot resolve a dispute against a closed settlement."
+            )
+        if settlement["status"] != "DISPUTED":
+            raise ValueError(
+                f"Settlement is '{settlement['status']}'; expected the DISPUTED "
+                "state for dispute resolution."
+            )
+
+        if outcome == "ADJUSTED_SHORTAGE" and approved_amount > 0:
+            cur.execute(
+                """
+                INSERT INTO settlement_adjustments (
+                    id, settlement_id, dispute_id, adjustment_type,
+                    amount_toman, reason, applied_by_user_id
+                ) VALUES (%s, %s, %s, 'SHORTAGE_DEDUCTION', %s, %s, %s);
+                """,
+                (
+                    str(uuid.uuid4()), settlement["id"], dispute_id,
+                    approved_amount, reason, actor_user_id,
+                ),
+            )
+            cur.execute(
+                """
+                UPDATE settlements
+                SET adjustment_amount_toman = COALESCE(adjustment_amount_toman, 0) + %s,
+                    net_vendor_amount_toman = gross_amount_toman
+                        - COALESCE(commission_amount_toman, 0)
+                        - (COALESCE(adjustment_amount_toman, 0) + %s)
+                WHERE id = %s;
+                """,
+                (approved_amount, approved_amount, settlement["id"]),
+            )
+
+        cur.execute(
+            """
+            UPDATE disputes
+            SET dispute_status = 'RESOLVED', resolution_outcome = %s,
+                approved_amount_toman = %s, resolved_at = now()
+            WHERE id = %s;
+            """,
+            (outcome, approved_amount, dispute_id),
+        )
+        cur.execute(
+            "UPDATE orders SET dispute_status = 'RESOLVED', updated_at = now() "
+            "WHERE id = %s;",
+            (dispute["order_id"],),
+        )
+        DisputeService._record_dispute_event(
+            cur, dispute_id=dispute_id, from_status="INVESTIGATING",
+            to_status="RESOLVED", actor_user_id=actor_user_id,
+            organization_id=organization_id, reason=reason,
+            event_data={
+                "outcome": outcome,
+                "approved_amount_toman": approved_amount,
+            },
+        )
+
+        # Templated canonical event to both parties (retailer + vendor orgs).
+        resolved_payload = Json({
+            "dispute_id": dispute_id,
+            "order_id": dispute["order_id"],
+            "resolution_outcome": outcome,
+            "approved_amount_toman": approved_amount,
+        })
+        for party in ("retailer", "vendor"):
+            org_sql = (
+                "SELECT organization_id FROM retailers WHERE id = "
+                "(SELECT retailer_id FROM disputes WHERE id = %(did)s)"
+                if party == "retailer"
+                else "SELECT organization_id FROM vendors WHERE id = "
+                     "(SELECT vendor_id FROM disputes WHERE id = %(did)s)"
+            )
+            cur.execute(
+                """
+                INSERT INTO outbox_events (
+                    id, event_id, event_name, aggregate_type, aggregate_id,
+                    payload, status, target_user_id, target_organization_id,
+                    dedupe_key, channel_hint, created_at
+                )
+                SELECT gen_random_uuid(), gen_random_uuid(), 'DISPUTE_RESOLVED',
+                       'DISPUTE', %(dispute_id)s, %(payload)s::jsonb, 'PENDING',
+                       om.user_id, om.organization_id,
+                       %(dedupe)s || ':' || om.user_id::text, 'INBOX', now()
+                FROM organization_memberships om
+                WHERE om.organization_id = (""" + org_sql + """)
+                  AND om.status = 'ACTIVE'
+                ON CONFLICT (event_name, dedupe_key) WHERE dedupe_key IS NOT NULL
+                DO NOTHING;
+                """,
+                {
+                    "did": dispute_id,
+                    "dispute_id": dispute_id,
+                    "payload": resolved_payload,
+                    "dedupe": f"DISPUTE_RESOLVED:{dispute_id}",
+                },
+            )
+
+        return {
+            "id": str(dispute["id"]),
+            "dispute_id": str(dispute["id"]),
+            "dispute_status": "RESOLVED",
+            "resolution_outcome": outcome,
+            "approved_amount_toman": approved_amount,
+            "settlement_status": "DISPUTED",
+            "idempotent_replay": False,
+        }
+
+    @staticmethod
+    def close_canonical(cur, *, dispute_id, actor_user_id, organization_id,
+                        reason=None):
+        cur.execute(
+            """
+            SELECT id, order_id, dispute_status, approved_amount_toman
+            FROM disputes
+            WHERE id = %s
+            FOR UPDATE;
+            """,
+            (dispute_id,),
+        )
+        dispute = cur.fetchone()
+        if not dispute:
+            raise KeyError("Dispute not found.")
+        if dispute["dispute_status"] == "CLOSED":
+            return DisputeService._dispute_replay_payload(cur, dispute_id)
+        if dispute["dispute_status"] != "RESOLVED":
+            raise ValueError("Only a RESOLVED dispute can be closed.")
+        if int(dispute["approved_amount_toman"] or 0) > 0:
+            # Same invariant as the migration-062 boundary, surfaced as a 422
+            # instead of a DB error: the award must be fully refunded first.
+            cur.execute(
+                """
+                SELECT COALESCE(SUM(amount_toman), 0) AS refunded
+                FROM refunds
+                WHERE dispute_id = %s AND status = 'COMPLETED';
+                """,
+                (dispute_id,),
+            )
+            refunded = int(cur.fetchone()["refunded"])
+            if refunded != int(dispute["approved_amount_toman"]):
+                raise ValueError(
+                    "Dispute close requires completed refunds totalling the "
+                    "approved award."
+                )
+        cur.execute(
+            "UPDATE disputes SET dispute_status = 'CLOSED', closed_at = now() "
+            "WHERE id = %s;",
+            (dispute_id,),
+        )
+        cur.execute(
+            "UPDATE orders SET dispute_status = 'CLOSED', updated_at = now() "
+            "WHERE id = %s;",
+            (dispute["order_id"],),
+        )
+        DisputeService._record_dispute_event(
+            cur, dispute_id=dispute_id, from_status="RESOLVED",
+            to_status="CLOSED", actor_user_id=actor_user_id,
+            organization_id=organization_id, reason=reason,
+        )
+        return {
+            "id": str(dispute["id"]),
+            "dispute_id": str(dispute["id"]),
+            "dispute_status": "CLOSED",
+            "idempotent_replay": False,
+        }
 
 
 class NotificationService:
+    """Deprecated facade; delegates to the canonical PostgreSQL outbox worker."""
+
     @staticmethod
-    def dispatch_pending_outbox(cur, target_user_id: str = None, target_org_id: str = None) -> int:
-        cur.execute("""
-            SELECT * FROM outbox_events WHERE status = 'PENDING' FOR UPDATE SKIP LOCKED;
-        """, ())
-        events = cur.fetchall()
-        count = 0
-        for ev in events:
-            notif_id = str(uuid.uuid4())
-            if target_user_id and target_org_id:
-                u_id, o_id = target_user_id, target_org_id
-            else:
-                cur.execute("""
-                    SELECT user_id, organization_id FROM organization_memberships 
-                    WHERE role = 'VENDOR_OWNER' AND status = 'ACTIVE' LIMIT 1;
-                """)
-                recip = cur.fetchone()
-                if recip:
-                    u_id, o_id = recip["user_id"], recip["organization_id"]
-                else:
-                    cur.execute("SELECT id FROM users LIMIT 1;")
-                    u_id = cur.fetchone()["id"]
-                    o_id = None
-
-            cur.execute("""
-                INSERT INTO notifications (id, user_id, organization_id, event_name, title, body, priority)
-                VALUES (%s, %s, %s, %s, 'اعلام مغایرت سفارش', 'مغایرت کالای آسیب‌دیده ثبت شد.', 'CRITICAL')
-                RETURNING id, user_id, organization_id;
-            """, (notif_id, u_id, o_id, ev["event_name"]))
-            n_row = cur.fetchone()
-
-            if n_row and n_row["organization_id"]:
-                cur.execute("""
-                    INSERT INTO user_inbox_items (id, user_id, organization_id, notification_id, title, body, category, deep_link, is_read)
-                    VALUES (%s, %s, %s, %s, 'اعلام مغایرت سفارش', 'مغایرت ثبت شد.', 'DISPUTES', '/disputes', FALSE);
-                """, (str(uuid.uuid4()), n_row["user_id"], n_row["organization_id"], n_row["id"]))
-
-            cur.execute("""
-                UPDATE outbox_events SET status = 'PUBLISHED', published_at = now() WHERE id = %s;
-            """, (ev["id"],))
-            count += 1
-        return count
+    def dispatch_pending_outbox(
+        cur,
+        target_user_id: str = None,
+        target_org_id: str = None,
+        limit: int = 100,
+    ) -> int:
+        if target_user_id or target_org_id:
+            raise PermissionError(
+                "Legacy targeted notification dispatch is disabled; "
+                "outbox events must contain explicit canonical routing."
+            )
+        if limit < 1 or limit > 10000:
+            raise ValueError("Notification dispatch limit must be between 1 and 10000.")
+        return CanonicalIntegrationWorker.process_pending(cur, limit=limit)
 
 
 class SupportService:
@@ -723,7 +1401,24 @@ class DailyInventoryService:
                 RETURNING *;
             """, (vendor_id, confirmation_date))
             row = cur.fetchone()
-        return row
+
+        result = dict(row)
+        cur.execute("""
+            SELECT vp.id AS vendor_product_id,
+                   p.id AS product_id,
+                   p.canonical_name_fa AS product_name,
+                   vi.physical_quantity AS expected_quantity,
+                   COALESCE(dci.declared_quantity, vi.physical_quantity, 0) AS confirmed_quantity
+            FROM vendor_products vp
+            JOIN products p ON p.id = vp.product_id
+            LEFT JOIN vendor_inventory vi ON vi.vendor_product_id = vp.id
+            LEFT JOIN daily_inventory_confirmation_items dci
+              ON dci.confirmation_id = %s AND dci.vendor_product_id = vp.id
+            WHERE vp.vendor_id = %s AND vp.is_active = TRUE
+            ORDER BY p.canonical_name_fa, vp.id
+        """, (result["id"], vendor_id))
+        result["lines"] = [dict(line, id=str(line["vendor_product_id"])) for line in cur.fetchall()]
+        return result
 
     @staticmethod
     def confirm_no_changes(cur, vendor_id: str, actor_user_id: str, confirmation_date: str, source: str = 'WEB_PANEL') -> dict:
@@ -965,11 +1660,6 @@ class FeedbackService:
         ))
         fb = cur.fetchone()
 
-        cur.execute("""
-            INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status)
-            VALUES (%s, %s, 'FEEDBACK_SUBMITTED', 'FEEDBACK', %s, %s, 'PENDING');
-        """, (str(uuid.uuid4()), f"fb_ev_{f_id[:8]}", f_id, Json({"feedback_id": f_id, "type": feedback_type, "priority": priority})))
-
         return fb
 
     @staticmethod
@@ -1034,104 +1724,49 @@ class FeedbackService:
 
 
 class RevalidationCheckoutService:
+    """Compatibility facade for the canonical transactional checkout service.
+
+    The implementation lives in scripts.revalidation_checkout. This facade keeps
+    legacy imports stable while preventing a stale duplicate implementation from
+    diverging from the canonical checkout contract.
     """
-    Checkout with Pre-Commit Verification
-    Guarantees:
-    - Allocation is never accepted blindly
-    - Price freshness check against effective vendor_prices
-    - Atomic stock reservation with row-level locks
-    - Vendor MOV/MOQ invariant re-check
-    """
+
     @staticmethod
-    def revalidate_and_checkout(cur, basket_id: str, plan_id: str, retailer_id: str,
-                                idempotency_key: str, address_snapshot: dict,
-                                vendor_allocations: list) -> dict:
-        cur.execute("""
-            SELECT b.version, p.basket_version, p.expires_at, p.status
-            FROM baskets b
-            JOIN allocation_plans p ON p.id = %s
-            WHERE b.id = %s;
-        """, (plan_id, basket_id))
-        chk = cur.fetchone()
-        if not chk:
-            raise ValueError("Basket or Allocation Plan not found.")
-        if chk["version"] != chk["basket_version"]:
-            raise ValueError(f"Stale basket checkout: basket v{chk['version']} != plan v{chk['basket_version']}")
-        if chk["expires_at"] < datetime.now(timezone.utc):
-            raise ValueError("Allocation plan has expired (15-minute TTL exceeded).")
+    def revalidate_and_checkout(
+        cur,
+        basket_id: str,
+        plan_id: str,
+        retailer_id: str,
+        idempotency_key: str,
+        address_snapshot: dict,
+        vendor_allocations: list,
+        request_fingerprint: str | None = None,
+    ) -> dict:
+        if request_fingerprint is None:
+            request_fingerprint = hashlib.sha256(
+                json.dumps(
+                    {
+                        "basket_id": basket_id,
+                        "plan_id": plan_id,
+                        "retailer_id": retailer_id,
+                        "vendor_allocations": vendor_allocations,
+                        "address_snapshot": address_snapshot,
+                    },
+                    sort_keys=True,
+                    default=str,
+                ).encode("utf-8")
+            ).hexdigest()
 
-        for alloc in vendor_allocations:
-            vp_id = alloc["vendor_product_id"]
-            quoted_price = alloc["unit_price_toman"]
-            req_qty = alloc["quantity"]
-
-            cur.execute("""
-                SELECT price_toman FROM vendor_prices
-                WHERE vendor_product_id = %s AND is_current = TRUE;
-            """, (vp_id,))
-            price_row = cur.fetchone()
-            if not price_row or price_row["price_toman"] != quoted_price:
-                actual = price_row["price_toman"] if price_row else "N/A"
-                raise ValueError(f"Price freshness failure for SKU {vp_id}: Quoted {quoted_price} vs Live {actual}")
-
-            cur.execute("""
-                SELECT physical_quantity, reserved_quantity FROM vendor_inventory
-                WHERE vendor_product_id = %s
-                FOR UPDATE;
-            """, (vp_id,))
-            inv_row = cur.fetchone()
-            if not inv_row:
-                raise ValueError(f"No inventory record found for SKU {vp_id}")
-            avail = inv_row["physical_quantity"] - inv_row["reserved_quantity"]
-            if avail < req_qty:
-                raise ValueError(f"Insufficient stock for SKU {vp_id}: Available {avail} < Requested {req_qty}")
-
-        total_toman = sum(v["amount_toman"] for v in vendor_allocations)
-        og_id = str(uuid.uuid4())
-        cur.execute("""
-            INSERT INTO order_groups (
-                id, basket_id, allocation_plan_id, retailer_id, checkout_idempotency_key, 
-                total_amount_toman, order_count, group_status
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, 'ACTIVE'
-            ) RETURNING id;
-        """, (og_id, basket_id, plan_id, retailer_id, idempotency_key, total_toman, len(vendor_allocations)))
-
-        child_orders = []
-        for alloc in vendor_allocations:
-            ord_id = str(uuid.uuid4())
-            res_id = str(uuid.uuid4())
-            ord_num = f"ORD-{uuid.uuid4().hex[:8].upper()}"
-
-            cur.execute("""
-                INSERT INTO orders (
-                    id, order_group_id, retailer_id, vendor_id, order_number, 
-                    total_amount_toman, order_status, dispute_status, delivery_address_snapshot, correlation_id
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, 'SUBMITTED', 'NONE', %s, %s
-                ) RETURNING *;
-            """, (
-                ord_id, og_id, retailer_id, alloc["vendor_id"], ord_num,
-                alloc["amount_toman"], Json(address_snapshot), f"corr-{og_id[:8]}"
-            ))
-            child_orders.append(cur.fetchone())
-
-            cur.execute("""
-                INSERT INTO inventory_reservations (
-                    id, vendor_product_id, order_id, quantity, status, idempotency_key, expires_at
-                ) VALUES (
-                    %s, %s, %s, %s, 'ACTIVE', %s, now() + interval '15 minutes'
-                );
-            """, (res_id, alloc["vendor_product_id"], ord_id, alloc["quantity"], f"res-{idempotency_key}-{alloc['vendor_id']}"))
-
-            cur.execute("""
-                UPDATE vendor_inventory 
-                SET reserved_quantity = reserved_quantity + %s
-                WHERE vendor_product_id = %s;
-            """, (alloc["quantity"], alloc["vendor_product_id"]))
-
-        return {"order_group_id": og_id, "orders": child_orders}
-
+        return CanonicalRevalidationCheckoutService.revalidate_and_checkout(
+            cur=cur,
+            basket_id=basket_id,
+            plan_id=plan_id,
+            retailer_id=retailer_id,
+            idempotency_key=idempotency_key,
+            request_fingerprint=request_fingerprint,
+            address_snapshot=address_snapshot,
+            vendor_allocations=vendor_allocations,
+        )
 
 class ReliabilityLedgerService:
     """

@@ -30,7 +30,7 @@ HTTP may also set `X-Correlation-ID`.
 
 **Pagination (where used):** follow response schema returned by the specific route (orders list uses `{data,total,offset,limit}` style per backend tests/queries — confirm per endpoint when wiring; do not assume beyond this note).
 
-**Auth:** `Authorization: Bearer <access_token>`; 15-min access / 30-day refresh (D-018). Refresh-token rotation remains OPEN; current implementation reuses the stored refresh-token hash.
+**Auth:** `Authorization: Bearer <access_token>`; 15-min access / 30-day refresh (D-018). Current implementation rotates the persisted refresh-token hash on every successful refresh and returns the replacement token. The product/security policy remains governed by the unresolved D-018 downstream decision; the source behavior is documented here as implementation state, not a new policy decision.
 
 ---
 
@@ -54,7 +54,7 @@ HTTP may also set `X-Correlation-ID`.
 |--------|------|-------|
 | POST | `/auth/request-otp` | OTP 4-digit D-018; returns otp_request_id, TTL |
 | POST | `/auth/verify-otp` | returns tokens + profile context |
-| POST | `/auth/refresh` | issues a new access token; **refresh-token rotation is NOT implemented** (D-018 policy remains OPEN) |
+| POST | `/auth/refresh` | issues a new access token and currently rotates the persisted refresh token; replay of the previously presented token fails. **D-018 policy wording remains OPEN** |
 | POST | `/auth/switch-organization` | |
 | DELETE | `/auth/sessions/current` | |
 | DELETE | `/auth/sessions/{session_id}` | |
@@ -69,6 +69,13 @@ HTTP may also set `X-Correlation-ID`.
 | GET | `/profile/context` |
 | PUT | `/profile` |
 | GET/PUT | `/membership/profile` (membership_router prefix `/membership`) |
+
+### 3.2.1 Privacy — `privacy.py` (`/privacy`)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/privacy/export` | Authenticated user-owned data snapshot; SHA-256 persisted with request metadata; export payload is not persisted as a duplicate PII artifact |
+| POST | `/privacy/deletion` | Authenticated account de-identification: revoke sessions/devices/consents and clear direct profile PII while preserving business/audit history |
 
 ### 3.3 Baskets — `baskets.py` (`/baskets`)
 
@@ -88,6 +95,15 @@ HTTP may also set `X-Correlation-ID`.
 | GET | `/catalog/products/{product_id}/vendors` |
 | GET | `/catalog/products/{product_id}/compare-prices` |
 | GET | `/catalog/products/{product_id}/compare-inventory` |
+
+### 3.4.1 Canonical public catalog routes
+
+| Method | Path |
+|--------|------|
+| GET | `/products/search` |
+| POST | `/products/match-barcode` |
+| POST | `/product-candidates` |
+| GET | `/categories` |
 
 ### 3.5 Unified search — `catalog_search.py` (`/search`)
 
@@ -154,7 +170,9 @@ HTTP may also set `X-Correlation-ID`.
 | POST/GET | `/support/cases` |
 | GET | `/support/cases/{case_id}` |
 | POST | `/support/cases/{case_id}/messages` |
-| PATCH | `/support/cases/{case_id}` | status transition |
+| POST | `/support/cases/{case_id}/assign` | canonical assignment |
+| PATCH | `/support/cases/{case_id}/status` | canonical status transition |
+| PATCH | `/support/cases/{case_id}` | legacy-compatible status transition alias |
 
 ### 3.11 Finance — `finance.py`
 
@@ -180,6 +198,10 @@ HTTP may also set `X-Correlation-ID`.
 |--------|------|
 | GET | `/admin/audit-logs` |
 | GET | `/admin/exceptions/dashboard` |
+| POST | `/admin/broadcasts` |
+| POST | `/admin/broadcasts/{broadcast_id}/dispatch` |
+| POST | `/admin/categories` |
+| PATCH | `/admin/categories/{category_id}` |
 
 ### 3.14 Referrals — `referrals.py`
 
@@ -193,10 +215,10 @@ HTTP may also set `X-Correlation-ID`.
 
 | Method | Path |
 |--------|------|
-| GET | `/notifications` | inbox list (confirm field names vs `read`/`is_read` when wiring) |
+| GET | `/notifications` | notification projection including read/deep-link state |
 | GET/PUT | `/notifications/preferences` |
 
-**Note:** Contract inventory lists `/inbox/items*` paths — **CONFLICT** with implemented `/notifications*`; prefer implemented path for REAL calls; contract inbox paths → see GAPS if screens require exact contract path.
+**Note:** Canonical inbox routes `/inbox/items*` are implemented alongside `/notifications*`; both are real HTTP surfaces and are covered by notification transport tests.
 
 ### 3.16 Field — `field.py` (`/field`)
 
@@ -213,7 +235,16 @@ HTTP may also set `X-Correlation-ID`.
 | GET | `/storefront/vendors/{vendor_id}` |
 | GET | `/storefront/vendors/{vendor_id}/products` |
 
-### 3.18 Operational
+### 3.19 Media — `media.py` (`/media`)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/media/presigned-url` | Single-object quarantine upload; confirm validates content before READY |
+| POST | `/media/confirm-upload` | Magic-byte + decode + WebP + metadata stripping + trusted derivative processing |
+| POST | `/media/resumable/init` | S3-compatible multipart upload session with presigned part URLs |
+| POST | `/media/resumable/complete` | Completes multipart session; caller then uses canonical confirm/processing contract |
+
+### 3.20 Operational
 
 | Method | Path |
 |--------|------|
@@ -222,21 +253,18 @@ HTTP may also set `X-Correlation-ID`.
 
 ---
 
-## 4. CONTRACT-only (from 50-endpoint inventory — mock with same contract)
+## 4. Contract reconciliation
 
-| # | Endpoint | Use |
-|---|----------|-----|
-| 1 | GET `/api/v1/products/search` | Catalog — **path differs** from REAL `/catalog/search` + `/search` → prefer REAL; products/search = GAP-CONFLICT in gaps file |
-| 2 | POST `/api/v1/products/match-barcode` | Barcode (D-028) |
-| 3 | POST `/api/v1/product-candidates` | Unknown barcode candidate |
-| 4 | POST `/api/v1/vendors/inventory/continuous-scan` | VD-16 |
-| 5 | POST `/api/v1/vendors/inventory/publish` | VD-01 publish |
-| 17–20 | payments/disputes variants | covered partially by REAL order payment/dispute routes — map per screen |
-| 36–37 | POST `/api/v1/admin/broadcasts[/{id}/dispatch]` | Ops broadcasts |
-| 40–42 | exceptions dashboard / sla-overrides / audit-logs | audit+exceptions = REAL under `/admin/*`; sla-overrides = CONTRACT |
-| 43–45 | categories admin CRUD | CONTRACT |
+The historical contract-only entries from the original 50-endpoint inventory have been promoted to canonical HTTP implementations on the remediation branch:
 
-Any screen needing a `CONTRACT` row before backend HTTP exists → **MOCK adapter** (same method/path/envelope), tagged `MOCK` in use-notes; no business rules in mock.
+| Former contract-only area | Current canonical HTTP | Source |
+|---|---|---|
+| Vendor continuous inventory | POST `/api/v1/vendors/inventory/continuous-scan`, POST `/api/v1/vendors/inventory/publish` | `scripts/api/routes/vendor_inventory.py` |
+| Payment/dispute verification + resolution | canonical payment verification variants and dispute resolution | `scripts/api/routes/finance.py`, `scripts/api/routes/disputes.py` |
+| Admin SLA override | POST `/api/v1/admin/sla-overrides` | `scripts/api/routes/management.py` |
+| Catalog candidate review | GET/PATCH `/api/v1/admin/product-candidates*` | `scripts/api/routes/management.py` |
+
+No current MVP screen should introduce a MOCK adapter merely because one of these entries was contract-only in the historical inventory.
 
 ---
 
@@ -258,20 +286,22 @@ feedback_*, support_* (HTTP now REAL for cases), referral (HTTP REAL), return_re
 | Order list/detail/group/timeline | orders GET/* | — |
 | Vendor accept/reject/partial | orders accept/reject/partial | — |
 | Fulfillment dispatch/POD | orders preparing/ready/dispatch/deliver | handoff UX (D-023) |
-| Returns/disputes | orders returns/disputes | — |
+| Returns/disputes | orders returns/disputes + `GET /ops/returns` + `PATCH /disputes/{id}/resolve` | canonical dispute resolution REAL |
 | Support | support/cases/* | — |
 | Notifications | notifications/* | inbox path conflict if contract-literal |
 | Preferences | notifications/preferences | — |
-| Vendor catalog/price/inventory | catalog/vendors/*, inventory/daily/* | continuous-scan/publish CONTRACT |
+| Barcode matching | `GET /catalog/barcode/lookup`, `POST /products/match-barcode` | exact canonical identifier match; unknown barcode -> PENDING_REVIEW candidate/quarantined vendor product |
+| Vendor catalog/price/inventory | catalog/vendors/*, inventory/daily/*, `/vendors/inventory/continuous-scan`, `/vendors/inventory/publish` | continuous scan + publish REAL |
 | Invoices/settlements | finance routes | — |
 | Reconciliation | finance/reconciliation | — |
-| Referrals | referrals/* | — |
+| Referrals | referrals/* | reward balance remains out of MVP by D-016 |
 | Field tasks | field/tasks* | — |
-| Admin audit/exceptions | admin/* | broadcasts, users/orgs, categories admin |
-| Pilot analytics O-09 | **GAP** (no analytics HTTP) | MOCK read-model or GAP |
-| Vendor customers V-09 | **GAP/CONTRACT** (no list API found) | GAP → mock list from orders if needed |
-| Staff/access V-11 | **GAP** | GAP |
-| Permission mgmt | **GAP** | GAP |
+| Admin audit/exceptions | admin/* | users/orgs, SLA overrides, broadcasts, categories, audit/exceptions are REAL |
+| Pilot analytics O-09 | `GET /ops/analytics`, `GET /ops/analytics/weekly` | KPI service / live SQL |
+| Vendor customers V-09 | `GET /vendors/customers?query=&offset=&limit=` | tenant-scoped customers derived from vendor orders |
+| Staff/access V-11 | `GET/POST/PATCH /vendors/staff*` | vendor-owner managed membership lifecycle |
+| Permission mgmt | `GET /ops/permissions` | canonical RBAC permission catalog |
+| Global returns | `GET /ops/returns` | ops workbench over all returns |
 
 ---
 

@@ -29,7 +29,7 @@ def catalog_search(
 
 @router.get("/categories")
 def catalog_categories(boundary=Depends(get_application_boundary)):
-    return success_payload(boundary.catalog_categories())
+    return success_payload(boundary.catalog_categories_public())
 
 
 @router.get("/products/{product_id}")

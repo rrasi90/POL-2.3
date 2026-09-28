@@ -9,6 +9,7 @@ import {
 export type ButtonVariant =
   | "primary"
   | "secondary"
+  | "outline"
   | "ghost"
   | "danger"
   | "success";
@@ -24,15 +25,17 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantCls: Record<ButtonVariant, string> = {
   primary:
-    "bg-[var(--pol-light-brand-primary)] text-white hover:bg-[var(--pol-light-brand-hover)] active:bg-[var(--pol-light-brand-active)] dark:bg-[var(--pol-night-brand-primary)] dark:text-[var(--pol-night-text-primary)] dark:hover:bg-[var(--pol-night-brand-hover)]",
+    "bg-[var(--pol-light-brand-primary)] text-white shadow-xs hover:bg-[var(--pol-light-brand-hover)] active:bg-[var(--pol-light-brand-active)] border border-transparent",
   secondary:
-    "bg-[var(--pol-light-surface-default)] text-[var(--pol-light-text-primary)] border border-[var(--pol-light-border-strong)] hover:bg-[var(--pol-light-surface-subtle)]",
+    "bg-[var(--pol-light-surface-default)] text-[var(--pol-light-text-primary)] border border-[var(--pol-light-border-strong)] shadow-xs hover:bg-[var(--pol-light-surface-subtle)] hover:border-[var(--pol-light-border-strong)] active:bg-[var(--pol-light-surface-subtle)]",
+  outline:
+    "bg-transparent text-[var(--pol-light-brand-primary)] border border-[var(--pol-light-brand-primary)] hover:bg-[var(--pol-light-brand-primary)]/10 active:bg-[var(--pol-light-brand-primary)]/20",
   ghost:
-    "bg-transparent text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)] hover:text-[var(--pol-light-text-primary)]",
+    "bg-transparent text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)] hover:text-[var(--pol-light-text-primary)] border border-transparent",
   danger:
-    "bg-[var(--pol-light-semantic-danger)] text-white hover:opacity-90",
+    "bg-[var(--pol-light-semantic-danger)] text-white shadow-xs hover:opacity-90 active:opacity-100 border border-transparent",
   success:
-    "bg-[var(--pol-light-semantic-success)] text-white hover:opacity-90",
+    "bg-[var(--pol-light-semantic-success)] text-white shadow-xs hover:opacity-90 active:opacity-100 border border-transparent",
 };
 
 const sizeCls: Record<ButtonSize, string> = {
@@ -68,10 +71,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       disabled={isDisabled}
       aria-busy={loading || undefined}
       className={[
-        "inline-flex items-center justify-center gap-2 rounded-[8px] font-medium",
-        "transition-colors duration-[160ms] ease-out",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--pol-light-focus-ring)]",
-        "disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center gap-2 rounded-[8px] font-medium cursor-pointer",
+        "transition-all duration-[160ms] ease-out select-none active:scale-[0.98]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pol-light-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--pol-light-surface-default)]",
+        "disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed",
         sizeCls[size],
         variantCls[variant],
         block ? "w-full" : "",
@@ -81,7 +84,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     >
       {loading ? (
         <span
-          aria-hidden
+          aria-hidden="true"
           className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
         />
       ) : null}

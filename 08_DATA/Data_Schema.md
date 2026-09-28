@@ -273,7 +273,9 @@ CREATE TABLE IF NOT EXISTS media_assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     storage_provider VARCHAR(30) NOT NULL DEFAULT 'S3_COMPATIBLE', -- MINIO / ARVAN_S3
     storage_bucket VARCHAR(64) NOT NULL DEFAULT 'pol-media',
-    storage_key VARCHAR(255) UNIQUE NOT NULL, -- products/{product_id}/canonical/{uuid}.webp
+    storage_key VARCHAR(255) UNIQUE NOT NULL, -- legacy runtime alias; mirrors object_key
+    bucket_name VARCHAR(100) NOT NULL DEFAULT 'pol-media', -- canonical media-model alias
+    object_key VARCHAR(500) UNIQUE NOT NULL, -- canonical media-model object key
     mime_type VARCHAR(50) NOT NULL DEFAULT 'image/webp',
     file_size_bytes INTEGER NOT NULL,
     width INTEGER,
@@ -292,7 +294,13 @@ CREATE TABLE IF NOT EXISTS media_assets (
 CREATE TABLE IF NOT EXISTS product_media (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    media_asset_id UUID NOT NULL REFERENCES media_assets(id) ON DELETE CASCADE,
+    media_asset_id UUID NOT NULL REFERENCES media_assets(id) ON DELETE RESTRICT,
+    media_type VARCHAR(30) NOT NULL DEFAULT 'PRIMARY_IMAGE',
+    source_provenance VARCHAR(50) NOT NULL DEFAULT 'POL_OWNED',
+    approval_status VARCHAR(30) NOT NULL DEFAULT 'PENDING'
+        CHECK (approval_status IN ('PENDING', 'APPROVED', 'REJECTED', 'PRIVATE_REFERENCE')),
+    approved_by_user_id UUID REFERENCES users(id),
+    approved_at TIMESTAMPTZ,
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     display_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -703,7 +711,8 @@ CREATE TABLE IF NOT EXISTS refunds (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     payment_id UUID REFERENCES payments(id) ON DELETE SET NULL,
-    dispute_id UUID REFERENCES disputes(id) ON DELETE SET NULL, -- کلید خارجی صریح به جدول اختلافات
+    dispute_id UUID REFERENCES disputes(id) ON DELETE SET NULL,
+    return_id UUID REFERENCES returns(id) ON DELETE SET NULL,
     retailer_id UUID NOT NULL REFERENCES retailers(id),
     amount_toman BIGINT NOT NULL CHECK (amount_toman > 0),
     refund_method VARCHAR(30) NOT NULL DEFAULT 'VENDOR_CASH_DIRECT' CHECK (
@@ -714,18 +723,47 @@ CREATE TABLE IF NOT EXISTS refunds (
         status IN ('PENDING', 'APPROVED', 'COMPLETED', 'REJECTED')
     ),
     approved_by_user_id UUID REFERENCES users(id),
+    created_by_user_id UUID REFERENCES users(id),
+    completed_by_user_id UUID REFERENCES users(id),
+    approved_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ,
+    idempotency_key VARCHAR(128),
+    idempotency_fingerprint VARCHAR(64),
+    source_type VARCHAR(30) NOT NULL DEFAULT 'DISPUTE',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_refund_per_dispute ON refunds(dispute_id) WHERE dispute_id IS NOT NULL AND status IN ('PENDING', 'APPROVED', 'COMPLETED');
-```
+CREATE UNIQUE INDEX IF NOT EXISTS uq_refund_per_dispute_v063
+    ON refunds(dispute_id)
+    WHERE dispute_id IS NOT NULL AND status IN ('PENDING', 'APPROVED', 'COMPLETED');
 
----
+CREATE UNIQUE INDEX IF NOT EXISTS uq_refund_per_return_v063
+    ON refunds(return_id)
+    WHERE return_id IS NOT NULL AND status IN ('PENDING', 'APPROVED', 'COMPLETED');
 
-## ۸. اعتبار و لاگ تاریخی رتبه‌بندی بنکداران (`reputations`, `reputation_snapshots`)
+CREATE TABLE IF NOT EXISTS dispute_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dispute_id UUID NOT NULL REFERENCES disputes(id) ON DELETE CASCADE,
+    from_status VARCHAR(30),
+    to_status VARCHAR(30) NOT NULL,
+    actor_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    actor_organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL,
+    reason TEXT,
+    event_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-```sql
+CREATE TABLE IF NOT EXISTS dispute_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dispute_id UUID NOT NULL REFERENCES disputes(id) ON DELETE CASCADE,
+    order_item_id UUID NOT NULL REFERENCES order_items(id) ON DELETE RESTRICT,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    claimed_amount_toman BIGINT NOT NULL CHECK (claimed_amount_toman > 0),
+    reason_code VARCHAR(50) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT uq_dispute_item UNIQUE (dispute_id, order_item_id)
+);
+
 CREATE TABLE IF NOT EXISTS reputations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     vendor_id UUID UNIQUE NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
@@ -871,6 +909,8 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 );
 
 -- 5. OTP Challenges (Rate-Limiting & Brute Force Defense)
+-- Application contract: authentication OTPs are exactly 4 digits (D-018); non-auth
+-- purposes must be consumed by their dedicated domain flow, not auth verification.
 CREATE TABLE IF NOT EXISTS otp_challenges (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     phone_number VARCHAR(32) NOT NULL,
@@ -1031,6 +1071,13 @@ CREATE TABLE IF NOT EXISTS field_tasks (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Field-task lifecycle invariant (application/domain guard):
+-- ASSIGNED -> IN_PROGRESS | FAILED | CANCELLED
+-- IN_PROGRESS -> COMPLETED | FAILED | CANCELLED
+-- FAILED -> IN_PROGRESS | CANCELLED
+-- COMPLETED/CANCELLED are terminal for status transitions.
+-- Notes may still be edited by the assigned field operator.
+
 -- 16. Inventory Reservations (Explicit Lifecycle Tracking with Idempotency)
 CREATE TABLE IF NOT EXISTS inventory_reservations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1131,3 +1178,25 @@ CREATE INDEX IF NOT EXISTS idx_retailers_org ON retailers(organization_id);
 CREATE INDEX IF NOT EXISTS idx_vendors_org ON vendors(organization_id);
 
 ```
+
+
+## Remediation reconciliation — 2026-09-26
+
+### Media governance
+The runtime media contract now includes order/dispute/delivery/payment target binding, READY-state validation, uploader ownership checks, product-media approval metadata, resumable/presigned ingestion, and storage reconciliation. New READY media assets require a valid lowercase SHA-256 checksum; legacy rows may remain nullable for historical compatibility.
+
+### Financial evidence
+Payment evidence may select an explicit payment when an order has multiple payment records. Receipt images require READY media whose target is the same order or payment and whose uploader is the active actor.
+
+### Dispute / refund
+Dispute creation requires READY evidence, line-item claims, delivered-order admission and the active four-hour filing window. Resolution is canonicalized through INVESTIGATING → RESOLVED → CLOSED. Refunds are idempotent, payment-linked, source-scoped, auditable and evented; full payment refunds mark the payment REFUNDED, while partial refunds do not.
+
+### Delivery
+Dispatch no longer returns delivery OTP secrets. POD confirmation locks the active ARRIVED delivery, bounds OTP attempts, validates item-level delivered quantities, and applies DB-level quantity/OTP invariants.
+
+### Audit / history
+Administrative audit and inventory audit history are append-only. Inventory audit rows retain history even when a vendor-product parent is later deleted.
+
+### Notification retention
+Expired inbox cleanup has a daily scheduler entry point and a repository workflow. Deployment still requires the repository database secret to be configured.
+

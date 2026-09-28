@@ -3,20 +3,21 @@ import type { StatusTone } from "@pol/ui";
 export type LoadState = "loading" | "error" | "ready";
 
 export const cardCls = [
-  "rounded-[12px] border border-[var(--pol-light-border-subtle)]",
-  "bg-[var(--pol-light-surface-default)] p-4",
+  "rounded-xl border border-[var(--pol-light-border-subtle)]",
+  "bg-[var(--pol-light-surface-default)] p-5",
+  "shadow-[var(--pol-shadow-card)]",
 ].join(" ");
 
 export const linkCardCls = [
   cardCls,
-  "transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-subtle)]",
+  "transition-all duration-200 hover:shadow-[var(--pol-shadow-md)] hover:border-[var(--pol-light-border-strong)] hover:bg-[var(--pol-light-surface-subtle)]",
 ].join(" ");
 
 export const inputCls = [
-  "h-10 w-full rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3",
+  "h-10 w-full rounded-lg border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3",
   "text-[14px] leading-[22px] text-[var(--pol-light-text-primary)]",
   "placeholder:text-[var(--pol-light-text-muted)]",
-  "transition-[border-color,box-shadow] duration-[160ms]",
+  "transition-[border-color,box-shadow] duration-150",
   "focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)] focus:border-transparent",
   "disabled:opacity-50 disabled:bg-[var(--pol-light-surface-subtle)]",
 ].join(" ");
@@ -91,10 +92,10 @@ export function ageLabel(iso: unknown): string {
   if (Number.isNaN(d.getTime())) return "—";
   const minutes = Math.floor((Date.now() - d.getTime()) / 60000);
   if (minutes < 1) return "هم‌اکنون";
-  if (minutes < 60) return `${minutes.toLocaleString("fa-IR")} دقیقه`;
+  if (minutes < 60) return `${minutes.toLocaleString("fa-IR")} دقیقه پیش`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours.toLocaleString("fa-IR")} ساعت`;
-  return `${Math.floor(hours / 24).toLocaleString("fa-IR")} روز`;
+  if (hours < 24) return `${hours.toLocaleString("fa-IR")} ساعت پیش`;
+  return `${Math.floor(hours / 24).toLocaleString("fa-IR")} روز پیش`;
 }
 
 export function ageTone(iso: unknown, warnHours = 4, dangerHours = 12): StatusTone {

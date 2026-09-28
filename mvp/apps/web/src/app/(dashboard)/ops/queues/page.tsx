@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Button, EmptyState, ErrorState, Skeleton, StatusChip, type StatusTone } from "@pol/ui";
+import { Button, Card, EmptyState, ErrorState, Skeleton, StatusChip } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import {
   ageLabel,
   ageTone,
-  cardCls,
   disputeStatusLabel,
   disputeStatusTone,
   formatDateTime,
@@ -29,10 +28,10 @@ import {
 type TabId = "orders" | "support" | "recon" | "rma";
 
 const TABS: Array<{ id: TabId; label: string }> = [
-  { id: "orders", label: "سفارش‌ها" },
-  { id: "support", label: "پشتیبانی" },
-  { id: "recon", label: "تطبیق مالی" },
-  { id: "rma", label: "مرجوعی / RMA" },
+  { id: "orders", label: "سفارش‌های فعال" },
+  { id: "support", label: "تیکت‌های باز" },
+  { id: "recon", label: "مغایرت‌های مالی" },
+  { id: "rma", label: "مرجوعی و RMA" },
 ];
 
 const OPEN_ORDER_STATUSES = new Set([
@@ -130,10 +129,19 @@ export default function OpsQueuesPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری صف‌ها">
-        <Skeleton className="h-8 w-48" />
-        <div className={cardCls}>
-          <Skeleton lines={6} />
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری صف‌ها">
+        <Skeleton className="h-9 w-48" />
+        <div className="flex gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-8 w-28 rounded-full" />
+          ))}
+        </div>
+        <div className="grid gap-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i} className="p-4">
+              <Skeleton lines={3} />
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -150,44 +158,68 @@ export default function OpsQueuesPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          صفوف یکپارچه
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">O-02</span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>
-          به‌روزرسانی
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--pol-light-border-subtle)] pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[20px] md:text-[24px] font-bold text-[var(--pol-light-text-primary)]">
+              صفوف یکپارچه عملیات
+            </h1>
+            <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-bold text-[var(--pol-light-text-secondary)]">
+              O-02 · Multi-Queue
+            </span>
+          </div>
+          <p className="mt-1 text-[12px] text-[var(--pol-light-text-secondary)]">
+            مرکز تریاژ و ارجاع سریع سفارش‌های نیازمند اقدام، تیکت‌های پشتیبانی و مغایرت‌های مالی
+          </p>
+        </div>
+
+        <Button variant="secondary" size="sm" onClick={() => void load()}>
+          به‌روزرسانی داده‌ها
         </Button>
       </header>
 
+      {/* Queue Tabs */}
       <div role="tablist" aria-label="نوع صف" className="flex flex-wrap gap-2">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            type="button"
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
-            className={[
-              "rounded-[8px] px-3 py-1.5 text-[13px] transition-colors duration-[160ms]",
-              tab === t.id
-                ? "bg-[var(--pol-light-surface-subtle)] font-semibold text-[var(--pol-light-text-primary)]"
-                : "text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)]",
-            ].join(" ")}
-          >
-            {t.label}
-            <span className="ms-1.5 text-[11px] text-[var(--pol-light-text-muted)]">
-              {counts[t.id].toLocaleString("fa-IR")}
-            </span>
-          </button>
-        ))}
+        {TABS.map((t) => {
+          const isSelected = tab === t.id;
+          const count = counts[t.id];
+          return (
+            <button
+              key={t.id}
+              role="tab"
+              type="button"
+              aria-selected={isSelected}
+              onClick={() => setTab(t.id)}
+              className={[
+                "flex items-center gap-2 rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]",
+                isSelected
+                  ? "bg-[var(--pol-light-brand-primary)] text-white shadow-sm"
+                  : "border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)]",
+              ].join(" ")}
+            >
+              <span>{t.label}</span>
+              <span
+                className={[
+                  "rounded-full px-2 py-0.2 text-[11px] font-bold",
+                  isSelected
+                    ? "bg-white/25 text-white"
+                    : "bg-[var(--pol-light-surface-subtle)] text-[var(--pol-light-text-secondary)]",
+                ].join(" ")}
+              >
+                {count.toLocaleString("fa-IR")}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {tab === "orders" ? <OrdersTab rows={orders} /> : null}
-      {tab === "support" ? <SupportTab rows={support} /> : null}
-      {tab === "recon" ? <ReconTab rows={recon} /> : null}
-      {tab === "rma" ? <RmaTab rows={rmaOrders} /> : null}
+      {/* Tab Panels */}
+      {tab === "orders" && <OrdersTab rows={orders} />}
+      {tab === "support" && <SupportTab rows={support} />}
+      {tab === "recon" && <ReconTab rows={recon} />}
+      {tab === "rma" && <RmaTab rows={rmaOrders} />}
     </div>
   );
 }
@@ -195,43 +227,59 @@ export default function OpsQueuesPage() {
 function OrdersTab({ rows }: { rows: OrderRow[] }) {
   const open = rows.filter((o) => OPEN_ORDER_STATUSES.has(o.order_status ?? ""));
   const list = open.length > 0 ? open : rows;
+
   if (list.length === 0) {
     return (
       <EmptyState
-        title="سفارشی در صف نیست"
-        description="هنگامی که سفارش ثبت شود، اینجا نمایش داده می‌شود."
+        title="هیچ سفارشی در صف انتظار نیست"
+        description="سفارش‌های نیازمند اقدام در جریان توزیع اینجا قرار می‌گیرند."
       />
     );
   }
+
   return (
-    <ul role="list" className="space-y-2">
+    <div className="grid gap-2.5">
       {list.map((o) => (
-        <li key={str(o.id)} className={cardCls}>
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
-              {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
-            </StatusChip>
-            <StatusChip tone={disputeStatusTone[o.dispute_status ?? ""] ?? "neutral"}>
-              {disputeStatusLabel[o.dispute_status ?? ""] ?? o.dispute_status ?? "—"}
-            </StatusChip>
-            <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-              {ageLabel(o.created_at)}
-            </span>
+        <Card
+          key={str(o.id)}
+          className="p-3.5 transition-all duration-150 hover:border-[var(--pol-light-border-strong)]"
+        >
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
+                {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
+              </StatusChip>
+              {o.dispute_status && o.dispute_status !== "NONE" && (
+                <StatusChip tone={disputeStatusTone[o.dispute_status] ?? "danger"}>
+                  {disputeStatusLabel[o.dispute_status] ?? o.dispute_status}
+                </StatusChip>
+              )}
+              <span className="font-mono text-[13px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
+                {o.order_number ?? str(o.id)}
+              </span>
+              <span className="rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                اقدام: {nextActionForOrder(o.order_status, o.dispute_status)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 border-t border-[var(--pol-light-border-subtle)] pt-2 text-[12px] sm:border-0 sm:pt-0">
+              <span className="text-[var(--pol-light-text-muted)]">
+                {ageLabel(o.created_at)}
+              </span>
+              <span className="font-bold text-[var(--pol-light-text-primary)]">
+                {formatToman(o.total_amount_toman)}
+              </span>
+              <Link
+                href={`/ops/orders/${o.id}`}
+                className="font-semibold text-[var(--pol-light-brand-primary)] hover:underline"
+              >
+                بررسی سفارش ←
+              </Link>
+            </div>
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <span className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]" dir="ltr">
-              {o.order_number ?? str(o.id)}
-            </span>
-            <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
-              اقدام: {nextActionForOrder(o.order_status, o.dispute_status)}
-            </span>
-            <span className="ms-auto text-[13px] text-[var(--pol-light-text-primary)]">
-              {formatToman(o.total_amount_toman)}
-            </span>
-          </div>
-        </li>
+        </Card>
       ))}
-    </ul>
+    </div>
   );
 }
 
@@ -239,50 +287,73 @@ function SupportTab({ rows }: { rows: SupportRow[] }) {
   if (rows.length === 0) {
     return (
       <div className="space-y-3">
-        <EmptyState title="پرونده پشتیبانی نیست" description="پرونده‌های باز اینجا فهرست می‌شوند." />
-        <Link
-          href="/ops/support"
-          className="inline-block text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
-        >
-          رفتن به میز پشتیبانی
-        </Link>
+        <EmptyState
+          title="پرونده پشتیبانی بازی وجود ندارد"
+          description="تیکت‌های جدید کاربران در این صف قرار می‌گیرند."
+        />
+        <div className="text-center">
+          <Link
+            href="/ops/support"
+            className="text-[13px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+          >
+            مشاهده کل میز پشتیبانی ←
+          </Link>
+        </div>
       </div>
     );
   }
+
   return (
     <div className="space-y-3">
-      <ul role="list" className="space-y-2">
+      <div className="grid gap-2.5">
         {rows.map((s) => (
-          <li key={str(s.id)} className={cardCls}>
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusChip tone={supportStatusTone[s.status ?? ""] ?? "neutral"}>
-                {supportStatusLabel[s.status ?? ""] ?? s.status ?? "—"}
-              </StatusChip>
-              <StatusChip tone={supportPriorityTone[s.priority ?? ""] ?? "neutral"}>
-                {supportPriorityLabel[s.priority ?? ""] ?? s.priority ?? "—"}
-              </StatusChip>
-              <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                {s.case_type ?? "—"}
-              </span>
-              <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                {ageLabel(s.created_at)}
-              </span>
+          <Card
+            key={str(s.id)}
+            className="p-3.5 transition-all duration-150 hover:border-[var(--pol-light-border-strong)]"
+          >
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusChip tone={supportStatusTone[s.status ?? ""] ?? "neutral"}>
+                  {supportStatusLabel[s.status ?? ""] ?? s.status ?? "—"}
+                </StatusChip>
+                <StatusChip tone={supportPriorityTone[s.priority ?? ""] ?? "neutral"}>
+                  {supportPriorityLabel[s.priority ?? ""] ?? s.priority ?? "—"}
+                </StatusChip>
+                <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
+                  {s.case_type ?? "عمومی"}
+                </span>
+                <span className="font-semibold text-[13px] text-[var(--pol-light-text-primary)]">
+                  {s.subject ?? "بدون موضوع"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between gap-4 text-[12px]">
+                <span className="font-mono text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
+                  {s.case_number ?? str(s.id).slice(0, 8)}
+                </span>
+                <span className="text-[var(--pol-light-text-muted)]">
+                  {ageLabel(s.created_at)}
+                </span>
+                <Link
+                  href="/ops/support"
+                  className="font-semibold text-[var(--pol-light-brand-primary)] hover:underline"
+                >
+                  پاسخگویی ←
+                </Link>
+              </div>
             </div>
-            <p className="mt-2 text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-              {s.subject ?? "بدون موضوع"}
-            </p>
-            <p className="text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
-              {s.case_number ?? str(s.id)}
-            </p>
-          </li>
+          </Card>
         ))}
-      </ul>
-      <Link
-        href="/ops/support"
-        className="inline-block text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
-      >
-        باز کردن میز پشتیبانی
-      </Link>
+      </div>
+
+      <div className="text-end">
+        <Link
+          href="/ops/support"
+          className="text-[13px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+        >
+          باز کردن میز کامل پشتیبانی ←
+        </Link>
+      </div>
     </div>
   );
 }
@@ -292,44 +363,61 @@ function ReconTab({ rows }: { rows: ReconRow[] }) {
     return (
       <div className="space-y-3">
         <EmptyState
-          title="مورد تطبیقی نیست"
-          description="مغایرت‌های مالی پس از ثبت، اینجا فهرست می‌شوند."
+          title="مورد مغایرت مالی ثبت نشده است"
+          description="سیستم تطبیق تسویه‌ها به صورت مستمر بررسی مغایرت‌ها را انجام می‌دهد."
         />
-        <Link
-          href="/ops/reconciliation"
-          className="inline-block text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
-        >
-          رفتن به تطبیق مالی
-        </Link>
+        <div className="text-center">
+          <Link
+            href="/ops/reconciliation"
+            className="text-[13px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+          >
+            مشاهده کنسول تطبیق مالی ←
+          </Link>
+        </div>
       </div>
     );
   }
+
   return (
     <div className="space-y-3">
-      <ul role="list" className="space-y-2">
+      <div className="grid gap-2.5">
         {rows.map((r) => (
-          <li key={str(r.id)} className={cardCls}>
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusChip tone={reconStatusTone[r.status ?? ""] ?? "neutral"}>
-                {reconStatusLabel[r.status ?? ""] ?? r.status ?? "—"}
-              </StatusChip>
-              <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                انتظار: {formatToman(r.expected_amount_toman)} · مشاهده:{" "}
-                {formatToman(r.observed_amount_toman)}
-              </span>
-              <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                {ageLabel(r.opened_at)}
-              </span>
+          <Card key={str(r.id)} className="p-3.5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <StatusChip tone={reconStatusTone[r.status ?? ""] ?? "neutral"}>
+                  {reconStatusLabel[r.status ?? ""] ?? r.status ?? "—"}
+                </StatusChip>
+                <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
+                  انتظار: <strong>{formatToman(r.expected_amount_toman)}</strong> · مشاهده:{" "}
+                  <strong>{formatToman(r.observed_amount_toman)}</strong>
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between gap-4 text-[12px]">
+                <span className="text-[var(--pol-light-text-muted)]">
+                  {ageLabel(r.opened_at)}
+                </span>
+                <Link
+                  href="/ops/reconciliation"
+                  className="font-semibold text-[var(--pol-light-brand-primary)] hover:underline"
+                >
+                  رسیدگی به مغایرت ←
+                </Link>
+              </div>
             </div>
-          </li>
+          </Card>
         ))}
-      </ul>
-      <Link
-        href="/ops/reconciliation"
-        className="inline-block text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
-      >
-        باز کردن تطبیق مالی
-      </Link>
+      </div>
+
+      <div className="text-end">
+        <Link
+          href="/ops/reconciliation"
+          className="text-[13px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+        >
+          باز کردن کنسول تطبیق مالی ←
+        </Link>
+      </div>
     </div>
   );
 }
@@ -339,50 +427,63 @@ function RmaTab({ rows }: { rows: RmaOrderRow[] }) {
     return (
       <div className="space-y-3">
         <EmptyState
-          title="سفارشی با اختلاف یا وضعیت باز نیست"
-          description="لیست سراسری مرجوعی‌ها موجود نیست (G-013) — از طریق سفارش وارد شوید."
+          title="سفارشی با اختلاف یا مرجوعی باز وجود ندارد"
+          description="اختلافات و درخواست‌های استرداد کالا به محض ثبت در این بخش لیست می‌شوند."
         />
-        <Link
-          href="/ops/rma"
-          className="inline-block text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
-        >
-          رفتن به میز RMA
-        </Link>
+        <div className="text-center">
+          <Link
+            href="/ops/rma"
+            className="text-[13px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+          >
+            مشاهده میز RMA ←
+          </Link>
+        </div>
       </div>
     );
   }
+
   return (
     <div className="space-y-3">
-      <p className="text-[12px] text-[var(--pol-light-text-secondary)]">
-        شکاف G-013: بدون لیست سراسری مرجوعی — ردیف‌ها از سفارش‌های دارای اختلاف/وضعیت باز استخراج
-        شده‌اند.
-      </p>
-      <ul role="list" className="space-y-2">
+      <div className="grid gap-2.5">
         {rows.map((o) => (
-          <li key={str(o.id)} className={cardCls}>
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
-                {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
-              </StatusChip>
-              <StatusChip tone={disputeStatusTone[o.dispute_status ?? ""] ?? "neutral"}>
-                {disputeStatusLabel[o.dispute_status ?? ""] ?? o.dispute_status ?? "—"}
-              </StatusChip>
-              <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                {formatDateTime(o.created_at)}
-              </span>
+          <Card key={str(o.id)} className="p-3.5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
+                  {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
+                </StatusChip>
+                <StatusChip tone={disputeStatusTone[o.dispute_status ?? ""] ?? "neutral"}>
+                  {disputeStatusLabel[o.dispute_status ?? ""] ?? o.dispute_status ?? "—"}
+                </StatusChip>
+                <span className="font-mono text-[13px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
+                  {o.order_number ?? str(o.id)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between gap-4 text-[12px]">
+                <span className="text-[var(--pol-light-text-muted)]">
+                  {formatDateTime(o.created_at)}
+                </span>
+                <Link
+                  href="/ops/rma"
+                  className="font-semibold text-[var(--pol-light-brand-primary)] hover:underline"
+                >
+                  رسیدگی به RMA ←
+                </Link>
+              </div>
             </div>
-            <span className="mt-2 block text-[14px] font-semibold" dir="ltr">
-              {o.order_number ?? str(o.id)}
-            </span>
-          </li>
+          </Card>
         ))}
-      </ul>
-      <Link
-        href="/ops/rma"
-        className="inline-block text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
-      >
-        باز کردن میز RMA
-      </Link>
+      </div>
+
+      <div className="text-end">
+        <Link
+          href="/ops/rma"
+          className="text-[13px] font-medium text-[var(--pol-light-brand-primary)] hover:underline"
+        >
+          باز کردن میز RMA ←
+        </Link>
+      </div>
     </div>
   );
 }

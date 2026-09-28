@@ -29,15 +29,17 @@ This matrix governs all notifications produced across the POL platform. Every bu
 | **Commerce / Order** | ORDER_SUBMITTED | Vendor Owner/Staff | CRITICAL | Yes | Yes | Immediate SMS Alert | /vendor/orders/{order_id} | No |
 | **Commerce / Order** | ORDER_ACCEPTED | Retailer Owner/Staff | HIGH | Yes | Yes | Optional SMS | /retailer/orders/{order_id} | Yes |
 | **Commerce / Order** | ORDER_REJECTED | Retailer Owner/Staff | HIGH | Yes | Yes | Immediate SMS Alert | /retailer/orders/{order_id} | No |
-| **Commerce / Order** | ORDER_TIMEOUT_EXPIRED | Retailer Owner/Staff | HIGH | Yes | Yes | Immediate SMS Alert | /retailer/orders/{order_id} | No |
+| **Commerce / Order** | ORDER_CANCELLED | Retailer & Vendor Owner/Staff | HIGH | Yes | Yes | Immediate SMS Alert | /orders/{order_id} | No |
 | **Commerce / Order** | ORDER_TIMEOUT_WARNING | Vendor Owner/Staff | CRITICAL | Yes | Yes | Immediate SMS Alert | /vendor/orders/{order_id} | No |
 | **Fulfillment** | ORDER_DISPATCHED | Retailer Owner/Staff | HIGH | Yes | Yes | Optional SMS | /retailer/orders/{order_id}/tracking | Yes |
+| **Fulfillment** | ORDER_PREPARING | Retailer Owner/Staff | NORMAL | Yes | Yes | Optional SMS | /retailer/orders/{order_id} | Yes |
+| **Fulfillment** | ORDER_READY | Retailer Owner/Staff | NORMAL | Yes | Yes | Optional SMS | /retailer/orders/{order_id} | Yes |
 | **Fulfillment** | DELIVERY_OTP_GENERATED | Retailer Owner | CRITICAL | Yes | Yes | Immediate SMS OTP | /retailer/orders/{order_id}/otp | No |
-| **Fulfillment** | ORDER_DELIVERED | Retailer, Vendor | NORMAL | Yes | Yes | Optional SMS | /orders/{order_id} | Yes |
+| **Fulfillment** | ORDER_DELIVERED | Retailer & Vendor Owner/Staff | NORMAL | Yes | Yes | Optional SMS | /orders/{order_id} | Yes |
 | **Direct Payment** | PAYMENT_PROOF_SUBMITTED| Vendor Owner | HIGH | Yes | Yes | Optional SMS | /vendor/payments/{payment_id} | Yes |
 | **Direct Payment** | PAYMENT_VERIFIED | Retailer Owner | HIGH | Yes | Yes | Optional SMS | /retailer/payments/{payment_id} | Yes |
 | **Direct Payment** | PAYMENT_REJECTED | Retailer Owner | CRITICAL | Yes | Yes | Immediate SMS Alert | /retailer/payments/{payment_id} | No |
-| **Disputes** | DISPUTE_OPENED | Vendor, Admin | CRITICAL | Yes | Yes | Immediate SMS Alert | /disputes/{dispute_id} | No |
+| **Disputes** | DISPUTE_OPENED | Retailer, Vendor, Ops/Admin | CRITICAL | Yes | Yes | Immediate SMS Alert | /disputes/{dispute_id} | No |
 | **Disputes** | DISPUTE_EVIDENCE_ADDED| Opposite Party, Admin | NORMAL | Yes | Yes | No SMS | /disputes/{dispute_id} | Yes |
 | **Disputes** | DISPUTE_RESOLVED | Retailer, Vendor | HIGH | Yes | Yes | Immediate SMS Alert | /disputes/{dispute_id} | No |
 | **Support** | SUPPORT_CASE_OPENED | User, Ops Support | NORMAL | Yes | No | No SMS | /support/cases/{case_id} | Yes |

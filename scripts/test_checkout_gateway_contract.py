@@ -23,8 +23,19 @@ def test_gateway_delegates_only_to_revalidation_service(monkeypatch):
     monkeypatch.setattr("scripts.checkout_gateway.CanonicalCheckoutGateway._replay_existing", lambda *args, **kwargs: None)
     monkeypatch.setattr("scripts.checkout_gateway.validate_allocation_against_basket", lambda **kwargs: None)
 
+    class FakeCursor:
+        def __init__(self):
+            self.executed = []
+
+        def execute(self, query, params=None):
+            self.executed.append((query, params))
+
+        def fetchone(self):
+            return None
+
+    fake_cur = FakeCursor()
     result = CanonicalCheckoutGateway.checkout(
-        cur="CURSOR",
+        cur=fake_cur,
         basket_id="basket",
         plan_id="plan",
         retailer_id="retailer",

@@ -68,6 +68,7 @@ def _seed_delivered(suffix):
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             ru = str(uuid4()); ro = str(uuid4()); ri = str(uuid4())
             vu = str(uuid4()); vo = str(uuid4()); vi = str(uuid4())
+            ou = str(uuid4()); oo = str(uuid4())
             bi = str(uuid4()); pi = str(uuid4()); ogi = str(uuid4())
             oi = str(uuid4()); di = str(uuid4())
 
@@ -85,6 +86,11 @@ def _seed_delivered(suffix):
                         (str(uuid4()), vo, vu))
             cur.execute("INSERT INTO vendors (id, user_id, organization_id, business_name, warehouse_address, min_order_value_toman, status) "
                         "VALUES (%s, %s, %s, \'V\', \'Ahvaz\', 1000000, \'ACTIVE\')", (vi, vu, vo))
+            cur.execute("INSERT INTO users (id, phone_number, full_name, role) VALUES (%s, %s, 'Ops', 'OPS_AGENT')",
+                        (ou, f"+9891{uuid4().int % 100000000:08d}"))
+            cur.execute("INSERT INTO organizations (id, name, org_type, status) VALUES (%s, 'OPS', 'OPERATOR', 'ACTIVE')", (oo,))
+            cur.execute("INSERT INTO organization_memberships (id, organization_id, user_id, role, status) VALUES (%s, %s, %s, 'OPS_AGENT', 'ACTIVE')",
+                        (str(uuid4()), oo, ou))
             cur.execute("INSERT INTO baskets (id, retailer_id, status, version) VALUES (%s, %s, \'OPEN\', 1)", (bi, ri))
             cur.execute("INSERT INTO allocation_plans (id, basket_id, basket_version, status, strategy, vendor_count, total_estimated_toman, expires_at) "
                         "VALUES (%s, %s, 1, \'CONFIRMED\', \'SINGLE_VENDOR\', 1, 5000000, now() + interval \'15 minutes\')", (pi, bi))
@@ -99,9 +105,9 @@ def _seed_delivered(suffix):
                 (di, oi, vi, "1234"),
             )
             media_id = str(uuid4())
-            cur.execute("INSERT INTO media_assets (id, storage_key, file_size_bytes, uploaded_by_user_id, status, provenance, created_at) "
-                        "VALUES (%s, %s, 1024, %s, 'READY', 'POL_OWNED', now())",
-                        (media_id, f"proof/{media_id}", ru))
+            cur.execute("INSERT INTO media_assets (id, storage_key, file_size_bytes, uploaded_by_user_id, status, provenance, checksum_sha256, created_at) "
+                        "VALUES (%s, %s, 1024, %s, 'READY', 'POL_OWNED', %s, now())",
+                        (media_id, f"proof/{media_id}", ru, "d" * 64))
             cur.execute(
                 "INSERT INTO proof_of_delivery (id, delivery_id, accepted_by_name, accepted_at, "
                 "proof_type, otp_verified, proof_media_id, issue_reported_at_delivery) "
@@ -114,7 +120,8 @@ def _seed_delivered(suffix):
         conn.commit()
         rt = encode_access_token(ru, rs, ro, "RETAILER_OWNER")
         vt = encode_access_token(vu, vs, vo, "VENDOR_OWNER")
-        return {"oi": oi, "di": di, "r_token": rt, "v_token": vt, "ru": ru, "ro": ro, "vi": vi, "vo": vo}
+        return {"oi": oi, "di": di, "r_token": rt, "v_token": vt, "ru": ru, "ro": ro,
+                "vu": vu, "vi": vi, "vo": vo, "oo": oo}
     finally:
         conn.close()
 
@@ -136,6 +143,34 @@ class TestExceptionReporting:
         assert resp.status_code == 201
         assert resp.json()["data"]["exception_type"] == "DAMAGED_GOODS"
         assert resp.json()["data"]["status"] == "REPORTED"
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT target_user_id, target_organization_id, dedupe_key
+                    FROM outbox_events
+                    WHERE event_name='DELIVERY_EXCEPTION_REPORTED'
+                      AND aggregate_id=%s
+                    """,
+                    (resp.json()["data"]["exception_id"],),
+                )
+                event = cur.fetchone()
+                assert event is not None
+                assert str(event["target_user_id"]) == data["vu"]
+                assert str(event["target_organization_id"]) == data["vo"]
+                assert event["dedupe_key"].startswith("DELIVERY_EXCEPTION_REPORTED:")
+                cur.execute(
+                    """
+                    SELECT COUNT(*) AS c FROM notification_templates
+                    WHERE event_name='DELIVERY_EXCEPTION_REPORTED'
+                      AND channel='INBOX'
+                      AND enabled=TRUE
+                    """
+                )
+                assert int(cur.fetchone()["c"]) >= 1
+        finally:
+            conn.close()
 
     def test_report_doorstep_rejection(self, client):
         data = _seed_delivered(uuid4().hex[:8])
@@ -186,6 +221,26 @@ class TestExceptionResolution:
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["resolution_type"] == "FULL_REFUND"
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT target_user_id, target_organization_id
+                    FROM outbox_events
+                    WHERE event_name='DELIVERY_EXCEPTION_RESOLVED'
+                      AND aggregate_id=%s
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    """,
+                    (exc_id,),
+                )
+                event = cur.fetchone()
+                assert event is not None
+                assert str(event["target_user_id"]) == data["ru"]
+                assert str(event["target_organization_id"]) == data["ro"]
+        finally:
+            conn.close()
 
     def test_resolve_replacement(self, client):
         data = _seed_delivered(uuid4().hex[:8])
@@ -243,6 +298,25 @@ class TestExceptionEscalation:
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["status"] == "ESCALATED"
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT target_user_id, target_organization_id
+                    FROM outbox_events
+                    WHERE event_name='DELIVERY_EXCEPTION_ESCALATED'
+                      AND aggregate_id=%s
+                      AND target_organization_id=%s
+                    LIMIT 1
+                    """,
+                    (exc_id, data["oo"]),
+                )
+                event = cur.fetchone()
+                assert event is not None
+                assert str(event["target_organization_id"]) == data["oo"]
+        finally:
+            conn.close()
 
 
 class TestExceptionQuery:

@@ -5,11 +5,18 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Field,
   Skeleton,
   StatusChip,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import {
@@ -354,12 +361,12 @@ export default function RetailerOrderDetailPage() {
     return (
       <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری سفارش">
         <Skeleton className="h-8 w-64" />
-        <div className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4">
+        <Card className="p-5">
           <Skeleton lines={3} />
-        </div>
-        <div className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4">
+        </Card>
+        <Card className="p-5">
           <Skeleton lines={4} />
-        </div>
+        </Card>
       </div>
     );
   }
@@ -375,153 +382,173 @@ export default function RetailerOrderDetailPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-start gap-3">
+    <div className="space-y-6 pb-10">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--pol-light-border-subtle)] pb-5">
         <div>
           <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
             جزئیات سفارش
           </h1>
           <p className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="text-[13px] text-[var(--pol-light-text-secondary)]" dir="ltr">
+            <span className="font-mono text-[14px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
               {order.order_number ?? order.id}
             </span>
-            <span className="text-[11px] text-[var(--pol-light-text-muted)]">
-              {formatDateTime(order.created_at)}
+            <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+              · ثبت‌شده در {formatDateTime(order.created_at)}
             </span>
           </p>
         </div>
-        <div className="ms-auto flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" onClick={() => void load()}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => void load()}>
+            <svg className="size-4 me-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
             به‌روزرسانی
           </Button>
+          <Link
+            href="/retailer/orders"
+            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[12px] font-medium text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)]"
+          >
+            ← تمام سفارش‌ها
+          </Link>
         </div>
       </header>
 
-      <section
-        aria-label="وضعیت‌ها"
-        className="flex flex-wrap items-center gap-2 rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-      >
-        <StatusChip tone={orderStatusTone[order.order_status ?? ""] ?? "neutral"}>
-          {orderStatusLabel[order.order_status ?? ""] ?? order.order_status ?? "—"}
-        </StatusChip>
-        {order.group_status ? (
-          <StatusChip tone={groupStatusTone[order.group_status] ?? "neutral"}>
-            گروه: {groupStatusLabel[order.group_status] ?? order.group_status}
-          </StatusChip>
+      {/* Primary Status Banner */}
+      <Card className="p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusChip tone={orderStatusTone[order.order_status ?? ""] ?? "neutral"}>
+              {orderStatusLabel[order.order_status ?? ""] ?? order.order_status ?? "—"}
+            </StatusChip>
+            {order.group_status ? (
+              <StatusChip tone={groupStatusTone[order.group_status] ?? "neutral"}>
+                گروه: {groupStatusLabel[order.group_status] ?? order.group_status}
+              </StatusChip>
+            ) : null}
+            <StatusChip tone={disputeTone[order.dispute_status ?? "NONE"] ?? "neutral"}>
+              {disputeLabel[order.dispute_status ?? "NONE"] ?? order.dispute_status ?? ""}
+            </StatusChip>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] text-[var(--pol-light-text-muted)]">مبلغ کل سفارش:</span>
+            <span className="text-[18px] font-bold text-[var(--pol-light-brand-primary)]">
+              {formatToman(order.total_amount_toman)}
+            </span>
+          </div>
+        </div>
+
+        {order.delivery_address ? (
+          <div className="mt-3 pt-3 border-t border-[var(--pol-light-border-subtle)] text-[12px] text-[var(--pol-light-text-secondary)]">
+            <span className="font-semibold text-[var(--pol-light-text-primary)]">نشانی تحویل: </span>
+            <span>{order.delivery_address}</span>
+          </div>
         ) : null}
-        <StatusChip tone={disputeTone[order.dispute_status ?? "NONE"] ?? "neutral"}>
-          {disputeLabel[order.dispute_status ?? "NONE"] ?? order.dispute_status ?? ""}
-        </StatusChip>
-        <span className="ms-auto text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
-          {formatToman(order.total_amount_toman)}
-        </span>
-      </section>
+      </Card>
 
       {actionError ? (
         <ErrorState title="عملیات ناموفق بود" description={actionError} />
       ) : null}
 
+      {/* Context Links */}
       <div className="flex flex-wrap gap-2">
         {order.order_group_id ? (
           <Link
             href={`/retailer/orders/group/${order.order_group_id}`}
-            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
+            className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[12px] font-medium text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
           >
-            نمایش گروه سفارش
+            مشاهده گروه سفارش
             {order.group_order_count != null
-              ? ` (${order.group_order_count.toLocaleString("fa-IR")})`
+              ? ` (${order.group_order_count.toLocaleString("fa-IR")} سفارش)`
               : ""}
           </Link>
         ) : null}
         <Link
           href={`/retailer/orders/${order.id}/returns`}
-          className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
+          className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[12px] font-medium text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
         >
-          بازگشت کالا و اختلاف
+          ثبت درخواست بازگشت کالا و اختلاف
         </Link>
         <Link
           href="/retailer/support"
-          className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
+          className="rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[12px] font-medium text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)]"
         >
-          پشتیبانی
+          پشتیبانی سفارش
         </Link>
       </div>
 
-      <section aria-label="اقلام سفارش">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          اقلام
+      {/* Order Items Table */}
+      <section aria-label="اقلام سفارش" className="space-y-3">
+        <h2 className="text-[16px] leading-[24px] font-bold text-[var(--pol-light-text-primary)]">
+          اقلام سفارش ({items.length.toLocaleString("fa-IR")} قلم)
         </h2>
         {items.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState title="قلمی برای این سفارش ثبت نشده" />
-          </div>
+          <Card variant="subtle" className="p-6">
+            <EmptyState title="قلمی برای این سفارش ثبت نشده است" />
+          </Card>
         ) : (
-          <div className="mt-3 overflow-x-auto rounded-[12px] border border-[var(--pol-light-border-subtle)]">
-            <table className="w-full min-w-[640px] border-collapse bg-[var(--pol-light-surface-default)] text-[13px]">
-              <thead>
-                <tr className="border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] text-[12px] text-[var(--pol-light-text-secondary)]">
-                  <th className="px-4 py-2 text-start font-medium">کالا</th>
-                  <th className="px-4 py-2 text-start font-medium">سفارش</th>
-                  <th className="px-4 py-2 text-start font-medium">پذیرفته</th>
-                  <th className="px-4 py-2 text-start font-medium">تحویل</th>
-                  <th className="px-4 py-2 text-start font-medium">واحد</th>
-                  <th className="px-4 py-2 text-start font-medium">مبلغ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((it) => (
-                  <tr
-                    key={it.id}
-                    className="border-b border-[var(--pol-light-border-subtle)] last:border-b-0"
-                  >
-                    <td className="px-4 py-3">
-                      <span className="text-[var(--pol-light-text-primary)]">
-                        {it.product_name_snapshot ?? "—"}
-                      </span>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>نام کالا و مشخصات</TableHead>
+                <TableHead>تعداد سفارش</TableHead>
+                <TableHead>پذیرفته‌شده</TableHead>
+                <TableHead>تحویل‌شده</TableHead>
+                <TableHead>بسته‌بندی</TableHead>
+                <TableHead>مبلغ کل سطر</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((it) => (
+                <TableRow key={it.id}>
+                  <TableCell>
+                    <div className="font-semibold text-[var(--pol-light-text-primary)]">
+                      {it.product_name_snapshot ?? "—"}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                       {it.brand_name_snapshot ? (
-                        <span className="ms-1 text-[11px] text-[var(--pol-light-text-muted)]">
+                        <span className="text-[11px] text-[var(--pol-light-text-muted)]">
                           {it.brand_name_snapshot}
                         </span>
                       ) : null}
                       {it.fulfillment_status ? (
-                        <span className="ms-2">
-                          <StatusChip tone="info">{it.fulfillment_status}</StatusChip>
-                        </span>
+                        <StatusChip tone="info">{it.fulfillment_status}</StatusChip>
                       ) : null}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--pol-light-text-primary)]">
-                      {Number(it.ordered_quantity ?? 0).toLocaleString("fa-IR")}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--pol-light-text-secondary)]">
-                      {it.accepted_quantity != null
-                        ? Number(it.accepted_quantity).toLocaleString("fa-IR")
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--pol-light-text-secondary)]">
-                      {it.delivered_quantity != null
-                        ? Number(it.delivered_quantity).toLocaleString("fa-IR")
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--pol-light-text-secondary)]">
-                      {it.packaging_unit_snapshot ?? "—"}
-                      {it.pack_quantity_snapshot
-                        ? ` ×${it.pack_quantity_snapshot.toLocaleString("fa-IR")}`
-                        : ""}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--pol-light-text-primary)]">
-                      {formatToman(it.total_line_amount_toman)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-bold text-[var(--pol-light-text-primary)]">
+                    {Number(it.ordered_quantity ?? 0).toLocaleString("fa-IR")}
+                  </TableCell>
+                  <TableCell className="text-[var(--pol-light-text-secondary)]">
+                    {it.accepted_quantity != null
+                      ? Number(it.accepted_quantity).toLocaleString("fa-IR")
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="text-[var(--pol-light-text-secondary)]">
+                    {it.delivered_quantity != null
+                      ? Number(it.delivered_quantity).toLocaleString("fa-IR")
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="text-[var(--pol-light-text-secondary)]">
+                    {it.packaging_unit_snapshot ?? "—"}
+                    {it.pack_quantity_snapshot
+                      ? ` ×${it.pack_quantity_snapshot.toLocaleString("fa-IR")}`
+                      : ""}
+                  </TableCell>
+                  <TableCell className="font-bold text-[var(--pol-light-text-primary)]">
+                    {formatToman(it.total_line_amount_toman)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </section>
 
-      <section aria-label="پذیرش جزئی" data-screen="R-09C">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          پذیرش جزئی
+      {/* Partial Acceptance Review (R-09C) */}
+      <section aria-label="پذیرش جزئی" data-screen="R-09C" className="space-y-3">
+        <h2 className="text-[16px] leading-[24px] font-bold text-[var(--pol-light-text-primary)]">
+          پیشنهادهای پذیرش جزئی تأمین‌کننده
         </h2>
         {(() => {
           const proposals = deriveProposals(events);
@@ -532,77 +559,82 @@ export default function RetailerOrderDetailPage() {
             ["SUBMITTED", "ACCEPTED", "PARTIALLY_ACCEPTED"].includes(order.order_status);
           if (proposals.length === 0) {
             return (
-              <div className="mt-3">
+              <Card variant="subtle" className="p-5">
                 <EmptyState
                   title="پیشنهاد پذیرش جزئی ثبت نشده"
-                  description="هنوز پیشنهادی از فروشنده برای این سفارش وجود ندارد."
+                  description="تأمین‌کننده هنوز کسری موجودی یا تغییر تعدادی برای این سفارش پیشنهاد نداده است."
                 />
-              </div>
+              </Card>
             );
           }
           return (
-            <ul role="list" className="mt-3 space-y-3">
+            <div className="space-y-3">
               {proposals.map((p) => (
-                <li
-                  key={p.proposal_id}
-                  className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusChip
-                      tone={
-                        p.status === "ACCEPTED"
-                          ? "success"
+                <Card key={p.proposal_id} className="p-4 sm:p-5 shadow-xs space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-3">
+                    <div className="flex items-center gap-2">
+                      <StatusChip
+                        tone={
+                          p.status === "ACCEPTED"
+                            ? "success"
+                            : p.status === "DECLINED"
+                              ? "danger"
+                              : "warning"
+                        }
+                      >
+                        {p.status === "ACCEPTED"
+                          ? "پذیرفته‌شده توسط شما"
                           : p.status === "DECLINED"
-                            ? "danger"
-                            : "warning"
-                      }
-                    >
-                      {p.status === "ACCEPTED"
-                        ? "پذیرفته‌شده"
-                        : p.status === "DECLINED"
-                          ? "ردشده"
-                          : "در انتظار بررسی"}
-                    </StatusChip>
-                    <span className="text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
-                      {p.proposal_id}
-                    </span>
-                    <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
+                            ? "ردشده توسط شما"
+                            : "در انتظار بررسی و تصمیم شما"}
+                      </StatusChip>
+                      <span className="font-mono text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
+                        شناسه: {p.proposal_id.slice(0, 10)}…
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-[var(--pol-light-text-muted)]">
                       {formatDateTime(p.proposed_at)}
                     </span>
                   </div>
+
                   {p.items.length > 0 ? (
-                    <ul className="mt-3 space-y-1">
+                    <div className="rounded-[8px] bg-[var(--pol-light-surface-subtle)] p-3 border border-[var(--pol-light-border-subtle)] space-y-1.5">
                       {p.items.map((line) => {
                         const item = items.find((i) => i.id === line.order_item_id);
                         return (
-                          <li
+                          <div
                             key={line.order_item_id || `${p.proposal_id}-line`}
-                            className="flex flex-wrap gap-2 text-[13px] text-[var(--pol-light-text-secondary)]"
+                            className="flex flex-wrap items-center justify-between text-[13px]"
                           >
-                            <span className="text-[var(--pol-light-text-primary)]">
+                            <span className="font-medium text-[var(--pol-light-text-primary)]">
                               {item?.product_name_snapshot ?? line.order_item_id.slice(0, 8)}
                             </span>
-                            <span>
-                              پذیرفته:{" "}
-                              {line.accepted_quantity != null
-                                ? Number(line.accepted_quantity).toLocaleString("fa-IR")
-                                : "—"}
-                              {item?.ordered_quantity != null
-                                ? ` از ${Number(item.ordered_quantity).toLocaleString("fa-IR")}`
-                                : ""}
-                            </span>
-                            {line.reason ? (
-                              <span className="text-[11px] text-[var(--pol-light-text-muted)]">
-                                {line.reason}
+                            <div className="flex items-center gap-2">
+                              <span className="text-[var(--pol-light-text-secondary)]">
+                                پذیرفته:{" "}
+                                <strong className="text-[var(--pol-light-text-primary)]">
+                                  {line.accepted_quantity != null
+                                    ? Number(line.accepted_quantity).toLocaleString("fa-IR")
+                                    : "—"}
+                                </strong>
+                                {item?.ordered_quantity != null
+                                  ? ` از ${Number(item.ordered_quantity).toLocaleString("fa-IR")}`
+                                  : ""}
                               </span>
-                            ) : null}
-                          </li>
+                              {line.reason ? (
+                                <span className="rounded-md bg-[var(--pol-light-surface-default)] px-2 py-0.5 text-[11px] text-[var(--pol-light-text-muted)] border border-[var(--pol-light-border-subtle)]">
+                                  علت: {line.reason}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
                         );
                       })}
-                    </ul>
+                    </div>
                   ) : null}
+
                   {canReview && p.status === "PENDING" ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--pol-light-border-subtle)]">
                       <Button
                         size="sm"
                         loading={acting === `approve:${p.proposal_id}`}
@@ -620,18 +652,20 @@ export default function RetailerOrderDetailPage() {
                         }}
                         aria-expanded={declineOpen === p.proposal_id}
                       >
-                        رد پیشنهاد
+                        رد پیشنهاد تأمین‌کننده
                       </Button>
                     </div>
                   ) : null}
+
                   {declineOpen === p.proposal_id ? (
-                    <div className="mt-3 space-y-3">
+                    <div className="mt-3 space-y-3 rounded-[8px] bg-[var(--pol-light-surface-subtle)] p-3 border border-[var(--pol-light-border-subtle)]">
                       <Field
-                        label="دلیل رد"
+                        label="دلیل رد پیشنهاد"
                         value={declineReason}
                         onChange={(e) => setDeclineReason(e.target.value)}
                         hint="اختیاری — حداکثر ۱۰۰۰ نویسه"
                         maxLength={1000}
+                        placeholder="مثلاً: تعداد کمتر برای فروشگاه صرفه اقتصادی ندارد…"
                       />
                       <div className="flex gap-2">
                         <Button
@@ -641,7 +675,7 @@ export default function RetailerOrderDetailPage() {
                           disabled={acting !== null}
                           onClick={() => void declineProposal(p.proposal_id)}
                         >
-                          تأیید رد
+                          تأیید رد پیشنهاد
                         </Button>
                         <Button
                           variant="secondary"
@@ -653,208 +687,227 @@ export default function RetailerOrderDetailPage() {
                       </div>
                     </div>
                   ) : null}
-                </li>
+                </Card>
               ))}
-            </ul>
+            </div>
           );
         })()}
       </section>
 
-      <section
-        aria-label="پیگیری ارسال"
-        data-screen="R-09D"
-        className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-      >
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          پیگیری ارسال
+      {/* Delivery Tracking (R-09D) */}
+      <section aria-label="پیگیری ارسال" data-screen="R-09D" className="space-y-3">
+        <h2 className="text-[16px] leading-[24px] font-bold text-[var(--pol-light-text-primary)]">
+          پیگیری و مشخصات ارسال
         </h2>
         {deliveryMissing || !delivery ? (
-          <div className="mt-3">
+          <Card variant="subtle" className="p-5">
             <EmptyState
-              title="رکورد ارسال موجود نیست"
-              description="هنوز ارسالی برای این سفارش ثبت نشده است."
+              title="هنوز ارسالی ثبت نشده است"
+              description="پس از آماده‌سازی کالا توسط تأمین‌کننده و تخصیص راننده، اطلاعات باربری و خودرو در این بخش نمایش می‌یابد."
             />
-          </div>
+          </Card>
         ) : (
-          <dl className="mt-3 grid gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-[12px] text-[var(--pol-light-text-muted)]">وضعیت</dt>
-              <dd className="mt-1">
-                <StatusChip
-                  tone={
-                    DELIVERY_STATUS_TONE[delivery.delivery_status ?? ""] ?? "neutral"
-                  }
-                >
-                  {DELIVERY_STATUS_LABEL[delivery.delivery_status ?? ""] ??
-                    delivery.delivery_status ??
-                    "—"}
-                </StatusChip>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[12px] text-[var(--pol-light-text-muted)]">راننده</dt>
-              <dd className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]">
-                {delivery.driver_name ?? "—"}
-                {delivery.vehicle_plate ? (
-                  <span className="ms-2 text-[12px] text-[var(--pol-light-text-muted)]" dir="ltr">
-                    {delivery.vehicle_plate}
-                  </span>
-                ) : null}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[12px] text-[var(--pol-light-text-muted)]">تماس راننده</dt>
-              <dd className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
-                {delivery.driver_phone ?? "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[12px] text-[var(--pol-light-text-muted)]">زمان ارسال</dt>
-              <dd className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]">
-                {formatDateTime(delivery.dispatched_at)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[12px] text-[var(--pol-light-text-muted)]">زمان تحویل</dt>
-              <dd className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]">
-                {formatDateTime(delivery.delivered_at)}
-              </dd>
-            </div>
-          </dl>
+          <Card className="p-5 shadow-xs">
+            <dl className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <div className="rounded-[8px] bg-[var(--pol-light-surface-subtle)] p-3 border border-[var(--pol-light-border-subtle)]">
+                <dt className="text-[12px] text-[var(--pol-light-text-muted)]">وضعیت جاری ارسال</dt>
+                <dd className="mt-1">
+                  <StatusChip
+                    tone={
+                      DELIVERY_STATUS_TONE[delivery.delivery_status ?? ""] ?? "neutral"
+                    }
+                  >
+                    {DELIVERY_STATUS_LABEL[delivery.delivery_status ?? ""] ??
+                      delivery.delivery_status ??
+                      "—"}
+                  </StatusChip>
+                </dd>
+              </div>
+
+              <div className="rounded-[8px] bg-[var(--pol-light-surface-subtle)] p-3 border border-[var(--pol-light-border-subtle)]">
+                <dt className="text-[12px] text-[var(--pol-light-text-muted)]">نام و پلاک راننده</dt>
+                <dd className="mt-1 text-[13px] font-bold text-[var(--pol-light-text-primary)]">
+                  {delivery.driver_name ?? "—"}
+                  {delivery.vehicle_plate ? (
+                    <span className="ms-2 rounded-md bg-[var(--pol-light-surface-default)] px-2 py-0.5 font-mono text-[11px] text-[var(--pol-light-text-secondary)] border border-[var(--pol-light-border-subtle)]" dir="ltr">
+                      {delivery.vehicle_plate}
+                    </span>
+                  ) : null}
+                </dd>
+              </div>
+
+              <div className="rounded-[8px] bg-[var(--pol-light-surface-subtle)] p-3 border border-[var(--pol-light-border-subtle)]">
+                <dt className="text-[12px] text-[var(--pol-light-text-muted)]">شماره تماس راننده</dt>
+                <dd className="mt-1 text-[13px] font-bold text-[var(--pol-light-text-primary)] font-mono" dir="ltr">
+                  {delivery.driver_phone ?? "—"}
+                </dd>
+              </div>
+
+              <div className="rounded-[8px] bg-[var(--pol-light-surface-subtle)] p-3 border border-[var(--pol-light-border-subtle)]">
+                <dt className="text-[12px] text-[var(--pol-light-text-muted)]">زمان خروج و ارسال</dt>
+                <dd className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]">
+                  {formatDateTime(delivery.dispatched_at)}
+                </dd>
+              </div>
+
+              <div className="rounded-[8px] bg-[var(--pol-light-surface-subtle)] p-3 border border-[var(--pol-light-border-subtle)]">
+                <dt className="text-[12px] text-[var(--pol-light-text-muted)]">زمان تحویل قطعی</dt>
+                <dd className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]">
+                  {formatDateTime(delivery.delivered_at)}
+                </dd>
+              </div>
+            </dl>
+          </Card>
         )}
       </section>
 
-      <section
-        aria-label="تحویل و رسید"
-        data-screen="R-09E"
-        className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4"
-      >
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          تحویل و رسید
+      {/* Receiver Handoff & Confirmation (R-09E) */}
+      <section aria-label="تحویل و رسید" data-screen="R-09E" className="space-y-3">
+        <h2 className="text-[16px] leading-[24px] font-bold text-[var(--pol-light-text-primary)]">
+          رسید تحویل و تأیید گیرنده (Proof of Delivery)
         </h2>
         {proof && proof.id ? (
-          <dl className="mt-3 grid gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-[12px] text-[var(--pol-light-text-muted)]">تأییدکننده</dt>
-              <dd className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]">
-                {proof.accepted_by_name ?? "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[12px] text-[var(--pol-light-text-muted)]">زمان تحویل</dt>
-              <dd className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]">
-                {formatDateTime(proof.accepted_at)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[12px] text-[var(--pol-light-text-muted)]">تأیید OTP</dt>
-              <dd className="mt-1">
-                <StatusChip tone={proof.otp_verified ? "success" : "neutral"}>
-                  {proof.otp_verified ? "تأییدشده" : "بدون OTP"}
-                </StatusChip>
-              </dd>
-            </div>
-            {proof.issue_reported_at_delivery ? (
-              <div>
-                <dt className="text-[12px] text-[var(--pol-light-text-muted)]">مشکل هنگام تحویل</dt>
-                <dd className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]">
-                  {proof.issue_reported_at_delivery}
+          <Card className="p-5 shadow-xs">
+            <dl className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <div className="rounded-[8px] bg-[var(--pol-light-surface-subtle)] p-3 border border-[var(--pol-light-border-subtle)]">
+                <dt className="text-[12px] text-[var(--pol-light-text-muted)]">نام تحویل‌گیرنده</dt>
+                <dd className="mt-1 text-[13px] font-bold text-[var(--pol-light-text-primary)]">
+                  {proof.accepted_by_name ?? "—"}
                 </dd>
               </div>
-            ) : null}
-          </dl>
+
+              <div className="rounded-[8px] bg-[var(--pol-light-surface-subtle)] p-3 border border-[var(--pol-light-border-subtle)]">
+                <dt className="text-[12px] text-[var(--pol-light-text-muted)]">زمان ثبت تحویل</dt>
+                <dd className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]">
+                  {formatDateTime(proof.accepted_at)}
+                </dd>
+              </div>
+
+              <div className="rounded-[8px] bg-[var(--pol-light-surface-subtle)] p-3 border border-[var(--pol-light-border-subtle)]">
+                <dt className="text-[12px] text-[var(--pol-light-text-muted)]">تأییدیه احراز هویت پیامکی (OTP)</dt>
+                <dd className="mt-1">
+                  <StatusChip tone={proof.otp_verified ? "success" : "neutral"}>
+                    {proof.otp_verified ? "تأییدشده با کد OTP" : "ثبت بدون OTP"}
+                  </StatusChip>
+                </dd>
+              </div>
+
+              {proof.issue_reported_at_delivery ? (
+                <div className="sm:col-span-2 md:col-span-3 rounded-[8px] bg-[var(--pol-light-warning)]/10 p-3 border border-[var(--pol-light-warning)]/30">
+                  <dt className="text-[12px] font-bold text-[var(--pol-light-warning)]">
+                    مشکل گزارش‌شده در هنگام تحویل:
+                  </dt>
+                  <dd className="mt-1 text-[13px] text-[var(--pol-light-text-primary)]">
+                    {proof.issue_reported_at_delivery}
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+          </Card>
         ) : (
-          <div className="mt-3">
+          <Card variant="subtle" className="p-5">
             <EmptyState
-              title="رسید تحویل ثبت نشده"
+              title="رسید قطعی تحویل هنوز ثبت نشده است"
               description={
                 proofMissing
-                  ? "هنوز proof of delivery برای این سفارش وجود ندارد."
+                  ? "پس از دریافت بار در مقصد، می‌توانید تحویل را با کد ۴ رقمی پیامک‌شده تأیید نمایید."
                   : undefined
               }
             />
-          </div>
+          </Card>
         )}
 
         {order.order_status === "DISPATCHED" || order.order_status === "DELIVERED" ? (
-          <div className="mt-4 space-y-3 border-t border-[var(--pol-light-border-subtle)] pt-4">
-            <h3 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-              تأیید تحویل گیرنده
-            </h3>
-            <p className="text-[12px] text-[var(--pol-light-text-muted)]">
-              POST /orders/{`{id}`}/deliver — فقط فیلدهای خالی ارسال نمی‌شوند. الگوی OTP
-              بک‌اند ۴ رقمی است (D-018 / G-022 RESOLVED).
-            </p>
+          <Card className="p-5 shadow-xs border-[var(--pol-light-brand-primary)]/30 space-y-4">
+            <div>
+              <h3 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+                تأیید تحویل سفارش توسط گیرنده
+              </h3>
+              <p className="mt-0.5 text-[12px] text-[var(--pol-light-text-muted)]">
+                کد پیامک‌شده ۴ رقمی ارسال را در کادر زیر وارد کنید و دکمه تأیید تحویل را بفشارید.
+              </p>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-2">
               <Field
-                label="نام گیرنده"
+                label="نام شخص تحویل‌گیرنده"
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
                 maxLength={200}
-                hint="اختیاری"
+                hint="اختیاری — مثلاً متصدی فروشگاه"
+                placeholder="نام و نام خانوادگی…"
               />
               <Field
-                label="کد OTP"
+                label="کد ۴ رقمی OTP"
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 maxLength={4}
-                hint="الگوی بک‌اند: ۴ رقم (D-018)"
+                hint="کد ۴ رقمی ارسال‌شده به تلفن همراه گیرنده"
+                placeholder="----"
               />
             </div>
+
             <Field
-              label="شرح مشکل هنگام تحویل"
+              label="شرح مشکل در صورت مغایرت یا آسیب بار"
               value={issueReported}
               onChange={(e) => setIssueReported(e.target.value)}
               maxLength={500}
-              hint="اختیاری"
+              hint="اختیاری — در صورت کسری کارتن یا شکستگی کالا شرح دهید"
+              placeholder="توضیحات مغایرت در هنگام تحویل…"
             />
-            <div className="flex gap-2">
+
+            <div className="flex gap-2 pt-1">
               <Button
                 loading={acting === "deliver"}
                 disabled={acting !== null}
                 onClick={() => void confirmDelivery()}
               >
-                تأیید تحویل
+                تأیید و ثبت نهایی تحویل سفارش
               </Button>
             </div>
-          </div>
+          </Card>
         ) : null}
       </section>
 
-      <section aria-label="خط زمانی سفارش">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          خط زمانی
+      {/* Order Events Timeline */}
+      <section aria-label="خط زمانی سفارش" className="space-y-3">
+        <h2 className="text-[16px] leading-[24px] font-bold text-[var(--pol-light-text-primary)]">
+          خط زمانی رویدادهای سفارش ({events.length.toLocaleString("fa-IR")} رویداد)
         </h2>
         {events.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState title="رویدادی ثبت نشده" description="هنوز رویدادی برای این سفارش وجود ندارد." />
-          </div>
+          <Card variant="subtle" className="p-5">
+            <EmptyState title="رویدادی ثبت نشده است" description="هنوز هیچ تغییر وضعیتی در چرخه این سفارش روی نداده است." />
+          </Card>
         ) : (
-          <ol className="mt-3 space-y-0 border-s-2 border-[var(--pol-light-border-subtle)] ps-4">
-            {events.map((ev) => (
-              <li key={ev.id} className="relative pb-4 last:pb-0">
-                <span
-                  aria-hidden
-                  className="absolute -start-[21px] top-1.5 size-2.5 rounded-full bg-[var(--pol-light-brand-primary)]"
-                />
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[13px] font-medium text-[var(--pol-light-text-primary)]">
-                    {ev.event_type ?? "رویداد"}
-                  </span>
-                  {ev.from_status || ev.to_status ? (
-                    <span className="text-[12px] text-[var(--pol-light-text-secondary)]" dir="ltr">
-                      {ev.from_status ?? "∅"} → {ev.to_status ?? "∅"}
+          <Card className="p-5 shadow-xs">
+            <ol className="relative space-y-4 border-s-2 border-[var(--pol-light-border-subtle)] ps-5 ms-2">
+              {events.map((ev) => (
+                <li key={ev.id} className="relative">
+                  <span
+                    aria-hidden
+                    className="absolute -start-[27px] top-1.5 size-3 rounded-full bg-[var(--pol-light-brand-primary)] ring-4 ring-[var(--pol-light-surface-default)]"
+                  />
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-bold text-[var(--pol-light-text-primary)]">
+                        {ev.event_type ?? "رویداد"}
+                      </span>
+                      {ev.from_status || ev.to_status ? (
+                        <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-mono text-[var(--pol-light-text-secondary)] border border-[var(--pol-light-border-subtle)]" dir="ltr">
+                          {ev.from_status ?? "∅"} → {ev.to_status ?? "∅"}
+                        </span>
+                      ) : null}
+                    </div>
+                    <span className="text-[11px] font-medium text-[var(--pol-light-text-muted)]">
+                      {formatDateTime(ev.created_at)}
                     </span>
-                  ) : null}
-                  <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                    {formatDateTime(ev.created_at)}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ol>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </Card>
         )}
       </section>
     </div>

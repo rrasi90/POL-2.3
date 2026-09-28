@@ -9,6 +9,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+class ConflictError(ValueError):
+    """Client supplied a stale/competing state; HTTP transport maps this to 409."""
+
+
 from scripts.auth_boundary import (
     AuthError,
     InvalidRefreshTokenError,
@@ -115,6 +119,8 @@ async def permission_handler(request: Request, exc: PermissionError):
 
 
 async def value_error_handler(request: Request, exc: ValueError):
+    if isinstance(exc, ConflictError):
+        return _response(request, "CONFLICT", str(exc), 409)
     return _response(request, "INVALID_REQUEST", str(exc), 422)
 
 

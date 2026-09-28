@@ -113,12 +113,43 @@ class VendorAcceptanceTimeoutWorker:
                 )
                 released_reservations += 1
 
+                cur.execute(
+                    """
+                    INSERT INTO outbox_events (
+                        id,event_id,event_name,aggregate_type,aggregate_id,payload,
+                        status,target_user_id,target_organization_id,dedupe_key,channel_hint
+                    )
+                    SELECT gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_RELEASED','INVENTORY_RESERVATION',%s,
+                        jsonb_build_object(
+                            'reservation_id',%s,'order_id',%s,'vendor_product_id',%s,
+                            'quantity',%s,'reason','VENDOR_TIMEOUT'
+                        ),
+                        'PENDING',om.user_id,om.organization_id,%s || ':' || om.user_id::text,'INBOX'
+                    FROM organization_memberships om
+                    WHERE om.organization_id = (
+                            SELECT v.organization_id FROM vendors v
+                            WHERE v.id = (SELECT o.vendor_id FROM orders o WHERE o.id = %s)
+                          )
+                      AND om.status='ACTIVE'
+                      AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
+                    ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                    """,
+                    (
+                        reservation["id"], reservation["id"], order_id,
+                        reservation["vendor_product_id"], reservation["quantity"],
+                        f"reservation-released:{reservation['id']}:VENDOR_TIMEOUT",
+                        order_id,
+                    ),
+                )
+
             cur.execute(
                 """
                 SELECT o.order_number, o.order_group_id, o.retailer_id, o.vendor_id,
-                       r.organization_id AS retailer_organization_id
+                       r.organization_id AS retailer_organization_id,
+                       v.organization_id AS vendor_organization_id
                 FROM orders o
                 JOIN retailers r ON r.id = o.retailer_id
+                JOIN vendors v ON v.id = o.vendor_id
                 WHERE o.id = %s
                 """,
                 (order_id,),
@@ -183,13 +214,24 @@ class VendorAcceptanceTimeoutWorker:
                 SELECT om.user_id, om.organization_id
                 FROM organization_memberships om
                 JOIN organizations org ON org.id = om.organization_id
-                WHERE om.organization_id = %s
+                JOIN users u ON u.id = om.user_id
+                WHERE om.organization_id IN (%s, %s)
                   AND om.status = 'ACTIVE'
                   AND org.status = 'ACTIVE'
-                  AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
-                ORDER BY om.user_id
+                  AND u.is_active = TRUE
+                  AND (
+                    (om.organization_id = %s AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF'))
+                    OR
+                    (om.organization_id = %s AND om.role IN ('VENDOR_OWNER', 'VENDOR_STAFF'))
+                  )
+                ORDER BY om.organization_id, om.user_id
                 """,
-                (order["retailer_organization_id"],),
+                (
+                    order["retailer_organization_id"],
+                    order["vendor_organization_id"],
+                    order["retailer_organization_id"],
+                    order["vendor_organization_id"],
+                ),
             )
             recipients = cur.fetchall()
 

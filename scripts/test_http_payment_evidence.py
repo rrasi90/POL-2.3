@@ -137,13 +137,34 @@ def _seed_order(suffix):
                 (pay_id, oi, ri, vi),
             )
 
+            media_id = str(uuid4())
+            cur.execute(
+                """
+                INSERT INTO media_assets (
+                    id, storage_provider, storage_bucket, storage_key,
+                    bucket_name, object_key, mime_type, file_size_bytes,
+                    checksum_sha256, status, provenance,
+                    uploaded_by_user_id, upload_target_type, upload_target_id
+                )
+                VALUES (
+                    %s,'S3_COMPATIBLE','pol-media',%s,'pol-media',%s,
+                    'image/jpeg',2048,%s,'READY','POL_OWNED',%s,'ORDER',%s
+                )
+                """,
+                (
+                    media_id, f"tests/payments/{media_id}.jpg",
+                    f"tests/payments/{media_id}.jpg", "c" * 64, ru, oi,
+                ),
+            )
+
             rs = _create_session(cur, ru, ro)
             vs = _create_session(cur, vu, vo)
 
         conn.commit()
         r_token = encode_access_token(ru, rs, ro, "RETAILER_OWNER")
         v_token = encode_access_token(vu, vs, vo, "VENDOR_OWNER")
-        return {"oi": oi, "pay_id": pay_id, "r_token": r_token, "v_token": v_token,
+        return {"oi": oi, "pay_id": pay_id, "media_id": media_id,
+                "r_token": r_token, "v_token": v_token,
                 "ru": ru, "vu": vu, "ro": ro, "vo": vo}
     finally:
         conn.close()
@@ -173,6 +194,59 @@ class TestSubmitEvidence:
         assert body["data"]["evidence_type"] == "BANK_REFERENCE"
         assert body["data"]["reference_number"] == ref
         assert body["data"]["amount_toman"] == 5000000
+
+    def test_replay_of_same_external_reference_is_idempotent(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        reference = f"TXN-REPLAY-{uuid4().hex[:10]}"
+        payload = {
+            "evidence_type": "BANK_REFERENCE",
+            "reference_number": reference,
+            "amount_toman": 5000000,
+        }
+        first = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json=payload,
+        )
+        second = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json=payload,
+        )
+        assert first.status_code == 201
+        assert second.status_code == 201
+        first_data = first.json()["data"]
+        second_data = second.json()["data"]
+        assert first_data["evidence_id"] == second_data["evidence_id"]
+        assert second_data["idempotent_replay"] is True
+
+    def test_receipt_image_requires_owned_media(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={
+                "evidence_type": "RECEIPT_IMAGE",
+                "reference_number": f"IMG-{uuid4().hex[:10]}",
+                "amount_toman": 5000000,
+                "evidence_media_id": data["media_id"],
+            },
+        )
+        assert resp.status_code == 201
+        assert resp.json()["data"]["evidence_type"] == "RECEIPT_IMAGE"
+
+    def test_receipt_image_without_media_rejected(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={
+                "evidence_type": "RECEIPT_IMAGE",
+                "reference_number": f"IMG-NONE-{uuid4().hex[:10]}",
+                "amount_toman": 5000000,
+            },
+        )
+        assert resp.status_code == 422
 
     def test_vendor_submits_pos_reference(self, client):
         data = _seed_order(uuid4().hex[:8])
@@ -229,8 +303,75 @@ class TestSubmitEvidence:
 
 
 class TestVerifyPayment:
+    def test_vendor_verify_requires_matching_evidence(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/verify",
+            headers={"Authorization": f"Bearer {data['v_token']}"},
+            json={"notes": "No evidence"},
+        )
+        assert resp.status_code == 422
+
+
+
+    def test_canonical_direct_transfer_alias_and_payment_id_verify(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        evidence = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/direct-transfer",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={
+                "evidence_type": "BANK_REFERENCE",
+                "reference_number": f"TXN-CANON-{uuid4().hex[:10]}",
+                "amount_toman": 5000000,
+            },
+        )
+        assert evidence.status_code == 201
+        payment_id = evidence.json()["data"]["payment_id"]
+        assert payment_id
+
+        verified = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/{payment_id}/verify",
+            headers={"Authorization": f"Bearer {data['v_token']}"},
+            json={"notes": "Canonical payment id verification"},
+        )
+        assert verified.status_code == 200
+        assert verified.json()["data"]["status"] == "SUCCESS"
+        assert verified.json()["data"]["idempotent_replay"] is False
+
+    def test_payment_id_verify_rejects_payment_from_other_order(self, client):
+        first = _seed_order(uuid4().hex[:8])
+        second = _seed_order(uuid4().hex[:8])
+        evidence = client.post(
+            f"/api/v1/orders/{first['oi']}/payments/direct-transfer",
+            headers={"Authorization": f"Bearer {first['r_token']}"},
+            json={
+                "evidence_type": "BANK_REFERENCE",
+                "reference_number": f"TXN-X-{uuid4().hex[:10]}",
+                "amount_toman": 5000000,
+            },
+        )
+        payment_id = evidence.json()["data"]["payment_id"]
+        forged = client.post(
+            f"/api/v1/orders/{second['oi']}/payments/{payment_id}/verify",
+            headers={"Authorization": f"Bearer {second['v_token']}"},
+            json={},
+        )
+        assert forged.status_code == 422
+
     def test_vendor_verifies_payment(self, client):
         data = _seed_order(uuid4().hex[:8])
+        evidence = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['v_token']}"},
+            json={
+                "evidence_type": "BANK_REFERENCE",
+                "reference_number": f"TXN-{uuid4().hex[:12]}",
+                "amount_toman": 5000000,
+                "notes": "Bank statement reference",
+            },
+        )
+        assert evidence.status_code == 201
+
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/payments/verify",
             headers={"Authorization": f"Bearer {data['v_token']}"},
@@ -240,6 +381,15 @@ class TestVerifyPayment:
         body = resp.json()
         assert body["success"] is True
         assert body["data"]["status"] == "SUCCESS"
+        assert body["data"]["idempotent_replay"] is False
+
+        replay = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/verify",
+            headers={"Authorization": f"Bearer {data['v_token']}"},
+            json={"notes": "Replay"},
+        )
+        assert replay.status_code == 200
+        assert replay.json()["data"]["idempotent_replay"] is True
 
     def test_retailer_cannot_verify_payment(self, client):
         data = _seed_order(uuid4().hex[:8])
@@ -299,3 +449,121 @@ class TestAccessControl:
             },
         )
         assert resp.status_code == 403
+
+
+    def test_wrong_tenant_cannot_read_evidence(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        conn = _db()
+        other_token = None
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                other_u = str(uuid4()); other_o = str(uuid4())
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s,%s,'OTHER','RETAILER_OWNER')",
+                    (other_u, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    "INSERT INTO organizations (id, name, org_type, status) VALUES (%s,'OTHER-READ','RETAILER','ACTIVE')",
+                    (other_o,),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status) "
+                    "VALUES (%s,%s,%s,'RETAILER_OWNER','ACTIVE')",
+                    (str(uuid4()), other_o, other_u),
+                )
+                other_sess = _create_session(cur, other_u, other_o)
+            conn.commit()
+            other_token = encode_access_token(other_u, other_sess, other_o, "RETAILER_OWNER")
+        finally:
+            conn.close()
+
+        resp = client.get(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {other_token}"},
+        )
+        assert resp.status_code == 403
+
+
+
+class TestRoleMatrixRegression:
+    @staticmethod
+    def _member_token(data, org_id, role):
+        conn = _db()
+        user_id = str(uuid4())
+        session_id = None
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role, is_active) "
+                    "VALUES (%s, %s, %s, %s, TRUE)",
+                    (user_id, f"+9891{uuid4().int % 100000000:08d}", "RBAC Staff", role),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships "
+                    "(id, organization_id, user_id, role, status, is_primary) "
+                    "VALUES (%s, %s, %s, %s, 'ACTIVE', FALSE)",
+                    (str(uuid4()), org_id, user_id, role),
+                )
+                session_id = _create_session(cur, user_id, org_id)
+            conn.commit()
+            token = encode_access_token(user_id, session_id, org_id, role)
+            return token, user_id, session_id
+        finally:
+            conn.close()
+
+    def test_retailer_staff_cannot_submit_payment_evidence(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        token, user_id, session_id = self._member_token(data, data["ro"], "RETAILER_STAFF")
+        try:
+            response = client.post(
+                f"/api/v1/orders/{data['oi']}/payments/evidence",
+                headers={"Authorization": f"Bearer {token}"},
+                json={
+                    "evidence_type": "BANK_REFERENCE",
+                    "reference_number": f"STAFF-REJECT-{uuid4().hex[:10]}",
+                    "amount_toman": 5000000,
+                },
+            )
+            assert response.status_code == 403
+        finally:
+            conn = _db()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("DELETE FROM user_sessions WHERE id=%s", (session_id,))
+                    cur.execute("DELETE FROM organization_memberships WHERE user_id=%s", (user_id,))
+                    cur.execute("DELETE FROM users WHERE id=%s", (user_id,))
+                conn.commit()
+            finally:
+                conn.close()
+
+    def test_vendor_staff_cannot_verify_payment(self, client):
+        data = _seed_order(uuid4().hex[:8])
+        evidence = client.post(
+            f"/api/v1/orders/{data['oi']}/payments/evidence",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={
+                "evidence_type": "BANK_REFERENCE",
+                "reference_number": f"STAFF-VERIFY-{uuid4().hex[:10]}",
+                "amount_toman": 5000000,
+            },
+        )
+        assert evidence.status_code == 201
+
+        token, user_id, session_id = self._member_token(data, data["vo"], "VENDOR_STAFF")
+        try:
+            response = client.post(
+                f"/api/v1/orders/{data['oi']}/payments/verify",
+                headers={"Authorization": f"Bearer {token}"},
+                json={},
+            )
+            assert response.status_code == 403
+        finally:
+            conn = _db()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("DELETE FROM user_sessions WHERE id=%s", (session_id,))
+                    cur.execute("DELETE FROM organization_memberships WHERE user_id=%s", (user_id,))
+                    cur.execute("DELETE FROM users WHERE id=%s", (user_id,))
+                conn.commit()
+            finally:
+                conn.close()

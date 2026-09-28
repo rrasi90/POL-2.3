@@ -24,6 +24,19 @@ const checks = [
     const s = read("screens/VendorMobileScreen.tsx");
     return s.includes("SUBMITTED") && s.includes("ACCEPTED") && s.includes("PREPARING") && s.includes("READY");
   }],
+  ["Mobile order mutations match canonical API payloads and roles", () => {
+    const s = read("screens/OrderDetailMobileScreen.tsx");
+    const v = read("screens/VendorMobileScreen.tsx");
+    return s.includes("reason: rejectReason.trim()") && s.includes("driver_name: dispatchDriverName.trim()") &&
+      s.includes("order_item_id: x.id") && s.includes("accepted_quantity: Number") &&
+      s.includes("submitDeliveryStage(target:") && s.includes('"arrived"') && s.includes("recipient_name: deliveryRecipient.trim()") &&
+      v.includes("new_physical_quantity") && v.includes("vendor_product_id: x.vendor_product_id || x.id") &&
+      v.includes("declared_quantity: Number") && v.includes("physical_quantity ?? 0");
+  }],
+  ["Mobile dispute submission uses canonical amount and description fields", () => {
+    const s = read("screens/OrderDetailMobileScreen.tsx");
+    return s.includes("claimed_amount_toman") && s.includes("const description = disputeDescription.trim()") && !s.includes("{ reason: disputeReason.trim() }");
+  }],
   ["Order detail lifecycle remains state-gated for returns/disputes/vendor actions", () => {
     const s = read("screens/OrderDetailMobileScreen.tsx");
     return s.includes("quantity < 1") && s.includes("disputeReason") && s.includes("DISPATCHED");
@@ -38,7 +51,17 @@ const checks = [
     const account = read("screens/AccountMobileScreen.tsx");
     const app = readMobile("App.tsx");
     return api.includes('request<T>("DELETE"') && api.includes("delete: <T>") && account.includes("/api/v1/auth/sessions/current") &&
-      account.includes("setToken(null)") && app.includes("onLogout()");
+      account.includes("clearSession()") && api.includes("SecureStore") && api.includes("refreshAccessToken") &&
+      api.includes("AUTH_EXPIRED") && app.includes("onLogout()");
+  }],
+  ["Mobile session survives process restart through SecureStore and rotates access on 401", () => {
+    const s = read("api.ts");
+    const login = read("screens/LoginScreen.tsx");
+    const app = readMobile("App.tsx");
+    return s.includes("expo-secure-store") && s.includes("persistSession") &&
+      s.includes("restoreSession") && s.includes("res.status === 401") &&
+      s.includes("await refreshAccessToken()") && login.includes("data.refresh_token") &&
+      app.includes("restoreSession()");
   }],
   ["Shared account uses real profile/notification preference endpoints", () => {
     const s = read("screens/AccountMobileScreen.tsx");
@@ -59,6 +82,7 @@ const checks = [
     const account = read("screens/AccountMobileScreen.tsx");
     return theme.includes("ThemeProvider") && app.includes("<ThemeProvider>") && account.includes('setMode("night")');
   }],
+  ["Retailer checkout reconciles stale basket conflicts from current server basket", () => { const s = read("screens/RetailerMobileScreen.tsx"); return s.includes("ApiError") && s.includes("e.status === 409") && s.includes("/api/v1/baskets/current") && s.includes("setAllocation(null)"); }],
   ["F-03 catalog uses the required q parameter and canonical product fields", () => {
     const s = read("screens/AssistedOrderScreen.tsx");
     return s.includes("if (!q) {") && s.includes("canonical_name_fa") && s.includes("master_sku");

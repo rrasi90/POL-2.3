@@ -4,20 +4,25 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Skeleton,
   StatusChip,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import {
-  cardCls,
   formatDateTime,
   formatToman,
   itemsOf,
   settlementStatusLabel,
   settlementStatusTone,
-  str,
   type LoadState,
 } from "../_shared";
 
@@ -75,11 +80,11 @@ export default function VendorSettlementsPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری تسویه‌ها">
-        <Skeleton className="h-8 w-48" />
-        <div className={cardCls}>
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری تسویه‌ها">
+        <Skeleton className="h-9 w-48" />
+        <Card className="p-6">
           <Skeleton lines={5} />
-        </div>
+        </Card>
       </div>
     );
   }
@@ -96,107 +101,126 @@ export default function VendorSettlementsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          تسویه و اسناد
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">V-10</span>
-        <Link
-          href="/vendor/finance"
-          className="text-[13px] text-[var(--pol-light-brand-primary)] hover:underline"
-        >
-          فعالیت مالی
-        </Link>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>
-          به‌روزرسانی
-        </Button>
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] md:text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              تسویه‌حساب‌ها و اسناد مالی
+            </h1>
+            <span className="rounded-full bg-[var(--pol-light-surface-subtle)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              V-10
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            جزئیات دوره‌های تسویه بانکی، مبالغ واریز شده و مدارک فاکتورهای رسمی
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href="/vendor/finance"
+            className="rounded-lg border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-1.5 text-[13px] text-[var(--pol-light-text-primary)] hover:bg-[var(--pol-light-surface-subtle)] transition-colors"
+          >
+            داشبورد مالی
+          </Link>
+          <Button variant="secondary" size="sm" onClick={() => void load()}>
+            به‌روزرسانی
+          </Button>
+        </div>
       </header>
 
-      <section aria-label="تسویه‌ها">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          تسویه‌ها
+      {/* Settlements Table */}
+      <section aria-label="فهرست تسویه‌ها" className="space-y-3">
+        <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
+          دوره‌های تسویه‌حساب ({settlements.length.toLocaleString("fa-IR")} مورد)
         </h2>
+
         {settlements.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState
-              title="تسویه‌ای ثبت نشده"
-              description="هنوز دوره تسویه‌ای برای شما باز نشده است."
-            />
-          </div>
+          <EmptyState
+            title="هیچ ردیف تسویه‌ای موجود نیست"
+            description="تسویه‌حساب‌ها به طور خودکار طبق برنامه زمانی تعیین‌شده تولید و واریز خواهند شد."
+          />
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
-            {settlements.map((s) => (
-              <li key={String(s.id)} className={cardCls}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusChip tone={settlementStatusTone[s.status ?? ""] ?? "neutral"}>
-                    {settlementStatusLabel[s.status ?? ""] ?? s.status ?? "—"}
-                  </StatusChip>
-                  <span className="text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
-                    {s.settlement_number ?? String(s.id)}
-                  </span>
-                  <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                    {formatDateTime(s.created_at)}
-                  </span>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-3 text-[13px]">
-                  <span className="font-medium text-[var(--pol-light-text-primary)]">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>شماره پیگیری تسویه</TableHead>
+                <TableHead>وضعیت</TableHead>
+                <TableHead>بازه زمانی دوره</TableHead>
+                <TableHead>تاریخ واریز / ایجاد</TableHead>
+                <TableHead>مبلغ واریزی</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {settlements.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-mono font-bold" dir="ltr">
+                    {s.settlement_number ?? `SETTLE-${s.id.slice(0, 8)}`}
+                  </TableCell>
+                  <TableCell>
+                    <StatusChip tone={settlementStatusTone[s.status ?? ""] ?? "neutral"}>
+                      {settlementStatusLabel[s.status ?? ""] ?? s.status ?? "—"}
+                    </StatusChip>
+                  </TableCell>
+                  <TableCell className="text-[12px] text-[var(--pol-light-text-secondary)]">
+                    {s.period_start ? formatDateTime(s.period_start) : "—"} تا{" "}
+                    {s.period_end ? formatDateTime(s.period_end) : "—"}
+                  </TableCell>
+                  <TableCell className="text-[12px] text-[var(--pol-light-text-muted)]">
+                    {formatDateTime(s.paid_at ?? s.created_at)}
+                  </TableCell>
+                  <TableCell className="font-bold">
                     {formatToman(s.amount_toman)}
-                  </span>
-                  {s.period_start || s.period_end ? (
-                    <span className="text-[var(--pol-light-text-secondary)]">
-                      دوره: {formatDateTime(s.period_start)} — {formatDateTime(s.period_end)}
-                    </span>
-                  ) : null}
-                  {s.paid_at ? (
-                    <span className="text-[var(--pol-light-text-secondary)]">
-                      پرداخت: {formatDateTime(s.paid_at)}
-                    </span>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ul>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </section>
 
-      <section aria-label="فاکتورها">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          فاکتورها
+      {/* Invoices Table */}
+      <section aria-label="فهرست فاکتورها" className="space-y-3">
+        <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
+          فاکتورهای رسمی صادرشده ({invoices.length.toLocaleString("fa-IR")} مورد)
         </h2>
+
         {invoices.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState title="فاکتوری یافت نشد" description="سندی صادر نشده است." />
-          </div>
+          <EmptyState title="هیچ فاکتوری ثبت نشده است" />
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
-            {invoices.map((inv) => (
-              <li key={String(inv.id)} className={cardCls}>
-                <div className="flex flex-wrap items-center gap-2">
-                  {inv.status ? <StatusChip tone="info">{inv.status}</StatusChip> : null}
-                  <span className="text-[13px] font-semibold text-[var(--pol-light-text-primary)]" dir="ltr">
-                    {inv.invoice_number ?? str(inv.id)}
-                  </span>
-                  <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>شماره فاکتور</TableHead>
+                <TableHead>سفارش مرتبط</TableHead>
+                <TableHead>وضعیت فاکتور</TableHead>
+                <TableHead>تاریخ صدور</TableHead>
+                <TableHead>مبلغ کل</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {invoices.map((inv) => (
+                <TableRow key={inv.id}>
+                  <TableCell className="font-mono font-bold" dir="ltr">
+                    {inv.invoice_number ?? `INV-${inv.id.slice(0, 8)}`}
+                  </TableCell>
+                  <TableCell className="font-mono text-[12px] text-[var(--pol-light-text-secondary)]" dir="ltr">
+                    {inv.order_id ? inv.order_id.slice(0, 8) + "..." : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <StatusChip tone="info">{inv.status ?? "صادرشده"}</StatusChip>
+                  </TableCell>
+                  <TableCell className="text-[12px] text-[var(--pol-light-text-muted)]">
                     {formatDateTime(inv.issued_at ?? inv.created_at)}
-                  </span>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-3 text-[13px]">
-                  <span className="font-medium text-[var(--pol-light-text-primary)]">
+                  </TableCell>
+                  <TableCell className="font-bold">
                     {formatToman(inv.total_amount_toman)}
-                  </span>
-                  {inv.order_id ? (
-                    <Link
-                      href={`/vendor/orders/${inv.order_id}`}
-                      className="text-[var(--pol-light-brand-primary)] hover:underline"
-                      dir="ltr"
-                    >
-                      order {inv.order_id}
-                    </Link>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ul>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </section>
     </div>

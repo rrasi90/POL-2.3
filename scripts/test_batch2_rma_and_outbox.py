@@ -35,9 +35,63 @@ def rma_case(postgres_database, checkout_catalog, checkout_request):
     with transaction(postgres_database) as cur:
         result = POLApplicationBoundary(cur, checkout_catalog["context"]).checkout(**deepcopy(checkout_request))
         order = result["orders"][0]
+        cur.execute(
+            """
+            UPDATE order_items
+            SET accepted_quantity=COALESCE(accepted_quantity, ordered_quantity),
+                delivered_quantity=ordered_quantity,
+                fulfillment_status='FULFILLED'
+            WHERE order_id=%s
+            """,
+            (order["id"],),
+        )
         cur.execute("UPDATE orders SET order_status='DELIVERED' WHERE id=%s", (order["id"],))
         cur.execute("SELECT id FROM order_items WHERE order_id=%s ORDER BY id", (order["id"],))
         item_id = cur.fetchone()["id"]
+
+        cur.execute(
+            "SELECT COUNT(*) AS c FROM payments WHERE order_id=%s AND payment_status='SUCCESS'",
+            (order["id"],),
+        )
+        if cur.fetchone()["c"] == 0:
+            cur.execute(
+                "SELECT COALESCE(SUM(ordered_quantity * unit_price_toman),0) AS total FROM order_items WHERE order_id=%s",
+                (order["id"],),
+            )
+            total = int(cur.fetchone()["total"])
+            cur.execute(
+                """
+                INSERT INTO payments
+                    (id,order_id,retailer_id,vendor_id,amount_toman,payment_method,
+                     payment_status,custody_model,reference_number,paid_at)
+                VALUES (%s,%s,%s,%s,%s,'ONLINE_MOCK','SUCCESS','NON_CUSTODIAL_DIRECT',%s,now())
+                """,
+                (
+                    str(uuid4()), order["id"], order["retailer_id"], order["vendor_id"],
+                    total, f"TEST-{order['id']}",
+                ),
+            )
+
+        cur.execute(
+            "SELECT COUNT(*) AS c FROM settlements WHERE order_id=%s AND vendor_id=%s",
+            (order["id"], order["vendor_id"]),
+        )
+        if cur.fetchone()["c"] == 0:
+            cur.execute(
+                "SELECT COALESCE(SUM(ordered_quantity * unit_price_toman),0) AS total FROM order_items WHERE order_id=%s",
+                (order["id"],),
+            )
+            total = int(cur.fetchone()["total"])
+            cur.execute(
+                """
+                INSERT INTO settlements
+                    (id,order_id,vendor_id,gross_amount_toman,commission_rate,
+                     commission_amount_toman,net_vendor_amount_toman,status)
+                VALUES (%s,%s,%s,%s,0,0,%s,'CALCULATED')
+                """,
+                (str(uuid4()), order["id"], order["vendor_id"], total, total),
+            )
+
         cur.execute("SELECT organization_id, user_id FROM vendors WHERE id=%s", (order["vendor_id"],))
         vendor = cur.fetchone()
         payload = dict(
@@ -128,6 +182,20 @@ def test_rma_ops_context_and_separation_of_duties(postgres_database, rma_case, r
             return_id=ret["id"], target_status="REFUND_PENDING", approved_refund_amount_toman=1000,
         )
         assert pending["status"] == "REFUND_PENDING"
+    with transaction(postgres_database) as cur:
+        pending = POLApplicationBoundary(cur, approver).return_transition(
+            return_id=ret["id"], target_status="REFUND_PENDING", approved_refund_amount_toman=1000,
+        )
+        assert pending["status"] == "REFUND_PENDING"
+        cur.execute("SELECT status FROM refunds WHERE return_id=%s", (ret["id"],))
+        assert cur.fetchone()["status"] == "PENDING"
+
+    with transaction(postgres_database) as cur:
+        approved = POLApplicationBoundary(cur, approver).return_refund_approve(
+            return_id=ret["id"], reason="Finance approval",
+        )
+        assert approved["status"] == "APPROVED"
+
     with pytest.raises(ReturnAccessError, match="different actor than the approver"):
         with transaction(postgres_database) as cur:
             POLApplicationBoundary(cur, approver).return_transition(return_id=ret["id"], target_status="REFUNDED")
@@ -141,6 +209,25 @@ def test_rma_ops_context_and_separation_of_duties(postgres_database, rma_case, r
         assert refund["status"] == "COMPLETED"
         assert refund["refund_method"] == "VENDOR_CASH_DIRECT"
         assert refund["amount_toman"] == 1000
+        cur.execute("SELECT payment_status FROM payments WHERE id=%s", (refund["payment_id"],))
+        assert cur.fetchone()["payment_status"] == "SUCCESS"
+        cur.execute(
+            """
+            SELECT event_name
+            FROM outbox_events
+            WHERE aggregate_id=%s
+              AND event_name IN ('REFUND_CREATED','REFUND_APPROVED','REFUND_COMPLETED','PAYMENT_REFUNDED')
+            ORDER BY event_name
+            """,
+            (str(refund["id"]),),
+        )
+        assert [row["event_name"] for row in cur.fetchall()] == ["REFUND_APPROVED", "REFUND_COMPLETED", "REFUND_CREATED"]
+
+        cur.execute(
+            "SELECT event_name FROM outbox_events WHERE aggregate_id=%s AND event_name='REFUND_CREATED'",
+            (str(refund["id"]),),
+        )
+        assert cur.fetchone() is not None
 
 
 @pytest.mark.parametrize("status", ["REFUND_PENDING", "REFUNDED"])

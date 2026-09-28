@@ -29,7 +29,11 @@ from scripts.api.errors import (
 from scripts.api.routes.auth import router as auth_router
 from scripts.api.routes.baskets import router as baskets_router
 from scripts.api.routes.catalog import router as catalog_router
+from scripts.api.routes.categories import router as categories_router
+from scripts.api.routes.catalog_identifiers import candidates_router as catalog_candidates_router
+from scripts.api.routes.products import router as products_router
 from scripts.api.routes.profile import membership_router, router as profile_router
+from scripts.api.routes.privacy import router as privacy_router
 from scripts.api.routes.orders import router as orders_router
 from scripts.api.routes.returns import router as returns_order_router
 from scripts.api.routes.returns import returns_router
@@ -41,15 +45,21 @@ from scripts.api.routes.reconciliation import router as reconciliation_router
 from scripts.api.routes.support import router as support_router
 from scripts.api.routes.admin import router as admin_router
 from scripts.api.routes.referrals import router as referrals_router
-from scripts.api.routes.notifications import router as notifications_router
+from scripts.api.routes.notifications import inbox_router, router as notifications_router
 from scripts.api.routes.field import router as field_router
+from scripts.api.routes.media import router as media_router
 from scripts.api.routes.vendor_storefront import router as vendor_storefront_router
 from scripts.api.routes.catalog_search import router as catalog_search_router
+from scripts.api.routes.analytics import router as analytics_router
+from scripts.api.routes.catalog_matching import router as catalog_matching_router
+from scripts.api.routes.management import vendor_router as vendor_management_router, admin_router as admin_management_router, ops_router as ops_management_router
+from scripts.api.routes.vendor_inventory import router as vendor_inventory_router
 from scripts.api.routes.finance import (
     invoices_router as finance_invoices_router,
     order_invoice_router as finance_order_invoice_router,
     settlements_router as finance_settlements_router,
     settlement_detail_router as finance_settlement_detail_router,
+    refunds_router as finance_refunds_router,
 )
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -99,7 +109,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
-        allow_credentials=False,
+        allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Correlation-ID"],
         expose_headers=["X-Correlation-ID"],
@@ -115,6 +125,8 @@ def create_app() -> FastAPI:
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        if environment in {"prod", "production"}:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
     @app.get("/healthz", tags=["ops"])
@@ -137,9 +149,13 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(baskets_router, prefix="/api/v1")
     app.include_router(catalog_router, prefix="/api/v1")
+    app.include_router(categories_router, prefix="/api/v1")
+    app.include_router(catalog_candidates_router, prefix="/api/v1")
+    app.include_router(products_router, prefix="/api/v1")
     app.include_router(vendor_catalog_router, prefix="/api/v1")
     app.include_router(daily_inventory_router, prefix="/api/v1")
     app.include_router(profile_router, prefix="/api/v1")
+    app.include_router(privacy_router, prefix="/api/v1")
     app.include_router(membership_router, prefix="/api/v1")
     app.include_router(orders_router, prefix="/api/v1")
     app.include_router(returns_order_router, prefix="/api/v1")
@@ -151,13 +167,22 @@ def create_app() -> FastAPI:
     app.include_router(finance_order_invoice_router, prefix="/api/v1")
     app.include_router(finance_settlements_router, prefix="/api/v1")
     app.include_router(finance_settlement_detail_router, prefix="/api/v1")
+    app.include_router(finance_refunds_router, prefix="/api/v1")
     app.include_router(reconciliation_router, prefix="/api/v1")
     app.include_router(admin_router, prefix="/api/v1")
     app.include_router(referrals_router, prefix="/api/v1")
     app.include_router(notifications_router, prefix="/api/v1")
+    app.include_router(inbox_router, prefix="/api/v1")
     app.include_router(field_router, prefix="/api/v1")
+    app.include_router(media_router, prefix="/api/v1")
     app.include_router(vendor_storefront_router, prefix="/api/v1")
     app.include_router(catalog_search_router, prefix="/api/v1")
+    app.include_router(analytics_router, prefix="/api/v1")
+    app.include_router(catalog_matching_router, prefix="/api/v1")
+    app.include_router(vendor_management_router, prefix="/api/v1")
+    app.include_router(admin_management_router, prefix="/api/v1")
+    app.include_router(ops_management_router, prefix="/api/v1")
+    app.include_router(vendor_inventory_router, prefix="/api/v1")
 
     app.add_exception_handler(RequestValidationError, request_validation_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)

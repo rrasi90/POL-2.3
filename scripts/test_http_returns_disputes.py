@@ -121,6 +121,34 @@ def _seed_delivered_order(suffix):
                 "VALUES (%s, %s, %s, %s, 'Product', 'Brand', 'VS', 'CARTON', 4, 10, 10, 500000, 5000000, 'PENDING')",
                 (oii, oi, prod_id, vpid),
             )
+            media_id = str(uuid4())
+            cur.execute(
+                """
+                INSERT INTO media_assets (
+                    id, storage_provider, storage_bucket, storage_key,
+                    bucket_name, object_key, mime_type, file_size_bytes,
+                    checksum_sha256, status, provenance,
+                    uploaded_by_user_id, upload_target_type, upload_target_id
+                )
+                VALUES (
+                    %s,'S3_COMPATIBLE','pol-media',%s,'pol-media',%s,
+                    'image/jpeg',1024,%s,'READY','POL_OWNED',%s,'ORDER',%s
+                )
+                """,
+                (
+                    media_id,
+                    f"test/{media_id}.jpg",
+                    f"test/{media_id}.jpg",
+                    "a" * 64,
+                    ru,
+                    oi,
+                ),
+            )
+
+            cur.execute(
+                "INSERT INTO deliveries (id, order_id, vendor_id, carrier_type, carrier_name, delivery_status, delivered_at) VALUES (%s, %s, %s, 'CLUSTER_LOGISTICS', 'Test Carrier', 'DELIVERED', now())",
+                (str(uuid4()), oi, vi),
+            )
             cur.execute(
                 "INSERT INTO settlements (id, order_id, vendor_id, gross_amount_toman, commission_rate, commission_amount_toman, net_vendor_amount_toman, status) "
                 "VALUES (%s, %s, %s, 5000000, 0, 0, 5000000, 'CALCULATED')",
@@ -134,9 +162,24 @@ def _seed_delivered_order(suffix):
         rt = encode_access_token(ru, rs, ro, "RETAILER_OWNER")
         vt = encode_access_token(vu, vs, vo, "VENDOR_OWNER")
         return {"oi": oi, "oii": oii, "si": si, "r_token": rt, "v_token": vt,
-                "ru": ru, "ro": ro, "vi": vi, "vo": vo, "ri": ri}
+                "ru": ru, "ro": ro, "vi": vi, "vo": vo, "ri": ri,
+                "media_id": media_id}
     finally:
         conn.close()
+
+
+def _dispute_payload(data, amount, description, quantity=1):
+    return {
+        "claimed_amount_toman": amount,
+        "description": description,
+        "evidence_media_id": data["media_id"],
+        "items": [{
+            "order_item_id": data["oii"],
+            "quantity": quantity,
+            "claimed_amount_toman": amount,
+            "reason_code": "DELIVERY",
+        }],
+    }
 
 
 @pytest.fixture(scope="module")
@@ -297,21 +340,76 @@ class TestDisputeOpen:
         data = _seed_delivered_order(uuid4().hex[:8])
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"description": "Wrong items delivered, vendor unresponsive"},
+            headers={
+                "Authorization": f"Bearer {data['r_token']}",
+                "Idempotency-Key": str(uuid4()),
+            },
+            json=_dispute_payload(data, 1000000, "Wrong items delivered, vendor unresponsive", 2),
         )
         assert resp.status_code == 201
         body = resp.json()
         assert body["success"] is True
         assert body["data"]["dispute_status"] == "OPEN"
         assert body["data"]["description"] == "Wrong items delivered, vendor unresponsive"
+        assert body["data"]["claimed_amount_toman"] == 1000000
+
+        with _db() as verify_conn:
+            with verify_conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT event_name, target_user_id, target_organization_id FROM outbox_events WHERE event_name = %s AND aggregate_id = %s",
+                    ("DISPUTE_OPENED", body["data"]["id"]),
+                )
+                events = cur.fetchall()
+                assert events and all(e["target_user_id"] and e["target_organization_id"] for e in events)
+
+    def test_retailer_staff_cannot_open_formal_dispute(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                staff_user = str(uuid4())
+                cur.execute(
+                    """
+                    INSERT INTO users (id, phone_number, full_name, role, is_active)
+                    VALUES (%s, %s, 'R Staff', 'RETAILER_STAFF', TRUE)
+                    """,
+                    (staff_user, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO organization_memberships
+                        (id, organization_id, user_id, role, status, is_primary)
+                    VALUES (%s, %s, %s, 'RETAILER_STAFF', 'ACTIVE', FALSE)
+                    """,
+                    (str(uuid4()), data["ro"], staff_user),
+                )
+                session_id = _create_session(cur, staff_user, data["ro"])
+            conn.commit()
+            staff_token = encode_access_token(
+                staff_user, session_id, data["ro"], "RETAILER_STAFF"
+            )
+        finally:
+            conn.close()
+
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={
+                "Authorization": f"Bearer {staff_token}",
+                "Idempotency-Key": str(uuid4()),
+            },
+            json=_dispute_payload(data, 100000, "Staff must not open a formal dispute", 1),
+        )
+        assert resp.status_code == 403
 
     def test_vendor_cannot_open_dispute(self, client):
         data = _seed_delivered_order(uuid4().hex[:8])
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            headers={"Authorization": f"Bearer {data['v_token']}"},
-            json={"description": "Test dispute from vendor"},
+            headers={
+                "Authorization": f"Bearer {data['v_token']}",
+                "Idempotency-Key": str(uuid4()),
+            },
+            json=_dispute_payload(data, 100000, "Test dispute from vendor", 1),
         )
         assert resp.status_code in (403, 422)
 
@@ -319,18 +417,45 @@ class TestDisputeOpen:
         data = _seed_delivered_order(uuid4().hex[:8])
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            json={"description": "Test"},
+            json=_dispute_payload(data, 100000, "Test", 1),
         )
         assert resp.status_code == 401
 
+
+class TestDisputeFilingWindow:
+    def test_expired_dispute_window_is_rejected(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        conn = _db()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE deliveries SET delivered_at = now() - interval '5 hours' WHERE order_id = %s",
+                    (data["oi"],),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+
+        resp = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={
+                "Authorization": f"Bearer {data['r_token']}",
+                "Idempotency-Key": str(uuid4()),
+            },
+            json=_dispute_payload(data, 1000000, "Expired dispute window", 2),
+        )
+        assert resp.status_code == 422
 
 class TestDisputeQuery:
     def test_get_dispute_by_tenant(self, client):
         data = _seed_delivered_order(uuid4().hex[:8])
         create_resp = client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"description": "Dispute for testing get"},
+            headers={
+                "Authorization": f"Bearer {data['r_token']}",
+                "Idempotency-Key": str(uuid4()),
+            },
+            json=_dispute_payload(data, 100000, "Dispute for testing get", 1),
         )
         dispute_id = create_resp.json()["data"]["id"]
         resp = client.get(
@@ -344,8 +469,11 @@ class TestDisputeQuery:
         data = _seed_delivered_order(uuid4().hex[:8])
         client.post(
             f"/api/v1/orders/{data['oi']}/disputes",
-            headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"description": "Dispute for listing"},
+            headers={
+                "Authorization": f"Bearer {data['r_token']}",
+                "Idempotency-Key": str(uuid4()),
+            },
+            json=_dispute_payload(data, 100000, "Dispute for listing", 1),
         )
         resp = client.get(
             f"/api/v1/orders/{data['oi']}/disputes",
@@ -353,3 +481,265 @@ class TestDisputeQuery:
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["count"] >= 1
+
+
+
+def _seed_ops_admin():
+    conn = _db()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    user_id = str(uuid4())
+    org_id = str(uuid4())
+    cur.execute(
+        "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s,%s,'Ops Admin','OPS_ADMIN')",
+        (user_id, f"+9891{uuid4().int % 100000000:08d}"),
+    )
+    cur.execute(
+        "INSERT INTO organizations (id,name,org_type,status) VALUES (%s,'Ops','OPERATOR','ACTIVE')",
+        (org_id,),
+    )
+    cur.execute(
+        """
+        INSERT INTO organization_memberships
+            (id,organization_id,user_id,role,status,is_primary)
+        VALUES (%s,%s,%s,'OPS_ADMIN','ACTIVE',TRUE)
+        """,
+        (str(uuid4()), org_id, user_id),
+    )
+    session_id = _create_session(cur, user_id, org_id)
+    conn.commit()
+    token = encode_access_token(user_id, session_id, org_id, "OPS_ADMIN")
+    cur.close()
+    return conn, token, user_id, org_id, session_id
+
+
+class TestDisputeResolution:
+    def test_ops_admin_can_resolve_and_reconcile_dispute(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        opened = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={
+                "Authorization": f"Bearer {data['r_token']}",
+                "Idempotency-Key": str(uuid4()),
+            },
+            json=_dispute_payload(data, 1000000, "Resolution contract test", 2),
+        )
+        assert opened.status_code == 201
+        dispute_id = opened.json()["data"]["id"]
+
+        ops_conn, ops_token, ops_user, ops_org, ops_session = _seed_ops_admin()
+        try:
+            investigating = client.post(
+                f"/api/v1/disputes/{dispute_id}/investigate",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={"reason": "Ops review started"},
+            )
+            assert investigating.status_code == 200
+            assert investigating.json()["data"]["dispute_status"] == "INVESTIGATING"
+
+            resolved = client.patch(
+                f"/api/v1/disputes/{dispute_id}/resolve",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={
+                    "outcome": "ADJUSTED_SHORTAGE",
+                    "approved_amount_toman": 750000,
+                    "reason": "Confirmed shortage after review",
+                },
+            )
+            assert resolved.status_code == 200
+            body = resolved.json()["data"]
+            assert body["dispute_status"] == "RESOLVED"
+            assert body["resolution_outcome"] == "ADJUSTED_SHORTAGE"
+            assert body["approved_amount_toman"] == 750000
+            assert body["settlement_status"] == "DISPUTED"
+
+            with ops_conn:
+                with ops_conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute(
+                        "SELECT dispute_status FROM disputes WHERE id=%s",
+                        (dispute_id,),
+                    )
+                    assert cur.fetchone()["dispute_status"] == "RESOLVED"
+                    cur.execute(
+                        "SELECT amount_toman, adjustment_type, applied_by_user_id FROM settlement_adjustments WHERE dispute_id=%s",
+                        (dispute_id,),
+                    )
+                    adj = cur.fetchone()
+                    assert adj["amount_toman"] == 750000
+                    assert adj["adjustment_type"] == "SHORTAGE_DEDUCTION"
+                    assert str(adj["applied_by_user_id"]) == ops_user
+        finally:
+            ops_conn.rollback()
+            ops_conn.close()
+
+    def test_dispute_resolution_is_idempotent(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        opened = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json=_dispute_payload(data, 500000, "Idempotent resolution", 1),
+        )
+        dispute_id = opened.json()["data"]["id"]
+
+        ops_conn, ops_token, *_ = _seed_ops_admin()
+        try:
+            payload = {
+                "outcome": "ADJUSTED_SHORTAGE",
+                "approved_amount_toman": 300000,
+                "reason": "Approved",
+            }
+            investigating = client.post(
+                f"/api/v1/disputes/{dispute_id}/investigate",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={"reason": "Ops review started"},
+            )
+            assert investigating.status_code == 200
+
+            first = client.patch(
+                f"/api/v1/disputes/{dispute_id}/resolve",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json=payload,
+            )
+            second = client.patch(
+                f"/api/v1/disputes/{dispute_id}/resolve",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json=payload,
+            )
+            assert first.status_code == 200
+            assert second.status_code == 200
+            assert second.json()["data"]["idempotent_replay"] is True
+            with ops_conn:
+                with ops_conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT COUNT(*) FROM settlement_adjustments WHERE dispute_id=%s",
+                        (dispute_id,),
+                    )
+                    assert cur.fetchone()[0] == 1
+        finally:
+            ops_conn.rollback()
+            ops_conn.close()
+
+    def test_resolution_notifies_every_active_member_of_both_parties(self, client):
+        """G-466 regression: DISPUTE_RESOLVED fan-out must not collide on event_id.
+
+        Both party organizations expand to one outbox row per active member, and
+        the per-user dedupe_key makes those rows genuinely distinct, so a single
+        shared event_id made the second row fail with a unique violation and the
+        resolution request returned HTTP 500.
+        """
+        data = _seed_delivered_order(uuid4().hex[:8])
+        opened = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json=_dispute_payload(data, 500000, "Fan-out regression", 1),
+        )
+        dispute_id = opened.json()["data"]["id"]
+
+        # Give both party organizations a second active member (owner + staff).
+        second_member_conn = _db()
+        try:
+            with second_member_conn.cursor() as cur:
+                for org_id, role in ((data["ro"], "RETAILER_STAFF"), (data["vo"], "VENDOR_STAFF")):
+                    member_id = str(uuid4())
+                    cur.execute(
+                        "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s,%s,'Second member',%s)",
+                        (member_id, f"+9891{uuid4().int % 100000000:08d}", role),
+                    )
+                    cur.execute(
+                        "INSERT INTO organization_memberships (id, organization_id, user_id, role, status) "
+                        "VALUES (%s,%s,%s,%s,'ACTIVE')",
+                        (str(uuid4()), org_id, member_id, role),
+                    )
+            second_member_conn.commit()
+        finally:
+            second_member_conn.close()
+
+        ops_conn, ops_token, *_ = _seed_ops_admin()
+        try:
+            investigating = client.post(
+                f"/api/v1/disputes/{dispute_id}/investigate",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={"reason": "Ops review started"},
+            )
+            assert investigating.status_code == 200
+
+            resolved = client.patch(
+                f"/api/v1/disputes/{dispute_id}/resolve",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={
+                    "outcome": "ADJUSTED_SHORTAGE",
+                    "approved_amount_toman": 250000,
+                    "reason": "Multi-member fan-out",
+                },
+            )
+            assert resolved.status_code == 200, resolved.text
+            assert resolved.json()["data"]["dispute_status"] == "RESOLVED"
+
+            with ops_conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT target_organization_id, count(*) AS n,
+                           count(DISTINCT event_id) AS distinct_ids
+                    FROM outbox_events
+                    WHERE event_name='DISPUTE_RESOLVED' AND aggregate_id=%s
+                    GROUP BY 1
+                    """,
+                    (dispute_id,),
+                )
+                rows = cur.fetchall()
+                assert len(rows) == 2, rows
+                for row in rows:
+                    assert row["n"] == 2, row
+                    assert row["distinct_ids"] == row["n"], row
+        finally:
+            ops_conn.rollback()
+            ops_conn.close()
+
+    def test_non_ops_cannot_resolve_dispute(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        opened = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json=_dispute_payload(data, 500000, "Auth test", 1),
+        )
+        dispute_id = opened.json()["data"]["id"]
+        denied = client.patch(
+            f"/api/v1/disputes/{dispute_id}/resolve",
+            headers={"Authorization": f"Bearer {data['v_token']}"},
+            json={
+                "outcome": "ADJUSTED_SHORTAGE",
+                "approved_amount_toman": 100000,
+                "reason": "Denied",
+            },
+        )
+        assert denied.status_code == 403
+
+    def test_resolution_cannot_exceed_claim(self, client):
+        data = _seed_delivered_order(uuid4().hex[:8])
+        opened = client.post(
+            f"/api/v1/orders/{data['oi']}/disputes",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json=_dispute_payload(data, 500000, "Amount guard", 1),
+        )
+        dispute_id = opened.json()["data"]["id"]
+        ops_conn, ops_token, *_ = _seed_ops_admin()
+        try:
+            investigating = client.post(
+                f"/api/v1/disputes/{dispute_id}/investigate",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={"reason": "Ops review started"},
+            )
+            assert investigating.status_code == 200
+
+            denied = client.patch(
+                f"/api/v1/disputes/{dispute_id}/resolve",
+                headers={"Authorization": f"Bearer {ops_token}"},
+                json={
+                    "outcome": "ADJUSTED_SHORTAGE",
+                    "approved_amount_toman": 500001,
+                    "reason": "Too high",
+                },
+            )
+            assert denied.status_code == 422
+        finally:
+            ops_conn.rollback()
+            ops_conn.close()

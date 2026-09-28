@@ -177,13 +177,16 @@ def test_inventory_reservations():
             WHERE vendor_product_id = %s;
         """, (vp_id,))
 
-        # Daemon checks for expired reservations
+        # Daemon checks for expired reservations (scoped to this vendor_product:
+        # a global sweep would mutate other tests' committed reservations and
+        # trip the reconciliation invariant on unrelated rows at commit).
         cur.execute("""
-            UPDATE inventory_reservations 
+            UPDATE inventory_reservations
             SET status = 'EXPIRED', released_at = now()
             WHERE status = 'ACTIVE' AND expires_at < now()
+              AND vendor_product_id = %s
             RETURNING id, quantity;
-        """)
+        """, (vp_id,))
         expired_rows = cur.fetchall()
         assert len(expired_rows) >= 1
         assert any(str(r["id"]) == res_id3 for r in expired_rows)

@@ -82,6 +82,21 @@ def test_checkout_rejects_invalid_tenant_context(
         assert snapshot(cur) == before
 
 
+@pytest.mark.parametrize("mutation", ["inactive_user", "suspended_org"])
+def test_boundary_role_resolution_rejects_inactive_security_context(
+    postgres_database, checkout_catalog, mutation,
+):
+    actor = checkout_catalog["context"]
+    with transaction(postgres_database) as cur:
+        if mutation == "inactive_user":
+            cur.execute("UPDATE users SET is_active=FALSE WHERE id=%s", (actor.user_id,))
+        else:
+            cur.execute("UPDATE organizations SET status='SUSPENDED' WHERE id=%s", (actor.organization_id,))
+    with pytest.raises(PermissionError):
+        with transaction(postgres_database) as cur:
+            POLApplicationBoundary(cur, actor).order_list(limit=5)
+    # The mutation above is intentional test state; fixture teardown owns restoration.
+
 @pytest.mark.parametrize("change, message", [
     ("price", "Quoted price is not the current vendor price"),
     ("stock", "Available stock is insufficient"),

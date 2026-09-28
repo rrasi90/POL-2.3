@@ -127,7 +127,7 @@ def _seed_support(suffix, *, include_ops=False):
         rt = encode_access_token(ru, rs, ro, "RETAILER_OWNER")
         vt = encode_access_token(vu, vs, vo, "VENDOR_OWNER")
         ot = encode_access_token(ou, os_s, oo, "OPS_AGENT") if include_ops else None
-        return {"r_token": rt, "v_token": vt, "o_token": ot, "ru": ru, "ro": ro, "vu": vu, "vo": vo, "ou": ou, "oo": oo}
+        return {"r_token": rt, "v_token": vt, "o_token": ot, "ru": ru, "ro": ro, "vu": vu, "vo": vo, "vi": vi, "ou": ou, "oo": oo}
     finally:
         conn.close()
 
@@ -162,6 +162,83 @@ class TestCreateSupportCase:
         )
         assert resp.status_code == 201
         assert resp.json()["data"]["priority"] == "HIGH"
+
+
+    def test_related_order_must_belong_to_active_support_tenant(self, client):
+        data = _seed_support(uuid4().hex[:8])
+        conn = _db()
+        other_user = str(uuid4())
+        other_org = str(uuid4())
+        other_retailer = str(uuid4())
+        other_group = str(uuid4())
+        other_order = str(uuid4())
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role) VALUES (%s,%s,'Other Retailer','RETAILER_OWNER')",
+                    (other_user, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    "INSERT INTO organizations (id,name,org_type,status) VALUES (%s,'Other Retailer Org','RETAILER','ACTIVE')",
+                    (other_org,),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO organization_memberships
+                        (id,organization_id,user_id,role,status)
+                    VALUES (%s,%s,%s,'RETAILER_OWNER','ACTIVE')
+                    """,
+                    (str(uuid4()), other_org, other_user),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO retailers
+                        (id,user_id,organization_id,store_name,city,neighborhood,address)
+                    VALUES (%s,%s,%s,'Other Store','Ahvaz','Other','Other Address')
+                    """,
+                    (other_retailer, other_user, other_org),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO order_groups
+                        (id,retailer_id,total_amount_toman,group_status)
+                    VALUES (%s,%s,1000000,'ACTIVE')
+                    """,
+                    (other_group, other_retailer),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO orders
+                        (id,order_number,order_group_id,retailer_id,vendor_id,
+                         order_status,total_amount_toman)
+                    VALUES (%s,%s,%s,%s,%s,'DELIVERED',1000000)
+                    """,
+                    (other_order, f"ORD-SUP-{uuid4().hex[:10]}", other_group, other_retailer, data["vi"]),
+                )
+            conn.commit()
+
+            resp = client.post(
+                "/api/v1/support/cases",
+                headers={"Authorization": f"Bearer {data['r_token']}"},
+                json={
+                    "case_type": "ORDER_INQUIRY",
+                    "subject": "Cross-tenant related order regression",
+                    "related_order_id": other_order,
+                },
+            )
+            assert resp.status_code == 403
+            body = resp.json()
+            assert body["success"] is False
+        finally:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM orders WHERE id=%s", (other_order,))
+                cur.execute("DELETE FROM order_groups WHERE id=%s", (other_group,))
+                cur.execute("DELETE FROM retailers WHERE id=%s", (other_retailer,))
+                cur.execute("DELETE FROM organization_memberships WHERE organization_id=%s", (other_org,))
+                cur.execute("DELETE FROM organizations WHERE id=%s", (other_org,))
+                cur.execute("DELETE FROM users WHERE id=%s", (other_user,))
+            conn.commit()
+            conn.close()
 
 
 class TestListSupportCases:
@@ -230,6 +307,39 @@ class TestAddMessage:
         assert resp.json()["data"]["message_text"] == "Hello support team!"
         assert resp.json()["data"]["sender_type"] == "USER"
 
+
+class TestSupportAssignment:
+    def test_assign_case_uses_canonical_route(self, client):
+        data = _seed_support(uuid4().hex[:8], include_ops=True)
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Assign test"},
+        )
+        case_id = create_resp.json()["data"]["id"]
+        resp = client.post(
+            f"/api/v1/support/cases/{case_id}/assign",
+            headers={"Authorization": f"Bearer {data['o_token']}"},
+            json={"assignee_user_id": data["ou"]},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["assigned_to_user_id"] == data["ou"]
+
+    def test_status_alias_uses_canonical_route(self, client):
+        data = _seed_support(uuid4().hex[:8], include_ops=True)
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Status route test"},
+        )
+        case_id = create_resp.json()["data"]["id"]
+        resp = client.patch(
+            f"/api/v1/support/cases/{case_id}/status",
+            headers={"Authorization": f"Bearer {data['o_token']}"},
+            json={"target_status": "IN_PROGRESS"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["status"] == "IN_PROGRESS"
 
 class TestTransitionCase:
     def test_transition_to_in_progress(self, client):

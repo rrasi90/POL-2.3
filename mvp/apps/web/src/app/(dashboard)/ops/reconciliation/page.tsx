@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
+  Field,
   SearchField,
   Skeleton,
   StatusChip,
@@ -12,15 +14,13 @@ import {
 import { getApi } from "@/lib/auth/api";
 import {
   ageLabel,
-  ageTone,
-  cardCls,
   formatDateTime,
   formatToman,
-  idOf,
+  inputCls,
   itemsOf,
-  str,
   reconStatusLabel,
   reconStatusTone,
+  str,
   type LoadState,
 } from "../_shared";
 
@@ -99,42 +99,44 @@ export default function OpsReconciliationPage() {
     if (selectedId) void loadDetail(selectedId);
   }, [selectedId, loadDetail]);
 
+  const filtered = items.filter((it) => {
+    if (!query.trim()) return true;
+    const q = query.trim().toLowerCase();
+    return (
+      str(it.id).toLowerCase().includes(q) ||
+      str(it.payment_id).toLowerCase().includes(q) ||
+      str(it.external_reference).toLowerCase().includes(q)
+    );
+  });
+
   async function resolveCase() {
     if (!selectedId) return;
     setResolving(true);
     setResolveError(null);
     try {
-      const body = resolveNote.trim() ? { resolution_note: resolveNote.trim() } : {};
-      const updated = await getApi().patch<ReconCase>(
-        `/api/v1/finance/reconciliation/${selectedId}/resolve`,
-        body,
-      );
-      setDetail(updated);
-      setResolveNote("");
+      await getApi().post(`/api/v1/finance/reconciliation/${selectedId}/resolve`, {
+        resolution_reason: resolveNote.trim() || undefined,
+      });
+      await loadDetail(selectedId);
       await load();
     } catch (err) {
-      setResolveError(err instanceof Error ? err.message : "تسویه ناموفق بود");
+      setResolveError(err instanceof Error ? err.message : "حل مغایرت ناموفق بود");
     } finally {
       setResolving(false);
     }
   }
 
-  const filtered = items.filter((c) => {
-    if (!query.trim()) return true;
-    const q = query.trim().toLowerCase();
-    return (
-      str(c.payment_id, "").toLowerCase().includes(q) ||
-      str(c.external_reference, "").toLowerCase().includes(q) ||
-      str(c.id, "").toLowerCase().includes(q)
-    );
-  });
-
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری تطبیق">
-        <Skeleton className="h-8 w-48" />
-        <div className={cardCls}>
-          <Skeleton lines={6} />
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری تطبیق مالی">
+        <Skeleton className="h-9 w-48" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className="p-5">
+            <Skeleton lines={6} />
+          </Card>
+          <Card className="p-5">
+            <Skeleton lines={6} />
+          </Card>
         </div>
       </div>
     );
@@ -143,227 +145,237 @@ export default function OpsReconciliationPage() {
   if (state === "error") {
     return (
       <ErrorState
-        title="دریافت تطبیق مالی ناموفق بود"
+        title="دریافت مغایرت‌های مالی ناموفق بود"
         description={errorMessage ?? undefined}
         onRetry={() => void load()}
       />
     );
   }
 
-  const canResolve =
-    detail && detail.status !== "RESOLVED" && detail.status !== "CANCELLED";
-
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          تطبیق مالی
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">O-06</span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--pol-light-border-subtle)] pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[20px] md:text-[24px] font-bold text-[var(--pol-light-text-primary)]">
+              کنسول انطباق و تطبیق مالی
+            </h1>
+            <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-bold text-[var(--pol-light-text-secondary)]">
+              O-05 · Reconciliation
+            </span>
+          </div>
+          <p className="mt-1 text-[12px] text-[var(--pol-light-text-secondary)]">
+            بررسی مغایرت‌های واریزی درگاه پرداخت، مقادیر انتظاری و دستور تسویه حساب
+          </p>
+        </div>
+
+        <Button variant="secondary" size="sm" onClick={() => void load()}>
           به‌روزرسانی
         </Button>
       </header>
 
-      <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-        <SearchField
-          label="جستجو"
-          placeholder="payment / reference…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <select
-          aria-label="فیلتر وضعیت"
-          className="h-10 rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 text-[14px] text-[var(--pol-light-text-primary)]"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s || "all"} value={s}>
-              {s ? (reconStatusLabel[s] ?? s) : "همه وضعیت‌ها"}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Split View */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
+        {/* Cases List */}
+        <section aria-label="فهرست مغایرت‌ها" className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <SearchField
+              label="جستجو"
+              placeholder="شناسه، پرداخت، مرجع..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="recon-status" className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+                وضعیت مغایرت
+              </label>
+              <select
+                id="recon-status"
+                className={inputCls}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">همه وضعیت‌ها</option>
+                {STATUS_OPTIONS.filter(Boolean).map((s) => (
+                  <option key={s} value={s}>
+                    {reconStatusLabel[s] ?? s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <section aria-label="فهرست موارد">
           {filtered.length === 0 ? (
             <EmptyState
-              title="مورد تطبیقی یافت نشد"
-              description="فیلترها را تغییر دهید یا منتظر مغایرت جدید بمانید."
+              title="موردی یافت نشد"
+              description="مغایرت مالی بازی با این مشخصات در سیستم ثبت نشده است."
             />
           ) : (
-            <ul role="list" className="space-y-2">
-              {filtered.map((c) => (
-                <li key={str(c.id)}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(str(c.id))}
+            <div className="space-y-2">
+              {filtered.map((item) => {
+                const isSelected = selectedId === item.id;
+                return (
+                  <Card
+                    key={item.id}
+                    onClick={() => setSelectedId(item.id)}
                     className={[
-                      "w-full rounded-[12px] border p-3 text-start transition-colors duration-[160ms]",
-                      selectedId === str(c.id)
-                        ? "border-[var(--pol-light-brand-primary)] bg-[var(--pol-light-surface-subtle)]"
-                        : "border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] hover:bg-[var(--pol-light-surface-subtle)]",
+                      "cursor-pointer p-3.5 transition-all duration-150 text-start",
+                      isSelected
+                        ? "border-[var(--pol-light-brand-primary)] bg-[var(--pol-light-surface-subtle)] ring-1 ring-[var(--pol-light-brand-primary)]"
+                        : "hover:border-[var(--pol-light-border-strong)] hover:bg-[var(--pol-light-surface-subtle)]",
                     ].join(" ")}
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusChip tone={reconStatusTone[c.status ?? ""] ?? "neutral"}>
-                        {reconStatusLabel[c.status ?? ""] ?? c.status ?? "—"}
+                      <StatusChip tone={reconStatusTone[item.status ?? ""] ?? "neutral"}>
+                        {reconStatusLabel[item.status ?? ""] ?? item.status ?? "—"}
                       </StatusChip>
                       <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                        {ageLabel(c.opened_at)}
+                        {ageLabel(item.opened_at)}
                       </span>
                     </div>
-                    <div className="mt-1.5 flex flex-wrap gap-3 text-[13px]">
-                      <span className="text-[var(--pol-light-text-primary)]" dir="ltr">
-                        {c.payment_id ?? str(c.id)}
+
+                    <div className="mt-2 flex flex-wrap items-center justify-between text-[12px] text-[var(--pol-light-text-secondary)]">
+                      <span>
+                        انتظار: <strong>{formatToman(item.expected_amount_toman)}</strong>
                       </span>
-                      <span className="text-[var(--pol-light-text-secondary)]">
-                        انتظار {formatToman(c.expected_amount_toman)} · مشاهده{" "}
-                        {formatToman(c.observed_amount_toman)}
+                      <span>
+                        مشاهده: <strong>{formatToman(item.observed_amount_toman)}</strong>
                       </span>
                     </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
+
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-[var(--pol-light-text-muted)] border-t border-[var(--pol-light-border-subtle)] pt-2">
+                      <span dir="ltr" className="font-mono">
+                        ID: {item.id.slice(0, 8)}...
+                      </span>
+                      {item.payment_id && (
+                        <span dir="ltr" className="font-mono">
+                          پرداخت: {item.payment_id.slice(0, 8)}...
+                        </span>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </section>
 
-        <section aria-label="جزئیات مورد" className={cardCls}>
+        {/* Selected Case Detail */}
+        <section aria-label="جزئیات پرونده مغایرت">
           {!selectedId ? (
-            <EmptyState
-              title="موردی انتخاب نشده"
-              description="از فهرست کنار، یک مورد تطبیق انتخاب کنید."
-            />
+            <Card className="flex flex-col items-center justify-center p-12 text-center">
+              <span className="text-[32px] mb-2">⚖️</span>
+              <h3 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+                موردی انتخاب نشده است
+              </h3>
+              <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+                یک ردیف مغایرت را از ستون کناری جهت بررسی تفصیلی و رفع مغایرت انتخاب کنید.
+              </p>
+            </Card>
           ) : detailState === "loading" ? (
-            <div aria-busy="true">
-              <Skeleton lines={5} />
-            </div>
+            <Card className="p-5">
+              <Skeleton lines={6} />
+            </Card>
           ) : detailState === "error" ? (
             <ErrorState
-              title="دریافت جزئیات ناموفق بود"
+              title="دریافت جزئیات پرونده ناموفق بود"
               description={detailError ?? undefined}
               onRetry={() => selectedId && void loadDetail(selectedId)}
             />
           ) : detail ? (
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
+            <Card className="p-5 space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-3">
                 <StatusChip tone={reconStatusTone[detail.status ?? ""] ?? "neutral"}>
                   {reconStatusLabel[detail.status ?? ""] ?? detail.status ?? "—"}
                 </StatusChip>
-                <StatusChip tone={ageTone(detail.opened_at, 24, 120)}>
-                  {ageLabel(detail.opened_at)}
-                </StatusChip>
+                <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+                  زمان ثبت: {formatDateTime(detail.opened_at)}
+                </span>
               </div>
 
-              <dl className="grid gap-3 sm:grid-cols-2">
+              {/* Amounts Comparison */}
+              <div className="grid gap-3 sm:grid-cols-2 rounded-xl bg-[var(--pol-light-surface-subtle)] p-4 border border-[var(--pol-light-border-subtle)]">
                 <div>
-                  <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                    شناسه
-                  </dt>
-                  <dd className="text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
-                    {detail.id}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">پرداخت</dt>
-                  <dd className="text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
-                    {detail.payment_id ?? "—"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                    مبلغ انتظار
-                  </dt>
-                  <dd className="text-[13px] text-[var(--pol-light-text-primary)]">
+                  <span className="block text-[11px] text-[var(--pol-light-text-secondary)]">
+                    مبلغ انتظاری پُل
+                  </span>
+                  <span className="text-[18px] font-bold text-[var(--pol-light-text-primary)]">
                     {formatToman(detail.expected_amount_toman)}
-                  </dd>
+                  </span>
                 </div>
                 <div>
-                  <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                    مبلغ مشاهده
-                  </dt>
-                  <dd className="text-[13px] text-[var(--pol-light-text-primary)]">
+                  <span className="block text-[11px] text-[var(--pol-light-text-secondary)]">
+                    مبلغ مشاهده‌شده بانکی
+                  </span>
+                  <span className="text-[18px] font-bold text-[var(--pol-light-text-primary)]">
                     {formatToman(detail.observed_amount_toman)}
-                  </dd>
+                  </span>
                 </div>
-                <div>
-                  <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                    مرجع خارجی
-                  </dt>
-                  <dd className="text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
-                    {detail.external_reference ?? "—"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                    تعداد تلاش
-                  </dt>
-                  <dd className="text-[13px] text-[var(--pol-light-text-primary)]">
-                    {(detail.attempt_count ?? 0).toLocaleString("fa-IR")}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                    باز شده
-                  </dt>
-                  <dd className="text-[13px] text-[var(--pol-light-text-primary)]">
-                    {formatDateTime(detail.opened_at)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                    تسویه
-                  </dt>
-                  <dd className="text-[13px] text-[var(--pol-light-text-primary)]">
-                    {formatDateTime(detail.resolved_at)}
-                  </dd>
-                </div>
-                {detail.resolution_reason ? (
-                  <div className="sm:col-span-2">
-                    <dt className="text-[12px] text-[var(--pol-light-text-secondary)]">
-                      دلیل تسویه
-                    </dt>
-                    <dd className="text-[13px] text-[var(--pol-light-text-primary)]">
-                      {detail.resolution_reason}
-                    </dd>
-                  </div>
-                ) : null}
-              </dl>
+              </div>
 
-              {canResolve ? (
-                <div className="border-t border-[var(--pol-light-border-subtle)] pt-3">
-                  <h3 className="text-[14px] font-semibold text-[var(--pol-light-text-primary)]">
-                    تسویه مورد
+              {/* Metadata */}
+              <div className="space-y-2 text-[12px] text-[var(--pol-light-text-secondary)]">
+                <div className="flex justify-between">
+                  <span>شناسه پرونده:</span>
+                  <span dir="ltr" className="font-mono text-[var(--pol-light-text-primary)]">
+                    {detail.id}
+                  </span>
+                </div>
+                {detail.payment_id && (
+                  <div className="flex justify-between">
+                    <span>شناسه پرداخت:</span>
+                    <span dir="ltr" className="font-mono text-[var(--pol-light-text-primary)]">
+                      {detail.payment_id}
+                    </span>
+                  </div>
+                )}
+                {detail.external_reference && (
+                  <div className="flex justify-between">
+                    <span>کد پیگیری شاپرک / سداد:</span>
+                    <span dir="ltr" className="font-mono text-[var(--pol-light-text-primary)]">
+                      {detail.external_reference}
+                    </span>
+                  </div>
+                )}
+                {detail.attempt_count != null && (
+                  <div className="flex justify-between">
+                    <span>تعداد تلاش‌های تطبیق:</span>
+                    <span className="text-[var(--pol-light-text-primary)]">
+                      {detail.attempt_count.toLocaleString("fa-IR")}
+                    </span>
+                  </div>
+                )}
+                {detail.resolution_reason && (
+                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 p-3 text-emerald-800 dark:text-emerald-300">
+                    <strong>علت رفع مغایرت:</strong> {detail.resolution_reason}
+                  </div>
+                )}
+              </div>
+
+              {/* Resolve Case Section */}
+              {detail.status !== "RESOLVED" && detail.status !== "CANCELLED" && (
+                <div className="border-t border-[var(--pol-light-border-subtle)] pt-4 space-y-3">
+                  <h3 className="text-[14px] font-bold text-[var(--pol-light-text-primary)]">
+                    ثبت اقدام رفع مغایرت مالی
                   </h3>
-                  {resolveError ? (
-                    <div className="mt-2">
-                      <ErrorState title="تسویه ناموفق بود" description={resolveError} />
-                    </div>
-                  ) : null}
-                  <textarea
+                  {resolveError && (
+                    <ErrorState title="خطا در حل مغایرت" description={resolveError} />
+                  )}
+                  <Field
+                    label="توضیح یا دلیل رفع مغایرت"
                     value={resolveNote}
                     onChange={(e) => setResolveNote(e.target.value)}
-                    rows={2}
-                    maxLength={2000}
-                    placeholder="یادداشت تسویه (اختیاری)…"
-                    className="mt-2 h-auto min-h-[56px] w-full rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3 py-2 text-[14px] text-[var(--pol-light-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
+                    placeholder="مثال: تراکنش اصلاحی شاپرک بررسی شد و مبلغ لحاظ گردید..."
                   />
-                  <div className="mt-2">
-                    <Button
-                      size="sm"
-                      variant="success"
-                      loading={resolving}
-                      onClick={() => void resolveCase()}
-                    >
-                      تسویه
+                  <div className="flex justify-end">
+                    <Button loading={resolving} onClick={() => void resolveCase()}>
+                      علامت‌گذاری به عنوان حل‌شده (Resolved)
                     </Button>
                   </div>
                 </div>
-              ) : null}
-            </div>
+              )}
+            </Card>
           ) : null}
         </section>
       </div>

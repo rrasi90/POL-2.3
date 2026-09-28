@@ -98,6 +98,20 @@ def client(monkeypatch):
         "authorize_action",
         lambda *a, **k: {"role": "VENDOR_OWNER", "status": "ACTIVE", "org_type": "VENDOR"},
     )
+    # Vendor order routes evaluate the delegated-permission dependency
+    # (require_permission("order.accept")); the harness grants it so the
+    # transport contract under test is exercised without DB-backed fixtures.
+    import scripts.api.dependencies as _api_dependencies
+
+    monkeypatch.setattr(
+        _api_dependencies,
+        "check_permission",
+        lambda cur, user_id, org_id, permission_key, **k: {
+            "permission_key": permission_key,
+            "granted": True,
+            "source": "ROLE_BASELINE",
+        },
+    )
     app.dependency_overrides[get_application_boundary] = lambda: _FakeBoundary()
     app.dependency_overrides[get_application_context] = lambda: ApplicationContext(
         user_id="http-contract-user",

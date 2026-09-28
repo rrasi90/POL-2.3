@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import os
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 
 from scripts.api.db import get_db_cursor
 from scripts.api.dependencies import get_bearer_token, get_current_auth
 from scripts.api.errors import success_payload
+from scripts.auth_boundary import InvalidRefreshTokenError
 from scripts.api.schemas import (
     RefreshTokenRequest,
     RequestOTPRequest,
@@ -19,6 +21,18 @@ from scripts.auth_application import AuthApplicationService
 from scripts.operational_config import OTP_RESEND_INTERVAL_SECONDS, OTP_TTL_SECONDS
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
+    response.set_cookie(
+        "pol_refresh",
+        refresh_token,
+        max_age=30 * 24 * 60 * 60,
+        httponly=True,
+        secure=not (os.environ.get("ENVIRONMENT", "").lower() == "test"),
+        samesite="lax",
+        path="/api/v1/auth",
+    )
 
 
 @router.post("/request-otp")
@@ -40,18 +54,33 @@ def request_otp(payload: RequestOTPRequest, request: Request, cur=Depends(get_db
 
 
 @router.post("/verify-otp")
-def verify_otp(payload: VerifyOTPRequest, cur=Depends(get_db_cursor)):
+def verify_otp(payload: VerifyOTPRequest, response: Response, cur=Depends(get_db_cursor)):
     result = AuthApplicationService.verify_otp(
         cur,
         payload.mobile_number,
         payload.otp_code,
     )
+    refresh_token = result.get("refresh_token")
+    if refresh_token and payload.client_platform == "web":
+        _set_refresh_cookie(response, refresh_token)
+    if payload.client_platform == "web":
+        result = {key: value for key, value in result.items() if key != "refresh_token"}
     return success_payload(result)
 
 
 @router.post("/refresh")
-def refresh(payload: RefreshTokenRequest, cur=Depends(get_db_cursor)):
-    return success_payload(AuthApplicationService.refresh(cur, payload.refresh_token))
+def refresh(request: Request, response: Response, payload: RefreshTokenRequest | None = None, cur=Depends(get_db_cursor)):
+    cookie_refresh = request.cookies.get("pol_refresh")
+    refresh_token = cookie_refresh or (payload.refresh_token if payload else None)
+    if not refresh_token:
+        raise InvalidRefreshTokenError("Refresh token is required.")
+    result = AuthApplicationService.refresh(cur, refresh_token)
+    next_refresh = result.get("refresh_token")
+    if next_refresh and cookie_refresh:
+        _set_refresh_cookie(response, next_refresh)
+    if cookie_refresh:
+        result = {key: value for key, value in result.items() if key != "refresh_token"}
+    return success_payload(result)
 
 
 @router.post("/switch-organization")
@@ -70,12 +99,14 @@ def switch_organization(
 
 @router.delete("/sessions/current")
 def revoke_current_session(
+    response: Response,
     token: str = Depends(get_bearer_token),
     claims: dict = Depends(get_current_auth),
     cur=Depends(get_db_cursor),
 ):
     session_id = claims["sid"]
     AuthApplicationService.revoke_session(cur, token, str(session_id))
+    response.delete_cookie("pol_refresh", path="/api/v1/auth")
     return success_payload({"session_id": str(session_id), "status": "REVOKED"})
 
 
@@ -91,8 +122,10 @@ def revoke_session(
 
 @router.post("/logout-all")
 def logout_all(
+    response: Response,
     token: str = Depends(get_bearer_token),
     cur=Depends(get_db_cursor),
 ):
     revoked_count = AuthApplicationService.logout_all(cur, token)
+    response.delete_cookie("pol_refresh", path="/api/v1/auth")
     return success_payload({"revoked_sessions": revoked_count, "status": "ALL_REVOKED"})

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Skeleton,
@@ -14,7 +15,6 @@ import { getApi } from "@/lib/auth/api";
 import {
   ageLabel,
   ageTone,
-  cardCls,
   formatDateTime,
   formatToman,
   itemsOf,
@@ -36,12 +36,12 @@ interface OrderRow {
 const PAGE_SIZE = 20;
 
 const statusFilters = [
-  { value: "", label: "همه" },
+  { value: "", label: "همه سفارش‌ها" },
   { value: "SUBMITTED", label: "در انتظار پذیرش" },
   { value: "CREATED", label: "ایجادشده" },
   { value: "ACCEPTED", label: "پذیرفته‌شده" },
   { value: "PARTIALLY_ACCEPTED", label: "پذیرش جزئی" },
-  { value: "PREPARING", label: "آماده‌سازی" },
+  { value: "PREPARING", label: "در حال آماده‌سازی" },
   { value: "READY", label: "آماده ارسال" },
   { value: "DISPATCHED", label: "ارسال‌شده" },
   { value: "DELIVERED", label: "تحویل‌شده" },
@@ -107,10 +107,19 @@ export default function VendorOrdersPage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-3" aria-busy="true" aria-label="در حال بارگذاری صف سفارش‌ها">
-        <Skeleton className="h-8 w-48" />
-        <div className={cardCls}>
-          <Skeleton lines={6} />
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری صف سفارش‌ها">
+        <Skeleton className="h-9 w-52" />
+        <div className="flex gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-8 w-24 rounded-full" />
+          ))}
+        </div>
+        <div className="grid gap-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i} className="p-5">
+              <Skeleton lines={3} />
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -127,89 +136,118 @@ export default function VendorOrdersPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          صف سفارش‌ها
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">
-          V-02 · {items.length.toLocaleString("fa-IR")} مورد
-          {total !== null ? ` از ${total.toLocaleString("fa-IR")}` : ""}
-        </span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load(true, status)}>
-          به‌روزرسانی
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] md:text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              صف مدیریت سفارش‌ها
+            </h1>
+            <span className="rounded-full bg-[var(--pol-light-surface-subtle)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              V-02
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            نمایش {items.length.toLocaleString("fa-IR")} سفارش
+            {total !== null ? ` از مجموع ${total.toLocaleString("fa-IR")} سفارش` : ""}
+          </p>
+        </div>
+        <Button variant="secondary" size="sm" onClick={() => void load(true, status)}>
+          به‌روزرسانی صف
         </Button>
       </header>
 
-      <div className="flex flex-wrap gap-2" role="group" aria-label="فیلتر وضعیت">
-        {statusFilters.map((f) => (
-          <button
-            key={f.value}
-            type="button"
-            aria-pressed={status === f.value}
-            onClick={() => setStatus(f.value)}
-            className={[
-              "rounded-full border px-3 py-1 text-[12px] transition-colors duration-[160ms]",
-              status === f.value
-                ? "border-transparent bg-[var(--pol-light-brand-primary)] text-white"
-                : "border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)]",
-            ].join(" ")}
-          >
-            {f.label}
-          </button>
-        ))}
+      {/* Filter Tabs */}
+      <div
+        className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
+        role="group"
+        aria-label="فیلتر وضعیت سفارش‌ها"
+      >
+        {statusFilters.map((f) => {
+          const isActive = status === f.value;
+          return (
+            <button
+              key={f.value}
+              type="button"
+              aria-pressed={isActive}
+              onClick={() => setStatus(f.value)}
+              className={[
+                "shrink-0 rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]",
+                isActive
+                  ? "bg-[var(--pol-light-brand-primary)] text-white shadow-sm"
+                  : "border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] text-[var(--pol-light-text-secondary)] hover:bg-[var(--pol-light-surface-subtle)] hover:text-[var(--pol-light-text-primary)]",
+              ].join(" ")}
+            >
+              {f.label}
+            </button>
+          );
+        })}
       </div>
 
+      {/* Orders List */}
       {items.length === 0 ? (
         <EmptyState
-          title="سفارشی یافت نشد"
-          description={status ? "سفارشی با این وضعیت وجود ندارد." : "صف سفارش خالی است."}
-          actionLabel={status ? "حذف فیلتر" : undefined}
+          title="سفارشی با این مشخصات یافت نشد"
+          description={status ? "سفارشی با وضعیت انتخاب‌شده در سیستم وجود ندارد." : "صف سفارش‌های فروشگاه شما خالی است."}
+          actionLabel={status ? "نمایش همه سفارش‌ها" : undefined}
           onAction={status ? () => setStatus("") : undefined}
         />
       ) : (
-        <ul role="list" className="space-y-2">
+        <div className="grid gap-3">
           {items.map((o) => (
-            <li
+            <Link
               key={String(o.id)}
-              className="rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-4 transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-subtle)]"
+              href={`/vendor/orders/${o.id}`}
+              className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
             >
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
-                  {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
-                </StatusChip>
-                {o.dispute_status && o.dispute_status !== "NONE" ? (
-                  <StatusChip tone="danger">اختلاف</StatusChip>
-                ) : null}
-                <StatusChip tone={ageTone(o.created_at, 4, 12)}>{ageLabel(o.created_at)}</StatusChip>
-                <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
-                  {formatDateTime(o.created_at)}
-                </span>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-3">
-                <Link
-                  href={`/vendor/orders/${o.id}`}
-                  className="text-[14px] font-semibold text-[var(--pol-light-text-primary)] hover:underline"
-                  dir="ltr"
-                >
-                  {o.order_number ?? String(o.id)}
-                </Link>
-                <span className="ms-auto text-[14px] font-medium text-[var(--pol-light-text-primary)]">
-                  {formatToman(o.total_amount_toman)}
-                </span>
-              </div>
-            </li>
+              <Card className="p-4 transition-all duration-200 group-hover:shadow-[var(--pol-shadow-md)] group-hover:border-[var(--pol-light-border-strong)]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
+                      {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
+                    </StatusChip>
+                    {o.dispute_status && o.dispute_status !== "NONE" && (
+                      <StatusChip tone="danger">اختلاف ثبت‌شده</StatusChip>
+                    )}
+                    <StatusChip tone={ageTone(o.created_at, 4, 12)}>
+                      {ageLabel(o.created_at)}
+                    </StatusChip>
+                    <span className="font-mono text-[14px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
+                      {o.order_number ?? String(o.id)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-[var(--pol-light-border-subtle)] pt-3 sm:border-0 sm:pt-0 sm:gap-6">
+                    <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+                      {formatDateTime(o.created_at)}
+                    </span>
+                    <span className="text-[16px] font-bold text-[var(--pol-light-text-primary)]">
+                      {formatToman(o.total_amount_toman)}
+                    </span>
+                    <span className="hidden text-[13px] font-semibold text-[var(--pol-light-brand-primary)] group-hover:underline sm:inline-block">
+                      مدیریت سفارش ←
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            </Link>
           ))}
-        </ul>
+        </div>
       )}
 
-      {hasMore ? (
+      {/* Pagination Load More */}
+      {hasMore && (
         <div className="flex justify-center pt-2">
-          <Button variant="secondary" loading={loadingMore} onClick={() => void load(false, status)}>
-            بارگذاری موارد بیشتر
+          <Button
+            variant="secondary"
+            loading={loadingMore}
+            onClick={() => void load(false, status)}
+          >
+            بارگذاری ۲۰ سفارش دیگر
           </Button>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

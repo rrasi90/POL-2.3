@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   SearchField,
@@ -12,9 +13,6 @@ import {
 } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import {
-  ageLabel,
-  ageTone,
-  cardCls,
   formatDateTime,
   itemsOf,
   str,
@@ -100,27 +98,28 @@ export default function OpsAdminPage() {
     if (!query.trim()) return true;
     const q = query.trim().toLowerCase();
     return (
-      str(log.action, "").toLowerCase().includes(q) ||
-      str(log.actor_name, "").toLowerCase().includes(q) ||
-      str(log.target_entity_type, "").toLowerCase().includes(q) ||
-      str(log.target_entity_id, "").toLowerCase().includes(q)
+      (log.action ?? "").toLowerCase().includes(q) ||
+      (log.actor_name ?? "").toLowerCase().includes(q) ||
+      (log.target_entity_type ?? "").toLowerCase().includes(q) ||
+      (log.target_entity_id ?? "").toLowerCase().includes(q) ||
+      (log.correlation_id ?? "").toLowerCase().includes(q)
     );
   });
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری ادمین">
-        <Skeleton className="h-8 w-48" />
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری لاگ‌های ممیزی">
+        <Skeleton className="h-9 w-52" />
         <div className="grid gap-3 sm:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className={cardCls}>
+            <Card key={i} className="p-4">
               <Skeleton lines={2} />
-            </div>
+            </Card>
           ))}
         </div>
-        <div className={cardCls}>
+        <Card className="p-5">
           <Skeleton lines={6} />
-        </div>
+        </Card>
       </div>
     );
   }
@@ -136,139 +135,151 @@ export default function OpsAdminPage() {
   }
 
   const ex = dash?.delivery_exceptions ?? {};
+  const disputes = dash?.disputes ?? {};
+  const cases = dash?.support_cases ?? {};
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          ادمین / Context
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">O-10</span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>
-          به‌روزرسانی
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--pol-light-border-subtle)] pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[20px] md:text-[24px] font-bold text-[var(--pol-light-text-primary)]">
+              داشبورد استثناها و لاگ‌های ممیزی (Audit Logs)
+            </h1>
+            <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-bold text-[var(--pol-light-text-secondary)]">
+              O-10 · Audit Trail
+            </span>
+          </div>
+          <p className="mt-1 text-[12px] text-[var(--pol-light-text-secondary)]">
+            ثبت غیرقابل تغییر تمامی رویدادها، تغییرات دسترسی، وضعیت سفارش‌ها و تراکنش‌های سیستمی
+          </p>
+        </div>
+
+        <Button variant="secondary" size="sm" onClick={() => void load()}>
+          به‌روزرسانی لاگ‌ها
         </Button>
       </header>
 
-      <section aria-label="داشبورد استثناها" className="grid gap-3 sm:grid-cols-3">
-        <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">
-            استثنای تحویل باز
-          </p>
-          <p className="mt-1 text-[24px] font-bold text-[var(--pol-light-text-primary)]">
+      {/* Exception Metrics */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card className="p-4">
+          <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+            استثناهای باز تحویل
+          </span>
+          <div className="mt-2 text-[24px] font-bold text-[var(--pol-light-text-primary)]">
             {(ex.open_count ?? 0).toLocaleString("fa-IR")}
-          </p>
+          </div>
           <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
-            کل {str(ex.total, "0")} · حل‌شده {str(ex.resolved_count, "0")} · ارتقا{" "}
-            {str(ex.escalated_count, "0")}
+            کل: {str(ex.total, "0")} · ارتقا: {str(ex.escalated_count, "0")}
           </p>
-        </div>
-        <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">اختلاف باز</p>
-          <p className="mt-1 text-[24px] font-bold text-[var(--pol-light-text-primary)]">
-            {(dash?.disputes?.open_disputes ?? 0).toLocaleString("fa-IR")}
-          </p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
-            کل {str(dash?.disputes?.total, "0")}
-          </p>
-        </div>
-        <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">
-            پرونده پشتیبانی باز
-          </p>
-          <p className="mt-1 text-[24px] font-bold text-[var(--pol-light-text-primary)]">
-            {(dash?.support_cases?.open_cases ?? 0).toLocaleString("fa-IR")}
-          </p>
-          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
-            کل {str(dash?.support_cases?.total, "0")}
-          </p>
-        </div>
-      </section>
+        </Card>
 
-      <section aria-label="کاربران و سازمان‌ها" className={cardCls}>
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
-            کاربران و سازمان‌ها
-          </h2>
-          <StatusChip tone="warning">G-007</StatusChip>
-        </div>
-        <p className="mt-2 text-[13px] text-[var(--pol-light-text-secondary)]">
-          شکاف G-007: هیچ API برای فهرست/ویرایش کاربران و سازمان‌ها وجود ندارد. این بخش فقط
-          پیوند به مسیرهای پیشنهادی است و هیچ CRUD جعلی ارائه نمی‌دهد.
-        </p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Link
-            href="/admin/users"
-            className="rounded-[8px] border border-dashed border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-subtle)] p-4 text-[14px] font-semibold text-[var(--pol-light-text-secondary)] transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-default)]"
-          >
-            کاربران — شکاف (بدون API)
-          </Link>
-          <Link
-            href="/admin/orgs"
-            className="rounded-[8px] border border-dashed border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-subtle)] p-4 text-[14px] font-semibold text-[var(--pol-light-text-secondary)] transition-colors duration-[160ms] hover:bg-[var(--pol-light-surface-default)]"
-          >
-            سازمان‌ها — شکاف (بدون API)
-          </Link>
-        </div>
-      </section>
+        <Card className="p-4">
+          <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+            اختلافات باز
+          </span>
+          <div className="mt-2 text-[24px] font-bold text-[var(--pol-light-text-primary)]">
+            {(disputes.open_disputes ?? 0).toLocaleString("fa-IR")}
+          </div>
+          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
+            کل موارد: {str(disputes.total, "0")}
+          </p>
+        </Card>
 
-      <section aria-label="لاگ ممیزی">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-[16px] font-semibold text-[var(--pol-light-text-primary)]">
-            Audit Logs
-          </h2>
-          <SearchField
-            label="جستجوی لاگ"
-            placeholder="action / actor / entity…"
-            className="ms-auto w-full max-w-xs"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-        {filtered.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState
-              title="لاگی یافت نشد"
-              description="فیلتر جستجو را پاک کنید یا منتظر رویداد جدید بمانید."
+        <Card className="p-4">
+          <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+            تیکت‌های باز
+          </span>
+          <div className="mt-2 text-[24px] font-bold text-[var(--pol-light-text-primary)]">
+            {(cases.open_cases ?? 0).toLocaleString("fa-IR")}
+          </div>
+          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
+            کل پرونده‌ها: {str(cases.total, "0")}
+          </p>
+        </Card>
+      </div>
+
+      {/* Audit Logs Section */}
+      <section aria-label="لاگ‌های ممیزی" className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-[16px] font-bold text-[var(--pol-light-text-primary)]">
+              لاگ‌های تغییر وضعیت و رویدادهای ممیزی
+            </h2>
+            <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
+              {filtered.length.toLocaleString("fa-IR")} لاگ یافت‌شده
+            </span>
+          </div>
+
+          <div className="w-full sm:w-72">
+            <SearchField
+              label="جستجوی لاگ"
+              placeholder="اقدام، کاربر، موجودیت یا شناسه..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
             />
           </div>
+        </div>
+
+        {filtered.length === 0 ? (
+          <EmptyState
+            title="هیچ لاگ ممیزی یافت نشد"
+            description="با فیلترهای کنونی هیچ رویدادی در سامانه تطابق ندارد."
+          />
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
+          <div className="grid gap-2.5">
             {filtered.map((log) => (
-              <li key={str(log.id)} className={cardCls}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusChip tone="info">{log.action ?? "—"}</StatusChip>
-                  <span className="text-[13px] font-semibold text-[var(--pol-light-text-primary)]">
-                    {log.actor_name ?? log.actor_user_id ?? "—"}
-                  </span>
-                  <span className="text-[12px] text-[var(--pol-light-text-secondary)]" dir="ltr">
-                    {log.target_entity_type ?? "—"}
-                    {log.target_entity_id ? ` / ${log.target_entity_id}` : ""}
-                  </span>
-                  <StatusChip tone={ageTone(log.created_at, 168, 720)}>
-                    {ageLabel(log.created_at)}
-                  </StatusChip>
-                  <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
+              <Card key={log.id} className="p-3.5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusChip tone="info">{log.action ?? "ACTION"}</StatusChip>
+                    <span className="font-semibold text-[13px] text-[var(--pol-light-text-primary)]">
+                      {log.actor_name ?? "سیستم خودکار"}
+                    </span>
+                    <span className="font-mono text-[12px] text-[var(--pol-light-text-secondary)]" dir="ltr">
+                      [{log.target_entity_type ?? "ENTITY"}:{log.target_entity_id?.slice(0, 8) ?? "—"}]
+                    </span>
+                  </div>
+
+                  <span className="text-[11px] text-[var(--pol-light-text-muted)]">
                     {formatDateTime(log.created_at)}
                   </span>
                 </div>
-                {log.state_before || log.state_after || log.reason ? (
-                  <p className="mt-1.5 text-[12px] text-[var(--pol-light-text-secondary)]">
-                    {log.state_before ? `قبل: ${log.state_before} → ` : ""}
-                    {log.state_after ? `بعد: ${log.state_after}` : ""}
-                    {log.reason ? ` · ${log.reason}` : ""}
+
+                {(log.state_before || log.state_after) && (
+                  <div className="mt-2 rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1.5 font-mono text-[11px] text-[var(--pol-light-text-secondary)]" dir="ltr">
+                    {log.state_before ?? "∅"} → {log.state_after ?? "∅"}
+                  </div>
+                )}
+
+                {log.reason && (
+                  <p className="mt-2 text-[12px] text-[var(--pol-light-text-secondary)]">
+                    علت: {log.reason}
                   </p>
-                ) : null}
-              </li>
+                )}
+
+                {log.correlation_id && (
+                  <div className="mt-1 text-[10px] font-mono text-[var(--pol-light-text-muted)]" dir="ltr">
+                    corr_id={log.correlation_id}
+                  </div>
+                )}
+              </Card>
             ))}
-          </ul>
+          </div>
         )}
-        {!exhausted ? (
-          <div className="mt-3 flex justify-center">
-            <Button variant="secondary" size="sm" loading={loadingMore} onClick={() => void loadMore()}>
-              بارگذاری موارد بیشتر
+
+        {!exhausted && (
+          <div className="flex justify-center pt-2">
+            <Button
+              variant="secondary"
+              loading={loadingMore}
+              onClick={() => void loadMore()}
+            >
+              بارگذاری ۵۰ لاگ قدیمی‌تر
             </Button>
           </div>
-        ) : null}
+        )}
       </section>
     </div>
   );

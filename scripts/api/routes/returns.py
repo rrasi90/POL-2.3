@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, status
 
-from scripts.api.dependencies import get_application_boundary
+from scripts.api.dependencies import get_application_boundary, require_roles
 from scripts.api.errors import success_payload
 from scripts.api.schemas import ReturnRequestRequest, ReturnTransitionRequest
 
@@ -68,6 +68,21 @@ def get_return(
 ):
     return success_payload(
         boundary.return_get(return_id=str(return_id))
+    )
+
+
+@returns_router.post("/{return_id}/refund/approve")
+def approve_return_refund(
+    return_id: UUID,
+    payload: ReturnTransitionRequest,
+    boundary=Depends(get_application_boundary),
+    _auth=Depends(require_roles("OPS_AGENT","OPS_ADMIN","ADMIN_SUPER","SUPER_ADMIN")),
+):
+    return success_payload(
+        boundary.return_refund_approve(
+            return_id=str(return_id),
+            reason=payload.reason,
+        )
     )
 
 

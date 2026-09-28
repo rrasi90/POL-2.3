@@ -1,10 +1,10 @@
 # POL CURRENT SOURCE OF TRUTH & REPOSITORY GOVERNANCE
 
 **Document ID:** `POL-GOV-001`  
-**Version:** 1.2 (Canonical)  
+**Version:** 1.3 (Canonical)  
 **Status:** `LOCKED / OFFICIAL GOVERNANCE CHARTER`  
 **Effective Milestone:** Sprint 0 & MVP v1.0  
-**Last Audit:** 2026-09-23  
+**Last Audit:** 2026-09-25  
 
 ---
 
@@ -43,10 +43,10 @@ Canonical design/build authority:
 |:---|:---|:---|:---|
 | **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-028; later amendments supersede earlier decisions explicitly. | Absolute precedence. |
 | **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md` | Feature matrix, core flows, boundaries and MVP inclusions/exclusions. | Must conform to the currently effective Decision Register, D-001–D-028; later explicit amendments supersede earlier decisions. |
-| **Identity & Access Management** | `06_PRODUCT/Roles_and_Permissions.md`, `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md` | Identity, tenant membership, authorization, persona context and UX preferences. | `organization_memberships.role` is authorization SSoT; `users.role` is legacy/deprecated. |
+| **Identity & Access Management** | `06_PRODUCT/Roles_and_Permissions.md`, `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md`, Master Tree VD-15 | Identity, tenant membership, role authorization, delegated permissions, persona context and UX preferences. | `organization_memberships.role` is the base authorization SSoT; effective access is `base role permissions + active delegated grants`, always scoped to an active user, active organization and active membership. `users.role` is legacy/deprecated. |
 | **Order Lifecycle & State Transitions** | `06_PRODUCT/Order_Lifecycle.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | OrderGroup, child Orders, Delivery and exception state machines. | Governs backend workflows and UI state mapping. |
 | **Domain Entities & Business Invariants** | `08_DATA/DOMAIN_MODEL.md` | Ubiquitous language, aggregates and invariants. | Governs domain service behavior. |
-| **Database Schema & Migrations** | `migrations/001_*.sql` through `migrations/031_*.sql`, `08_DATA/Data_Schema.md`, `POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST_2026-09-16.md` | PostgreSQL 18 DDL, constraints, indexes, triggers and foreign keys. | The numbered migration chain is the physical schema authority. |
+| **Database Schema & Migrations** | `migrations/001_*.sql` through the current forward-only migration head (`048` on the remediation branch), `08_DATA/Data_Schema.md`, and `POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST.md` | PostgreSQL 18 DDL, constraints, indexes, triggers and foreign keys. | The complete numbered forward-only migration chain is the physical schema authority; later migrations supersede earlier physical state without rewriting historical migrations. |
 | **API Contracts & DTOs** | `06_PRODUCT/API_Contracts.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX_CORRECTIONS_2026-09-16.md`, `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md` | REST/JSON contracts and application-boundary commands. | Correction overlay supersedes conflicting legacy terminology. |
 | **Allocation Engine Algorithm** | `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` | Deterministic multi-vendor allocation, MOV/MOQ and ranking. | Governs allocation implementation. |
 | **Brand & Design System** | `POL_00_PROJECT_CONTROL/BRAND_ARCHITECTURE.md`, `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`, `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md` | Brand hierarchy, Precision Commerce visual direction, design tokens, interaction patterns, Light/Night visual language and design QA. | Design may not override product/engineering decisions. |
@@ -112,18 +112,13 @@ No visual artifact becomes canonical until the corresponding written requirement
 4. Generated local artifacts must not be committed to the repository.
 5. Production-readiness claims must distinguish domain verification from HTTP/auth/provider/UI/observability/deployment/recovery implementation.
 
-### Agentic Design Execution — 2026-09-21
+### Tool-Agnostic Design Execution — 2026-09-21
 
-For AI-agent-driven design tool construction, the execution control authority is:
-`13_PRODUCT_DESIGN/52_POL_design tool_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
-
-It governs agent behavior during design construction: preflight, capability probing, atomic mutations, checkpoints, visual/structural verification, approvals, resumability, rollback, and evidence separation. It does not override product decisions or domain/API authority.
+Design construction is governed by the written Master Tree, the canonical visual design system, repository safety rules, and the evidence ledgers in `mvp/`. Execution tooling is interchangeable and is never itself a product authority.
 
 ### Product Architecture Evolution — 2026-09-20
 
-The current product-design authority now also includes:
-
-- POL_00_PROJECT_CONTROL/PRODUCT_EVOLUTION/PRODUCT_ARCHITECTURE_EVOLUTION_WAVE_01_2026-09-20.md
+The current product-architecture direction is represented by the active Decision Register and the current Master Tree.
 
 This document records the adopted product-architecture direction for:
 - Financial Activity without MVP stored-value Wallet
@@ -142,17 +137,20 @@ These directions refine presentation, UX and implementation sequencing without o
 
 ### Precision Commerce Visual Direction — 2026-09-21
 
-POL's canonical product visual direction is now **A — Precision Commerce**.
+POL's canonical product visual direction is **A — Precision Commerce**.
 
-The visual authority is:
+The active visual authority on this branch is:
 
 - `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
-- `13_PRODUCT_DESIGN/57_POL_MASTER_TREE_DEEP_CRITICAL_AUDIT_2026-09-21.md`
-- `13_PRODUCT_DESIGN/58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`
-- `13_PRODUCT_DESIGN/59_POL_DESIGN_TO_ENGINEERING_HANDOFF_AND_BUILD_READINESS_2026-09-21.md`
-- `13_PRODUCT_DESIGN/60_POL_FINAL_DESIGN_TO_BUILD_READINESS_AUDIT_2026-09-21.md`
+- `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md`
 
-Required theme policy: **Light + Night are first-class variants for every applicable canonical screen, section, component, pattern and design tool artifact.** Night is semantic theming, not color inversion.
+Operational closure evidence is maintained in:
+
+- `mvp/MVP_SCREEN_MATRIX.md`
+- `mvp/MVP_API_MAP.md`
+- `mvp/MVP_KNOWN_GAPS.md`
+
+Required theme policy: **Light + Night are first-class variants for every applicable canonical screen, section and component.** Night is semantic theming, not color inversion.
 
 The visual system governs appearance, tokens, typography, shape, elevation, density, motion, RTL presentation and visual QA only. It does not override product/domain/API/permission/financial/MVP authorities.
 
@@ -161,9 +159,7 @@ The visual system governs appearance, tokens, typography, shape, elevation, dens
 
 ### Design Approval → Engineering Readiness — 2026-09-21
 
-The project now explicitly separates DESIGN_APPROVED from ENGINEERING_READY.
-
-design tool approval certifies the design layer only. Engineering readiness additionally requires action, permission, state, data, API, error/recovery, analytics, platform and test mappings.
+The project explicitly separates DESIGN_APPROVED from ENGINEERING_READY. Design approval certifies the written/design layer; engineering readiness additionally requires action, permission, state, data, API, error/recovery, analytics, platform and test mappings.
 
 Current implementation state is governed by `mvp/BUILD_PLAN.md`, `mvp/MVP_SCREEN_MATRIX.md` and current repository evidence: Web has a partial live-verified baseline; Android/Expo source exists and is in Phase 3 verification. Remaining mobile parity and verification gates must not be described as absent source. These are engineering workstreams, not claims of design failure.
 ### Greenfield design tool Build Mode — 2026-09-21
@@ -178,42 +174,71 @@ Foundations → Components → Patterns → Golden Screens → Product Surfaces 
 
 ### Master Tree v4 Registry Upgrade — 2026-09-21
 
-The Master Tree is now Version 4.0.0 and adopts a registry-first control model:
+The Master Tree is a registry-first control model:
 
-Canonical Node Registry → Federated Views → Relationship Graph → Closure Profiles → Evidence → design tool Artifact Binding → Drift Control → Release Snapshot.
+Canonical Node Registry → Federated Views → Relationship Graph → Closure Profiles → Evidence → Artifact Binding → Drift Control → Release Snapshot.
 
 This upgrade does not create new product capabilities. It strengthens canonicality, applicability-aware closure, many-to-many evidence/relationships, artifact identity, source health, agent source packets and executable fitness functions.
 
 Repeated screen IDs in derived sections are projections, not independent sources of truth.
 
+## 7.1 Current Remediation Checkpoint — 2026-09-25
+
+The active engineering state is the remediation branch remediation/full-closure-2026-09-25, ahead of main without divergence. Source remediation has added forward-only integrity migrations, canonical HTTP contracts, tenant/actor boundaries, idempotency safeguards, notification routing/template hardening, and live UI surfaces. Historical CI/local records remain evidence only; fresh CI on the remediation branch is currently failing before useful step execution, so no fresh green certification is asserted.
+
+Current unresolved closure classes are:
+- explicit product/security decisions: D-018 policy wording, invoice timing, D-024 storefront write scope;
+- deployment/provider/observability evidence;
+- selected deep mobile management UI parity;
+- fresh CI certification after the current GitHub Actions execution blocker is resolved.
+
+The repository must not mark these items VERIFIED merely because source implementation exists.
+
 ## 7. Deep-Saturation Design Control — 2026-09-21
 
-The five-pass design saturation audit is registered as a supporting design-control artifact:
-
-- `13_PRODUCT_DESIGN/53_POL_MASTER_TREE_DEEP_SATURATION_AUDIT_2026-09-21.md`
-
-The active Master Tree is now Version 4.3.0:
+The active design-control set on the current branch is:
 
 - `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md`
-- `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
-- `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
 - `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`
+- `mvp/MVP_KNOWN_GAPS.md`
+- `mvp/MVP_SCREEN_MATRIX.md`
+- `mvp/MVP_API_MAP.md`
 
-The active agent execution protocol is now Version 1.5.0:
-
-- `13_PRODUCT_DESIGN/52_POL_design tool_AGENTIC_DESIGN_EXECUTION_PROTOCOL_2026-09-21.md`
-
-The Master Tree saturation layer adds control-plane requirements for context packaging, execution identity, trust boundaries, mutation intent, persistence proof, semantic/structural/visual evidence, state freshness, task/command contracts, accessibility/RTL/network semantics, token/component lifecycle, analytics tracking governance and change-impact controls.
-
-These controls govern how design work is safely constructed and verified. They do not create new product capabilities and do not override product, domain, database, API or operations authorities.
+Execution safety and verification are governed by `.agents/rules/00-pol-canonical-safety.md` plus the active Master Tree and evidence ledgers. These controls govern how work is safely constructed and verified; they do not create new product capabilities or override product, domain, database, API or operations authorities.
 
 
 ### Executable Master Tree — 2026-09-21
 
-The human-readable Master Tree and its executable schema are now registered as the active design-control pair:
+The active human-readable design authority is `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md`; closure/validation evidence is maintained in `mvp/MVP_KNOWN_GAPS.md`, `mvp/MVP_SCREEN_MATRIX.md`, and `mvp/MVP_API_MAP.md`.
 
-- Human semantic authority: `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md`
-- Machine-readable structural authority: `13_PRODUCT_DESIGN/55_POL_MASTER_TREE_NODE_SCHEMA_2026-09-21.json`
-- Closure/validation rules: `13_PRODUCT_DESIGN/54_POL_MASTER_TREE_EXECUTABLE_SCHEMA_2026-09-21.md`
+## Remediation Re-Audit Checkpoint — 2026-09-26
 
-The executable schema constrains structure and evidence reporting; it does not override product/domain/API authority.
+- Main remains authoritative at the main branch; remediation changes remain isolated on `remediation/full-closure-2026-09-25`.
+- Current remediation head at this checkpoint: `c380e7c1a0d9c3d993d45629707ab411829b1dd5`.
+- Additional closure completed after the prior saturation audit:
+  - valid organization switching corrected and regression-protected;
+  - retailer staff blocked from basket mutation, allocation, checkout and formal dispute opening;
+  - retailer partial-acceptance decisions restricted to retailer owners;
+  - vendor order acceptance/rejection restricted to vendor owners;
+  - vendor staff baseline order.accept removed and delegation ceilings prevent re-granting owner-only capabilities;
+  - mobile CI Node runtime aligned with Expo SDK 57 requirements;
+  - project evidence documents reconciled against the current remediation branch.
+- Current CI is not certifiable: the latest remediation workflow jobs fail before useful step execution, with no executable step metadata and unavailable job logs.
+- Historical backend/mobile/device results remain historical evidence for their respective commits and are not promoted to current-head PASS.
+- Remaining unresolved closure classes are still the explicit governance/product decisions, deployment/provider/browser/device evidence, and the external OpenPencil/runtime dependencies identified in the audit register.
+\n
+
+## Post-Reaudit Remediation Checkpoint — 2026-09-26
+- Remediation branch: `remediation/full-closure-2026-09-25`
+- Latest remediation head at checkpoint: `5c40c14a619e0c530ae795638b556d79d7f86705`
+- Additional source-level findings closed after the prior checkpoint: G-052 delegated-permission ceiling enforcement at evaluation time; G-053 product-media tenant/provenance authorization; G-054 fail-closed handling and database invariant for legacy unbound in-flight uploads.
+- Regression coverage added/extended in `scripts/test_delegated_permissions.py` and `scripts/test_media_service.py`.
+- Fresh GitHub Actions executions continue to terminate with failed jobs whose step lists are empty, including reruns. Therefore current-head CI certification remains **blocked by execution/evidence**, not marked PASS.
+- Main remains unchanged; these changes are isolated to the remediation branch/PR.
+
+- Latest post-reaudit source head: `52e5c79c5874aa53f15af8a0048c945f8e234298`.
+- Additional closure after the prior checkpoint: G-055 Field Task HTTP/boundary contract alignment; G-056 Support related-order tenant binding.
+- Regression coverage added in `scripts/test_http_field_tasks.py` and `scripts/test_http_support.py`.
+
+- Fresh CI executions on the latest head continue to fail before any workflow step is reported (`steps=[]`); this remains an execution/evidence blocker, not a source-level PASS/FAIL determination.
+- G-057 HTTP referral redemption is now wired to canonical first-touch attribution with deterministic idempotency; `scripts/test_http_referrals.py` covers creation + replay.

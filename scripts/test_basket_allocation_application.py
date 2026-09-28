@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from uuid import uuid4
 
+import pytest
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -231,6 +232,49 @@ def test_basket_allocation_application_boundary_round_trip():
             (preview["allocation_plan_id"], vendor_id, vendor_product_id),
         )
         assert cur.fetchone()["count"] == 1
+
+        # Retailer staff may view operational data but may not create/modify
+        # baskets or materialize allocation plans. Checkout authority is owner-only.
+        staff_user_id = str(uuid4())
+        cur.execute(
+            """
+            INSERT INTO users (id, phone_number, full_name, role, is_active)
+            VALUES (%s, %s, 'HTTP Basket Staff', 'RETAILER_STAFF', TRUE)
+            """,
+            (staff_user_id, f"+9891{uuid4().int % 100000000:08d}"),
+        )
+        cur.execute(
+            """
+            INSERT INTO organization_memberships (
+                id, organization_id, user_id, role, status
+            )
+            VALUES (%s, %s, %s, 'RETAILER_STAFF', 'ACTIVE')
+            """,
+            (str(uuid4()), retailer_org_id, staff_user_id),
+        )
+        staff_boundary = POLApplicationBoundary(
+            cur,
+            ApplicationContext(
+                user_id=staff_user_id,
+                organization_id=retailer_org_id,
+                correlation_id=f"staff-{suffix}",
+            ),
+        )
+
+        with pytest.raises(PermissionError, match="RETAILER_OWNER"):
+            staff_boundary.basket_create()
+        with pytest.raises(PermissionError, match="RETAILER_OWNER"):
+            staff_boundary.basket_add_item(
+                basket_id=basket_id,
+                product_id=product_id,
+                quantity=1,
+                pack_quantity=4,
+                expected_version=2,
+            )
+        with pytest.raises(PermissionError, match="RETAILER_OWNER"):
+            staff_boundary.basket_allocation_preview(basket_id=basket_id)
+
+        cur.execute("DELETE FROM users WHERE id = %s;", (staff_user_id,))
     finally:
         conn.rollback()
         cur.close()

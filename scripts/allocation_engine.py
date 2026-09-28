@@ -13,7 +13,9 @@ Core Invariants:
 
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Tuple, Set
+import hashlib
 import itertools
+import json
 import uuid
 
 
@@ -45,6 +47,7 @@ class VendorSKU:
     physical_quantity: int
     reserved_quantity: int
     moq: int = 1
+    pack_quantity: int = 1
 
     @property
     def available_quantity(self) -> int:
@@ -57,6 +60,7 @@ class BasketItem:
     master_product_id: str
     requested_quantity: int
     packaging_unit: str = "CARTON"
+    pack_quantity: int = 1
 
 
 @dataclass
@@ -82,6 +86,7 @@ class AllocationPlan:
     total_amount_toman: int
     is_fully_fulfilled: bool
     items: List[AllocationResultItem]
+    decision_hash: str = ""
 
     @property
     def allocated_items(self) -> List[AllocationResultItem]:
@@ -99,10 +104,10 @@ class MultiVendorAllocationEngine:
         vendor_skus: List[VendorSKU]
     ):
         self.vendors = vendors
-        # Index SKUs by (master_product_id, packaging_unit)
-        self.sku_catalog: Dict[Tuple[str, str], List[VendorSKU]] = {}
+        # Index SKUs by product + sell unit + exact pack size.
+        self.sku_catalog: Dict[Tuple[str, str, int], List[VendorSKU]] = {}
         for sku in vendor_skus:
-            key = (sku.master_product_id, sku.packaging_unit)
+            key = (sku.master_product_id, sku.packaging_unit, sku.pack_quantity)
             if key not in self.sku_catalog:
                 self.sku_catalog[key] = []
             self.sku_catalog[key].append(sku)
@@ -138,7 +143,7 @@ class MultiVendorAllocationEngine:
         item_diagnostics: Dict[str, str] = {}
 
         for b_item in basket_items:
-            key = (b_item.master_product_id, b_item.packaging_unit)
+            key = (b_item.master_product_id, b_item.packaging_unit, b_item.pack_quantity)
             skus = self.sku_catalog.get(key, [])
             valid_skus = []
             has_vendor = False
@@ -200,7 +205,7 @@ class MultiVendorAllocationEngine:
                     list(p.vendor_subtotals.keys())[0]
                 )
             )
-            return complete_k1_plans[0]
+            return self._with_decision_hash(complete_k1_plans[0], basket_items)
 
         # --- PHASE 2: K = 2 Evaluation (Vendor Pairs) ---
         if len(sorted_vendor_ids) >= 2:
@@ -220,7 +225,7 @@ class MultiVendorAllocationEngine:
                     sorted(list(p.vendor_subtotals.keys()))
                 )
             )
-            return complete_k2_plans[0]
+            return self._with_decision_hash(complete_k2_plans[0], basket_items)
 
         # --- PHASE 3: K >= 3 and Greedy Fallback with MOV Pruning ---
         greedy_plan = self._build_greedy_residual_plan(
@@ -231,7 +236,7 @@ class MultiVendorAllocationEngine:
 
         if not candidate_plans:
             # Entire basket unfulfilled
-            return self._build_all_unfulfilled_plan(retailer_id, basket_items, item_diagnostics)
+            return self._with_decision_hash(self._build_all_unfulfilled_plan(retailer_id, basket_items, item_diagnostics), basket_items)
 
         # Sort all candidate plans according to canonical objective hierarchy:
         # 1. Fulfilled line item count (descending)
@@ -251,7 +256,44 @@ class MultiVendorAllocationEngine:
             )
         )
 
-        return candidate_plans[0]
+        return self._with_decision_hash(candidate_plans[0], basket_items)
+
+
+    def _with_decision_hash(self, plan: AllocationPlan, basket_items: List[BasketItem]) -> AllocationPlan:
+        canonical = {
+            "retailer_id": plan.retailer_id,
+            "basket": [
+                {
+                    "id": x.id,
+                    "product": x.master_product_id,
+                    "qty": x.requested_quantity,
+                    "unit": x.packaging_unit,
+                    "pack_quantity": x.pack_quantity,
+                }
+                for x in sorted(basket_items, key=lambda z: z.id)
+            ],
+            "decision": [
+                {
+                    "basket_item_id": x.basket_item_id,
+                    "status": x.status,
+                    "vendor_id": x.vendor_id,
+                    "vendor_sku_id": x.vendor_sku_id,
+                    "qty": x.requested_quantity,
+                    "unit": x.packaging_unit,
+                    "unit_price": x.unit_price_toman,
+                    "total": x.total_price_toman,
+                    "reason": x.reason_code,
+                }
+                for x in sorted(plan.items, key=lambda z: z.basket_item_id)
+            ],
+            "vendor_subtotals": dict(sorted(plan.vendor_subtotals.items())),
+            "total_amount_toman": plan.total_amount_toman,
+            "vendor_count": plan.vendor_count,
+        }
+        plan.decision_hash = hashlib.sha256(
+            json.dumps(canonical, sort_keys=True, separators=(",", ":"), default=str).encode()
+        ).hexdigest()
+        return plan
 
     def _build_vendor_subset_plan(
         self,
@@ -274,7 +316,7 @@ class MultiVendorAllocationEngine:
             skus = [s for s in item_candidates.get(b_item.id, []) if s.vendor_id in subset_set]
             if skus:
                 # Sort by price, then vendor reputation
-                skus.sort(key=lambda s: (s.price_toman, -self.vendors[s.vendor_id].reputation_score, s.vendor_id))
+                skus.sort(key=lambda s: (s.price_toman, -self.vendors[s.vendor_id].reputation_score, s.vendor_id, s.id))
                 assignment[b_item.id] = skus[0]
 
         # 2. Calculate subtotals per vendor
@@ -486,7 +528,7 @@ class MultiVendorAllocationEngine:
                 )
 
             # Prune the failing vendor with the largest MOV deficit
-            failing_vendors.sort(key=lambda v: (self.vendors[v].mov_toman - vendor_subtotals[v]), reverse=True)
+            failing_vendors.sort(key=lambda v: (self.vendors[v].mov_toman - vendor_subtotals[v], v), reverse=True)
             worst_failing = failing_vendors[0]
             available_vendors.remove(worst_failing)
 

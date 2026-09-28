@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+##!/usr/bin/env python3
 """
 POL Environment & Bootstrap Verifier
 Validates:
@@ -7,52 +7,20 @@ Validates:
 3. SQL migration chain availability & readability
 4. PostgreSQL 18.x connection & port availability
 5. Target database 'pol_test' readiness
-6. Core tables (56 active tables) & trigger invariants
+6. Core tables, delegated-permission tables, and trigger invariants
 """
 
 import os
 import sys
 import json
 import argparse
+import re
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-EXPECTED_MIGRATIONS = [
-    "001_initial_schema.sql",
-    "002_platform_core_schema.sql",
-    "003_contract_reconciliation.sql",
-    "004_operational_intelligence.sql",
-    "005_competitive_operational_hardening.sql",
-    "006_temporal_price_transition.sql",
-    "007_vendor_price_close_transition.sql",
-    "008_integration_delivery_contract.sql",
-    "009_canonical_operational_responsibility_and_notification_delivery.sql",
-    "010_daily_confirmation_scheduler_contract.sql",
-    "011_application_boundary_rma_reconciliation_provider_hardening.sql",
-    "012_canonical_route_templates.sql",
-    "013_vendor_referral_mvp_and_integrity_fixes.sql",
-    "014_vendor_inventory_responsibility_creation_guard.sql",
-    "015_vendor_inventory_responsibility_unconditional_on_vendor_owner.sql",
-    "016_daily_inventory_routing_exception_ledger.sql",
-    "017_canonical_user_profiles_and_persona_context.sql",
-    "018_membership_profile_role_transition_guard.sql",
-    "019_rma_refund_state_integrity.sql",
-    "020_repository_integrity_hardening.sql",
-    "021_cross_entity_runtime_integrity.sql",
-    "022_tenant_ownership_integrity.sql",
-    "023_compatibility_and_tenant_guard_refinement.sql",
-    "024_runtime_bug_fixes_and_audit_guards.sql",
-    "025_refund_amount_and_order_group_template.sql",
-    "026_auth_otp_rate_limit_and_lockout.sql",
-    "027_partial_acceptance_two_party_contract.sql",
-    "028_vendor_acceptance_timeout_canonical.sql",
-    "029_order_timeline_events.sql",
-    "030_delivery_otp_column.sql",
-    "031_delivery_exceptions.sql",
-]
-EXPECTED_TABLE_COUNT = 95
+EXPECTED_MIGRATION_HEAD = 48
 EXPECTED_CORE_TABLES = [
     "users",
     "organizations",
@@ -88,8 +56,9 @@ EXPECTED_CORE_TABLES = [
     "vendor_reliability_events",
     "product_identity_lifecycle_logs",
     "returns",
+    "delegated_permission_grants",
+    "permission_audit_events",
 ]
-
 def verify_python():
     version_info = sys.version_info
     ver_str = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
@@ -119,22 +88,44 @@ def verify_dependencies():
 
 def verify_migration_files():
     migrations_dir = os.path.join(REPO_ROOT, "migrations")
-    status = {}
-    all_found = True
-    for mig in EXPECTED_MIGRATIONS:
-        path = os.path.join(migrations_dir, mig)
-        exists = os.path.isfile(path) and os.path.getsize(path) > 0
-        status[mig] = {
-            "exists": exists,
-            "size_bytes": os.path.getsize(path) if exists else 0,
+    if not os.path.isdir(migrations_dir):
+        return {
+            "check": "migration_files",
+            "passed": False,
+            "directory": migrations_dir,
+            "error": "migrations directory not found",
         }
-        if not exists:
-            all_found = False
+
+    files = sorted(
+        name for name in os.listdir(migrations_dir)
+        if name.endswith(".sql")
+    )
+    numbered = []
+    malformed = []
+    for name in files:
+        prefix = name.split("_", 1)[0]
+        if not prefix.isdigit():
+            malformed.append(name)
+            continue
+        numbered.append((int(prefix), name))
+
+    numbers = [n for n, _ in numbered]
+    contiguous = numbers == list(range(1, max(numbers) + 1)) if numbers else False
+    head_ok = bool(numbered) and numbers[-1] == EXPECTED_MIGRATION_HEAD
+    unique_numbers = len(numbers) == len(set(numbers))
+    all_found = bool(files) and contiguous and head_ok and unique_numbers and not malformed
+
     return {
         "check": "migration_files",
         "passed": all_found,
         "directory": migrations_dir,
-        "files": status,
+        "migration_count": len(files),
+        "migration_head": numbered[-1][1] if numbered else None,
+        "expected_migration_head": EXPECTED_MIGRATION_HEAD,
+        "contiguous_numeric_chain": contiguous,
+        "unique_numeric_prefixes": unique_numbers,
+        "malformed_files": malformed,
+        "files": files,
     }
 
 def verify_postgres():
@@ -187,21 +178,38 @@ def verify_postgres():
         is_pg18 = "PostgreSQL 18" in pg_ver_full
 
         cur.execute("""
-            SELECT count(*) as cnt 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
+            SELECT count(*) as cnt
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
               AND table_type = 'BASE TABLE';
         """)
         table_count = cur.fetchone()["cnt"]
 
         cur.execute("""
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
               AND table_type = 'BASE TABLE';
         """)
         existing_tables = set(r["table_name"] for r in cur.fetchall())
-        missing_tables = [t for t in EXPECTED_CORE_TABLES if t not in existing_tables]
+
+        migration_dir = os.path.join(REPO_ROOT, "migrations")
+        migration_sql = ""
+        for migration_name in sorted(os.listdir(migration_dir)):
+            if migration_name.endswith(".sql"):
+                with open(os.path.join(migration_dir, migration_name), "r", encoding="utf-8") as fh:
+                    migration_sql += "\n" + fh.read()
+
+        declared_tables = set(
+            match.lower()
+            for match in re.findall(
+                r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?([A-Za-z_][A-Za-z0-9_]*)",
+                migration_sql,
+                flags=re.IGNORECASE,
+            )
+        )
+        required_tables = set(EXPECTED_CORE_TABLES) | declared_tables
+        missing_tables = sorted(required_tables - existing_tables)
 
         cur.execute("""
             SELECT trigger_name 
@@ -213,7 +221,7 @@ def verify_postgres():
 
         conn.close()
 
-        schema_valid = (table_count == EXPECTED_TABLE_COUNT) and (len(missing_tables) == 0) and trigger_found
+        schema_valid = (len(missing_tables) == 0) and trigger_found
 
         return {
             "check": "postgres_runtime",
@@ -222,8 +230,9 @@ def verify_postgres():
             "pg_version_raw": pg_ver_full,
             "is_postgres_18": is_pg18,
             "table_count": table_count,
-            "expected_table_count": EXPECTED_TABLE_COUNT,
-            "missing_core_tables": missing_tables,
+            "declared_table_count": len(declared_tables),
+            "required_table_count": len(required_tables),
+            "missing_required_tables": missing_tables,
             "trigger_verified": trigger_found,
         }
     except Exception as e:

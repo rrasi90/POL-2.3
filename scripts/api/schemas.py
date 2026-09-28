@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
@@ -18,13 +19,14 @@ class RequestOTPRequest(APIBaseModel):
 
 
 class VerifyOTPRequest(APIBaseModel):
-    mobile_number: str = Field(min_length=7, max_length=32)
+    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9]\d{7,14}$")
     otp_code: str = Field(pattern=r"^\d{4}$")
     device_info: dict[str, Any] | None = None
+    client_platform: Literal["web", "mobile"] | None = None
 
 
 class RefreshTokenRequest(APIBaseModel):
-    refresh_token: str = Field(min_length=20, max_length=512)
+    refresh_token: str | None = Field(default=None, min_length=20, max_length=512)
 
 
 class SwitchOrganizationRequest(APIBaseModel):
@@ -67,6 +69,9 @@ class VendorPartialAcceptanceProposalRequest(APIBaseModel):
 class RetailerPartialAcceptanceDeclineRequest(APIBaseModel):
     reason: str | None = Field(default=None, max_length=1000)
 
+
+class PrivacyExportRequest(APIBaseModel):
+    include_activity_counts: bool = True
 
 class ProfileUpdateRequest(APIBaseModel):
     display_name: str | None = None
@@ -139,12 +144,51 @@ class DispatchRequest(APIBaseModel):
     driver_phone: str | None = Field(default=None, max_length=32)
 
 
+class DeliveredItemRequest(APIBaseModel):
+    order_item_id: UUID
+    delivered_quantity: int = Field(ge=0)
+
+
 class DeliveryConfirmRequest(APIBaseModel):
     recipient_name: str | None = Field(default=None, max_length=200)
     otp_code: str | None = Field(default=None, pattern=r"^\d{4}$")
-    proof_type: str = Field(default="OTP_CODE", max_length=30)
+    proof_type: Literal["OTP_CODE", "PHYSICAL_SIGNATURE", "STORE_STAMP", "PHOTO_PROOF"] = "OTP_CODE"
     proof_media_id: str | None = Field(default=None, max_length=64)
     issue_reported: str | None = Field(default=None, max_length=500)
+    delivered_items: list[DeliveredItemRequest] | None = Field(default=None, max_length=500)
+
+
+class MediaPresignRequest(APIBaseModel):
+    mime_type: Literal["image/jpeg", "image/png", "image/webp"]
+    file_size_bytes: int = Field(gt=0, le=5 * 1024 * 1024)
+    target_type: Literal["PRODUCT", "VENDOR", "CANDIDATE", "DISPUTE", "DELIVERY", "PAYMENT", "SUPPORT"]
+    target_id: UUID
+    filename: str | None = Field(default=None, max_length=255)
+
+
+class MediaResumableInitRequest(APIBaseModel):
+    mime_type: Literal["image/jpeg", "image/png", "image/webp"]
+    file_size_bytes: int = Field(gt=0, le=5 * 1024 * 1024)
+    target_type: Literal["PRODUCT", "VENDOR", "CANDIDATE", "DISPUTE", "DELIVERY", "PAYMENT", "SUPPORT"]
+    target_id: UUID
+    filename: str | None = Field(default=None, max_length=255)
+
+class MediaResumableCompletePart(APIBaseModel):
+    part_number: int = Field(ge=1, le=10000)
+    etag: str = Field(min_length=1, max_length=255)
+
+class MediaResumableCompleteRequest(APIBaseModel):
+    session_id: UUID
+    parts: list[MediaResumableCompletePart] = Field(min_length=1, max_length=10000)
+
+class MediaConfirmUploadRequest(APIBaseModel):
+    media_id: UUID
+    target_type: Literal["PRODUCT", "VENDOR", "CANDIDATE", "DISPUTE", "DELIVERY", "PAYMENT", "SUPPORT"]
+    target_id: UUID
+
+
+class DeliveryStageRequest(APIBaseModel):
+    reason: str | None = Field(default=None, max_length=2000)
 
 
 class DeliveryExceptionReportRequest(APIBaseModel):
@@ -163,6 +207,29 @@ class DeliveryExceptionEscalateRequest(APIBaseModel):
     reason: str | None = Field(default=None, max_length=2000)
 
 
+class CategoryCreateRequest(APIBaseModel):
+    name_fa: str = Field(min_length=1, max_length=100)
+    slug: str = Field(min_length=1, max_length=120)
+    icon_url: str | None = Field(default=None, max_length=255)
+    display_order: int = Field(default=0, ge=0)
+
+class CategoryUpdateRequest(APIBaseModel):
+    name_fa: str | None = Field(default=None, min_length=1, max_length=100)
+    slug: str | None = Field(default=None, min_length=1, max_length=120)
+    icon_url: str | None = Field(default=None, max_length=255)
+    display_order: int | None = Field(default=None, ge=0)
+
+class BroadcastCreateRequest(APIBaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    body: str = Field(min_length=1, max_length=20000)
+    target_criteria: dict[str, object] = Field(min_length=1)
+    channel: str = Field(default="IN_APP", max_length=32)
+    priority: str = Field(default="NORMAL", max_length=32)
+    scheduled_at: str | None = None
+
+class BroadcastDispatchRequest(APIBaseModel):
+    approve: bool = True
+
 class NotificationPreferenceUpdateRequest(APIBaseModel):
     event_name: str = Field(min_length=1, max_length=100)
     channel: str = Field(min_length=1, max_length=10)
@@ -178,7 +245,7 @@ class FieldTaskCreateRequest(APIBaseModel):
 
 
 class FieldTaskUpdateRequest(APIBaseModel):
-    status: str | None = Field(default=None, max_length=20)
+    status: Literal["ASSIGNED", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"] | None = None
     notes: str | None = Field(default=None, max_length=2000)
 
 
@@ -202,18 +269,29 @@ class ReturnTransitionRequest(APIBaseModel):
     approved_refund_amount_toman: int | None = Field(default=None, ge=0)
 
 
+class DisputeItemRequest(APIBaseModel):
+    order_item_id: UUID
+    quantity: int = Field(gt=0)
+    claimed_amount_toman: int = Field(gt=0)
+    reason_code: str = Field(min_length=1, max_length=50)
+
+
 class DisputeOpenRequest(APIBaseModel):
+    claimed_amount_toman: int = Field(gt=0)
     description: str = Field(min_length=1, max_length=2000)
-    evidence_media_id: UUID | None = None
+    evidence_media_id: UUID
+    items: list[DisputeItemRequest] = Field(min_length=1)
 
 
 class PaymentEvidenceRequest(APIBaseModel):
+    payment_id: UUID | None = None
     evidence_type: Literal[
         "BANK_REFERENCE", "POS_REFERENCE", "RECEIPT_IMAGE",
         "VENDOR_CONFIRMATION", "RETAILER_CONFIRMATION",
     ]
     reference_number: str = Field(min_length=1, max_length=255)
     amount_toman: int = Field(gt=0)
+    evidence_media_id: UUID | None = None
     notes: str | None = Field(default=None, max_length=2000)
 
 
@@ -236,6 +314,17 @@ class SupportCaseMessageRequest(APIBaseModel):
     message_text: str = Field(min_length=1, max_length=5000)
 
 
+class ProductCandidateCreateRequest(APIBaseModel):
+    proposed_title: str = Field(min_length=1, max_length=255)
+    proposed_brand: str | None = Field(default=None, max_length=100)
+    barcode: str | None = Field(default=None, max_length=100)
+    vendor_sku: str | None = Field(default=None, max_length=100)
+    photo_asset_id: UUID | None = None
+
+class SupportCaseAssignRequest(APIBaseModel):
+    assignee_user_id: UUID
+
+
 class SupportCaseTransitionRequest(APIBaseModel):
     target_status: str = Field(min_length=1, max_length=30)
     resolution_code: str | None = Field(default=None, max_length=50)
@@ -243,9 +332,172 @@ class SupportCaseTransitionRequest(APIBaseModel):
 
 
 class ReferralCreateRequest(APIBaseModel):
-    referred_retailer_id: UUID
-    referral_code: str = Field(min_length=1, max_length=32)
+    referral_code: str | None = Field(default=None, min_length=1, max_length=32)
+    max_redemptions: int | None = Field(default=None, gt=0)
+    expires_at: datetime | None = None
 
 
 class ReferralRedeemRequest(APIBaseModel):
     pass
+
+
+
+class VendorStaffInviteRequest(APIBaseModel):
+    phone_number: str = Field(
+        min_length=8,
+        max_length=16,
+        pattern=r"^\+[1-9]\d{7,14}$",
+    )
+    full_name: str = Field(min_length=1, max_length=100)
+
+
+class VendorStaffUpdateRequest(APIBaseModel):
+    role: Literal["VENDOR_OWNER", "VENDOR_STAFF"] | None = None
+    status: Literal["INVITED", "ACTIVE", "SUSPENDED", "REVOKED"] | None = None
+
+
+class AdminUserStatusRequest(APIBaseModel):
+    is_active: bool
+
+class DelegatedPermissionGrantRequest(APIBaseModel):
+    permission_key: Literal[
+        "catalog.view",
+        "catalog.manage",
+        "inventory.view",
+        "inventory.scan",
+        "inventory.adjust",
+        "price.view",
+        "price.manage",
+        "order.view",
+        "order.accept",
+        "order.fulfillment",
+        "delivery.dispatch",
+        "delivery.handoff",
+        "payment.view",
+        "payment.record",
+        "settlement.view",
+        "membership.manage",
+        "reports.view",
+    ]
+    reason: str = Field(min_length=1, max_length=500)
+    client: str | None = Field(default=None, max_length=32)
+
+
+class DelegatedPermissionRevokeRequest(APIBaseModel):
+    reason: str = Field(min_length=1, max_length=500)
+    client: str | None = Field(default=None, max_length=32)
+
+
+
+class AdminOrganizationStatusRequest(APIBaseModel):
+    status: Literal[
+        "LEAD",
+        "DOCUMENTS_PENDING",
+        "UNDER_REVIEW",
+        "VERIFICATION_PENDING",
+        "APPROVED",
+        "ACTIVE",
+        "REJECTED",
+        "SUSPENDED",
+    ]
+
+
+class AdminSlaOverrideRequest(APIBaseModel):
+    order_id: UUID
+    extension_minutes: int = Field(ge=1, le=1440)
+    reason: str = Field(min_length=1, max_length=500)
+
+
+class AdminBroadcastCreateRequest(APIBaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    body: str = Field(min_length=1, max_length=5000)
+    target_criteria: dict = Field(default_factory=dict)
+    channel: Literal["IN_APP", "SMS", "PUSH", "INBOX_AND_SMS", "ALL"] = "IN_APP"
+    priority: Literal["LOW", "NORMAL", "HIGH", "URGENT"] = "NORMAL"
+    scheduled_at: datetime | None = None
+
+
+class AdminBroadcastDispatchRequest(APIBaseModel):
+    approve: bool = True
+
+
+class AdminCategoryCreateRequest(APIBaseModel):
+    name_fa: str = Field(min_length=1, max_length=100)
+    slug: str = Field(min_length=1, max_length=120)
+    icon_url: str | None = Field(default=None, max_length=255)
+    display_order: int = Field(default=0, ge=0)
+
+
+class AdminCategoryUpdateRequest(APIBaseModel):
+    name_fa: str | None = Field(default=None, min_length=1, max_length=100)
+    slug: str | None = Field(default=None, min_length=1, max_length=120)
+    icon_url: str | None = Field(default=None, max_length=255)
+    display_order: int | None = Field(default=None, ge=0)
+
+
+class VendorInventoryContinuousScanRequest(APIBaseModel):
+    product_id: UUID
+    vendor_sku: str = Field(min_length=1, max_length=100)
+    packaging_unit: str = Field(min_length=1, max_length=30)
+    pack_quantity: int = Field(ge=1, le=100000)
+    physical_quantity: int = Field(ge=0)
+    unit_price_toman: int = Field(gt=0)
+    consumer_price_per_unit_toman: int | None = Field(default=None, gt=0)
+    session_id: str = Field(min_length=1, max_length=128)
+
+
+class VendorInventoryPublishRequest(APIBaseModel):
+    session_id: str = Field(min_length=1, max_length=128)
+
+
+class DisputeTransitionReasonRequest(APIBaseModel):
+    reason: str | None = Field(default=None, max_length=1000)
+
+
+class DisputeResolveRequest(APIBaseModel):
+    outcome: Literal[
+        "ADJUSTED_SHORTAGE",
+        "REPLACEMENT_ORDER",
+        "REJECTED_CLAIM",
+        "MUTUAL_AGREEMENT",
+    ]
+    approved_amount_toman: int = Field(ge=0)
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class RefundIssueRequest(APIBaseModel):
+    dispute_id: UUID
+    amount_toman: int = Field(gt=0)
+    payment_id: UUID | None = None
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class RefundApproveRequest(APIBaseModel):
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class RefundCompleteRequest(APIBaseModel):
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class BarcodeMatchRequest(APIBaseModel):
+    # Legacy contract shape (raw_barcode + scan_source) remains accepted.
+    raw_barcode: str | None = Field(default=None, min_length=8, max_length=32)
+    scan_source: str | None = Field(default=None, min_length=1, max_length=50)
+    # Extended remediation shape adds optional candidate creation inputs.
+    barcode: str | None = Field(default=None, min_length=8, max_length=32)
+    proposed_title: str | None = Field(default=None, max_length=255)
+    vendor_sku: str | None = Field(default=None, max_length=100)
+    packaging_unit: str = Field(default="UNIT", min_length=1, max_length=30)
+    pack_quantity: int = Field(default=1, ge=1, le=100000)
+    create_candidate: bool = False
+
+
+class AdminProductCandidateReviewRequest(APIBaseModel):
+    action: Literal["APPROVE_CANONICAL", "MERGE_EXISTING", "REJECT"]
+    reason: str = Field(min_length=1, max_length=1000)
+    brand_id: UUID | None = None
+    category_id: UUID | None = None
+    subcategory_id: UUID | None = None
+    canonical_name_fa: str | None = Field(default=None, max_length=255)
+    target_product_id: UUID | None = None

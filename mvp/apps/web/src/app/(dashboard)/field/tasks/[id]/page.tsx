@@ -12,6 +12,7 @@ const taskStatusTone: Record<string, StatusTone> = {
   IN_PROGRESS: "info",
   COMPLETED: "success",
   CANCELLED: "neutral",
+  FAILED: "danger",
   OPEN: "warning",
   DONE: "success",
   CLOSED: "neutral",
@@ -22,6 +23,7 @@ const taskStatusLabel: Record<string, string> = {
   IN_PROGRESS: "در حال انجام",
   COMPLETED: "تکمیل‌شده",
   CANCELLED: "لغوشده",
+  FAILED: "ناموفق",
   OPEN: "باز",
   DONE: "انجام‌شده",
   CLOSED: "بسته",
@@ -75,6 +77,14 @@ export default function FieldTaskDetailPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const allowedNextStatuses: Record<string, string[]> = {
+    ASSIGNED: ["IN_PROGRESS", "FAILED", "CANCELLED"],
+    IN_PROGRESS: ["COMPLETED", "FAILED", "CANCELLED"],
+    FAILED: ["IN_PROGRESS", "CANCELLED"],
+    COMPLETED: [],
+    CANCELLED: [],
+  };
 
   async function save() {
     if (!taskId) return;
@@ -228,7 +238,7 @@ export default function FieldTaskDetailPage() {
               }}
             >
               <option value="">(بدون تغییر)</option>
-              {Object.keys(taskStatusLabel).map((s) => (
+              {(task?.status && allowedNextStatuses[task.status] ? allowedNextStatuses[task.status] : []).map((s) => (
                 <option key={s} value={s}>
                   {taskStatusLabel[s]}
                 </option>

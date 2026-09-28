@@ -24,6 +24,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# request_otp only exposes the deterministic test_code when ENVIRONMENT == "test".
+os.environ.setdefault("ENVIRONMENT", "test")
+
 import uuid
 import datetime
 import psycopg2
@@ -42,6 +45,13 @@ from scripts.domain_services import (
     AuditService
 )
 from scripts.checkout_gateway import CanonicalCheckoutGateway
+from scripts.fulfillment_service import (
+    mark_preparing as canonical_mark_preparing,
+    mark_ready as canonical_mark_ready,
+    dispatch_order as canonical_dispatch_order,
+    transition_delivery_stage,
+    confirm_delivery as canonical_confirm_delivery,
+)
 
 import hashlib
 import json
@@ -153,7 +163,7 @@ def run_master_e2e_test():
         # Test AuthService OTP & Session creation
         otp_challenge = AuthService.request_otp(cur, phone_ret_owner, "127.0.0.1", purpose='LOGIN')
         assert otp_challenge["status"] == "PENDING"
-        session = AuthService.verify_otp(cur, phone_ret_owner, "1234", u_ret_owner, org_ret)
+        session = AuthService.verify_otp(cur, phone_ret_owner, otp_challenge["test_code"], u_ret_owner, org_ret)
         assert session["session"]["status"] == "ACTIVE"
         assert str(session["session"]["active_organization_id"]) == org_ret
         assert session["access_token"] and session["refresh_token"]
@@ -218,6 +228,42 @@ def run_master_e2e_test():
         # Allocation Engine produces Multi-Vendor Plan (D-014)
         plan = AllocationService.create_plan(cur, basket_id, basket_version=3, vendor_count=2, total_toman=12750000)
         plan_id = plan["id"]
+        cur.execute(
+            """
+            SELECT id, product_id, requested_quantity, requested_unit
+            FROM basket_items
+            WHERE basket_id=%s
+            ORDER BY created_at, id
+            """,
+            (basket_id,),
+        )
+        basket_rows = cur.fetchall()
+        assert len(basket_rows) == 2
+        allocation_rows = {
+            str(row["product_id"]): row
+            for row in basket_rows
+        }
+        for product_id, vendor_id, vendor_product_id, quantity, unit_price in (
+            (prod_a, vnda_id, vp_a, 10, 600000),
+            (prod_b, vndb_id, vp_b, 15, 450000),
+        ):
+            row = allocation_rows[product_id]
+            cur.execute(
+                """
+                INSERT INTO allocation_items (
+                    id, allocation_plan_id, basket_item_id, vendor_id, vendor_product_id,
+                    allocated_quantity, allocated_unit, unit_price_snapshot_toman,
+                    line_total_toman, status
+                )
+                VALUES (
+                    gen_random_uuid(), %s, %s, %s, %s, %s, %s, %s, %s, 'ALLOCATED'
+                )
+                """,
+                (
+                    plan_id, row["id"], vendor_id, vendor_product_id,
+                    quantity, row["requested_unit"], unit_price, quantity * unit_price,
+                ),
+            )
         assert plan["strategy"] == "MULTI_VENDOR_MIN_FRAGMENTATION"
         assert plan["vendor_count"] == 2
         print(f"  [PASS] Basket v3 allocated across 2 vendors ({plan['total_estimated_toman']:,} Toman) via AllocationService.")
@@ -294,36 +340,111 @@ def run_master_e2e_test():
         # -------------------------------------------------------------
         # 6. Delivery Dispatch (Driver Info Option A) & OTP Delivery Confirmation
         # -------------------------------------------------------------
-        print("\n[STEP 6] Fulfillment: Dispatch with Driver Info (Option A) and OTP Confirmation via FulfillmentService...")
+        print("\n[STEP 6] Fulfillment: Dispatch with Driver Info (Option A) and staged OTP confirmation...")
         driver_metadata = {
             "driver_name": "Karim Driver",
             "driver_phone": "+989163334455",
             "vehicle_plate": "14 Iran 333 b 12"
         }
-        deliv_id = FulfillmentService.dispatch_order(cur, ord_a_id, vnda_id, driver_metadata)
-        cur.execute("SELECT delivery_status FROM deliveries WHERE id = %s;", (deliv_id,))
-        assert cur.fetchone()["delivery_status"] == "IN_TRANSIT"
+        prep_res = canonical_mark_preparing(
+            cur,
+            user_id=u_vnda_owner,
+            organization_id=org_vnda,
+            order_id=ord_a_id,
+        )
+        assert prep_res["order_status"] == "PREPARING"
 
-        # Retailer confirms delivery via OTP
-        FulfillmentService.confirm_delivery_otp(cur, deliv_id, ord_a_id, 'Hossein Golestani')
+        ready_res = canonical_mark_ready(
+            cur,
+            user_id=u_vnda_owner,
+            organization_id=org_vnda,
+            order_id=ord_a_id,
+        )
+        assert ready_res["order_status"] == "READY"
+
+        dispatch_res = canonical_dispatch_order(
+            cur,
+            user_id=u_vnda_owner,
+            organization_id=org_vnda,
+            order_id=ord_a_id,
+            **driver_metadata,
+        )
+        deliv_id = dispatch_res["delivery_id"]
+        # OTP is a secret and is intentionally not returned by the production
+        # dispatch contract. The integration test reads it directly from the
+        # isolated test database to verify the subsequent confirmation flow.
+        cur.execute("SELECT delivery_otp FROM deliveries WHERE id = %s;", (deliv_id,))
+        otp_row = cur.fetchone()
+        assert otp_row and otp_row["delivery_otp"]
+        otp_code = otp_row["delivery_otp"]
+        assert dispatch_res["delivery_status"] == "ASSIGNED"
+
+        for stage in ("PICKED_UP", "IN_TRANSIT", "ARRIVED"):
+            stage_res = transition_delivery_stage(
+                cur,
+                user_id=u_vnda_owner,
+                organization_id=org_vnda,
+                order_id=ord_a_id,
+                target_status=stage,
+            )
+            assert stage_res["delivery_status"] == stage
+
+        cur.execute("SELECT delivery_status FROM deliveries WHERE id = %s;", (deliv_id,))
+        assert cur.fetchone()["delivery_status"] == "ARRIVED"
+
+        canonical_confirm_delivery(
+            cur,
+            user_id=u_ret_owner,
+            organization_id=org_ret,
+            order_id=ord_a_id,
+            recipient_name="Hossein Golestani",
+            otp_code=otp_code,
+        )
         cur.execute("SELECT delivery_status FROM deliveries WHERE id = %s;", (deliv_id,))
         assert cur.fetchone()["delivery_status"] == "DELIVERED"
         cur.execute("SELECT order_status FROM orders WHERE id = %s;", (ord_a_id,))
         assert cur.fetchone()["order_status"] == "DELIVERED"
-        print("  [PASS] Delivery dispatched with driver credentials and verified by OTP -> DELIVERED via FulfillmentService.")
+        print("  [PASS] Delivery staged ASSIGNED→PICKED_UP→IN_TRANSIT→ARRIVED→DELIVERED with one-time OTP.")
 
         # -------------------------------------------------------------
-        # 7. Non-Custodial Direct Payment & Proof Verification
+        # 7. Non-Custodial Direct Payment Evidence & Verification
         # -------------------------------------------------------------
-        print("\n[STEP 7] Non-Custodial Direct Payment Proof & Verification via PaymentService...")
-        pay_res = PaymentService.record_direct_payment(cur, ord_a_id, ret_id, vnda_id, 6000000, u_vnda_owner)
-        payment = pay_res["payment"]
-        settlement = pay_res["settlement"]
-        settle_id = settlement["id"]
-        assert payment["custody_model"] == "NON_CUSTODIAL_DIRECT"
-        assert settlement["commission_rate"] == 0
-        assert settlement["status"] == "CALCULATED"
-        print("  [PASS] Direct payment proof recorded via PaymentService: 6,000,000 Toman settled at 0% commission.")
+        print("\n[STEP 7] Non-Custodial Direct Payment Evidence & Verification...")
+        pay_id = str(uuid.uuid4())
+        cur.execute(
+            """
+            INSERT INTO payments (
+                id, order_id, retailer_id, vendor_id, amount_toman,
+                payment_method, custody_model, payment_status
+            ) VALUES (
+                %s,%s,%s,%s,6000000,'DIRECT_BANK_TRANSFER','NON_CUSTODIAL_DIRECT','PENDING'
+            )
+            RETURNING *
+            """,
+            (pay_id, ord_a_id, ret_id, vnda_id),
+        )
+        cur.execute(
+            """
+            INSERT INTO payment_evidence (
+                id, payment_id, evidence_type, external_reference,
+                claimed_amount_toman, observed_amount_toman,
+                captured_by_user_id, observation_scope, metadata
+            ) VALUES (
+                %s,%s,'BANK_REFERENCE',%s,6000000,6000000,%s,'SINGLE_PAYMENT','{}'::jsonb
+            )
+            """,
+            (str(uuid.uuid4()), pay_id, f"TXN-{uuid.uuid4().hex[:12]}", u_ret_owner),
+        )
+        payment_boundary = POLApplicationBoundary(
+            cur,
+            ApplicationContext(u_vnda_owner, org_vnda, corr_id),
+        )
+        pay_res = payment_boundary.verify_payment(order_id=ord_a_id, notes="Master E2E verification")
+        assert pay_res["status"] == "SUCCESS"
+        settle_id = pay_res["settlement_id"]
+        cur.execute("SELECT status FROM settlements WHERE id=%s", (settle_id,))
+        assert cur.fetchone()["status"] == "CALCULATED"
+        print("  [PASS] Payment verified only after matching evidence; settlement CALCULATED.")
 
         # -------------------------------------------------------------
         # 8. Invoices with Multi-Tenant Access
@@ -369,8 +490,64 @@ def run_master_e2e_test():
         # -------------------------------------------------------------
         # 10. Formal Dispute Isolation & Settlement Hold
         # -------------------------------------------------------------
-        print("\n[STEP 10] Formal Dispute Opening via DisputeService: Settlement Hold & Blast Radius Isolation...")
-        disp_id = DisputeService.open_dispute(cur, ord_a_id, ret_id, vnda_id, settle_id, 1200000, 'Damaged goods: 2 cartons')
+        print("\n[STEP 10] Formal Dispute Opening via Canonical Application Boundary: Evidence + Items + Idempotency...")
+        dispute_media_id = str(uuid.uuid4())
+        cur.execute(
+            """
+            INSERT INTO media_assets (
+                id, storage_provider, storage_bucket, storage_key,
+                mime_type, file_size_bytes, checksum_sha256, status,
+                provenance, uploaded_by_user_id, upload_target_type, upload_target_id
+            )
+            VALUES (
+                %s,'S3_COMPATIBLE','pol-media',%s,'image/jpeg',2048,%s,
+                'READY','POL_OWNED',%s,'ORDER',%s
+            )
+            """,
+            (
+                dispute_media_id,
+                f"e2e/disputes/{dispute_media_id}.jpg",
+                "b" * 64,
+                u_ret_owner,
+                ord_a_id,
+            ),
+        )
+
+        cur.execute(
+            """
+            SELECT oi.id, oi.delivered_quantity, oi.unit_price_toman
+            FROM order_items oi
+            JOIN vendor_products vp ON vp.id = oi.vendor_product_id
+            WHERE oi.order_id=%s
+              AND vp.vendor_id = %s
+            ORDER BY oi.created_at ASC
+            LIMIT 1
+            """,
+            (ord_a_id, vnda_id),
+        )
+        dispute_item = cur.fetchone()
+        assert dispute_item and int(dispute_item["delivered_quantity"] or 0) >= 2
+        assert 1200000 <= 2 * int(dispute_item["unit_price_toman"])
+
+        dispute_boundary = POLApplicationBoundary(
+            cur,
+            ApplicationContext(u_ret_owner, org_ret, corr_id),
+        )
+        dispute_result = dispute_boundary.dispute_open(
+            order_id=ord_a_id,
+            claimed_amount_toman=1200000,
+            description='Damaged goods: 2 cartons',
+            evidence_media_id=dispute_media_id,
+            items=[{
+                "order_item_id": str(dispute_item["id"]),
+                "quantity": 2,
+                "claimed_amount_toman": 1200000,
+                "reason_code": "DAMAGE",
+            }],
+            idempotency_key=str(uuid.uuid4()),
+        )
+        disp_id = str(dispute_result["id"])
+        assert dispute_result["dispute_status"] == "OPEN"
 
         cur.execute("SELECT order_status, dispute_status FROM orders WHERE id = %s;", (ord_a_id,))
         ord_status_check = cur.fetchone()
@@ -379,13 +556,16 @@ def run_master_e2e_test():
 
         cur.execute("SELECT status FROM settlements WHERE id = %s;", (settle_id,))
         assert cur.fetchone()["status"] == "DISPUTED"
-        print("  [PASS] Dispute opened via DisputeService: order_status remained DELIVERED, dispute_status projected to OPEN, settlement locked in DISPUTED.")
+        print("  [PASS] Canonical dispute opened with READY evidence, line-item claim, idempotency and settlement hold.")
 
         # -------------------------------------------------------------
         # 11. Transactional Outbox to Notification & User Inbox
         # -------------------------------------------------------------
         print("\n[STEP 11] Transactional Outbox Event to Notification Engine & User Inbox via NotificationService...")
-        dispatched_count = NotificationService.dispatch_pending_outbox(cur, target_user_id=u_vnda_owner, target_org_id=org_vnda)
+        # The full verification suite shares pol_test across rollback-safe tests. Drain a
+        # bounded larger batch so older unrelated PENDING outbox rows cannot mask this E2E's
+        # canonical DISPUTE_OPENED notification contract.
+        dispatched_count = NotificationService.dispatch_pending_outbox(cur, limit=1000)
         assert dispatched_count >= 1
 
         cur.execute("SELECT count(*) as cnt FROM user_inbox_items WHERE user_id = %s AND category = 'DISPUTES';", (u_vnda_owner,))

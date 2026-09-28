@@ -10,6 +10,7 @@ MVP intent:
 
 from __future__ import annotations
 
+import re
 import secrets
 import string
 import uuid
@@ -70,13 +71,25 @@ class VendorReferralService:
     @classmethod
     def create_referral(cls, cur, actor_user_id: str, vendor_id: str,
                         max_redemptions: int | None = None,
-                        expires_at=None) -> dict:
+                        expires_at=None,
+                        referral_code: str | None = None) -> dict:
+        """Create the canonical vendor referral code/link.
+
+        D-016 does not bind a referral to a specific retailer at creation time.
+        The retailer is identified only when the code is redeemed.
+        """
         if not cls._vendor_access(cur, actor_user_id, vendor_id):
             raise VendorReferralAccessError("Actor is not an active member of this vendor.")
         if max_redemptions is not None and max_redemptions <= 0:
             raise ValueError("max_redemptions must be positive when provided.")
 
-        code = cls._generate_code()
+        if referral_code is None or not referral_code.strip():
+            code = cls._generate_code()
+        else:
+            code = referral_code.strip().upper()
+            if not re.fullmatch(r"POLV-[A-Z0-9]{8}", code):
+                raise ValueError("referral_code must match POLV-XXXXXXXX format.")
+
         referral_id = str(uuid.uuid4())
         try:
             cur.execute(
@@ -91,7 +104,7 @@ class VendorReferralService:
             )
         except Exception as exc:
             if getattr(exc, "pgcode", None) == "23505":
-                raise VendorReferralStateError("Generated referral code collided; retry creation.") from exc
+                raise VendorReferralStateError("Referral code already exists; retry with another code.") from exc
             raise
         return cur.fetchone()
 

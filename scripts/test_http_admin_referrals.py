@@ -183,25 +183,20 @@ class TestReferralCreate:
         resp = client.post(
             "/api/v1/referrals",
             headers={"Authorization": f"Bearer {data['v_token']}"},
-            json={
-                "referred_retailer_id": data["ri"],
-                "referral_code": f"POLV-{uuid4().hex[:8].upper()}",
-            },
+            json={},
         )
         assert resp.status_code == 201
         body = resp.json()
         assert body["success"] is True
         assert body["data"]["status"] == "ACTIVE"
+        assert body["data"]["referral_code"].startswith("POLV-")
 
     def test_retailer_cannot_create_referral(self, client):
         data = _seed_admin_vendor_retailer()
         resp = client.post(
             "/api/v1/referrals",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={
-                "referred_retailer_id": data["ri"],
-                "referral_code": f"POLV-{uuid4().hex[:8].upper()}",
-            },
+            json={"referral_code": f"POLV-{uuid4().hex[:8].upper()}"},
         )
         assert resp.status_code == 403
 
@@ -213,7 +208,7 @@ class TestReferralList:
         client.post(
             "/api/v1/referrals",
             headers={"Authorization": f"Bearer {data['v_token']}"},
-            json={"referred_retailer_id": data["ri"], "referral_code": code},
+            json={"referral_code": code},
         )
         resp = client.get(
             "/api/v1/referrals",
@@ -233,18 +228,30 @@ class TestReferralRedeem:
         create_resp = client.post(
             "/api/v1/referrals",
             headers={"Authorization": f"Bearer {data['v_token']}"},
-            json={"referred_retailer_id": data["ri"], "referral_code": code},
+            json={"referral_code": code},
         )
+        assert create_resp.status_code == 201
         referral_id = create_resp.json()["data"]["id"]
         resp = client.post(
             f"/api/v1/referrals/{referral_id}/redeem",
-            headers={"Authorization": f"Bearer {data['v_token']}"},
+            headers={"Authorization": f"Bearer {data['r_token']}"},
             json={},
         )
         assert resp.status_code == 200
         body = resp.json()
         assert body["success"] is True
-        assert body["data"]["redemption_count"] == 1
+        assert body["data"]["status"] == "ATTRIBUTED"
+
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT redemption_count FROM vendor_referrals WHERE id=%s",
+                    (referral_id,),
+                )
+                assert int(cur.fetchone()["redemption_count"]) == 1
+        finally:
+            conn.close()
 
 
 class TestUnauthenticated:

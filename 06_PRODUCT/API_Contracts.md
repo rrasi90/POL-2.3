@@ -494,6 +494,7 @@
 
 ### ۷.۳. تازه‌سازی توکن دسترسی (`POST /auth/refresh`)
 * **مجوز:** عمومی (نیاز به refresh_token معتبر).
+* **Rotation:** هر refresh موفق، refresh token قبلی را مصرف و یک refresh token جدید صادر می‌کند؛ replay توکن قبلی باید fail-closed شود.
 * **بدنه درخواست:**
 ```json
 {
@@ -506,6 +507,7 @@
   "success": true,
   "data": {
     "access_token": "eyJhbGciOiJIUzI1Ni...",
+    "refresh_token": "new-rotated-refresh-token...",
     "token_type": "Bearer",
     "expires_in": 900
   }
@@ -545,7 +547,7 @@
   }
 }
 ```
-* **Governance note (D-018):** refresh-token rotation policy هنوز تصمیم‌گیری نشده است. رفتار فعلی implementation این است که refresh token را rotate نمی‌کند و همان token را در طول refresh-session معتبر مصرف می‌کند؛ این جمله صرفاً وضعیت runtime فعلی است و به‌عنوان policy نهایی تلقی نمی‌شود.
+* **Governance note (D-018):** refresh-token rotation policy هنوز تصمیم‌گیری نشده است. رفتار فعلی implementation این است که refresh token را در هر refresh موفق rotate می‌کند و replay توکن قبلی را fail-closed می‌کند؛ این جمله صرفاً وضعیت runtime فعلی است و به‌عنوان policy نهایی تلقی نمی‌شود.
 
 ### ۷.۴. سوئیچ بین سازمان‌ها (`POST /auth/switch-organization`)
 * **مجوز:** کاربر احراز هویت شده دارای بیش از یک عضویت فعال.
@@ -555,7 +557,7 @@
   "target_organization_id": "7d91e843-c03b-4191-87aa-29775089c93a"
 }
 ```
-* **پاسخ موفق (200 OK):** توکن JWT جدید با ادعای `org_id` و `role` سازمان مقصد صادر می‌شود. در implementation فعلی refresh token تغییر نمی‌کند؛ rotation policy طبق D-018 هنوز TBD است.
+* **پاسخ موفق (200 OK):** توکن JWT جدید با ادعای `org_id` و `role` سازمان مقصد صادر می‌شود. پیاده‌سازی فعلی در `switch_organization` refresh token را rotate نمی‌کند؛ rotation در endpoint `POST /auth/refresh` انجام می‌شود. سیاست نهایی rotation طبق D-018 هنوز TBD است.
 ```json
 {
   "success": true,
@@ -576,6 +578,36 @@
 * **پاسخ موفق (200 OK):** سشن در جدول `user_sessions` به وضعیت `status = 'REVOKED'` و `revoked_at = now()` درمی‌آید.
 
 ---
+
+## ۷.۷ Media Ingestion APIs
+
+### ۷.۷.۱ Presign معمولی (`POST /api/v1/media/presigned-url`)
+- فایل ابتدا در quarantine با وضعیت `UPLOADING` قرار می‌گیرد.
+- اندازه حداکثر ۵MB و MIME اولیه فقط JPEG/PNG/WebP است؛ `confirm-upload` نوع واقعی فایل را با magic bytes بررسی می‌کند.
+
+### ۷.۷.۲ آپلود resumable (`POST /api/v1/media/resumable/init`)
+- یک `media_upload_session` و تعداد partهای موردنیاز ایجاد می‌کند و برای هر part URL امضاشده برمی‌گرداند.
+- partها با شماره متوالی ۱..N تکمیل می‌شوند.
+
+### ۷.۷.۳ تکمیل resumable (`POST /api/v1/media/resumable/complete`)
+- همه partها باید دقیقاً یک‌بار ارائه شوند؛ multipart در provider تکمیل و session به `COMPLETED` می‌رود.
+- سپس caller از همان `POST /media/confirm-upload` برای validation/processing نهایی استفاده می‌کند.
+
+### ۷.۷.۴ Trusted processing
+- validation: size + magic bytes + decode.
+- metadata/EXIF حذف می‌شود؛ derivative به WebP تبدیل می‌شود و thumbnail استاندارد ۱۵۰×۱۵۰ تولید می‌شود.
+
+## ۷.۶ Privacy Export / Account Deletion APIs
+
+### ۷.۶.۱ درخواست دریافت داده شخصی (`POST /api/v1/privacy/export`)
+- **مجوز:** فقط کاربر احراز هویت‌شده و فقط داده‌های متعلق به همان `user_id`.
+- **رفتار:** snapshot نسخه‌دار از داده‌های مستقیم هویتی، پروفایل، عضویت‌ها، دستگاه‌ها، رضایت‌ها و شمارنده‌های فعالیت بازمی‌گرداند. محتوای snapshot به‌عنوان artifact دائمی در DB نگهداری نمی‌شود؛ فقط SHA-256 درخواست ثبت می‌شود.
+- **پاسخ:** `request.status = COMPLETED` و `request.export_sha256` به‌همراه `data`.
+
+### ۷.۶.۲ حذف حساب (`POST /api/v1/privacy/deletion`)
+- **مجوز:** فقط کاربر احراز هویت‌شده برای حساب خودش.
+- **رفتار:** یک درخواست privacy با lifecycle `REQUESTED → PROCESSING → COMPLETED` ثبت می‌شود؛ سپس PII مستقیم de-identify می‌شود، session/device/consent access revoke می‌شود و سوابق مالی/تجاری/حسابرسی برای حفظ یکپارچگی نگه داشته می‌شوند.
+- **قاعده:** hard-delete کاربر انجام نمی‌شود؛ `user_id` برای referential/audit integrity باقی می‌ماند و داده‌های مستقیم شخصی به tombstone تبدیل می‌شوند.
 
 ## ۸. اندپوینت‌های تیکت‌ها و پرونده‌های پشتیبانی عمومی (Support Case APIs)
 

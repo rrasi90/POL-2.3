@@ -166,8 +166,9 @@ def _seed_finance(suffix):
                 "INSERT INTO order_items (id, order_id, product_id, vendor_product_id, "
                 "product_name_snapshot, brand_name_snapshot, vendor_sku_snapshot, "
                 "packaging_unit_snapshot, pack_quantity_snapshot, ordered_quantity, "
-                "unit_price_toman, total_line_amount_toman, fulfillment_status) "
-                "VALUES (%s, %s, %s, %s, 'Product', 'Brand', 'VS', 'CARTON', 4, 10, 500000, 5000000, 'FULFILLED')",
+                "delivered_quantity, unit_price_toman, total_line_amount_toman, "
+                "fulfillment_status) "
+                "VALUES (%s, %s, %s, %s, 'Product', 'Brand', 'VS', 'CARTON', 4, 10, 10, 500000, 5000000, 'FULFILLED')",
                 (order_item_id, order_id, product_id, vendor_product_id),
             )
 
@@ -253,6 +254,45 @@ class TestInvoiceList:
         assert isinstance(body["invoices"], list)
         assert len(body["invoices"]) >= 1
         assert body["invoices"][0]["retailer_organization_id"] == data["retailer_org"]
+
+    def test_ops_list_cross_tenant_invoices(self, client):
+        data = _seed_finance(uuid4().hex[:8])
+        op_user = str(uuid4())
+        op_org = str(uuid4())
+        membership_id = str(uuid4())
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role, is_active) VALUES (%s, %s, 'Ops', 'ADMIN_SUPER', TRUE)",
+                    (op_user, f"+9891{uuid4().int % 100000000:08d}"),
+                )
+                cur.execute(
+                    "INSERT INTO organizations (id, name, org_type, status) VALUES (%s, 'Ops Org', 'OPERATOR', 'ACTIVE')",
+                    (op_org,),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status, is_primary) VALUES (%s, %s, %s, 'ADMIN_SUPER', 'ACTIVE', TRUE)",
+                    (membership_id, op_org, op_user),
+                )
+                session_id = _create_session(cur, op_user, op_org)
+            conn.commit()
+            op_token = encode_access_token(op_user, session_id, op_org, "ADMIN_SUPER")
+
+            resp = client.get("/api/v1/invoices", headers={"Authorization": f"Bearer {op_token}"})
+            assert resp.status_code == 200
+            invoices = resp.json()["data"]["invoices"]
+            assert any(item["id"] == data["invoice_id"] for item in invoices)
+            assert any(item["vendor_organization_id"] == data["vendor_org"] for item in invoices)
+            assert any(item["retailer_organization_id"] == data["retailer_org"] for item in invoices)
+        finally:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM user_sessions WHERE user_id=%s", (op_user,))
+                cur.execute("DELETE FROM organization_memberships WHERE id=%s", (membership_id,))
+                cur.execute("DELETE FROM organizations WHERE id=%s", (op_org,))
+                cur.execute("DELETE FROM users WHERE id=%s", (op_user,))
+            conn.commit()
+            conn.close()
 
 
 class TestInvoiceGet:

@@ -232,7 +232,7 @@ def test_allocation_count_mismatch_rejected():
             data = _seed_basket_and_plan(cur, uuid4().hex[:8])
         conn.commit()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            with pytest.raises(AllocationIntegrityError, match="exactly one vendor"):
+            with pytest.raises(AllocationIntegrityError, match="must exactly match the fulfilled allocation-plan lines"):
                 validate_allocation_against_basket(
                     cur, data["basket_id"], data["plan_id"], data["retailer_id"],
                     [],
@@ -252,6 +252,55 @@ def test_basket_not_found_rejected():
                 validate_allocation_against_basket(
                     cur, str(uuid4()), data["plan_id"], data["retailer_id"],
                     data["vendor_allocations"],
+                )
+    finally:
+        conn.close()
+
+
+
+def test_forged_vendor_product_rejected():
+    conn = _db()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _seed_basket_and_plan(cur, uuid4().hex[:8])
+        conn.commit()
+        forged = [dict(data["vendor_allocations"][0], vendor_product_id=str(uuid4()))]
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            with pytest.raises(AllocationIntegrityError, match="does not exist"):
+                validate_allocation_against_basket(
+                    cur, data["basket_id"], data["plan_id"], data["retailer_id"], forged
+                )
+    finally:
+        conn.close()
+
+
+def test_forged_quantity_rejected_against_basket():
+    conn = _db()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _seed_basket_and_plan(cur, uuid4().hex[:8])
+        conn.commit()
+        forged = [dict(data["vendor_allocations"][0], quantity=9, amount_toman=4500000)]
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            with pytest.raises(AllocationIntegrityError, match="does not match the persisted plan for product"):
+                validate_allocation_against_basket(
+                    cur, data["basket_id"], data["plan_id"], data["retailer_id"], forged
+                )
+    finally:
+        conn.close()
+
+
+def test_forged_line_total_rejected():
+    conn = _db()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _seed_basket_and_plan(cur, uuid4().hex[:8])
+        conn.commit()
+        forged = [dict(data["vendor_allocations"][0], amount_toman=4999999)]
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            with pytest.raises(AllocationIntegrityError, match="does not match the persisted plan for product"):
+                validate_allocation_against_basket(
+                    cur, data["basket_id"], data["plan_id"], data["retailer_id"], forged
                 )
     finally:
         conn.close()

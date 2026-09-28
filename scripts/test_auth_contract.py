@@ -41,6 +41,7 @@ from scripts.auth_boundary import (
     hash_token,
     store_otp_hash,
     verify_otp_hash,
+    InvalidRefreshTokenError,
 )
 from scripts.operational_config import (
     OTP_MAX_ATTEMPTS,
@@ -146,6 +147,56 @@ def _auth_tx_recovery(auth_env):
         auth_env["conn"].rollback()
     except Exception:
         pass
+
+
+# =========================================================
+# T-SEC-OTP-01: Deterministic OTP is test-environment only
+# =========================================================
+def test_static_otp_is_strictly_test_only(auth_env, monkeypatch):
+    """Prevent a non-test deployment from silently falling back to 1234."""
+    from scripts import domain_services
+    from scripts.domain_services import AuthService
+
+    cur = auth_env["cur"]
+    phone = f"+9891{uuid.uuid4().hex[:8]}"
+    ip = "10.240.0.10"
+
+    # Explicit test environment may expose the deterministic fixture code.
+    monkeypatch.setenv("ENVIRONMENT", "test")
+    monkeypatch.delenv("POL_ENV", raising=False)
+    # Stay under the 3-per-5-min phone+IP rate limit: clear prior challenges
+    # before each request_otp call below.
+    cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
+    auth_env["conn"].commit()
+    first = AuthService.request_otp(cur, phone, ip, "LOGIN")
+    assert first["test_code"] == "1234"
+    cur.execute(
+        "SELECT code_hash FROM otp_challenges WHERE id=%s",
+        (first["id"],),
+    )
+    assert verify_otp_hash("1234", cur.fetchone()["code_hash"])
+
+    # Development/unknown/unset environments must never use or expose 1234.
+    monkeypatch.setattr(domain_services.secrets, "randbelow", lambda upper: 5678)
+    for env in ("development", "unknown", ""):
+        if env:
+            monkeypatch.setenv("ENVIRONMENT", env)
+        else:
+            monkeypatch.delenv("ENVIRONMENT", raising=False)
+        cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
+        auth_env["conn"].commit()
+        result = AuthService.request_otp(cur, phone, ip, "LOGIN")
+        assert "test_code" not in result
+        cur.execute(
+            "SELECT code_hash FROM otp_challenges WHERE id=%s",
+            (result["id"],),
+        )
+        stored_hash = cur.fetchone()["code_hash"]
+        assert verify_otp_hash("5678", stored_hash)
+        assert not verify_otp_hash("1234", stored_hash)
+
+    cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
+    auth_env["conn"].commit()
 
 
 # =========================================================
@@ -395,25 +446,32 @@ def test_ac20_otp_challenge_is_consumed_exactly_once(auth_env):
     user_id = auth_env["user_id"]
     org_a = auth_env["org_a"]
     phone = "+989161110030"
+    # verify_otp enforces phone↔user binding: the challenge is created under a
+    # fixed phone, so point the fixture user at that phone for this test.
+    cur.execute("SELECT phone_number FROM users WHERE id = %s;", (user_id,))
+    original_phone = cur.fetchone()["phone_number"]
     otp_id = str(uuid.uuid4())
-    cur.execute("""
-        INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
-        VALUES (%s, %s, %s, 'LOGIN', '10.0.0.30', 0, 5, 'PENDING', now() + interval '2 minutes');
-    """, (otp_id, phone, store_otp_hash("1234")))
-    conn.commit()
-    from scripts.domain_services import AuthService
-    first = AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
-    assert first["access_token"]
-    cur.execute("SELECT status FROM otp_challenges WHERE id = %s;", (otp_id,))
-    assert cur.fetchone()["status"] == "VERIFIED"
     try:
-        AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
-        raise AssertionError("OTP was accepted more than once")
-    except ValueError as e:
-        assert "No pending OTP challenge" in str(e)
+        cur.execute("UPDATE users SET phone_number=%s WHERE id=%s;", (phone, user_id))
+        cur.execute("""
+            INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
+            VALUES (%s, %s, %s, 'LOGIN', '10.0.0.30', 0, 5, 'PENDING', now() + interval '2 minutes');
+        """, (otp_id, phone, store_otp_hash("1234")))
+        conn.commit()
+        from scripts.domain_services import AuthService
+        first = AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+        assert first["access_token"]
+        cur.execute("SELECT status FROM otp_challenges WHERE id = %s;", (otp_id,))
+        assert cur.fetchone()["status"] == "VERIFIED"
+        try:
+            AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+            raise AssertionError("OTP was accepted more than once")
+        except ValueError as e:
+            assert "No pending OTP challenge" in str(e)
     finally:
         cur.execute("DELETE FROM user_sessions WHERE user_id = %s;", (user_id,))
         cur.execute("DELETE FROM otp_challenges WHERE id = %s;", (otp_id,))
+        cur.execute("UPDATE users SET phone_number=%s WHERE id=%s;", (original_phone, user_id))
         conn.commit()
 
 
@@ -804,3 +862,383 @@ def test_con1_concurrent_rate_limit_advisory_lock(auth_env):
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([os.path.abspath(__file__)]))
+
+
+
+# =========================================================
+# P0 REGRESSION: SESSION OWNERSHIP / REFRESH ROTATION / OTP BINDING
+# =========================================================
+def test_p0_switch_organization_rejects_foreign_session(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    org_b = auth_env["org_b"]
+
+    foreign_user = str(uuid.uuid4())
+    foreign_phone = f"+9891{uuid.uuid4().hex[:8]}"
+    cur.execute(
+        "INSERT INTO users (id, phone_number, role, full_name, is_active) "
+        "VALUES (%s, %s, 'RETAILER_OWNER', 'Foreign Session User', TRUE)",
+        (foreign_user, foreign_phone),
+    )
+    # The DB trigger requires a session's active organization to be an ACTIVE
+    # membership of its user; grant the foreign user a membership in org_b so
+    # the session insert succeeds and the test can exercise the real rejection
+    # path (switch_organization called with a mismatched user).
+    foreign_membership = str(uuid.uuid4())
+    cur.execute(
+        "INSERT INTO organization_memberships (id, organization_id, user_id, role, status, is_primary) "
+        "VALUES (%s, %s, %s, 'VENDOR_OWNER', 'ACTIVE', FALSE)",
+        (foreign_membership, org_b, foreign_user),
+    )
+    foreign_session = str(uuid.uuid4())
+    cur.execute(
+        "INSERT INTO user_sessions "
+        "(id, user_id, active_organization_id, token_hash, status, expires_at) "
+        "VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days')",
+        (foreign_session, foreign_user, org_b, hash_token("foreign-access")),
+    )
+    conn.commit()
+
+    try:
+        with pytest.raises(PermissionError, match="does not belong"):
+            AuthService.switch_organization(cur, user_id, org_b, foreign_session)
+    finally:
+        cur.execute("DELETE FROM user_sessions WHERE id = %s", (foreign_session,))
+        cur.execute("DELETE FROM organization_memberships WHERE id = %s", (foreign_membership,))
+        cur.execute("DELETE FROM users WHERE id = %s", (foreign_user,))
+        conn.commit()
+
+
+def test_p0_switch_organization_valid_target_succeeds(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    org_b = auth_env["org_b"]
+
+    session_id = str(uuid.uuid4())
+    access = encode_access_token(user_id, session_id, org_a, "RETAILER_OWNER")
+    cur.execute(
+        """
+        INSERT INTO user_sessions
+            (id, user_id, active_organization_id, token_hash, status, expires_at)
+        VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days')
+        """,
+        (session_id, user_id, org_a, hash_token(access)),
+    )
+    conn.commit()
+
+    try:
+        result = AuthService.switch_organization(cur, user_id, org_b, session_id)
+        assert result["session"]["id"] == session_id
+        assert str(result["session"]["active_organization_id"]) == str(org_b)
+        assert result["session"]["status"] == "ACTIVE"
+
+        claims = decode_access_token(result["access_token"])
+        assert claims["sub"] == user_id
+        assert claims["sid"] == session_id
+        assert claims["org_id"] == str(org_b)
+        assert claims["role"] == "VENDOR_OWNER"
+
+        cur.execute(
+            "SELECT active_organization_id FROM user_sessions WHERE id = %s",
+            (session_id,),
+        )
+        assert str(cur.fetchone()["active_organization_id"]) == str(org_b)
+    finally:
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (session_id,))
+        conn.commit()
+
+
+def test_p0_refresh_token_is_rotated_and_old_token_replay_fails(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    session_id = str(uuid.uuid4())
+    access = encode_access_token(user_id, session_id, org_a, "RETAILER_OWNER")
+    old_refresh = generate_refresh_token()
+
+    cur.execute(
+        """
+        INSERT INTO user_sessions
+            (id, user_id, active_organization_id, token_hash, refresh_token_hash, status, expires_at)
+        VALUES (%s, %s, %s, %s, %s, 'ACTIVE', now() + interval '30 days')
+        """,
+        (session_id, user_id, org_a, hash_token(access), hash_token(old_refresh)),
+    )
+    conn.commit()
+
+    first = AuthService.refresh_access_token(cur, old_refresh)
+    assert first["access_token"]
+    assert first["refresh_token"]
+    assert first["refresh_token"] != old_refresh
+
+    cur.execute(
+        "SELECT refresh_token_hash FROM user_sessions WHERE id = %s",
+        (session_id,),
+    )
+    assert cur.fetchone()["refresh_token_hash"] == hash_token(first["refresh_token"])
+
+    with pytest.raises(InvalidRefreshTokenError):
+        AuthService.refresh_access_token(cur, old_refresh)
+
+    cur.execute("DELETE FROM user_sessions WHERE id = %s", (session_id,))
+    conn.commit()
+
+
+def test_p0_verify_otp_rejects_user_mismatch_for_same_phone(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    attacker_user = str(uuid.uuid4())
+    phone = auth_env["phone"] if "phone" in auth_env else "+989161110099"
+
+    if phone == "+989161110099":
+        cur.execute(
+            "SELECT phone_number FROM users WHERE id = %s",
+            (user_id,),
+        )
+        phone = cur.fetchone()["phone_number"]
+
+    otp_id = str(uuid.uuid4())
+    cur.execute(
+        """
+        INSERT INTO otp_challenges
+            (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
+        VALUES (%s, %s, %s, 'LOGIN', '10.0.0.99', 0, 5, 'PENDING', now() + interval '2 minutes')
+        """,
+        (otp_id, phone, store_otp_hash("1234")),
+    )
+    conn.commit()
+
+    try:
+        with pytest.raises(PermissionError, match="identity"):
+            AuthService.verify_otp(cur, phone, "1234", attacker_user, org_a)
+    finally:
+        cur.execute("DELETE FROM otp_challenges WHERE id = %s", (otp_id,))
+        conn.rollback()
+
+
+# =========================================================
+# Remediation: active principal enforcement for bearer and refresh tokens
+# =========================================================
+
+def _insert_active_session(cur, user_id, org_id):
+    sess_id = str(uuid.uuid4())
+    access_token = encode_access_token(user_id, sess_id, org_id, "RETAILER_OWNER")
+    refresh_token = generate_refresh_token()
+    cur.execute(
+        """
+        INSERT INTO user_sessions
+            (id, user_id, active_organization_id, token_hash, refresh_token_hash, status, expires_at)
+        VALUES (%s, %s, %s, %s, %s, 'ACTIVE', now() + interval '30 days')
+        """,
+        (sess_id, user_id, org_id, hash_token(access_token), hash_token(refresh_token)),
+    )
+    return sess_id, access_token, refresh_token
+
+
+def test_access_token_rejects_inactive_user(auth_env):
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    sess_id, access_token, _ = _insert_active_session(cur, user_id, org_a)
+    conn.commit()
+
+    try:
+        cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s;", (user_id,))
+        conn.commit()
+        with pytest.raises(AuthError, match="inactive"):
+            validate_access_token(cur, access_token)
+    finally:
+        cur.execute("UPDATE users SET is_active = TRUE WHERE id = %s;", (user_id,))
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+        conn.commit()
+
+
+def test_access_token_rejects_inactive_organization(auth_env):
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    sess_id, access_token, _ = _insert_active_session(cur, user_id, org_a)
+    conn.commit()
+
+    try:
+        cur.execute("UPDATE organizations SET status = 'SUSPENDED' WHERE id = %s;", (org_a,))
+        conn.commit()
+        with pytest.raises(AuthError, match="Organization is not active"):
+            validate_access_token(cur, access_token)
+    finally:
+        cur.execute("UPDATE organizations SET status = 'ACTIVE' WHERE id = %s;", (org_a,))
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+        conn.commit()
+
+
+def test_refresh_token_rejects_inactive_user(auth_env):
+    from scripts.auth_boundary import InvalidRefreshTokenError
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    sess_id, _, refresh_token = _insert_active_session(cur, user_id, org_a)
+    conn.commit()
+
+    try:
+        cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s;", (user_id,))
+        conn.commit()
+        with pytest.raises(InvalidRefreshTokenError, match="inactive"):
+            AuthService.refresh_access_token(cur, refresh_token)
+    finally:
+        cur.execute("UPDATE users SET is_active = TRUE WHERE id = %s;", (user_id,))
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+        conn.commit()
+
+
+def test_refresh_token_rejects_inactive_organization(auth_env):
+    from scripts.auth_boundary import InvalidRefreshTokenError
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    sess_id, _, refresh_token = _insert_active_session(cur, user_id, org_a)
+    conn.commit()
+
+    try:
+        cur.execute("UPDATE organizations SET status = 'SUSPENDED' WHERE id = %s;", (org_a,))
+        conn.commit()
+        with pytest.raises(InvalidRefreshTokenError, match="Organization is not active"):
+            AuthService.refresh_access_token(cur, refresh_token)
+    finally:
+        cur.execute("UPDATE organizations SET status = 'ACTIVE' WHERE id = %s;", (org_a,))
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (sess_id,))
+        conn.commit()
+
+
+# =========================================================
+# P0 REGRESSION: DIRECT AUTHORIZATION / ORG SWITCH PRINCIPAL STATE
+# =========================================================
+def test_authorize_action_rejects_inactive_user(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+
+    cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s;", (user_id,))
+    conn.commit()
+    try:
+        with pytest.raises(PermissionError, match="inactive"):
+            AuthService.authorize_action(
+                cur,
+                user_id,
+                org_a,
+                ["RETAILER_OWNER"],
+            )
+    finally:
+        cur.execute("UPDATE users SET is_active = TRUE WHERE id = %s;", (user_id,))
+        conn.commit()
+
+
+def test_switch_organization_rejects_inactive_user(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    org_b = auth_env["org_b"]
+
+    session_id = str(uuid.uuid4())
+    access = encode_access_token(user_id, session_id, org_a, "RETAILER_OWNER")
+    cur.execute(
+        """
+        INSERT INTO user_sessions
+            (id, user_id, active_organization_id, token_hash, status, expires_at)
+        VALUES (%s, %s, %s, %s, 'ACTIVE', now() + interval '30 days')
+        """,
+        (session_id, user_id, org_a, hash_token(access)),
+    )
+    cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s;", (user_id,))
+    conn.commit()
+
+    try:
+        with pytest.raises(PermissionError, match="inactive"):
+            AuthService.switch_organization(cur, user_id, org_b, session_id)
+    finally:
+        cur.execute("UPDATE users SET is_active = TRUE WHERE id = %s;", (user_id,))
+        cur.execute("DELETE FROM user_sessions WHERE id = %s;", (session_id,))
+        conn.commit()
+
+
+def test_verify_otp_rejects_suspended_organization(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+
+    cur.execute("SELECT phone_number FROM users WHERE id=%s;", (user_id,))
+    phone = cur.fetchone()["phone_number"]
+
+    # A valid LOGIN challenge must still be unusable when the selected
+    # organization is suspended.
+    AuthService.request_otp(cur, phone, "127.0.0.77", "LOGIN")
+    cur.execute("UPDATE organizations SET status='SUSPENDED' WHERE id=%s;", (org_a,))
+    conn.commit()
+    try:
+        with pytest.raises(PermissionError, match="active membership"):
+            AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+    finally:
+        cur.execute("UPDATE organizations SET status='ACTIVE' WHERE id=%s;", (org_a,))
+        cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s;", (phone,))
+        conn.commit()
+
+
+def test_verify_otp_cannot_consume_non_authentication_challenge(auth_env):
+    from scripts.domain_services import AuthService
+
+    conn = auth_env["conn"]
+    cur = auth_env["cur"]
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+
+    cur.execute("SELECT phone_number FROM users WHERE id=%s;", (user_id,))
+    phone = cur.fetchone()["phone_number"]
+
+    cur.execute(
+        """
+        INSERT INTO otp_challenges
+            (id, phone_number, code_hash, purpose, ip_address, attempts_count,
+             max_attempts, status, expires_at)
+        VALUES (%s,%s,%s,'ORDER_CONFIRMATION','127.0.0.78',0,5,'PENDING',now()+interval '2 minutes')
+        """,
+        (str(uuid.uuid4()), phone, store_otp_hash("1234")),
+    )
+    conn.commit()
+
+    try:
+        with pytest.raises(ValueError, match="No pending OTP challenge"):
+            AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+    finally:
+        cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s;", (phone,))
+        conn.commit()

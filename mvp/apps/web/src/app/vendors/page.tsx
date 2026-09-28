@@ -4,47 +4,101 @@ import { Button } from "@pol/ui";
 /** C-03 Vendors corporate landing — static, PUBLIC_ANON (G-006). */
 export default function CorporateVendorsPage() {
   return (
-    <main className="min-h-screen bg-[var(--pol-light-bg-canvas)]">
-      <div className="mx-auto max-w-3xl px-6 py-16">
-        <p className="mb-2 text-[12px] font-semibold tracking-wide text-[var(--pol-light-brand-primary)]">
-          Precision Commerce
-        </p>
-        <h1 className="text-[32px] leading-[40px] font-bold text-[var(--pol-light-text-primary)]">
-          برای تأمین‌کنندگان
-        </h1>
-        <p className="mt-4 text-[14px] leading-[24px] text-[var(--pol-light-text-secondary)]">
-          صف سفارش‌ها، پذیرش/رد/پذیرش جزئی، مدیریت قیمت و موجودی روزانه، ویترین خواندنی و
-          تسویه شفاف.
-        </p>
-        <ul className="mt-6 list-disc space-y-2 ps-5 text-[14px] leading-[24px] text-[var(--pol-light-text-secondary)]">
-          <li>داشبورد صف‌محور بدون شلوغی بصری</li>
-          <li>تأیید روزانه موجودی</li>
-          <li>ارجاع فقط نسبت‌دهی — بدون پاداش MVP (D-016)</li>
-          <li>بدون کیف پول (D-021) و بدون اسکرو (D-025)</li>
-        </ul>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/auth/login">
-            <Button>شروع ورود</Button>
+    <div className="flex min-h-screen flex-col bg-[var(--pol-light-bg-canvas)] text-[var(--pol-light-text-primary)]">
+      {/* Header */}
+      <header className="border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)]/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-6">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-[var(--pol-light-brand-primary)] text-[16px] font-black text-white">
+              پُ
+            </span>
+            <span className="font-bold text-[18px]">پُــــل</span>
           </Link>
-          <Link href="/retailers">
-            <Button variant="secondary">برای خرده‌فروشان</Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/auth/login">
+              <Button size="sm">ورود به سامانه</Button>
+            </Link>
+          </div>
         </div>
-        <nav aria-label="ناوبری شرکتی" className="mt-10 flex flex-wrap gap-4 text-[13px]">
-          <Link href="/" className="text-[var(--pol-light-brand-primary)] hover:underline">
-            خانه
-          </Link>
-          <Link href="/about" className="text-[var(--pol-light-brand-primary)] hover:underline">
-            درباره
-          </Link>
-          <Link href="/pilot" className="text-[var(--pol-light-brand-primary)] hover:underline">
-            پایلوت اهواز
-          </Link>
-          <Link href="/contact" className="text-[var(--pol-light-brand-primary)] hover:underline">
-            تماس
-          </Link>
-        </nav>
-      </div>
-    </main>
+      </header>
+
+      <main className="flex-1 py-12 md:py-16">
+        <div className="mx-auto max-w-4xl px-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--pol-light-brand-primary)]/20 bg-[var(--pol-light-brand-primary)]/10 px-3 py-0.5 text-[11px] font-semibold text-[var(--pol-light-brand-primary)]">
+            PRECISION COMMERCE · ویژه بنکداران و شرکت‌های تأمین‌کننده
+          </div>
+          <h1 className="mt-4 text-[30px] font-black leading-[40px] text-[var(--pol-light-text-primary)] md:text-[36px]">
+            مدیریت هوشمند فروش عمده، صف سفارشات و تسویه مستقیم
+          </h1>
+          <p className="mt-4 text-[15px] leading-[26px] text-[var(--pol-light-text-secondary)]">
+            پلتفرم پُل بستری کارآمد برای شرکت‌های پخش، بنکداران و نمایندگی‌های برندهای FMCG است تا سفارشات سوپرمارکت‌های اهواز را در یک داشبورد عملیاتی منظم مدیریت و ارسال کنند.
+          </p>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5 shadow-[var(--pol-shadow-card)]">
+              <div className="text-[20px]">📋</div>
+              <h2 className="mt-2 text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+                داشبورد صف‌محور عملیاتی
+              </h2>
+              <p className="mt-1 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
+                مشاهده آنی سفارش‌های دریافتی با سن سفارش و امکان اقدام سریع برای پذیرش کامل، رد یا پیشنهاد مقادیر جایگزین.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5 shadow-[var(--pol-shadow-card)]">
+              <div className="text-[20px]">🌅</div>
+              <h2 className="mt-2 text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+                آیین صبحگاهی تأیید موجودی
+              </h2>
+              <p className="mt-1 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
+                تأیید سریع موجودی روزانه انبار در آغاز روز کاری جهت حفظ رتبه خوش‌قولی و پیشگیری از لغو سفارش‌های خریداران.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5 shadow-[var(--pol-shadow-card)]">
+              <div className="text-[20px]">💰</div>
+              <h2 className="mt-2 text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+                بدون بلوکه شدن وجه و کارمزد پنهان
+              </h2>
+              <p className="mt-1 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
+                پول شما در کیف پول مجازی مسدود نمی‌شود؛ فاکتورها مستقیماً طبق عرف بازار و روال تجاری خودتان با خریدار تسویه می‌گردد.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5 shadow-[var(--pol-shadow-card)]">
+              <div className="text-[20px]">🚚</div>
+              <h2 className="mt-2 text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+                ارسال و تحویل بدون اپلیکیشن راننده
+              </h2>
+              <p className="mt-1 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
+                حواله ارسال با یک پیامک حاوی لینک امن به متصدی تحویل سپرده شده و پس از تحویل، امضا و تأیید بار در سیستم ثبت می‌شود.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Link href="/auth/login">
+              <Button size="lg">ورود به پنل تأمین‌کنندگان</Button>
+            </Link>
+            <Link href="/retailers">
+              <Button variant="secondary" size="lg">مشاهده امکانات خرده‌فروشان</Button>
+            </Link>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] py-6">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-6 text-[12px] text-[var(--pol-light-text-muted)]">
+          <span>POL — ویژه بنکداران و تأمین‌کنندگان</span>
+          <nav aria-label="پیوندهای کمکی" className="flex gap-4">
+            <Link href="/" className="hover:underline">خانه</Link>
+            <Link href="/retailers" className="hover:underline">خرده‌فروشان</Link>
+            <Link href="/pilot" className="hover:underline">پایلوت اهواز</Link>
+            <Link href="/contact" className="hover:underline">تماس</Link>
+          </nav>
+        </div>
+      </footer>
+    </div>
   );
 }

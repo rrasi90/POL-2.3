@@ -257,6 +257,44 @@ def test_catalog_product_detail_returns_identifiers_and_media(api_env):
         conn.close()
 
 
+def test_catalog_product_media_requires_ready_and_approved_public_governance(api_env):
+    conn = _db()
+    try:
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                data = _seed_catalog(cur, uuid4().hex[:8])
+                approved_media = str(uuid4())
+                pending_media = str(uuid4())
+                private_media = str(uuid4())
+                for media_id, status, approval in (
+                    (approved_media, "READY", "APPROVED"),
+                    (pending_media, "READY", "PENDING"),
+                    (private_media, "READY", "PRIVATE_REFERENCE"),
+                ):
+                    cur.execute(
+                        """INSERT INTO media_assets
+                           (id, storage_bucket, storage_key, bucket_name, object_key, mime_type, file_size_bytes, checksum_sha256, status, provenance, uploaded_by_user_id)
+                           VALUES (%s, 'pol-media', %s, 'pol-media', %s, 'image/webp', 1024, %s, %s, 'POL_OWNED', NULL)""",
+                        (media_id, f"g317/{media_id}", f"g317/{media_id}", "a" * 64, status),
+                    )
+                    cur.execute(
+                        """INSERT INTO product_media
+                           (id, product_id, media_asset_id, media_type, source_provenance, approval_status, approved_at)
+                           VALUES (%s, %s, %s, 'PRIMARY_IMAGE', 'POL_OWNED', %s, CASE WHEN %s = 'APPROVED' THEN now() ELSE NULL END)""",
+                        (str(uuid4()), data["product_id"], media_id, approval, approval),
+                    )
+        response = TestClient(app).get(
+            f"/api/v1/catalog/products/{data['product_id']}",
+            headers={"Authorization": f"Bearer {data['token']}"},
+        )
+        assert response.status_code == 200
+        media_ids = {item["id"] for item in response.json()["data"]["media"]}
+        assert approved_media in media_ids
+        assert pending_media not in media_ids
+        assert private_media not in media_ids
+    finally:
+        conn.close()
+
 def test_catalog_product_detail_not_found(api_env):
     conn = _db()
     try:
@@ -311,3 +349,10 @@ def test_catalog_product_detail_requires_auth(api_env):
 def test_catalog_product_vendors_requires_auth(api_env):
     response = TestClient(app).get(f"/api/v1/catalog/products/{uuid4()}/vendors")
     assert response.status_code == 401
+
+
+def test_public_categories_route_contract(api_env):
+    response = TestClient(app).get("/api/v1/categories")
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+

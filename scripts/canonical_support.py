@@ -55,6 +55,43 @@ class CanonicalSupportService:
     @classmethod
     def create_case(cls, cur, actor_user_id, organization_id, case_type, subject,
                     related_order_id=None, priority="NORMAL"):
+        # The support case tenant and the optional related order tenant must
+        # resolve to the same commercial organization. Never allow a caller to
+        # plant a cross-tenant order reference into a support case.
+        cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN organizations o ON o.id = om.organization_id
+            WHERE om.user_id=%s
+              AND om.organization_id=%s
+              AND om.status='ACTIVE'
+              AND o.status='ACTIVE'
+            LIMIT 1
+            """,
+            (actor_user_id, organization_id),
+        )
+        if not cur.fetchone():
+            raise SupportAccessError("Actor is not an active member of the support organization.")
+
+        if related_order_id:
+            cur.execute(
+                """
+                SELECT 1
+                FROM orders o
+                JOIN retailers r ON r.id=o.retailer_id
+                JOIN vendors v ON v.id=o.vendor_id
+                WHERE o.id=%s
+                  AND (%s = r.organization_id OR %s = v.organization_id)
+                LIMIT 1
+                """,
+                (related_order_id, organization_id, organization_id),
+            )
+            if not cur.fetchone():
+                raise SupportAccessError(
+                    "Related order does not belong to the active support organization."
+                )
+
         for _ in range(3):
             case_id = str(uuid.uuid4())
             case_number = cls._new_case_number()

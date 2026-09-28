@@ -165,7 +165,7 @@ def test_integration_worker_uses_exact_recipient_and_template(postgres_database)
 
 
 @pytest.mark.parametrize("routing", [
-    "authorized", "wrong_organization", "suspended", "revoked", "inactive_organization", "missing_user", "missing_organization",
+    "authorized", "wrong_organization", "suspended", "revoked", "inactive_organization", "inactive_user", "missing_user", "missing_organization",
 ])
 def test_batch4_recipient_membership_isolation(postgres_database, routing):
     with transaction(postgres_database) as cur:
@@ -191,23 +191,50 @@ def test_batch4_recipient_membership_isolation(postgres_database, routing):
             cur.execute("UPDATE organization_memberships SET status=%s WHERE user_id=%s", (routing.upper(), user["id"]))
         if routing == "inactive_organization":
             cur.execute("UPDATE organizations SET status='SUSPENDED' WHERE id=%s", (org["id"],))
+        if routing == "inactive_user":
+            cur.execute("UPDATE users SET is_active=FALSE WHERE id=%s", (user["id"],))
     with transaction(postgres_database) as cur:
         if routing == "authorized":
             assert CanonicalIntegrationWorker.process_pending(cur) == 1
             assert CanonicalIntegrationWorker.process_pending(cur) == 0
         else:
-            with pytest.raises(IntegrationWorkerError, match="routing|active membership"):
-                CanonicalIntegrationWorker.process_pending(cur)
-        cur.execute("SELECT user_id, organization_id FROM notifications")
+            assert CanonicalIntegrationWorker.process_pending(cur) == 1
+        cur.execute(
+            """
+            SELECT user_id, organization_id
+            FROM notifications
+            WHERE user_id=%s AND organization_id=%s AND event_name='ORDER_ACCEPTED'
+            ORDER BY created_at DESC
+            """,
+            (user["id"], org["id"]),
+        )
         rows = cur.fetchall()
         assert len(rows) == (1 if routing == "authorized" else 0)
         if rows:
             assert rows[0]["user_id"] == user["id"]
             assert rows[0]["organization_id"] == org["id"]
-        cur.execute("SELECT count(*) AS count FROM notification_deliveries")
+        cur.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM notification_deliveries nd
+            JOIN notifications n ON n.id=nd.notification_id
+            WHERE n.user_id=%s AND n.organization_id=%s AND n.event_name='ORDER_ACCEPTED'
+            """,
+            (user["id"], org["id"]),
+        )
         assert cur.fetchone()["count"] == len(rows)
-        cur.execute("SELECT status FROM outbox_events WHERE event_id=%s", (event_id,))
-        assert cur.fetchone()["status"] == ("PUBLISHED" if routing == "authorized" else "PENDING")
+        cur.execute("SELECT status, last_error FROM outbox_events WHERE event_id=%s", (event_id,))
+        event_row = cur.fetchone()
+        assert event_row["status"] == ("PUBLISHED" if routing == "authorized" else "FAILED")
+        if routing != "authorized":
+            assert event_row["last_error"]
     with transaction(postgres_database) as cur:
-        cur.execute("SELECT count(*) AS count FROM notifications")
+        cur.execute(
+            """
+            SELECT COUNT(*) AS count
+            FROM notifications
+            WHERE user_id=%s AND organization_id=%s AND event_name='ORDER_ACCEPTED'
+            """,
+            (user["id"], org["id"]),
+        )
         assert cur.fetchone()["count"] == (1 if routing == "authorized" else 0)

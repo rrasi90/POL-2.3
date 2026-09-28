@@ -7,13 +7,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, status
 
-from scripts.api.dependencies import get_application_boundary, require_roles
+from scripts.api.dependencies import get_application_boundary, require_permission, require_roles
 from scripts.api.errors import success_payload
 from scripts.api.schemas import (
     CheckoutRequest,
     DeliveryConfirmRequest,
     DeliveryExceptionEscalateRequest,
     DeliveryExceptionReportRequest,
+    DeliveryStageRequest,
     DeliveryExceptionResolveRequest,
     DispatchRequest,
     PaymentEvidenceRequest,
@@ -54,11 +55,22 @@ def create_order(
     )
 
 
+@router.post("/{order_id}/cancel", status_code=200)
+def cancel_order(
+    order_id: UUID,
+    reason: str | None = Query(default=None, max_length=64),
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "RETAILER_STAFF"))] = None,
+):
+    return success_payload(
+        boundary.retailer_order_cancel(order_id=str(order_id), reason=reason or "RETAILER_CANCELLED")
+    )
+
 @router.post("/{order_id}/accept", status_code=200)
 def accept_order(
     order_id: UUID,
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
+    _auth: Annotated[dict, Depends(require_permission("order.accept"))] = None,
 ):
     return success_payload(
         boundary.vendor_order_accept(order_id=str(order_id))
@@ -70,7 +82,7 @@ def reject_order(
     order_id: UUID,
     payload: VendorOrderRejectRequest,
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
+    _auth: Annotated[dict, Depends(require_permission("order.accept"))] = None,
 ):
     return success_payload(
         boundary.vendor_order_reject(
@@ -81,13 +93,31 @@ def reject_order(
 
  
  
+@router.get("/{order_id}/partial-acceptance-proposals")
+def list_partial_acceptance_proposals(
+    order_id: UUID,
+    status: str | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.partial_acceptance_proposals_list(
+            order_id=str(order_id),
+            status=status,
+            offset=offset,
+            limit=limit,
+        )
+    )
+
+
 @router.post("/{order_id}/partial-acceptance-proposals", status_code=201)
 def propose_partial_acceptance(
     order_id: UUID,
     payload: VendorPartialAcceptanceProposalRequest,
     idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=128),
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF"))] = None,
+    _auth: Annotated[dict, Depends(require_permission("order.accept"))] = None,
 ):
     return success_payload(
         boundary.vendor_partial_acceptance_propose(
@@ -245,6 +275,58 @@ def dispatch_order(
     return success_payload(boundary.vendor_dispatch_order(**kwargs))
 
 
+def _delivery_stage(order_id: UUID, target_status: str, payload, boundary):
+    return success_payload(
+        boundary.vendor_delivery_stage(
+            order_id=str(order_id),
+            target_status=target_status,
+            reason=payload.reason if payload else None,
+        )
+    )
+
+
+@router.post("/{order_id}/delivery/picked-up", status_code=200)
+def delivery_picked_up(
+    order_id: UUID,
+    payload: DeliveryStageRequest | None = None,
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF", "FIELD_ACTIVATOR"))] = None,
+):
+    return _delivery_stage(order_id, "PICKED_UP", payload, boundary)
+
+
+@router.post("/{order_id}/delivery/in-transit", status_code=200)
+def delivery_in_transit(
+    order_id: UUID,
+    payload: DeliveryStageRequest | None = None,
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF", "FIELD_ACTIVATOR"))] = None,
+):
+    return _delivery_stage(order_id, "IN_TRANSIT", payload, boundary)
+
+
+@router.post("/{order_id}/delivery/arrived", status_code=200)
+def delivery_arrived(
+    order_id: UUID,
+    payload: DeliveryStageRequest | None = None,
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF", "FIELD_ACTIVATOR"))] = None,
+):
+    return _delivery_stage(order_id, "ARRIVED", payload, boundary)
+
+
+@router.post("/{order_id}/delivery/failed", status_code=200)
+def delivery_failed(
+    order_id: UUID,
+    payload: DeliveryStageRequest,
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("VENDOR_OWNER", "VENDOR_STAFF", "FIELD_ACTIVATOR"))] = None,
+):
+    if not payload.reason:
+        raise ValueError("Failure reason is required.")
+    return _delivery_stage(order_id, "FAILED", payload, boundary)
+
+
 @router.post("/{order_id}/deliver", status_code=200)
 def confirm_delivery(
     order_id: UUID,
@@ -264,6 +346,14 @@ def confirm_delivery(
             kwargs["proof_media_id"] = payload.proof_media_id
         if payload.issue_reported:
             kwargs["issue_reported"] = payload.issue_reported
+        if payload.delivered_items:
+            kwargs["delivered_items"] = [
+                {
+                    "order_item_id": str(item.order_item_id),
+                    "delivered_quantity": item.delivered_quantity,
+                }
+                for item in payload.delivered_items
+            ]
     return success_payload(boundary.retailer_confirm_delivery(**kwargs))
 
 
@@ -341,7 +431,7 @@ def resolve_delivery_exception(
     exception_id: UUID,
     payload: DeliveryExceptionResolveRequest,
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "VENDOR_OWNER"))] = None,
+    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN", "VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.resolve_delivery_exception(
@@ -357,6 +447,7 @@ def escalate_delivery_exception(
     exception_id: UUID,
     payload: DeliveryExceptionEscalateRequest | None = None,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN", "VENDOR_OWNER", "VENDOR_STAFF"))] = None,
 ):
     return success_payload(
         boundary.escalate_delivery_exception(
@@ -374,6 +465,7 @@ def submit_payment_evidence(
     order_id: UUID,
     payload: PaymentEvidenceRequest,
     boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "VENDOR_OWNER"))] = None,
 ):
     return success_payload(
         boundary.submit_payment_evidence(
@@ -381,6 +473,27 @@ def submit_payment_evidence(
             evidence_type=payload.evidence_type,
             reference_number=payload.reference_number,
             amount_toman=payload.amount_toman,
+            payment_id=str(payload.payment_id) if payload.payment_id else None,
+            evidence_media_id=str(payload.evidence_media_id) if payload.evidence_media_id else None,
+            notes=payload.notes,
+        )
+    )
+
+
+@router.post("/{order_id}/payments/direct-transfer", status_code=201)
+def record_direct_transfer(
+    order_id: UUID,
+    payload: PaymentEvidenceRequest,
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("RETAILER_OWNER", "VENDOR_OWNER"))] = None,
+):
+    return success_payload(
+        boundary.submit_payment_evidence(
+            order_id=str(order_id),
+            evidence_type=payload.evidence_type,
+            reference_number=payload.reference_number,
+            amount_toman=payload.amount_toman,
+            evidence_media_id=str(payload.evidence_media_id) if payload.evidence_media_id else None,
             notes=payload.notes,
         )
     )
@@ -401,11 +514,28 @@ def verify_payment(
     order_id: UUID,
     payload: PaymentVerifyRequest | None = None,
     boundary=Depends(get_application_boundary),
-    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "VENDOR_OWNER"))] = None,
+    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN", "VENDOR_OWNER"))] = None,
 ):
     return success_payload(
         boundary.verify_payment(
             order_id=str(order_id),
+            notes=payload.notes if payload else None,
+        )
+    )
+
+
+@router.post("/{order_id}/payments/{payment_id}/verify", status_code=200)
+def verify_payment_by_id(
+    order_id: UUID,
+    payment_id: UUID,
+    payload: PaymentVerifyRequest | None = None,
+    boundary=Depends(get_application_boundary),
+    _auth: Annotated[dict, Depends(require_roles("OPS_AGENT", "OPS_ADMIN", "ADMIN_SUPER", "SUPER_ADMIN", "VENDOR_OWNER"))] = None,
+):
+    return success_payload(
+        boundary.verify_payment(
+            order_id=str(order_id),
+            payment_id=str(payment_id),
             notes=payload.notes if payload else None,
         )
     )

@@ -3891,9 +3891,7 @@ design tool باید یک representation بصری از این زنجیره با�
 - `POL_00_PROJECT_CONTROL/PRODUCT_EVOLUTION/PRODUCT_ARCHITECTURE_EVOLUTION_WAVE_01_2026-09-20.md`
 - `POL_00_PROJECT_CONTROL/CAPABILITY_COVERAGE_MATRIX.md`
 - `POL_00_PROJECT_CONTROL/PLATFORM_COMPLETION_GAP_REGISTER.md`
-- `POL_00_PROJECT_CONTROL/PENPOT_COMPLETION_MATRIX.md`
-- `13_PRODUCT_DESIGN/17_PENPOT_CANONICAL_BLUEPRINT.md`
-- `13_PRODUCT_DESIGN/18_DESIGN_COMPLETION_PLAN.md`
+- Historical design-tool evidence is not a current authority. Active design authority is the written Master Tree plus the canonical visual design system.
 - `13_PRODUCT_DESIGN/21_MVP_DESIGN_AND_FRONTEND_READINESS_GATE_2026-09-16.md`
 - `13_PRODUCT_DESIGN/22_UI_UX_PAGE_AND_SECTION_COMPLETION_SPEC_2026-09-16.md`
 - `13_PRODUCT_DESIGN/30_RETAILER_SCREEN_BY_SCREEN_SPEC_2026-09-16.md`
@@ -7072,7 +7070,7 @@ Current frontend tree contains:
 Therefore the canonical evidence ladder is:
 
 DESIGN_DEFINED
-→ PENPOT_BUILT
+→ DESIGN_ARTIFACT_BUILT
 → PROTOTYPED
 → FRONTEND_ROUTE_DEFINED
 → FRONTEND_CODE_PRESENT
@@ -7365,11 +7363,11 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 
 | # | Canonical endpoint | Status | Current owner/path |
 |---:|---|---|---|
-| 1 | GET `/api/v1/products/search` | CONTRACT_ONLY | catalog applicationization |
-| 2 | POST `/api/v1/products/match-barcode` | CONTRACT_ONLY | catalog applicationization |
-| 3 | POST `/api/v1/product-candidates` | CONTRACT_ONLY | catalog applicationization |
-| 4 | POST `/api/v1/vendors/inventory/continuous-scan` | CONTRACT_ONLY | vendor catalog/inventory |
-| 5 | POST `/api/v1/vendors/inventory/publish` | CONTRACT_ONLY | vendor catalog/inventory |
+| 1 | GET `/api/v1/products/search` | HTTP_IMPLEMENTED | `catalog_products_search` |
+| 2 | POST `/api/v1/products/match-barcode` | HTTP_IMPLEMENTED | `catalog_match_barcode` |
+| 3 | POST `/api/v1/product-candidates` | HTTP_IMPLEMENTED | `catalog_create_product_candidate` |
+| 4 | POST `/api/v1/vendors/inventory/continuous-scan` | HTTP_IMPLEMENTED | `vendor_inventory_continuous_scan` |
+| 5 | POST `/api/v1/vendors/inventory/publish` | HTTP_IMPLEMENTED | `vendor_inventory_publish` |
 | 6 | POST `/api/v1/baskets` | HTTP_IMPLEMENTED | `basket_create` |
 | 7 | POST `/api/v1/baskets/{id}/items` | HTTP_IMPLEMENTED | `basket_add_item` |
 | 8 | POST `/api/v1/baskets/{id}/allocation-preview` | HTTP_IMPLEMENTED | `basket_allocation_preview` |
@@ -7379,37 +7377,37 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 | 12 | POST `/api/v1/orders/{id}/partial-acceptance-proposals` | HTTP_IMPLEMENTED | `vendor_partial_acceptance_propose` |
 | 13 | POST `/api/v1/orders/{id}/partial-acceptance-proposals/{proposal_id}/approve` | HTTP_IMPLEMENTED | `retailer_partial_acceptance_approve` |
 | 14 | POST `/api/v1/orders/{id}/partial-acceptance-proposals/{proposal_id}/decline` | HTTP_IMPLEMENTED | `retailer_partial_acceptance_decline` |
-| 15 | POST `/api/v1/orders/{id}/dispatch` | CONTRACT_ONLY | dispatch/delivery runtime |
-| 16 | POST `/api/v1/orders/{id}/deliver` | CONTRACT_ONLY | proof-of-delivery boundary |
-| 17 | POST `/api/v1/orders/{id}/payments/direct-transfer` | CONTRACT_ONLY | payment evidence API |
-| 18 | POST `/api/v1/orders/{id}/payments/{payment_id}/verify` | CONTRACT_ONLY | payment evidence API |
-| 19 | POST `/api/v1/orders/{id}/disputes` | CONTRACT_ONLY | dispute/RMA HTTP |
-| 20 | PATCH `/api/v1/disputes/{id}/resolve` | CONTRACT_ONLY | dispute/RMA HTTP |
+| 15 | POST `/api/v1/orders/{id}/dispatch` | HTTP_IMPLEMENTED | `vendor_dispatch_order` |
+| 16 | POST `/api/v1/orders/{id}/deliver` | HTTP_IMPLEMENTED | `retailer_confirm_delivery` |
+| 17 | POST `/api/v1/orders/{id}/payments/direct-transfer` | HTTP_IMPLEMENTED | `submit_payment_evidence` alias |
+| 18 | POST `/api/v1/orders/{id}/payments/{payment_id}/verify` | HTTP_IMPLEMENTED | `verify_payment` bound by payment_id |
+| 19 | POST `/api/v1/orders/{id}/disputes` | HTTP_IMPLEMENTED | canonical dispute boundary |
+| 20 | PATCH `/api/v1/disputes/{id}/resolve` | HTTP_IMPLEMENTED | `dispute_resolve` |
 | 21 | POST `/api/v1/auth/request-otp` | HTTP_IMPLEMENTED | authentication/session layer |
 | 22 | POST `/api/v1/auth/verify-otp` | HTTP_IMPLEMENTED | authentication/session layer |
 | 23 | POST `/api/v1/auth/refresh` | HTTP_IMPLEMENTED | authentication/session layer |
 | 24 | POST `/api/v1/auth/switch-organization` | HTTP_IMPLEMENTED | authentication/session layer |
 | 25 | DELETE `/api/v1/auth/sessions/current` | HTTP_IMPLEMENTED | authentication/session layer |
 | 26 | DELETE `/api/v1/auth/sessions/{id}` | HTTP_IMPLEMENTED | authentication/session layer |
-| 27 | POST `/api/v1/support/cases` | CONTRACT_ONLY | `support_create` exists internal-only |
-| 28 | POST `/api/v1/support/cases/{id}/messages` | CONTRACT_ONLY | `support_message` exists internal-only |
-| 29 | POST `/api/v1/support/cases/{id}/assign` | CONTRACT_ONLY | `support_assign` exists internal-only |
-| 30 | PATCH `/api/v1/support/cases/{id}/status` | CONTRACT_ONLY | `support_transition` exists internal-only |
-| 31 | GET `/api/v1/inbox/items` | CONTRACT_ONLY | notification HTTP |
-| 32 | PATCH `/api/v1/inbox/items/{id}/read` | CONTRACT_ONLY | notification HTTP |
-| 33 | PATCH `/api/v1/inbox/items/read-all` | CONTRACT_ONLY | notification HTTP |
-| 34 | GET `/api/v1/notifications/preferences` | CONTRACT_ONLY | notification HTTP |
-| 35 | PUT `/api/v1/notifications/preferences` | CONTRACT_ONLY | notification HTTP |
-| 36 | POST `/api/v1/admin/broadcasts` | CONTRACT_ONLY | admin/ops HTTP |
-| 37 | POST `/api/v1/admin/broadcasts/{id}/dispatch` | CONTRACT_ONLY | admin/ops HTTP |
-| 38 | GET `/api/v1/invoices` | CONTRACT_ONLY | invoice/settlement HTTP |
-| 39 | GET `/api/v1/invoices/{id}` | CONTRACT_ONLY | invoice/settlement HTTP |
-| 40 | GET `/api/v1/admin/exceptions/dashboard` | CONTRACT_ONLY | ops dashboard |
-| 41 | POST `/api/v1/admin/sla-overrides` | CONTRACT_ONLY | ops SLA boundary |
-| 42 | GET `/api/v1/admin/audit-logs` | CONTRACT_ONLY | audit HTTP |
-| 43 | GET `/api/v1/categories` | CONTRACT_ONLY | catalog HTTP |
-| 44 | POST `/api/v1/admin/categories` | CONTRACT_ONLY | catalog admin HTTP |
-| 45 | PATCH `/api/v1/admin/categories/{id}` | CONTRACT_ONLY | catalog admin HTTP |
+| 27 | POST `/api/v1/support/cases` | HTTP_IMPLEMENTED | `support_create` |
+| 28 | POST `/api/v1/support/cases/{id}/messages` | HTTP_IMPLEMENTED | `support_message` |
+| 29 | POST `/api/v1/support/cases/{id}/assign` | HTTP_IMPLEMENTED | `support_assign` |
+| 30 | PATCH `/api/v1/support/cases/{id}/status` | HTTP_IMPLEMENTED | `support_transition` |
+| 31 | GET `/api/v1/inbox/items` | HTTP_IMPLEMENTED | notification inbox |
+| 32 | PATCH `/api/v1/inbox/items/{id}/read` | HTTP_IMPLEMENTED | notification read |
+| 33 | PATCH `/api/v1/inbox/items/read-all` | HTTP_IMPLEMENTED | notification read-all |
+| 34 | GET `/api/v1/notifications/preferences` | HTTP_IMPLEMENTED | notification preferences |
+| 35 | PUT `/api/v1/notifications/preferences` | HTTP_IMPLEMENTED | notification preferences |
+| 36 | POST `/api/v1/admin/broadcasts` | HTTP_IMPLEMENTED | `admin_broadcast_create` |
+| 37 | POST `/api/v1/admin/broadcasts/{id}/dispatch` | HTTP_IMPLEMENTED | `admin_broadcast_dispatch` |
+| 38 | GET `/api/v1/invoices` | HTTP_IMPLEMENTED | `invoices_list` |
+| 39 | GET `/api/v1/invoices/{id}` | HTTP_IMPLEMENTED | `invoice_get` |
+| 40 | GET `/api/v1/admin/exceptions/dashboard` | HTTP_IMPLEMENTED | `admin_exceptions_dashboard` |
+| 41 | POST `/api/v1/admin/sla-overrides` | HTTP_IMPLEMENTED | `admin_sla_override` |
+| 42 | GET `/api/v1/admin/audit-logs` | HTTP_IMPLEMENTED | `admin_audit_logs_list` |
+| 43 | GET `/api/v1/categories` | HTTP_IMPLEMENTED | `catalog_categories_public` |
+| 44 | POST `/api/v1/admin/categories` | HTTP_IMPLEMENTED | `admin_category_create` |
+| 45 | PATCH `/api/v1/admin/categories/{id}` | HTTP_IMPLEMENTED | `admin_category_update` |
 | 46 | GET `/api/v1/profile` | HTTP_IMPLEMENTED | `profile_get` |
 | 47 | PUT `/api/v1/profile` | HTTP_IMPLEMENTED | `profile_update` |
 | 48 | GET `/api/v1/profile/completion` | HTTP_IMPLEMENTED | `profile_completion` |
@@ -7417,7 +7415,7 @@ The endpoint ledger is intentionally exact. Method, normalized path, status and 
 | 50 | GET `/api/v1/profile/context` | HTTP_IMPLEMENTED / SHARED BOUNDARY | `profile_get` |
 
 Endpoint governance:
-- 21 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED.
+- 50 of the 50 business endpoint specifications are currently HTTP_IMPLEMENTED on this remediation branch. The ledger is therefore fully HTTP-closed; remaining verification is runtime/CI evidence, not missing canonical routes.
 - /healthz and /readyz are operational transport routes, not business endpoints.
 - BOUNDARY_READY / NOT_YET_HTTP methods are not production HTTP completion.
 - Path normalization may reconcile :id and {id}; this does not create a second endpoint.

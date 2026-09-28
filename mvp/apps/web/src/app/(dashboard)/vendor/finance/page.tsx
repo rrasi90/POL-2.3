@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Skeleton,
@@ -10,7 +11,6 @@ import {
 } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import {
-  cardCls,
   formatDateTime,
   formatToman,
   itemsOf,
@@ -78,13 +78,13 @@ export default function VendorFinancePage() {
 
   if (state === "loading") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="در حال بارگذاری مالی">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid gap-3 sm:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className={cardCls}>
+      <div className="space-y-6" aria-busy="true" aria-label="در حال بارگذاری مالی">
+        <Skeleton className="h-9 w-48" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i} className="p-5">
               <Skeleton lines={2} />
-            </div>
+            </Card>
           ))}
         </div>
       </div>
@@ -102,99 +102,154 @@ export default function VendorFinancePage() {
   }
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[24px] leading-[32px] font-bold text-[var(--pol-light-text-primary)]">
-          فعالیت مالی
-        </h1>
-        <span className="text-[12px] text-[var(--pol-light-text-muted)]">V-17</span>
-        <Button variant="secondary" size="sm" className="ms-auto" onClick={() => void load()}>
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[22px] md:text-[26px] font-bold text-[var(--pol-light-text-primary)]">
+              امور مالی و گزارش‌های تسویه
+            </h1>
+            <span className="rounded-full bg-[var(--pol-light-surface-subtle)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
+              V-17
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-[var(--pol-light-text-secondary)]">
+            خلاصه مبالغ تسویه‌شده، در جریان و فاکتورهای فروش صادرشده
+          </p>
+        </div>
+
+        <Button variant="secondary" size="sm" onClick={() => void load()}>
           به‌روزرسانی
         </Button>
       </header>
 
-      <section aria-label="کیف پول" className="rounded-[12px] border border-dashed border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-subtle)] p-4">
-        <p className="text-[13px] text-[var(--pol-light-text-secondary)]">
-          کیف پول و موجودی ذخیره‌شده خارج از دامنه MVP است (D-021). فقط تسویه و فاکتور.
-        </p>
-      </section>
-
-      <section aria-label="خلاصه" className="grid gap-3 sm:grid-cols-3">
-        <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">تسویه‌شده</p>
-          <p className="mt-1 text-[20px] font-bold text-[var(--pol-light-text-primary)]">
+      {/* KPI Cards */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card className="p-5 border-emerald-300 bg-emerald-50/20 dark:border-emerald-800 dark:bg-emerald-950/20">
+          <span className="text-[13px] font-medium text-[var(--pol-light-text-secondary)]">
+            مجموع تسویه‌شده قطعی
+          </span>
+          <div className="mt-2 text-[26px] font-bold text-emerald-600 dark:text-emerald-400">
             {formatToman(paidTotal)}
-          </p>
-        </div>
-        <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">در انتظار</p>
-          <p className="mt-1 text-[20px] font-bold text-[var(--pol-light-text-primary)]">
-            {formatToman(pendingTotal)}
-          </p>
-        </div>
-        <div className={cardCls}>
-          <p className="text-[12px] text-[var(--pol-light-text-secondary)]">فاکتورها</p>
-          <p className="mt-1 text-[20px] font-bold text-[var(--pol-light-text-primary)]">
-            {invoices.length.toLocaleString("fa-IR")}
-          </p>
-        </div>
-      </section>
-
-      <section aria-label="آخرین تسویه‌ها">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          تسویه‌ها
-        </h2>
-        {settlements.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState title="تسویه‌ای ثبت نشده" />
           </div>
+          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
+            واریزشده به حساب بانکی شبا
+          </p>
+        </Card>
+
+        <Card className="p-5 border-amber-300 bg-amber-50/20 dark:border-amber-800 dark:bg-amber-950/20">
+          <span className="text-[13px] font-medium text-[var(--pol-light-text-secondary)]">
+            مبالغ در حال پردازش و تسویه
+          </span>
+          <div className="mt-2 text-[26px] font-bold text-amber-700 dark:text-amber-400">
+            {formatToman(pendingTotal)}
+          </div>
+          <p className="mt-1 text-[11px] text-[var(--pol-light-text-muted)]">
+            در چرخه تسویه دوره‌ای پُل
+          </p>
+        </Card>
+      </div>
+
+      {/* Scope Disclaimer */}
+      <div className="flex items-start gap-3 rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-subtle)] p-4 text-[13px] text-[var(--pol-light-text-secondary)] leading-relaxed">
+        <span className="text-base">ℹ️</span>
+        <div>
+          <strong className="font-semibold text-[var(--pol-light-text-primary)]">نکته تسویه:</strong>{" "}
+          تسویه‌حساب‌ها طبق توافق‌نامه پایا/ساتنا به صورت دوره‌ای و پس از تحویل قطعی سفارش‌ها انجام
+          می‌گردد. کیف پول اعتباری در فاز فعلی پشتیبانی نمی‌شود (D-021).
+        </div>
+      </div>
+
+      {/* Settlements List */}
+      <section aria-label="تسویه‌حساب‌ها" className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
+            دستورهای تسویه‌حساب
+          </h2>
+          <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+            {settlements.length.toLocaleString("fa-IR")} مورد
+          </span>
+        </div>
+
+        {settlements.length === 0 ? (
+          <EmptyState
+            title="هیچ تسویه‌ای ثبت نشده است"
+            description="به محض اتمام اولین چرخه فروش و تحویل سفارش‌ها، دستور تسویه در این بخش ثبت می‌شود."
+          />
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
-            {settlements.slice(0, 10).map((s) => (
-              <li key={String(s.id)} className="flex flex-wrap items-center gap-2 rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-3">
-                <StatusChip tone={settlementStatusTone[s.status ?? ""] ?? "neutral"}>
-                  {settlementStatusLabel[s.status ?? ""] ?? s.status ?? "—"}
-                </StatusChip>
-                <span className="text-[13px] text-[var(--pol-light-text-primary)]" dir="ltr">
-                  {s.settlement_number ?? String(s.id)}
-                </span>
-                <span className="ms-auto text-[13px] font-medium text-[var(--pol-light-text-primary)]">
-                  {formatToman(s.amount_toman)}
-                </span>
-                <span className="text-[11px] text-[var(--pol-light-text-muted)]">
-                  {formatDateTime(s.created_at)}
-                </span>
-              </li>
+          <div className="grid gap-3">
+            {settlements.map((s) => (
+              <Card key={s.id} className="p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <StatusChip tone={settlementStatusTone[s.status ?? ""] ?? "neutral"}>
+                      {settlementStatusLabel[s.status ?? ""] ?? s.status ?? "—"}
+                    </StatusChip>
+                    <span className="font-mono text-[14px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
+                      {s.settlement_number ?? `SETTLE-${s.id.slice(0, 8)}`}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:gap-6 border-t border-[var(--pol-light-border-subtle)] pt-2 sm:border-0 sm:pt-0">
+                    <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+                      {formatDateTime(s.created_at)}
+                    </span>
+                    <span className="text-[16px] font-bold text-[var(--pol-light-text-primary)]">
+                      {formatToman(s.amount_toman)}
+                    </span>
+                  </div>
+                </div>
+              </Card>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
-      <section aria-label="آخرین فاکتورها">
-        <h2 className="text-[16px] leading-[24px] font-semibold text-[var(--pol-light-text-primary)]">
-          فاکتورها
-        </h2>
+      {/* Invoices List */}
+      <section aria-label="فاکتورهای فروش" className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[17px] font-bold text-[var(--pol-light-text-primary)]">
+            فاکتورهای فروش
+          </h2>
+          <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
+            {invoices.length.toLocaleString("fa-IR")} فاکتور
+          </span>
+        </div>
+
         {invoices.length === 0 ? (
-          <div className="mt-3">
-            <EmptyState title="فاکتوری یافت نشد" />
-          </div>
+          <EmptyState
+            title="فاکتوری ثبت نشده است"
+            description="فاکتورهای رسمی سفارش‌های تحویل‌شده در این بخش بایگانی می‌گردند."
+          />
         ) : (
-          <ul role="list" className="mt-3 space-y-2">
-            {invoices.slice(0, 10).map((inv) => (
-              <li key={String(inv.id)} className="flex flex-wrap items-center gap-2 rounded-[12px] border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-3">
-                {inv.status ? <StatusChip tone="info">{inv.status}</StatusChip> : null}
-                <span className="text-[13px] font-semibold text-[var(--pol-light-text-primary)]" dir="ltr">
-                  {inv.invoice_number ?? String(inv.id)}
-                </span>
-                <span className="ms-auto text-[13px] font-medium text-[var(--pol-light-text-primary)]">
-                  {formatToman(inv.total_amount_toman)}
-                </span>
-                <span className="text-[11px] text-[var(--pol-light-text-muted)]">
-                  {formatDateTime(inv.issued_at ?? inv.created_at)}
-                </span>
-              </li>
+          <div className="grid gap-3">
+            {invoices.map((inv) => (
+              <Card key={inv.id} className="p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-mono text-[14px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
+                      {inv.invoice_number ?? `INV-${inv.id.slice(0, 8)}`}
+                    </span>
+                    {inv.order_id && (
+                      <span className="text-[12px] text-[var(--pol-light-text-secondary)]" dir="ltr">
+                        سفارش: {inv.order_id.slice(0, 8)}...
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between sm:gap-6 border-t border-[var(--pol-light-border-subtle)] pt-2 sm:border-0 sm:pt-0">
+                    <span className="text-[12px] text-[var(--pol-light-text-muted)]">
+                      {formatDateTime(inv.issued_at ?? inv.created_at)}
+                    </span>
+                    <span className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+                      {formatToman(inv.total_amount_toman)}
+                    </span>
+                  </div>
+                </div>
+              </Card>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>

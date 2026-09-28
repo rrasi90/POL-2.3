@@ -203,6 +203,14 @@ def test_retailer_approval_reconciles_order_inventory_amounts_and_outbox(pg_conn
                 proposal_id=proposal["proposal_id"],
             )
             assert result["order_status"] == "PARTIALLY_ACCEPTED"
+            cur.execute(
+                "SELECT event_name FROM outbox_events WHERE aggregate_type='INVENTORY_RESERVATION' AND aggregate_id=%s ORDER BY event_name",
+                (data["reservation_id"],),
+            )
+            reservation_events = {row["event_name"] for row in cur.fetchall()}
+            assert "INVENTORY_RESERVATION_CONSUMED" in reservation_events
+            assert "INVENTORY_RESERVATION_RELEASED" in reservation_events
+
             assert result["total_amount_toman"] == 3500000
             assert result["changed_item_count"] == 1
             assert result["consumed_reservation_count"] == 1
@@ -297,6 +305,53 @@ def test_retailer_approval_is_tenant_protected(pg_connection):
             assert cur.fetchone()["status"] == "ACTIVE"
 
 
+def test_retailer_staff_cannot_decide_partial_acceptance(pg_connection):
+    suffix = uuid4().hex[:10]
+    with pg_connection:
+        with pg_connection.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _setup_order(cur, suffix)
+            proposal = _propose(cur, data)
+
+            staff_user_id = str(uuid4())
+            cur.execute(
+                """
+                INSERT INTO users (id, phone_number, full_name, role, is_active)
+                VALUES (%s, %s, 'Partial Decision Staff', 'RETAILER_STAFF', TRUE)
+                """,
+                (staff_user_id, f"+9891{uuid4().int % 100000000:08d}"),
+            )
+            cur.execute(
+                """
+                INSERT INTO organization_memberships
+                    (id, organization_id, user_id, role, status, is_primary)
+                VALUES (%s, %s, %s, 'RETAILER_STAFF', 'ACTIVE', FALSE)
+                """,
+                (str(uuid4()), data["retailer_org"], staff_user_id),
+            )
+
+            try:
+                with pytest.raises(PermissionError):
+                    POLApplicationBoundary(
+                        cur,
+                        ApplicationContext(
+                            user_id=staff_user_id,
+                            organization_id=data["retailer_org"],
+                            correlation_id=f"staff-decision-{uuid4()}",
+                        ),
+                    ).retailer_partial_acceptance_approve(
+                        order_id=data["order_id"],
+                        proposal_id=proposal["proposal_id"],
+                    )
+
+                cur.execute(
+                    "SELECT status FROM order_partial_acceptance_proposals WHERE id=%s",
+                    (proposal["proposal_id"],),
+                )
+                assert cur.fetchone()["status"] == "PENDING"
+            finally:
+                cur.execute("DELETE FROM users WHERE id=%s", (staff_user_id,))
+
+
 def test_idempotent_partial_proposal_replay_and_payload_guard(pg_connection):
     suffix = uuid4().hex[:10]
     with pg_connection:
@@ -361,3 +416,33 @@ def test_full_vendor_accept_is_blocked_while_partial_proposal_is_pending(pg_conn
                 (data["order_id"],),
             )
             assert cur.fetchone()["order_status"] == "SUBMITTED"
+
+
+
+def test_partial_acceptance_proposals_list_is_tenant_scoped(pg_connection):
+    suffix = uuid4().hex[:10]
+    with pg_connection:
+        with pg_connection.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _setup_order(cur, suffix)
+            proposal = _propose(cur, data, accepted_quantity=7)
+
+            vendor_result = _vendor_boundary(cur, data).partial_acceptance_proposals_list(
+                order_id=data["order_id"]
+            )
+            assert len(vendor_result["proposals"]) == 1
+            row = vendor_result["proposals"][0]
+            assert row["proposal_id"] == proposal["proposal_id"]
+            assert row["status"] == "PENDING"
+            assert row["items"][0]["accepted_quantity"] == 7
+
+            with pytest.raises(PermissionError):
+                POLApplicationBoundary(
+                    cur,
+                    ApplicationContext(
+                        user_id=data["retailer_user"],
+                        organization_id=data["vendor_org"],
+                        correlation_id=f"cross-list-{uuid4()}",
+                    ),
+                ).partial_acceptance_proposals_list(
+                    order_id=data["order_id"]
+                )

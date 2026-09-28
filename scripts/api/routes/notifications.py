@@ -43,3 +43,29 @@ def update_notification_preference(
             is_enabled=payload.is_enabled,
         )
     )
+
+
+inbox_router = APIRouter(prefix="/inbox", tags=["notifications"])
+
+
+@inbox_router.get("/items")
+def list_inbox_items(
+    is_read: bool | None = Query(default=None),
+    category: str | None = Query(default=None, max_length=32),
+    limit: int = Query(default=20, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.inbox_list(is_read=is_read, category=category, limit=limit, offset=offset)
+    )
+
+
+@inbox_router.patch("/items/{item_id}/read")
+def mark_inbox_item_read(item_id: str, boundary=Depends(get_application_boundary)):
+    return success_payload(boundary.inbox_mark_read(item_id=item_id))
+
+
+@inbox_router.patch("/items/read-all")
+def mark_all_inbox_read(boundary=Depends(get_application_boundary)):
+    return success_payload(boundary.inbox_mark_all_read())

@@ -1,0 +1,99 @@
+{
+  "certification": {
+    "project": "POL-2.3 MVP",
+    "verdict": "CERTIFICATION READY — WITH EXPLICIT EXTERNAL / DECISION LIMITATIONS",
+    "statement": "POL-2.3 MVP INTERNAL TECHNICAL CERTIFICATION READY",
+    "timestamp_utc": "2026-09-27T08:49:27Z",
+    "git": {
+      "branch": "remediation/master-gap-closure-2026-09-26",
+      "commit": "49c2277a4018f8f1e191f0c249b3d44f7a7ac441",
+      "starting_commit": "ef24eff43911e5c6283df431ab398ba649b341b4",
+      "push_policy": "STRICTLY_FORBIDDEN"
+    },
+    "runtime": {
+      "python": "3.11.15",
+      "framework": "FastAPI (D-020 transport adapter)",
+      "boundary": "POLApplicationBoundary (D-019 Python canonical runtime)"
+    },
+    "database": {
+      "engine": "PostgreSQL 18.4",
+      "port": 5432,
+      "table_count": 107,
+      "migration_chain": {
+        "start": "001_initial_schema.sql",
+        "head": "076_reservation_and_candidate_event_templates.sql",
+        "total_migrations": 76,
+        "verified": true
+      }
+    },
+    "suite_summary": {
+      "total_collected": 658,
+      "total_passed": 658,
+      "total_failed": 0,
+      "total_skipped": 0,
+      "total_errors": 0,
+      "duration_seconds": 246.2,
+      "exit_code": 0,
+      "status": "PASSED"
+    },
+    "reconciled_gaps": {
+      "G-466": "RESOLVED - Multi-member fan-out deduplication and per-row event_id isolation",
+      "G-467": "RESOLVED - Fixed SQL parameter count mismatch in CanonicalRetailerOrderService.cancel_order outbox insert",
+      "G-468": "RESOLVED - Fixed unbound variable category_id in POLApplicationBoundary.admin_category_create audit log",
+      "G-469": "RESOLVED - Added settlement active status guard in CanonicalReturnService._create_settlement_adjustment",
+      "G-470": "RESOLVED - Added default POL_JWT_SECRET in verification suite runner for autonomous self-contained execution"
+    },
+    "open_decisions": [
+      {
+        "id": "D-018",
+        "topic": "Refresh Token Rotation Policy",
+        "status": "SOURCE_IMPLEMENTED_POLICY_OPEN",
+        "note": "Runtime rotates refresh tokens and invalidates old token; formal policy approval remains OPEN_DECISION"
+      },
+      {
+        "id": "FIN-001",
+        "topic": "Invoice Generation Timing",
+        "status": "OPEN_DECISION",
+        "note": "Implemented on order ACCEPTED per canonical finance routes; formal accounting approval remains OPEN_DECISION"
+      },
+      {
+        "id": "D-024",
+        "topic": "Storefront Write Scope",
+        "status": "READ_ORDER_ONLY",
+        "note": "Vendor storefronts are strictly READ/ORDER surfaces in MVP; no write contract defined"
+      },
+      {
+        "id": "D-028",
+        "topic": "Barcode Scanner Camera Transport",
+        "status": "RUNTIME_SCOPE",
+        "note": "Backend barcode matching API verified; physical camera driver belongs to device runtime"
+      }
+    ],
+    "external_dependencies": [
+      {
+        "dependency": "SMS.ir Provider",
+        "status": "BLOCKED_EXTERNAL",
+        "local_guarantee": "Provider adapter boundary and contract tests verified with mock",
+        "production_requirement": "Live SMSIR_API_KEY, SMSIR_TEMPLATE_ID, SMSIR_LINE_NUMBER"
+      },
+      {
+        "dependency": "Bank / POS Direct Transfer Reconciliation",
+        "status": "BLOCKED_EXTERNAL",
+        "local_guarantee": "Non-custodial payment receipt, evidence upload, and operator verification lifecycle verified",
+        "production_requirement": "External banking gateway / POS terminal transaction statements"
+      },
+      {
+        "dependency": "Object Storage (S3 / MinIO)",
+        "status": "BLOCKED_EXTERNAL",
+        "local_guarantee": "Resumable upload, SHA-256 validation, metadata tracking, and mock S3 provider verified",
+        "production_requirement": "Live S3 bucket credentials and endpoint configuration"
+      },
+      {
+        "dependency": "GitHub Actions Runner Environment",
+        "status": "BLOCKED_EXTERNAL",
+        "local_guarantee": "Local execution on real PostgreSQL 18.4 passes 658/658 tests with 107 tables",
+        "production_requirement": "Resolution of runner initialization blocker on GitHub Actions"
+      }
+    ]
+  }
+}

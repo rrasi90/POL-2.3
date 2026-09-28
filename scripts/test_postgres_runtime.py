@@ -60,6 +60,39 @@ def make_uuid(domain: int, item_id: int) -> str:
     """Generate deterministic, valid RFC 4122 UUID strings for test fixtures."""
     return f"{domain:08d}-0000-0000-0000-{item_id:012d}"
 
+
+def _sync_reservation(cur, vendor_product_id, quantity):
+    """Keep migration 057's reconciliation invariant intact after a scenario
+    bumps vendor_inventory.reserved_quantity directly: record the reservation
+    as an ACTIVE inventory_reservations row so that at commit
+    reserved_quantity == SUM(quantity of ACTIVE reservations)."""
+    cur.execute("""
+        INSERT INTO inventory_reservations (id, vendor_product_id, quantity, status, expires_at)
+        VALUES (gen_random_uuid(), %s, %s, 'ACTIVE', now() + interval '1 day')
+    """, (vendor_product_id, quantity))
+
+
+def _release_reservations(cur, vendor_product_id):
+    """Mirror a direct reserved_quantity decrement by releasing the ACTIVE
+    inventory_reservations rows for the vendor product (migration 057
+    reconciliation invariant)."""
+    cur.execute("""
+        UPDATE inventory_reservations
+        SET status = 'RELEASED', released_at = now()
+        WHERE vendor_product_id = %s AND status = 'ACTIVE'
+    """, (vendor_product_id,))
+
+
+def _insert_dispute_evidence_media(cur):
+    """Insert a READY, POL_OWNED media asset for the migration 058 dispute
+    evidence requirement; returns the media id for disputes.evidence_media_id."""
+    media_id = str(uuid.uuid4())
+    cur.execute("""
+        INSERT INTO media_assets (id, storage_key, file_size_bytes, checksum_sha256, status, provenance)
+        VALUES (%s, %s, 1024, %s, 'READY', 'POL_OWNED')
+    """, (media_id, f"disputes/evidence/{media_id}.webp", "a" * 64))
+    return media_id
+
 # Deterministic UUID Fixtures
 U_ADMIN = make_uuid(1, 1)
 U_RET_1 = make_uuid(1, 10)
@@ -217,12 +250,14 @@ def run_postgres_runtime_scenarios():
             WHERE vendor_product_id = %s AND (physical_quantity - reserved_quantity) >= 2
         """, (VP_A_A,))
         assert cur.rowcount == 1
+        _sync_reservation(cur, VP_A_A, 2)
         cur.execute("""
             UPDATE vendor_inventory
             SET reserved_quantity = reserved_quantity + 5
             WHERE vendor_product_id = %s AND (physical_quantity - reserved_quantity) >= 5
         """, (VP_A_B,))
         assert cur.rowcount == 1
+        _sync_reservation(cur, VP_A_B, 5)
 
         # Atomic reservation for Vendor B items
         cur.execute("""
@@ -231,12 +266,14 @@ def run_postgres_runtime_scenarios():
             WHERE vendor_product_id = %s AND (physical_quantity - reserved_quantity) >= 10
         """, (VP_B_D,))
         assert cur.rowcount == 1
+        _sync_reservation(cur, VP_B_D, 10)
         cur.execute("""
             UPDATE vendor_inventory
             SET reserved_quantity = reserved_quantity + 1
             WHERE vendor_product_id = %s AND (physical_quantity - reserved_quantity) >= 1
         """, (VP_B_E,))
         assert cur.rowcount == 1
+        _sync_reservation(cur, VP_B_E, 1)
 
         # Create Child Orders
         cur.execute("""
@@ -336,11 +373,12 @@ def run_postgres_runtime_scenarios():
 
         # Reservation 1
         cur.execute("""
-            UPDATE vendor_inventory 
-            SET reserved_quantity = reserved_quantity + 1 
+            UPDATE vendor_inventory
+            SET reserved_quantity = reserved_quantity + 1
             WHERE vendor_product_id = %s AND (physical_quantity - reserved_quantity) >= 1
         """, (vp_scarce,))
         assert cur.rowcount == 1
+        _sync_reservation(cur, vp_scarce, 1)
 
         # Reservation 2 (fails atomicity)
         cur.execute("""
@@ -364,7 +402,9 @@ def run_postgres_runtime_scenarios():
         cur.execute("UPDATE orders SET order_status = 'CANCELLED' WHERE id = %s AND order_status = 'SUBMITTED'", (ord_1_a_id,))
         assert cur.rowcount == 1
         cur.execute("UPDATE vendor_inventory SET reserved_quantity = reserved_quantity - 2 WHERE vendor_product_id = %s", (VP_A_A,))
+        _release_reservations(cur, VP_A_A)
         cur.execute("UPDATE vendor_inventory SET reserved_quantity = reserved_quantity - 5 WHERE vendor_product_id = %s", (VP_A_B,))
+        _release_reservations(cur, VP_A_B)
         conn.commit()
 
         cur.execute("SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id = %s", (VP_A_A,))
@@ -500,7 +540,7 @@ def run_postgres_runtime_scenarios():
     try:
         cur.execute("""
             INSERT INTO deliveries (id, order_id, vendor_id, delivery_status)
-            VALUES (%s, %s, %s, 'IN_TRANSIT')
+            VALUES (%s, %s, %s, 'ARRIVED')
         """, (del_001_id, ord_1_b_id, VND_B))
         conn.commit()
 
@@ -529,10 +569,12 @@ def run_postgres_runtime_scenarios():
     print("\n[RET-R-010] Runtime Orthogonal Dispute Creation...")
     disp_001_id = make_uuid(13, 1)
     try:
+        # Migration 058 requires new disputes to reference READY evidence media.
+        evidence_media_001 = _insert_dispute_evidence_media(cur)
         cur.execute("""
-            INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description)
-            VALUES (%s, %s, %s, %s, 'OPEN', 3000000, 'Damaged items reported')
-        """, (disp_001_id, ord_1_b_id, RET_1, VND_B))
+            INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description, evidence_media_id)
+            VALUES (%s, %s, %s, %s, 'OPEN', 3000000, 'Damaged items reported', %s)
+        """, (disp_001_id, ord_1_b_id, RET_1, VND_B, evidence_media_001))
         cur.execute("UPDATE orders SET dispute_status = 'OPEN' WHERE id = %s", (ord_1_b_id,))
         conn.commit()
 
@@ -706,16 +748,18 @@ def run_postgres_runtime_scenarios():
             VALUES (%s, 'POL-1405-09-022', %s, %s, %s, 'SUBMITTED', 4000000)
         """, (ord_vnd_rej_id, og_vnd_id, RET_1, VND_B))
         cur.execute("UPDATE vendor_inventory SET reserved_quantity = reserved_quantity + 4 WHERE vendor_product_id = %s", (VP_B_C,))
+        _sync_reservation(cur, VP_B_C, 4)
         conn.commit()
 
         # Vendor rejects order
         cur.execute("""
-            UPDATE orders 
-            SET order_status = 'REJECTED', rejection_reason = 'Out of physical stock in warehouse' 
+            UPDATE orders
+            SET order_status = 'REJECTED', rejection_reason = 'Out of physical stock in warehouse'
             WHERE id = %s AND order_status = 'SUBMITTED'
         """, (ord_vnd_rej_id,))
         assert cur.rowcount == 1
         cur.execute("UPDATE vendor_inventory SET reserved_quantity = reserved_quantity - 4 WHERE vendor_product_id = %s", (VP_B_C,))
+        _release_reservations(cur, VP_B_C)
         conn.commit()
 
         cur.execute("SELECT order_status, rejection_reason FROM orders WHERE id = %s", (ord_vnd_rej_id,))
@@ -914,6 +958,7 @@ def run_postgres_runtime_scenarios():
             """, (vp_flash,))
             if cur.rowcount == 1:
                 successful_res += 1
+                _sync_reservation(cur, vp_flash, 1)
             else:
                 failed_res += 1
         conn.commit()
@@ -1103,10 +1148,11 @@ def run_postgres_runtime_scenarios():
 
         # Negative Test 2: disputes.dispute_status MUST NOT accept invalid status
         try:
+            evidence_media_neg = _insert_dispute_evidence_media(cur)
             cur.execute("""
-                INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description)
-                VALUES (%s, %s, %s, %s, 'INVALID_STATUS', 1000, 'Invalid status test')
-            """, (str(uuid.uuid4()), ord_m_1, RET_1, VND_A))
+                INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description, evidence_media_id)
+                VALUES (%s, %s, %s, %s, 'INVALID_STATUS', 1000, 'Invalid status test', %s)
+            """, (str(uuid.uuid4()), ord_m_1, RET_1, VND_A, evidence_media_neg))
             conn.commit()
             assert False, "Should have violated CHECK constraint on dispute_status"
         except psycopg2.IntegrityError:

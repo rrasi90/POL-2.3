@@ -231,3 +231,46 @@ def test_vendor_reject_requires_non_empty_reason(pg_connection):
                 (data["reservation_id"],),
             )
             assert cur.fetchone()["status"] == "ACTIVE"
+def test_vendor_staff_cannot_reject_order(pg_connection):
+    suffix = uuid4().hex[:10]
+    with pg_connection:
+        with pg_connection.cursor(cursor_factory=RealDictCursor) as cur:
+            data = _setup_order(cur, suffix)
+
+            staff_user_id = str(uuid4())
+            cur.execute(
+                """
+                INSERT INTO users (id, phone_number, full_name, role, is_active)
+                VALUES (%s, %s, 'Rejection Staff', 'VENDOR_STAFF', TRUE)
+                """,
+                (staff_user_id, f"+9891{uuid4().int % 100000000:08d}"),
+            )
+            cur.execute(
+                """
+                INSERT INTO organization_memberships
+                    (id, organization_id, user_id, role, status, is_primary)
+                VALUES (%s, %s, %s, 'VENDOR_STAFF', 'ACTIVE', FALSE)
+                """,
+                (str(uuid4()), data["vendor_org"], staff_user_id),
+            )
+            try:
+                with pytest.raises(PermissionError):
+                    POLApplicationBoundary(
+                        cur,
+                        ApplicationContext(
+                            user_id=staff_user_id,
+                            organization_id=data["vendor_org"],
+                            correlation_id=f"staff-reject-{uuid4()}",
+                        ),
+                    ).vendor_order_reject(
+                        order_id=data["order_id"],
+                        rejection_reason="Staff must not reject",
+                    )
+
+                cur.execute(
+                    "SELECT order_status FROM orders WHERE id=%s",
+                    (data["order_id"],),
+                )
+                assert cur.fetchone()["order_status"] == "SUBMITTED"
+            finally:
+                cur.execute("DELETE FROM users WHERE id=%s", (staff_user_id,))

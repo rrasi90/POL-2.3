@@ -358,3 +358,50 @@ def test_vendor_catalog_routes_require_auth(api_env):
         json={"pack_quantity": 1},
     )
     assert response.status_code == 401
+
+def test_public_products_search_contract(api_env):
+    conn = _db()
+    try:
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                data = _seed_vendor(cur, uuid4().hex[:8])
+                cur.execute(
+                    "INSERT INTO vendor_products (id, vendor_id, product_id, vendor_sku, packaging_unit, pack_quantity, sales_unit, is_active, listing_status) VALUES (gen_random_uuid(), %s, %s, %s, 'CARTON', 4, 'CARTON', TRUE, 'ACTIVE') RETURNING id",
+                    (data['vendor_id'], data['product_id'], f"SEARCH-{uuid4().hex[:6]}"),
+                )
+                vp_id = cur.fetchone()['id']
+                cur.execute("INSERT INTO vendor_inventory (vendor_product_id, inventory_unit, physical_quantity, reserved_quantity, moq, freshness_status) VALUES (%s, 'CARTON', 50, 0, 1, 'FRESH')", (vp_id,))
+                cur.execute("INSERT INTO vendor_prices (vendor_product_id, price_toman, is_current) VALUES (%s, 380000, TRUE)", (vp_id,))
+        response = TestClient(app).get('/api/v1/products/search?q=Product&limit=20')
+        assert response.status_code == 200
+        body = response.json()
+        assert body['success'] is True
+        assert body['data']['pagination']['page'] == 1
+        assert body['data']['products']
+        item = body['data']['products'][0]
+        assert {'id','master_sku','canonical_name_fa','brand_name','pack_unit','pack_quantity','lowest_unit_price_toman','available_vendors_count'} <= set(item)
+    finally:
+        conn.close()
+
+def test_vendor_barcode_match_and_unknown_candidate_flow(api_env):
+    conn = _db()
+    try:
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                data = _seed_vendor(cur, uuid4().hex[:8])
+                cur.execute("DELETE FROM product_identifiers WHERE identifier_type='EAN13' AND identifier_value IN ('6260123456789','6260123456790')")
+                cur.execute("INSERT INTO product_identifiers (product_id, identifier_type, identifier_value, identifier_scope, packaging_scope) VALUES (%s, 'EAN13', '6260123456789', 'GLOBAL', 'UNIT')", (data['product_id'],))
+                cur.execute("INSERT INTO product_identifiers (product_id, identifier_type, identifier_value, identifier_scope, packaging_scope) VALUES (%s, 'EAN13', '6260123456790', 'GLOBAL', 'UNIT')", (data['product_id'],))
+        client = TestClient(app)
+        response = client.post('/api/v1/products/match-barcode', headers={'Authorization': f"Bearer {data['token']}"}, json={'raw_barcode': '6260123456789', 'scan_source': 'CAMERA_CONTINUOUS_SCAN'})
+        assert response.status_code == 200
+        assert response.json()['data']['match_status'] == 'EXACT'
+        assert response.json()['data']['product']['id'] == data['product_id']
+        response = client.post('/api/v1/products/match-barcode', headers={'Authorization': f"Bearer {data['token']}"}, json={'raw_barcode': '6299999999999', 'scan_source': 'CAMERA_CONTINUOUS_SCAN'})
+        assert response.status_code == 200
+        assert response.json()['data']['match_status'] == 'NO_MATCH'
+        candidate = client.post('/api/v1/product-candidates', headers={'Authorization': f"Bearer {data['token']}"}, json={'proposed_title':'Unknown Product','barcode':'6299999999999','vendor_sku':f"CAND-{uuid4().hex[:6]}"})
+        assert candidate.status_code == 201
+        assert candidate.json()['data']['status'] == 'PENDING_REVIEW'
+    finally:
+        conn.close()

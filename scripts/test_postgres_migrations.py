@@ -8,8 +8,10 @@ Validates migrations/001_initial_schema.sql against real PostgreSQL 18:
 """
 
 import os
+from uuid import uuid4
 import sys
 import psycopg2
+import pytest
 from psycopg2 import sql
 
 # Ensure UTF-8 output
@@ -329,6 +331,24 @@ def verify_foreign_keys_and_indexes(conn):
     assert "is_active = true" in idx_s[1].lower(), f"Expected is_active = true partial index, got {idx_s[1]}"
     print(" - uq_active_support_assignment partial unique index verified")
 
+    # Check partial unique index for pending vendor barcode candidates (migration 046)
+    cur.execute("""
+        SELECT indexname, indexdef
+        FROM pg_indexes
+        WHERE tablename = 'product_candidates'
+          AND indexname = 'uq_product_candidates_pending_vendor_barcode';
+    """)
+    idx_c = cur.fetchone()
+    assert idx_c is not None, "uq_product_candidates_pending_vendor_barcode index missing"
+    idx_c_def = idx_c[1].lower()
+    assert "vendor_id" in idx_c_def and "barcode" in idx_c_def, (
+        f"Expected vendor_id+barcode candidate guard, got: {idx_c[1]}"
+    )
+    assert "pending_review" in idx_c_def.lower().replace("::text", ""), (
+        f"Expected PENDING_REVIEW predicate, got: {idx_c[1]}"
+    )
+    print(" - pending vendor barcode concurrency index verified")
+
     # Check organization_id columns on retailers and vendors
     cur.execute("""
         SELECT column_name FROM information_schema.columns 
@@ -341,6 +361,303 @@ def verify_foreign_keys_and_indexes(conn):
     """)
     assert cur.fetchone() is not None, "organization_id missing on vendors"
     print(" - retailers and vendors canonical organization_id verified")
+
+def verify_delegated_permission_schema(conn):
+    """Verify migration 047 D-026/VD-15 schema invariants."""
+    cur = conn.cursor()
+
+    for table in ("delegated_permission_grants", "permission_audit_events"):
+        cur.execute(
+            """
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema='public' AND table_name=%s
+            """,
+            (table,),
+        )
+        assert cur.fetchone() is not None, f"{table} table missing after migration 047"
+
+    cur.execute(
+        """
+        SELECT indexname
+        FROM pg_indexes
+        WHERE tablename='delegated_permission_grants'
+          AND indexname='idx_delegated_permission_active'
+        """
+    )
+    assert cur.fetchone() is not None, "active delegated-permission index missing"
+
+    cur.execute(
+        """
+        SELECT indexname
+        FROM pg_indexes
+        WHERE tablename='delegated_permission_grants'
+          AND indexname='uq_delegated_permission_membership_key'
+        """
+    )
+    assert cur.fetchone() is not None, "delegated-permission membership/key uniqueness missing"
+
+    cur.execute(
+        """
+        SELECT tgname
+        FROM pg_trigger
+        WHERE tgrelid='permission_audit_events'::regclass
+          AND tgname='trg_permission_audit_no_update'
+        """
+    )
+    assert cur.fetchone() is not None, "permission audit append-only trigger missing"
+
+    cur.execute(
+        """
+        SELECT conname, pg_get_constraintdef(oid)
+        FROM pg_constraint
+        WHERE conrelid='delegated_permission_grants'::regclass
+          AND contype='c'
+        """
+    )
+    grant_checks = " ".join(row[1].lower() for row in cur.fetchall())
+    assert "granted" in grant_checks and "revoked" in grant_checks, "grant status CHECK missing"
+    assert "inventory.scan" in grant_checks and "membership.manage" in grant_checks, (
+        "canonical delegated permission keys missing from DB CHECK"
+    )
+
+    print(" - migration 047 delegated permission tables, uniqueness, permission keys, and append-only audit guard verified")
+    cur.execute(
+        """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name='media_assets'
+          AND column_name IN ('upload_target_type','upload_target_id')
+        ORDER BY column_name
+        """
+    )
+    media_target_columns = [row[0] for row in cur.fetchall()]
+    assert media_target_columns == ["upload_target_id", "upload_target_type"], (
+        "migration 048 media target binding columns missing"
+    )
+    cur.execute(
+        """
+        SELECT indexname
+        FROM pg_indexes
+        WHERE tablename='media_assets'
+          AND indexname='idx_media_assets_upload_target'
+        """
+    )
+    assert cur.fetchone() is not None, "media upload-target binding index missing"
+
+    cur.close()
+
+
+def verify_financial_dispute_remediation(conn):
+    """Verify migrations 058-062 are present and protect their new invariants."""
+    cur = conn.cursor()
+
+    for table in ("dispute_events", "dispute_items"):
+        cur.execute(
+            """
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema='public' AND table_name=%s
+            """,
+            (table,),
+        )
+        assert cur.fetchone() is not None, f"{table} missing after financial/dispute remediation"
+
+    for table, column in (
+        ("disputes", "idempotency_key"),
+        ("disputes", "idempotency_fingerprint"),
+        ("disputes", "created_by_user_id"),
+        ("refunds", "idempotency_key"),
+        ("refunds", "idempotency_fingerprint"),
+        ("refunds", "approved_at"),
+        ("refunds", "completed_by_user_id"),
+        ("refunds", "created_by_user_id"),
+        ("refunds", "source_type"),
+        ("settlement_adjustments", "refund_id"),
+        ("payment_evidence", "evidence_media_id"),
+    ):
+        cur.execute(
+            """
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema='public' AND table_name=%s AND column_name=%s
+            """,
+            (table, column),
+        )
+        assert cur.fetchone() is not None, f"{table}.{column} missing"
+
+    for table, index_name in (
+        ("disputes", "uq_dispute_idempotency_key"),
+        ("refunds", "uq_refund_idempotency_key"),
+        ("refunds", "uq_refund_per_dispute_v063"),
+        ("refunds", "uq_refund_per_return_v063"),
+        ("settlement_adjustments", "uq_refund_settlement_adjustment_v058"),
+        ("payment_evidence", "idx_payment_evidence_media_v064"),
+    ):
+        cur.execute(
+            "SELECT 1 FROM pg_indexes WHERE tablename=%s AND indexname=%s",
+            (table, index_name),
+        )
+        assert cur.fetchone() is not None, f"Index {index_name} missing"
+
+    for table, constraint_name in (
+        ("media_assets", "chk_media_asset_checksum_required_v070"),
+        ("deliveries", "chk_delivery_otp_attempt_count_max_v068"),
+        ("deliveries", "chk_delivery_otp_format_v068"),
+        ("order_items", "chk_order_item_accepted_quantity_v068"),
+        ("order_items", "chk_order_item_delivered_quantity_v068"),
+    ):
+        cur.execute(
+            """
+            SELECT 1
+            FROM pg_constraint
+            WHERE conrelid=%s::regclass AND conname=%s
+            """,
+            (table, constraint_name),
+        )
+        assert cur.fetchone() is not None, f"Constraint {constraint_name} missing"
+
+    for table, trigger_name in (
+        ("admin_audit_logs", "trg_admin_audit_logs_immutable"),
+        ("inventory_audit_log", "trg_inventory_audit_append_only_v069"),
+        ("dispute_events", "trg_dispute_events_append_only_v058"),
+        ("disputes", "trg_validate_dispute_adjudication_v062"),
+        ("refunds", "trg_completed_refund_payment_v058"),
+        ("payment_evidence", "trg_validate_payment_evidence_media_v064"),
+    ):
+        cur.execute(
+            """
+            SELECT 1 FROM pg_trigger
+            WHERE tgrelid=%s::regclass AND tgname=%s
+            """,
+            (table, trigger_name),
+        )
+        assert cur.fetchone() is not None, f"Trigger {trigger_name} missing"
+
+    cur.execute(
+        """
+        SELECT 1
+        FROM notification_templates
+        WHERE event_name='REFUND_COMPLETED'
+          AND channel='INBOX'
+          AND enabled=TRUE
+        LIMIT 1
+        """
+    )
+    assert cur.fetchone() is not None, "REFUND_COMPLETED notification template missing"
+
+    cur.close()
+    print(" - financial/dispute remediation 058-062 schema, indexes, triggers and template verified")
+
+
+def test_dispute_resolution_invariant_direct_sql():
+    """Exercise the PostgreSQL adjudication guard directly with a minimal aggregate."""
+    conn = get_connection()
+    try:
+        _run_dispute_resolution_invariant(conn)
+    finally:
+        conn.close()
+
+
+def _run_dispute_resolution_invariant(conn):
+    cur = conn.cursor()
+
+    # Build only the minimum FK-compatible aggregate. Session trigger replication
+    # is disabled locally while creating the order because its parent group belongs
+    # to checkout-time concerns outside this focused migration invariant test.
+    cur.execute("SET LOCAL session_replication_role = replica")
+
+    cur.execute(
+        """
+        INSERT INTO organizations (id,name,org_type,status)
+        VALUES
+            (gen_random_uuid(),'Migration Test Retailer Org','RETAILER','ACTIVE'),
+            (gen_random_uuid(),'Migration Test Vendor Org','VENDOR','ACTIVE')
+        RETURNING id, org_type
+        """
+    )
+    orgs = {row[1]: row[0] for row in cur.fetchall()}
+
+    cur.execute(
+        """
+        INSERT INTO users (id,phone_number,full_name,role,is_active)
+        VALUES
+            (gen_random_uuid(),%s,'Migration Retailer','RETAILER_OWNER',TRUE),
+            (gen_random_uuid(),%s,'Migration Vendor','VENDOR_OWNER',TRUE)
+        RETURNING id, role
+        """,
+        (
+            f"+989{int.from_bytes(os.urandom(4),'big') % 1000000000:09d}",
+            f"+989{int.from_bytes(os.urandom(4),'big') % 1000000000:09d}",
+        ),
+    )
+    users = {row[1]: row[0] for row in cur.fetchall()}
+
+    cur.execute(
+        """
+        INSERT INTO retailers
+            (id,user_id,organization_id,store_name,neighborhood,address,city)
+        VALUES
+            (gen_random_uuid(),%s,%s,'Migration Test Retailer','Central','Test Address','Ahvaz')
+        RETURNING id
+        """,
+        (users["RETAILER_OWNER"], orgs["RETAILER"]),
+    )
+    retailer = cur.fetchone()[0]
+
+    cur.execute(
+        """
+        INSERT INTO vendors
+            (id,user_id,organization_id,business_name,warehouse_address,cluster_location)
+        VALUES
+            (gen_random_uuid(),%s,%s,'Migration Test Vendor','Test Warehouse','Ahvaz')
+        RETURNING id
+        """,
+        (users["VENDOR_OWNER"], orgs["VENDOR"]),
+    )
+    vendor = cur.fetchone()[0]
+
+    cur.execute(
+        """
+        INSERT INTO orders
+            (id,order_number,retailer_id,vendor_id,order_status,dispute_status,total_amount_toman)
+        VALUES
+            (gen_random_uuid(),%s,%s,%s,'DELIVERED','NONE',100000)
+        RETURNING id
+        """,
+        (f"MIG-{uuid4().hex[:12]}", retailer, vendor),
+    )
+    order_id = cur.fetchone()[0]
+
+    # Re-enable normal trigger behavior before testing the remediation trigger.
+    cur.execute("SET LOCAL session_replication_role = origin")
+
+    cur.execute(
+        """
+        INSERT INTO media_assets
+            (id,storage_key,file_size_bytes,status,provenance,checksum_sha256,uploaded_by_user_id)
+        VALUES (gen_random_uuid(),%s,1024,'READY','POL_OWNED',repeat('a',64),%s)
+        RETURNING id
+        """,
+        (f"migration-test/{uuid4().hex}.jpg", users["RETAILER_OWNER"]),
+    )
+    evidence_id = cur.fetchone()[0]
+
+    with pytest.raises(psycopg2.errors.CheckViolation, match="DISPUTE_APPROVED_AMOUNT_OUT_OF_BOUNDS"):
+        cur.execute(
+            """
+            INSERT INTO disputes (
+                id,order_id,retailer_id,vendor_id,dispute_status,
+                claimed_amount_toman,approved_amount_toman,resolution_outcome,
+                evidence_media_id
+            )
+            VALUES (gen_random_uuid(),%s,%s,%s,'RESOLVED',1000,2000,'ADJUSTED_SHORTAGE',%s)
+            """,
+            (order_id, retailer, vendor, evidence_id),
+        )
+
+    conn.rollback()
+    cur.close()
+
+
 
 def test_postgres_migrations():
     """Canonical test entry point for pytest."""
@@ -356,12 +673,16 @@ def test_postgres_migrations():
     verify_tables(conn)
     verify_constraints(conn)
     verify_foreign_keys_and_indexes(conn)
+    verify_delegated_permission_schema(conn)
+    verify_financial_dispute_remediation(conn)
 
     # Path 2: Incremental upgrade (001+002, then 003)
     run_upgrade_test(conn)
     verify_tables(conn)
     verify_constraints(conn)
     verify_foreign_keys_and_indexes(conn)
+    verify_delegated_permission_schema(conn)
+    verify_financial_dispute_remediation(conn)
 
     conn.close()
 

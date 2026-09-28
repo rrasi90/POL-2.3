@@ -150,7 +150,7 @@ This document specifies the complete, exhaustive state transition rules for all 
 | `INITIATED / PENDING` | `SUCCESS` | Driver / Gateway | Gateway callback or driver marks cash/POS collected | `reference_number`, `paid_at` | `UPDATE payments SET payment_status='SUCCESS'` | `payment_completed` | SMS receipt | Invoice marked paid; enables settlement release |
 | `INITIATED` | `FAILED` | Driver / Gateway | Insufficient funds, gateway timeout, or buyer cash shortage | `error_code`, attempt status = 'FAILED' | `UPDATE payments SET payment_status='FAILED'` | `payment_failed` | SMS alert | Retries allowed; delivery blocked if unpaid |
 | `PENDING` | `CANCELLED` | System | Order cancelled before payment | Order cancellation trigger | `UPDATE payments SET payment_status='CANCELLED'` | `payment_cancelled` | None | Payment expectation closed |
-| `SUCCESS` | `REFUNDED` | Ops Admin / Finance | Approved dispute refund executed | Link to `refunds.id` | `UPDATE payments SET payment_status='REFUNDED'` | `payment_refunded` | SMS to Retailer | Adjusts settlement ledger |
+| `SUCCESS` | `REFUNDED` | Ops Admin / Finance | Approved dispute refund executed | Link to `refunds.id` | `UPDATE payments SET payment_status='REFUNDED'` | `PAYMENT_REFUNDED` | SMS to Retailer | Adjusts settlement ledger |
 
 - **Forbidden Transitions:**
   - `SUCCESS -> PENDING / INITIATED / FAILED`
@@ -183,9 +183,9 @@ This document specifies the complete, exhaustive state transition rules for all 
 
 | From State | Allowed To State | Actor | Triggering Action | Required Fields | DB Mutation | Domain Event | Side Effects |
 |---|---|---|---|---|---|---|---|
-| `[*] (None)` | `PENDING` | Ops Admin | Dispute resolved in retailer favor | `order_id`, `dispute_id`, `amount_toman > 0`, `refund_method` | `INSERT INTO refunds` | `refund_created` | Creates pending refund voucher |
-| `PENDING` | `APPROVED` | Finance Lead | Finance approves disbursement | `approved_by_user_id` | `UPDATE refunds SET status='APPROVED'` | `refund_approved` | Scheduled for wallet or cash direct credit |
-| `APPROVED / PENDING` | `COMPLETED` | Finance / System | Vendor direct cash deduction or wallet credit executed | `completed_at` | `UPDATE refunds SET status='COMPLETED'` | `refund_completed` | Settles retailer claim; logs ledger entry |
+| `[*] (None)` | `PENDING` | Ops Admin | Dispute resolved in retailer favor | `order_id`, `dispute_id`, `payment_id`, `amount_toman > 0`, `refund_method`, `Idempotency-Key` | `INSERT INTO refunds` | `REFUND_CREATED` | Creates pending refund voucher + settlement linkage pending completion |
+| `PENDING` | `APPROVED` | Finance Lead | Finance approves disbursement | `approved_by_user_id`, creator ≠ approver | `UPDATE refunds SET status='APPROVED'` | `REFUND_APPROVED` | Scheduled for wallet or cash direct credit |
+| `APPROVED` | `COMPLETED` | Finance / System | Vendor direct cash deduction or wallet credit executed | `completed_at`, `payment_id`, approver ≠ completer | `UPDATE refunds SET status='COMPLETED'`, `UPDATE payments SET payment_status='REFUNDED'` | `REFUND_COMPLETED`, `PAYMENT_REFUNDED` | Reconciles settlement adjustment and closes eligible dispute |
 | `PENDING` | `REJECTED` | Finance Lead | Duplicate or invalid refund claim | Rejection justification | `UPDATE refunds SET status='REJECTED'` | `refund_rejected` | Refund cancelled; dispute re-evaluated |
 
 - **Forbidden Transitions:**

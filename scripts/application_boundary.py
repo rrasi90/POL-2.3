@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import uuid4
 
+from datetime import datetime, timezone
+
 from psycopg2.extras import Json
 
 from scripts.checkout_gateway import CanonicalCheckoutGateway
@@ -16,19 +18,44 @@ from scripts.canonical_feedback import CanonicalFeedbackService
 from scripts.canonical_basket_allocation import CanonicalBasketAllocationService
 from scripts.canonical_partial_acceptance import CanonicalPartialAcceptanceService
 from scripts.canonical_vendor_order import CanonicalVendorOrderService
+from scripts.canonical_retailer_order import CanonicalRetailerOrderService
 from scripts.canonical_support import CanonicalSupportService
 from scripts.fulfillment_service import (
     mark_preparing as _mark_preparing,
     mark_ready as _mark_ready,
     dispatch_order as _dispatch_order,
+    transition_delivery_stage as _transition_delivery_stage,
     confirm_delivery as _confirm_delivery,
 )
 from scripts.payment_reconciliation_worker import PaymentReconciliationWorker
 from scripts.provider_delivery_worker import ProviderDeliveryWorker
+from scripts.operational_config import PILOT_COMMISSION_RATE
 from scripts.returns_rma import CanonicalReturnService
+from scripts.media_service import MediaService
 from scripts.user_profiles import UserProfileService
+from scripts.privacy_lifecycle import PrivacyLifecycleService
 from scripts.vendor_referral import VendorReferralService
 from scripts.vendor_acceptance_timeout_worker import VendorAcceptanceTimeoutWorker
+from scripts.reservation_expiry_worker import ReservationExpiryWorker
+FIELD_TASK_TRANSITIONS = {
+    "ASSIGNED": {"IN_PROGRESS", "FAILED", "CANCELLED"},
+    "IN_PROGRESS": {"COMPLETED", "FAILED", "CANCELLED"},
+    "FAILED": {"IN_PROGRESS", "CANCELLED"},
+    "COMPLETED": set(),
+    "CANCELLED": set(),
+}
+
+
+from scripts.permissions import (
+    BASE_ROLE_PERMISSIONS,
+    CANONICAL_PERMISSIONS,
+    effective_permissions,
+    grant_permission,
+    membership_permissions,
+    permission_audit,
+    require_permission,
+    revoke_permission,
+)
 
 
 @dataclass(frozen=True)
@@ -38,12 +65,71 @@ class ApplicationContext:
     correlation_id: str
 
 
+def _jsonable_row(row):
+    """Return a JSON-safe copy of a DB row (datetimes -> ISO strings)."""
+    from datetime import datetime as _dt
+
+    return {
+        key: (value.isoformat() if isinstance(value, _dt) else value)
+        for key, value in dict(row).items()
+    }
+
+
 class POLApplicationBoundary:
     """The sole client-facing command/query facade for MVP routes."""
 
     def __init__(self, cur, context: ApplicationContext):
         self.cur = cur
         self.context = context
+
+    def media_presign(self, *, mime_type, file_size_bytes, target_type, target_id, filename=None):
+        if not self.context.organization_id:
+            raise PermissionError("Media upload requires an active organization context.")
+        return MediaService.presign(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            mime_type=mime_type,
+            file_size_bytes=file_size_bytes,
+            target_type=target_type,
+            target_id=str(target_id),
+            filename=filename,
+        )
+
+    def media_presign_resumable(self, *, mime_type, file_size_bytes, target_type, target_id, filename=None):
+        if not self.context.organization_id:
+            raise PermissionError("Media upload requires an active organization context.")
+        return MediaService.presign_resumable(
+            self.cur, user_id=self.context.user_id, organization_id=self.context.organization_id,
+            mime_type=mime_type, file_size_bytes=file_size_bytes, target_type=target_type,
+            target_id=str(target_id), filename=filename,
+        )
+
+    def media_complete_resumable(self, *, session_id, parts):
+        if not self.context.organization_id:
+            raise PermissionError("Media completion requires an active organization context.")
+        return MediaService.complete_resumable(
+            self.cur, user_id=self.context.user_id, organization_id=self.context.organization_id,
+            session_id=str(session_id), parts=[item if isinstance(item, dict) else item.model_dump() for item in parts],
+        )
+
+    def media_confirm_upload(self, *, media_id, target_type, target_id):
+        if not self.context.organization_id:
+            raise PermissionError("Media confirmation requires an active organization context.")
+        return MediaService.confirm_upload(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            media_id=str(media_id),
+            target_type=target_type,
+            target_id=str(target_id),
+        )
+
+    def privacy_export(self):
+        return PrivacyLifecycleService.request_export(self.cur, self.context.user_id)
+
+    def privacy_delete_account(self):
+        return PrivacyLifecycleService.request_deletion(self.cur, self.context.user_id)
 
     def profile_get(self):
         return UserProfileService.get_my_profile(
@@ -66,6 +152,49 @@ class POLApplicationBoundary:
         return UserProfileService.update_membership_profile(
             self.cur, self.context.user_id, self.context.organization_id, fields
         )
+
+    def basket_current(self):
+        retailer, basket = CanonicalBasketAllocationService._basket_for_context(
+            self.cur, self.context.user_id, self.context.organization_id,
+            self._current_basket_id(),
+        )
+        self.cur.execute(
+            """
+            SELECT bi.id, bi.product_id, p.master_sku, p.canonical_name_fa,
+                   bi.requested_quantity, bi.requested_unit, bi.pack_quantity
+            FROM basket_items bi
+            JOIN products p ON p.id = bi.product_id
+            WHERE bi.basket_id = %s
+            ORDER BY bi.created_at, bi.id
+            """,
+            (basket["id"],),
+        )
+        items = [dict(row, id=str(row["id"]), product_id=str(row["product_id"])) for row in self.cur.fetchall()]
+        return {
+            "basket_id": str(basket["id"]),
+            "retailer_id": str(retailer["retailer_id"]),
+            "status": basket["status"],
+            "version": int(basket["version"]),
+            "items": items,
+        }
+
+    def _current_basket_id(self):
+        self.cur.execute(
+            """
+            SELECT b.id
+            FROM baskets b
+            JOIN retailers r ON r.id = b.retailer_id
+            WHERE r.organization_id = %s
+              AND b.status = 'OPEN'
+            ORDER BY b.updated_at DESC, b.id DESC
+            LIMIT 1
+            """,
+            (self.context.organization_id,),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError("No OPEN basket exists for the active retailer organization.")
+        return str(row["id"])
 
     def basket_create(self):
         return CanonicalBasketAllocationService.create_basket(
@@ -127,7 +256,7 @@ class POLApplicationBoundary:
               AND om.organization_id = %s
               AND om.status = 'ACTIVE'
               AND o.status = 'ACTIVE'
-              AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
+              AND om.role = 'RETAILER_OWNER'
             LIMIT 1
             """,
             (allocation_plan_id, self.context.user_id, self.context.organization_id),
@@ -218,6 +347,17 @@ class POLApplicationBoundary:
             "idempotent_replay": bool(result.get("idempotent_replay", False)),
         }
 
+    def retailer_order_cancel(self, *, order_id, reason='RETAILER_CANCELLED'):
+        self.cur.execute("SELECT retailer_id FROM orders WHERE id=%s", (order_id,))
+        row = self.cur.fetchone()
+        if not row:
+            raise KeyError(f"Order {order_id} not found.")
+        self._verify_retailer_actor(row["retailer_id"])
+        return CanonicalRetailerOrderService.cancel_order(
+            self.cur, user_id=self.context.user_id, organization_id=self.context.organization_id,
+            order_id=order_id, reason=reason,
+        )
+
     def vendor_order_accept(self, *, order_id):
         return CanonicalVendorOrderService.accept_order(
             self.cur,
@@ -264,13 +404,121 @@ class POLApplicationBoundary:
             reason=reason,
         )
 
+    def partial_acceptance_proposals_list(self, *, order_id, status=None, offset=0, limit=50):
+        actor_role = self._resolve_actor_role()
+        clauses = ["p.order_id = %s"]
+        params: list = [order_id]
+
+        if actor_role == "RETAILER":
+            clauses.append(
+                "p.retailer_id IN (SELECT id FROM retailers WHERE organization_id = %s)"
+            )
+            params.append(self.context.organization_id)
+        elif actor_role == "VENDOR":
+            clauses.append(
+                "p.vendor_id IN (SELECT id FROM vendors WHERE organization_id = %s)"
+            )
+            params.append(self.context.organization_id)
+
+        if status:
+            clauses.append("p.status = %s")
+            params.append(status)
+
+        where_sql = " AND ".join(clauses)
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT
+                p.id AS proposal_id,
+                p.order_id,
+                p.vendor_id,
+                p.retailer_id,
+                p.proposed_by_user_id,
+                p.status,
+                p.decision_by_user_id,
+                p.decision_reason,
+                p.decided_at,
+                p.created_at,
+                p.updated_at,
+                o.order_number,
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'order_item_id', pi.order_item_id,
+                            'accepted_quantity', pi.accepted_quantity,
+                            'reason', pi.reason
+                        )
+                        ORDER BY pi.order_item_id
+                    ) FILTER (WHERE pi.id IS NOT NULL),
+                    '[]'::json
+                ) AS items
+            FROM order_partial_acceptance_proposals p
+            JOIN orders o ON o.id = p.order_id
+            LEFT JOIN order_partial_acceptance_proposal_items pi
+              ON pi.proposal_id = p.id
+            WHERE {where_sql}
+            GROUP BY p.id, o.order_number
+            ORDER BY p.created_at DESC, p.id
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        proposals = []
+        for row in self.cur.fetchall():
+            item = dict(row)
+            item["proposal_id"] = str(item["proposal_id"])
+            item["order_id"] = str(item["order_id"])
+            item["vendor_id"] = str(item["vendor_id"])
+            item["retailer_id"] = str(item["retailer_id"])
+            item["proposed_by_user_id"] = str(item["proposed_by_user_id"])
+            item["decision_by_user_id"] = (
+                str(item["decision_by_user_id"])
+                if item["decision_by_user_id"] else None
+            )
+            for field in ("decided_at", "created_at", "updated_at"):
+                if item[field]:
+                    item[field] = item[field].isoformat()
+            proposals.append(item)
+
+        return {
+            "proposals": proposals,
+            "limit": limit,
+            "offset": offset,
+        }
+
     # ── Order Query Methods (Stage 20) ──────────────────────────────
+
+    def _current_vendor_for_context(self):
+        if not self.context.organization_id:
+            return None
+        self.cur.execute(
+            """
+            SELECT v.id, v.organization_id, v.user_id, v.business_name, v.status
+            FROM vendors v
+            WHERE v.organization_id=%s
+              AND v.status='ACTIVE'
+            ORDER BY v.id
+            LIMIT 1
+            """,
+            (self.context.organization_id,),
+        )
+        return self.cur.fetchone()
 
     def _resolve_actor_role(self):
         if not self.context.organization_id:
             raise PermissionError("Order query requires an organization context.")
         self.cur.execute(
-            "SELECT role FROM organization_memberships WHERE organization_id = %s AND user_id = %s AND status = 'ACTIVE'",
+            """
+            SELECT om.role
+            FROM organization_memberships om
+            JOIN organizations o ON o.id=om.organization_id
+            JOIN users u ON u.id=om.user_id
+            WHERE om.organization_id=%s
+              AND om.user_id=%s
+              AND om.status='ACTIVE'
+              AND o.status='ACTIVE'
+              AND u.is_active=TRUE
+            """,
             (self.context.organization_id, self.context.user_id),
         )
         row = self.cur.fetchone()
@@ -339,10 +587,6 @@ class POLApplicationBoundary:
             raise ValueError("Order not found.")
         order = dict(order)
         if actor_role == "RETAILER":
-            org_check = self.cur.execute(
-                "SELECT id FROM retailers WHERE id = %s AND organization_id = %s",
-                (order["retailer_id"], self.context.organization_id),
-            ) or True
             self.cur.execute(
                 "SELECT 1 FROM retailers WHERE id = %s AND organization_id = %s",
                 (order["retailer_id"], self.context.organization_id),
@@ -495,9 +739,26 @@ class POLApplicationBoundary:
             driver_phone=driver_phone,
         )
 
+    def vendor_delivery_stage(self, *, order_id, target_status, reason=None):
+        return _transition_delivery_stage(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            order_id=order_id,
+            target_status=target_status,
+            reason=reason,
+        )
+
     def retailer_confirm_delivery(self, *, order_id, recipient_name=None,
                                     otp_code=None, proof_type="OTP_CODE",
-                                    proof_media_id=None, issue_reported=None):
+                                    proof_media_id=None, issue_reported=None, delivered_items=None):
+        if otp_code:
+            # G-438: the attempt cap must survive per-request rollback, so each
+            # verification attempt is recorded in an independent transaction
+            # before the confirmation transaction starts. An expired or already
+            # consumed OTP is not counted; the canonical service still raises
+            # the precise error for those cases.
+            self._record_delivery_otp_attempt(order_id)
         return _confirm_delivery(
             self.cur,
             user_id=self.context.user_id,
@@ -508,9 +769,50 @@ class POLApplicationBoundary:
             proof_type=proof_type,
             proof_media_id=proof_media_id,
             issue_reported=issue_reported,
+            delivered_items=delivered_items,
         )
 
     # ── Delivery Tracking Methods (Stage 23) ───────────────────────
+
+
+    _DELIVERY_OTP_MAX_ATTEMPTS = 5
+
+    def _record_delivery_otp_attempt(self, order_id):
+        """Record one delivery-OTP verification attempt atomically and durably.
+
+        Uses an independent connection so the counter survives the rollback of
+        the rejected confirmation request. Concurrent verifications serialize on
+        the delivery_otp_attempts row; the cap (5, per D-018 max-attempts policy)
+        is enforced by the guarded RETURNING increment.
+        """
+        from scripts.api.db import get_runtime_connection
+
+        conn = get_runtime_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO delivery_otp_attempts AS a (delivery_id, attempt_count, last_attempt_at)
+                    SELECT d.id, 1, now()
+                    FROM deliveries d
+                    WHERE d.order_id = %s
+                      AND d.delivery_otp IS NOT NULL
+                      AND d.delivery_otp_used_at IS NULL
+                      AND (d.delivery_otp_expires_at IS NULL OR d.delivery_otp_expires_at > now())
+                    ON CONFLICT (delivery_id) DO UPDATE
+                      SET attempt_count = a.attempt_count + 1,
+                          last_attempt_at = now(),
+                          updated_at = now()
+                    RETURNING attempt_count;
+                    """,
+                    (order_id,),
+                )
+                row = cur.fetchone()
+                conn.commit()
+                if row and int(row[0]) > self._DELIVERY_OTP_MAX_ATTEMPTS:
+                    raise ValueError("Delivery OTP attempt limit has been reached.")
+        finally:
+            conn.close()
 
     def delivery_get(self, *, order_id):
         self.order_get(order_id=order_id)
@@ -596,6 +898,8 @@ class POLApplicationBoundary:
         from scripts.delivery_exceptions import list_delivery_exceptions as _list
         return _list(
             self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
             order_id=order_id,
             delivery_id=delivery_id,
             status=status,
@@ -605,7 +909,12 @@ class POLApplicationBoundary:
 
     def delivery_exception_get(self, *, exception_id):
         from scripts.delivery_exceptions import get_delivery_exception as _get
-        result = _get(self.cur, exception_id=exception_id)
+        result = _get(
+            self.cur,
+            user_id=self.context.user_id,
+            organization_id=self.context.organization_id,
+            exception_id=exception_id,
+        )
         if not result:
             raise ValueError("Delivery exception not found.")
         return result
@@ -679,6 +988,12 @@ class POLApplicationBoundary:
             organization_id=self.context.organization_id,
         )
 
+    def return_refund_approve(self, *, return_id, reason=None):
+        return CanonicalReturnService.approve_refund(
+            self.cur, self.context.user_id, return_id,
+            self.context.organization_id, reason=reason,
+        )
+
     def return_transition(self, *, return_id, target_status, reason=None, approved_refund_amount_toman=None):
         return CanonicalReturnService.transition(
             self.cur, self.context.user_id, return_id, target_status,
@@ -738,50 +1053,188 @@ class POLApplicationBoundary:
                 filtered.append(ret)
         return {"returns": filtered, "count": len(filtered)}
 
-    def dispute_open(self, *, order_id, description, evidence_media_id=None):
+    def dispute_open(self, *, order_id, claimed_amount_toman, description,
+                     evidence_media_id, items, idempotency_key):
         if not self.context.organization_id:
             raise PermissionError("Dispute open requires an organization context.")
+        from scripts.canonical_dispute import CanonicalDisputeService
+
+        # Resolve the retailer/vendor parties from the active tenant rather than
+        # accepting them from the client.
         self.cur.execute(
-            "SELECT id, retailer_id, vendor_id FROM orders WHERE id = %s",
-            (order_id,),
+            """
+            SELECT o.retailer_id, o.vendor_id
+            FROM orders o
+            JOIN retailers r ON r.id=o.retailer_id
+            WHERE o.id=%s AND r.organization_id=%s
+            LIMIT 1
+            """,
+            (order_id, self.context.organization_id),
         )
-        order = self.cur.fetchone()
-        if not order:
-            raise KeyError("Order not found.")
-        order = dict(order)
+        context = self.cur.fetchone()
+        if not context:
+            raise PermissionError("Order is not in the active retailer tenant.")
+
+        normalized_items = [
+            {
+                "order_item_id": str(x.order_item_id),
+                "quantity": int(x.quantity),
+                "claimed_amount_toman": int(x.claimed_amount_toman),
+                "reason_code": str(x.reason_code),
+            } if hasattr(x, "order_item_id") else {
+                "order_item_id": str(x["order_item_id"]),
+                "quantity": int(x["quantity"]),
+                "claimed_amount_toman": int(x["claimed_amount_toman"]),
+                "reason_code": str(x["reason_code"]),
+            }
+            for x in items
+        ]
+        return CanonicalDisputeService.open_dispute_v2(
+            self.cur,
+            order_id=str(order_id),
+            retailer_id=str(context["retailer_id"]),
+            vendor_id=str(context["vendor_id"]),
+            claimed_amount=int(claimed_amount_toman),
+            description=str(description),
+            evidence_media_id=str(evidence_media_id),
+            items=normalized_items,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            idempotency_key=(str(idempotency_key) if idempotency_key else None),
+        )
+
+
+    def dispute_investigate(self, *, dispute_id, reason=None):
+        self._require_dispute_resolution_context()
+        from scripts.canonical_dispute import CanonicalDisputeService
+        result = CanonicalDisputeService.investigate_dispute(
+            self.cur,
+            dispute_id=str(dispute_id),
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            reason=reason.strip() if reason else None,
+        )
         self.cur.execute(
-            "SELECT id FROM retailers WHERE id = %s AND organization_id = %s",
-            (order["retailer_id"], self.context.organization_id),
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s,'DISPUTE_INVESTIGATING','DISPUTE',%s,%s,%s,%s)
+            """,
+            (self.context.user_id, dispute_id, Json(result), reason, self.context.correlation_id),
         )
-        if not self.cur.fetchone():
-            raise PermissionError("Only the order retailer may open a dispute.")
+        return result
+
+
+    def dispute_resolve(self, *, dispute_id, outcome, approved_amount_toman, reason):
+        self._require_dispute_resolution_context()
+        from scripts.canonical_dispute import CanonicalDisputeService
+        result = CanonicalDisputeService.resolve_canonical(
+            self.cur,
+            dispute_id=str(dispute_id),
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            outcome=outcome,
+            approved_amount=int(approved_amount_toman),
+            reason=reason,
+        )
         self.cur.execute(
-            "SELECT id FROM settlements WHERE order_id = %s AND status != 'DISPUTED' ORDER BY created_at DESC LIMIT 1",
-            (order_id,),
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_before, state_after, reason, correlation_id)
+            VALUES (%s,'DISPUTE_RESOLVED','DISPUTE',%s,%s,%s,%s,%s)
+            """,
+            (
+                self.context.user_id, dispute_id,
+                Json({"status": "INVESTIGATING"}),
+                Json(result), reason.strip(), self.context.correlation_id,
+            ),
         )
-        settlement = self.cur.fetchone()
-        if not settlement:
-            raise ValueError("No active settlement found for this order.")
-        disp_id = str(uuid4())
+        return result
+
+
+    def dispute_close(self, *, dispute_id, reason=None):
+        self._require_dispute_resolution_context()
+        from scripts.canonical_dispute import CanonicalDisputeService
+        result = CanonicalDisputeService.close_canonical(
+            self.cur,
+            dispute_id=str(dispute_id),
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            reason=reason.strip() if reason else None,
+        )
         self.cur.execute(
-            "INSERT INTO disputes (id, order_id, retailer_id, vendor_id, dispute_status, claimed_amount_toman, description) "
-            "VALUES (%s, %s, %s, %s, 'OPEN', %s, %s) RETURNING id",
-            (disp_id, order_id, str(order["retailer_id"]), str(order["vendor_id"]), 0, description),
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s,'DISPUTE_CLOSED','DISPUTE',%s,%s,%s,%s)
+            """,
+            (self.context.user_id, dispute_id, Json(result), reason, self.context.correlation_id),
         )
-        self.cur.execute("UPDATE orders SET dispute_status = 'OPEN' WHERE id = %s", (order_id,))
-        self.cur.execute("UPDATE settlements SET status = 'DISPUTED' WHERE id = %s", (str(settlement["id"]),))
-        self.cur.execute(
-            "INSERT INTO outbox_events (id, event_id, event_name, aggregate_type, aggregate_id, payload, status) "
-            "VALUES (%s, %s, 'DISPUTE_OPENED', 'ORDER', %s, %s, 'PENDING')",
-            (str(uuid4()), str(uuid4()), order_id, Json({"dispute_id": disp_id, "amount_toman": 0})),
+        return result
+
+
+    def refund_issue(self, *, dispute_id, amount_toman, payment_id=None,
+                     reason="", idempotency_key=None):
+        from scripts.refund_service import RefundService
+        return RefundService.issue_from_dispute(
+            self.cur,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            dispute_id=str(dispute_id),
+            amount_toman=int(amount_toman),
+            payment_id=str(payment_id) if payment_id else None,
+            reason=str(reason),
+            idempotency_key=str(idempotency_key) if idempotency_key else None,
+            correlation_id=self.context.correlation_id,
         )
-        if evidence_media_id:
-            self.cur.execute(
-                "UPDATE disputes SET evidence_media_id = %s WHERE id = %s",
-                (evidence_media_id, disp_id),
-            )
-        self.cur.execute("SELECT * FROM disputes WHERE id = %s", (disp_id,))
-        return dict(self.cur.fetchone())
+
+
+    def refund_approve(self, *, refund_id, reason=""):
+        from scripts.refund_service import RefundService
+        return RefundService.approve(
+            self.cur,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            refund_id=str(refund_id),
+            reason=str(reason),
+            correlation_id=self.context.correlation_id,
+        )
+
+
+    def refund_complete(self, *, refund_id, reason=""):
+        from scripts.refund_service import RefundService
+        return RefundService.complete(
+            self.cur,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            refund_id=str(refund_id),
+            reason=str(reason),
+            correlation_id=self.context.correlation_id,
+        )
+
+
+    def refund_get(self, *, refund_id):
+        from scripts.refund_service import RefundService
+        return RefundService.get(
+            self.cur,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            refund_id=str(refund_id),
+        )
+
+
+    def refunds_list(self, *, offset=0, limit=50):
+        from scripts.refund_service import RefundService
+        return RefundService.list(
+            self.cur,
+            actor_user_id=str(self.context.user_id),
+            organization_id=str(self.context.organization_id),
+            limit=int(limit),
+            offset=int(offset),
+        )
 
     def dispute_get(self, *, dispute_id):
         if not self.context.organization_id:
@@ -830,6 +1283,10 @@ class POLApplicationBoundary:
             if self.cur.fetchone():
                 filtered.append(disp)
         return {"disputes": filtered, "count": len(filtered)}
+
+    def process_reservation_expiries(self, *, limit=100):
+        self._require_ops_context()
+        return ReservationExpiryWorker.process_expired(self.cur, limit=limit)
 
     def process_vendor_acceptance_timeouts(self, *, limit=100):
         self._require_ops_context()
@@ -923,7 +1380,8 @@ class POLApplicationBoundary:
         "VENDOR_CONFIRMATION", "RETAILER_CONFIRMATION",
     })
 
-    def submit_payment_evidence(self, *, order_id, evidence_type, reference_number, amount_toman, notes=None):
+    def submit_payment_evidence(self, *, order_id, evidence_type, reference_number,
+                                  amount_toman, payment_id=None, evidence_media_id=None, notes=None):
         if evidence_type not in self.VALID_EVIDENCE_TYPES:
             raise ValueError(
                 f"Invalid evidence_type '{evidence_type}'. "
@@ -932,22 +1390,48 @@ class POLApplicationBoundary:
         if not self.context.organization_id:
             raise PermissionError("Payment evidence requires an active organization context.")
 
-        # Locate the order and its payment
-        self.cur.execute(
-            """
-            SELECT o.id AS order_id, o.retailer_id, o.vendor_id,
-                   p.id AS payment_id, p.payment_status, p.retailer_id AS pay_retailer_id,
-                   p.vendor_id AS pay_vendor_id
-            FROM orders o
-            JOIN payments p ON p.order_id = o.id
-            WHERE o.id = %s
-            LIMIT 1
-            """,
-            (order_id,),
-        )
-        row = self.cur.fetchone()
+        # Locate exactly one payment. An order with multiple payment records
+        # must identify the intended payment explicitly.
+        if payment_id:
+            self.cur.execute(
+                """
+                SELECT o.id AS order_id, o.retailer_id, o.vendor_id,
+                       p.id AS payment_id, p.payment_status,
+                       p.retailer_id AS pay_retailer_id,
+                       p.vendor_id AS pay_vendor_id,
+                       p.amount_toman AS payment_amount_toman
+                FROM orders o
+                JOIN payments p ON p.order_id=o.id
+                WHERE o.id=%s AND p.id=%s
+                FOR UPDATE OF p
+                """,
+                (order_id, payment_id),
+            )
+            row=self.cur.fetchone()
+        else:
+            self.cur.execute(
+                """
+                SELECT o.id AS order_id, o.retailer_id, o.vendor_id,
+                       p.id AS payment_id, p.payment_status,
+                       p.retailer_id AS pay_retailer_id,
+                       p.vendor_id AS pay_vendor_id,
+                       p.amount_toman AS payment_amount_toman
+                FROM orders o
+                JOIN payments p ON p.order_id=o.id
+                WHERE o.id=%s
+                ORDER BY p.created_at DESC, p.id DESC
+                LIMIT 2
+                FOR UPDATE OF p
+                """,
+                (order_id,),
+            )
+            rows=self.cur.fetchall()
+            if len(rows) != 1:
+                raise ValueError("Explicit payment_id is required when an order has multiple payment records.")
+            row=rows[0]
+
         if not row:
-            raise ValueError(f"Order {order_id} not found or has no payment.")
+            raise ValueError(f"Order {order_id} not found or selected payment does not exist.")
 
         # Tenant check: actor must belong to the retailer or vendor org of this order
         pay_retailer_id = str(row["pay_retailer_id"])
@@ -959,12 +1443,14 @@ class POLApplicationBoundary:
             SELECT 1
             FROM organization_memberships om
             JOIN organizations o ON o.id = om.organization_id
+            JOIN users u ON u.id = om.user_id
             WHERE om.user_id = %s
               AND om.organization_id = %s
               AND om.status = 'ACTIVE'
               AND o.status = 'ACTIVE'
+              AND u.is_active = TRUE
               AND (
-                  (om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+                  (om.role = 'RETAILER_OWNER'
                    AND EXISTS (SELECT 1 FROM retailers r WHERE r.id = %s AND r.organization_id = %s))
                   OR
                   (om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
@@ -979,27 +1465,90 @@ class POLApplicationBoundary:
         if not self.cur.fetchone():
             raise PermissionError("Actor is not an authorized member of this order's retailer or vendor tenant.")
 
+        if int(amount_toman) <= 0:
+            raise ValueError("Payment evidence amount must be positive.")
+        if int(amount_toman) > int(row["payment_amount_toman"]):
+            raise ValueError("Payment evidence amount exceeds the selected payment amount.")
+
+        if evidence_type == "RECEIPT_IMAGE" and not evidence_media_id:
+            raise ValueError("RECEIPT_IMAGE requires evidence_media_id.")
+        if evidence_media_id:
+            self.cur.execute(
+                """
+                SELECT id, status, uploaded_by_user_id, upload_target_type, upload_target_id
+                FROM media_assets
+                WHERE id=%s
+                FOR SHARE
+                """,
+                (str(evidence_media_id),),
+            )
+            media = self.cur.fetchone()
+            if not media:
+                raise ValueError("Payment evidence media was not found.")
+            if str(media["status"]).upper() != "READY":
+                raise ValueError("Payment evidence media must be READY.")
+            if str(media["uploaded_by_user_id"]) != str(self.context.user_id):
+                raise PermissionError("Payment evidence media is not owned by the current actor.")
+            target_type = str(media["upload_target_type"] or "").upper()
+            target_id = str(media["upload_target_id"]) if media["upload_target_id"] else None
+            if target_type == "ORDER":
+                if target_id != str(row["order_id"]):
+                    raise PermissionError("Payment evidence media is not bound to this order.")
+            elif target_type == "PAYMENT":
+                if target_id != str(row["payment_id"]):
+                    raise PermissionError("Payment evidence media is not bound to this payment.")
+            else:
+                raise PermissionError("Payment evidence media must be bound to this order or payment.")
+
         evidence_id = str(uuid4())
         self.cur.execute(
             """
             INSERT INTO payment_evidence (
                 id, payment_id, evidence_type, external_reference,
                 claimed_amount_toman, observed_amount_toman,
-                captured_by_user_id, observation_scope, metadata
+                evidence_media_id, captured_by_user_id, observation_scope, metadata
             ) VALUES (
                 %s, %s, %s, %s,
-                %s, %s,
+                %s, %s, %s,
                 %s, 'SINGLE_PAYMENT', %s
-            ) RETURNING *;
+            )
+            ON CONFLICT (external_reference) WHERE external_reference IS NOT NULL
+            DO NOTHING
+            RETURNING *;
             """,
             (
                 evidence_id, str(row["payment_id"]), evidence_type, reference_number,
-                amount_toman, amount_toman,
+                amount_toman, amount_toman, str(evidence_media_id) if evidence_media_id else None,
                 self.context.user_id,
                 Json({"notes": notes} if notes else {}),
             ),
         )
         ev = self.cur.fetchone()
+        if ev is None and reference_number:
+            self.cur.execute(
+                """
+                SELECT id, payment_id, evidence_type, external_reference,
+                       claimed_amount_toman, captured_at, captured_by_user_id
+                FROM payment_evidence
+                WHERE external_reference=%s
+                LIMIT 1
+                """,
+                (reference_number,),
+            )
+            existing = self.cur.fetchone()
+            if not existing:
+                raise RuntimeError("Payment evidence replay conflict could not be resolved.")
+            if str(existing["payment_id"]) != str(row["payment_id"]):
+                raise ValueError("This external reference is already attached to another payment.")
+            return {
+                "evidence_id": str(existing["id"]),
+                "payment_id": str(existing["payment_id"]),
+                "evidence_type": existing["evidence_type"],
+                "reference_number": existing["external_reference"],
+                "amount_toman": int(existing["claimed_amount_toman"]),
+                "captured_at": existing["captured_at"].isoformat() if existing["captured_at"] else None,
+                "idempotent_replay": True,
+            }
         return {
             "evidence_id": str(ev["id"]),
             "payment_id": str(ev["payment_id"]),
@@ -1007,6 +1556,7 @@ class POLApplicationBoundary:
             "reference_number": ev["external_reference"],
             "amount_toman": int(ev["claimed_amount_toman"]),
             "captured_at": ev["captured_at"].isoformat() if ev["captured_at"] else None,
+            "idempotent_replay": False,
         }
 
     def get_payment_evidence(self, *, order_id):
@@ -1015,9 +1565,16 @@ class POLApplicationBoundary:
 
         self.cur.execute(
             """
-            SELECT p.id AS payment_id
+            SELECT p.id AS payment_id,
+                   p.retailer_id,
+                   p.vendor_id,
+                   r.organization_id AS retailer_org_id,
+                   v.organization_id AS vendor_org_id
             FROM payments p
-            WHERE p.order_id = %s
+            JOIN retailers r ON r.id=p.retailer_id
+            JOIN vendors v ON v.id=p.vendor_id
+            WHERE p.order_id=%s
+            ORDER BY p.created_at DESC, p.id DESC
             LIMIT 1
             """,
             (order_id,),
@@ -1025,6 +1582,34 @@ class POLApplicationBoundary:
         pay = self.cur.fetchone()
         if not pay:
             raise ValueError(f"Order {order_id} has no payment record.")
+
+        self.cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN organizations o ON o.id=om.organization_id
+            JOIN users u ON u.id=om.user_id
+            WHERE om.user_id=%s
+              AND om.organization_id=%s
+              AND om.status='ACTIVE'
+              AND o.status='ACTIVE'
+              AND u.is_active=TRUE
+              AND (
+                 (om.organization_id=%s AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF'))
+                 OR
+                 (om.organization_id=%s AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF'))
+              )
+            LIMIT 1
+            """,
+            (
+                self.context.user_id,
+                self.context.organization_id,
+                pay["retailer_org_id"],
+                pay["vendor_org_id"],
+            ),
+        )
+        if not self.cur.fetchone():
+            raise PermissionError("Actor is not authorized to read this payment evidence.")
 
         self.cur.execute(
             """
@@ -1051,53 +1636,242 @@ class POLApplicationBoundary:
             for r in rows
         ]
 
-    def verify_payment(self, *, order_id, notes=None):
+    def verify_payment(self, *, order_id, notes=None, payment_id=None):
         if not self.context.organization_id:
             raise PermissionError("Payment verification requires an active organization context.")
+        if payment_id is None:
+            # Multi-payment symmetry with submit_payment_evidence: verification
+            # must never silently pick "the latest" payment record.
+            self.cur.execute(
+                "SELECT COUNT(*) AS c FROM payments WHERE order_id = %s;",
+                (order_id,),
+            )
+            if int(self.cur.fetchone()["c"]) > 1:
+                raise ValueError(
+                    "Explicit payment_id is required when an order has multiple "
+                    "payment records."
+                )
 
-        # Only vendor can verify payment
         self.cur.execute(
             """
-            SELECT p.id AS payment_id, p.payment_status, p.vendor_id,
-                   v.organization_id AS vendor_org_id
+            SELECT p.*, v.organization_id AS vendor_org_id,
+                   r.organization_id AS retailer_org_id
             FROM payments p
-            JOIN vendors v ON v.id = p.vendor_id
-            WHERE p.order_id = %s
+            JOIN vendors v ON v.id=p.vendor_id
+            JOIN retailers r ON r.id=p.retailer_id
+            WHERE p.order_id=%s
+              AND (%s::uuid IS NULL OR p.id=%s::uuid)
+            ORDER BY p.created_at DESC, p.id DESC
             LIMIT 1
+            FOR UPDATE OF p
             """,
-            (order_id,),
+            (order_id, payment_id, payment_id),
         )
         pay = self.cur.fetchone()
         if not pay:
             raise ValueError(f"Order {order_id} has no payment record.")
 
-        if str(pay["vendor_org_id"]) != self.context.organization_id:
-            raise PermissionError("Only the vendor tenant may verify a payment.")
+        self.cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships om
+            JOIN organizations o ON o.id=om.organization_id
+            JOIN users u ON u.id=om.user_id
+            WHERE om.user_id=%s
+              AND om.organization_id=%s
+              AND om.status='ACTIVE'
+              AND o.status='ACTIVE'
+              AND u.is_active=TRUE
+              AND om.role IN ('VENDOR_OWNER','OPS_AGENT','OPS_ADMIN','ADMIN_SUPER','SUPER_ADMIN')
+            LIMIT 1
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        if not self.cur.fetchone() or str(pay["vendor_org_id"]) != str(self.context.organization_id):
+            raise PermissionError("Only an active vendor/operations actor may verify this payment.")
 
         if pay["payment_status"] == "SUCCESS":
-            return {"payment_id": str(pay["payment_id"]), "status": "SUCCESS", "message": "Payment already verified."}
+            return {
+                "payment_id": str(pay["id"]),
+                "status": "SUCCESS",
+                "message": "Payment already verified.",
+                "idempotent_replay": True,
+            }
 
         self.cur.execute(
             """
-            UPDATE payments
-            SET payment_status = 'SUCCESS',
-                verified_by = %s,
-                verified_at = now(),
-                paid_at = COALESCE(paid_at, now())
-            WHERE id = %s AND payment_status IN ('PENDING', 'INITIATED')
-            RETURNING *;
+            SELECT id, evidence_type, external_reference,
+                   claimed_amount_toman, observed_amount_toman,
+                   captured_at
+            FROM payment_evidence
+            WHERE payment_id=%s
+            ORDER BY captured_at DESC, id DESC
+            FOR UPDATE
             """,
-            (self.context.user_id, str(pay["payment_id"])),
+            (str(pay["id"]),),
+        )
+        evidences = self.cur.fetchall()
+        matching = [
+            ev for ev in evidences
+            if ev["claimed_amount_toman"] is not None
+            and ev["observed_amount_toman"] is not None
+            and int(ev["claimed_amount_toman"]) == int(pay["amount_toman"])
+            and int(ev["observed_amount_toman"]) == int(pay["amount_toman"])
+        ]
+        if not matching:
+            raise ValueError(
+                "Payment verification requires a trusted evidence record whose observed and claimed amount exactly matches the payment amount."
+            )
+        evidence = matching[0]
+
+        cur_ref = evidence["external_reference"]
+        self.cur.execute(
+            """
+            UPDATE payments
+            SET payment_status='SUCCESS',
+                reference_number=COALESCE(reference_number,%s),
+                verified_by=%s,
+                verified_at=COALESCE(verified_at,now()),
+                paid_at=COALESCE(paid_at,now())
+            WHERE id=%s AND payment_status IN ('PENDING','INITIATED')
+            RETURNING *
+            """,
+            (cur_ref, self.context.user_id, str(pay["id"])),
         )
         updated = self.cur.fetchone()
         if not updated:
+            # Another verifier committed the terminal result; return the canonical replay.
+            self.cur.execute("SELECT * FROM payments WHERE id=%s", (str(pay["id"]),))
+            replay = self.cur.fetchone()
+            if replay and replay["payment_status"] == "SUCCESS":
+                return {
+                    "payment_id": str(replay["id"]),
+                    "status": "SUCCESS",
+                    "message": "Payment already verified.",
+                    "idempotent_replay": True,
+                }
             raise ValueError("Payment cannot be verified in its current status.")
 
+        gross = int(updated["amount_toman"])
+        commission = int(round(gross * float(PILOT_COMMISSION_RATE)))
+
+        self.cur.execute(
+            """
+            SELECT id, status
+            FROM settlements
+            WHERE order_id=%s AND vendor_id=%s
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (str(updated["order_id"]), str(updated["vendor_id"])),
+        )
+        settlement = self.cur.fetchone()
+        if settlement is None:
+            self.cur.execute(
+                """
+                INSERT INTO settlements (
+                    id, order_id, vendor_id, gross_amount_toman,
+                    commission_rate, commission_amount_toman,
+                    net_vendor_amount_toman, status
+                )
+                VALUES (%s,%s,%s,%s,%s,%s,%s,'CALCULATED')
+                RETURNING id, status
+                """,
+                (
+                    str(uuid4()), str(updated["order_id"]), str(updated["vendor_id"]),
+                    gross, PILOT_COMMISSION_RATE, commission, gross - commission,
+                ),
+            )
+            settlement = self.cur.fetchone()
+        elif settlement["status"] == "PENDING":
+            self.cur.execute(
+                """
+                UPDATE settlements
+                SET status='CALCULATED'
+                WHERE id=%s
+                RETURNING id, status
+                """,
+                (str(settlement["id"]),),
+            )
+            settlement = self.cur.fetchone()
+
+        # Invoice creation remains governed by the open invoice-timing decision.
+        # When an invoice already exists and exactly matches the payment amount,
+        # mark it paid as part of this verification transaction.
+        self.cur.execute(
+            """
+            UPDATE invoices
+            SET status='PAID'
+            WHERE order_id=%s
+              AND total_amount=%s
+              AND status IN ('ISSUED','ADJUSTED')
+            RETURNING id
+            """,
+            (str(updated["order_id"]), gross),
+        )
+
+        self.cur.execute(
+            """
+            INSERT INTO outbox_events (
+                id, event_id, event_name, aggregate_type, aggregate_id,
+                payload, status, target_user_id, target_organization_id,
+                dedupe_key, channel_hint
+            )
+            SELECT
+                gen_random_uuid(), gen_random_uuid(), 'PAYMENT_VERIFIED', 'PAYMENT', %s,
+                jsonb_build_object(
+                    'payment_id', %s,
+                    'order_id', %s,
+                    'amount_toman', %s,
+                    'evidence_id', %s
+                ),
+                'PENDING', om.user_id, om.organization_id,
+                %s, 'INBOX'
+            FROM organization_memberships om
+            JOIN organizations org ON org.id=om.organization_id
+            WHERE om.organization_id=%s
+              AND om.status='ACTIVE'
+              AND org.status='ACTIVE'
+              AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+            ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+            """,
+            (
+                str(updated["id"]), str(updated["id"]), str(updated["order_id"]),
+                gross, str(evidence["id"]),
+                f"payment_verified:{updated['id']}",
+                str(pay["retailer_org_id"]),
+            ),
+        )
+
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (id, actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s, %s, 'PAYMENT_VERIFIED', 'PAYMENT', %s, %s, %s, %s)
+            """,
+            (
+                str(uuid4()), self.context.user_id, str(updated["id"]),
+                Json({
+                    "payment_id": str(updated["id"]),
+                    "order_id": str(updated["order_id"]),
+                    "amount_toman": int(updated["amount_toman"]),
+                    "verified_by": str(self.context.user_id),
+                }),
+                notes or "direct-transfer payment verified",
+                self.context.correlation_id,
+            ),
+        )
         return {
             "payment_id": str(updated["id"]),
-            "status": updated["payment_status"],
+            "status": "SUCCESS",
             "verified_at": updated["verified_at"].isoformat() if updated["verified_at"] else None,
+            "evidence_id": str(evidence["id"]),
+            "settlement_id": str(settlement["id"]) if settlement else None,
+            "idempotent_replay": False,
         }
+
 
     def deliver_external_notifications(self, *, limit=100):
         self._require_ops_context()
@@ -1115,9 +1889,10 @@ class POLApplicationBoundary:
             params.append(self.context.organization_id)
             where = "i.vendor_organization_id = %s"
         else:
-            params.append(self.context.organization_id)
-            where = "(i.retailer_organization_id = %s OR i.vendor_organization_id = %s)"
-            params.append(self.context.organization_id)
+            # Operator administration is intentionally cross-tenant for read-only
+            # invoice visibility, matching the RBAC/API contract. Tenant users are
+            # already handled by the RETAILER/VENDOR branches above.
+            where = "1 = 1"
         params.extend([limit, offset])
         self.cur.execute(
             f"""
@@ -1315,6 +2090,968 @@ class POLApplicationBoundary:
         )
         return self.cur.fetchall()
 
+    def catalog_match_barcode(self, *, raw_barcode: str, scan_source: str):
+        normalized = raw_barcode.strip()
+        if not normalized:
+            raise ValueError("Barcode is required.")
+        self.cur.execute(
+            """
+            SELECT p.id, p.master_sku, p.canonical_name_fa,
+                   b.name_fa AS brand_name, p.default_pack_quantity, ma.storage_key AS image_url
+            FROM product_identifiers pi
+            JOIN products p ON p.id = pi.product_id AND p.is_active = TRUE
+            JOIN brands b ON b.id = p.brand_id
+            LEFT JOIN LATERAL (
+                SELECT ma.storage_key
+                FROM product_media pm
+                JOIN media_assets ma ON ma.id = pm.media_asset_id AND ma.status = 'READY'
+                WHERE pm.product_id = p.id
+                ORDER BY pm.is_primary DESC, pm.display_order, pm.created_at
+                LIMIT 1
+            ) ma ON TRUE
+            LEFT JOIN vendors v ON v.id = pi.vendor_id
+            WHERE pi.identifier_value = %s
+              AND (pi.vendor_id IS NULL OR v.organization_id = %s::uuid)
+            ORDER BY pi.vendor_id NULLS FIRST, pi.is_primary DESC
+            LIMIT 1
+            """,
+            (normalized, self.context.organization_id),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            return {
+                "match_status": "NO_MATCH",
+                "confidence_score": 0.0,
+                "suggested_action": "CREATE_PRODUCT_CANDIDATE",
+            }
+        result = dict(row)
+        result["id"] = str(result["id"])
+        return {
+            "match_status": "EXACT",
+            "confidence_score": 1.0,
+            "product": {
+                "id": result["id"],
+                "master_sku": result["master_sku"],
+                "canonical_name_fa": result["canonical_name_fa"],
+                "brand_name": result["brand_name"],
+                "default_pack_quantity": result["default_pack_quantity"],
+                "image_url": result.get("image_url"),
+            },
+        }
+
+    def catalog_create_product_candidate(
+        self,
+        *,
+        proposed_title: str,
+        proposed_brand: str | None,
+        barcode: str | None,
+        vendor_sku: str | None,
+        photo_asset_id: str | None,
+    ):
+        if not self.context.organization_id:
+            raise PermissionError("Candidate creation requires an active organization context.")
+
+        self.cur.execute(
+            """
+            SELECT 1
+            FROM organization_memberships
+            WHERE user_id=%s
+              AND organization_id=%s
+              AND role IN ('VENDOR_OWNER','VENDOR_STAFF')
+              AND status='ACTIVE'
+            LIMIT 1
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        if not self.cur.fetchone():
+            raise PermissionError("Only active vendor members may create product candidates.")
+
+        self.cur.execute(
+            """
+            SELECT id, user_id
+            FROM vendors
+            WHERE organization_id=%s::uuid AND status='ACTIVE'
+            ORDER BY id
+            LIMIT 1
+            """,
+            (self.context.organization_id,),
+        )
+        vendor = self.cur.fetchone()
+        if not vendor:
+            raise PermissionError("No active vendor exists for this organization.")
+
+        normalized_barcode = None
+        if barcode:
+            normalized_barcode = "".join(ch for ch in str(barcode).strip() if ch.isalnum())
+            if len(normalized_barcode) < 8 or len(normalized_barcode) > 32:
+                raise ValueError("Barcode must contain between 8 and 32 alphanumeric characters.")
+
+        normalized_vendor_sku = vendor_sku.strip() if vendor_sku and vendor_sku.strip() else None
+        proposed_title = proposed_title.strip()
+        if not proposed_title:
+            raise ValueError("proposed_title is required.")
+
+        if photo_asset_id:
+            self.cur.execute(
+                "SELECT id FROM media_assets WHERE id=%s AND uploaded_by_user_id=%s AND status='READY'",
+                (photo_asset_id, self.context.user_id),
+            )
+            if not self.cur.fetchone():
+                raise PermissionError("Candidate photo must be a READY asset owned by the current user.")
+
+        vendor_id = str(vendor["id"])
+
+        # Serialize the natural-key check so two concurrent submissions cannot
+        # create/replace competing candidate associations for one vendor SKU.
+        if normalized_vendor_sku:
+            self.cur.execute(
+                "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                (f"{vendor_id}:{normalized_vendor_sku}",),
+            )
+            self.cur.execute(
+                """
+                SELECT id, product_id, candidate_id, listing_status
+                FROM vendor_products
+                WHERE vendor_id=%s AND vendor_sku=%s
+                FOR UPDATE
+                """,
+                (vendor_id, normalized_vendor_sku),
+            )
+            existing_vp = self.cur.fetchone()
+            if existing_vp:
+                if existing_vp["product_id"]:
+                    raise ValueError("vendor_sku is already bound to a canonical product.")
+                if existing_vp["candidate_id"]:
+                    self.cur.execute(
+                        "SELECT id, status FROM product_candidates WHERE id=%s FOR UPDATE",
+                        (existing_vp["candidate_id"],),
+                    )
+                    candidate = self.cur.fetchone()
+                    if candidate and candidate["status"] != "REJECTED":
+                        return {
+                            "candidate_id": str(candidate["id"]),
+                            "vendor_product_id": str(existing_vp["id"]),
+                            "status": candidate["status"],
+                            "listing_status": existing_vp["listing_status"],
+                            "idempotent_replay": True,
+                            "message": "کاندیدای موجود برای این SKU بازگردانده شد.",
+                        }
+                    raise ValueError("vendor_sku is linked to a rejected candidate; use the existing resolution workflow.")
+
+        if normalized_barcode and not normalized_vendor_sku:
+            self.cur.execute(
+                """
+                SELECT id, status
+                FROM product_candidates
+                WHERE vendor_id=%s
+                  AND barcode=%s
+                  AND status='PENDING_REVIEW'
+                ORDER BY created_at DESC
+                LIMIT 1
+                FOR UPDATE
+                """,
+                (vendor_id, normalized_barcode),
+            )
+            existing_candidate = self.cur.fetchone()
+            if existing_candidate:
+                return {
+                    "candidate_id": str(existing_candidate["id"]),
+                    "status": existing_candidate["status"],
+                    "idempotent_replay": True,
+                    "message": "کاندیدای باز موجود برای این بارکد بازگردانده شد.",
+                }
+
+        candidate_id = str(uuid4())
+        if normalized_barcode and not normalized_vendor_sku:
+            self.cur.execute(
+                """
+                INSERT INTO product_candidates
+                    (id, vendor_id, proposed_title, proposed_brand, barcode, vendor_sku, photo_asset_id, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'PENDING_REVIEW')
+                ON CONFLICT (vendor_id, barcode)
+                    WHERE barcode IS NOT NULL AND status = 'PENDING_REVIEW'
+                DO NOTHING
+                RETURNING id, status
+                """,
+                (
+                    candidate_id,
+                    vendor_id,
+                    proposed_title,
+                    proposed_brand,
+                    normalized_barcode,
+                    normalized_vendor_sku,
+                    photo_asset_id,
+                ),
+            )
+            row = self.cur.fetchone()
+            if row is None:
+                self.cur.execute(
+                    """
+                    SELECT id, status
+                    FROM product_candidates
+                    WHERE vendor_id=%s
+                      AND barcode=%s
+                      AND status='PENDING_REVIEW'
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    """,
+                    (vendor_id, normalized_barcode),
+                )
+                row = self.cur.fetchone()
+                if not row:
+                    raise RuntimeError("Pending barcode candidate disappeared during idempotent replay.")
+                return {
+                    "candidate_id": str(row["id"]),
+                    "vendor_product_id": None,
+                    "status": row["status"],
+                    "listing_status": None,
+                    "idempotent_replay": True,
+                    "message": "کاندیدای باز موجود برای این بارکد بازگردانده شد.",
+                }
+        else:
+            self.cur.execute(
+                """
+                INSERT INTO product_candidates
+                    (id, vendor_id, proposed_title, proposed_brand, barcode, vendor_sku, photo_asset_id, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'PENDING_REVIEW')
+                RETURNING id, status
+                """,
+                (
+                    candidate_id,
+                    vendor_id,
+                    proposed_title,
+                    proposed_brand,
+                    normalized_barcode,
+                    normalized_vendor_sku,
+                    photo_asset_id,
+                ),
+            )
+            row = self.cur.fetchone()
+
+        vendor_product_id = None
+        if normalized_vendor_sku:
+            self.cur.execute(
+                """
+                INSERT INTO vendor_products
+                    (vendor_id, product_id, candidate_id, vendor_sku, listing_status, is_active)
+                VALUES (%s, NULL, %s, %s, 'DRAFT_PENDING_CATALOG', FALSE)
+                RETURNING id
+                """,
+                (vendor_id, candidate_id, normalized_vendor_sku),
+            )
+            vendor_product_id = str(self.cur.fetchone()["id"])
+            self.cur.execute(
+                """
+                INSERT INTO vendor_inventory
+                    (vendor_product_id, inventory_unit, physical_quantity, reserved_quantity, moq, freshness_status)
+                VALUES (%s, 'CARTON', 0, 0, 1, 'UNKNOWN')
+                ON CONFLICT (vendor_product_id) DO NOTHING
+                """,
+                (vendor_product_id,),
+            )
+
+        self.cur.execute(
+            """
+            INSERT INTO outbox_events (
+                id, event_id, event_name, aggregate_type, aggregate_id, payload, status,
+                target_user_id, target_organization_id, dedupe_key, channel_hint
+            )
+            VALUES (
+                %s, %s, 'product_candidate_created', 'PRODUCT_CANDIDATE', %s, %s, 'PENDING',
+                %s, %s, %s, 'INBOX'
+            )
+            ON CONFLICT (event_name, dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+            """,
+            (
+                str(uuid4()),
+                str(uuid4()),
+                candidate_id,
+                Json({
+                    "candidate_id": candidate_id,
+                    "vendor_id": vendor_id,
+                    "barcode": normalized_barcode,
+                    "vendor_sku": normalized_vendor_sku,
+                    "status": "PENDING_REVIEW",
+                }),
+                str(vendor["user_id"]),
+                str(self.context.organization_id),
+                "PRODUCT_CANDIDATE_CREATED:" + candidate_id,
+            ),
+        )
+        return {
+            "candidate_id": candidate_id,
+            "vendor_product_id": vendor_product_id,
+            "status": row["status"],
+            "listing_status": "DRAFT_PENDING_CATALOG" if vendor_product_id else None,
+            "idempotent_replay": False,
+            "message": "کاندیدا با موفقیت ثبت شد و در کارتابل بررسی تیم کاتالوگ قرار گرفت.",
+        }
+
+    def admin_product_candidates_list(self, *, status="PENDING_REVIEW", query=None, offset=0, limit=50):
+        self._require_catalog_admin()
+        allowed = {"PENDING_REVIEW", "APPROVED_CANONICAL", "MERGED_EXISTING", "REJECTED"}
+        if status and status not in allowed:
+            raise ValueError("Invalid candidate status.")
+        params = []
+        clauses = ["1=1"]
+        if status:
+            clauses.append("pc.status=%s")
+            params.append(status)
+        if query:
+            needle = "%" + query.strip() + "%"
+            clauses.append("(pc.proposed_title ILIKE %s OR COALESCE(pc.proposed_brand,'') ILIKE %s OR COALESCE(pc.barcode,'') ILIKE %s OR COALESCE(pc.vendor_sku,'') ILIKE %s)")
+            params.extend([needle, needle, needle, needle])
+        where = " AND ".join(clauses)
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT
+                pc.id AS candidate_id,
+                pc.vendor_id,
+                v.business_name AS vendor_name,
+                pc.proposed_title,
+                pc.proposed_brand,
+                pc.barcode,
+                pc.vendor_sku,
+                pc.photo_asset_id,
+                pc.status,
+                pc.resolved_product_id,
+                pc.reviewed_by_user_id,
+                pc.review_notes,
+                pc.created_at,
+                pc.resolved_at
+            FROM product_candidates pc
+            JOIN vendors v ON v.id=pc.vendor_id
+            WHERE {where}
+            ORDER BY
+                CASE pc.status WHEN 'PENDING_REVIEW' THEN 0 ELSE 1 END,
+                pc.created_at ASC,
+                pc.id
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        rows=[]
+        for row in self.cur.fetchall():
+            item=dict(row)
+            for key in ("candidate_id","vendor_id","photo_asset_id","resolved_product_id","reviewed_by_user_id"):
+                if item.get(key):
+                    item[key]=str(item[key])
+            for key in ("created_at","resolved_at"):
+                if item.get(key):
+                    item[key]=item[key].isoformat()
+            rows.append(item)
+        return {"candidates": rows, "status": status, "limit": limit, "offset": offset}
+
+    def admin_product_candidate_review(
+        self,
+        *,
+        candidate_id,
+        action,
+        reason,
+        brand_id=None,
+        category_id=None,
+        subcategory_id=None,
+        canonical_name_fa=None,
+        target_product_id=None,
+    ):
+        self._require_catalog_admin()
+        if not reason or not reason.strip():
+            raise ValueError("Review reason is required.")
+        if action not in {"APPROVE_CANONICAL", "MERGE_EXISTING", "REJECT"}:
+            raise ValueError("Unsupported candidate review action.")
+
+        self.cur.execute(
+            """
+            SELECT pc.*, v.organization_id AS vendor_organization_id, v.user_id AS vendor_user_id
+            FROM product_candidates pc
+            JOIN vendors v ON v.id=pc.vendor_id
+            WHERE pc.id=%s
+            FOR UPDATE
+            """,
+            (candidate_id,),
+        )
+        candidate=self.cur.fetchone()
+        if not candidate:
+            raise KeyError("Product candidate not found.")
+        if candidate["status"] != "PENDING_REVIEW":
+            return {
+                "candidate_id": str(candidate["id"]),
+                "status": candidate["status"],
+                "resolved_product_id": str(candidate["resolved_product_id"]) if candidate["resolved_product_id"] else None,
+                "idempotent_replay": True,
+            }
+
+        resolved_product_id=None
+        if action == "MERGE_EXISTING":
+            if not target_product_id:
+                raise ValueError("target_product_id is required for MERGE_EXISTING.")
+            self.cur.execute(
+                "SELECT id FROM products WHERE id=%s AND is_active=TRUE FOR UPDATE",
+                (target_product_id,),
+            )
+            if not self.cur.fetchone():
+                raise KeyError("Target product not found or inactive.")
+            resolved_product_id=str(target_product_id)
+        elif action == "APPROVE_CANONICAL":
+            for field_name, field_value in (
+                ("brand_id", brand_id), ("category_id", category_id), ("subcategory_id", subcategory_id)
+            ):
+                if not field_value:
+                    raise ValueError(field_name + " is required for APPROVE_CANONICAL.")
+            name = (canonical_name_fa or candidate["proposed_title"] or "").strip()
+            if not name:
+                raise ValueError("canonical_name_fa is required for APPROVE_CANONICAL.")
+
+            self.cur.execute(
+                "SELECT 1 FROM brands WHERE id=%s",
+                (brand_id,),
+            )
+            if not self.cur.fetchone():
+                raise KeyError("Brand not found.")
+            self.cur.execute(
+                "SELECT 1 FROM categories WHERE id=%s",
+                (category_id,),
+            )
+            if not self.cur.fetchone():
+                raise KeyError("Category not found.")
+            self.cur.execute(
+                "SELECT 1 FROM subcategories WHERE id=%s AND category_id=%s",
+                (subcategory_id, category_id),
+            )
+            if not self.cur.fetchone():
+                raise ValueError("Subcategory does not belong to the selected category.")
+
+            master_sku = None
+            for _ in range(5):
+                probe = "POL-PRD-" + uuid4().hex[:10].upper()
+                self.cur.execute("SELECT 1 FROM products WHERE master_sku=%s", (probe,))
+                if not self.cur.fetchone():
+                    master_sku=probe
+                    break
+            if not master_sku:
+                raise RuntimeError("Unable to allocate a unique master SKU.")
+
+            self.cur.execute(
+                """
+                INSERT INTO products
+                    (id,master_sku,canonical_name_fa,brand_id,category_id,subcategory_id,
+                     is_active,is_verified)
+                VALUES (%s,%s,%s,%s,%s,%s,TRUE,TRUE)
+                RETURNING id
+                """,
+                (str(uuid4()), master_sku, name, brand_id, category_id, subcategory_id),
+            )
+            resolved_product_id=str(self.cur.fetchone()["id"])
+
+        if candidate["vendor_sku"]:
+            self.cur.execute(
+                """
+                UPDATE vendor_products
+                SET product_id=%s,
+                    listing_status=CASE WHEN %s='REJECT' THEN 'SUSPENDED' ELSE 'ACTIVE' END,
+                    is_active=CASE WHEN %s='REJECT' THEN FALSE ELSE TRUE END,
+                    updated_at=now()
+                WHERE candidate_id=%s
+                """,
+                (resolved_product_id, action, action, candidate_id),
+            )
+
+        if action == "APPROVE_CANONICAL" and candidate["barcode"]:
+            normalized = "".join(ch for ch in str(candidate["barcode"]) if ch.isalnum())
+            self.cur.execute(
+                "SELECT id, product_id FROM product_identifiers WHERE identifier_value=%s FOR UPDATE",
+                (normalized,),
+            )
+            existing_identifier=self.cur.fetchone()
+            if existing_identifier and str(existing_identifier["product_id"]) != str(resolved_product_id):
+                raise ValueError("Barcode already belongs to a different canonical product.")
+            if not existing_identifier:
+                identifier_type = "EAN13" if normalized.isdigit() and len(normalized)==13 else ("UPC_A" if normalized.isdigit() and len(normalized)==12 else "INTERNAL_BARCODE")
+                self.cur.execute(
+                    """
+                    INSERT INTO product_identifiers
+                        (product_id,vendor_id,identifier_scope,identifier_type,identifier_value,
+                         packaging_scope,source,confidence_score,is_primary)
+                    VALUES (%s,NULL,'GLOBAL',%s,%s,'UNIT','CATALOG_REVIEW',1.00,TRUE)
+                    """,
+                    (resolved_product_id, identifier_type, normalized),
+                )
+
+        new_status = "APPROVED_CANONICAL" if action == "APPROVE_CANONICAL" else ("MERGED_EXISTING" if action == "MERGE_EXISTING" else "REJECTED")
+        self.cur.execute(
+            """
+            UPDATE product_candidates
+            SET status=%s,
+                resolved_product_id=%s,
+                reviewed_by_user_id=%s,
+                review_notes=%s,
+                resolved_at=now()
+            WHERE id=%s
+            RETURNING id,status,resolved_product_id,reviewed_by_user_id,resolved_at
+            """,
+            (new_status, resolved_product_id, self.context.user_id, reason.strip(), candidate_id),
+        )
+        reviewed=dict(self.cur.fetchone())
+
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s,'PRODUCT_CANDIDATE_REVIEWED','PRODUCT_CANDIDATE',%s,%s,%s,%s)
+            """,
+            (
+                self.context.user_id,
+                candidate_id,
+                Json({
+                    "status": new_status,
+                    "resolved_product_id": resolved_product_id,
+                    "action": action,
+                }),
+                reason.strip(),
+                self.context.correlation_id,
+            ),
+        )
+
+        self.cur.execute(
+            """
+            INSERT INTO outbox_events
+                (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                 target_user_id,target_organization_id,dedupe_key,channel_hint)
+            VALUES
+                (gen_random_uuid(),gen_random_uuid(),'PRODUCT_CANDIDATE_REVIEWED',
+                 'PRODUCT_CANDIDATE',%s,%s,'PENDING',%s,%s,%s,'INBOX')
+            ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+            """,
+            (
+                candidate_id,
+                Json({
+                    "candidate_id": candidate_id,
+                    "status": new_status,
+                    "resolved_product_id": resolved_product_id,
+                    "reviewed_by_user_id": str(self.context.user_id),
+                }),
+                candidate["vendor_user_id"],
+                candidate["vendor_organization_id"],
+                "PRODUCT_CANDIDATE_REVIEWED:" + str(candidate_id),
+            ),
+        )
+        return {
+            "candidate_id": str(reviewed["id"]),
+            "status": reviewed["status"],
+            "resolved_product_id": str(reviewed["resolved_product_id"]) if reviewed["resolved_product_id"] else None,
+            "reviewed_by_user_id": str(reviewed["reviewed_by_user_id"]) if reviewed["reviewed_by_user_id"] else None,
+            "resolved_at": reviewed["resolved_at"].isoformat() if reviewed["resolved_at"] else None,
+            "idempotent_replay": False,
+        }
+
+    def catalog_products_search(self, *, query: str, category_id: str | None = None, page: int = 1, limit: int = 20):
+        if page < 1 or limit < 1 or limit > 100:
+            raise ValueError("Invalid pagination.")
+        offset = (page - 1) * limit
+        self.cur.execute(
+            """
+            SELECT count(*) AS total
+            FROM products p
+            JOIN brands b ON b.id = p.brand_id
+            WHERE p.is_active = TRUE
+              AND (
+                p.canonical_name_fa ILIKE %s
+                OR b.name_fa ILIKE %s
+                OR p.master_sku ILIKE %s
+                OR similarity(p.canonical_name_fa, %s) > 0.15
+              )
+              AND (%s::uuid IS NULL OR p.category_id = %s::uuid)
+            """,
+            (f"%{query}%", f"%{query}%", f"%{query}%", query, category_id, category_id),
+        )
+        total = int(self.cur.fetchone()["total"])
+
+        self.cur.execute(
+            """
+            SELECT p.id, p.master_sku, p.canonical_name_fa,
+                   b.name_fa AS brand_name,
+                   p.default_pack_unit AS pack_unit,
+                   p.default_pack_quantity AS pack_quantity,
+                   COALESCE(price.lowest_price, NULL) AS lowest_unit_price_toman,
+                   COALESCE(stock.available_vendors_count, 0) AS available_vendors_count,
+                   media.primary_image_url
+            FROM products p
+            JOIN brands b ON b.id = p.brand_id
+            LEFT JOIN LATERAL (
+                SELECT MIN(vpr.price_toman) AS lowest_price
+                FROM vendor_products vprp
+                JOIN vendor_prices vpr
+                  ON vpr.vendor_product_id = vprp.id AND vpr.is_current = TRUE
+                JOIN vendors vv ON vv.id = vprp.vendor_id AND vv.status = 'ACTIVE'
+                WHERE vprp.product_id = p.id
+                  AND vprp.is_active = TRUE
+                  AND vprp.listing_status = 'ACTIVE'
+            ) price ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT count(DISTINCT vprp.vendor_id) AS available_vendors_count
+                FROM vendor_products vprp
+                JOIN vendors vv ON vv.id = vprp.vendor_id AND vv.status = 'ACTIVE'
+                JOIN vendor_inventory vi ON vi.vendor_product_id = vprp.id
+                WHERE vprp.product_id = p.id
+                  AND vprp.is_active = TRUE
+                  AND vprp.listing_status = 'ACTIVE'
+                  AND vi.available_quantity > 0
+            ) stock ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT CASE
+                    WHEN ma.storage_key LIKE 'http://%%' OR ma.storage_key LIKE 'https://%%' THEN ma.storage_key
+                    ELSE NULL
+                END AS primary_image_url
+                FROM product_media pm
+                JOIN media_assets ma ON ma.id = pm.media_asset_id AND ma.status = 'READY'
+                WHERE pm.product_id = p.id
+                ORDER BY pm.is_primary DESC, pm.display_order, pm.created_at
+                LIMIT 1
+            ) media ON TRUE
+            WHERE p.is_active = TRUE
+              AND (
+                p.canonical_name_fa ILIKE %s
+                OR b.name_fa ILIKE %s
+                OR p.master_sku ILIKE %s
+                OR similarity(p.canonical_name_fa, %s) > 0.15
+              )
+              AND (%s::uuid IS NULL OR p.category_id = %s::uuid)
+            ORDER BY similarity(p.canonical_name_fa, %s) DESC, p.canonical_name_fa
+            LIMIT %s OFFSET %s
+            """,
+            (f"%{query}%", f"%{query}%", f"%{query}%", query, category_id, category_id, query, limit, offset),
+        )
+        rows = []
+        for row in self.cur.fetchall():
+            item = dict(row)
+            item["id"] = str(item["id"])
+            rows.append(item)
+        return {
+            "products": rows,
+            "pagination": {"page": page, "limit": limit, "total": total},
+        }
+
+    def catalog_barcode_match(
+        self,
+        *,
+        barcode: str,
+        proposed_title: str | None = None,
+        vendor_sku: str | None = None,
+        packaging_unit: str = "UNIT",
+        pack_quantity: int = 1,
+        create_candidate: bool = False,
+    ):
+        normalized = "".join(ch for ch in (barcode or "").strip() if ch.isalnum())
+        if not normalized or len(normalized) < 8 or len(normalized) > 32:
+            raise ValueError("Barcode must contain between 8 and 32 alphanumeric characters.")
+        if pack_quantity < 1:
+            raise ValueError("pack_quantity must be positive.")
+
+        vendor = self._current_vendor_for_context() if self.context.organization_id else None
+        vendor_id = str(vendor["id"]) if vendor else None
+
+        self.cur.execute(
+            """
+            SELECT      
+                pi.id AS identifier_id,
+                pi.identifier_type,
+                pi.identifier_value,
+                pi.identifier_scope,
+                pi.packaging_scope,
+                pi.source,
+                pi.confidence_score,
+                p.id AS product_id,
+                p.master_sku,
+                p.canonical_name_fa,
+                p.base_unit,
+                p.default_pack_unit,
+                p.default_pack_quantity,
+                b.name_fa AS brand_name
+            FROM product_identifiers pi
+            JOIN products p ON p.id = pi.product_id
+            LEFT JOIN brands b ON b.id = p.brand_id
+            WHERE pi.identifier_value = %s
+              AND p.is_active = TRUE
+              AND (
+                    pi.vendor_id IS NULL
+                    OR pi.vendor_id = %s::uuid
+              )
+            ORDER BY
+                CASE WHEN pi.vendor_id IS NULL THEN 0 ELSE 1 END,
+                pi.confidence_score DESC,
+                pi.id
+            """,
+            (normalized, vendor_id),
+        )
+        matches = [dict(row) for row in self.cur.fetchall()]
+
+        product_ids = {str(row["product_id"]) for row in matches}
+        if len(product_ids) == 1:
+            row = matches[0]
+            return {
+                "match_type": "EXACT",
+                "confidence_score": float(row["confidence_score"]),
+                "product": {
+                    "id": str(row["product_id"]),
+                    "master_sku": row["master_sku"],
+                    "canonical_name_fa": row["canonical_name_fa"],
+                    "brand_name": row["brand_name"],
+                    "base_unit": row["base_unit"],
+                    "default_pack_unit": row["default_pack_unit"],
+                    "default_pack_quantity": row["default_pack_quantity"],
+                },
+                "identifier": {
+                    "id": str(row["identifier_id"]),
+                    "identifier_type": row["identifier_type"],
+                    "identifier_value": row["identifier_value"],
+                    "identifier_scope": row["identifier_scope"],
+                    "packaging_scope": row["packaging_scope"],
+                    "source": row["source"],
+                },
+                "candidate_id": None,
+                "vendor_product_id": None,
+            }
+
+        if len(product_ids) > 1:
+            return {
+                "match_type": "AMBIGUOUS",
+                "confidence_score": 0.0,
+                "products": [
+                    {
+                        "id": str(row["product_id"]),
+                        "master_sku": row["master_sku"],
+                        "canonical_name_fa": row["canonical_name_fa"],
+                        "brand_name": row["brand_name"],
+                    }
+                    for row in matches
+                ],
+                "candidate_id": None,
+                "vendor_product_id": None,
+            }
+
+        if not create_candidate:
+            return {
+                "match_type": "NO_MATCH",
+                "confidence_score": 0.0,
+                "product": None,
+                "candidate_id": None,
+                "vendor_product_id": None,
+            }
+
+        if not vendor_id:
+            raise PermissionError("Creating an unmatched barcode candidate requires an active vendor context.")
+        if not proposed_title or not proposed_title.strip():
+            raise ValueError("proposed_title is required when creating a barcode candidate.")
+
+        candidate_vendor_sku = vendor_sku.strip() if vendor_sku and vendor_sku.strip() else None
+        existing_vp = None
+        if candidate_vendor_sku:
+            self.cur.execute(
+                """
+                SELECT vp.id, vp.product_id, vp.candidate_id, vp.listing_status,
+                       pc.barcode AS candidate_barcode
+                FROM vendor_products vp
+                LEFT JOIN product_candidates pc ON pc.id = vp.candidate_id
+                WHERE vp.vendor_id=%s AND vp.vendor_sku=%s
+                FOR UPDATE OF vp
+                """,
+                (vendor_id, candidate_vendor_sku),
+            )
+            existing_vp = self.cur.fetchone()
+        if existing_vp and existing_vp["product_id"]:
+            raise ValueError("vendor_sku is already bound to a canonical product.")
+        if existing_vp and existing_vp["candidate_id"]:
+            if existing_vp["candidate_barcode"] not in (None, normalized):
+                raise ValueError("vendor_sku is already bound to a different barcode candidate.")
+            candidate_id = str(existing_vp["candidate_id"])
+            return {
+                "match_type": "NO_MATCH",
+                "confidence_score": 0.0,
+                "product": None,
+                "candidate_id": candidate_id,
+                "vendor_product_id": str(existing_vp["id"]),
+                "listing_status": existing_vp["listing_status"],
+                "idempotent_replay": True,
+            }
+
+        self.cur.execute(
+            """
+            SELECT id
+            FROM product_candidates
+            WHERE vendor_id=%s
+              AND barcode=%s
+              AND status='PENDING_REVIEW'
+            ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (vendor_id, normalized),
+        )
+        candidate = self.cur.fetchone()
+        candidate_replayed = bool(candidate)
+        candidate_created = False
+        if candidate:
+            candidate_id = str(candidate["id"])
+        else:
+            candidate_id = str(uuid4())
+            self.cur.execute(
+                """
+                INSERT INTO product_candidates
+                    (id,vendor_id,proposed_title,barcode,vendor_sku,status)
+                VALUES (%s,%s,%s,%s,%s,'PENDING_REVIEW')
+                ON CONFLICT (vendor_id, barcode)
+                    WHERE barcode IS NOT NULL AND status='PENDING_REVIEW'
+                DO NOTHING
+                RETURNING id
+                """,
+                (
+                    candidate_id,
+                    vendor_id,
+                    proposed_title.strip(),
+                    normalized,
+                    candidate_vendor_sku,
+                ),
+            )
+            inserted = self.cur.fetchone()
+            if inserted:
+                candidate_created = True
+                candidate_id = str(inserted["id"])
+            else:
+                candidate_replayed = True
+                self.cur.execute(
+                    """
+                    SELECT id
+                    FROM product_candidates
+                    WHERE vendor_id=%s
+                      AND barcode=%s
+                      AND status='PENDING_REVIEW'
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    """,
+                    (vendor_id, normalized),
+                )
+                candidate = self.cur.fetchone()
+                if not candidate:
+                    raise RuntimeError(
+                        "Concurrent barcode candidate insert conflicted but the winning candidate could not be re-read."
+                    )
+                candidate_id = str(candidate["id"])
+
+        vendor_product_id = None
+        listing_status = None
+        vendor_product_created = False
+        if candidate_vendor_sku:
+            vendor_product_id = str(uuid4())
+            self.cur.execute(
+                """
+                INSERT INTO vendor_products
+                    (id,vendor_id,product_id,candidate_id,vendor_sku,
+                     packaging_unit,pack_quantity,sales_unit,is_active,listing_status)
+                VALUES (%s,%s,NULL,%s,%s,%s,%s,%s,FALSE,'DRAFT_PENDING_CATALOG')
+                ON CONFLICT (vendor_id, vendor_sku)
+                DO NOTHING
+                RETURNING id, listing_status
+                """,
+                (
+                    vendor_product_id,
+                    vendor_id,
+                    candidate_id,
+                    candidate_vendor_sku,
+                    packaging_unit.strip(),
+                    int(pack_quantity),
+                    packaging_unit.strip(),
+                ),
+            )
+            inserted_vp = self.cur.fetchone()
+            if inserted_vp:
+                vendor_product_created = True
+                vendor_product_id = str(inserted_vp["id"])
+                listing_status = inserted_vp["listing_status"]
+            else:
+                self.cur.execute(
+                    """
+                    SELECT vp.id, vp.product_id, vp.candidate_id, vp.listing_status,
+                           pc.barcode AS candidate_barcode
+                    FROM vendor_products vp
+                    LEFT JOIN product_candidates pc ON pc.id = vp.candidate_id
+                    WHERE vp.vendor_id=%s AND vp.vendor_sku=%s
+                    FOR UPDATE
+                    """,
+                    (vendor_id, candidate_vendor_sku),
+                )
+                winner_vp = self.cur.fetchone()
+                if not winner_vp:
+                    raise RuntimeError(
+                        "Concurrent vendor SKU insert conflicted but the winning vendor product could not be re-read."
+                    )
+                if winner_vp["product_id"]:
+                    raise ValueError("vendor_sku is already bound to a canonical product.")
+                if str(winner_vp["candidate_id"]) != candidate_id:
+                    raise ValueError("vendor_sku is already bound to a different product candidate.")
+                if winner_vp["candidate_barcode"] not in (None, normalized):
+                    raise ValueError("vendor_sku is already bound to a different barcode candidate.")
+                vendor_product_id = str(winner_vp["id"])
+                listing_status = winner_vp["listing_status"]
+                candidate_replayed = True
+
+        if candidate_created:
+            self.cur.execute(
+                """
+                INSERT INTO outbox_events
+                    (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                     target_user_id,target_organization_id,dedupe_key,channel_hint)
+                VALUES
+                    (gen_random_uuid(),gen_random_uuid(),'product_candidate_created',
+                     'PRODUCT_CANDIDATE',%s,
+                     jsonb_build_object(
+                        'candidate_id',%s,
+                        'vendor_id',%s,
+                        'barcode',%s,
+                        'vendor_sku',%s,
+                        'proposed_title',%s
+                     ),
+                     'PENDING',%s,%s,%s,'INBOX')
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    candidate_id,
+                    candidate_id,
+                    vendor_id,
+                    normalized,
+                    candidate_vendor_sku,
+                    proposed_title.strip(),
+                    str(vendor["user_id"]) if vendor else None,
+                    str(self.context.organization_id),
+                    "PRODUCT_CANDIDATE_CREATED:" + candidate_id,
+                ),
+            )
+
+        return {
+            "match_type": "NO_MATCH",
+            "confidence_score": 0.0,
+            "product": None,
+            "candidate_id": candidate_id,
+            "vendor_product_id": vendor_product_id,
+            "listing_status": listing_status,
+            "idempotent_replay": candidate_replayed and not vendor_product_created,
+        }
+
+    def catalog_categories_public(self):
+        self.cur.execute(
+            """
+            SELECT c.id, c.name_fa, c.slug, c.icon_url, c.display_order,
+                   COALESCE(json_agg(json_build_object('id', sc.id, 'name_fa', sc.name_fa, 'slug', sc.slug, 'display_order', sc.display_order)
+                                      ORDER BY sc.display_order, sc.name_fa) FILTER (WHERE sc.id IS NOT NULL), '[]'::json) AS subcategories
+            FROM categories c
+            LEFT JOIN subcategories sc ON sc.category_id=c.id
+            GROUP BY c.id, c.name_fa, c.slug, c.icon_url, c.display_order
+            ORDER BY c.display_order, c.name_fa
+            """
+        )
+        return self.cur.fetchall()
+
     def catalog_categories(self):
         self.cur.execute(
             """
@@ -1375,7 +3112,11 @@ class POLApplicationBoundary:
             SELECT ma.id, ma.storage_key, ma.mime_type, pm.is_primary, pm.display_order
             FROM product_media pm
             JOIN media_assets ma ON ma.id = pm.media_asset_id
-            WHERE pm.product_id = %s::uuid AND ma.status = 'READY'
+            WHERE pm.product_id = %s::uuid
+              AND ma.status = 'READY'
+              AND ma.provenance IN ('VENDOR_UPLOADED', 'MANUFACTURER_PROVIDED', 'POL_OWNED')
+              AND pm.approval_status = 'APPROVED'
+              AND pm.approval_status <> 'PRIVATE_REFERENCE'
             ORDER BY pm.is_primary DESC, pm.display_order
             """,
             (product_id,),
@@ -1665,6 +3406,256 @@ class POLApplicationBoundary:
         )
         if not self.cur.fetchone():
             raise PermissionError("Vendor product not found or not accessible from this organization.")
+
+    def vendor_inventory_continuous_scan(
+        self,
+        *,
+        product_id: str,
+        vendor_sku: str,
+        packaging_unit: str,
+        pack_quantity: int,
+        physical_quantity: int,
+        unit_price_toman: int,
+        consumer_price_per_unit_toman: int | None,
+        session_id: str,
+    ):
+        if not self.context.organization_id:
+            raise PermissionError("Inventory scan requires an active organization context.")
+        if pack_quantity < 1 or physical_quantity < 0 or unit_price_toman <= 0:
+            raise ValueError("Invalid pack quantity, physical quantity, or unit price.")
+        vendor = self._current_vendor_for_context()
+        if not vendor:
+            raise PermissionError("Active vendor membership required.")
+
+        self.cur.execute(
+            "SELECT id FROM products WHERE id=%s::uuid AND is_active=TRUE",
+            (product_id,),
+        )
+        if not self.cur.fetchone():
+            raise KeyError("Master product not found or inactive.")
+
+        self.cur.execute(
+            """
+            SELECT id, product_id, packaging_unit, pack_quantity, listing_status
+            FROM vendor_products
+            WHERE vendor_id=%s AND vendor_sku=%s
+            FOR UPDATE
+            """,
+            (vendor["id"], vendor_sku.strip()),
+        )
+        vp = self.cur.fetchone()
+        if vp:
+            if str(vp["product_id"]) != str(product_id):
+                raise ValueError("vendor_sku is already bound to another master product.")
+            if vp["packaging_unit"] != packaging_unit or int(vp["pack_quantity"]) != int(pack_quantity):
+                raise ValueError("Existing vendor SKU packaging does not match the scan contract.")
+            vendor_product_id = str(vp["id"])
+            if vp["listing_status"] == "SUSPENDED":
+                raise ValueError("Suspended vendor product cannot be updated by scan.")
+        else:
+            vendor_product_id = str(uuid4())
+            self.cur.execute(
+                """
+                INSERT INTO vendor_products
+                    (id,vendor_id,product_id,vendor_sku,packaging_unit,pack_quantity,sales_unit,is_active,listing_status)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,TRUE,'DRAFT_PENDING_CATALOG')
+                RETURNING id
+                """,
+                (vendor_product_id, vendor["id"], product_id, vendor_sku.strip(),
+                 packaging_unit, int(pack_quantity), packaging_unit),
+            )
+
+        self.cur.execute(
+            """
+            INSERT INTO inventory_scan_sessions
+                (vendor_id,external_session_id,created_by_user_id,status)
+            VALUES (%s,%s,%s,'DRAFT')
+            ON CONFLICT (vendor_id,external_session_id)
+            DO UPDATE SET created_by_user_id=EXCLUDED.created_by_user_id
+            RETURNING id,status
+            """,
+            (vendor["id"], session_id.strip(), self.context.user_id),
+        )
+        session = self.cur.fetchone()
+        if session["status"] != "DRAFT":
+            raise ValueError("Inventory scan session is already closed.")
+
+        self.cur.execute(
+            """
+            INSERT INTO inventory_scan_session_items
+                (session_id,vendor_product_id,physical_quantity,unit_price_toman,consumer_price_per_unit_toman)
+            VALUES (%s,%s,%s,%s,%s)
+            ON CONFLICT (session_id,vendor_product_id)
+            DO UPDATE SET
+                physical_quantity=EXCLUDED.physical_quantity,
+                unit_price_toman=EXCLUDED.unit_price_toman,
+                consumer_price_per_unit_toman=EXCLUDED.consumer_price_per_unit_toman,
+                updated_at=now()
+            RETURNING id
+            """,
+            (session["id"], vendor_product_id, physical_quantity, unit_price_toman,
+             consumer_price_per_unit_toman),
+        )
+
+        self.cur.execute(
+            """
+            SELECT physical_quantity, reserved_quantity
+            FROM vendor_inventory
+            WHERE vendor_product_id=%s
+            FOR UPDATE
+            """,
+            (vendor_product_id,),
+        )
+        inv = self.cur.fetchone()
+        old_qty = int(inv["physical_quantity"]) if inv else 0
+        reserved = int(inv["reserved_quantity"]) if inv else 0
+        if inv and physical_quantity < reserved:
+            raise ValueError("Physical quantity cannot be below currently reserved quantity.")
+
+        if inv:
+            self.cur.execute(
+                """
+                UPDATE vendor_inventory
+                SET physical_quantity=%s, updated_at=now(),
+                    freshness_status='FRESH',
+                    inventory_confidence='CONFIRMED_TODAY',
+                    verification_source='BARCODE_SCAN',
+                    last_confirmed_at=now()
+                WHERE vendor_product_id=%s
+                """,
+                (physical_quantity, vendor_product_id),
+            )
+        else:
+            self.cur.execute(
+                """
+                INSERT INTO vendor_inventory
+                    (vendor_product_id,inventory_unit,physical_quantity,reserved_quantity,freshness_status,
+                     inventory_confidence,verification_source,last_confirmed_at)
+                VALUES (%s,%s,%s,0,'FRESH','CONFIRMED_TODAY','BARCODE_SCAN',now())
+                """,
+                (vendor_product_id, packaging_unit, physical_quantity),
+            )
+
+        self.cur.execute(
+            """
+            UPDATE vendor_prices
+            SET is_current=FALSE,effective_to=now()
+            WHERE vendor_product_id=%s AND is_current=TRUE
+            """,
+            (vendor_product_id,),
+        )
+        self.cur.execute(
+            """
+            INSERT INTO vendor_prices
+                (vendor_product_id,price_toman,consumer_price_per_unit_toman,is_current,effective_from)
+            VALUES (%s,%s,%s,TRUE,now())
+            """,
+            (vendor_product_id, unit_price_toman, consumer_price_per_unit_toman),
+        )
+        self.cur.execute(
+            """
+            INSERT INTO inventory_audit_log
+                (vendor_id,vendor_product_id,old_quantity,new_quantity,old_price_toman,new_price_toman,
+                 source_trigger,reference_id,actor_user_id)
+            VALUES (%s,%s,%s,%s,
+                    (SELECT price_toman FROM vendor_prices WHERE vendor_product_id=%s AND is_current=FALSE ORDER BY effective_to DESC NULLS LAST LIMIT 1),
+                    %s,'BARCODE_SCAN',%s,%s)
+            """,
+            (vendor["id"],vendor_product_id,old_qty,physical_quantity,vendor_product_id,
+             unit_price_toman,session_id.strip(),self.context.user_id),
+        )
+        return {
+            "vendor_product_id": vendor_product_id,
+            "available_quantity": physical_quantity - reserved,
+            "inventory_unit": packaging_unit,
+            "unit_price_toman": unit_price_toman,
+            "freshness_status": "FRESH",
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "session_id": session_id.strip(),
+            "listing_status": "DRAFT_PENDING_CATALOG",
+        }
+
+    def vendor_inventory_publish(self, *, session_id: str):
+        if not self.context.organization_id:
+            raise PermissionError("Inventory publish requires an active organization context.")
+        vendor = self._current_vendor_for_context()
+        if not vendor:
+            raise PermissionError("Active vendor membership required.")
+
+        self.cur.execute(
+            """
+            SELECT id,status
+            FROM inventory_scan_sessions
+            WHERE vendor_id=%s AND external_session_id=%s
+            FOR UPDATE
+            """,
+            (vendor["id"], session_id.strip()),
+        )
+        session = self.cur.fetchone()
+        if not session:
+            raise KeyError("Inventory scan session not found.")
+        if session["status"] == "PUBLISHED":
+            self.cur.execute(
+                "SELECT COUNT(*)::INT AS count FROM inventory_scan_session_items WHERE session_id=%s",
+                (session["id"],),
+            )
+            return {"session_id": session_id.strip(), "status": "PUBLISHED",
+                    "published_count": int(self.cur.fetchone()["count"]), "idempotent_replay": True}
+        if session["status"] != "DRAFT":
+            raise ValueError("Inventory scan session cannot be published from its current state.")
+
+        self.cur.execute(
+            "SELECT vendor_product_id,physical_quantity,unit_price_toman FROM inventory_scan_session_items WHERE session_id=%s FOR UPDATE",
+            (session["id"],),
+        )
+        items = self.cur.fetchall()
+        if not items:
+            raise ValueError("Inventory scan session contains no items.")
+
+        published = 0
+        for item in items:
+            self.cur.execute(
+                """
+                UPDATE vendor_products
+                SET listing_status='ACTIVE', is_active=TRUE, updated_at=now()
+                WHERE id=%s
+                  AND vendor_id=%s
+                  AND listing_status='DRAFT_PENDING_CATALOG'
+                RETURNING id
+                """,
+                (item["vendor_product_id"],vendor["id"]),
+            )
+            if self.cur.fetchone():
+                published += 1
+            self.cur.execute(
+                """
+                INSERT INTO inventory_audit_log
+                    (vendor_id,vendor_product_id,old_quantity,new_quantity,old_price_toman,new_price_toman,source_trigger,reference_id,actor_user_id)
+                SELECT %s,vi.vendor_product_id,vi.physical_quantity,vi.physical_quantity,%s,%s,'SESSION_PUBLISH',%s,%s
+                FROM vendor_inventory vi
+                WHERE vi.vendor_product_id=%s
+                """,
+                (vendor["id"],item["unit_price_toman"],item["unit_price_toman"],
+                 session_id.strip(),self.context.user_id,item["vendor_product_id"]),
+            )
+
+        self.cur.execute(
+            """
+            UPDATE inventory_scan_sessions
+            SET status='PUBLISHED',published_at=now()
+            WHERE id=%s
+            RETURNING status,published_at
+            """,
+            (session["id"],),
+        )
+        done = self.cur.fetchone()
+        return {
+            "session_id": session_id.strip(),
+            "status": done["status"],
+            "published_count": published,
+            "published_at": done["published_at"].isoformat(),
+            "idempotent_replay": False,
+        }
 
     def vendor_inventory_get(self, vendor_product_id: str):
         """Get inventory details for a vendor product (tenant-scoped)."""
@@ -2143,60 +4134,42 @@ class POLApplicationBoundary:
 
     # ── Referral Management (Stage 34) ────────────────────────────
 
-    def referral_create(self, *, referred_retailer_id, referral_code):
+    def referral_create(self, *, referral_code=None, max_redemptions=None, expires_at=None):
+        """Create a vendor referral through the canonical D-016 service."""
         if not self.context.organization_id:
             raise PermissionError("Referral creation requires an organization context.")
+
         self.cur.execute(
             """
-            SELECT 1
-            FROM organization_memberships om
-            JOIN organizations o ON o.id = om.organization_id
-            WHERE om.user_id = %s
-              AND om.organization_id = %s
-              AND om.status = 'ACTIVE'
-              AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
+            SELECT v.id
+            FROM vendors v
+            JOIN organizations o ON o.id = v.organization_id
+            JOIN organization_memberships om
+              ON om.organization_id = v.organization_id
+             AND om.user_id = %s
+             AND om.status = 'ACTIVE'
+             AND om.role IN ('VENDOR_OWNER','VENDOR_STAFF')
+            WHERE v.organization_id = %s
+              AND v.status = 'ACTIVE'
               AND o.org_type = 'VENDOR'
               AND o.status = 'ACTIVE'
-            LIMIT 1;
+            ORDER BY v.id
+            LIMIT 1
             """,
             (self.context.user_id, self.context.organization_id),
         )
-        if not self.cur.fetchone():
-            raise PermissionError("Only active vendor members may create referrals.")
-
-        self.cur.execute(
-            "SELECT id FROM vendors WHERE organization_id = %s AND status = 'ACTIVE'",
-            (self.context.organization_id,),
-        )
         vendor = self.cur.fetchone()
         if not vendor:
-            raise ValueError("No active vendor found for this organization.")
+            raise PermissionError("Only active vendor members may create referrals.")
 
-        self.cur.execute(
-            "SELECT id FROM retailers WHERE id = %s",
-            (referred_retailer_id,),
+        return VendorReferralService.create_referral(
+            self.cur,
+            self.context.user_id,
+            str(vendor["id"]),
+            referral_code=referral_code,
+            max_redemptions=max_redemptions,
+            expires_at=expires_at,
         )
-        if not self.cur.fetchone():
-            raise ValueError("Referred retailer not found.")
-
-        referral_id = str(uuid4())
-        self.cur.execute(
-            """
-            INSERT INTO vendor_referrals
-                (id, vendor_id, referral_code, status, created_by_user_id)
-            VALUES (%s, %s, %s, 'ACTIVE', %s)
-            RETURNING id, vendor_id, referral_code, status, created_at
-            """,
-            (referral_id, str(vendor["id"]), referral_code, self.context.user_id),
-        )
-        row = self.cur.fetchone()
-        return {
-            "id": str(row["id"]),
-            "vendor_id": str(row["vendor_id"]),
-            "referral_code": row["referral_code"],
-            "status": row["status"],
-            "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-        }
 
     def referral_list(self, *, offset=0, limit=50):
         if not self.context.organization_id:
@@ -2280,46 +4253,58 @@ class POLApplicationBoundary:
         }
 
     def referral_redeem(self, *, referral_id):
+        """Redeem a vendor referral as first-touch attribution for the current retailer."""
         if not self.context.organization_id:
             raise PermissionError("Referral redemption requires an organization context.")
+
         self.cur.execute(
             """
-            SELECT vr.id, vr.vendor_id, vr.status, vr.redemption_count,
-                   vr.max_redemptions
-            FROM vendor_referrals vr
-            JOIN vendors v ON v.id = vr.vendor_id
-            WHERE vr.id = %s AND v.organization_id = %s
+            SELECT r.id AS retailer_id
+            FROM retailers r
+            JOIN organizations o ON o.id=r.organization_id
+            JOIN organization_memberships om
+              ON om.organization_id=r.organization_id
+             AND om.user_id=%s
+             AND om.status='ACTIVE'
+             AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+            WHERE r.organization_id=%s
+              AND o.status='ACTIVE'
+            ORDER BY r.id
+            LIMIT 1
             """,
-            (referral_id, self.context.organization_id),
+            (self.context.user_id, self.context.organization_id),
         )
-        row = self.cur.fetchone()
-        if not row:
-            raise KeyError("Referral not found.")
-        referral = dict(row)
-        if referral["status"] != "ACTIVE":
-            raise ValueError(f"Referral is in '{referral['status']}' status and cannot be redeemed.")
-        if referral["max_redemptions"] is not None and referral["redemption_count"] >= referral["max_redemptions"]:
-            raise ValueError("Referral redemption limit reached.")
+        retailer = self.cur.fetchone()
+        if not retailer:
+            raise PermissionError("Referral redemption requires an active retailer membership.")
+
         self.cur.execute(
             """
-            UPDATE vendor_referrals
-            SET status = 'ACTIVE',
-                redemption_count = redemption_count + 1,
-                updated_at = now()
-            WHERE id = %s
-            RETURNING id, vendor_id, referral_code, status, redemption_count, updated_at
+            SELECT vr.id, vr.vendor_id, vr.referral_code, vr.status
+            FROM vendor_referrals vr
+            JOIN vendors v ON v.id=vr.vendor_id
+            JOIN organizations o ON o.id=v.organization_id
+            WHERE vr.id=%s
+              AND o.status='ACTIVE'
+            FOR UPDATE
             """,
             (referral_id,),
         )
-        updated = self.cur.fetchone()
-        return {
-            "id": str(updated["id"]),
-            "vendor_id": str(updated["vendor_id"]),
-            "referral_code": updated["referral_code"],
-            "status": updated["status"],
-            "redemption_count": int(updated["redemption_count"]),
-            "updated_at": updated["updated_at"].isoformat() if updated["updated_at"] else None,
-        }
+        referral = self.cur.fetchone()
+        if not referral:
+            raise KeyError("Referral not found.")
+
+        request_key = (
+            f"HTTP_REFERRAL_REDEEM:{str(referral_id)}:"
+            f"{str(retailer['retailer_id'])}"
+        )
+        return VendorReferralService.redeem_referral(
+            self.cur,
+            self.context.user_id,
+            str(retailer["retailer_id"]),
+            referral["referral_code"],
+            request_key,
+        )
 
     def daily_inventory_confirm_with_changes(self, confirmation_date: str, changes: list):
         """Confirm with item quantity changes (tenant-scoped)."""
@@ -2417,6 +4402,11 @@ class POLApplicationBoundary:
         updates = []
         params = []
         if status is not None:
+            allowed_next = FIELD_TASK_TRANSITIONS.get(task["status"], set())
+            if status != task["status"] and status not in allowed_next:
+                raise ValueError(
+                    f"Invalid field task transition: {task['status']} -> {status}."
+                )
             updates.append("status = %s")
             params.append(status)
             if status == "COMPLETED":
@@ -2448,17 +4438,76 @@ class POLApplicationBoundary:
         d["updated_at"] = d["updated_at"].isoformat() if d["updated_at"] else None
         return d
 
-    def field_task_create(self, *, task_type, assigned_to_user_id, target_organization_id=None, notes=None):
-        """Create a field task (admin/operator only)."""
+    def field_task_create(
+        self,
+        *,
+        task_type,
+        assigned_to_user_id,
+        retailer_id=None,
+        vendor_id=None,
+        target_organization_id=None,
+        notes=None,
+    ):
+        """Create a field task (admin/operator only) with an explicit target entity."""
         self._require_ops_context()
+
+        if retailer_id and vendor_id:
+            raise ValueError("A field task cannot target both a retailer and a vendor.")
+        if target_organization_id and (retailer_id or vendor_id):
+            raise ValueError("Use retailer_id/vendor_id or target_organization_id, not both.")
+
         self.cur.execute(
-            """
-            SELECT 1 FROM users WHERE id = %s
-            """,
+            "SELECT id, is_active FROM users WHERE id = %s",
             (assigned_to_user_id,),
         )
-        if not self.cur.fetchone():
+        assigned = self.cur.fetchone()
+        if not assigned:
             raise ValueError("Assigned user not found.")
+        if not assigned["is_active"]:
+            raise ValueError("Assigned user is inactive.")
+
+        resolved_target_organization_id = target_organization_id
+        if retailer_id:
+            self.cur.execute(
+                """
+                SELECT r.organization_id
+                FROM retailers r
+                JOIN organizations o ON o.id = r.organization_id
+                WHERE r.id = %s
+                  AND o.status = 'ACTIVE'
+                """,
+                (retailer_id,),
+            )
+            target = self.cur.fetchone()
+            if not target:
+                raise KeyError("Target retailer not found or inactive.")
+            resolved_target_organization_id = str(target["organization_id"])
+
+        if vendor_id:
+            self.cur.execute(
+                """
+                SELECT v.organization_id
+                FROM vendors v
+                JOIN organizations o ON o.id = v.organization_id
+                WHERE v.id = %s
+                  AND v.status = 'ACTIVE'
+                  AND o.status = 'ACTIVE'
+                """,
+                (vendor_id,),
+            )
+            target = self.cur.fetchone()
+            if not target:
+                raise KeyError("Target vendor not found or inactive.")
+            resolved_target_organization_id = str(target["organization_id"])
+
+        if resolved_target_organization_id:
+            self.cur.execute(
+                "SELECT id FROM organizations WHERE id=%s AND status='ACTIVE'",
+                (resolved_target_organization_id,),
+            )
+            if not self.cur.fetchone():
+                raise KeyError("Target organization not found or inactive.")
+
         self.cur.execute(
             """
             INSERT INTO field_tasks (task_type, assigned_to_user_id, target_organization_id, notes)
@@ -2466,7 +4515,7 @@ class POLApplicationBoundary:
             RETURNING id, task_type, target_organization_id, assigned_to_user_id,
                       status, due_date, completed_at, notes, created_at, updated_at
             """,
-            (task_type, assigned_to_user_id, target_organization_id, notes),
+            (task_type, assigned_to_user_id, resolved_target_organization_id, notes),
         )
         row = self.cur.fetchone()
         d = dict(row)
@@ -2489,12 +4538,97 @@ class POLApplicationBoundary:
             params.append(self.context.organization_id)
         where_sql = " AND ".join(where_clauses)
         self.cur.execute(
-            f"SELECT n.id, n.event_name, n.title, n.body, n.priority, n.created_at "
-            f"FROM notifications n WHERE {where_sql} "
+            f"""
+            SELECT n.id, n.event_name, n.title, n.body, n.priority, n.created_at,
+                   ui.is_read, ui.read_at, ui.deep_link
+            FROM notifications n
+            LEFT JOIN user_inbox_items ui
+              ON ui.notification_id = n.id
+             AND ui.user_id = n.user_id
+             AND (ui.organization_id = n.organization_id OR ui.organization_id IS NULL)
+            WHERE {where_sql} """
             f"ORDER BY n.created_at DESC LIMIT %s OFFSET %s",
             (*params, limit, offset),
         )
         return [dict(r) for r in self.cur.fetchall()]
+
+    def inbox_list(self, *, is_read=None, category=None, limit=20, offset=0):
+        where = ["ui.user_id = %s"]
+        params = [self.context.user_id]
+        if self.context.organization_id:
+            where.append("ui.organization_id = %s")
+            params.append(self.context.organization_id)
+        if is_read is not None:
+            where.append("ui.is_read = %s")
+            params.append(is_read)
+        if category:
+            where.append("ui.category = %s")
+            params.append(category)
+        where_sql = " AND ".join(where)
+        self.cur.execute(
+            f"""
+            SELECT ui.id, ui.notification_id, ui.title, ui.body, ui.category,
+                   ui.deep_link, ui.is_read, ui.read_at, ui.created_at
+            FROM user_inbox_items ui
+            WHERE {where_sql}
+            ORDER BY ui.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            (*params, limit, offset),
+        )
+        items = [dict(r) for r in self.cur.fetchall()]
+        self.cur.execute(
+            f"SELECT COUNT(*) AS count FROM user_inbox_items ui WHERE {where_sql} AND ui.is_read = FALSE",
+            tuple(params),
+        )
+        unread_count = int(self.cur.fetchone()["count"])
+        for item in items:
+            item["id"] = str(item["id"])
+            item["notification_id"] = str(item["notification_id"]) if item["notification_id"] else None
+        return {"items": items, "unread_count": unread_count, "limit": limit, "offset": offset}
+
+    def inbox_mark_read(self, *, item_id):
+        where = "id = %s AND user_id = %s"
+        params = [item_id, self.context.user_id]
+        if self.context.organization_id:
+            where += " AND organization_id = %s"
+            params.append(self.context.organization_id)
+        self.cur.execute(
+            f"""
+            UPDATE user_inbox_items
+            SET is_read = TRUE, read_at = COALESCE(read_at, now())
+            WHERE {where}
+            RETURNING id, is_read, read_at
+            """,
+            tuple(params),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise PermissionError("Inbox item not found or outside active organization.")
+        self.cur.execute(
+            "SELECT COUNT(*) AS count FROM user_inbox_items WHERE user_id=%s AND is_read=FALSE"
+            + (" AND organization_id=%s" if self.context.organization_id else ""),
+            (self.context.user_id, self.context.organization_id) if self.context.organization_id else (self.context.user_id,),
+        )
+        unread_count = int(self.cur.fetchone()["count"])
+        return {"id": str(row["id"]), "is_read": True, "read_at": row["read_at"].isoformat(), "unread_count": unread_count}
+
+    def inbox_mark_all_read(self):
+        where = "user_id = %s"
+        params = [self.context.user_id]
+        if self.context.organization_id:
+            where += " AND organization_id = %s"
+            params.append(self.context.organization_id)
+        self.cur.execute(
+            f"""
+            UPDATE user_inbox_items
+            SET is_read = TRUE, read_at = COALESCE(read_at, now())
+            WHERE {where} AND is_read = FALSE
+            """,
+            tuple(params),
+        )
+        marked_count = self.cur.rowcount
+        return {"marked_count": marked_count, "unread_count": 0}
 
     def notification_preferences_get(self):
         self.cur.execute(
@@ -2524,66 +4658,994 @@ class POLApplicationBoundary:
             )
         return {"event_name": event_name, "channel": channel, "is_enabled": is_enabled}
 
-    # ── Field Tasks (Stage 35) ────────────────────────────────────
+    # ── Catalog Administration (Stage 41) ───────────────────────────
 
-    def field_tasks_list(self, *, status=None, offset=0, limit=50):
-        where_clauses = ["ft.assigned_to_user_id = %s"]
-        params: list = [self.context.user_id]
-        if status:
-            where_clauses.append("ft.status = %s")
-            params.append(status)
-        where_sql = " AND ".join(where_clauses)
+    def admin_category_create(self, *, name_fa, slug, icon_url=None, display_order=0):
+        self._require_catalog_admin()
+        if not name_fa or not name_fa.strip():
+            raise ValueError("Category name is required.")
+        if not slug or not slug.strip():
+            raise ValueError("Category slug is required.")
+        if int(display_order) < 0:
+            raise ValueError("display_order cannot be negative.")
         self.cur.execute(
-            f"SELECT ft.id, ft.task_type, ft.status, ft.notes, ft.created_at, ft.completed_at "
-            f"FROM field_tasks ft WHERE {where_sql} "
-            f"ORDER BY ft.created_at DESC LIMIT %s OFFSET %s",
-            (*params, limit, offset),
+            """
+            INSERT INTO categories (id,name_fa,slug,icon_url,display_order)
+            VALUES (%s,%s,%s,%s,%s)
+            RETURNING id,name_fa,slug,icon_url,display_order,created_at
+            """,
+            (str(uuid4()), name_fa.strip(), slug.strip(), icon_url, int(display_order)),
         )
-        return [dict(r) for r in self.cur.fetchall()]
-
-    def field_task_get(self, *, task_id):
+        row = dict(self.cur.fetchone())
+        row["id"] = str(row["id"])
+        row["created_at"] = row["created_at"].isoformat()
         self.cur.execute(
-            "SELECT id, task_type, assigned_to_user_id, target_organization_id, "
-            "status, notes, due_date, completed_at, created_at "
-            "FROM field_tasks WHERE id = %s",
-            (task_id,),
+            """
+            INSERT INTO admin_audit_logs
+                (id, actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s, %s, 'ADMIN_CATEGORY_CREATE', 'CATEGORY', %s, %s, %s, %s)
+            """,
+            (
+                str(uuid4()), self.context.user_id, row["id"],
+                Json(row), 'catalog category created',
+                self.context.correlation_id,
+            ),
         )
-        row = self.cur.fetchone()
-        if not row:
-            raise ValueError("Field task not found.")
-        return dict(row)
+        return row
 
-    def field_task_update(self, *, task_id, status=None, notes=None):
+    def admin_category_update(self, *, category_id, name_fa=None, slug=None, icon_url=None, display_order=None):
+        self._require_catalog_admin()
         updates = []
-        params: list = []
-        if status:
-            updates.append("status = %s")
-            params.append(status)
-        if notes:
-            updates.append("notes = %s")
-            params.append(notes)
+        params = []
+        if name_fa is not None:
+            if not name_fa.strip():
+                raise ValueError("Category name cannot be empty.")
+            updates.append("name_fa=%s")
+            params.append(name_fa.strip())
+        if slug is not None:
+            if not slug.strip():
+                raise ValueError("Category slug cannot be empty.")
+            updates.append("slug=%s")
+            params.append(slug.strip())
+        if icon_url is not None:
+            updates.append("icon_url=%s")
+            params.append(icon_url)
+        if display_order is not None:
+            if int(display_order) < 0:
+                raise ValueError("display_order cannot be negative.")
+            updates.append("display_order=%s")
+            params.append(int(display_order))
         if not updates:
-            raise ValueError("No fields to update.")
-        updates.append("updated_at = now()")
-        params.append(task_id)
+            raise ValueError("No category fields to update.")
+        params.append(category_id)
         self.cur.execute(
-            f"UPDATE field_tasks SET {', '.join(updates)} WHERE id = %s "
-            "RETURNING id, task_type, status, notes, created_at, updated_at",
+            "UPDATE categories SET " + ", ".join(updates) +
+            " WHERE id=%s RETURNING id,name_fa,slug,icon_url,display_order,created_at",
             tuple(params),
         )
         row = self.cur.fetchone()
         if not row:
-            raise ValueError("Field task not found.")
-        return dict(row)
-
-    def field_task_create(self, *, task_type, assigned_to_user_id,
-                          retailer_id=None, vendor_id=None, notes=None):
-        self._require_ops_context()
+            raise KeyError("Category not found.")
+        result = dict(row)
+        result["id"] = str(result["id"])
+        result["created_at"] = result["created_at"].isoformat()
         self.cur.execute(
-            "INSERT INTO field_tasks (task_type, assigned_to_user_id, notes) "
-            "VALUES (%s, %s, %s) "
-            "RETURNING id, task_type, status, notes, created_at",
-            (task_type, assigned_to_user_id, notes),
+            """
+            INSERT INTO admin_audit_logs
+                (id, actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s, %s, 'ADMIN_CATEGORY_UPDATE', 'Category', %s, %s, %s, %s)
+            """,
+            (
+                str(uuid4()), self.context.user_id, result["id"],
+                Json(result), "catalog category updated", self.context.correlation_id,
+            ),
+        )
+        return result
+
+    # ── Ops Analytics (Stage 38) ───────────────────────────────────
+
+    def ops_analytics(self, *, start_date, end_date):
+        self._require_ops_context()
+        if start_date > end_date:
+            raise ValueError("start_date must be on or before end_date.")
+        from scripts.pilot_kpis import compute_all_kpis
+
+        kpis = compute_all_kpis(self.cur, start_date, end_date)
+        return {
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
+            "kpis": kpis,
+        }
+
+    def ops_analytics_week(self, *, snapshot_date):
+        self._require_ops_context()
+        from scripts.pilot_kpis import weekly_snapshot
+
+        return weekly_snapshot(self.cur, snapshot_date)
+
+    # ── Management / IAM Read & Mutation Surface ───────────────────
+
+    def _require_vendor_management(self):
+        if not self.context.organization_id:
+            raise PermissionError("Vendor management requires an active organization context.")
+        self.cur.execute(
+            """
+            SELECT om.role, o.org_type, o.status AS org_status
+            FROM organization_memberships om
+            JOIN organizations o ON o.id = om.organization_id
+            WHERE om.user_id = %s
+              AND om.organization_id = %s
+              AND om.status = 'ACTIVE'
+              AND o.org_type = 'VENDOR'
+              AND o.status = 'ACTIVE'
+            LIMIT 1
+            """,
+            (self.context.user_id, self.context.organization_id),
         )
         row = self.cur.fetchone()
-        return dict(row)
+        if not row or row["role"] not in ("VENDOR_OWNER", "VENDOR_STAFF"):
+            raise PermissionError("Access denied: vendor membership required.")
+        return row
+
+    def _require_vendor_owner(self):
+        row = self._require_vendor_management()
+        if row["role"] != "VENDOR_OWNER":
+            raise PermissionError("Only VENDOR_OWNER may manage staff.")
+        return row
+
+    def _require_admin_management(self):
+        self._require_ops_context()
+        self.cur.execute(
+            """
+            SELECT role
+            FROM organization_memberships
+            WHERE user_id = %s
+              AND organization_id = %s
+              AND status = 'ACTIVE'
+            LIMIT 1
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        row = self.cur.fetchone()
+        if not row or row["role"] not in ("SUPER_ADMIN", "OPS_ADMIN", "ADMIN_SUPER", "OPS_AGENT"):
+            raise PermissionError("Administrative membership required.")
+        return row
+
+    def _require_super_admin(self):
+        row = self._require_admin_management()
+        if row["role"] not in ("SUPER_ADMIN", "ADMIN_SUPER"):
+            raise PermissionError("SUPER_ADMIN authority required.")
+        return row
+
+
+    def _require_dispute_resolution_context(self):
+        self._require_ops_context()
+        self.cur.execute(
+            """
+            SELECT om.role
+            FROM organization_memberships om
+            JOIN organizations o ON o.id=om.organization_id
+            WHERE om.user_id=%s
+              AND om.organization_id=%s
+              AND om.status='ACTIVE'
+              AND o.org_type='OPERATOR'
+              AND o.status='ACTIVE'
+              AND om.role IN ('OPS_ADMIN','SUPER_ADMIN','ADMIN_SUPER')
+            LIMIT 1
+            """,
+            (self.context.user_id, self.context.organization_id),
+        )
+        row = self.cur.fetchone()
+        if not row:
+            raise PermissionError("Dispute resolution requires OPS_ADMIN authority.")
+
+    def _require_catalog_admin(self):
+        row = self._require_admin_management()
+        if row["role"] not in ("SUPER_ADMIN", "ADMIN_SUPER", "OPS_ADMIN"):
+            raise PermissionError("Catalog administration requires SUPER_ADMIN or OPS_ADMIN.")
+        return row
+
+    def _require_broadcast_admin(self):
+        row = self._require_admin_management()
+        if row["role"] not in ("SUPER_ADMIN", "ADMIN_SUPER", "OPS_ADMIN"):
+            raise PermissionError("Broadcast administration requires SUPER_ADMIN or OPS_ADMIN.")
+        return row
+
+    def vendor_customers_list(self, *, query=None, offset=0, limit=50):
+        self._require_vendor_management()
+        params: list = [self.context.organization_id]
+        clauses = ["v.organization_id = %s", "o.order_status <> 'CANCELLED'"]
+        if query:
+            clauses.append("(r.store_name ILIKE %s OR u.full_name ILIKE %s OR u.phone_number ILIKE %s)")
+            needle = f"%{query.strip()}%"
+            params.extend([needle, needle, needle])
+        where_sql = " AND ".join(clauses)
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT
+                r.id AS retailer_id,
+                r.store_name,
+                r.city,
+                r.neighborhood,
+                u.id AS user_id,
+                u.full_name,
+                u.phone_number,
+                COUNT(o.id)::INT AS order_count,
+                MAX(o.created_at) AS last_order_at
+            FROM orders o
+            JOIN vendors v ON v.id = o.vendor_id
+            JOIN retailers r ON r.id = o.retailer_id
+            JOIN users u ON u.id = r.user_id
+            WHERE {where_sql}
+            GROUP BY r.id, r.store_name, r.city, r.neighborhood, u.id, u.full_name, u.phone_number
+            ORDER BY MAX(o.created_at) DESC, r.id
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        rows = [dict(x) for x in self.cur.fetchall()]
+        return {"customers": rows, "limit": limit, "offset": offset}
+
+    def vendor_staff_list(self, *, offset=0, limit=100):
+        self._require_vendor_management()
+        self.cur.execute(
+            """
+            SELECT
+                m.id AS membership_id,
+                m.user_id,
+                u.phone_number,
+                u.full_name,
+                m.role,
+                m.status,
+                m.is_primary,
+                m.created_at,
+                m.updated_at
+            FROM organization_memberships m
+            JOIN users u ON u.id = m.user_id
+            WHERE m.organization_id = %s
+            ORDER BY
+                CASE m.role WHEN 'VENDOR_OWNER' THEN 0 ELSE 1 END,
+                m.created_at ASC
+            LIMIT %s OFFSET %s
+            """,
+            (self.context.organization_id, limit, offset),
+        )
+        return {"members": [dict(x) for x in self.cur.fetchall()], "limit": limit, "offset": offset}
+
+    def vendor_staff_invite(self, *, phone_number, full_name):
+        self._require_vendor_owner()
+        self.cur.execute(
+            "SELECT id, is_active FROM users WHERE phone_number = %s LIMIT 1",
+            (phone_number,),
+        )
+        user = self.cur.fetchone()
+        if user and not user["is_active"]:
+            raise ValueError("The target user account is inactive.")
+        if not user:
+            user_id = str(uuid4())
+            self.cur.execute(
+                """
+                INSERT INTO users (id, phone_number, role, full_name, is_active)
+                VALUES (%s, %s, 'VENDOR_STAFF', %s, TRUE)
+                RETURNING id
+                """,
+                (user_id, phone_number, full_name),
+            )
+        else:
+            user_id = str(user["id"])
+            if full_name.strip():
+                self.cur.execute(
+                    "UPDATE users SET full_name=%s, updated_at=now() WHERE id=%s",
+                    (full_name.strip(), user_id),
+                )
+        self.cur.execute(
+            """
+            SELECT id, status, role
+            FROM organization_memberships
+            WHERE organization_id=%s AND user_id=%s
+            """,
+            (self.context.organization_id, user_id),
+        )
+        existing = self.cur.fetchone()
+        if existing:
+            raise ValueError(f"User already has membership in this vendor organization ({existing['status']}).")
+        membership_id = str(uuid4())
+        self.cur.execute(
+            """
+            INSERT INTO organization_memberships
+                (id, organization_id, user_id, role, status, is_primary)
+            VALUES (%s, %s, %s, 'VENDOR_STAFF', 'INVITED', FALSE)
+            RETURNING id, organization_id, user_id, role, status, created_at
+            """,
+            (membership_id, self.context.organization_id, user_id),
+        )
+        row = dict(self.cur.fetchone())
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id, state_after, reason, correlation_id)
+            VALUES (%s, 'VENDOR_STAFF_INVITED', 'ORGANIZATION_MEMBERSHIP', %s, %s, %s, %s)
+            """,
+            (
+                self.context.user_id,
+                membership_id,
+                Json(_jsonable_row(row)),
+                "vendor staff invitation",
+                self.context.correlation_id,
+            ),
+        )
+        return _jsonable_row(row)
+
+    def vendor_staff_update(self, *, membership_id, role=None, status=None):
+        self._require_vendor_owner()
+        allowed_roles = {"VENDOR_OWNER", "VENDOR_STAFF"}
+        allowed_statuses = {"INVITED", "ACTIVE", "SUSPENDED", "REVOKED"}
+        if role is not None and role not in allowed_roles:
+            raise ValueError("Invalid vendor membership role.")
+        if status is not None and status not in allowed_statuses:
+            raise ValueError("Invalid membership status.")
+        self.cur.execute(
+            """
+            SELECT id, user_id, role, status
+            FROM organization_memberships
+            WHERE id=%s AND organization_id=%s
+            FOR UPDATE
+            """,
+            (membership_id, self.context.organization_id),
+        )
+        before = self.cur.fetchone()
+        if not before:
+            raise KeyError("Vendor membership not found.")
+        if before["role"] == "VENDOR_OWNER" and (role == "VENDOR_STAFF" or status in {"SUSPENDED", "REVOKED"}):
+            self.cur.execute(
+                """
+                SELECT COUNT(*) AS owners
+                FROM organization_memberships
+                WHERE organization_id=%s
+                  AND role='VENDOR_OWNER'
+                  AND status='ACTIVE'
+                  AND id<>%s
+                """,
+                (self.context.organization_id, membership_id),
+            )
+            if int(self.cur.fetchone()["owners"]) == 0:
+                raise ValueError("Cannot remove the last active vendor owner.")
+        updates = []
+        params: list = []
+        if role is not None:
+            updates.append("role=%s")
+            params.append(role)
+        if status is not None:
+            updates.append("status=%s")
+            params.append(status)
+        if not updates:
+            raise ValueError("No staff fields to update.")
+        updates.append("updated_at=now()")
+        params.extend([membership_id, self.context.organization_id])
+        self.cur.execute(
+            f"""
+            UPDATE organization_memberships
+            SET {", ".join(updates)}
+            WHERE id=%s AND organization_id=%s
+            RETURNING id, organization_id, user_id, role, status, is_primary, updated_at
+            """,
+            tuple(params),
+        )
+        after = dict(self.cur.fetchone())
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id, state_before, state_after, reason, correlation_id)
+            VALUES (%s, 'VENDOR_STAFF_UPDATED', 'ORGANIZATION_MEMBERSHIP', %s, %s, %s, %s, %s)
+            """,
+            (
+                self.context.user_id,
+                membership_id,
+                Json(dict(before)),
+                Json(after),
+                "vendor staff membership update",
+                self.context.correlation_id,
+            ),
+        )
+        return after
+
+    def delegated_permissions_list(self, *, membership_id):
+        if not self.context.organization_id:
+            raise PermissionError("Delegated permissions require an active organization context.")
+        return membership_permissions(
+            self.cur,
+            self.context.user_id,
+            self.context.organization_id,
+            str(membership_id),
+        )
+
+    def delegated_permission_grant(
+        self,
+        *,
+        membership_id,
+        permission_key,
+        reason,
+        client=None,
+    ):
+        if not self.context.organization_id:
+            raise PermissionError("Delegated permissions require an active organization context.")
+        return grant_permission(
+            self.cur,
+            self.context.user_id,
+            self.context.organization_id,
+            str(membership_id),
+            permission_key,
+            reason,
+            client=client,
+            target_role="VENDOR_STAFF",
+        )
+
+    def delegated_permission_revoke(
+        self,
+        *,
+        membership_id,
+        permission_key,
+        reason,
+        client=None,
+    ):
+        if not self.context.organization_id:
+            raise PermissionError("Delegated permissions require an active organization context.")
+        return revoke_permission(
+            self.cur,
+            self.context.user_id,
+            self.context.organization_id,
+            str(membership_id),
+            permission_key,
+            reason,
+            client=client,
+            target_role="VENDOR_STAFF",
+        )
+
+    def delegated_permission_audit(self, *, membership_id=None, limit=100):
+        if not self.context.organization_id:
+            raise PermissionError("Delegated permissions require an active organization context.")
+        return {
+            "items": permission_audit(
+                self.cur,
+                self.context.user_id,
+                self.context.organization_id,
+                target_membership_id=str(membership_id) if membership_id else None,
+                limit=limit,
+            ),
+            "limit": limit,
+        }
+
+    def admin_users_list(self, *, query=None, offset=0, limit=50):
+        self._require_admin_management()
+        params: list = []
+        clauses = ["1=1"]
+        if query:
+            clauses.append("(u.phone_number ILIKE %s OR u.full_name ILIKE %s OR u.role ILIKE %s)")
+            needle = f"%{query.strip()}%"
+            params.extend([needle, needle, needle])
+        where_sql = " AND ".join(clauses)
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT
+                u.id, u.phone_number, u.full_name, u.role, u.is_active,
+                u.last_login_at, u.created_at,
+                COUNT(DISTINCT m.id)::INT AS membership_count
+            FROM users u
+            LEFT JOIN organization_memberships m ON m.user_id=u.id
+            WHERE {where_sql}
+            GROUP BY u.id
+            ORDER BY u.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        return {"users": [dict(x) for x in self.cur.fetchall()], "limit": limit, "offset": offset}
+
+    def admin_user_update(self, *, user_id, is_active):
+        self._require_super_admin()
+        self.cur.execute(
+            "SELECT id, is_active, role FROM users WHERE id=%s FOR UPDATE",
+            (user_id,),
+        )
+        before = self.cur.fetchone()
+        if not before:
+            raise KeyError("User not found.")
+        if str(before["id"]) == str(self.context.user_id) and not is_active:
+            raise ValueError("Administrator cannot deactivate the current account.")
+        self.cur.execute(
+            "UPDATE users SET is_active=%s, updated_at=now() WHERE id=%s RETURNING id, phone_number, full_name, role, is_active, updated_at",
+            (is_active, user_id),
+        )
+        after = dict(self.cur.fetchone())
+        if not is_active:
+            self.cur.execute(
+                "UPDATE user_sessions SET status='REVOKED', revoked_at=now() WHERE user_id=%s AND status='ACTIVE'",
+                (user_id,),
+            )
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id, state_before, state_after, reason, correlation_id)
+            VALUES (%s, 'ADMIN_USER_STATUS_UPDATED', 'USER', %s, %s, %s, %s, %s)
+            """,
+            (self.context.user_id, user_id, Json(dict(before)), Json(after), "admin user status update", self.context.correlation_id),
+        )
+        return after
+
+    def admin_organizations_list(self, *, query=None, org_type=None, offset=0, limit=50):
+        self._require_admin_management()
+        params: list = []
+        clauses = ["1=1"]
+        if query:
+            clauses.append("(o.name ILIKE %s OR COALESCE(o.national_id,'') ILIKE %s)")
+            needle = f"%{query.strip()}%"
+            params.extend([needle, needle])
+        if org_type:
+            clauses.append("o.org_type=%s")
+            params.append(org_type)
+        where_sql = " AND ".join(clauses)
+        params.extend([limit, offset])
+        self.cur.execute(
+            f"""
+            SELECT
+                o.id, o.name, o.org_type, o.status, o.national_id,
+                o.created_at, o.updated_at,
+                COUNT(DISTINCT m.id)::INT AS membership_count
+            FROM organizations o
+            LEFT JOIN organization_memberships m ON m.organization_id=o.id
+            WHERE {where_sql}
+            GROUP BY o.id
+            ORDER BY o.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        return {"organizations": [dict(x) for x in self.cur.fetchall()], "limit": limit, "offset": offset}
+
+    def admin_organization_update(self, *, organization_id, status):
+        self._require_super_admin()
+        allowed = {"LEAD", "DOCUMENTS_PENDING", "UNDER_REVIEW", "VERIFICATION_PENDING", "APPROVED", "ACTIVE", "REJECTED", "SUSPENDED"}
+        if status not in allowed:
+            raise ValueError("Invalid organization status.")
+        self.cur.execute(
+            "SELECT id, name, org_type, status FROM organizations WHERE id=%s FOR UPDATE",
+            (organization_id,),
+        )
+        before = self.cur.fetchone()
+        if not before:
+            raise KeyError("Organization not found.")
+        self.cur.execute(
+            "UPDATE organizations SET status=%s, updated_at=now() WHERE id=%s RETURNING id, name, org_type, status, updated_at",
+            (status, organization_id),
+        )
+        after = dict(self.cur.fetchone())
+        if status in ("SUSPENDED", "REJECTED"):
+            self.cur.execute(
+                """
+                UPDATE user_sessions
+                SET status='REVOKED', revoked_at=now()
+                WHERE active_organization_id=%s AND status='ACTIVE'
+                """,
+                (organization_id,),
+            )
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id, state_before, state_after, reason, correlation_id)
+            VALUES (%s, 'ADMIN_ORG_STATUS_UPDATED', 'ORGANIZATION', %s, %s, %s, %s, %s)
+            """,
+            (self.context.user_id, organization_id, Json(dict(before)), Json(after), "admin organization status update", self.context.correlation_id),
+        )
+        return after
+
+    def permission_catalog(self):
+        self._require_ops_context()
+        return {
+            "roles": {
+                "RETAILER_OWNER": ["invite_staff", "manage_store_profile", "place_orders", "confirm_delivery", "submit_payment_evidence", "open_disputes", "view_invoices"],
+                "RETAILER_STAFF": ["view_orders", "confirm_delivery"],
+                "VENDOR_OWNER": ["manage_catalog", "set_prices", "update_inventory", "accept_reject_orders", "assign_drivers", "view_settlements", "manage_staff"],
+                "VENDOR_STAFF": ["review_orders", "mark_preparing", "mark_ready", "dispatch", "confirm_inventory"],
+                "FIELD_ACTIVATOR": ["register_retailer_lead", "verify_coordinates", "complete_onboarding", "log_field_visits"],
+                "OPS_ADMIN": ["resolve_support", "catalog_operations", "review_candidates", "monitor_vendor_sla"],
+                "SUPER_ADMIN": ["manage_users", "manage_organizations", "broadcasts", "dispute_resolution", "financial_adjustments", "feature_flags"],
+            },
+            "delegatable_permissions": sorted(CANONICAL_PERMISSIONS),
+            "delegation_rules": {
+                "manager_permission": "membership.manage",
+                "tenant_scope": "active_organization",
+                "privilege_ceiling": "actor_can_only_delegate_permissions_in_actor_effective_set",
+                "audit": "permission_audit_events_append_only",
+            },
+            "source": "MASTER_SYSTEM_ARCHITECTURE.md §4 + Master Tree VD-15",
+        }
+    
+    def global_returns_list(self, *, status=None, offset=0, limit=50):
+        self._require_ops_context()
+        params: list = []
+        clauses = ["1=1"]
+        if status:
+            clauses.append("r.status=%s")
+            params.append(status)
+        params.extend([limit, offset])
+        where_sql = " AND ".join(clauses)
+        self.cur.execute(
+            f"""
+            SELECT
+                r.id AS return_id,
+                r.order_id,
+                r.status,
+                r.reason,
+                r.claimed_refund_amount_toman,
+                r.approved_refund_amount_toman,
+                r.created_at,
+                o.order_number,
+                o.order_status,
+                ret.store_name AS retailer_name,
+                v.business_name AS vendor_name
+            FROM returns r
+            JOIN orders o ON o.id=r.order_id
+            JOIN retailers ret ON ret.id=o.retailer_id
+            JOIN vendors v ON v.id=o.vendor_id
+            WHERE {where_sql}
+            ORDER BY r.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            tuple(params),
+        )
+        return {"returns": [dict(x) for x in self.cur.fetchall()], "limit": limit, "offset": offset}
+
+
+    # ── Admin SLA Override (Stage 39) ──────────────────────────────
+
+    def admin_sla_override(self, *, order_id, extension_minutes, reason):
+        self._require_admin_management()
+        if not 1 <= int(extension_minutes) <= 24 * 60:
+            raise ValueError("extension_minutes must be between 1 and 1440.")
+        if not reason or not reason.strip():
+            raise ValueError("reason is required for an SLA override.")
+
+        self.cur.execute(
+            """
+            SELECT id, order_number, order_status, vendor_acceptance_deadline_at
+            FROM orders
+            WHERE id=%s
+            FOR UPDATE
+            """,
+            (order_id,),
+        )
+        before = self.cur.fetchone()
+        if not before:
+            raise KeyError("Order not found.")
+        if before["order_status"] != "SUBMITTED":
+            raise ValueError("SLA override is only valid for SUBMITTED orders.")
+        if before["vendor_acceptance_deadline_at"] is None:
+            raise ValueError("Order has no vendor acceptance SLA deadline.")
+
+        self.cur.execute(
+            """
+            UPDATE orders
+            SET vendor_acceptance_deadline_at = vendor_acceptance_deadline_at + (%s * interval '1 minute'),
+                updated_at = now()
+            WHERE id=%s
+            RETURNING id, order_number, order_status, vendor_acceptance_deadline_at, updated_at
+            """,
+            (int(extension_minutes), order_id),
+        )
+        after = dict(self.cur.fetchone())
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_before, state_after, reason, correlation_id)
+            VALUES (%s, 'ORDER_SLA_OVERRIDE', 'ORDER', %s, %s, %s, %s, %s)
+            """,
+            (
+                self.context.user_id,
+                order_id,
+                Json({
+                    "vendor_acceptance_deadline_at":
+                        before["vendor_acceptance_deadline_at"].isoformat()
+                        if before["vendor_acceptance_deadline_at"] else None
+                }),
+                Json({
+                    "vendor_acceptance_deadline_at":
+                        after["vendor_acceptance_deadline_at"].isoformat()
+                        if after["vendor_acceptance_deadline_at"] else None,
+                    "extension_minutes": int(extension_minutes),
+                }),
+                reason.strip(),
+                self.context.correlation_id,
+            ),
+        )
+        return after
+
+
+    # ── Admin Broadcast HTTP Boundary (Stage 40) ────────────────────
+
+    @staticmethod
+    def _broadcast_criteria_where(criteria: dict, alias: str = "u"):
+        allowed = {"org_type", "status", "city", "role"}
+        unknown = set(criteria) - allowed
+        if unknown:
+            raise ValueError("Unsupported broadcast targeting criteria: " + ", ".join(sorted(unknown)))
+
+        clauses = []
+        params = []
+        if "role" in criteria:
+            role = str(criteria["role"])
+            if role not in {
+                "RETAILER_OWNER", "RETAILER_STAFF",
+                "VENDOR_OWNER", "VENDOR_STAFF",
+                "FIELD_ACTIVATOR", "OPS_ADMIN", "SUPER_ADMIN",
+            }:
+                raise ValueError("Unsupported broadcast role criterion.")
+            clauses.append("m.role = %s")
+            params.append(role)
+        if "org_type" in criteria:
+            org_type = str(criteria["org_type"]).upper()
+            if org_type not in {"RETAILER", "VENDOR", "OPERATOR"}:
+                raise ValueError("Unsupported organization type criterion.")
+            clauses.append("o.org_type = %s")
+            params.append(org_type)
+        if "status" in criteria:
+            org_status = str(criteria["status"]).upper()
+            if org_status not in {"ACTIVE", "SUSPENDED", "REJECTED", "APPROVED", "UNDER_REVIEW", "DOCUMENTS_PENDING", "VERIFICATION_PENDING", "LEAD"}:
+                raise ValueError("Unsupported organization status criterion.")
+            clauses.append("o.status = %s")
+            params.append(org_status)
+        if "city" in criteria:
+            clauses.append("r.city = %s")
+            params.append(str(criteria["city"]).strip())
+        return clauses, params
+
+    def admin_broadcast_create(self, *, title, body, target_criteria, channel="IN_APP", priority="NORMAL", scheduled_at=None):
+        self._require_broadcast_admin()
+        if not title or not title.strip():
+            raise ValueError("Broadcast title is required.")
+        if not body or not body.strip():
+            raise ValueError("Broadcast body is required.")
+        if channel not in {"IN_APP", "SMS", "PUSH", "INBOX_AND_SMS", "ALL"}:
+            raise ValueError("Unsupported broadcast channel.")
+        if priority not in {"LOW", "NORMAL", "HIGH", "URGENT"}:
+            raise ValueError("Unsupported broadcast priority.")
+        if channel != "IN_APP":
+            raise ValueError("Only IN_APP broadcast dispatch is enabled in the current MVP notification runtime.")
+
+        criteria = dict(target_criteria or {})
+        clauses, params = self._broadcast_criteria_where(criteria)
+        where = " AND ".join(["m.status = 'ACTIVE'", "u.is_active = TRUE"] + clauses)
+
+        if "city" in criteria:
+            query = f"""
+                SELECT COUNT(DISTINCT u.id)::INT AS count
+                FROM users u
+                JOIN organization_memberships m ON m.user_id=u.id AND m.status='ACTIVE'
+                JOIN organizations o ON o.id=m.organization_id
+                JOIN retailers r ON r.organization_id=o.id
+                WHERE {where}
+            """
+        else:
+            query = f"""
+                SELECT COUNT(DISTINCT u.id)::INT AS count
+                FROM users u
+                JOIN organization_memberships m ON m.user_id=u.id AND m.status='ACTIVE'
+                JOIN organizations o ON o.id=m.organization_id
+                WHERE {where}
+            """
+        self.cur.execute(query, tuple(params))
+        estimated = int(self.cur.fetchone()["count"])
+
+        bid = str(uuid4())
+        self.cur.execute(
+            """
+            INSERT INTO broadcast_messages
+                (id, admin_user_id, title, body, target_criteria, channel,
+                 priority, status, estimated_recipient_count, scheduled_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,'DRAFT',%s,%s)
+            RETURNING id, title, body, target_criteria, channel, priority,
+                      status, recipient_count, estimated_recipient_count,
+                      scheduled_at, created_at
+            """,
+            (
+                bid,
+                self.context.user_id,
+                title.strip(),
+                body.strip(),
+                Json(criteria),
+                channel,
+                priority,
+                estimated,
+                scheduled_at,
+            ),
+        )
+        row = dict(self.cur.fetchone())
+        for key in ("id",):
+            row[key] = str(row[key])
+        for key in ("scheduled_at", "created_at"):
+            if row[key]:
+                row[key] = row[key].isoformat()
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (id, actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                str(uuid4()), self.context.user_id, 'ADMIN_BROADCAST_CREATE',
+                'BROADCAST', row["id"],
+                Json(row), 'broadcast draft created',
+                self.context.correlation_id,
+            ),
+        )
+        return row
+
+    def admin_broadcast_dispatch(self, *, broadcast_id, approve=True):
+        self._require_broadcast_admin()
+        if not approve:
+            raise ValueError("Broadcast dispatch requires explicit approval.")
+
+        self.cur.execute(
+            """
+            SELECT *
+            FROM broadcast_messages
+            WHERE id=%s
+            FOR UPDATE
+            """,
+            (broadcast_id,),
+        )
+        broadcast = self.cur.fetchone()
+        if not broadcast:
+            raise KeyError("Broadcast not found.")
+        if broadcast["status"] == "COMPLETED":
+            self.cur.execute(
+                "SELECT COUNT(*)::INT AS count FROM broadcast_recipients WHERE broadcast_id=%s AND status='SENT'",
+                (broadcast_id,),
+            )
+            return {
+                "id": str(broadcast["id"]),
+                "status": "COMPLETED",
+                "recipient_count": int(self.cur.fetchone()["count"]),
+                "idempotent_replay": True,
+            }
+        if broadcast["status"] not in {"DRAFT", "SCHEDULED"}:
+            raise ValueError(f"Broadcast cannot be dispatched from {broadcast['status']}.")
+
+        criteria = dict(broadcast["target_criteria"] or {})
+        clauses, params = self._broadcast_criteria_where(criteria)
+        where = " AND ".join(["m.status='ACTIVE'", "u.is_active=TRUE"] + clauses)
+
+        if "city" in criteria:
+            recipient_sql = f"""
+                SELECT DISTINCT u.id AS user_id, o.id AS organization_id
+                FROM users u
+                JOIN organization_memberships m ON m.user_id=u.id AND m.status='ACTIVE'
+                JOIN organizations o ON o.id=m.organization_id
+                JOIN retailers r ON r.organization_id=o.id
+                WHERE {where}
+                ORDER BY u.id, o.id
+            """
+        else:
+            recipient_sql = f"""
+                SELECT DISTINCT u.id AS user_id, o.id AS organization_id
+                FROM users u
+                JOIN organization_memberships m ON m.user_id=u.id AND m.status='ACTIVE'
+                JOIN organizations o ON o.id=m.organization_id
+                WHERE {where}
+                ORDER BY u.id, o.id
+            """
+        self.cur.execute(recipient_sql, tuple(params))
+        recipients = self.cur.fetchall()
+
+        # Frozen recipient snapshot. The unique constraint makes retries safe.
+        self.cur.execute(
+            """
+            UPDATE broadcast_messages
+            SET status='PROCESSING', approved_by=%s, dispatched_at=now()
+            WHERE id=%s
+            """,
+            (self.context.user_id, broadcast_id),
+        )
+
+        sent = 0
+        for recipient in recipients:
+            self.cur.execute(
+                """
+                INSERT INTO broadcast_recipients
+                    (id,broadcast_id,user_id,organization_id,status)
+                VALUES (%s,%s,%s,%s,'PENDING')
+                ON CONFLICT (broadcast_id,user_id) DO NOTHING
+                RETURNING id
+                """,
+                (str(uuid4()), broadcast_id, recipient["user_id"], recipient["organization_id"]),
+            )
+            snap = self.cur.fetchone()
+            if not snap:
+                continue
+
+            self.cur.execute(
+                """
+                INSERT INTO notifications
+                    (id,user_id,organization_id,event_name,title,body,priority)
+                VALUES (%s,%s,%s,'ADMIN_BROADCAST_MESSAGE',%s,%s,%s)
+                RETURNING id
+                """,
+                (
+                    str(uuid4()),
+                    recipient["user_id"],
+                    recipient["organization_id"],
+                    broadcast["title"],
+                    broadcast["body"],
+                    broadcast["priority"],
+                ),
+            )
+            notification_id = self.cur.fetchone()["id"]
+
+            self.cur.execute(
+                """
+                INSERT INTO user_inbox_items
+                    (id,user_id,notification_id,title,body,category,is_read)
+                VALUES (%s,%s,%s,%s,%s,'SYSTEM',FALSE)
+                """,
+                (
+                    str(uuid4()),
+                    recipient["user_id"],
+                    notification_id,
+                    broadcast["title"],
+                    broadcast["body"],
+                ),
+            )
+            self.cur.execute(
+                """
+                UPDATE broadcast_recipients
+                SET notification_id=%s, status='SENT'
+                WHERE id=%s
+                """,
+                (notification_id, snap["id"]),
+            )
+            sent += 1
+
+        self.cur.execute(
+            """
+            UPDATE broadcast_messages
+            SET recipient_count=%s, status='COMPLETED', completed_at=now()
+            WHERE id=%s
+            RETURNING id,status,recipient_count,estimated_recipient_count,completed_at
+            """,
+            (sent, broadcast_id),
+        )
+        row = dict(self.cur.fetchone())
+        row["id"] = str(row["id"])
+        audit_row = dict(row)
+        audit_row["estimated_recipient_count"] = (
+            int(audit_row["estimated_recipient_count"]) if audit_row["estimated_recipient_count"] else 0
+        )
+        audit_row["completed_at"] = (
+            audit_row["completed_at"].isoformat() if audit_row["completed_at"] else None
+        )
+        self.cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (id, actor_user_id, action, target_entity_type, target_entity_id,
+                 state_after, reason, correlation_id)
+            VALUES (%s, %s, 'ADMIN_BROADCAST_DISPATCH', 'BROADCAST', %s, %s, %s, %s)
+            """,
+            (
+                str(uuid4()), self.context.user_id, broadcast_id,
+                Json(audit_row), "broadcast dispatched",
+                self.context.correlation_id,
+            ),
+        )
+        return {
+            "id": str(row["id"]),
+            "status": row["status"],
+            "recipient_count": int(row["recipient_count"]),
+            "estimated_recipient_count": int(row["estimated_recipient_count"]),
+            "completed_at": row["completed_at"].isoformat() if row["completed_at"] else None,
+            "idempotent_replay": False,
+        }

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0.0",
+  "schema": {
+    "types": {
+      "token": {
+        "description": "POL Precision Commerce Design Tokens (Light/Night, Typography, Spacing, Radius, Motion)",
+        "searchable": ["name", "summary", "tags"],
+        "facets": ["$type", "theme"]
+      },
+      "principle": {
+        "description": "POL Precision Commerce Design Principles & Invariants",
+        "searchable": ["title", "summary", "body", "tags"]
+      },
+      "pattern": {
+        "description": "POL Density and Surface Patterns (D1 Spacious, D2 Balanced, D3 Command)",
+        "searchable": ["title", "summary", "body", "tags"]
+      },
+      "component": {
+        "description": "POL UI Components and Domain Commerce Surfaces",
+        "searchable": ["title", "summary", "props", "tags"]
+      },
+      "rule": {
+        "description": "POL Visual Safety and Governance Rules",
+        "searchable": ["title", "summary", "body", "tags"]
+      }
+    },
+    "relations": {
+      "consumes_token": {
+        "from": "component",
+        "to": "token",
+        "description": "Component consumes token"
+      },
+      "implements_pattern": {
+        "from": "component",
+        "to": "pattern",
+        "description": "Component implements pattern"
+      }
+    }
+  }
+}

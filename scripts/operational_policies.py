@@ -1,6 +1,6 @@
 """POL operational policies for checkout integrity and operational realism."""
 
-from datetime import datetime, timezone, time
+from datetime import datetime, timezone, time, timedelta
 from zoneinfo import ZoneInfo
 
 
@@ -33,12 +33,66 @@ def _local_day_bounds(now_utc: datetime, tz_name: str):
     return local_now, postgres_weekday, local_midnight.astimezone(timezone.utc), next_midnight.astimezone(timezone.utc)
 
 
+def _resolve_operating_window(cur, vendor_id: str, now_utc: datetime, fallback_tz_name: str):
+    """Resolve the active operating window in the window row's own timezone."""
+    cur.execute(
+        """
+        SELECT id, timezone, weekday, opens_at, closes_at, order_cutoff_at, effective_from
+        FROM vendor_operating_windows
+        WHERE vendor_id = %s
+          AND is_active = TRUE
+          AND effective_from <= now()
+          AND (effective_until IS NULL OR effective_until > now())
+        ORDER BY effective_from DESC, id ASC;
+        """,
+        (vendor_id,),
+    )
+    windows = cur.fetchall()
+    if not windows:
+        return None
+
+    matches = []
+    for window in windows:
+        tz_name = window["timezone"] or fallback_tz_name or "Asia/Tehran"
+        try:
+            tz = ZoneInfo(tz_name)
+        except Exception as exc:
+            raise AllocationIntegrityError(f"Invalid vendor timezone: {tz_name}") from exc
+
+        local_now = now_utc.astimezone(tz)
+        current_time = local_now.timetz().replace(tzinfo=None)
+        current_weekday = (local_now.weekday() + 1) % 7
+        opens_at = window["opens_at"]
+        closes_at = window["closes_at"]
+        overnight = opens_at > closes_at
+        business_weekday = (
+            (current_weekday - 1) % 7
+            if overnight and current_time <= closes_at
+            else current_weekday
+        )
+        if int(window["weekday"]) != business_weekday:
+            continue
+        matches.append((window, local_now, current_time, overnight))
+
+    if not matches:
+        return None
+    return matches[0]
+
+
 def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
     """Apply configured vendor hours/capacity using the vendor's own timezone/day boundary."""
     _, vendor_units = _vendor_allocated_totals(vendor_allocations)
     now_utc = datetime.now(timezone.utc)
 
-    for vendor_id, requested_units in vendor_units.items():
+    # Capacity is a shared transactional resource. Serialize checks per vendor
+    # so the canonical checkout path cannot perform two check-then-act decisions
+    # against the same capacity snapshot concurrently.
+    for vendor_id in sorted(vendor_units):
+        requested_units = vendor_units[vendor_id]
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0));",
+            (f"POL:vendor-capacity:{vendor_id}",),
+        )
         cur.execute(
             """
             SELECT timezone, max_orders_per_day, max_pick_units_per_hour
@@ -56,41 +110,7 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
         tz_name = (capacity["timezone"] if capacity and capacity["timezone"] else "Asia/Tehran")
         local_now, local_weekday, day_start_utc, next_day_start_utc = _local_day_bounds(now_utc, tz_name)
 
-        cur.execute(
-            """
-            SELECT timezone, opens_at, closes_at, order_cutoff_at
-            FROM vendor_operating_windows
-            WHERE vendor_id = %s
-              AND weekday = %s
-              AND is_active = TRUE
-              AND effective_from <= now()
-              AND (effective_until IS NULL OR effective_until > now())
-            ORDER BY effective_from DESC
-            LIMIT 1;
-            """,
-            (vendor_id, local_weekday),
-        )
-        window = cur.fetchone()
-
-        if window and window["timezone"]:
-            if window["timezone"] != tz_name:
-                tz_name = window["timezone"]
-                local_now, local_weekday, day_start_utc, next_day_start_utc = _local_day_bounds(now_utc, tz_name)
-            cur.execute(
-                """
-                SELECT timezone, opens_at, closes_at, order_cutoff_at
-                FROM vendor_operating_windows
-                WHERE vendor_id = %s
-                  AND weekday = %s
-                  AND is_active = TRUE
-                  AND effective_from <= now()
-                  AND (effective_until IS NULL OR effective_until > now())
-                ORDER BY effective_from DESC
-                LIMIT 1;
-                """,
-                (vendor_id, local_weekday),
-            )
-            window = cur.fetchone()
+        window_match = _resolve_operating_window(cur, vendor_id, now_utc, tz_name)
 
         if capacity:
             if capacity["max_orders_per_day"] is not None:
@@ -131,13 +151,12 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
                         f"{recent_units + requested_units} > {capacity['max_pick_units_per_hour']}"
                     )
 
-        if window:
-            current_time = local_now.timetz().replace(tzinfo=None)
+        if window_match:
+            window, window_local_now, current_time, overnight = window_match
             opens_at = window["opens_at"]
             closes_at = window["closes_at"]
             cutoff = window["order_cutoff_at"]
 
-            # Support a business day that crosses midnight (e.g. 22:00-02:00).
             if opens_at <= closes_at:
                 in_window = opens_at <= current_time <= closes_at
             else:
@@ -145,13 +164,34 @@ def validate_vendor_operational_capacity(cur, vendor_allocations: list) -> None:
 
             if not in_window:
                 raise AllocationIntegrityError(f"Vendor {vendor_id} is outside its operating window.")
-            if cutoff and current_time > cutoff:
-                raise AllocationIntegrityError(f"Vendor {vendor_id} order cutoff has passed.")
+            if cutoff:
+                business_date = window_local_now.date()
+                if overnight and current_time <= closes_at:
+                    business_date -= timedelta(days=1)
+
+                cutoff_date = business_date
+                if overnight and cutoff < opens_at:
+                    cutoff_date += timedelta(days=1)
+
+                cutoff_at = datetime.combine(
+                    cutoff_date,
+                    cutoff,
+                    tzinfo=window_local_now.tzinfo,
+                )
+                if window_local_now > cutoff_at:
+                    raise AllocationIntegrityError(f"Vendor {vendor_id} order cutoff has passed.")
 
 
 def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retailer_id: str,
                                        vendor_allocations: list) -> None:
-    """Reject forged/stale allocation input before transactional checkout."""
+    """Reject forged/stale allocation input before transactional checkout.
+
+    An allocation plan may legally contain UNFULFILLED basket lines. Checkout
+    commits only ALLOCATED/PARTIALLY_ALLOCATED lines and leaves the unfulfilled
+    demand represented in the consumed allocation plan.
+    """
+    allocated_statuses = {"ALLOCATED", "PARTIALLY_ALLOCATED"}
+
     cur.execute(
         """
         SELECT b.retailer_id, b.status, b.version,
@@ -178,6 +218,23 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
 
     cur.execute(
         """
+        SELECT bi.product_id, ai.vendor_product_id, ai.status,
+               ai.allocated_quantity, ai.unit_price_snapshot_toman,
+               ai.line_total_toman
+        FROM allocation_items ai
+        JOIN basket_items bi ON bi.id = ai.basket_item_id
+        WHERE ai.allocation_plan_id = %s
+          AND bi.basket_id = %s
+        ORDER BY ai.id;
+        """,
+        (plan_id, basket_id),
+    )
+    plan_items = cur.fetchall()
+    if not plan_items:
+        raise AllocationIntegrityError("Allocation plan has no basket lines.")
+
+    cur.execute(
+        """
         SELECT product_id, requested_quantity
         FROM basket_items
         WHERE basket_id = %s
@@ -189,13 +246,56 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
     if not basket_items:
         raise AllocationIntegrityError("Cannot checkout an empty basket.")
 
-    if len(vendor_allocations) != len(basket_items):
+    expected_requested = {
+        str(row["product_id"]): int(row["requested_quantity"])
+        for row in basket_items
+    }
+    plan_by_product = {}
+    for row in plan_items:
+        product_id = str(row["product_id"])
+        if product_id in plan_by_product:
+            raise AllocationIntegrityError("Allocation plan contains duplicate basket products.")
+        plan_by_product[product_id] = row
+
+    if set(plan_by_product) != set(expected_requested):
+        raise AllocationIntegrityError("Allocation plan does not cover the current basket lines.")
+
+    invalid_statuses = {
+        row["status"]
+        for row in plan_items
+        if row["status"] not in allocated_statuses and row["status"] != "UNFULFILLED"
+    }
+    if invalid_statuses:
         raise AllocationIntegrityError(
-            "MVP allocation must assign exactly one vendor offer to each basket line."
+            f"Allocation plan contains invalid line statuses: {sorted(invalid_statuses)}"
         )
 
-    expected = {str(r["product_id"]): int(r["requested_quantity"]) for r in basket_items}
+    allocated_plan = [
+        row for row in plan_items if row["status"] in allocated_statuses
+    ]
+    if not allocated_plan:
+        raise AllocationIntegrityError("Cannot checkout an allocation plan with no fulfilled lines.")
+
+    if len(vendor_allocations) != len(allocated_plan):
+        raise AllocationIntegrityError(
+            "Checkout allocations must exactly match the fulfilled allocation-plan lines."
+        )
+
+    expected_allocations = {
+        (
+            str(row["product_id"]),
+            str(row["vendor_product_id"]),
+            int(row["allocated_quantity"]),
+            int(row["unit_price_snapshot_toman"]),
+            int(row["line_total_toman"]),
+        )
+        for row in allocated_plan
+    }
+    if len(expected_allocations) != len(allocated_plan):
+        raise AllocationIntegrityError("Allocation plan contains duplicate fulfilled allocation lines.")
+
     seen = set()
+    supplied_allocations = set()
     vendor_totals = {}
 
     for alloc in vendor_allocations:
@@ -223,15 +323,35 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
             raise AllocationIntegrityError(f"Vendor product {vp_id} has incomplete inventory data.")
 
         product_id = str(row["product_id"])
-        if product_id in seen or product_id not in expected:
+        if product_id in seen or product_id not in expected_requested:
             raise AllocationIntegrityError("Allocation does not map one-to-one to basket products.")
         seen.add(product_id)
 
-        qty = int(alloc["quantity"])
-        if qty != expected[product_id]:
+        persisted = plan_by_product.get(product_id)
+        if not persisted or persisted["status"] not in allocated_statuses:
             raise AllocationIntegrityError(
-                f"Quantity mismatch for product {product_id}: allocation={qty}, basket={expected[product_id]}"
+                f"Allocation for product {product_id} is not present as a fulfilled plan line."
             )
+
+        qty = int(alloc["quantity"])
+        unit_price = int(alloc["unit_price_toman"])
+        amount = int(alloc["amount_toman"])
+        expected_tuple = (
+            product_id,
+            str(persisted["vendor_product_id"]),
+            int(persisted["allocated_quantity"]),
+            int(persisted["unit_price_snapshot_toman"]),
+            int(persisted["line_total_toman"]),
+        )
+        supplied_tuple = (product_id, str(vp_id), qty, unit_price, amount)
+        if supplied_tuple != expected_tuple:
+            raise AllocationIntegrityError(
+                f"Checkout allocation does not match the persisted plan for product {product_id}."
+            )
+        supplied_allocations.add(supplied_tuple)
+
+        if qty <= 0:
+            raise AllocationIntegrityError(f"Allocated quantity must be positive for {vp_id}.")
         if qty < int(row["moq"]):
             raise AllocationIntegrityError(f"Requested quantity is below vendor MOQ for {vp_id}.")
 
@@ -241,8 +361,6 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
                 f"Available stock is insufficient for {vp_id}: {available} < requested {qty}."
             )
 
-        unit_price = int(alloc["unit_price_toman"])
-        amount = int(alloc["amount_toman"])
         if amount != unit_price * qty:
             raise AllocationIntegrityError(f"Line amount mismatch for vendor product {vp_id}.")
 
@@ -261,8 +379,13 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
         vendor_key = str(row["vendor_id"])
         vendor_totals[vendor_key] = vendor_totals.get(vendor_key, 0) + amount
 
-    if seen != set(expected):
-        raise AllocationIntegrityError("Allocation is missing one or more basket products.")
+    expected_products = {
+        str(row["product_id"]) for row in allocated_plan
+    }
+    if seen != expected_products or supplied_allocations != expected_allocations:
+        raise AllocationIntegrityError(
+            "Checkout allocations do not exactly match the fulfilled allocation plan."
+        )
 
     for vendor_id, total in vendor_totals.items():
         cur.execute("SELECT min_order_value_toman FROM vendors WHERE id = %s;", (vendor_id,))

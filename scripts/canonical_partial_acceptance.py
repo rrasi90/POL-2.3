@@ -374,7 +374,7 @@ class CanonicalPartialAcceptanceService:
               AND p.order_id = %s
               AND om.organization_id = %s
               AND om.status = 'ACTIVE'
-              AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
+              AND om.role = 'RETAILER_OWNER'
               AND vo.status = 'ACTIVE'
               AND ro.status = 'ACTIVE'
               AND v.status = 'ACTIVE'
@@ -553,6 +553,54 @@ class CanonicalPartialAcceptanceService:
                 ),
             )
             consumed_count += 1
+
+            if accepted_quantity < int(reservation["quantity"]):
+                cur.execute(
+                    """
+                    INSERT INTO outbox_events (
+                        id,event_id,event_name,aggregate_type,aggregate_id,payload,
+                        status,target_user_id,target_organization_id,dedupe_key,channel_hint
+                    )
+                    VALUES (
+                        gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_RELEASED',
+                        'INVENTORY_RESERVATION',%s,
+                        jsonb_build_object(
+                            'reservation_id',%s,'order_id',%s,'vendor_product_id',%s,
+                            'quantity',%s,'reason','PARTIAL_ACCEPTANCE_SHORTAGE'
+                        ),
+                        'PENDING',NULL,NULL,%s,'INBOX'
+                    )
+                    ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                    """,
+                    (
+                        reservation["id"], reservation["id"], order_id,
+                        reservation["vendor_product_id"],
+                        int(reservation["quantity"]) - accepted_quantity,
+                        f"reservation-released:{reservation['id']}:PARTIAL_ACCEPTANCE"
+                    ),
+                )
+
+            cur.execute(
+                """
+                INSERT INTO outbox_events (
+                    id,event_id,event_name,aggregate_type,aggregate_id,payload,
+                    status,target_user_id,target_organization_id,dedupe_key,channel_hint
+                )
+                VALUES (
+                    gen_random_uuid(),gen_random_uuid(),'INVENTORY_RESERVATION_CONSUMED','INVENTORY_RESERVATION',%s,
+                    jsonb_build_object(
+                        'reservation_id',%s,'order_id',%s,'vendor_product_id',%s,
+                        'quantity',%s,'reason','PARTIAL_ACCEPTANCE'
+                    ),
+                    'PENDING',NULL,NULL,%s,'INBOX'
+                )
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    reservation["id"], reservation["id"], order_id, reservation["vendor_product_id"],
+                    reservation["quantity"], f"reservation-consumed:{reservation['id']}:PARTIAL_ACCEPTANCE"
+                ),
+            )
 
             cur.execute(
                 """
@@ -740,7 +788,7 @@ class CanonicalPartialAcceptanceService:
               AND p.order_id = %s
               AND om.organization_id = %s
               AND om.status = 'ACTIVE'
-              AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
+              AND om.role = 'RETAILER_OWNER'
               AND vo.status = 'ACTIVE'
               AND ro.status = 'ACTIVE'
               AND v.status = 'ACTIVE'

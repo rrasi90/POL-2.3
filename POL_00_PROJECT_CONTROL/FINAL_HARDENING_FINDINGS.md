@@ -140,3 +140,22 @@ Eight specific hardening findings (H-01 through H-08) were identified and catalo
 
 ## Conclusion & Action Authorization
 All 8 findings are documented with actionable, non-destructive solutions. Proceeding immediately to step-by-step remediation across the codebase.
+
+---
+
+## Reconciliation — 2026-09-25 Remediation Branch
+
+This document is the historical pre-hardening finding record. The following status reflects the current remediation branch and must be read together with the current Source of Truth and release evidence.
+
+| Finding | Current status | Current evidence |
+|---|---|---|
+| H-01 | RESOLVED | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` exists and is the centralized decision register. |
+| H-02 | RESOLVED | Current catalog/schema governance explicitly separates canonical product packaging from vendor sellable packaging; inventory remains unit-aware. |
+| H-03 | RESOLVED IN SOURCE | Candidate creation persists `PENDING_REVIEW`; linked vendor offers use `DRAFT_PENDING_CATALOG` + `is_active=FALSE`; public catalog/storefront queries require `listing_status='ACTIVE'`. HTTP regression coverage verifies the draft state. |
+| H-04 | RESOLVED | Matching thresholds are explicitly labeled `[HYPOTHESIS-MATCH-01]` and calibrated against pilot evidence. |
+| H-05 | RESOLVED | The `<10s` measure is explicitly described as an Initial UX Target, not an achieved operational fact. |
+| H-06 | SUPERSEDED BY CURRENT DECISION MODEL | D-014 defines a unified multi-vendor retailer basket; the old “single vendor per basket” wording is historical and no longer authoritative. |
+| H-07 | RESOLVED | Pilot language uses “Decision-Grade / Investor-Grade Evidence Pack”. |
+| H-08 | RESOLVED | No current project source references the obsolete `product_barcodes` table; canonical identity uses `product_identifiers`. |
+
+**Residual release gate:** fresh CI execution, deployed provider/browser/device evidence, and any explicitly unresolved product decisions remain separate from source remediation.

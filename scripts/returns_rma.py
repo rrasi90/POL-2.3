@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+import json
 
 
 class ReturnAccessError(PermissionError):
@@ -131,7 +132,7 @@ class CanonicalReturnService:
             WHERE o.id = %s
               AND o.retailer_id IS NOT NULL
               AND o.order_status NOT IN ('CANCELLED','CREATED','SUBMITTED')
-            FOR SHARE;
+            FOR UPDATE OF o, oi;
             """,
             (order_id,),
         )
@@ -152,6 +153,7 @@ class CanonicalReturnService:
         # never bypass the per-item returnable quantity ceiling.
         requested_by_item = {}
         reason_by_item = {}
+        unit_refund_by_item = {}
         for item in order_items:
             item_key = str(item["order_item_id"])
             if item_key not in order_item_map:
@@ -164,12 +166,45 @@ class CanonicalReturnService:
                 raise ValueError("Unsupported RMA reason code.")
             requested_by_item[item_key] = requested_by_item.get(item_key, 0) + quantity
             reason_by_item.setdefault(item_key, reason_code)
+            if item.get("unit_refund_amount_toman") is not None:
+                unit_refund_by_item[item_key] = int(item["unit_refund_amount_toman"])
 
+        claim_ceiling = 0
         for item_key, quantity in requested_by_item.items():
             source = order_item_map[item_key]
-            max_returnable = int(source["delivered_quantity"] or source["ordered_quantity"])
+            delivered = int(source["delivered_quantity"] or 0)
+            cur.execute(
+                """
+                SELECT COALESCE(SUM(
+                    CASE
+                      WHEN r.status IN (
+                        'RETURN_REQUESTED','APPROVED','PICKUP_REQUIRED',
+                        'RETURN_IN_TRANSIT','RECEIVED','VENDOR_INSPECTION','REFUND_PENDING'
+                      ) THEN ri.requested_quantity
+                      WHEN r.status IN ('ACCEPTED','REFUNDED','CLOSED') THEN ri.accepted_quantity
+                      ELSE 0
+                    END
+                ),0) AS consumed_quantity
+                FROM return_items ri
+                JOIN returns r ON r.id = ri.return_id
+                WHERE ri.order_item_id = %s
+                  AND r.order_id = %s
+                """,
+                (item_key, order_id),
+            )
+            consumed = int(cur.fetchone()["consumed_quantity"])
+            max_returnable = max(0, delivered - consumed)
             if quantity > max_returnable:
-                raise ValueError("Aggregated return quantity exceeds delivered/ordered quantity.")
+                raise ValueError(
+                    f"Aggregated return quantity exceeds delivered/ordered quantity. Return quantity exceeds remaining returnable quantity: requested={quantity}, remaining={max_returnable}."
+                )
+            unit_refund = unit_refund_by_item.get(item_key, int(source["unit_price_toman"]))
+            claim_ceiling += quantity * unit_refund
+
+        if claimed_refund_amount_toman > claim_ceiling:
+            raise ValueError(
+                f"Claimed refund amount exceeds line-item ceiling: claimed={claimed_refund_amount_toman}, ceiling={claim_ceiling}."
+            )
 
         return_id = str(uuid.uuid4())
         return_number = "RMA-" + return_id.replace("-", "")[:12].upper()
@@ -190,6 +225,9 @@ class CanonicalReturnService:
             source = order_item_map[item_key]
             # A duplicate line is collapsed into one canonical return_items row.
             source_item = next(i for i in order_items if str(i["order_item_id"]) == item_key)
+            line_unit_refund = unit_refund_by_item.get(
+                item_key, int(source_item.get("unit_refund_amount_toman") or source["unit_price_toman"])
+            )
             cur.execute(
                 """
                 INSERT INTO return_items
@@ -198,7 +236,7 @@ class CanonicalReturnService:
                 VALUES (%s,%s,%s,%s,%s,%s)
                 """,
                 (str(uuid.uuid4()), return_id, item_key, quantity,
-                 int(source_item.get("unit_refund_amount_toman") or source["unit_price_toman"]),
+                 line_unit_refund,
                  reason_by_item[item_key]),
             )
         cls._write_event(cur, return_id, None, "RETURN_REQUESTED", actor_user_id, reason)
@@ -226,47 +264,303 @@ class CanonicalReturnService:
             raise ReturnStateError("A positive approved refund amount is required before REFUND_PENDING.")
         if str(ret.get("initiated_by_user_id")) == str(actor_user_id):
             raise ReturnAccessError("Refund approval must be performed by a different actor than the RMA initiator.")
+
+        # Canonical payment provenance: exactly one successful payment must be
+        # attributable to the order, otherwise an explicit payment choice is
+        # required before an RMA refund can be approved.
+        cur.execute(
+            """
+            SELECT p.*,
+                   p.amount_toman - COALESCE((
+                       SELECT SUM(r2.amount_toman)
+                       FROM refunds r2
+                       WHERE r2.payment_id=p.id
+                         AND r2.status IN ('PENDING','APPROVED','COMPLETED')
+                   ),0) AS refundable_remaining
+            FROM payments p
+            WHERE p.order_id=%s
+              AND p.retailer_id=%s
+              AND p.vendor_id=%s
+              AND p.payment_status='SUCCESS'
+            ORDER BY p.created_at ASC
+            FOR UPDATE
+            """,
+            (ret["order_id"], ret["retailer_id"], ret["vendor_id"]),
+        )
+        payments = [dict(x) for x in cur.fetchall()]
+        eligible = [x for x in payments if int(x["refundable_remaining"]) >= int(amount)]
+        if len(eligible) != 1:
+            raise ReturnStateError("RMA refund requires exactly one eligible successful payment.")
+        payment = eligible[0]
+
         cur.execute(
             """
             INSERT INTO refunds
                 (id, order_id, payment_id, dispute_id, retailer_id, amount_toman,
-                 refund_method, reason, status, approved_by_user_id, return_id)
+                 refund_method, reason, status, approved_by_user_id, approved_at,
+                 created_by_user_id, return_id, idempotency_key, source_type)
             VALUES
-                (%s,%s,NULL,NULL,%s,%s,'VENDOR_CASH_DIRECT',%s,'APPROVED',%s,%s)
-            ON CONFLICT (return_id) WHERE return_id IS NOT NULL DO NOTHING
-            RETURNING id;
+                (%s,%s,%s,NULL,%s,%s,'VENDOR_CASH_DIRECT',%s,'PENDING',NULL,NULL,%s,%s,%s,'RMA')
+            ON CONFLICT (return_id) WHERE return_id IS NOT NULL AND status IN ('PENDING','APPROVED','COMPLETED') DO NOTHING
+            RETURNING id
             """,
-            (str(uuid.uuid4()), ret["order_id"], ret["retailer_id"], amount,
-             f"RMA refund {ret['return_number']}", actor_user_id, ret["id"]),
+            (
+                str(uuid.uuid4()), ret["order_id"], payment["id"], ret["retailer_id"],
+                amount, f"RMA refund {ret['return_number']}", ret["initiated_by_user_id"],
+                ret["id"], f"rma:{ret['id']}",
+            ),
         )
         refund_row = cur.fetchone()
         if refund_row:
-            cur.execute(
-                "UPDATE returns SET refund_id=%s WHERE id=%s",
-                (refund_row["id"], ret["id"]),
-            )
+            refund_id = refund_row["id"]
+            cur.execute("UPDATE returns SET refund_id=%s WHERE id=%s", (refund_id, ret["id"]))
 
+            cur.execute(
+                """
+                INSERT INTO outbox_events
+                    (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                     target_organization_id,target_user_id,dedupe_key,channel_hint)
+                SELECT gen_random_uuid(),gen_random_uuid(),'REFUND_CREATED','REFUND',%s,
+                       %s::jsonb,'PENDING',om.organization_id,om.user_id,%s || ':' || om.user_id::text,'INBOX'
+                FROM organization_memberships om
+                WHERE om.organization_id=(SELECT organization_id FROM retailers WHERE id=%s)
+                  AND om.status='ACTIVE'
+                  AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    str(refund_id),
+                    json.dumps({"refund_id":str(refund_id),"order_id":str(ret["order_id"]),
+                                "amount_toman":int(amount),"status":"PENDING"}),
+                    f"REFUND_CREATED:{refund_id}", ret["retailer_id"],
+                ),
+            )
     @staticmethod
     def _complete_refund(cur, ret: dict, actor_user_id: str):
         if not ret["refund_id"]:
             raise ReturnStateError("Cannot mark RMA REFUNDED without a linked refund.")
-        cur.execute("SELECT approved_by_user_id FROM refunds WHERE id=%s FOR UPDATE", (ret["refund_id"],))
+        cur.execute(
+            "SELECT * FROM refunds WHERE id=%s FOR UPDATE",
+            (ret["refund_id"],),
+        )
         refund = cur.fetchone()
         if not refund:
             raise ReturnStateError("Linked refund does not exist.")
         if str(refund["approved_by_user_id"]) == str(actor_user_id):
             raise ReturnAccessError("Refund completion must be performed by a different actor than the approver.")
+        if refund["status"] != "APPROVED":
+            raise ReturnStateError("Linked refund is missing or is not in APPROVED state.")
+
+        cur.execute("SELECT * FROM payments WHERE id=%s FOR UPDATE", (refund["payment_id"],))
+        payment = cur.fetchone()
+        if not payment or payment["payment_status"] != "SUCCESS":
+            raise ReturnStateError("Linked refund payment is missing or not refundable.")
+
         cur.execute(
             """
             UPDATE refunds
             SET status='COMPLETED', completed_at=now(), completed_by_user_id=%s
             WHERE id=%s AND status='APPROVED'
-            RETURNING id;
+            RETURNING *
             """,
             (actor_user_id, ret["refund_id"]),
         )
-        if not cur.fetchone():
-            raise ReturnStateError("Linked refund is missing or is not in APPROVED state.")
+        completed = cur.fetchone()
+        if not completed:
+            raise ReturnStateError("Refund completion raced with another completion request.")
+
+        cur.execute(
+            """
+            SELECT id, order_id, vendor_id, status
+            FROM settlements
+            WHERE order_id=%s AND vendor_id=%s
+            ORDER BY created_at DESC
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (ret["order_id"], ret["vendor_id"]),
+        )
+        settlement = cur.fetchone()
+        if not settlement:
+            raise ReturnStateError("No settlement exists for the RMA order.")
+        if settlement["status"] not in ("DISPUTED", "CALCULATED", "RECONCILED"):
+            raise ReturnStateError(
+                f"Settlement is '{settlement['status']}'; RMA refund adjustment "
+                "requires an active settlement."
+            )
+
+        cur.execute(
+            """
+            INSERT INTO settlement_adjustments
+                (id,settlement_id,dispute_id,refund_id,adjustment_type,
+                 amount_toman,reason,applied_by_user_id)
+            VALUES (%s,%s,NULL,%s,'REFUND',%s,%s,%s)
+            ON CONFLICT (refund_id) WHERE refund_id IS NOT NULL DO NOTHING
+            """,
+            (
+                str(uuid.uuid4()), settlement["id"], ret["refund_id"],
+                int(refund["amount_toman"]),
+                f"RMA refund {ret['return_number']}",
+                actor_user_id,
+            ),
+        )
+        cur.execute(
+            """
+            SELECT COALESCE(SUM(amount_toman),0) AS total
+            FROM settlement_adjustments
+            WHERE settlement_id=%s
+            """,
+            (settlement["id"],),
+        )
+        total_adjustments = int(cur.fetchone()["total"])
+        cur.execute(
+            """
+            UPDATE settlements
+            SET adjustment_amount_toman=-%s,
+                net_vendor_amount_toman=gross_amount_toman-commission_amount_toman-%s,
+                status='RECONCILED'
+            WHERE id=%s
+            """,
+            (total_adjustments, total_adjustments, settlement["id"]),
+        )
+
+        cur.execute(
+            """
+            SELECT COALESCE(SUM(r.amount_toman),0) AS total_completed
+            FROM refunds r
+            WHERE r.payment_id=%s AND r.status='COMPLETED'
+            """,
+            (payment["id"],),
+        )
+        total_completed = int(cur.fetchone()["total_completed"])
+        fully_refunded = total_completed == int(payment["amount_toman"])
+        if fully_refunded:
+            cur.execute(
+                """
+                UPDATE payments
+                SET payment_status='REFUNDED'
+                WHERE id=%s AND payment_status='SUCCESS'
+                """,
+                (payment["id"],),
+            )
+            if cur.rowcount != 1:
+                raise ValueError("Linked payment is no longer refundable.")
+
+        for event_name in (("REFUND_COMPLETED", "PAYMENT_REFUNDED") if fully_refunded else ("REFUND_COMPLETED",)):
+            cur.execute(
+                """
+                INSERT INTO outbox_events
+                    (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                     target_organization_id,target_user_id,dedupe_key,channel_hint)
+                SELECT gen_random_uuid(),gen_random_uuid(),%s,'REFUND',%s,%s::jsonb,'PENDING',
+                       om.organization_id,om.user_id,%s || ':' || om.user_id::text,'INBOX'
+                FROM organization_memberships om
+                JOIN retailers r ON r.organization_id=om.organization_id
+                WHERE r.id=%s AND om.status='ACTIVE'
+                  AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+                ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+                """,
+                (
+                    event_name, str(ret["refund_id"]),
+                    json.dumps({"refund_id":str(ret["refund_id"]),"order_id":str(ret["order_id"]),
+                                "amount_toman":int(refund["amount_toman"]),"status":"COMPLETED"}),
+                    f"{event_name}:{ret['refund_id']}", ret["retailer_id"],
+                ),
+            )
+
+        cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_before, state_after, reason)
+            VALUES (%s,'RMA_REFUND_COMPLETED','REFUND',%s,%s,%s,%s)
+            """,
+            (
+                actor_user_id, ret["refund_id"],
+                json.dumps({"status":"APPROVED","payment_status":"SUCCESS"}),
+                json.dumps({"status":"COMPLETED","payment_status":"REFUNDED"}),
+                f"RMA {ret['return_number']} refund completed",
+            ),
+        )
+
+    @classmethod
+    def approve_refund(cls, cur, actor_user_id: str, return_id: str, organization_id: str,
+                       reason: str | None = None):
+        if not cls._ops_access(cur, actor_user_id, organization_id):
+            raise ReturnAccessError("Only active operator staff may approve RMA refunds.")
+        cur.execute(
+            """
+            SELECT r.*, f.id AS refund_id, f.status AS refund_status,
+                   f.created_by_user_id, f.approved_by_user_id
+            FROM returns r
+            LEFT JOIN refunds f ON f.id=r.refund_id
+            WHERE r.id=%s
+            FOR UPDATE OF r
+            """,
+            (return_id,),
+        )
+        ret=cur.fetchone()
+        if not ret:
+            raise KeyError("Return not found")
+        if not ret["refund_id"]:
+            raise ReturnStateError("RMA has no refund to approve.")
+        if ret["refund_status"] == "APPROVED":
+            return dict(ret, idempotent_replay=True)
+        if ret["refund_status"] != "PENDING":
+            raise ReturnStateError("Only PENDING RMA refunds may be approved.")
+        if ret["status"] != "REFUND_PENDING":
+            raise ReturnStateError("RMA must be REFUND_PENDING before refund approval.")
+        if ret["created_by_user_id"] and str(ret["created_by_user_id"]) == str(actor_user_id):
+            raise ReturnAccessError("Refund approval must be performed by a different actor than the RMA initiator.")
+
+        cur.execute(
+            """
+            UPDATE refunds
+            SET status='APPROVED', approved_by_user_id=%s, approved_at=now()
+            WHERE id=%s AND status='PENDING'
+            RETURNING *
+            """,
+            (actor_user_id, ret["refund_id"]),
+        )
+        refund=cur.fetchone()
+        if not refund:
+            raise ReturnStateError("RMA refund approval raced with another request.")
+
+        cur.execute(
+            """
+            INSERT INTO admin_audit_logs
+                (actor_user_id, action, target_entity_type, target_entity_id,
+                 state_before, state_after, reason)
+            VALUES (%s,'RMA_REFUND_APPROVED','REFUND',%s,%s,%s,%s)
+            """,
+            (
+                actor_user_id, ret["refund_id"],
+                json.dumps({"status":"PENDING"}),
+                json.dumps({"status":"APPROVED","approved_by_user_id":str(actor_user_id)}),
+                reason,
+            ),
+        )
+        cur.execute(
+            """
+            INSERT INTO outbox_events
+                (id,event_id,event_name,aggregate_type,aggregate_id,payload,status,
+                 target_organization_id,target_user_id,dedupe_key,channel_hint)
+            SELECT gen_random_uuid(),gen_random_uuid(),'REFUND_APPROVED','REFUND',%s,%s::jsonb,'PENDING',
+                   om.organization_id,om.user_id,%s || ':' || om.user_id::text,'INBOX'
+            FROM organization_memberships om
+            WHERE om.organization_id=(SELECT organization_id FROM retailers WHERE id=%s)
+              AND om.status='ACTIVE'
+              AND om.role IN ('RETAILER_OWNER','RETAILER_STAFF')
+            ON CONFLICT (event_name,dedupe_key) WHERE dedupe_key IS NOT NULL DO NOTHING
+            """,
+            (
+                str(ret["refund_id"]),
+                json.dumps({"refund_id":str(ret["refund_id"]),"order_id":str(ret["order_id"]),
+                            "amount_toman":int(refund["amount_toman"]),"status":"APPROVED"}),
+                f"REFUND_APPROVED:{ret['refund_id']}", ret["retailer_id"],
+            ),
+        )
+        return dict(refund)
 
     @classmethod
     def transition(cls, cur, actor_user_id: str, return_id: str, target_status: str,
@@ -281,6 +575,16 @@ class CanonicalReturnService:
         if not ret:
             raise KeyError("Return not found")
         current = ret["status"]
+        if target_status == current == "REFUND_PENDING":
+            # Idempotent replay: re-issuing the refund-pending command keeps the
+            # return and its linked refund in their current state (the linked
+            # refunds row is created by _ensure_refund_pending with a partial
+            # unique ON CONFLICT DO NOTHING).
+            if not cls._ops_access(cur, actor_user_id, organization_id):
+                raise ReturnAccessError("Actor is not authorized for this RMA transition.")
+            cls._ensure_refund_pending(cur, ret, actor_user_id)
+            cur.execute("SELECT * FROM returns WHERE id = %s", (return_id,))
+            return dict(cur.fetchone())
         if target_status not in cls.TRANSITIONS.get(current, set()):
             raise ReturnStateError(f"Invalid RMA transition: {current} -> {target_status}")
 
@@ -300,9 +604,68 @@ class CanonicalReturnService:
         if not allowed:
             raise ReturnAccessError("Actor is not authorized for this RMA transition.")
 
+        # Materialize item-level receipt/inspection state at the lifecycle boundary.
+        cur.execute(
+            """
+            SELECT id, requested_quantity, received_quantity, accepted_quantity, unit_refund_amount_toman
+            FROM return_items
+            WHERE return_id=%s
+            ORDER BY id
+            FOR UPDATE
+            """,
+            (return_id,),
+        )
+        return_lines = cur.fetchall()
+        if not return_lines:
+            raise ReturnStateError("Return has no return items.")
+
+        calculated_refund = 0
+        if target_status == "RECEIVED":
+            for line in return_lines:
+                cur.execute(
+                    """
+                    UPDATE return_items
+                    SET received_quantity = requested_quantity
+                    WHERE id=%s
+                    """,
+                    (line["id"],),
+                )
+        elif target_status == "ACCEPTED":
+            for line in return_lines:
+                cur.execute(
+                    """
+                    UPDATE return_items
+                    SET accepted_quantity = received_quantity
+                    WHERE id=%s
+                    """,
+                    (line["id"],),
+                )
+            calculated_refund = sum(
+                int(line["received_quantity"]) * int(line["unit_refund_amount_toman"])
+                for line in return_lines
+            )
+
         next_refund_amount = approved_refund_amount_toman
+        if target_status == "ACCEPTED":
+            if approved_refund_amount_toman is not None and int(approved_refund_amount_toman) != calculated_refund:
+                raise ValueError(
+                    f"Approved refund amount must equal accepted return lines: "
+                    f"approved={approved_refund_amount_toman}, calculated={calculated_refund}."
+                )
+            next_refund_amount = calculated_refund
         if target_status == "REFUND_PENDING" and next_refund_amount is None:
             next_refund_amount = ret["approved_refund_amount_toman"]
+        if target_status == "REFUND_PENDING" and (next_refund_amount is None or int(next_refund_amount) <= 0):
+            raise ReturnStateError("A positive approved refund amount is required before REFUND_PENDING.")
+
+        if target_status == "CLOSED" and current == "REFUND_PENDING":
+            cur.execute(
+                "SELECT status FROM refunds WHERE return_id=%s ORDER BY created_at DESC LIMIT 1 FOR UPDATE",
+                (return_id,),
+            )
+            latest_refund = cur.fetchone()
+            if not latest_refund or latest_refund["status"] != "COMPLETED":
+                raise ReturnStateError("REFUND_PENDING RMA cannot be closed before its refund is completed.")
 
         cur.execute(
             """

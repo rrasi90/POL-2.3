@@ -4,17 +4,18 @@
 **Rule:** When a local item is completed, tell the assistant **«انجام شد»** (or provide the result/log). The assistant will re-check the repository, CI evidence, and this tracker before closing the item.
 
 **Repository:** `rrasi90/POL-2.3`  
-**Branch:** `main`  
-**Latest main HEAD:** `723f346402cf0fbb7ef9af3a0c46fa6e299d5cd2` (verified locally 2026-09-24)
+**Authoritative main HEAD:** `dbcfb9a974af53772a461db4e3f64afef70350e1`  
+**Remediation branch:** `remediation/full-closure-2026-09-25`  
+**Current remediation HEAD:** `54e5aab3061bd8ec898f06b1ac37d903f64e4b28`  
 **Local verification baseline (pre-remediation device run):** `e7e6464730b7c1cec1ffbed2302da0b87e9e9f7e`
-**Code under remediation verification:** `62870503e36a6f2c95929862f839e8bd8258e894` (mobile CI 35987850765)
+**Latest device evidence build referenced by this tracker:** `62870503e36a6f2c95929862f839e8bd8258e894` (mobile CI 35987850765)
 
 ---
 
 ## 1. Current stage
 
 ### Stage 6 — Mobile QA Cycle 3
-**STATUS: CLOSED / PASS**
+**STATUS: HISTORICAL PASS / CURRENT REMEDIATION RE-CERTIFICATION PENDING**
 
 Evidence:
 - Mobile CI `35893284378` — SUCCESS
@@ -106,12 +107,12 @@ These are **not automatically local bugs**. Do not invent implementations for th
 
 | ID | Status | Current rule |
 |---|---|---|
-| D-028 / barcode | GAP / CONTRACT | No runtime barcode adapter until authoritative HTTP/runtime contract exists |
-| V-09 Vendor Customers | GAP | No invented CRUD |
-| V-11 Vendor Staff | GAP | No invented permission CRUD |
-| G-003 catalog path | documented conflict | Use REAL `/catalog/search`; do not force contract-only `/products/search` |
-| G-004 inbox path | documented conflict | Use REAL `/notifications` |
-| Refresh-token rotation policy | OPEN | Do not invent policy |
+| D-028 / barcode | SOURCE IMPLEMENTED / CAMERA RUNTIME SCOPE | Canonical `/products/match-barcode` accepts legacy + extended payloads; device camera transport remains separate runtime scope |
+| V-09 Vendor Customers | RESOLVED | Tenant-scoped canonical HTTP route + web UI implemented |
+| V-11 Vendor Staff | RESOLVED | Tenant-scoped list/invite/update HTTP + web UI implemented |
+| G-003 catalog path | RESOLVED / COMPATIBLE | `/catalog/search` is retailer runtime; `/products/search` remains registered for canonical compatibility |
+| G-004 inbox path | RESOLVED | `/notifications` client projection and durable `/inbox/items*` routes coexist |
+| Refresh-token rotation policy | SOURCE IMPLEMENTED / POLICY OPEN | Refresh token rotates and old-token replay fails; D-018 policy wording remains a governance decision |
 | Invoice timing | OPEN | Existing default is invoice on ACCEPTED; confirm before finance E2E |
 | OpenPencil WAVE-02 | BLOCKED_EXTERNAL | Requires local OpenPencil MCP on `:7600` |
 | Real driver metrics | BLOCKED_EXTERNAL | No production metrics source supplied |
@@ -150,9 +151,9 @@ Latest backend evidence:
 2. ~~**LOCAL-03**~~ **DONE** — checkout idempotency replay (12/12).
 3. ~~**LOCAL-01 Night**~~ **DONE** — PASS on post-remediation build (runtime theme + Account toggle; see §2 LOCAL-01).
 4. ~~**LOCAL-04 retest**~~ **DONE** — PASS on post-remediation build (G-023…G-026; see §2 LOCAL-04).
-5. ~~Assistant re-checks evidence and reconciles repository documents.~~ **DONE** — retest evidence recorded in this commit.
-6. Final global regression (local suite already **497/497** on pre-remediation tree — re-run after any source merge).
-7. Final Delivery DoD audit.
+5. ~~Assistant re-checks evidence and reconciles repository documents.~~ **DONE** — evidence re-audited against current remediation branch.
+6. Fresh global regression after remediation. Historical 497/497 remains baseline evidence; current GitHub CI is still failing before useful step execution.
+7. Final Delivery DoD audit after fresh CI certification and remaining deployment/provider evidence.
 
 **Important:** Completing a local item does not itself close the stage. The assistant must verify the reported evidence and update the authoritative project documents.
 
@@ -227,7 +228,7 @@ Recorded on `e7e6464` before applying stash → pull to `723f346`. Stash kept as
 | Gate | Result | Artifact |
 |------|--------|----------|
 | Environment verify | PASS | `artifacts/verify_env_local3.json` |
-| Full suite | **497/497 PASSED** 165.05s EXIT 0 | `artifacts/pol-test-results.json`, `artifacts/suite_final.log` |
+| Historical full suite | **497/497 PASSED** 165.05s EXIT 0 | `artifacts/pol-test-results.json`, `artifacts/suite_final.log` (pre-remediation baseline evidence) |
 | LOCAL-02 | PASS 16/16 | `artifacts/live_basket_checkout_e2e.{py,json}` |
 | LOCAL-03 | PASS 12/12 | `artifacts/local03_idempotency_e2e.{py,json}` |
 | LOCAL-01 | LIGHT PASS / NIGHT FAIL | `artifacts/screenshots/local01_*` |
