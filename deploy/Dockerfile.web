@@ -32,4 +32,4 @@ COPY --from=build /app/mvp/packages ./packages
 
 EXPOSE 3001
 
-CMD ["npm", "run", "start", "--workspace=@pol/web", "--", "-p", "3001"]
+CMD ["node", "apps/web/.next/standalone/apps/web/server.js"]
