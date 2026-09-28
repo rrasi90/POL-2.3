@@ -34,6 +34,13 @@ const checks = [
       s.includes('type MainTab = "home" | "orders" | "inventory" | "finance" | "more"') &&
       s.includes("اقدام‌های امروز") && s.includes("Segmented");
   }],
+  ["Vendor queue hides owner-only acceptance from vendor staff", () => {
+    const s = read("screens/VendorMobileScreen.tsx");
+    const d = read("screens/OrderDetailMobileScreen.tsx");
+    return s.includes('props.role === "VENDOR_OWNER"') &&
+      s.includes("پذیرش سفارش فقط برای مالک بنکداری مجاز است.") &&
+      d.includes("vendorOwner") && d.includes("پذیرش جزئی فقط برای مالک بنکداری مجاز است.");
+  }],
   ["Vendor inventory and price mutations use canonical endpoints", () => {
     const s = read("screens/VendorMobileScreen.tsx");
     return s.includes("/api/v1/catalog/vendors/products/") &&
