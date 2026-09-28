@@ -9,13 +9,24 @@ export type RequestOptions = {
   headers?: Record<string, string>;
 };
 
+function userFacingError(code: string, message: string, status: number): string {
+  if (status === 401 || code === "AUTH_EXPIRED") return "نشست شما منقضی شده است؛ دوباره وارد شوید.";
+  if (status === 403 || /PERMISSION|FORBIDDEN|ACCESS_DENIED/i.test(code)) return "دسترسی شما برای این عملیات مجاز نیست.";
+  if (status === 404 || /NOT_FOUND/i.test(code)) return "اطلاعات موردنظر پیدا نشد.";
+  if (status === 409 || /CONFLICT|IDEMPOTENCY/i.test(code)) return "این عملیات با وضعیت فعلی داده‌ها تعارض دارد؛ دوباره بررسی کنید.";
+  if (status === 422 || /VALIDATION|INVALID/i.test(code)) return "داده‌های واردشده معتبر نیستند.";
+  if (code === "NETWORK") return "اتصال به سرویس برقرار نشد؛ اتصال اینترنت را بررسی کنید.";
+  if (code === "PARSE_ERROR") return "پاسخ سرویس قابل پردازش نبود.";
+  return message || "عملیات ناموفق بود.";
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly code: string,
     message: string,
     public readonly status: number,
   ) {
-    super(message);
+    super(userFacingError(code, message, status));
     this.name = "ApiError";
   }
 }
