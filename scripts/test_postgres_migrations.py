@@ -1,8 +1,8 @@
 """
 POL Platform Canonical PostgreSQL 18 Migration Verification Harness
-Validates migrations/001_initial_schema.sql against real PostgreSQL 18:
-- Executes clean migration on PostgreSQL 18
-- Asserts all 37 canonical domain tables are present in public schema
+Validates the current contiguous migration chain against real PostgreSQL 18:
+- Executes the complete migration chain on PostgreSQL 18
+- Asserts the canonical baseline tables are present and accepts additional tables introduced by later migrations
 - Asserts critical indexes, foreign keys, and check constraints
 - Asserts D-014 Multi-Vendor and NON_CUSTODIAL_DIRECT constraints
 """
