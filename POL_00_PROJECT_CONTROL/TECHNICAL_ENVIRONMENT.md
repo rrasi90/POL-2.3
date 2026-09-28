@@ -24,6 +24,16 @@
 
 ## ۲. تفکیک نقش‌ها و تمایز محیط‌ها (Environment Roles & Boundaries)
 
+## ۲.۱ وضعیت فعلی VPS خودمیزبان — 2026-09-28
+
+- **VPS:** `85.198.50.29`
+- **Deployment topology:** Docker Compose + Nginx + Next.js 15 standalone + FastAPI/Uvicorn + PostgreSQL 18.6 + Python transactional-outbox worker.
+- **Database:** 76 forward-only migrations applied; 108 base tables present; PostgreSQL container healthy.
+- **Public HTTP:** `/healthz`, `/readyz`, and `/api/v1/categories` verified with HTTP 200; root web page verified over public HTTP.
+- **Production gate:** current deployment is IP-stage. Domain `polmarket.ir`, HTTPS/443, exact HTTPS CORS origin, and deliberate `ENVIRONMENT=production` transition remain pending.
+- **Evidence:** `deploy/VPS_RUNTIME_VERIFICATION_2026-09-28.md`.
+
+
 | لایه محیطی | فناوری / موتور | کاربری و محدوده مجاز | وضعیت اعتبارسنجی |
 |:---|:---|:---|:---:|
 | **Canonical Runtime DB** | **PostgreSQL 18** | پایگاه داده مرجع و هدف نهایی سیستم برای پروداکشن، استیجینگ و اجرای تست‌های ران‌تایم حقیقی | **CANONICAL (اجباری)** |
