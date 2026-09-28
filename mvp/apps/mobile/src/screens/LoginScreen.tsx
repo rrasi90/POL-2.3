@@ -21,7 +21,7 @@ function toE164(value: string): string | null {
 }
 
 /** SH-AUTH-01/02 — 4-digit OTP login. Role comes only from the backend response. */
-export function LoginScreen(props: { onAuthed: (role: Role) => void }): React.ReactNode {
+export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRoles?: readonly Role[]; appName?: string }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
@@ -92,7 +92,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void }): React.Re
 
   return (
     <Screen>
-      <Title badge="SH-AUTH">ورود پُل</Title>
+      <Title badge="SH-AUTH">ورود {props.appName ?? "پُل"}</Title>
       <Card>
         <Text style={styles.sub}>OTP چهاررقمی (D-018) — بدون رمز عبور.</Text>
         <ErrorBox message={error} />
