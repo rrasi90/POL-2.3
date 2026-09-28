@@ -5,7 +5,7 @@ import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip } from "../compon
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
-import { formatFaNumber, formatTehranDateTime, formatToman, todayTehranIso, toPersianDigits } from "../i18n/fa";
+import { formatFaNumber, formatTehranDateTime, formatToman, todayTehranIso, toAsciiDigits } from "../i18n/fa";
 
 type MainTab = "home" | "orders" | "inventory" | "finance" | "more" | "support";
 type InventoryTab = "stock" | "daily";
@@ -486,7 +486,7 @@ export function VendorMobileScreen(props: {
   }
 
   async function saveInventory(row: Inv, raw: string): Promise<void> {
-    const quantity = Number(raw);
+    const quantity = Number(toAsciiDigits(raw).replace(/[٬,\s]/g, ""));
     if (!Number.isFinite(quantity) || quantity < 0) {
       setError("موجودی باید عددی غیرمنفی باشد.");
       return;
@@ -506,7 +506,7 @@ export function VendorMobileScreen(props: {
   }
 
   async function savePrice(row: Inv, raw: string): Promise<void> {
-    const price = Number(raw);
+    const price = Number(toAsciiDigits(raw).replace(/[٬,\s]/g, ""));
     if (!Number.isFinite(price) || price <= 0) {
       setError("قیمت باید بیشتر از صفر باشد.");
       return;
@@ -535,7 +535,7 @@ export function VendorMobileScreen(props: {
         await api.post("/api/v1/inventory/daily/" + dailyDate + "/confirm-with-changes", {
           changes: (daily?.lines ?? []).map((line) => ({
             vendor_product_id: line.vendor_product_id || line.id,
-            declared_quantity: Number(dailyEdits[line.id] || 0),
+            declared_quantity: Number(toAsciiDigits(dailyEdits[line.id] || "0").replace(/[٬,\s]/g, "")),
           })),
         });
       }
@@ -741,7 +741,7 @@ export function VendorMobileScreen(props: {
           <Input
             label="بارکد"
             value={barcode}
-            onChangeText={(value) => setBarcode(toPersianDigits(value).replace(/[^۰-۹A-Za-z]/g, ""))}
+            onChangeText={(value) => setBarcode(toAsciiDigits(value).replace(/[^0-9A-Za-z]/g, ""))}
             direction="ltr"
             keyboardType="number-pad"
             placeholder="6260123456789"
