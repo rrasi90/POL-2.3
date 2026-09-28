@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { api, persistSession } from "../api";
 import { Btn, Card, ErrorBox, Input, Screen, Title } from "../components/ui";
 import { spacing, useThemedStyles, type Palette } from "../theme";
@@ -90,8 +90,16 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
     }
   }
 
+  const brandSource =
+    props.appName === "پل بنکدار"
+      ? require("../../assets/vendor-logo.png")
+      : require("../../assets/icon.png");
+
   return (
     <Screen>
+      <View style={styles.brandBlock}>
+        <Image source={brandSource} style={styles.brandLogo} resizeMode="contain" accessibilityLabel={props.appName ?? "پُل"} />
+      </View>
       <Title badge="SH-AUTH">ورود {props.appName ?? "پُل"}</Title>
       <Card>
         <Text style={styles.sub}>OTP چهاررقمی (D-018) — بدون رمز عبور.</Text>
@@ -135,6 +143,16 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
 
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
+    brandBlock: {
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 112,
+      marginBottom: spacing.sm,
+    },
+    brandLogo: {
+      width: 156,
+      height: 112,
+    },
     sub: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: 20 },
     info: { fontSize: 12, color: colors.brand, marginBottom: spacing.sm, lineHeight: 18 },
     otpInput: {
