@@ -4,8 +4,9 @@ import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip } from "../components/ui";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
+import { SupportMobileScreen } from "./SupportMobileScreen";
 
-type MainTab = "home" | "orders" | "inventory" | "finance" | "more";
+type MainTab = "home" | "orders" | "inventory" | "finance" | "more" | "support";
 type InventoryTab = "stock" | "daily";
 type FinanceTab = "invoices" | "settlements";
 type MoreTab = "customers" | "referrals" | "staff";
@@ -202,6 +203,7 @@ function BottomNav(props: { tab: MainTab; onChange: (tab: MainTab) => void }): R
     { tab: "inventory", label: "انبار", short: "انبار" },
     { tab: "finance", label: "مالی", short: "مالی" },
     { tab: "more", label: "بیشتر", short: "بیشتر" },
+    { tab: "support", label: "پشتیبانی", short: "پشتیبانی" },
   ];
   return (
     <View style={styles.bottomNav}>
@@ -551,6 +553,7 @@ export function VendorMobileScreen(props: {
           <QuickAction label="موجودی روزانه" detail={daily?.status ? statusLabel(daily.status) : "وضعیت امروز را ببینید"} onPress={() => { setInventoryTab("daily"); setTab("inventory"); }} tone={daily?.status === "PENDING" ? "warn" : "neutral"} />
           <QuickAction label="موجودی کالاها" detail={inventory.length ? numberFa(inventory.length) + " قلم ثبت شده" : "کاتالوگ خالی است"} onPress={() => { setInventoryTab("stock"); setTab("inventory"); }} />
           <QuickAction label="مالی" detail="فاکتور و تسویه" onPress={() => setTab("finance")} />
+          <QuickAction label="پشتیبانی" detail="ثبت و پیگیری پرونده‌های پشتیبانی" onPress={() => setTab("support")} />
         </View>
 
         <SectionHeader title="سفارش‌های منتظر اقدام" action="مشاهده همه" onAction={() => setTab("orders")} />
@@ -796,7 +799,7 @@ export function VendorMobileScreen(props: {
       </View>
 
       <View style={styles.main}>
-        {tab === "home" ? renderHome() : tab === "orders" ? renderOrders() : tab === "inventory" ? renderInventory() : tab === "finance" ? renderFinance() : renderMore()}
+        {tab === "home" ? renderHome() : tab === "orders" ? renderOrders() : tab === "inventory" ? renderInventory() : tab === "finance" ? renderFinance() : tab === "more" ? renderMore() : <SupportMobileScreen role={props.role} />}
       </View>
 
       <BottomNav tab={tab} onChange={setTab} />
