@@ -18,6 +18,7 @@ const variantSource = readFileSync(resolve(appDir, variantEntry), "utf8");
 const env = {
   ...process.env,
   POL_APP_VARIANT: variant,
+  ...(variant === "vendor" ? { POL_RELEASE: "1" } : {}),
 };
 
 function run(command, args, cwd = appDir) {
