@@ -162,7 +162,12 @@ const message = await req<{ id: string }>(
 );
 assert.ok(message.id);
 
-const profile = await req<{ membership: { role: string } }>("GET", "/api/v1/profile", undefined, staff);
+const profile = await req<{ membership: { role: string }; user_profile: { timezone: string } }>("GET", "/api/v1/profile", undefined, staff);
 assert.equal(profile.membership.role, "VENDOR_STAFF");
+assert.equal(profile.user_profile.timezone, "Asia/Tehran");
+await req("PUT", "/api/v1/profile", { display_name: "انبار و سفارش" }, staff);
+const preferences = await req<{ preferences: { is_enabled: boolean } }>("GET", "/api/v1/notifications/preferences", undefined, staff);
+assert.equal(preferences.preferences.is_enabled, true);
+await req("PUT", "/api/v1/notifications/preferences", { event_name: "ORDER_STATUS_CHANGED", channel: "PUSH", is_enabled: false }, staff);
 
 console.log("[MOCK-QA PASS] Vendor mock transport exercised successfully across auth, RBAC, orders, inventory, finance, storefront, barcode, scan/publish, support and profile.");
