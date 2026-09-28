@@ -91,3 +91,8 @@ Keep product images, invoice binaries, POD images, payment evidence, and dispute
 Do not use `scripts/bootstrap_env.py --reset`, the destructive reset path in `scripts/migration_runner.py`, or `pol_test` for this deployment.
 
 The production migration service is `python -m scripts.migrate_prod`.
+
+
+## Landing deployment gate — 2026-09-28
+
+The deployment operator now verifies the new public landing surface after startup, including headline markers and all three canonical `/brand/{asset}` endpoints. A deployment is not considered successful by the operator when any of these checks fail.
