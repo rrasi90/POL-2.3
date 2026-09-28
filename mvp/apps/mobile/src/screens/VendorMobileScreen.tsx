@@ -5,11 +5,12 @@ import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip } from "../compon
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
+import { formatFaNumber, formatTehranDateTime, formatToman, todayTehranIso, toPersianDigits } from "../i18n/fa";
 
 type MainTab = "home" | "orders" | "inventory" | "finance" | "more" | "support";
 type InventoryTab = "stock" | "daily";
 type FinanceTab = "invoices" | "settlements";
-type MoreTab = "customers" | "referrals" | "staff";
+type MoreTab = "customers" | "referrals" | "staff" | "storefront";
 
 type Order = {
   id: string;
@@ -111,6 +112,50 @@ type Daily = {
   lines?: DailyLine[];
 };
 
+type StorefrontVendor = {
+  id: string;
+  name?: string | null;
+  display_name?: string | null;
+  city?: string | null;
+  description?: string | null;
+  is_active?: boolean | null;
+  created_at?: string | null;
+  product_count?: number | null;
+};
+
+type StorefrontProduct = {
+  id: string;
+  product_id?: string | null;
+  product_name?: string | null;
+  name?: string | null;
+  brand_name?: string | null;
+  price_toman?: number | null;
+  stock_quantity?: number | null;
+  packaging_unit?: string | null;
+  is_available?: boolean | null;
+};
+
+type BarcodeProduct = {
+  id?: string | null;
+  master_sku?: string | null;
+  canonical_name_fa?: string | null;
+  brand_name?: string | null;
+  base_unit?: string | null;
+  default_pack_unit?: string | null;
+  default_pack_quantity?: number | null;
+};
+
+type BarcodeResult = {
+  match_type?: string | null;
+  match_status?: string | null;
+  confidence_score?: number | null;
+  product?: BarcodeProduct | null;
+  products?: BarcodeProduct[];
+  candidate_id?: string | null;
+  vendor_product_id?: string | null;
+  suggested_action?: string | null;
+};
+
 function rows<T>(data: unknown, key: string): T[] {
   if (Array.isArray(data)) return data as T[];
   if (!data || typeof data !== "object") return [];
@@ -122,20 +167,25 @@ function rows<T>(data: unknown, key: string): T[] {
 }
 
 function money(value: number | string | null | undefined): string {
-  const n = Number(value);
-  return Number.isFinite(n) ? n.toLocaleString("fa-IR") + " تومان" : "—";
+  return formatToman(value);
 }
 
 function numberFa(value: number | string | null | undefined): string {
-  const n = Number(value);
-  return Number.isFinite(n) ? n.toLocaleString("fa-IR") : "—";
+  return formatFaNumber(value);
 }
 
 function dateTimeFa(value: string | null | undefined): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("fa-IR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+  return formatTehranDateTime(value);
+}
+
+function barcodeStatusLabel(status: string | null | undefined): string {
+  const map: Record<string, string> = {
+    EXACT: "تطبیق قطعی",
+    HIGH_CONFIDENCE: "تطبیق با اطمینان بالا",
+    AMBIGUOUS: "چند تطبیق",
+    NO_MATCH: "یافت نشد",
+  };
+  return status ? map[status] || status : "نامشخص";
 }
 
 function statusLabel(status: string | null | undefined): string {
@@ -195,13 +245,13 @@ function SectionHeader(props: { title: string; action?: string; onAction?: () =>
   );
 }
 
-function BottomNav(props: { tab: MainTab; onChange: (tab: MainTab) => void }): React.ReactNode {
+function BottomNav(props: { tab: MainTab; role: "VENDOR_OWNER" | "VENDOR_STAFF"; onChange: (tab: MainTab) => void }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   const items: Array<{ tab: MainTab; label: string; short: string }> = [
     { tab: "home", label: "خانه", short: "خانه" },
     { tab: "orders", label: "سفارش‌ها", short: "سفارش" },
     { tab: "inventory", label: "انبار", short: "انبار" },
-    { tab: "finance", label: "مالی", short: "مالی" },
+    ...(props.role === "VENDOR_OWNER" ? [{ tab: "finance" as MainTab, label: "مالی", short: "مالی" }] : []),
     { tab: "more", label: "بیشتر", short: "بیشتر" },
     { tab: "support", label: "پشتیبانی", short: "پشتیبانی" },
   ];
@@ -244,11 +294,19 @@ export function VendorMobileScreen(props: {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [daily, setDaily] = useState<Daily | null>(null);
+  const [storefrontVendor, setStorefrontVendor] = useState<StorefrontVendor | null>(null);
+  const [storefrontProducts, setStorefrontProducts] = useState<StorefrontProduct[]>([]);
+  const [barcode, setBarcode] = useState("");
+  const [barcodeResult, setBarcodeResult] = useState<BarcodeResult | null>(null);
+  const [candidateTitle, setCandidateTitle] = useState("");
+  const [candidateBrand, setCandidateBrand] = useState("");
+  const [candidateSku, setCandidateSku] = useState("");
+  const [candidateCreatedId, setCandidateCreatedId] = useState<string | null>(null);
 
   const [customerQuery, setCustomerQuery] = useState("");
   const [invitePhone, setInvitePhone] = useState("");
   const [inviteName, setInviteName] = useState("");
-  const [dailyDate, setDailyDate] = useState(new Date().toISOString().slice(0, 10));
+  const [dailyDate, setDailyDate] = useState(todayTehranIso());
   const [dailyEdits, setDailyEdits] = useState<Record<string, string>>({});
 
   const [permissionMemberId, setPermissionMemberId] = useState<string | null>(null);
@@ -303,6 +361,67 @@ export function VendorMobileScreen(props: {
     setStaff(rows<Staff>(data, "members"));
   }, []);
 
+  const loadStorefront = useCallback(async () => {
+    const data = await api.get<unknown>("/api/v1/storefront/vendors");
+    const vendors = rows<StorefrontVendor>(data, "vendors");
+    const selected = vendors[0] ?? null;
+    setStorefrontVendor(selected);
+    if (!selected) {
+      setStorefrontProducts([]);
+      return;
+    }
+    const productData = await api.get<unknown>("/api/v1/storefront/vendors/" + selected.id + "/products?limit=50&offset=0");
+    setStorefrontProducts(rows<StorefrontProduct>(productData, "products"));
+  }, []);
+
+  async function scanBarcode(): Promise<void> {
+    const value = barcode.trim();
+    if (value.length < 8 || value.length > 32) {
+      setError("بارکد باید بین ۸ تا ۳۲ نویسه باشد.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setCandidateCreatedId(null);
+    try {
+      const data = await api.get<BarcodeResult>(
+        "/api/v1/catalog/barcode/lookup?barcode=" + encodeURIComponent(value),
+      );
+      setBarcodeResult(data);
+    } catch (e) {
+      setBarcodeResult(null);
+      setError(e instanceof Error ? e.message : "استعلام بارکد ناموفق بود.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function createBarcodeCandidate(): Promise<void> {
+    if (!barcode.trim() || !candidateTitle.trim()) {
+      setError("برای کالای ناشناخته، عنوان پیشنهادی الزامی است.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.post<{ candidate_id?: string }>("/api/v1/product-candidates", {
+        proposed_title: candidateTitle.trim(),
+        proposed_brand: candidateBrand.trim() || null,
+        barcode: barcode.trim(),
+        vendor_sku: candidateSku.trim() || null,
+      });
+      setCandidateCreatedId(data.candidate_id || "ثبت شد");
+      setCandidateTitle("");
+      setCandidateBrand("");
+      setCandidateSku("");
+      await loadInventory();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ثبت کاندیدای کالا ناموفق بود.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const refreshCore = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -322,9 +441,22 @@ export function VendorMobileScreen(props: {
   useEffect(() => {
     let promise: Promise<void> | null = null;
     if (tab === "finance") {
+      if (props.role !== "VENDOR_OWNER") {
+        setTab("home");
+        return;
+      }
       promise = financeTab === "invoices" ? loadInvoices() : loadSettlements();
     } else if (tab === "more") {
-      promise = moreTab === "customers" ? loadCustomers() : moreTab === "referrals" ? loadReferrals() : loadStaff();
+      promise =
+        moreTab === "customers"
+          ? loadCustomers()
+          : moreTab === "referrals"
+            ? loadReferrals()
+            : moreTab === "staff"
+              ? loadStaff()
+              : props.role === "VENDOR_OWNER"
+                ? loadStorefront()
+                : loadCustomers();
     } else if (tab === "inventory" && inventoryTab === "daily") {
       promise = loadDaily();
     } else if (tab === "orders") {
@@ -334,7 +466,7 @@ export function VendorMobileScreen(props: {
     setLoading(true);
     setError(null);
     void promise.catch((e) => setError(e instanceof Error ? e.message : "بارگذاری ناموفق بود")).finally(() => setLoading(false));
-  }, [tab, financeTab, inventoryTab, moreTab, loadInvoices, loadSettlements, loadCustomers, loadReferrals, loadStaff, loadDaily, loadOrders]);
+  }, [tab, financeTab, inventoryTab, moreTab, loadInvoices, loadSettlements, loadCustomers, loadReferrals, loadStaff, loadStorefront, loadDaily, loadOrders, props.role]);
 
   async function orderAction(orderId: string, actionName: "accept" | "preparing" | "ready"): Promise<void> {
     if (actionName === "accept" && props.role !== "VENDOR_OWNER") {
@@ -571,7 +703,7 @@ export function VendorMobileScreen(props: {
         {inventory.length === 0 ? (
           <Empty title="کالایی ثبت نشده" description="اولین داده‌های کاتالوگ و موجودی بنکداری را از پنل عملیاتی ثبت کنید." />
         ) : (
-          inventory.slice(0, 3).map((row) => <InventoryCard key={row.id} row={row} onSaveInventory={saveInventory} onSavePrice={savePrice} loading={loading} compact />)
+          inventory.slice(0, 3).map((row) => <InventoryCard key={row.id} row={row} onSaveInventory={saveInventory} onSavePrice={savePrice} loading={loading} editablePrice={props.role === "VENDOR_OWNER"} compact />)
         )}
       </ScrollView>
     );
@@ -603,13 +735,65 @@ export function VendorMobileScreen(props: {
           <Text style={styles.pageTitle}>انبار بنکداری</Text>
           <Text style={styles.pageBody}>موجودی فیزیکی، رزرو و فروش‌پذیر را جدا نگه می‌داریم؛ قیمت نیز از API کانونیکال خوانده و ثبت می‌شود.</Text>
         </View>
+        <Card>
+          <Text style={styles.itemTitle}>استعلام بارکد</Text>
+          <Text style={styles.meta}>مسیر دستی برای تست و عملیات؛ دوربین واقعی در مرحله device runtime اضافه و گواهی می‌شود.</Text>
+          <Input
+            label="بارکد"
+            value={barcode}
+            onChangeText={(value) => setBarcode(toPersianDigits(value).replace(/[^۰-۹A-Za-z]/g, ""))}
+            direction="ltr"
+            keyboardType="number-pad"
+            placeholder="6260123456789"
+            maxLength={32}
+          />
+          <Btn label="استعلام بارکد" onPress={() => void scanBarcode()} loading={loading} disabled={loading || barcode.trim().length < 8} />
+          {barcodeResult ? (
+            <View style={styles.scanResult}>
+              <View style={styles.rowBetween}>
+                <StatusChip label={barcodeStatusLabel(barcodeResult.match_type || barcodeResult.match_status)} tone={barcodeResult.match_type === "NO_MATCH" ? "warn" : barcodeResult.match_type === "AMBIGUOUS" ? "danger" : "ok"} />
+                {barcodeResult.confidence_score != null ? (
+                  <Text style={styles.meta}>اطمینان: {numberFa(Math.round(Number(barcodeResult.confidence_score) * 100))}%</Text>
+                ) : null}
+              </View>
+              {barcodeResult.product ? (
+                <View style={styles.scanProduct}>
+                  <Text style={styles.itemTitle}>{barcodeResult.product.canonical_name_fa || "کالای تطبیق‌شده"}</Text>
+                  <Text style={styles.meta}>SKU: {barcodeResult.product.master_sku || "—"} · برند: {barcodeResult.product.brand_name || "—"}</Text>
+                  <Text style={styles.meta}>بسته‌بندی: {barcodeResult.product.default_pack_unit || "—"} · تعداد: {numberFa(barcodeResult.product.default_pack_quantity)}</Text>
+                </View>
+              ) : null}
+              {barcodeResult.products?.length ? (
+                <View style={styles.scanProduct}>
+                  <Text style={styles.itemTitle}>چند تطبیق پیدا شد</Text>
+                  {barcodeResult.products.slice(0, 5).map((product, index) => (
+                    <Text key={product.id || index} style={styles.meta}>
+                      {numberFa(index + 1)}. {product.canonical_name_fa || "—"} · {product.master_sku || "—"}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+              {barcodeResult.match_type === "NO_MATCH" ? (
+                <View style={styles.candidatePanel}>
+                  <Text style={styles.itemTitle}>کالای ناشناخته</Text>
+                  <Text style={styles.meta}>بارکد ناشناخته به Master Product تبدیل نمی‌شود؛ فقط می‌توان کاندیدای بررسی ثبت کرد.</Text>
+                  <Input label="عنوان پیشنهادی" value={candidateTitle} onChangeText={setCandidateTitle} />
+                  <Input label="برند پیشنهادی" value={candidateBrand} onChangeText={setCandidateBrand} />
+                  <Input label="SKU بنکداری (اختیاری)" value={candidateSku} onChangeText={setCandidateSku} direction="ltr" />
+                  <Btn label="ثبت کاندیدای کالا" onPress={() => void createBarcodeCandidate()} loading={loading} disabled={loading || !candidateTitle.trim()} />
+                  {candidateCreatedId ? <Text style={styles.successNote}>کاندید ثبت شد: {candidateCreatedId}</Text> : null}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+        </Card>
         <Segmented labels={[["stock", "موجودی کالا"], ["daily", "تأیید روزانه"]]} selected={inventoryTab} onChange={(value) => setInventoryTab(value as InventoryTab)} />
         <ErrorBox message={error} />
         {inventoryTab === "stock" ? (
           inventory.length === 0 ? (
             <Empty title="موجودی‌ای ثبت نشده" description="فهرست کالاهای بنکداری از API فعلی خالی برگشت." />
           ) : (
-            inventory.map((row) => <InventoryCard key={row.id} row={row} onSaveInventory={saveInventory} onSavePrice={savePrice} loading={loading} />)
+            inventory.map((row) => <InventoryCard key={row.id} row={row} onSaveInventory={saveInventory} onSavePrice={savePrice} loading={loading} editablePrice={props.role === "VENDOR_OWNER"} />)
           )
         ) : (
           <View>
@@ -690,7 +874,12 @@ export function VendorMobileScreen(props: {
           <Text style={styles.pageBody}>مشتریان، ارجاع‌ها و همکاران در این بخش قرار دارند تا navigation روزانه خلوت بماند.</Text>
         </View>
         <Segmented
-          labels={[["customers", "مشتریان"], ["referrals", "ارجاع"], ["staff", "همکاران"]]}
+          labels={[
+            ["customers", "مشتریان"],
+            ["referrals", "ارجاع"],
+            ["staff", "همکاران"],
+            ...(props.role === "VENDOR_OWNER" ? [["storefront", "ویترین"] as [string, string]] : []),
+          ]}
           selected={moreTab}
           onChange={(value) => setMoreTab(value as MoreTab)}
         />
@@ -723,6 +912,39 @@ export function VendorMobileScreen(props: {
               <Text style={styles.meta}>سازمان ارجاع‌شده: {referral.referred_organization_id || "—"}</Text>
             </Card>
           ))
+        ) : null}
+
+        {moreTab === "storefront" && props.role === "VENDOR_OWNER" ? (
+          <>
+            <Card>
+              <View style={styles.rowBetween}>
+                <View style={styles.flexOne}>
+                  <Text style={styles.itemTitle}>{storefrontVendor?.name || storefrontVendor?.display_name || "ویترین بنکداری"}</Text>
+                  <Text style={styles.meta}>
+                    {storefrontVendor?.city ? "شهر: " + storefrontVendor.city + " · " : ""}
+                    {storefrontVendor?.is_active === false ? "غیرفعال" : "ویترین فعال"}
+                  </Text>
+                </View>
+                <Btn label="به‌روزرسانی" tone="ghost" onPress={() => void loadStorefront().catch((e) => setError(e instanceof Error ? e.message : "خطا"))} disabled={loading} />
+              </View>
+              <Text style={styles.meta}>این نما read-only است؛ قیمت و موجودی از بخش‌های عملیاتی خودشان مدیریت می‌شوند.</Text>
+            </Card>
+            {storefrontProducts.length === 0 ? (
+              <Empty title="کالایی در ویترین نیست" description="کاتالوگ فعال و قیمت جاری از API دریافت نشد." />
+            ) : (
+              storefrontProducts.map((product) => (
+                <Card key={product.id}>
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.itemTitle}>{product.product_name || product.name || "—"}</Text>
+                    {product.is_available === false ? <StatusChip label="ناموجود" tone="warn" /> : <StatusChip label="فعال" tone="ok" />}
+                  </View>
+                  <Text style={styles.meta}>{product.brand_name || "—"} · بسته‌بندی: {product.packaging_unit || "—"}</Text>
+                  <Text style={styles.metricSmall}>{money(product.price_toman)}</Text>
+                  {product.stock_quantity != null ? <Text style={styles.meta}>موجودی ویترین: {numberFa(product.stock_quantity)} {product.packaging_unit || ""}</Text> : null}
+                </Card>
+              ))
+            )}
+          </>
         ) : null}
 
         {moreTab === "staff" ? (
@@ -806,7 +1028,7 @@ export function VendorMobileScreen(props: {
         {tab === "home" ? renderHome() : tab === "orders" ? renderOrders() : tab === "inventory" ? renderInventory() : tab === "finance" ? renderFinance() : tab === "more" ? renderMore() : <SupportMobileScreen role={props.role} />}
       </View>
 
-      <BottomNav tab={tab} onChange={setTab} />
+      <BottomNav tab={tab} role={props.role} onChange={setTab} />
     </Screen>
   );
 }
@@ -898,6 +1120,7 @@ function InventoryCard(props: {
   onSaveInventory: (row: Inv, value: string) => Promise<void>;
   onSavePrice: (row: Inv, value: string) => Promise<void>;
   loading: boolean;
+  editablePrice: boolean;
   compact?: boolean;
 }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
@@ -931,11 +1154,16 @@ function InventoryCard(props: {
       </View>
 
       <Input label="موجودی فیزیکی" value={quantity} onChangeText={setQuantity} keyboardType="numeric" />
-      {!props.compact ? <Input label="قیمت فعلی (تومان)" value={price} onChangeText={setPrice} keyboardType="numeric" /> : null}
+      {!props.compact && props.editablePrice ? (
+        <Input label="قیمت فعلی (تومان)" value={price} onChangeText={setPrice} keyboardType="numeric" />
+      ) : null}
+      {!props.compact && !props.editablePrice ? (
+        <Text style={styles.meta}>قیمت فعلی: {money(price)}</Text>
+      ) : null}
 
       <View style={styles.actionRow}>
         <Btn label="ذخیره موجودی" onPress={() => void props.onSaveInventory(props.row, quantity)} loading={props.loading} disabled={props.loading} />
-        {!props.compact ? <Btn label="ذخیره قیمت" tone="ghost" onPress={() => void props.onSavePrice(props.row, price)} loading={props.loading} disabled={props.loading} /> : null}
+        {!props.compact && props.editablePrice ? <Btn label="ذخیره قیمت" tone="ghost" onPress={() => void props.onSavePrice(props.row, price)} loading={props.loading} disabled={props.loading} /> : null}
       </View>
     </Card>
   );
@@ -960,7 +1188,7 @@ function makeStyles(colors: Palette) {
       paddingHorizontal: spacing.xs,
       paddingBottom: spacing.sm,
     },
-    brand: { color: colors.text, fontSize: 24, fontWeight: "800", lineHeight: 26 },
+    brand: { color: colors.text, fontSize: 24, fontWeight: "800", fontFamily: "Vazirmatn-Bold", lineHeight: 30 },
     context: { color: colors.textSecondary, fontSize: 11, marginTop: 2 },
     topMeta: { alignItems: "flex-end", gap: spacing.xs },
     loadingLabel: { color: colors.textMuted, fontSize: 10 },
@@ -979,8 +1207,8 @@ function makeStyles(colors: Palette) {
     },
     heroCopy: { flex: 1 },
     eyebrow: { color: colors.brand, fontSize: 11, fontWeight: "700", marginBottom: 4 },
-    heroTitle: { color: colors.text, fontSize: 26, fontWeight: "800", marginBottom: 4 },
-    heroBody: { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
+    heroTitle: { color: colors.text, fontSize: 26, fontWeight: "800", fontFamily: "Vazirmatn-Bold", marginBottom: 4, textAlign: "right" },
+    heroBody: { color: colors.textSecondary, fontSize: 13, lineHeight: 22, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
     roleBadge: {
       minWidth: 56,
       height: 56,
@@ -1013,7 +1241,7 @@ function makeStyles(colors: Palette) {
       marginBottom: spacing.sm,
       marginTop: spacing.sm,
     },
-    sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
+    sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "700", fontFamily: "Vazirmatn-SemiBold", textAlign: "right" },
     sectionAction: { color: colors.brand, fontSize: 12, fontWeight: "700" },
     quickGrid: { gap: spacing.sm, marginBottom: spacing.lg },
     quickAction: {
@@ -1027,13 +1255,13 @@ function makeStyles(colors: Palette) {
     quickLabel: { color: colors.text, fontSize: 14, fontWeight: "700" },
     quickDetail: { color: colors.textSecondary, fontSize: 11, lineHeight: 17, marginTop: 3 },
     pageIntro: { marginBottom: spacing.md },
-    pageTitle: { color: colors.text, fontSize: 24, fontWeight: "800", marginBottom: 4 },
-    pageBody: { color: colors.textSecondary, fontSize: 12, lineHeight: 19 },
+    pageTitle: { color: colors.text, fontSize: 24, fontWeight: "800", fontFamily: "Vazirmatn-Bold", marginBottom: 4, textAlign: "right" },
+    pageBody: { color: colors.textSecondary, fontSize: 12, lineHeight: 20, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
     rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
     actionRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },
-    itemTitle: { color: colors.text, fontSize: 14, fontWeight: "700", marginBottom: 3 },
+    itemTitle: { color: colors.text, fontSize: 14, fontWeight: "700", fontFamily: "Vazirmatn-SemiBold", marginBottom: 3, textAlign: "right" },
     metricSmall: { color: colors.text, fontSize: 20, fontWeight: "800", marginTop: spacing.sm },
-    meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18 },
+    meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 19, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
     segmented: {
       flexDirection: "row",
       backgroundColor: colors.neutralBg,
@@ -1070,6 +1298,10 @@ function makeStyles(colors: Palette) {
     },
     grantRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
     flexOne: { flex: 1 },
+    scanProduct: { marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+    candidatePanel: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+    successNote: { color: colors.success, fontSize: 12, fontFamily: "Vazirmatn-SemiBold", marginTop: spacing.sm, textAlign: "right" },
+    scanResult: { marginTop: spacing.md },
     bottomNav: {
       flexDirection: "row",
       backgroundColor: colors.surface,
