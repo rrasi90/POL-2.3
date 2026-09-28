@@ -153,8 +153,8 @@ function makeStyles(colors: Palette) {
       width: 156,
       height: 112,
     },
-    sub: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: 20 },
-    info: { fontSize: 12, color: colors.brand, marginBottom: spacing.sm, lineHeight: 18 },
+    sub: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: 21, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
+    info: { fontSize: 12, color: colors.brand, marginBottom: spacing.sm, lineHeight: 19, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
     otpInput: {
       textAlign: "center",
       letterSpacing: 10,
