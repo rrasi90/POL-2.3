@@ -58,7 +58,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p apps/web/.next/standalone/.next/static
+          mkdir -p apps/web/.next/standalone/apps/web/.next/static
           cp -R apps/web/.next/static/. apps/web/.next/standalone/.next/static/
+          cp -R apps/web/.next/static/. apps/web/.next/standalone/apps/web/.next/static/
 
       - name: Standalone runtime smoke
         run: |
@@ -79,8 +81,9 @@ jobs:
 
           test "$ready" -eq 1
           grep -F "خرید عمده" /tmp/pol-home.html
-          grep -F "یک مسیر روشن" /tmp/pol-home.html
-          grep -F "ONE NETWORK, THREE ROLES" /tmp/pol-home.html
+          grep -F "ساده‌تر از همیشه" /tmp/pol-home.html
+          grep -F "برای فروشگاه‌ها" /tmp/pol-home.html
+          grep -F "برای بنکدارها" /tmp/pol-home.html
 
           curl -fsS http://127.0.0.1:3001/_next/static/css/ >/dev/null 2>&1 || true
           css_url="$(grep -oE 'href="/_next/static/css/[^"]+\.css"' /tmp/pol-home.html | head -n1 | sed 's/^href="//;s/"$//')"
@@ -91,6 +94,7 @@ jobs:
           for asset in corporate market vendor; do
             curl -fsS -o "/tmp/pol-$asset.png" "http://127.0.0.1:3001/brand/$asset"
             test -s "/tmp/pol-$asset.png"
+            test "$(od -An -tx1 -N8 "/tmp/pol-$asset.png" | tr -d " \n")" = "89504e470d0a1a0a"
           done
 
           echo "Landing build + runtime + CSS + brand assets: PASS"
