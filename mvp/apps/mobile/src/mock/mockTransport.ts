@@ -68,6 +68,10 @@ type MockState = {
   supportCases: Array<Record<string, unknown>>;
   barcodeMap: Record<string, Record<string, unknown>>;
   candidates: Array<Record<string, unknown>>;
+  scanSessions: Record<string, {
+    status: "DRAFT" | "PUBLISHED";
+    items: Array<{ vendor_product_id: string; physical_quantity: number; unit_price_toman: number }>;
+  }>;
 };
 
 const now = new Date("2026-09-29T09:30:00+03:30");
@@ -234,6 +238,7 @@ function makeState(): MockState {
       },
     },
     candidates: [],
+    scanSessions: {},
   };
 }
 
@@ -524,8 +529,100 @@ export async function mockRequest<T>(
   }
 
   if (method === "POST" && pathname === "/api/v1/vendors/inventory/continuous-scan") {
+    if (!["VENDOR_OWNER", "VENDOR_STAFF"].includes(role)) {
+      throw new Error("Mock permission denied: inventory.scan");
+    }
     const payload = (body || {}) as Record<string, unknown>;
-    return envelope({ accepted: true, session_id: payload.session_id || "mock-scan-session", verification_source: "BARCODE_SCAN" });
+    const productId = String(payload.product_id || "").trim();
+    const vendorSku = String(payload.vendor_sku || "").trim();
+    const packagingUnit = String(payload.packaging_unit || "").trim();
+    const packQuantity = Number(payload.pack_quantity);
+    const physicalQuantity = Number(payload.physical_quantity);
+    const unitPrice = Number(payload.unit_price_toman);
+    const consumerPrice = payload.consumer_price_per_unit_toman == null ? null : Number(payload.consumer_price_per_unit_toman);
+    const sessionId = String(payload.session_id || "mock-scan-session").trim();
+
+    if (!productId || !vendorSku || !packagingUnit || !sessionId) {
+      throw new Error("Mock inventory scan requires product, SKU, packaging, and session.");
+    }
+    if (!Number.isInteger(packQuantity) || packQuantity < 1 || !Number.isInteger(physicalQuantity) || physicalQuantity < 0 || !Number.isFinite(unitPrice) || unitPrice <= 0) {
+      throw new Error("Mock invalid inventory scan payload");
+    }
+
+    const row = state.inventory.find((item) =>
+      item.vendor_sku === vendorSku && (
+        item.vendor_product_id === String(payload.vendor_product_id || "") ||
+        item.id === String(payload.vendor_product_id || "") ||
+        true
+      )
+    );
+    if (!row) throw new Error("Mock inventory product not found for continuous scan.");
+
+    const session = state.scanSessions[sessionId] || { status: "DRAFT" as const, items: [] };
+    if (session.status !== "DRAFT") {
+      throw new Error("Mock inventory scan session is already closed.");
+    }
+    state.scanSessions[sessionId] = session;
+
+    const existing = session.items.find((item) => item.vendor_product_id === row.vendor_product_id);
+    const item = {
+      vendor_product_id: row.vendor_product_id,
+      physical_quantity: physicalQuantity,
+      unit_price_toman: unitPrice,
+    };
+    if (existing) Object.assign(existing, item);
+    else session.items.push(item);
+
+    row.physical_quantity = physicalQuantity;
+    row.available_quantity = Math.max(0, physicalQuantity - row.reserved_quantity);
+    row.current_price_toman = unitPrice;
+    row.freshness_status = "FRESH";
+    row.is_stale = false;
+
+    return envelope({
+      vendor_product_id: row.vendor_product_id,
+      available_quantity: row.available_quantity,
+      inventory_unit: row.packaging_unit,
+      unit_price_toman: unitPrice,
+      freshness_status: "FRESH",
+      updated_at: new Date().toISOString(),
+      session_id: sessionId,
+      listing_status: "ACTIVE",
+      verification_source: "BARCODE_SCAN",
+      consumer_price_per_unit_toman: consumerPrice,
+    });
+  }
+
+  if (method === "POST" && pathname === "/api/v1/vendors/inventory/publish") {
+    if (!["VENDOR_OWNER", "VENDOR_STAFF"].includes(role)) {
+      throw new Error("Mock permission denied: inventory.publish");
+    }
+    const sessionId = String(((body || {}) as Record<string, unknown>).session_id || "").trim();
+    if (!sessionId) throw new Error("Mock inventory publish requires session_id.");
+
+    const session = state.scanSessions[sessionId];
+    if (!session) throw new Error("Inventory scan session not found.");
+
+    if (session.status === "PUBLISHED") {
+      return envelope({
+        session_id: sessionId,
+        status: "PUBLISHED",
+        published_count: session.items.length,
+        idempotent_replay: true,
+      });
+    }
+    if (!session.items.length) {
+      throw new Error("Inventory scan session contains no items.");
+    }
+
+    session.status = "PUBLISHED";
+    return envelope({
+      session_id: sessionId,
+      status: "PUBLISHED",
+      published_count: session.items.length,
+      published_at: new Date().toISOString(),
+      idempotent_replay: false,
+    });
   }
 
   if (method === "GET" && pathname === "/api/v1/support/cases") return envelope({ cases: state.supportCases.map(({ messages, ...row }) => row), limit: 50, offset: 0 });
