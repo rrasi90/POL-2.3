@@ -1,8 +1,10 @@
 import { StatusBar } from "expo-status-bar";
+import { useFonts } from "expo-font";
 import React, { useCallback, useEffect, useState } from "react";
 import { Pressable, SafeAreaView, StyleSheet, Text } from "react-native";
 import { clearSession, getToken, healthz, restoreSession } from "./src/api";
 import { AccountMobileScreen } from "./src/screens/AccountMobileScreen";
+import { OfflineBanner } from "./src/components/OfflineBanner";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { OrderDetailMobileScreen } from "./src/screens/OrderDetailMobileScreen";
 import { ThemeProvider, useTheme, useThemedStyles } from "./src/theme";
@@ -24,6 +26,11 @@ export function AppShell<R extends Role>(props: AppShellProps<R>): React.ReactNo
 function AppContent<R extends Role>(props: AppShellProps<R>): React.ReactNode {
   const { mode } = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const [fontsLoaded] = useFonts({
+    "Vazirmatn-Regular": require("./assets/fonts/Vazirmatn-Regular.ttf"),
+    "Vazirmatn-SemiBold": require("./assets/fonts/Vazirmatn-SemiBold.ttf"),
+    "Vazirmatn-Bold": require("./assets/fonts/Vazirmatn-Bold.ttf"),
+  });
   const [route, setRoute] = useState<
     { name: "login" } | { name: "workspace"; role: R } |
     { name: "order-detail"; orderId: string; role: R } | { name: "account"; role: R }
@@ -67,7 +74,7 @@ function AppContent<R extends Role>(props: AppShellProps<R>): React.ReactNode {
     setRoute({ name: "workspace", role: scopedRole });
   }
 
-  if (!booted) return <SafeAreaView style={styles.root} />;
+  if (!fontsLoaded || !booted) return <SafeAreaView style={styles.root} />;
   if (!getToken()) return (
     <SafeAreaView style={styles.root}>
       <LoginScreen onAuthed={onAuthed} allowedRoles={props.allowedRoles} appName={props.appName} />
@@ -78,6 +85,7 @@ function AppContent<R extends Role>(props: AppShellProps<R>): React.ReactNode {
   const currentRole = route.name === "login" ? role : route.role;
   return (
     <SafeAreaView style={styles.root}>
+      <OfflineBanner />
       {currentRole && route.name !== "account" && route.name !== "order-detail" ? (
         <SafeAreaView style={styles.accountBar}>
           <Pressable accessibilityRole="button" onPress={() => setRoute({ name: "account", role: currentRole })} style={styles.accountButton}>
@@ -101,9 +109,9 @@ function AppContent<R extends Role>(props: AppShellProps<R>): React.ReactNode {
 
 function makeStyles(colors: { bg: string; surface: string; border: string; text: string }) {
   return StyleSheet.create({
-    root: { flex: 1, backgroundColor: colors.bg },
-    accountBar: { backgroundColor: colors.bg, paddingHorizontal: 12, paddingTop: 6 },
-    accountButton: { alignSelf: "flex-start", borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+    root: { flex: 1, backgroundColor: colors.bg, direction: "rtl" },
+    accountBar: { backgroundColor: colors.bg, paddingHorizontal: 12, paddingTop: 6, direction: "rtl" },
+    accountButton: { alignSelf: "flex-end", borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
     accountText: { color: colors.text, fontSize: 11, fontWeight: "600" },
   });
 }
