@@ -45,7 +45,7 @@ const checks = [
   ["Offline banner reconciles the current online state after subscribing", () => read("components/OfflineBanner.tsx").includes("setOnline(isOnline())")],
   ["Mobile theme has runtime provider and explicit Light/Night controls", () => {
     const theme = read("theme.ts");
-    const app = read("../App.tsx");
+    const app = read("../AppShell.tsx");
     const account = read("screens/AccountMobileScreen.tsx");
     return theme.includes("ThemeProvider") && app.includes("<ThemeProvider>") && account.includes('setMode("night")') && account.includes('setMode("light")');
   }],
