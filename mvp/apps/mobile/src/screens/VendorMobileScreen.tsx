@@ -38,6 +38,14 @@ type Inv = {
   is_stale?: boolean | null;
 };
 
+type InvoiceItem = {
+  id: string;
+  product_name?: string | null;
+  quantity?: number | string | null;
+  unit_price?: number | string | null;
+  total_line_amount?: number | string | null;
+};
+
 type Invoice = {
   id: string;
   invoice_number?: string | null;
@@ -46,6 +54,8 @@ type Invoice = {
   total_amount?: number | string | null;
   currency?: string | null;
   issued_at?: string | null;
+  order_id?: string | null;
+  items?: InvoiceItem[];
 };
 
 type Referral = {
@@ -55,6 +65,13 @@ type Referral = {
   referred_organization_id?: string | null;
 };
 
+type SettlementAdjustment = {
+  id?: string | null;
+  adjustment_type?: string | null;
+  amount_toman?: number | string | null;
+  reason?: string | null;
+};
+
 type Settlement = {
   id: string;
   settlement_number?: string | null;
@@ -62,6 +79,10 @@ type Settlement = {
   amount_toman?: number | string | null;
   net_vendor_amount_toman?: number | string | null;
   gross_amount_toman?: number | string | null;
+  commission_amount_toman?: number | string | null;
+  adjustment_amount_toman?: number | string | null;
+  settled_at?: string | null;
+  adjustments?: SettlementAdjustment[];
 };
 
 type Customer = {
