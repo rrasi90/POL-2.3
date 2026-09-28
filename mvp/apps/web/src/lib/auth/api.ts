@@ -4,7 +4,11 @@ import { useAuthStore } from "./store";
 import { createApiClient, type ApiClient } from "@pol/api-client";
 import type { RefreshResponse } from "@pol/types";
 
-const baseUrl = () => process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+/**
+ * QA branch rule: when NEXT_PUBLIC_API_BASE_URL is empty, use the same-origin
+ * Next.js mock API under /api/v1. A real backend must be explicitly configured.
+ */
+const baseUrl = () => process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 let client: ApiClient | null = null;
 let refreshInFlight: Promise<boolean> | null = null;
