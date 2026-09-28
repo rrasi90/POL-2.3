@@ -15,7 +15,7 @@
 | Step | Name | Status | Notes |
 |------|------|--------|-------|
 | 1 | Infra / DB | **DONE** (2026-09-23) | Historical baseline only: the earlier `pol` / `pol_test` environment recorded 95 tables under migrations 001–031. Current schema authority is the contiguous migration chain through 076; active table count is runtime-derived. Current remediation artifact evidence is tracked separately and is not copied here as a certification claim. |
-| 2 | Open decisions | **PARTIAL** | Remaining explicit decisions: D-018 refresh-token rotation policy, invoice timing, plus external design/observability/provider dependencies → §2. D-024 is read/order scope; D-026 delegated permissions are implemented pending fresh runtime evidence. |
+| 2 | Open decisions | **PARTIAL** | Remaining explicit decisions: D-018 refresh-token rotation policy, invoice timing, plus external design/observability/provider dependencies → §2. D-024 is fixed to read/order storefront scope; D-026 delegated permissions are implemented pending fresh runtime evidence. |
 | 3 | Phase 0 + GATE 0 | **DONE** | Artifacts + skeleton; typecheck/build green. |
 | 4 | Phase 1 foundation + design system | **DONE** | tokens, ui package, shell, middleware role gates. |
 | 5 | Full Web MVP | **IMPLEMENTED / PARTIAL E2E** | Current screen matrix remains the authoritative capability ledger; management/customer/staff/candidate surfaces are now source-implemented. Historical cycle-5 counts remain historical evidence only. |
@@ -96,7 +96,7 @@ Source: `POL_00_PROJECT_CONTROL/MVP_EXECUTION/31_OUT_OF_SCOPE_MVP.md`, `FUTURE_V
 
 - [ ] BNPL / credit underwriting  
 - [ ] Wallet / stored value UI (D-021)  
-- [ ] Escrow / custody UX (D-025)  
+- [ ] Wallet / stored value UI (D-021) — intentionally out of MVP  
 - [ ] POL-owned warehouse / fleet (D-008)  
 - [ ] Advanced route optimization  
 - [ ] Sponsored products / ads  
@@ -139,7 +139,7 @@ mvp/
 
 | Service | Port | Status 2026-09-23 |
 |---------|------|-------------------|
-| Host PostgreSQL 18 | 5432 | **UP** — `pol` 95 tables (API live) + `pol_test` 95 tables (suite) |
+| Host PostgreSQL 18 | 5432 | **HISTORICAL SNAPSHOT** — `pol`/`pol_test` had 95 tables in the 2026-09-23 environment; current schema count is derived from the active migration chain. |
 | Docker `postgres` | 5432 map | UP but container `pol_test` **0 tables** (do not target) |
 | Docker `grafana` | 3000 | UP (conflicts with Next default port — run Next on 3001 if both needed) |
 | Docker `prometheus` | 9090 | UP |
@@ -312,7 +312,7 @@ MVP is DONE only when **all** hold:
 | Contract | Delivery OTP schema `^\d{6}$` + generation 6-digit + `delivery_otp` never persisted on INSERT (G-022) | schema `^\d{4}$`, generation via `OTP_CODE_LENGTH`, INSERT now includes `delivery_otp`; UI `maxLength={4}`; tests aligned to `"1234"`/`"9999"`; dispatch roundtrip asserts `otp_verified is True` |
 | Structural | `migrations/030_delivery_otp_column.sql` comment still said 6-digit | comment updated to D-018 4-digit (column stays VARCHAR(6); no new migration) |
 | Infra | stale/missing `.next`, failed root `npm install` | install from `mvp/`; clean rebuild green |
-| Test | `pol_test` schema wiped | re-bootstrap → 95 tables (research chain) |
+| Test | `pol_test` schema wiped | Historical evidence: re-bootstrap produced 95 tables under the 001–031 snapshot; current execution must derive the count from the active migration chain. |
 | Structural | 62 research files missing (`daily_inventory_boundary`, `notification_providers`, analytics/pilot/revalidation/canonical worker + ~55 tests) | restored from `origin/research-hardening-2026-09-14` |
 | Structural | `GET /inventory/daily/*` 500 (`ImportError: daily_inventory_boundary`) | restored boundary module → live 200 |
 | Structural | boundary missing `storefront_*` + `unified_search` methods (routes from `d140cc7`) | implemented in `application_boundary` → live 200 |
