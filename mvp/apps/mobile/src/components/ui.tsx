@@ -72,13 +72,19 @@ export function Btn(props: {
 export function Input(props: TextInputProps & { label: string; hint?: string }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
-  const { label, hint, direction = "rtl", ...rest } = props;
+  const { label, hint, direction, keyboardType, ...rest } = props;
+  const resolvedDirection =
+    direction ??
+    (["phone-pad", "number-pad", "numeric", "decimal-pad"].includes(keyboardType ?? "")
+      ? "ltr"
+      : "rtl");
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         {...rest}
-        style={[styles.input, direction === "ltr" && styles.inputLtr, rest.style]}
+        keyboardType={keyboardType}
+        style={[styles.input, resolvedDirection === "ltr" && styles.inputLtr, rest.style]}
         placeholderTextColor={colors.textMuted}
       />
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
