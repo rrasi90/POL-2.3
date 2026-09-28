@@ -85,3 +85,8 @@ tmux attach -t pol-deploy
 ```
 
 Do not treat a dropped SSH session as a deployment failure until the tmux job has been inspected.
+
+
+## Landing runtime asset correction — 2026-09-28
+
+A deployment log showed the Web HTML route could return 200 while `/_next/static/*` returned 404. This is treated as a confirmed packaging/layout defect of the standalone Next.js image, not a network-only symptom. The deployment image now copies `.next/static` into the standalone root and launches `apps/web/server.js` from that root. Re-run the deployment operator and perform browser verification after the image rebuild.
