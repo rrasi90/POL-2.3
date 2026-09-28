@@ -24,3 +24,17 @@ The public `/` surface was rebuilt as an editorial B2B landing experience instea
 - **Responsive target:** desktop/tablet/mobile layouts keep the hero hierarchy, CTA reachability, logo legibility, and minimum touch affordance intact.
 - **Scope:** presentation and asset delivery only; no domain/API/database behavior changed.
 - **Verification state:** fresh build + visual regression capture remains required after this change; prior landing-page verification is not reused as fresh evidence.
+
+
+## Landing usability correction pass — 2026-09-29
+
+Observed after VPS deployment: the HTML and CSS rendered, but canonical brand images returned a login redirect because `/brand` was absent from the public middleware allowlist. The landing copy also overused English labels and the header links pointed to separate public routes rather than clearly acting as landing-page navigation. This pass:
+
+- adds `/brand` to the public middleware prefixes;
+- makes the primary landing navigation explicit hash anchors to visible sections;
+- replaces internal/English marketing labels with natural Persian copy;
+- keeps `Link` only where a real route transition is intended (login/role entry);
+- improves Persian heading tracking, weight, line height, and body rhythm while retaining the canonical repository font family;
+- keeps mobile navigation accessible and touch-friendly.
+
+The canonical design system still uses Vazirmatn for Persian UI. The change is an application-level typographic refinement rather than a design-system replacement.
