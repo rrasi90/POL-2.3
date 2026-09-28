@@ -19,6 +19,10 @@ export type Palette = {
   dangerBg: string;
   infoBg: string;
   neutralBg: string;
+  onBrand: string;
+  onDanger: string;
+  onWarning: string;
+  shadow: string;
 };
 
 const palettes: Record<ThemeMode, Palette> = {
@@ -38,6 +42,10 @@ const palettes: Record<ThemeMode, Palette> = {
     dangerBg: "#FEF2F2",
     infoBg: "#EFF6FF",
     neutralBg: "#F1F5F9",
+    onBrand: "#FFFFFF",
+    onDanger: "#FFFFFF",
+    onWarning: "#FFFFFF",
+    shadow: "#0F172A",
   },
   night: {
     bg: "#0F141C",
@@ -55,6 +63,10 @@ const palettes: Record<ThemeMode, Palette> = {
     dangerBg: "#3A171A",
     infoBg: "#172A46",
     neutralBg: "#202938",
+    onBrand: "#0F172A",
+    onDanger: "#FFFFFF",
+    onWarning: "#0F172A",
+    shadow: "#000000",
   },
 };
 
