@@ -44,7 +44,7 @@ Motion is explanatory rather than ornamental:
 
 ## Mobile rules
 
-- Navigation collapses to brand + single high-priority CTA.
+- Navigation collapses to brand + primary CTA + an accessible compact menu.
 - Hero becomes single-column before the visual storytelling panel.
 - Display heading uses fluid sizing and controlled line length.
 - All CTA controls remain full-width and touch friendly.
@@ -60,7 +60,7 @@ The canonical repository logos are served same-origin from `/brand/{asset}` by `
 - No domain/API/database changes.
 - No external image-host dependency for the canonical logo assets.
 - No synthetic business metrics presented as proof.
-- No internal gap IDs, migration IDs, or engineering terminology in the primary marketing narrative.
+- No internal gap IDs, migration IDs, or unnecessary engineering terminology in the primary marketing narrative.
 
 ## Verification gate
 
