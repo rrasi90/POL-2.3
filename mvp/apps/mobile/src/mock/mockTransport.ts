@@ -278,6 +278,10 @@ export async function mockRequest<T>(
 
   if (method === "POST" && pathname === "/api/v1/auth/verify-otp") {
     const phone = String((body as Record<string, unknown> | undefined)?.mobile_number || "");
+    const otp = String((body as Record<string, unknown> | undefined)?.otp_code || "");
+    if (!/^\+?[1-9]\d{7,14}$/.test(phone) || !/^\d{4}$/.test(otp)) {
+      throw new Error("Mock OTP must contain an E.164 phone and 4 digits.");
+    }
     const mockRole: MockRole = phone.endsWith("0002") ? "VENDOR_STAFF" : "VENDOR_OWNER";
     const token = mockRole === "VENDOR_STAFF" ? "mock-vendor-staff-token" : "mock-vendor-owner-token";
     return envelope({ access_token: token, refresh_token: token + "-refresh", role: mockRole, current_organization: { id: "mock-vendor-org", role: mockRole } });
@@ -377,8 +381,14 @@ export async function mockRequest<T>(
     return envelope(state.daily);
   }
 
-  if (method === "GET" && pathname === "/api/v1/invoices") return envelope({ invoices: state.invoices, limit: 50, offset: 0 });
-  if (method === "GET" && pathname === "/api/v1/vendors/settlements") return envelope({ settlements: state.settlements, limit: 50, offset: 0 });
+  if (method === "GET" && pathname === "/api/v1/invoices") {
+    if (role !== "VENDOR_OWNER") throw new Error("Mock permission denied: finance.view");
+    return envelope({ invoices: state.invoices, limit: 50, offset: 0 });
+  }
+  if (method === "GET" && pathname === "/api/v1/vendors/settlements") {
+    if (role !== "VENDOR_OWNER") throw new Error("Mock permission denied: settlement.view");
+    return envelope({ settlements: state.settlements, limit: 50, offset: 0 });
+  }
 
   if (method === "GET" && pathname === "/api/v1/referrals") return envelope({ referrals: state.referrals, limit: 50, offset: 0 });
 
