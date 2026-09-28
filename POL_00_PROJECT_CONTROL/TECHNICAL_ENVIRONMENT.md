@@ -44,6 +44,6 @@
 
 محیط‌های تست و ران‌تایم باید منحصراً از فایل مایگریشن رسمی کانونیکال ساخته شوند:
 
-$$\text{Empty PostgreSQL 18 Database} \longrightarrow \text{migrations/001_initial_schema.sql} \longrightarrow \text{Canonical 37 Tables} \longrightarrow \text{Runtime / Concurrency Tests}$$
+$\text{Empty PostgreSQL 18 Database} \longrightarrow \text{ordered migration chain 001..076} \longrightarrow \text{runtime-derived schema} \longrightarrow \text{Runtime / Concurrency Tests}$
 
 هیچ اسکریپت تستی حق بازتعریف دستی و موازی ساختار جداول دامنه‌ای را ندارد.
