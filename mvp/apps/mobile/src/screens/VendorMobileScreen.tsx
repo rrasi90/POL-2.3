@@ -790,7 +790,7 @@ export function VendorMobileScreen(props: {
           <Text style={styles.context}>بنکدار</Text>
         </View>
         <View style={styles.topMeta}>
-          {loading ? <Text style={styles.loadingLabel}>در حال به‌روزرسانی</Text> : <Text style={styles.loadingLabel}>آنلاین</Text>}
+          {loading ? <Text style={styles.loadingLabel}>در حال به‌روزرسانی</Text> : <Text style={styles.loadingLabel}>محیط بنکدار</Text>}
           <StatusChip label={props.role === "VENDOR_OWNER" ? "مالک" : "همکار"} tone="info" />
         </View>
       </View>
@@ -1034,7 +1034,7 @@ function makeStyles(colors: Palette) {
     segment: { flex: 1, minHeight: 40, borderRadius: 8, alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.sm },
     segmentSelected: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
     segmentText: { color: colors.textSecondary, fontSize: 12, fontWeight: "600" },
-    segmentTextSelected: { color: colors.text, fontWeight: "750" },
+    segmentTextSelected: { color: colors.text, fontWeight: "700" },
     inventoryStats: {
       flexDirection: "row",
       gap: spacing.sm,
