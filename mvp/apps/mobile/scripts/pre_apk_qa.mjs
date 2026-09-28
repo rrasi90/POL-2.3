@@ -104,7 +104,7 @@ assert(vendorSource.includes("/api/v1/vendors/staff"), "vendor app uses canonica
 assert(vendorSource.includes("/api/v1/storefront/vendors"), "vendor app includes canonical storefront route");
 assert(vendorSource.includes("/api/v1/catalog/barcode/lookup"), "vendor app includes canonical barcode lookup route");
 const paritySource = readFileSync(resolve(appDir, "src/__tests__/parity.md"), "utf8");
-assert(paritySource.includes("match-barcode") && paritySource.includes("GAP / CONTRACT"), "barcode match endpoint is tracked as a contract-only runtime gate");
+assert(paritySource.includes("POST `/api/v1/products/match-barcode`") && paritySource.includes("CAMERA RUNTIME GAP"), "barcode match endpoint and camera runtime boundary are tracked in parity");
 assert(vendorSource.includes("/api/v1/vendors/inventory/continuous-scan"), "vendor app includes canonical continuous-scan route");
 assert(vendorSource.includes("/api/v1/vendors/inventory/publish"), "vendor app includes canonical inventory publish route");
 assert(vendorSource.includes("formatTehranDateTime") && vendorSource.includes("todayTehranIso"), "vendor app uses Tehran-localized date/time formatting");
