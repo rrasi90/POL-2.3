@@ -17,16 +17,10 @@ module.exports = {
     ...(base.plugins || []),
     "./plugins/withAndroidSizeOptimization.js",
   ],
-  splash: isVendor
-    ? {
-        image: vendorLogo,
-        resizeMode: "contain",
-        backgroundColor: "#F7F9FC",
-      }
-    : base.splash,
   android: {
     ...(base.android || {}),
     package: isVendor ? "ir.pol.vendor" : "ir.pol.market",
+    icon: isVendor ? vendorLogo : base.android?.icon,
     versionCode: 100,
     adaptiveIcon: isVendor
       ? {
