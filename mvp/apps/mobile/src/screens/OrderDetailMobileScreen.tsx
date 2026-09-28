@@ -141,6 +141,10 @@ export function OrderDetailMobileScreen(props: {
   }, [load]);
 
   async function act(name: "accept" | "preparing" | "ready"): Promise<void> {
+    if (props.mode === "vendor" && name === "accept" && props.role !== "VENDOR_OWNER") {
+      setActionError("پذیرش سفارش فقط برای مالک بنکداری مجاز است.");
+      return;
+    }
     setActing(name);
     setActionError(null);
     try {
@@ -162,6 +166,10 @@ export function OrderDetailMobileScreen(props: {
   }
 
   async function submitReject(): Promise<void> {
+    if (props.mode === "vendor" && props.role !== "VENDOR_OWNER") {
+      setActionError("رد سفارش فقط برای مالک بنکداری مجاز است.");
+      return;
+    }
     if (!rejectReason.trim()) {
       setActionError("دلیل رد سفارش الزامی است.");
       return;
@@ -306,6 +314,10 @@ export function OrderDetailMobileScreen(props: {
   }
 
   async function submitPartial(): Promise<void> {
+    if (props.mode === "vendor" && props.role !== "VENDOR_OWNER") {
+      setActionError("پذیرش جزئی فقط برای مالک بنکداری مجاز است.");
+      return;
+    }
     setActing("partial");
     setActionError(null);
     try {
@@ -345,6 +357,7 @@ export function OrderDetailMobileScreen(props: {
 
   const status = order.order_status || "";
   const vendorMode = props.mode === "vendor";
+  const vendorOwner = vendorMode && props.role === "VENDOR_OWNER";
 
   return (
     <Screen>
@@ -364,10 +377,10 @@ export function OrderDetailMobileScreen(props: {
         {vendorMode ? (
           <Card>
             <Text style={styles.h2}>اقدامات فروشنده</Text>
-            {["SUBMITTED", "CREATED"].includes(status) ? <Input label="دلیل رد سفارش" value={rejectReason} onChangeText={setRejectReason} maxLength={1000} /> : null}
+            {vendorOwner && ["SUBMITTED", "CREATED"].includes(status) ? <Input label="دلیل رد سفارش" value={rejectReason} onChangeText={setRejectReason} maxLength={1000} /> : null}
             {status === "READY" ? <><Input label="نام راننده" value={dispatchDriverName} onChangeText={setDispatchDriverName} maxLength={100} /><Input label="پلاک خودرو" value={dispatchVehiclePlate} onChangeText={setDispatchVehiclePlate} maxLength={20} /><Input label="تلفن راننده" value={dispatchDriverPhone} onChangeText={setDispatchDriverPhone} maxLength={32} /></> : null}
             <View style={styles.row}>
-              {["SUBMITTED", "CREATED"].includes(status) ? (
+              {vendorOwner && ["SUBMITTED", "CREATED"].includes(status) ? (
                 <>
                   <Btn label="پذیرش" onPress={() => void act("accept")} loading={acting === "accept"} disabled={acting !== null} />
                   <Btn label="رد" tone="ghost" onPress={() => void submitReject()} loading={acting === "reject"} disabled={acting !== null || !rejectReason.trim()} />
@@ -395,7 +408,7 @@ export function OrderDetailMobileScreen(props: {
               <Text style={styles.h2}>{x.product_name_snapshot || x.id}</Text>
               <Text style={styles.meta}>درخواست: {String(x.ordered_quantity ?? 0)} · پذیرفته: {String(x.accepted_quantity ?? "—")}</Text>
               <Text style={styles.meta}>{money(x.total_line_amount_toman)}</Text>
-              {vendorMode && ["SUBMITTED", "CREATED"].includes(status) ? (
+              {vendorOwner && ["SUBMITTED", "CREATED"].includes(status) ? (
                 <Input label="تعداد پیشنهادی" value={partial[x.id] || ""} onChangeText={(v) => setPartial((p) => ({ ...p, [x.id]: v }))} keyboardType="numeric" />
               ) : null}
             </View>
