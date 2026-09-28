@@ -143,8 +143,9 @@ printf '\\n'
 
 echo "[DEPLOY] verifying landing page and canonical brand assets"
 LANDING_HTML="$(curl -fsS --max-time 20 http://127.0.0.1/)"
+printf '%s' "$LANDING_HTML" >/tmp/pol-landing.html
 grep -Fq "خرید عمده" <<<"$LANDING_HTML" || die "landing page value proposition marker missing"
-grep -Fq "یک مسیر روشن" <<<"$LANDING_HTML" || die "landing page headline marker missing"
+grep -Fq "ساده‌تر از همیشه" <<<"$LANDING_HTML" || die "landing page headline marker missing"
 
 CSS_ASSET="$(grep -oE '/_next/static/css/[^"]+\.css' /tmp/pol-landing.html 2>/dev/null | head -n1 || true)"
 if [[ -z "$CSS_ASSET" ]]; then
@@ -183,8 +184,9 @@ if [[ -n "$PUBLIC_BASE_URL" ]]; then
   printf '\\n'
 
   PUBLIC_LANDING_HTML="$(curl -fsS --max-time 20 "$PUBLIC_BASE_URL/")"
+  printf '%s' "$PUBLIC_LANDING_HTML" >/tmp/pol-public-landing.html
   grep -Fq "خرید عمده" <<<"$PUBLIC_LANDING_HTML" || die "public landing value proposition marker missing"
-  grep -Fq "یک مسیر روشن" <<<"$PUBLIC_LANDING_HTML" || die "public landing headline marker missing"
+  grep -Fq "ساده‌تر از همیشه" <<<"$PUBLIC_LANDING_HTML" || die "public landing headline marker missing"
 
   PUBLIC_HTML="$PUBLIC_LANDING_HTML"
   PUBLIC_CSS_ASSET="$(grep -oE '/_next/static/css/[^"]+\.css' <<<"$PUBLIC_HTML" | head -n1 || true)"
