@@ -33,3 +33,27 @@ MVP_SCREEN_MATRIX.md. Minimum three Phase-3 QA cycles are required.
 - D-028 barcode camera/matching path remains contract-only until its authoritative request/response contract and runtime dependency are available.
 - Screen-by-screen Night-theme visual verification remains a QA gate.
 - Live basket → allocation → checkout e2e remains a local-environment execution task.
+
+
+## Android installable builds
+
+The mobile source produces two independent Android products from the same canonical client:
+
+- **POL Market / پل بازار** — retailer roles only (`RETAILER_OWNER`, `RETAILER_STAFF`), package `ir.pol.market`.
+- **POL Vendor / پل بنکدار** — vendor roles only (`VENDOR_OWNER`, `VENDOR_STAFF`), package `ir.pol.vendor`.
+
+Build locally from `mvp/apps/mobile`:
+
+```bash
+npm run build:apk:retailer
+npm run build:apk:vendor
+```
+
+Outputs:
+
+- `dist/retailer/POL-Market.apk`
+- `dist/vendor/POL-Vendor.apk`
+
+The Android build uses Expo prebuild + native Gradle `assembleRelease`; Expo export alone is not treated as an installable APK.
+
+The role boundary is enforced both at the mobile shell and at OTP-login handling. Backend authorization remains the canonical security boundary.
