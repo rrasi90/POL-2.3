@@ -12,7 +12,7 @@ module.exports = {
   version: "1.0.0",
   icon: isVendor ? vendorLogo : retailerIcon,
   userInterfaceStyle: "automatic",
-  extra: { ...(base.extra || {}), appVariant: isVendor ? "vendor" : "retailer" },
+  extra: { ...(base.extra || {}), appVariant: isVendor ? "vendor" : "retailer", dataMode: (process.env.EXPO_PUBLIC_DATA_MODE || "live").toLowerCase() },
   plugins: [
     ...(base.plugins || []),
     "./plugins/withAndroidSizeOptimization.js",
