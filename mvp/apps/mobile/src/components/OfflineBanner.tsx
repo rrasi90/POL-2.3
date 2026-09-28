@@ -49,6 +49,6 @@ function makeStyles(colors: Palette) {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
   },
-  retryText: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  retryText: { color: colors.onWarning, fontSize: 12, fontWeight: "600", fontFamily: "Vazirmatn-SemiBold" },
   });
 }
