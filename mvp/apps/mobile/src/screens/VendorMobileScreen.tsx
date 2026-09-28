@@ -688,7 +688,7 @@ export function VendorMobileScreen(props: {
           <QuickAction label="صف سفارش" detail={pendingOrders.length ? "سفارش منتظر بررسی دارید" : "موردی در صف نیست"} onPress={() => setTab("orders")} tone={pendingOrders.length ? "warn" : "neutral"} />
           <QuickAction label="موجودی روزانه" detail={daily?.status ? statusLabel(daily.status) : "وضعیت امروز را ببینید"} onPress={() => { setInventoryTab("daily"); setTab("inventory"); }} tone={daily?.status === "PENDING" ? "warn" : "neutral"} />
           <QuickAction label="موجودی کالاها" detail={inventory.length ? numberFa(inventory.length) + " قلم ثبت شده" : "کاتالوگ خالی است"} onPress={() => { setInventoryTab("stock"); setTab("inventory"); }} />
-          <QuickAction label="مالی" detail="فاکتور و تسویه" onPress={() => setTab("finance")} />
+          props.role === "VENDOR_OWNER" ? <QuickAction label="مالی" detail="فاکتور و تسویه" onPress={() => setTab("finance")} /> : null
           <QuickAction label="پشتیبانی" detail="ثبت و پیگیری پرونده‌های پشتیبانی" onPress={() => setTab("support")} />
         </View>
 
@@ -721,7 +721,7 @@ export function VendorMobileScreen(props: {
         {orders.length === 0 ? (
           <Empty title="صف سفارش خالی است" description="سفارشی برای این بنکداری از API دریافت نشد." />
         ) : (
-          orders.map((order) => <OrderCard key={order.id} order={order} onOpen={props.onOpenOrder} onAction={orderAction} loading={loading} />)
+          orders.map((order) => <OrderCard key={order.id} order={order} role={props.role} onOpen={props.onOpenOrder} onAction={orderAction} loading={loading} />)
         )}
       </ScrollView>
     );
@@ -798,7 +798,7 @@ export function VendorMobileScreen(props: {
         ) : (
           <View>
             <Card>
-              <Input label="تاریخ تأیید" value={dailyDate} onChangeText={setDailyDate} />
+              <Input label="تاریخ تأیید" value={dailyDate} onChangeText={(value) => setDailyDate(value.replace(/[^0-9-]/g, ""))} direction="ltr" keyboardType="default" />
               <Btn label="بارگذاری روز" tone="ghost" onPress={() => void loadDaily().catch((e) => setError(e instanceof Error ? e.message : "خطا"))} />
             </Card>
             <StatusCard status={daily?.status} />
