@@ -123,6 +123,12 @@ const lockedSecureStore = workspaceLock.packages?.["node_modules/expo-secure-sto
 assert(mobilePackage.dependencies?.["expo-secure-store"] === "~57.0.4", "expo-secure-store is aligned to Expo SDK 57");
 assert(lockedMobile["expo-secure-store"] === "~57.0.4", "package-lock mobile dependency is aligned to Expo SDK 57");
 assert(lockedSecureStore?.version === "57.0.4", "package-lock resolves expo-secure-store 57.0.4");
+const installedSecureStorePath = resolve(appDir, "..", "..", "node_modules", "expo-secure-store", "package.json");
+const installedSecureStore = existsSync(installedSecureStorePath)
+  ? JSON.parse(readFileSync(installedSecureStorePath, "utf8"))
+  : null;
+assert(installedSecureStore?.version === "57.0.4", "installed expo-secure-store is aligned to Expo SDK 57");
+
 
 const mockTransport = readFileSync(resolve(appDir, "src/mock/mockTransport.ts"), "utf8");
 const mockQa = readFileSync(resolve(appDir, "scripts/mock_transport_qa.ts"), "utf8");
