@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -121,8 +122,12 @@ assert(mockTransport.includes("mockRequest") && mockTransport.includes("resetMoc
 assert(mockQa.includes("Vendor Staff cannot accept orders") && mockQa.includes("Vendor Staff cannot manage prices"), "mock QA covers Vendor Staff RBAC");
 assert(dataMode === "live" || dataMode === "mock", "data mode is constrained to live/mock");
 
-const regression = readFileSync(resolve(appDir, "scripts/mobile_regression_qa.mjs"), "utf8");
-assert(regression.includes("Support creation/message validation remains enforced"), "regression QA covers support validation");
-assert(regression.includes("new_physical_quantity"), "regression QA covers inventory mutation field");
+function runQa(label, args) {
+  const result = spawnSync(process.execPath, args, { cwd: appDir, env: process.env, stdio: "inherit" });
+  assert(result.status === 0, label + " completed successfully");
+}
 
-console.log("[PRE-APK] Vendor app is at the final source/config gate immediately before APK build.");
+runQa("mobile regression QA", ["scripts/mobile_regression_qa.mjs"]);
+runQa("Vendor mock transport QA", ["--experimental-strip-types", "scripts/mock_transport_qa.ts"]);
+
+console.log("[PRE-APK] Vendor app passed source/config, regression, and mock-data gates immediately before APK build.");
