@@ -990,3 +990,22 @@ The remediation intentionally does **not** enforce one refund record per order. 
 - **Resolution:** Added explicit default `POL_JWT_SECRET` in `scripts/run_verification_suite.py:configure_test_environment()` to prevent unconfigured shell environments from failing auth contracts.
 - **Verification state:** RUNTIME VERIFIED (Suite self-contained, 658/658 PASS).
 
+
+
+## Vendor Android audit closure — 2026-09-29
+
+### Closed source/contract gaps
+- Vendor logo asset binding: closed; mobile bundle is byte-identical to canonical Vendor asset.
+- Vendor Staff acceptance/rejection/partial-acceptance UI authority: closed; Owner-only.
+- Vendor Staff finance read authority: closed at ApplicationBoundary and regression-test level; Owner-only.
+- Invoice/settlement response-field mapping: closed in mobile.
+- V-13 invoice/settlement detail read surfaces: implemented.
+- V-14 storefront read/preview: implemented.
+- V-16 barcode lookup/match/candidate + continuous-scan/publish source flow: implemented.
+
+### Remaining runtime gates
+- Native camera permission/frame/continuous-scan runtime.
+- Device visual verification for Persian RTL, Light/Night, font metrics and BIDI edge cases.
+- Current-head executable CI evidence.
+- Live HTTPS VPS endpoint verification.
+- Native Expo/Gradle build and installation.
