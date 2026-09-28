@@ -8,7 +8,7 @@ const ASSETS = {
   vendor: "لوگو پل برای بنکدار.png",
 } as const;
 
-export const dynamic = "force-static";
+export const revalidate = 31536000;
 
 type AssetKey = keyof typeof ASSETS;
 
@@ -27,7 +27,7 @@ export async function GET(
 
   try {
     const data = await readFile(filePath);
-    return new NextResponse(data, {
+    return new NextResponse(new Uint8Array(data), {
       status: 200,
       headers: {
         "Content-Type": "image/png",
