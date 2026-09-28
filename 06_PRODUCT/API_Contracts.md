@@ -301,7 +301,7 @@
 **مرحله ۱ — پیشنهاد بنکدار**
 `POST /api/v1/orders/:id/partial-acceptance-proposals`
 
-* **مجوز:** بنکدار مقصد در سازمان فعال (`VENDOR_OWNER`, `VENDOR_STAFF`).
+* **مجوز:** بنکدار مالک در سازمان فعال (`VENDOR_OWNER`).
 * **Idempotency:** هدر `Idempotency-Key` باید UUIDv4 باشد.
 * **بدنه درخواست:**
 ```json
