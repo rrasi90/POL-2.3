@@ -146,9 +146,17 @@ async function request<T>(
   try {
     if (MOCK_MODE) {
       const mockHeaders: Record<string, string> = { ...headers };
-      const value = await mockRequest<T>(method, path, body, mockHeaders);
-      setOnline(true);
-      return value;
+      try {
+        const value = await mockRequest<T>(method, path, body, mockHeaders);
+        setOnline(true);
+        return value;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Mock request failed";
+        if (/Mock permission denied/i.test(message)) throw new ApiError("FORBIDDEN", message, 403);
+        if (/not found/i.test(message)) throw new ApiError("NOT_FOUND", message, 404);
+        if (/invalid|must contain|required/i.test(message)) throw new ApiError("VALIDATION", message, 422);
+        throw new ApiError("MOCK_ERROR", message, 500);
+      }
     }
 
     const res = await fetch(BASE + path, {
