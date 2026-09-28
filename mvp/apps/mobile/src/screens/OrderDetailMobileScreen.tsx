@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import { spacing, useThemedStyles, type Palette } from "../theme";
+import { formatFaNumber, formatTehranDateTime, formatToman, toAsciiDigits } from "../i18n/fa";
 import type { Role } from "../types";
 
 type Mode = "retailer" | "vendor";
@@ -57,8 +58,15 @@ function rows<T>(data: unknown, keys: string[]): T[] {
   return [];
 }
 function money(v: number | string | null | undefined): string {
-  const n = Number(v);
-  return Number.isFinite(n) ? n.toLocaleString("fa-IR") + " تومان" : "—";
+  return formatToman(v);
+}
+
+function quantityFa(v: number | string | null | undefined): string {
+  return formatFaNumber(v);
+}
+
+function dateTimeFa(v: string | null | undefined): string {
+  return formatTehranDateTime(v);
 }
 
 export function OrderDetailMobileScreen(props: {
@@ -249,8 +257,8 @@ export function OrderDetailMobileScreen(props: {
   }
 
   async function submitReturn(): Promise<void> {
-    const quantity = Number(returnQuantity);
-    const claimedRefund = Number(returnClaimedRefund);
+    const quantity = Number(toAsciiDigits(returnQuantity).replace(/[٬,\s]/g, ""));
+    const claimedRefund = Number(toAsciiDigits(returnClaimedRefund).replace(/[٬,\s]/g, ""));
     if (!returnItemId) {
       setActionError("یک قلم برای مرجوعی انتخاب کنید.");
       return;
@@ -286,7 +294,7 @@ export function OrderDetailMobileScreen(props: {
       setActionError("دلیل اختلاف الزامی است.");
       return;
     }
-    const claimedAmount = Number(disputeClaimedAmount);
+    const claimedAmount = Number(toAsciiDigits(disputeClaimedAmount).replace(/[٬,\s]/g, ""));
     if (!Number.isFinite(claimedAmount) || claimedAmount <= 0) {
       setActionError("مبلغ مورد ادعا باید بیشتر از صفر باشد.");
       return;
@@ -323,7 +331,7 @@ export function OrderDetailMobileScreen(props: {
     try {
       const lines = items.map((x) => ({
         order_item_id: x.id,
-        accepted_quantity: Number(partial[x.id] ?? x.ordered_quantity ?? 0),
+        accepted_quantity: Number(toAsciiDigits(partial[x.id] ?? quantityFa(x.ordered_quantity ?? 0)).replace(/[٬,\s]/g, "")),
       }));
       await api.post("/api/v1/orders/" + props.orderId + "/partial-acceptance-proposals", { items: lines }, {
         headers: { "Idempotency-Key": keyV4() },
@@ -406,7 +414,7 @@ export function OrderDetailMobileScreen(props: {
           {items.length === 0 ? <Empty title="قلمی ثبت نشده" /> : items.map((x) => (
             <View key={x.id} style={styles.item}>
               <Text style={styles.h2}>{x.product_name_snapshot || x.id}</Text>
-              <Text style={styles.meta}>درخواست: {String(x.ordered_quantity ?? 0)} · پذیرفته: {String(x.accepted_quantity ?? "—")}</Text>
+              <Text style={styles.meta}>درخواست: {String(x.ordered_quantity ?? 0)} · پذیرفته: {quantityFa(x.accepted_quantity)}</Text>
               <Text style={styles.meta}>{money(x.total_line_amount_toman)}</Text>
               {vendorOwner && ["SUBMITTED", "CREATED"].includes(status) ? (
                 <Input label="تعداد پیشنهادی" value={partial[x.id] || ""} onChangeText={(v) => setPartial((p) => ({ ...p, [x.id]: v }))} keyboardType="numeric" />
@@ -441,7 +449,7 @@ export function OrderDetailMobileScreen(props: {
               <View key={x.id} style={styles.item}>
                 <StatusChip label={x.status || "—"} tone="info" />
                 <Text style={styles.meta}>{x.issue_type || "—"}</Text>
-                <Text style={styles.meta}>{x.created_at || "—"}</Text>
+                <Text style={styles.meta}>{dateTimeFa(x.created_at)}</Text>
               </View>
             ))}
           </Card>
