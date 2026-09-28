@@ -168,8 +168,15 @@ if [[ -n "$PUBLIC_BASE_URL" ]]; then
   printf '\\n'
   curl -fsS --max-time 20 "$PUBLIC_BASE_URL/readyz"
   printf '\\n'
-  curl -fsSI --max-time 20 "$PUBLIC_BASE_URL/"
-  printf '\\n'
+
+  PUBLIC_LANDING_HTML="$(curl -fsS --max-time 20 "$PUBLIC_BASE_URL/")"
+  grep -Fq "خرید عمده" <<<"$PUBLIC_LANDING_HTML" || die "public landing value proposition marker missing"
+  grep -Fq "یک مسیر روشن" <<<"$PUBLIC_LANDING_HTML" || die "public landing headline marker missing"
+
+  for asset in corporate market vendor; do
+    curl -fsS --max-time 20 "$PUBLIC_BASE_URL/brand/$asset" -o "/tmp/pol-public-brand-$asset.png"
+    test -s "/tmp/pol-public-brand-$asset.png" || die "public brand asset is empty: $asset"
+  done
 fi
 
 echo "[DEPLOY] === PASS ==="
