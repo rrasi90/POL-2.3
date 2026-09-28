@@ -46,14 +46,14 @@ Canonical design/build authority:
 | **Identity & Access Management** | `06_PRODUCT/Roles_and_Permissions.md`, `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md`, Master Tree VD-15 | Identity, tenant membership, role authorization, delegated permissions, persona context and UX preferences. | `organization_memberships.role` is the base authorization SSoT; effective access is `base role permissions + active delegated grants`, always scoped to an active user, active organization and active membership. `users.role` is legacy/deprecated. |
 | **Order Lifecycle & State Transitions** | `06_PRODUCT/Order_Lifecycle.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | OrderGroup, child Orders, Delivery and exception state machines. | Governs backend workflows and UI state mapping. |
 | **Domain Entities & Business Invariants** | `08_DATA/DOMAIN_MODEL.md` | Ubiquitous language, aggregates and invariants. | Governs domain service behavior. |
-| **Database Schema & Migrations** | `migrations/001_*.sql` through the current forward-only migration head (`048` on the remediation branch), `08_DATA/Data_Schema.md`, and `POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST.md` | PostgreSQL 18 DDL, constraints, indexes, triggers and foreign keys. | The complete numbered forward-only migration chain is the physical schema authority; later migrations supersede earlier physical state without rewriting historical migrations. |
+| **Database Schema & Migrations** | `migrations/001_*.sql` through the current forward-only migration head (`076` on the deployment branch), `08_DATA/Data_Schema.md`, and `POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST.md` | PostgreSQL 18 DDL, constraints, indexes, triggers and foreign keys. | The complete numbered forward-only migration chain is the physical schema authority; later migrations supersede earlier physical state without rewriting historical migrations. |
 | **API Contracts & DTOs** | `06_PRODUCT/API_Contracts.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX_CORRECTIONS_2026-09-16.md`, `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md` | REST/JSON contracts and application-boundary commands. | Correction overlay supersedes conflicting legacy terminology. |
 | **Allocation Engine Algorithm** | `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` | Deterministic multi-vendor allocation, MOV/MOQ and ranking. | Governs allocation implementation. |
 | **Brand & Design System** | `POL_00_PROJECT_CONTROL/BRAND_ARCHITECTURE.md`, `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`, `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md` | Brand hierarchy, Precision Commerce visual direction, design tokens, interaction patterns, Light/Night visual language and design QA. | Design may not override product/engineering decisions. |
 | **Operations, Fulfillment & Logistics** | `09_OPERATIONS/Fulfillment.md`, `09_OPERATIONS/Payments_and_Settlement.md`, `09_OPERATIONS/Support_and_Disputes.md` | Field SOPs, logistics, direct settlement and support/dispute operations. | Governs operational workflows. |
 | **Async Workers & Event Runtime** | `POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md`, `08_DATA/Event_Architecture.md` | Canonical PostgreSQL 18 transactional outbox + Python worker execution model. | Supersedes BullMQ/Redis Streams as the MVP event transport. |
 | **Pilot Definition & Metrics** | `11_PILOT/Pilot_Strategy.md`, `11_PILOT/KPIs.md`, `11_PILOT/Success_Criteria.md` | Ahvaz pilot parameters and Gate 1 telemetry. | Governs pilot validation. |
-| **Readiness & Certification** | `POL_00_PROJECT_CONTROL/GLOBAL_ENGINEERING_AUDIT_2026-09-14.md`, `POL_00_PROJECT_CONTROL/REPOSITORY_COMPLETION_AUDIT_2026-09-16.md`, `POL_00_PROJECT_CONTROL/CERTIFICATION_ADDENDUM_2026-09-14.md` | Explicit separation of verified domain core vs remaining production-applicationization gates. | No document may claim production readiness beyond these boundaries. |
+| **Readiness & Certification** | `POL_00_PROJECT_CONTROL/GLOBAL_ENGINEERING_AUDIT_2026-09-14.md`, `POL_00_PROJECT_CONTROL/REPOSITORY_COMPLETION_AUDIT_2026-09-16.md`, `POL_00_PROJECT_CONTROL/CERTIFICATION_ADDENDUM_2026-09-14.md`, `deploy/VPS_RUNTIME_VERIFICATION_2026-09-28.md` | Explicit separation of verified domain core, self-hosted runtime evidence, and remaining production-applicationization gates. | Runtime evidence may certify only the observed VPS/IP-stage scope; HTTPS/domain/provider/observability and fresh CI gates remain separate until verified. |
 
 ---
 
@@ -131,6 +131,12 @@ This document records the adopted product-architecture direction for:
 - Master SKU and product-media provenance
 
 These directions refine presentation, UX and implementation sequencing without overriding the currently effective D-001 through D-028 decisions or the canonical PostgreSQL/Python/FastAPI architecture. The Decision Register amendments D-021 through D-028 are the governing product decisions for this wave.
+
+### Self-Hosted VPS Runtime State — 2026-09-28
+
+The deployment branch now contains an executable self-hosted VPS topology and a verified runtime snapshot at `85.198.50.29`. Observed evidence covers PostgreSQL 18.6, 76 forward-only migrations with 108 base tables, FastAPI, the canonical Python worker runtime, Next.js standalone, and Nginx. Public HTTP health/readiness and the canonical categories endpoint returned HTTP 200 during verification. Detailed evidence is recorded in `deploy/VPS_RUNTIME_VERIFICATION_2026-09-28.md`.
+
+This is **IP-stage runtime evidence**, not final HTTPS production cutover. `polmarket.ir`, Nginx 443/TLS, exact HTTPS CORS origin, and the `ENVIRONMENT=production` gate remain pending. Vercel remains a separate QA target.
 
 
 ---
