@@ -158,7 +158,7 @@ test -s /tmp/pol-landing.css || die "landing CSS asset is empty"
 for asset in corporate market vendor; do
   curl -fsS --max-time 15 "http://127.0.0.1/brand/$asset" -o "/tmp/pol-brand-$asset.png"
   test -s "/tmp/pol-brand-$asset.png" || die "brand asset is empty: $asset"
-  PNG_MAGIC="$(xxd -p -l 8 "/tmp/pol-brand-$asset.png")"
+  PNG_MAGIC="$(od -An -tx1 -N8 "/tmp/pol-brand-$asset.png" | tr -d " \n")"
   [[ "$PNG_MAGIC" == "89504e470d0a1a0a" ]] || die "brand asset is not a valid PNG: $asset"
 done
 
@@ -195,7 +195,7 @@ if [[ -n "$PUBLIC_BASE_URL" ]]; then
   for asset in corporate market vendor; do
     curl -fsS --max-time 20 "$PUBLIC_BASE_URL/brand/$asset" -o "/tmp/pol-public-brand-$asset.png"
     test -s "/tmp/pol-public-brand-$asset.png" || die "public brand asset is empty: $asset"
-    PUBLIC_PNG_MAGIC="$(xxd -p -l 8 "/tmp/pol-public-brand-$asset.png")"
+    PUBLIC_PNG_MAGIC="$(od -An -tx1 -N8 "/tmp/pol-public-brand-$asset.png" | tr -d " \n")"
     [[ "$PUBLIC_PNG_MAGIC" == "89504e470d0a1a0a" ]] || die "public brand asset is not a valid PNG: $asset"
   done
 fi
