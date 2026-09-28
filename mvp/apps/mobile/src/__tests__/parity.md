@@ -68,7 +68,7 @@ Remote status for G-023…G-026: **SOURCE REMEDIATED / LOCAL RETEST PASS**.
 
 ### Pre-APK Vendor gate — 2026-09-28
 
-The dedicated Vendor Android product now binds the canonical vendor brand asset (`assets/vendor-logo.png`), exposes the shared support surface, and has a deterministic `scripts/pre_apk_qa.mjs` gate covering Expo config, Android package/variant, asset integrity, canonical API markers, role boundary, build-script restoration, and obvious-secret absence. Native APK build and device certification are intentionally not executed by this gate.
+The dedicated Vendor Android product binds the canonical vendor brand asset (`assets/vendor-logo.png`), exposes Vendor operations, finance detail, storefront, barcode and continuous-scan source flows, and has a deterministic `scripts/pre_apk_qa.mjs` gate covering Expo config, Android package/variant, asset integrity, canonical API markers, role boundary, mock-mode release blocking, and build-script restoration. Native APK build and device certification are intentionally not executed by this gate.
 
 
 ### Persian/RTL mobile baseline — 2026-09-29
@@ -77,3 +77,9 @@ The dedicated Vendor Android product now binds the canonical vendor brand asset 
 - Operational amounts/quantities use Persian digits and Tehran timezone; dates are formatted with the Persian calendar for the Vendor surface.
 - Vazirmatn Regular/SemiBold/Bold are bundled for the mobile client.
 - OfflineBanner is rendered at AppShell level so network loss is visible across Vendor routes.
+
+
+### Mock-data verification baseline — 2026-09-29
+- EXPO_PUBLIC_DATA_MODE=mock routes the same src/api.ts client through src/mock/mockTransport.ts.
+- Executable scripts/mock_transport_qa.ts covers Owner/Staff RBAC, order lifecycle, inventory, price, daily confirmation, invoice/settlement list+detail, customers, staff/permissions, storefront, barcode states, candidate creation, continuous scan/publish, support, profile and notification preferences.
+- Mock mode is prohibited in Vendor release builds by pre_apk_qa.mjs.
