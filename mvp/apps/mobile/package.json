@@ -24,7 +24,10 @@
     "qa:regression": "node scripts/mobile_regression_qa.mjs",
     "build:apk": "node scripts/build_android_variant.mjs",
     "build:apk:retailer": "node scripts/build_android_variant.mjs retailer",
-    "build:apk:vendor": "node scripts/build_android_variant.mjs vendor"
+    "build:apk:vendor": "node scripts/build_android_variant.mjs vendor",
+    "build:aab:retailer": "node scripts/build_android_variant.mjs retailer aab",
+    "build:aab:vendor": "node scripts/build_android_variant.mjs vendor aab",
+    "analyze:bundle": "EXPO_ATLAS=true npx expo export --platform android"
   },
   "private": true
 }
