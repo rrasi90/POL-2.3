@@ -3,8 +3,9 @@ import { existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync } from
 import { resolve } from "node:path";
 
 const variant = (process.argv[2] || "retailer").toLowerCase();
-if (!["retailer", "vendor"].includes(variant)) {
-  throw new Error("Usage: node scripts/build_android_variant.mjs retailer|vendor");
+const artifact = (process.argv[3] || "apk").toLowerCase();
+if (!["retailer", "vendor"].includes(variant) || !["apk", "aab"].includes(artifact)) {
+  throw new Error("Usage: node scripts/build_android_variant.mjs retailer|vendor [apk|aab]");
 }
 
 const appDir = resolve(".");
@@ -45,21 +46,24 @@ try {
 
   run(
     process.platform === "win32" ? "gradlew.bat" : "./gradlew",
-    ["assembleRelease"],
+    [artifact === "aab" ? "bundleRelease" : "assembleRelease"],
     androidDir,
   );
 
-  const apk = resolve(androidDir, "app/build/outputs/apk/release/app-release.apk");
-  if (!existsSync(apk)) throw new Error("Release APK was not generated");
+  const extension = artifact === "aab" ? "aab" : "apk";
+  const source = resolve(
+    androidDir,
+    "app/build/outputs",
+    artifact === "aab" ? "bundle/release/app-release.aab" : "apk/release/app-release.apk",
+  );
+  if (!existsSync(source)) throw new Error(`Release ${extension.toUpperCase()} was not generated`);
 
   const output = resolve(appDir, "dist", variant);
   mkdirSync(output, { recursive: true });
-  const target = resolve(
-    output,
-    variant === "retailer" ? "POL-Market.apk" : "POL-Vendor.apk",
-  );
-  copyFileSync(apk, target);
-  console.log("APK:", target);
+  const productName = variant === "retailer" ? "POL-Market" : "POL-Vendor";
+  const target = resolve(output, `${productName}.${extension}`);
+  copyFileSync(source, target);
+  console.log(`${extension.toUpperCase()}:`, target);
 } finally {
   writeFileSync(entryFile, entrySource, "utf8");
 }
