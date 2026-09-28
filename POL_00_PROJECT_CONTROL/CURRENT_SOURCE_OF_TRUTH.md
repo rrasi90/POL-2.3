@@ -184,7 +184,7 @@ Repeated screen IDs in derived sections are projections, not independent sources
 
 ## 7.1 Current Remediation Checkpoint — 2026-09-25
 
-The active engineering state is the remediation branch remediation/full-closure-2026-09-25, ahead of main without divergence. Source remediation has added forward-only integrity migrations, canonical HTTP contracts, tenant/actor boundaries, idempotency safeguards, notification routing/template hardening, and live UI surfaces. Historical CI/local records remain evidence only; fresh CI on the remediation branch is currently failing before useful step execution, so no fresh green certification is asserted.
+This paragraph is a historical checkpoint from 2026-09-25. The remediation branch described here has since been integrated into main; current authority is the main branch HEAD. Source remediation has added forward-only integrity migrations, canonical HTTP contracts, tenant/actor boundaries, idempotency safeguards, notification routing/template hardening, and live UI surfaces. Historical CI/local records remain evidence only; fresh CI on the remediation branch is currently failing before useful step execution, so no fresh green certification is asserted.
 
 Current unresolved closure classes are:
 - explicit product/security decisions: D-018 policy wording, invoice timing, D-024 storefront write scope;
