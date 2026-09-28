@@ -144,7 +144,25 @@ const scan = await req<{ accepted: boolean; session_id: string }>(
   staff,
 );
 assert.equal(scan.accepted, true);
-await req("POST", "/api/v1/vendors/inventory/publish", { session_id: scan.session_id }, staff);
+const published = await req<{ status: string; published_count: number; idempotent_replay: boolean }>(
+  "POST",
+  "/api/v1/vendors/inventory/publish",
+  { session_id: scan.session_id },
+  staff,
+);
+assert.equal(published.status, "PUBLISHED");
+assert.equal(published.published_count, 1);
+assert.equal(published.idempotent_replay, false);
+
+const replayedPublish = await req<{ status: string; published_count: number; idempotent_replay: boolean }>(
+  "POST",
+  "/api/v1/vendors/inventory/publish",
+  { session_id: scan.session_id },
+  staff,
+);
+assert.equal(replayedPublish.status, "PUBLISHED");
+assert.equal(replayedPublish.published_count, 1);
+assert.equal(replayedPublish.idempotent_replay, true);
 
 const support = await req<{ id: string }>(
   "POST",
