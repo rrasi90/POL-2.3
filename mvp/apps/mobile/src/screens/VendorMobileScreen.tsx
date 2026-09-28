@@ -294,6 +294,8 @@ export function VendorMobileScreen(props: {
   const [inventory, setInventory] = useState<Inv[]>([]);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoiceDetail, setInvoiceDetail] = useState<Invoice | null>(null);
+  const [settlementDetail, setSettlementDetail] = useState<Settlement | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
@@ -347,6 +349,32 @@ export function VendorMobileScreen(props: {
     for (const line of data.lines ?? []) next[line.id] = String(line.confirmed_quantity ?? line.expected_quantity ?? 0);
     setDailyEdits(next);
   }, [dailyDate]);
+
+  const loadInvoiceDetail = useCallback(async (invoiceId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.get<Invoice>("/api/v1/invoices/" + invoiceId);
+      setInvoiceDetail(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "جزئیات فاکتور ناموفق بود.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadSettlementDetail = useCallback(async (settlementId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.get<Settlement>("/api/v1/settlements/" + settlementId);
+      setSettlementDetail(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "جزئیات تسویه ناموفق بود.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const loadInvoices = useCallback(async () => {
     const data = await api.get<unknown>("/api/v1/invoices?limit=50&offset=0");
@@ -545,7 +573,7 @@ export function VendorMobileScreen(props: {
     setLoading(true);
     setError(null);
     void promise.catch((e) => setError(e instanceof Error ? e.message : "بارگذاری ناموفق بود")).finally(() => setLoading(false));
-  }, [tab, financeTab, inventoryTab, moreTab, loadInvoices, loadSettlements, loadCustomers, loadReferrals, loadStaff, loadStorefront, loadDaily, loadOrders, props.role]);
+  }, [tab, financeTab, inventoryTab, moreTab, loadInvoices, loadInvoiceDetail, loadSettlements, loadSettlementDetail, loadCustomers, loadReferrals, loadStaff, loadStorefront, loadDaily, loadOrders, props.role]);
 
   async function orderAction(orderId: string, actionName: "accept" | "preparing" | "ready"): Promise<void> {
     if (actionName === "accept" && props.role !== "VENDOR_OWNER") {
@@ -921,40 +949,94 @@ export function VendorMobileScreen(props: {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.pageIntro}>
           <Text style={styles.eyebrow}>مالی</Text>
-          <Text style={styles.pageTitle}>فعالیت مالی بنکداری</Text>
-          <Text style={styles.pageBody}>نمایش فاکتورها و وضعیت تسویه بدون ساخت wallet یا custody جدید.</Text>
+          <Text style={styles.pageTitle}>{invoiceDetail ? "جزئیات فاکتور" : settlementDetail ? "جزئیات تسویه" : "فعالیت مالی بنکداری"}</Text>
+          <Text style={styles.pageBody}>
+            {invoiceDetail
+              ? "اقلام فاکتور و مبلغ ثبت‌شده را از منبع کانونیکال ببینید."
+              : settlementDetail
+                ? "مبلغ ناخالص، کمیسیون و تعدیلات تسویه را از منبع کانونیکال ببینید."
+                : "نمایش فاکتورها و وضعیت تسویه بدون ساخت wallet یا custody جدید."}
+          </Text>
         </View>
-        <Segmented labels={[["invoices", "فاکتورها"], ["settlements", "تسویه‌ها"]]} selected={financeTab} onChange={(value) => setFinanceTab(value as FinanceTab)} />
         <ErrorBox message={error} />
-        {financeTab === "invoices" ? (
-          invoices.length === 0 ? (
-            <Empty title="فاکتوری موجود نیست" description="از API فاکتور کانونیکال، رکوردی برای این بنکداری دریافت نشد." />
-          ) : (
-            invoices.map((invoice) => (
-              <Card key={invoice.id}>
-                <View style={styles.rowBetween}>
-                  <StatusChip label={statusLabel(invoice.status)} tone="info" />
-                  <Text style={styles.meta}>{dateTimeFa(invoice.issued_at)}</Text>
-                </View>
-                <Text style={styles.itemTitle}>{invoice.invoice_number || invoice.id}</Text>
-                <Text style={styles.metricSmall}>{money(invoice.total_amount_toman ?? invoice.total_amount)}</Text>
+
+        {invoiceDetail ? (
+          <View>
+            <Btn label="بازگشت به فهرست فاکتورها" tone="ghost" onPress={() => setInvoiceDetail(null)} />
+            <Card>
+              <View style={styles.rowBetween}>
+                <StatusChip label={statusLabel(invoiceDetail.status)} tone="info" />
+                <Text style={styles.meta}>{dateTimeFa(invoiceDetail.issued_at)}</Text>
+              </View>
+              <Text style={styles.itemTitle}>{invoiceDetail.invoice_number || invoiceDetail.id}</Text>
+              {invoiceDetail.order_id ? <Text style={styles.meta}>سفارش: {invoiceDetail.order_id}</Text> : null}
+              <Text style={styles.metricSmall}>{money(invoiceDetail.total_amount_toman ?? invoiceDetail.total_amount)}</Text>
+            </Card>
+            {(invoiceDetail.items || []).map((item) => (
+              <Card key={item.id}>
+                <Text style={styles.itemTitle}>{item.product_name || "—"}</Text>
+                <Text style={styles.meta}>تعداد: {numberFa(item.quantity)} · قیمت واحد: {money(item.unit_price)}</Text>
+                <Text style={styles.metricSmall}>{money(item.total_line_amount)}</Text>
               </Card>
-            ))
-          )
+            ))}
+          </View>
+        ) : settlementDetail ? (
+          <View>
+            <Btn label="بازگشت به فهرست تسویه‌ها" tone="ghost" onPress={() => setSettlementDetail(null)} />
+            <Card>
+              <View style={styles.rowBetween}>
+                <StatusChip label={statusLabel(settlementDetail.status)} tone={settlementDetail.status === "PAID" ? "ok" : "info"} />
+                <Text style={styles.meta}>{dateTimeFa(settlementDetail.settled_at)}</Text>
+              </View>
+              <Text style={styles.itemTitle}>{settlementDetail.settlement_number || settlementDetail.id}</Text>
+              <Text style={styles.metricSmall}>{money(settlementDetail.net_vendor_amount_toman ?? settlementDetail.amount_toman)}</Text>
+              <Text style={styles.meta}>ناخالص: {money(settlementDetail.gross_amount_toman)} · کمیسیون: {money(settlementDetail.commission_amount_toman)}</Text>
+              <Text style={styles.meta}>تعدیلات: {money(settlementDetail.adjustment_amount_toman)}</Text>
+            </Card>
+            {(settlementDetail.adjustments || []).map((adj, index) => (
+              <Card key={adj.id || index}>
+                <Text style={styles.itemTitle}>{adj.adjustment_type || "تعدیل"}</Text>
+                <Text style={styles.meta}>{adj.reason || "بدون توضیح"}</Text>
+                <Text style={styles.metricSmall}>{money(adj.amount_toman)}</Text>
+              </Card>
+            ))}
+          </View>
         ) : (
-          settlements.length === 0 ? (
-            <Empty title="تسویه‌ای ثبت نشده" description="وضعیت تسویه از API فعلی خالی برگشت." />
-          ) : (
-            settlements.map((settlement) => (
-              <Card key={settlement.id}>
-                <View style={styles.rowBetween}>
-                  <StatusChip label={statusLabel(settlement.status)} tone={settlement.status === "PAID" ? "ok" : "info"} />
-                  <Text style={styles.itemTitle}>{settlement.settlement_number || settlement.id}</Text>
-                </View>
-                <Text style={styles.metricSmall}>{money(settlement.amount_toman ?? settlement.net_vendor_amount_toman ?? settlement.gross_amount_toman)}</Text>
-              </Card>
-            ))
-          )
+          <>
+            <Segmented labels={[["invoices", "فاکتورها"], ["settlements", "تسویه‌ها"]]} selected={financeTab} onChange={(value) => setFinanceTab(value as FinanceTab)} />
+            {financeTab === "invoices" ? (
+              invoices.length === 0 ? (
+                <Empty title="فاکتوری موجود نیست" description="از API فاکتور کانونیکال، رکوردی برای این بنکداری دریافت نشد." />
+              ) : (
+                invoices.map((invoice) => (
+                  <Pressable key={invoice.id} accessibilityRole="button" onPress={() => void loadInvoiceDetail(invoice.id)}>
+                    <Card>
+                      <View style={styles.rowBetween}>
+                        <StatusChip label={statusLabel(invoice.status)} tone="info" />
+                        <Text style={styles.meta}>{dateTimeFa(invoice.issued_at)}</Text>
+                      </View>
+                      <Text style={styles.itemTitle}>{invoice.invoice_number || invoice.id}</Text>
+                      <Text style={styles.metricSmall}>{money(invoice.total_amount_toman ?? invoice.total_amount)}</Text>
+                    </Card>
+                  </Pressable>
+                ))
+              )
+            ) : settlements.length === 0 ? (
+              <Empty title="تسویه‌ای ثبت نشده" description="وضعیت تسویه از API فعلی خالی برگشت." />
+            ) : (
+              settlements.map((settlement) => (
+                <Pressable key={settlement.id} accessibilityRole="button" onPress={() => void loadSettlementDetail(settlement.id)}>
+                  <Card>
+                    <View style={styles.rowBetween}>
+                      <StatusChip label={statusLabel(settlement.status)} tone={settlement.status === "PAID" ? "ok" : "info"} />
+                      <Text style={styles.itemTitle}>{settlement.settlement_number || settlement.id}</Text>
+                    </View>
+                    <Text style={styles.metricSmall}>{money(settlement.amount_toman ?? settlement.net_vendor_amount_toman ?? settlement.gross_amount_toman)}</Text>
+                  </Card>
+                </Pressable>
+              ))
+            )}
+          </>
         )}
       </ScrollView>
     );
