@@ -4,6 +4,7 @@ import { api, clearSession } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
+import { formatTehranDateTime } from "../i18n/fa";
 
 type Profile = {
   user_profile?: {
@@ -17,7 +18,7 @@ type Profile = {
   };
   membership?: { organization_id?: string; organization_name?: string | null; role?: string | null } | null;
 };
-type Preferences = { push_enabled?: boolean; sms_enabled?: boolean; email_enabled?: boolean };
+type NotificationPreference = { user_id?: string; category: string; push_enabled?: boolean; sms_enabled?: boolean };
 type Notification = {
   id: string;
   event_name?: string | null;
@@ -45,7 +46,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
   const [tab, setTab] = useState<"profile" | "notifications" | "preferences">("profile");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [preferences, setPreferences] = useState<Preferences>({});
+  const [preferences, setPreferences] = useState<NotificationPreference[]>([]);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [timezone, setTimezone] = useState("Asia/Tehran");
@@ -76,7 +77,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
 
   const loadPreferences = useCallback(async () => {
     setLoading(true); setError(null);
-    try { const d = await api.get<Preferences>("/api/v1/notifications/preferences"); setPreferences(d || {}); }
+    try { const d = await api.get<unknown>("/api/v1/notifications/preferences"); setPreferences(Array.isArray(d) ? (d as NotificationPreference[]) : []); }
     catch (e) { setError(e instanceof Error ? e.message : "دریافت تنظیمات اعلان ناموفق بود"); }
     finally { setLoading(false); }
   }, []);
@@ -94,11 +95,30 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
     void (tab === "profile" ? loadProfile() : tab === "notifications" ? loadNotifications() : loadPreferences());
   }, [tab, loadProfile, loadNotifications, loadPreferences]);
 
-  async function savePreferences(): Promise<void> {
+  async function savePreference(category: string, channel: "PUSH" | "SMS", enabled: boolean): Promise<void> {
     setLoading(true); setError(null); setNotice(null);
-    try { await api.put("/api/v1/notifications/preferences", preferences); setNotice("تنظیمات اعلان ذخیره شد."); await loadPreferences(); }
-    catch (e) { setError(e instanceof Error ? e.message : "ذخیره تنظیمات اعلان ناموفق بود"); }
-    finally { setLoading(false); }
+    try {
+      await api.put("/api/v1/notifications/preferences", {
+        event_name: category,
+        channel,
+        is_enabled: enabled,
+      });
+      setPreferences((current) =>
+        current.map((row) =>
+          row.category === category
+            ? {
+                ...row,
+                ...(channel === "PUSH" ? { push_enabled: enabled } : { sms_enabled: enabled }),
+              }
+            : row,
+        ),
+      );
+      setNotice("تنظیمات اعلان ذخیره شد.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ذخیره تنظیمات اعلان ناموفق بود");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function logout(): Promise<void> {
@@ -162,14 +182,37 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
             </View>
           </Card>
         ) : tab === "preferences" ? (
-          <Card>
-            <Text style={styles.h2}>کانال‌های اعلان</Text>
-            <Text style={styles.meta}>این تنظیمات مستقیماً از API اعلان خوانده و ذخیره می‌شوند.</Text>
-            <Btn label={"Push: " + (preferences.push_enabled ? "فعال" : "غیرفعال")} onPress={() => setPreferences((p) => ({ ...p, push_enabled: !p.push_enabled }))} tone="ghost" />
-            <Btn label={"SMS: " + (preferences.sms_enabled ? "فعال" : "غیرفعال")} onPress={() => setPreferences((p) => ({ ...p, sms_enabled: !p.sms_enabled }))} tone="ghost" />
-            <Btn label={"Email: " + (preferences.email_enabled ? "فعال" : "غیرفعال")} onPress={() => setPreferences((p) => ({ ...p, email_enabled: !p.email_enabled }))} tone="ghost" />
-            <Btn label="ذخیره تنظیمات" onPress={() => void savePreferences()} loading={loading} disabled={loading} />
-          </Card>
+          <View>
+            <Card>
+              <Text style={styles.h2}>کانال‌های اعلان</Text>
+              <Text style={styles.meta}>تنظیمات از API کانونیکال خوانده می‌شوند. در حال حاضر کانال‌های Push و SMS پشتیبانی می‌شوند.</Text>
+            </Card>
+            {preferences.length === 0 ? (
+              <Empty title="تنظیمات اعلانی ثبت نشده" description="برای این حساب هنوز رکوردی در API اعلان وجود ندارد." />
+            ) : (
+              preferences.map((preference) => (
+                <Card key={preference.category}>
+                  <Text style={styles.h2}>{preference.category}</Text>
+                  <View style={styles.row}>
+                    <Btn
+                      label={"Push: " + (preference.push_enabled ? "فعال" : "غیرفعال")}
+                      onPress={() => void savePreference(preference.category, "PUSH", !preference.push_enabled)}
+                      tone="ghost"
+                      loading={loading}
+                      disabled={loading}
+                    />
+                    <Btn
+                      label={"SMS: " + (preference.sms_enabled ? "فعال" : "غیرفعال")}
+                      onPress={() => void savePreference(preference.category, "SMS", !preference.sms_enabled)}
+                      tone="ghost"
+                      loading={loading}
+                      disabled={loading}
+                    />
+                  </View>
+                </Card>
+              ))
+            )}
+          </View>
         ) : notifications.length === 0 ? (
           <Empty title="اعلانی وجود ندارد" description="در صورت ثبت اعلان، اینجا نمایش داده می‌شود." />
         ) : (
@@ -183,7 +226,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
                 </View>
                 <Text style={styles.h2}>{n.title || "اعلان"}</Text>
                 <Text style={styles.body}>{n.body || "—"}</Text>
-                <Text style={styles.meta}>{n.event_name || "—"} · {n.created_at || "—"}</Text>
+                <Text style={styles.meta}>{n.event_name || "—"} · {formatTehranDateTime(n.created_at)}</Text>
               </Card>
             );
           })
