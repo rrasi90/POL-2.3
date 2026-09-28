@@ -3,28 +3,28 @@ import Link from "next/link";
 
 const flowSteps = [
   {
-    number: "01",
-    label: "کشف",
-    title: "بازار را سریع‌تر پیدا کن",
-    body: "کالایی که می‌خواهی را پیدا کن و از بین گزینه‌ها راحت انتخاب کن؛ دیگر لازم نیست برای هر قلم چند جا سر بزنی.",
+    number: "۰۱",
+    label: "پیدا کن",
+    title: "کالای موردنیازت را پیدا کن",
+    body: "کالا را ببین، قیمت و موجودی را مقایسه کن و بدون تماس‌های پراکنده انتخابت را انجام بده.",
   },
   {
-    number: "02",
+    number: "۰۲",
     label: "سبد",
-    title: "یک سبد، چند بنکدار",
-    body: "همه خریدت را یکجا جمع کن؛ پُل سفارش را بین بنکدارها تقسیم می‌کند و نتیجه را یکجا به تو نشان می‌دهد.",
+    title: "همه خریدت در یک سبد",
+    body: "چند قلم از چند بنکدار را کنار هم بگذار؛ پُل سفارش را بین آن‌ها مرتب می‌کند.",
   },
   {
-    number: "03",
+    number: "۰۳",
     label: "سفارش",
-    title: "از ثبت سفارش تا پیگیری",
-    body: "سفارش را ثبت کن، وضعیتش را ببین و تا رسیدنش به فروشگاه از مرحله بعد باخبر باش.",
+    title: "سفارش بده و وضعیتش را ببین",
+    body: "ثبت سفارش تا آماده‌سازی و تحویل را مرحله‌به‌مرحله دنبال کن.",
   },
   {
-    number: "04",
-    label: "شفافیت",
-    title: "آخرش هم می‌دانی چه شد",
-    body: "وضعیت پرداخت، فاکتور و پیگیری‌های لازم در همان مسیر می‌ماند؛ چیزی گم نمی‌شود.",
+    number: "۰۴",
+    label: "پیگیری",
+    title: "بدان سفارش کجاست",
+    body: "وضعیت پرداخت، فاکتور و پیگیری سفارش‌ها همان‌جا در دسترس توست.",
   },
 ];
 
@@ -36,27 +36,30 @@ const brandAssets = {
 
 const roleCards = [
   {
-    eyebrow: "برای خرده‌فروشان",
+    id: "retailers",
+    eyebrow: "برای فروشگاه‌ها",
     title: "خرید عمده، راحت‌تر",
     body: "کالا را پیدا کن، قیمت و موجودی را ببین، سبدت را ببند و سفارش بده.",
     href: "/retailer",
     cta: "ورود به بازار",
     logo: brandAssets.market,
-    logoAlt: "پل مغازه‌دار",
+    logoAlt: "پُــــل برای فروشگاه‌ها",
   },
   {
-    eyebrow: "برای تأمین‌کنندگان",
+    id: "vendors",
+    eyebrow: "برای بنکدارها",
     title: "فروش را یکجا جمع کن",
-    body: "کالا، قیمت، موجودی و سفارش‌ها را از یک جا مدیریت کن و ببین چه چیزی منتظر اقدام توست.",
+    body: "کالا، قیمت، موجودی و سفارش‌ها را از یک جا مدیریت کن و بدان چه کاری باید انجام شود.",
     href: "/vendor",
     cta: "ورود به پنل",
     logo: brandAssets.vendor,
-    logoAlt: "پل بنکدار",
+    logoAlt: "پُــــل برای بنکدارها",
   },
   {
-    eyebrow: "برای تیم عملیات",
-    title: "حواست به کارهای مهم باشد",
-    body: "کارهای عقب‌مانده، پشتیبانی و پیگیری سفارش‌ها را یکجا ببین و سریع‌تر جمعشان کن.",
+    id: "operations",
+    eyebrow: "برای تیم پُل",
+    title: "کارهای مهم را یکجا ببین",
+    body: "پیگیری سفارش‌ها، پشتیبانی و موارد نیازمند اقدام را از یک جا دنبال کن.",
     href: "/ops",
     cta: "ورود به عملیات",
     logo: brandAssets.corporate,
@@ -83,10 +86,10 @@ function FlowCard({
 
 export default function HomePage() {
   return (
-    <div className="pol-landing">
+    <div className="pol-landing" dir="rtl">
       <header className="pol-nav">
         <div className="pol-container pol-nav-inner">
-          <Link href="/" className="pol-brand" aria-label="پُــــل">
+          <a href="#top" className="pol-brand" aria-label="رفتن به ابتدای پُــــل">
             <Image
               className="pol-brand-logo"
               src={brandAssets.corporate}
@@ -96,13 +99,13 @@ export default function HomePage() {
               priority
               unoptimized
             />
-          </Link>
+          </a>
 
           <nav className="pol-nav-links" aria-label="ناوبری اصلی">
-            <Link href="/how">چگونه کار می‌کند</Link>
-            <Link href="/retailers">خرده‌فروشان</Link>
-            <Link href="/vendors">تأمین‌کنندگان</Link>
-            <Link href="/pilot">پایلوت اهواز</Link>
+            <a href="#how-it-works">چطور کار می‌کند</a>
+            <a href="#retailers">برای فروشگاه‌ها</a>
+            <a href="#vendors">برای بنکدارها</a>
+            <a href="#pilot">پایلوت اهواز</a>
           </nav>
 
           <div className="pol-nav-actions">
@@ -113,23 +116,23 @@ export default function HomePage() {
               شروع با شماره موبایل
             </Link>
             <details className="pol-mobile-menu">
-              <summary aria-label="باز کردن منو">
+              <summary aria-label="باز کردن منوی پُــــل">
                 <span />
                 <span />
                 <span />
               </summary>
               <nav aria-label="منوی موبایل">
-                <Link href="/how">چگونه کار می‌کند</Link>
-                <Link href="/retailers">خرده‌فروشان</Link>
-                <Link href="/vendors">تأمین‌کنندگان</Link>
-                <Link href="/pilot">پایلوت اهواز</Link>
+                <a href="#how-it-works">چطور کار می‌کند</a>
+                <a href="#retailers">برای فروشگاه‌ها</a>
+                <a href="#vendors">برای بنکدارها</a>
+                <a href="#pilot">پایلوت اهواز</a>
               </nav>
             </details>
           </div>
         </div>
       </header>
 
-      <main>
+      <main id="top">
         <section className="pol-hero">
           <div className="pol-hero-orb pol-hero-orb-one" />
           <div className="pol-hero-orb pol-hero-orb-two" />
@@ -144,21 +147,23 @@ export default function HomePage() {
               </div>
 
               <h1>
-                خرید عمده،<span className="pol-gradient-text"> یک مسیر روشن.</span>
+                خرید عمده<span className="pol-gradient-text">، ساده‌تر از همیشه.</span>
               </h1>
 
               <p className="pol-hero-lead">
-                پُل فروشگاه‌ها را به بنکدارها و تأمین‌کننده‌ها وصل می‌کند؛ کالا را پیدا می‌کنی، به سبد می‌زنی، سفارش می‌دهی و وضعیتش را دنبال می‌کنی.
+                پُل فروشگاه‌ها را به بنکدارها و تأمین‌کننده‌ها وصل می‌کند؛
+                کالا را پیدا می‌کنی، به سبد می‌زنی، سفارش می‌دهی و وضعیتش را
+                دنبال می‌کنی.
               </p>
 
               <div className="pol-hero-actions">
                 <Link href="/auth/login" className="pol-button pol-button-primary">
-                  ورود با شماره موبایل
+                  شروع خرید
                   <span aria-hidden="true">←</span>
                 </Link>
                 <a href="#how-it-works" className="pol-button pol-button-secondary">
-                  ببین پُل چطور کار می‌کند
-                </Link>
+                  ببین چطور کار می‌کند
+                </a>
               </div>
 
               <div className="pol-hero-note">
@@ -167,7 +172,11 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="pol-hero-visual pol-reveal pol-delay-2" role="img" aria-label="نمایش جریان سفارش در پُل">
+            <div
+              className="pol-hero-visual pol-reveal pol-delay-2"
+              role="img"
+              aria-label="نمایش مسیر سفارش از فروشگاه تا بنکدار"
+            >
               <div className="pol-visual-grid" />
               <div className="pol-visual-halo" />
 
@@ -178,19 +187,19 @@ export default function HomePage() {
               <div className="pol-node pol-node-a">
                 <span className="pol-node-dot" />
                 <span>فروشگاه</span>
-                <strong>سبد</strong>
+                <strong>سبد خرید</strong>
               </div>
 
               <div className="pol-node pol-node-b">
                 <span className="pol-node-dot" />
-                <span>تقسیم سفارش</span>
-                <strong>تخصیص</strong>
+                <span>پُل</span>
+                <strong>مرتب‌سازی سفارش</strong>
               </div>
 
               <div className="pol-node pol-node-c">
                 <span className="pol-node-dot" />
                 <span>بنکدار</span>
-                <strong>سفارش</strong>
+                <strong>آماده‌سازی</strong>
               </div>
 
               <div className="pol-flow-core">
@@ -206,7 +215,7 @@ export default function HomePage() {
                     unoptimized
                   />
                 </div>
-                <div className="pol-core-caption">B2B COMMERCE</div>
+                <div className="pol-core-caption">تجارت عمده</div>
               </div>
 
               <div className="pol-floating-card pol-floating-card-top">
@@ -224,10 +233,10 @@ export default function HomePage() {
           <div className="pol-container pol-hero-rail">
             <div>
               <span>یک سبد</span>
-              <strong>چند تأمین‌کننده</strong>
+              <strong>چند بنکدار</strong>
             </div>
             <div>
-              <span>یک سفارش</span>
+              <span>یک مسیر</span>
               <strong>از ثبت تا تحویل</strong>
             </div>
             <div>
@@ -242,10 +251,11 @@ export default function HomePage() {
             <div className="pol-section-heading pol-reveal">
               <div>
                 <span className="pol-overline">پُل چطور کار می‌کند؟</span>
-                <h2>از پیدا کردن کالا تا رسیدنش به دستت.</h2>
+                <h2>از پیدا کردن کالا تا رسیدنش به فروشگاه</h2>
               </div>
               <p>
-                همه‌چیز در یک مسیر جمع می‌شود؛ از انتخاب کالا و بستن سبد تا ثبت سفارش و پیگیری تحویل.
+                همه‌چیز در یک مسیر جمع می‌شود؛ انتخاب کالا، بستن سبد، ثبت سفارش
+                و پیگیری تحویل.
               </p>
             </div>
 
@@ -262,20 +272,22 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="pol-section">
+        <section id="roles" className="pol-section">
           <div className="pol-container">
             <div className="pol-section-heading pol-section-heading-centered pol-reveal">
-              <span className="pol-overline">ONE NETWORK, THREE ROLES</span>
-              <h2>هر نقش، همان تراکنش؛ با نمای درست خودش.</h2>
+              <span className="pol-overline">یک پُل برای همه</span>
+              <h2>هرکس، کار خودش را ساده‌تر انجام می‌دهد.</h2>
               <p>
-                پُل برای سه نقش اصلی، یک مسیر مشترک می‌سازد و نمایش را متناسب با مسئولیت هر نقش نگه می‌دارد.
+                فروشگاه، بنکدار و تیم پُل هرکدام همان سفارش را از زاویه خودشان
+                می‌بینند.
               </p>
             </div>
 
             <div className="pol-role-grid">
               {roleCards.map((card, index) => (
                 <article
-                  key={card.title}
+                  key={card.id}
+                  id={card.id}
                   className={index === 1 ? "pol-role-card pol-role-card-featured" : "pol-role-card"}
                 >
                   <div className="pol-role-brand-wrap">
@@ -307,24 +319,24 @@ export default function HomePage() {
         <section className="pol-section pol-precision-section">
           <div className="pol-container pol-precision-grid">
             <div className="pol-precision-copy pol-reveal">
-              <span className="pol-overline">PRECISION COMMERCE</span>
-              <h2>پُل فقط ویترین نیست؛ جریان سفارش را به هم وصل می‌کند.</h2>
+              <span className="pol-overline">چرا پُل؟</span>
+              <h2>خرید و فروش عمده را به هم وصل می‌کنیم.</h2>
               <p>
-                پُل فقط یک ویترین آنلاین نیست. موجودی، سفارش، پذیرش و تحویل در همان مسیر دیده می‌شوند تا هر نقش، تصویر
-                واضح‌تری از اتفاق بعدی داشته باشد.
+                کالا، موجودی، سفارش و تحویل در یک مسیر دیده می‌شوند؛ لازم نیست
+                برای فهمیدن وضعیت سفارش بین چند ابزار جابه‌جا شوی.
               </p>
 
               <div className="pol-metric-row">
                 <div>
-                  <strong>01</strong>
-                  <span>یک سبد چندفروشنده‌ای</span>
+                  <strong>۰۱</strong>
+                  <span>یک سبد، چند بنکدار</span>
                 </div>
                 <div>
-                  <strong>02</strong>
-                  <span>چند بنکدار در یک سبد</span>
+                  <strong>۰۲</strong>
+                  <span>یک مسیر برای سفارش</span>
                 </div>
                 <div>
-                  <strong>03</strong>
+                  <strong>۰۳</strong>
                   <span>پیگیری تا رسیدن سفارش</span>
                 </div>
               </div>
@@ -333,8 +345,8 @@ export default function HomePage() {
             <div className="pol-command-card pol-reveal pol-delay-2">
               <div className="pol-command-header">
                 <div>
-                  <span>LIVE ORDER FLOW</span>
-                  <strong>جریان واقعی سفارش</strong>
+                  <span>مسیر سفارش</span>
+                  <strong>همین سفارشی که ثبت کردی</strong>
                 </div>
                 <span className="pol-live-badge">در حال انجام</span>
               </div>
@@ -351,15 +363,15 @@ export default function HomePage() {
                 <div className="pol-command-step is-active">
                   <span>۲</span>
                   <div>
-                    <strong>تخصیص سفارش</strong>
-                    <small>۲ تأمین‌کننده</small>
+                    <strong>مرتب‌سازی سفارش</strong>
+                    <small>۲ بنکدار</small>
                   </div>
                 </div>
                 <div className="pol-command-arrow">↓</div>
                 <div className="pol-command-step">
                   <span>۳</span>
                   <div>
-                    <strong>ارسال و پیگیری</strong>
+                    <strong>ارسال و تحویل</strong>
                     <small>قابل پیگیری</small>
                   </div>
                 </div>
@@ -376,20 +388,17 @@ export default function HomePage() {
         <section className="pol-cta-section" id="pilot">
           <div className="pol-container pol-cta-card pol-reveal">
             <div>
-              <span className="pol-overline">AHVAZ PILOT</span>
-              <h2>پُل را در جریان واقعی سفارش ببین.</h2>
-              <p>
-                از ورود با شماره موبایل شروع کن و مسیر کشف، سبد و سفارش را
-                تجربه کن.
-              </p>
+              <span className="pol-overline">پایلوت اهواز</span>
+              <h2>خریدت را همین‌جا شروع کن.</h2>
+              <p>با شماره موبایل وارد شو و خرید عمده را شروع کن.</p>
             </div>
             <div className="pol-cta-actions">
               <Link href="/auth/login" className="pol-button pol-button-light">
-                ورود به سامانه
+                ورود به پُل
                 <span aria-hidden="true">←</span>
               </Link>
               <Link href="/pilot" className="pol-cta-secondary">
-                بیشتر درباره پُل و پایلوت اهواز
+                بیشتر درباره پُل
               </Link>
             </div>
           </div>
@@ -409,19 +418,19 @@ export default function HomePage() {
             />
             <div>
               <strong>پُــــل</strong>
-              <span>زیرساخت سفارش‌گذاری B2B</span>
+              <span>بازار و سفارش عمده</span>
             </div>
           </div>
 
           <nav aria-label="پیوندهای فوتر" className="pol-footer-links">
-            <Link href="/about">درباره ما</Link>
-            <Link href="/how">چگونه کار می‌کند</Link>
-            <Link href="/retailers">خرده‌فروشان</Link>
-            <Link href="/vendors">تأمین‌کنندگان</Link>
-            <Link href="/contact">تماس</Link>
+            <a href="#how-it-works">چطور کار می‌کند</a>
+            <a href="#retailers">برای فروشگاه‌ها</a>
+            <a href="#vendors">برای بنکدارها</a>
+            <a href="#pilot">پایلوت اهواز</a>
+            <Link href="/contact">تماس با ما</Link>
           </nav>
 
-          <span className="pol-footer-meta">© 2026 POL</span>
+          <span className="pol-footer-meta">© ۲۰۲۶ پُــــل</span>
         </div>
       </footer>
     </div>
