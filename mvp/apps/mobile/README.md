@@ -55,6 +55,6 @@ Outputs:
 - `dist/retailer/POL-Market.apk`
 - `dist/vendor/POL-Vendor.apk`
 
-The Android build uses Expo prebuild + native Gradle `assembleRelease`; Expo export alone is not treated as an installable APK.
+The Android build uses Expo prebuild + native Gradle `assembleRelease`; Expo export alone is not treated as an installable APK. Vendor release builds require `EXPO_PUBLIC_API_BASE_URL` and the release gate rejects emulator/loopback URLs and non-HTTPS endpoints.
 
-The role boundary is enforced both at the mobile shell and at OTP-login handling. Backend authorization remains the canonical security boundary.
+The role boundary is enforced both at the mobile shell and at OTP-login handling. Backend authorization remains the canonical security boundary.\n\nFor live staging connectivity checks, set `EXPO_PUBLIC_API_BASE_URL` and run `npm run qa:live`. The existing VPS was observed serving `http://85.198.50.29`; that HTTP endpoint is for non-production staging verification only. A TLS/HTTPS endpoint is required before producing a Vendor release APK.
