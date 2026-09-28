@@ -100,7 +100,7 @@ function AppContent<R extends Role>(props: AppShellProps<R>): React.ReactNode {
   );
 }
 
-function makeStyles(colors: { bg: string; surface: string; border: string }) {
+function makeStyles(colors: { bg: string; surface: string; border: string; text: string }) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
     accountBar: { backgroundColor: colors.bg, paddingHorizontal: 12, paddingTop: 6 },
