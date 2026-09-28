@@ -1,16 +1,16 @@
 # مانیفست کانونیکال اسکیما و زنجیره Migration دیتابیس پلتفرم پُل (POL)
 
 **شناسه سند:** `POL-SCHEMA-MANIFEST-2026`  
-**نسخه:** ۲.۱ (مرحله نهایی پیش از اسپرینت صفر — Reconciled & Hardened)  
+**نسخه:** ۲.۲ (Reconciled & Forward-Only)  
 **پایگاه داده هدف:** PostgreSQL 18.4 (x86_64)  
-**وضعیت:** تثبیت‌شده و فعال در محیط اجرایی (`CANONICAL / RUNTIME_VERIFIED`)  
-**تعداد کل جداول فعال در اسکیما (`public`):** ۵۶ جدول  
+**وضعیت:** `CANONICAL / RUNTIME-DERIVED`  
+**تعداد کل جداول فعال در اسکیما (`public`):** از روی اجرای واقعی زنجیره Migration محاسبه می‌شود؛ عدد ثابت کانونیکال نیست. آخرین artifact محلی ثبت‌شده: ۱۰۷ جدول.  
 
 ---
 
 ## ۱. زنجیره کانونیکال مهاجرت پایگاه داده (Canonical Migration Chain)
 
-زنجیره مایگریشن پایگاه داده پلتفرم پُل یک زنجیره forward-only و ترتیبی است و در remediation branch تا migration `048_bind_media_upload_target.sql` امتداد یافته است:
+زنجیره مایگریشن پایگاه داده پلتفرم پُل یک زنجیره forward-only و ترتیبی است و در remediation branch تا migration `076_reservation_and_candidate_event_templates.sql` امتداد یافته است:
 
 ```text
 migrations/001_initial_schema.sql
@@ -25,16 +25,20 @@ migrations/032 … migrations/046
        ↓ (integrity، fulfillment، checkout، inventory، notification، candidate/barcode hardening)
 migrations/047_delegated_permissions_and_audit.sql
        ↓ (delegated permission grants/revokes + append-only permission audit)
+migrations/048 … migrations/076
+       ↓ (media, privacy, reservations, financial/dispute hardening, delivery/POD, idempotency and event-template reconciliation)
 
 **Authority note:** این مانیفست باید از زنجیره واقعی migrationها عقب نماند؛ تغییرات بعدی باید فقط با migration شماره‌دار جدید ثبت شوند. فهرست جدول‌های legacy این سند ممکن است نیازمند refresh مستقل داشته باشد و نباید آن را به‌عنوان شمارش فعلی جدول‌ها تلقی کرد.
 ```
 
 > **اصل تغییرناپذیری مایگریشن‌ها:**  
-> فایل‌های migration تاریخی پس از اعمال نباید rewrite شوند. کلیه تطبیق‌ها، رفع تناقض‌ها و سخت‌سازی‌های بعدی باید صرفاً از طریق migrationهای forward-only شماره‌دار بعدی (تا `048` در این branch) اعمال شوند.
+> فایل‌های migration تاریخی پس از اعمال نباید rewrite شوند. کلیه تطبیق‌ها، رفع تناقض‌ها و سخت‌سازی‌های بعدی باید صرفاً از طریق migrationهای forward-only شماره‌دار بعدی (تا `076` در `main` فعلی) اعمال شوند.
 
 ---
 
-## ۲. سیاهه‌برداری جامع ۵۶ جدول دیتابیس (Schema Table Inventory)
+## ۲. سیاهه‌برداری پایه تاریخی ۵۶ جدول (Legacy Baseline Inventory)
+
+این جدول فقط baseline تاریخی 001+002 را نشان می‌دهد. Migrationهای بعدی جداول و ساختارهای بیشتری اضافه کرده‌اند؛ بنابراین این فهرست به‌تنهایی inventory فعلی schema نیست.
 
 | ردیف | نام جدول | حوزه دامنه‌ای | کلید اصلی (PK) | کلیدهای خارجی و ارجاعات کلیدی |
 | :---: | :--- | :--- | :--- | :--- |
@@ -162,8 +166,8 @@ FIELD_ACTIVATOR
 - `RUNTIME_VERIFIED`: قرارداد با اجرای واقعی اسکریپت بر روی پایگاه‌داده فعال PostgreSQL 18.4 و پاس شدن کامل سوئیت تست اعتبارسنجی شده است.
 - `BLOCKED`: تست به علت عدم دسترسی به وابستگی یا محیط اجرا نشده است (هرگز معادل Pass در نظر گرفته نمی‌شود).
 
-> **گواهی Runtime:**  
-> کلیه ۵۶ جدول و سناریوهای پنج‌گانه چندسازمانی (A, B, C, D, E) در پایگاه‌داده واقعی PostgreSQL 18.4 تحت پورت 5432 با اجرای سوئیت کامل ۱۹ گانه با وضعیت **`RUNTIME_VERIFIED`** تأیید قطعی شده‌اند.
+> **مرز گواهی Runtime:**  
+> گواهی‌های تاریخی ۵۶ جدول متعلق به snapshotهای قدیمی هستند. آخرین artifact محلی ثبت‌شده در repository (2026-09-27) تعداد ۱۰۷ جدول و ۶۵۸/۶۵۸ تست پاس‌شده را روی commit `49c2277a4018f8f1e191f0c249b3d44f7a7ac441` ثبت می‌کند؛ این evidence مربوط به همان محیط/commit است و گواهی اجرای فعلی `main` محسوب نمی‌شود.
 
 ---
 
