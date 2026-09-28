@@ -385,9 +385,41 @@ export async function mockRequest<T>(
     if (role !== "VENDOR_OWNER") throw new Error("Mock permission denied: finance.view");
     return envelope({ invoices: state.invoices, limit: 50, offset: 0 });
   }
+  if (method === "GET" && /^\/api\/v1\/invoices\/[^/]+$/.test(pathname)) {
+    if (role !== "VENDOR_OWNER") throw new Error("Mock permission denied: finance.view");
+    const id = pathname.split("/")[4];
+    const invoice = state.invoices.find((row) => String(row.id) === id);
+    if (!invoice) throw new Error("Mock invoice not found");
+    return envelope({
+      ...invoice,
+      order_id: "mock-order-1",
+      items: [
+        { id: "mock-invoice-item-1", product_name: "نوشابه خانواده کلاسیک", quantity: 12, unit_price: 540000, total_line_amount: 6480000 },
+        { id: "mock-invoice-item-2", product_name: "چیپس نمکی خانواده", quantity: 8, unit_price: 310000, total_line_amount: 2480000 },
+      ],
+    });
+  }
   if (method === "GET" && pathname === "/api/v1/vendors/settlements") {
     if (role !== "VENDOR_OWNER") throw new Error("Mock permission denied: settlement.view");
     return envelope({ settlements: state.settlements, limit: 50, offset: 0 });
+  }
+  if (method === "GET" && /^\/api\/v1\/settlements\/[^/]+$/.test(pathname)) {
+    if (role !== "VENDOR_OWNER") throw new Error("Mock permission denied: settlement.view");
+    const id = pathname.split("/")[4];
+    const settlement = state.settlements.find((row) => String(row.id) === id);
+    if (!settlement) throw new Error("Mock settlement not found");
+    return envelope({
+      ...settlement,
+      order_id: "mock-order-1",
+      gross_amount_toman: 17500000,
+      commission_amount_toman: 1050000,
+      adjustment_amount_toman: 370000,
+      net_vendor_amount_toman: 16080000,
+      settled_at: iso(-2),
+      adjustments: [
+        { id: "mock-adj-1", adjustment_type: "SHORTAGE_DEDUCTION", amount_toman: 370000, reason: "کسری ثبت‌شده" },
+      ],
+    });
   }
 
   if (method === "GET" && pathname === "/api/v1/referrals") return envelope({ referrals: state.referrals, limit: 50, offset: 0 });
