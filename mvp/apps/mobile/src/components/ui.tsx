@@ -183,7 +183,7 @@ function makeStyles(colors: Palette) {
     btn: {
       backgroundColor: colors.brand,
       borderRadius: 10,
-      minHeight: 44,
+      minHeight: 48,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: spacing.lg,
@@ -202,7 +202,7 @@ function makeStyles(colors: Palette) {
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 10,
-      minHeight: 44,
+      minHeight: 48,
       paddingHorizontal: spacing.md,
       paddingVertical: 10,
       fontSize: 15,
