@@ -13,7 +13,7 @@ export type WorkspaceProps<R extends Role> = { role: R; onOpenOrder: (orderId: s
 type AppShellProps<R extends Role> = {
   appName: string;
   allowedRoles: readonly R[];
-  workspace: React.ComponentType<WorkspaceProps<R>>;
+  workspace: (props: WorkspaceProps<R>) => React.ReactNode;
   orderMode: "retailer" | "vendor";
 };
 
@@ -24,7 +24,6 @@ export function AppShell<R extends Role>(props: AppShellProps<R>): React.ReactNo
 function AppContent<R extends Role>(props: AppShellProps<R>): React.ReactNode {
   const { mode } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const Workspace = props.workspace;
   const [route, setRoute] = useState<
     { name: "login" } | { name: "workspace"; role: R } |
     { name: "order-detail"; orderId: string; role: R } | { name: "account"; role: R }
@@ -91,7 +90,7 @@ function AppContent<R extends Role>(props: AppShellProps<R>): React.ReactNode {
       ) : route.name === "order-detail" ? (
         <OrderDetailMobileScreen mode={props.orderMode} role={route.role} orderId={route.orderId} onBack={() => setRoute({ name: "workspace", role: route.role })} />
       ) : currentRole ? (
-        <Workspace role={currentRole} onOpenOrder={(orderId) => setRoute({ name: "order-detail", orderId, role: currentRole })} />
+        {props.workspace({ role: currentRole, onOpenOrder: (orderId) => setRoute({ name: "order-detail", orderId, role: currentRole }) })}
       ) : (
         <LoginScreen onAuthed={onAuthed} allowedRoles={props.allowedRoles} appName={props.appName} />
       )}
