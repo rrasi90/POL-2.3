@@ -6,6 +6,8 @@ import signal
 import time
 from collections.abc import Callable
 
+from psycopg2.extras import RealDictCursor
+
 from scripts.api.db import get_runtime_connection
 from scripts.canonical_integration_worker import CanonicalIntegrationWorker
 from scripts.payment_reconciliation_worker import PaymentReconciliationWorker
@@ -23,7 +25,7 @@ def _stop(_signum, _frame) -> None:
 def _run_one(name: str, fn: Callable) -> None:
     conn = get_runtime_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
             result = fn(cur)
         conn.commit()
         print(f"[WORKER] {name}: {result}", flush=True)
