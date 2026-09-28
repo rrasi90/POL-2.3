@@ -18,7 +18,7 @@ flowchart TD
     end
 
     subgraph API Gateway & Edge Layer
-        B1[Nginx Reverse Proxy + SSL / Rate Limiter]
+        B1[Nginx Reverse Proxy / Edge — HTTP; TLS 443 pending]
     end
 
     subgraph Application Core - Modular Monolith
@@ -63,10 +63,10 @@ flowchart TD
 | **پایگاه داده اصلی (Database)** | **PostgreSQL 18** | پشتیبانی کامل از تراکنش‌های مالی ACID، جستجوی متنی فازی زبان فارسی با افزونه `pg_trgm`، ایندکس‌های B-Tree روی بارکدها و فیلدهای JSONB. |
 | **کش / Rate Limit** | **Redis 7 (Optional)** | در صورت استقرار، فقط برای cache / rate-limit / acceleration؛ canonical business state و outbox به Redis وابسته نیست. |
 | **موتور worker / event processing** | **Python workers + PostgreSQL Outbox** | Canonical per D-019/D-015: workers claim durable PostgreSQL work with `FOR UPDATE SKIP LOCKED` and leases; no BullMQ/Redis Streams dependency. See `POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md`. |
-| **ذخیره‌سازی فایل و تصاویر (Storage)** | **MinIO (فضای شی‌محور سازگار با پروتکل S3 ابری)** | ذخیره‌سازی ابری فایل‌های باینری تصاویر کالاها با ساختار کلیدهای پایدار (`products/{id}/canonical/{uuid}.webp`) و حذف EXIF. |
+| **ذخیره‌سازی فایل و تصاویر (Storage)** | **S3-compatible Object Storage (MinIO یا سرویس ابری)** | ذخیره‌سازی فایل‌های باینری و تصاویر با ساختار کلیدهای پایدار (`products/{id}/canonical/{uuid}.webp`) و حذف EXIF؛ در deployment اولیه VPS، object storage بیرونی است و روی root disk سرور قرار نمی‌گیرد. |
 | **فرانت‌اند وب و دسکتاپ (Web)** | **Next.js 15 (App Router) با استایل‌دهی Tailwind CSS** | ساختار فوق‌العاده سبک، رندر سریع سمت سرور (SSR) برای گوشی‌های ضعیف، و قابلیت PWA روی گوشی سوپرمارکت. |
 | **اپلیکیشن موبایل (Mobile)** | **React Native با فریم‌ورک Expo** | اشتراک بیش از ۸۰٪ کدهای تجاری با نسخه وب؛ ماژول اسکنر دوربین برای اسکن پیوسته بارکد (Continuous Scan). |
-| **رصد و مانیتورینگ (Observability)** | **Pino JSON Logger به همراه متریک‌های Prometheus و داشبورد Grafana** | ثبت بلادرنگ خطاها، پایش زمان پاسخگویی APIها و سلامت Python worker processes؛ deployment/process supervision remains a later deployment gate. |
+| **رصد و مانیتورینگ (Observability)** | **Pino JSON Logger به همراه متریک‌های Prometheus و داشبورد Grafana** | ثبت ساختاریافته خطاها و متریک‌ها؛ observability stack مستقل یک گیت عملیاتی جداست. process supervision فعلاً توسط Docker Compose و container restart policy انجام می‌شود و در VPS runtime تأیید شده است. |
 | **زیرساخت سرور و استقرار (Deployment)** | **Docker Compose روی سرورهای ابری داخل ایران (ابر آروان یا پارس‌پک)** | تضمین دسترسی ۱۰۰٪ پایدار درون کشور حتی در زمان اختلالات اینترنت بین‌الملل؛ استقرار ایزوله و مستقل. |
 
 ---
@@ -171,7 +171,7 @@ flowchart LR
 ## ۶. استراتژی استقرار و پایداری در ایران (Deployment & Disaster Recovery)
 
 1. **مدیریت زیرساخت با Docker Compose:**
-   کل سامانه (وب‌سرور Nginx، اپلیکیشن بک‌اند، پایگاه داده PostgreSQL، Redis و MinIO) در کانتینرهای مستقل داکر بسته‌بندی می‌شوند تا ظرف کمتر از ۱۵ دقیقه روی هر سرور جدید ابری داخل کشور قابل راه‌اندازی باشند.
+   لایه اجرایی POL با Docker Compose بسته‌بندی می‌شود. در deployment اولیه VPS، Nginx، FastAPI، Next.js، PostgreSQL و Python workers کانتینری هستند؛ Redis اختیاری است و object storage بیرونی S3-compatible است.
 2. **پشتیبان‌گیری خودکار (Automated Daily Backups):**
    اسکریپت خودکار در ساعت ۳:۰۰ بامداد هر شب خروجی فشرده پایگاه داده (`pg_dump`) و متادیتای S3 را تهیه کرده و روی فضای ابری مجزا ذخیره می‌کند.
 3. **مانیتورینگ و ثبت خطا (Logging & Observability):**
@@ -179,9 +179,15 @@ flowchart LR
 
 ---
 
+## وضعیت فعلی اجرای معماری — 2026-09-28
+
+معماری پیش‌بینی‌شده این سند اکنون در لایه runtime روی VPS با IP `85.198.50.29` به‌صورت عملیاتی تأیید شده است: PostgreSQL 18.6، FastAPI/Uvicorn، Python transactional-outbox worker، Next.js 15 standalone و Nginx در Docker Compose اجرا می‌شوند. 76 migration forward-only و 108 base tables در PostgreSQL تأیید شده‌اند و health/readiness و API smoke عمومی HTTP 200 بوده‌اند.
+
+تفکیک مهم: این snapshot مربوط به **IP-stage deployment** است. TLS/443، دامنه `polmarket.ir`، exact HTTPS CORS origin و گذار عمدی به `ENVIRONMENT=production` هنوز gateهای جداگانه هستند. جزئیات evidence در `deploy/VPS_RUNTIME_VERIFICATION_2026-09-28.md` ثبت شده است.
+
 ## وضعیت سند و گام بعدی
 
-* **وضعیت:** مصوب و آماده آغاز کدنویسی و پیاده‌سازی گام‌به‌گام.
+* **وضعیت:** مصوب؛ source و VPS IP-stage runtime پیاده‌سازی و تأیید شده است. HTTPS/domain cutover و برخی provider/observability gates همچنان جداگانه پیگیری می‌شوند.
 * **اسناد وابسته:** `06_PRODUCT/PRD.md`, `08_DATA/Data_Schema.md`, `08_DATA/Event_Architecture.md`.
 * **آمادگی برای ساخت (Build Readiness):** تأیید قطعی جهت آغاز فاز پیاده‌سازی.
 
