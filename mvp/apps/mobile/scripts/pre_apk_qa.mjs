@@ -66,14 +66,19 @@ for (const p of [
   "assets/android-icon-background.png",
   "assets/android-icon-monochrome.png",
   "assets/favicon.png",
-  "assets/fonts/Vazirmatn-Regular.ttf",
-  "assets/fonts/Vazirmatn-SemiBold.ttf",
-  "assets/fonts/Vazirmatn-Bold.ttf",
 ]) {
   const absolute = resolve(appDir, p);
   assert(existsSync(absolute), p + " exists");
   const info = pngDimensions(absolute);
   assert(info.width > 0 && info.height > 0, p + " has readable PNG dimensions");
+}
+
+for (const p of [
+  "assets/fonts/Vazirmatn-Regular.ttf",
+  "assets/fonts/Vazirmatn-SemiBold.ttf",
+  "assets/fonts/Vazirmatn-Bold.ttf",
+]) {
+  assert(existsSync(resolve(appDir, p)), p + " exists");
 }
 
 const apiSource = readFileSync(resolve(appDir, "src/api.ts"), "utf8");
