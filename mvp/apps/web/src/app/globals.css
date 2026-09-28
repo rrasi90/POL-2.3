@@ -1615,3 +1615,146 @@ body {
     scroll-behavior: auto;
   }
 }
+
+
+/* POL landing typography + navigation refinement */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
+.pol-landing {
+  direction: rtl;
+  text-align: right;
+  font-family: var(--font-vazirmatn), "Vazirmatn", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 450;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.pol-nav-links a,
+.pol-text-link,
+.pol-footer-links a {
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+
+.pol-hero h1,
+.pol-section-heading h2,
+.pol-precision-copy h2,
+.pol-cta-card h2,
+.pol-flow-card h3,
+.pol-role-card h3,
+.pol-command-step strong {
+  letter-spacing: -0.018em;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+.pol-hero h1 {
+  max-width: 720px;
+  line-height: 1.08;
+  font-weight: 800;
+}
+
+.pol-hero-lead,
+.pol-section-heading p,
+.pol-precision-copy p,
+.pol-cta-card p,
+.pol-flow-card p,
+.pol-role-card p {
+  line-height: 1.95;
+  letter-spacing: 0;
+}
+
+.pol-overline {
+  letter-spacing: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.pol-chip,
+.pol-kicker,
+.pol-hero-note,
+.pol-hero-rail,
+.pol-command-header,
+.pol-command-footer {
+  letter-spacing: 0;
+}
+
+#how-it-works,
+#roles,
+#retailers,
+#vendors,
+#operations,
+#pilot {
+  scroll-margin-top: 88px;
+}
+
+.pol-nav {
+  direction: rtl;
+}
+
+.pol-nav-inner {
+  position: relative;
+}
+
+.pol-nav-actions {
+  direction: ltr;
+}
+
+.pol-nav-actions > .pol-text-link,
+.pol-nav-actions > .pol-button-small {
+  direction: rtl;
+}
+
+.pol-mobile-menu {
+  direction: rtl;
+}
+
+.pol-mobile-menu nav a {
+  text-align: right;
+}
+
+.pol-brand-logo,
+.pol-role-logo,
+.pol-core-logo,
+.pol-footer-logo {
+  background: transparent;
+}
+
+@media (max-width: 680px) {
+  html {
+    scroll-padding-top: 76px;
+  }
+
+  #how-it-works,
+  #roles,
+  #retailers,
+  #vendors,
+  #operations,
+  #pilot {
+    scroll-margin-top: 76px;
+  }
+
+  .pol-hero h1 {
+    line-height: 1.12;
+    font-weight: 800;
+  }
+
+  .pol-section-heading h2,
+  .pol-precision-copy h2,
+  .pol-cta-card h2 {
+    line-height: 1.3;
+  }
+
+  .pol-hero-lead,
+  .pol-section-heading p,
+  .pol-precision-copy p,
+  .pol-cta-card p,
+  .pol-flow-card p,
+  .pol-role-card p {
+    font-size: 0.9rem;
+    line-height: 1.95;
+  }
+}
