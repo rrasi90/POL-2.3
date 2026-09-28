@@ -1,0 +1,41 @@
+name: POL Vercel QA
+
+on:
+  push:
+    branches: [ vercel-qa ]
+  workflow_dispatch:
+
+jobs:
+  web-qa-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mvp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mvp/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build web
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ""
+
+      - name: Verify QA-only files
+        run: |
+          test -f apps/web/src/app/api/v1/[...path]/route.ts
+          test -f apps/web/src/app/dev/qa/page.tsx
+          test -f vercel.json
+          grep -q 'NEXT_PUBLIC_API_BASE_URL=' apps/web/.env.example
