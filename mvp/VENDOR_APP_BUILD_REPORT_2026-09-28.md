@@ -4,7 +4,7 @@
 **Repository:** `rrasi90/POL-2.3`  
 **Base:** `main` @ `f90fe3117c1881545e32181381ec50a1a6960f9e`  
 **Working branch:** `feat/vendor-app-production-20260928-v2`  
-**Current HEAD:** `44f4d07e69d4741d0c792dab394434d24e36922e`  
+**Current HEAD:** `ec77fdf0eae1d91aecc503d90a242aafb01ca1b5`  
 **Pull Request:** #20
 
 ## 0. Gate position
@@ -159,7 +159,7 @@ The native builder now invokes this gate immediately before Expo prebuild.
 
 - Main branch: untouched.
 - PR #20: open, unmerged.
-- Current branch: ahead of main by 68 commits, behind by 0.
+- Current branch: ahead of main by 71 commits, behind by 0.
 - Current HEAD: `7411dba37bda71be544f825dd774f82fc30b9f05`.
 
 ## 8. CI status
@@ -181,6 +181,8 @@ The current assistant runtime does not have an SSH/remote-terminal channel into 
 Therefore no current live-host claim is made for this Vendor branch. A new `qa:live` preflight was added so the exact API endpoint can be checked without embedding credentials; the release APK builder additionally requires an HTTPS API endpoint.
 
 ## 10. Final status
+
+The final branch state is deliberately a **pre-APK release candidate**, not an APK release. The remaining release blockers are live HTTPS API availability, current-head execution evidence on a working CI/runtime environment, and native Android build/device verification.
 
 | Gate | Status |
 |---|---|
