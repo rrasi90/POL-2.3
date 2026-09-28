@@ -97,7 +97,7 @@ const checks = [
   }],
   ["Unsupported barcode path is not fabricated as a runtime adapter", () => {
     const p = fs.readFileSync(path.resolve(process.cwd(), "src/__tests__/parity.md"), "utf8");
-    return p.includes("GAP / CONTRACT") && p.includes("match-barcode");
+    return p.includes("CAMERA RUNTIME GAP") && p.includes("match-barcode");
   }],
   ["Night theme is runtime-wired", () => {
     const theme = read("theme.ts");
