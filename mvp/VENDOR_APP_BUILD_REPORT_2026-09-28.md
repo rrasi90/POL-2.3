@@ -51,6 +51,7 @@ The Vendor mobile workspace has been rebuilt around the daily wholesaler operati
 ### Vendor management
 - customers
 - referral attribution view
+- customers
 - staff lifecycle
 - delegated permission editor
 - effective permission set
@@ -61,7 +62,7 @@ The Vendor mobile workspace has been rebuilt around the daily wholesaler operati
 - Precision Commerce visual direction
 - D2 Balanced Operations density
 - 44px+ core interactive targets inherited from the shared mobile system
-- five-item primary bottom navigation to prevent the previous eight-tab compression
+- six-item primary bottom navigation keeps core operations accessible while retaining a dedicated support entry
 - secondary sections moved behind contextual segmented controls
 
 ## 4. Canonical API preservation
