@@ -9,7 +9,7 @@
 
 ## 0. Gate position
 
-The branch is intentionally stopped **immediately before native Android APK assembly**. The final documentation-only commit (`415aec1ff...`) records the release gate without changing application behavior after the functional/config snapshot (`ec77fdf0...`).
+The branch is intentionally stopped **immediately before native Android APK assembly**. The last application-behavior snapshot is `ec77fdf0...`; later commits only record/reconcile the release gate and do not add new runtime capabilities.
 
 This stage covers source/configuration/release-gate work only. It does **not** run:
 - `expo prebuild --clean --platform android`
@@ -193,7 +193,8 @@ The final branch state is deliberately a **pre-APK release candidate**, not an A
 | Owner-only acceptance authorization | PASS |
 | Support surface | PASS |
 | Canonical API preservation | PASS |
-| Deterministic pre-APK gate | PASS (wired; source checks inspected) |\n| Live API preflight harness | PASS (added; execution pending live endpoint access) |
+| Deterministic pre-APK gate | PASS (wired; source checks inspected) |
+| Live API preflight harness | PASS (added; execution pending live endpoint access) |
 | Fresh current-head CI | BLOCKED / NOT CERTIFIED |
 | Live VPS verification of this branch | BLOCKED / NOT CONNECTED |
 | Native Expo prebuild | **NOT RUN** |
