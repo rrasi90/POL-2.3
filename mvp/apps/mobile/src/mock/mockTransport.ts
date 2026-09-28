@@ -555,16 +555,24 @@ export async function mockRequest<T>(
 
   if (method === "GET" && pathname === "/api/v1/profile") return envelope({
     user_profile: { display_name: role === "VENDOR_OWNER" ? "مالک بنکداری" : "انبار و سفارش", phone_number: role === "VENDOR_OWNER" ? "+989160000001" : "+989160000002", email: null, timezone: "Asia/Tehran" },
-    membership: { id: role === "VENDOR_OWNER" ? "mock-member-owner" : "mock-member-staff", role, status: "ACTIVE" },
+    membership: { id: role === "VENDOR_OWNER" ? "mock-member-owner" : "mock-member-staff", role, status: "ACTIVE", organization_name: "بنکداری نمونه اهواز", organization_id: "mock-vendor-org" },
     membership_profile: {},
     persona_profile: {},
   });
 
-  if (method === "GET" && pathname === "/api/v1/profile/context") return envelope({ organization_id: "mock-vendor-org", organization_type: "VENDOR", role });
+  if (method === "PUT" && pathname === "/api/v1/profile") {
+    return envelope({ user_profile: body || {}, membership: { id: role === "VENDOR_OWNER" ? "mock-member-owner" : "mock-member-staff", role, status: "ACTIVE" } });
+  }
+
+  if (method === "GET" && pathname === "/api/v1/profile/context") return envelope({
+    organization_id: "mock-vendor-org",
+    organization_type: "VENDOR",
+    role,
+  });
 
   if (method === "GET" && pathname === "/api/v1/notifications") return envelope({ notifications: [], limit: 50, offset: 0 });
-  if (method === "GET" && pathname === "/api/v1/notifications/preferences") return envelope({ push_enabled: true, sms_enabled: true, email_enabled: false });
-  if (method === "PATCH" && pathname === "/api/v1/notifications/preferences") return envelope(body || {});
+  if (method === "GET" && pathname === "/api/v1/notifications/preferences") return envelope({ preferences: { event_name: "ORDER_STATUS_CHANGED", channel: "PUSH", is_enabled: true } });
+  if (method === "PUT" && pathname === "/api/v1/notifications/preferences") return envelope(body || {});
 
   if (method === "GET" && pathname === "/api/v1/auth/sessions/current") return envelope({ id: "mock-session", status: "ACTIVE", expires_at: new Date(Date.now() + 3600_000).toISOString() });
 
