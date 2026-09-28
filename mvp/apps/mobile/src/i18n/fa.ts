@@ -1,6 +1,12 @@
 const PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
 const ARABIC_DIGITS = "٠١٢٣٤٥٦٧٨٩";
 
+export function toAsciiDigits(value: string): string {
+  return value
+    .replace(/[۰-۹]/g, (d) => String(PERSIAN_DIGITS.indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String(ARABIC_DIGITS.indexOf(d)));
+}
+
 export function toPersianDigits(value: string): string {
   return value
     .replace(/[0-9]/g, (d) => PERSIAN_DIGITS[Number(d)])
