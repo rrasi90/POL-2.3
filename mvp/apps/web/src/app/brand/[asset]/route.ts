@@ -15,7 +15,7 @@ type AssetKey = keyof typeof ASSETS;
 async function readBrandAsset(fileName: string): Promise<Buffer> {
   const candidates = [
     path.resolve(process.cwd(), "logo", fileName),
-    path.resolve(process.cwd(), "..", "..", "..", "..", "..", "logo", fileName),
+    path.resolve(process.cwd(), "..", "..", "..", "logo", fileName),
   ];
 
   let lastError: unknown;
