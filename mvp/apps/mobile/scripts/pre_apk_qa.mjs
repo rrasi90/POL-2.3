@@ -1,9 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import { createRequire } from "node:module";
 
 const appDir = resolve(process.cwd());
-const root = resolve(appDir, "../..");
 const requireFromApp = createRequire(resolve(appDir, "package.json"));
 
 function assert(condition, message) {
@@ -23,8 +22,9 @@ function pngDimensions(file) {
 
 const originalVariant = process.env.POL_APP_VARIANT;
 process.env.POL_APP_VARIANT = "vendor";
-delete requireFromApp.cache?.[require.resolve("../app.config.js")];
-const config = require("../app.config.js");
+const configPath = requireFromApp.resolve("./app.config.js");
+delete requireFromApp.cache[configPath];
+const config = requireFromApp("./app.config.js");
 if (originalVariant === undefined) delete process.env.POL_APP_VARIANT;
 else process.env.POL_APP_VARIANT = originalVariant;
 
