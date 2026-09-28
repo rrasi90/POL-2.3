@@ -1,5 +1,5 @@
 const base = require("./app.json").expo;
-const variant = (process.env.POL_APP_VARIANT || process.env.EXPO_PUBLIC_APP_VARIANT || "retailer").toLowerCase();
+const variant = (process.env.POL_APP_VARIANT || "retailer").toLowerCase();
 const isVendor = variant === "vendor";
 
 module.exports = {
