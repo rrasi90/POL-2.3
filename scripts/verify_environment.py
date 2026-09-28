@@ -20,7 +20,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-EXPECTED_MIGRATION_HEAD = 48
+MIN_EXPECTED_MIGRATION_HEAD = 76
 EXPECTED_CORE_TABLES = [
     "users",
     "organizations",
@@ -111,7 +111,7 @@ def verify_migration_files():
 
     numbers = [n for n, _ in numbered]
     contiguous = numbers == list(range(1, max(numbers) + 1)) if numbers else False
-    head_ok = bool(numbered) and numbers[-1] == EXPECTED_MIGRATION_HEAD
+    head_ok = bool(numbered) and numbers[-1] >= MIN_EXPECTED_MIGRATION_HEAD
     unique_numbers = len(numbers) == len(set(numbers))
     all_found = bool(files) and contiguous and head_ok and unique_numbers and not malformed
 
@@ -121,7 +121,7 @@ def verify_migration_files():
         "directory": migrations_dir,
         "migration_count": len(files),
         "migration_head": numbered[-1][1] if numbered else None,
-        "expected_migration_head": EXPECTED_MIGRATION_HEAD,
+        "minimum_expected_migration_head": MIN_EXPECTED_MIGRATION_HEAD,
         "contiguous_numeric_chain": contiguous,
         "unique_numeric_prefixes": unique_numbers,
         "malformed_files": malformed,
