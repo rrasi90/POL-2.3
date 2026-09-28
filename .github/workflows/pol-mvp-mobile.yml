@@ -42,8 +42,18 @@ jobs:
       - name: Regression cross-module QA
         run: npm run qa:regression --workspace @pol/mobile
 
-      - name: Expo config validation
+      - name: Validate retailer Expo config
         working-directory: mvp/apps/mobile
+        env:
+          POL_APP_VARIANT: retailer
+          EXPO_PUBLIC_APP_VARIANT: retailer
+        run: npx expo config --type public
+
+      - name: Validate vendor Expo config
+        working-directory: mvp/apps/mobile
+        env:
+          POL_APP_VARIANT: vendor
+          EXPO_PUBLIC_APP_VARIANT: vendor
         run: npx expo config --type public
 
       - name: Expo Android export
