@@ -7,10 +7,10 @@ permissions, API semantics and platform-appropriate states. UI does not need to 
 |---|---|---|---|---|
 | Shared/Auth | SH-AUTH-01/02, SH-PROFILE-01, SH-NOTIF-01/02 | src/screens/LoginScreen.tsx + AccountMobileScreen.tsx | auth OTP, profile/context, notifications, notification preferences | IMPLEMENTED |
 | Retailer | R-02, R-03, R-06, R-07, R-08, R-10, R-11, R-12, R-16, R-17, R-18 | RetailerMobileScreen.tsx + OrderDetailMobileScreen.tsx + SupportMobileScreen.tsx | catalog/search, vendor search/storefront, basket/allocation/checkout, orders/detail/timeline, returns/disputes, support cases/messages, invoices | IMPLEMENTED |
-| Vendor | V-01, V-02, V-03, V-06, V-07, V-08, V-09, V-10, V-11, V-17 + shared support | VendorMobileScreen.tsx + OrderDetailMobileScreen.tsx + SupportMobileScreen.tsx | order queue/actions, partial acceptance, items/timeline, inventory, daily inventory, referrals, customers, settlements, invoices, staff/delegated permissions, support cases/messages | IMPLEMENTED |
+| Vendor | V-01, V-02, V-03, V-06, V-07, V-08, V-09, V-10, V-11, V-14, V-16, V-17 + shared support | VendorMobileScreen.tsx + OrderDetailMobileScreen.tsx + SupportMobileScreen.tsx | order queue/actions, partial acceptance, items/timeline, inventory, daily inventory, referrals, customers, owner-only finance, staff/delegated permissions, storefront preview, barcode lookup/match + candidate flow, support cases/messages | IMPLEMENTED / CAMERA_RUNTIME_GAP for V-16 |
 | Ops | O-01, O-02, O-06, O-07, O-08, O-09, O-10, OP-13 | src/screens/OpsMobileScreen.tsx + SupportMobileScreen.tsx | exceptions/risk signals, orders, reconciliation, analytics, notifications, audit logs, catalog-candidate review | IMPLEMENTED (role-scoped; fresh QA pending) |
 | Field | F-01…F-05 | FieldTaskList/Detail/AssistedOrderScreen.tsx + OfflineBanner | field tasks, healthz | IMPLEMENTED |
-| Barcode | R-03B / V-16 | canonical API exists; no device camera adapter yet | POST `/api/v1/products/match-barcode` + candidate workflow | GAP / CONTRACT (CAMERA RUNTIME SCOPE) |
+| Barcode | R-03B / V-16 | manual/mock adapter is implemented; native camera/continuous-scan remains device-gated | GET `/api/v1/catalog/barcode/lookup` + POST `/api/v1/products/match-barcode` + product-candidate workflow | IMPLEMENTED / CAMERA RUNTIME GAP |
 | Vendor Customers/Staff | V-09 / V-11 | VendorMobileScreen.tsx | customer search + staff list/invite/status/permission actions | IMPLEMENTED / pre-APK source gate |
 | Retailer order detail / returns / support | R-09…R-13 | order detail, return/dispute submission and support are implemented; remaining notifications/profile are shared | routes available per API map | IMPLEMENTED foundation |
 
@@ -68,3 +68,11 @@ Remote status for G-023…G-026: **SOURCE REMEDIATED / LOCAL RETEST PASS**.
 ### Pre-APK Vendor gate — 2026-09-28
 
 The dedicated Vendor Android product now binds the canonical vendor brand asset (`assets/vendor-logo.png`), exposes the shared support surface, and has a deterministic `scripts/pre_apk_qa.mjs` gate covering Expo config, Android package/variant, asset integrity, canonical API markers, role boundary, build-script restoration, and obvious-secret absence. Native APK build and device certification are intentionally not executed by this gate.
+
+
+### Persian/RTL mobile baseline — 2026-09-29
+- Vendor app root and shared mobile Screen primitives explicitly use RTL direction.
+- Numeric/identifier inputs use LTR presentation while Persian numerals are normalized at the input boundary.
+- Operational amounts/quantities use Persian digits and Tehran timezone; dates are formatted with the Persian calendar for the Vendor surface.
+- Vazirmatn Regular/SemiBold/Bold are bundled for the mobile client.
+- OfflineBanner is rendered at AppShell level so network loss is visible across Vendor routes.
