@@ -1,3 +1,4 @@
+import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { api, persistSession } from "../api";
@@ -79,6 +80,17 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
       const role = normalizeRole(data.current_organization?.role ?? data.role);
       if (!role) {
         setError("نقش کاربر از پاسخ معتبر بک‌اند قابل تعیین نیست.");
+        return;
+      }
+      if (props.allowedRoles && !props.allowedRoles.includes(role)) {
+        setError(
+          props.appName === "پل بنکدار"
+            ? "این حساب برای اپلیکیشن بنکدار مجاز نیست."
+            : "این حساب برای این اپلیکیشن مجاز نیست.",
+        );
+        await SecureStore.deleteItemAsync("pol.access_token");
+        await SecureStore.deleteItemAsync("pol.refresh_token");
+        await SecureStore.deleteItemAsync("pol.session_role");
         return;
       }
       await persistSession(data.access_token, data.refresh_token ?? null, role);
