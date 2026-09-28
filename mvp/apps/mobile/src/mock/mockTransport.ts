@@ -259,7 +259,7 @@ function findOrder(id: string): MockOrder {
   return order;
 }
 
-function envelope<T>(value: T): T {
+function envelope(value: unknown): any {
   return clone(value);
 }
 
