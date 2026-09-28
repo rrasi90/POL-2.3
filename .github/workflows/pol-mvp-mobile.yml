@@ -42,6 +42,9 @@ jobs:
       - name: Regression cross-module QA
         run: npm run qa:regression --workspace @pol/mobile
 
+      - name: Deterministic Vendor mock transport QA
+        run: npm run qa:mock --workspace @pol/mobile
+
       - name: Validate retailer Expo config
         working-directory: mvp/apps/mobile
         env:
