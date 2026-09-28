@@ -11,9 +11,9 @@ const vazirmatn = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-  title: "پُــــل | زیرساخت سفارش‌گذاری B2B",
+  title: "پُــــل | بازار و خرید عمده",
   description:
-    "پُــــل؛ لایه عملیاتی تجارت B2B برای خرده‌فروشان و تأمین‌کنندگان، از کشف و سبد چندفروشنده‌ای تا سفارش و fulfillment.",
+    "پُــــل؛ بازار و ابزار خرید و فروش عمده برای فروشگاه‌ها و بنکدارها، از پیدا کردن کالا تا سفارش و پیگیری تحویل.",
 };
 
 export default function RootLayout({
