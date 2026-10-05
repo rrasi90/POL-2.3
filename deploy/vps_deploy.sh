@@ -1,0 +1,207 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# POL self-hosted VPS deployment operator.
+# Safe-by-default:
+# - never drops/removes the PostgreSQL volume
+# - never runs destructive bootstrap/reset paths
+# - verifies the exact deployment ref before building
+# - stops on build, migration, or readiness failure
+# - writes an inspectable deployment log
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+BRANCH="${POL_DEPLOY_BRANCH:-deploy/vps-self-hosted-20260928}"
+COMPOSE=(docker compose --env-file .env -f docker-compose.vps.yml)
+LOG_DIR="${POL_DEPLOY_LOG_DIR:-$ROOT_DIR/../deploy-logs}"
+LOCK_FILE="${POL_DEPLOY_LOCK_FILE:-$ROOT_DIR/../.pol-deploy.lock}"
+WAIT_SECONDS="${POL_DEPLOY_WAIT_SECONDS:-180}"
+PUBLIC_BASE_URL="${POL_PUBLIC_BASE_URL:-}"
+
+mkdir -p "$LOG_DIR"
+
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+  echo "[DEPLOY] another deployment is already running: $LOCK_FILE" >&2
+  exit 20
+fi
+
+TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+LOG_FILE="$LOG_DIR/deploy-$TIMESTAMP.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+on_error() {
+  rc=$?
+  echo
+  echo "[DEPLOY] FAILED rc=$rc"
+  echo "[DEPLOY] commit: $(git rev-parse HEAD 2>/dev/null || echo unknown)"
+  echo "[DEPLOY] recent service state:"
+  "${COMPOSE[@]}" ps || true
+  echo "[DEPLOY] recent logs:"
+  "${COMPOSE[@]}" logs --no-color --tail=80 api worker web nginx || true
+  echo "[DEPLOY] log: $LOG_FILE"
+  exit "$rc"
+}
+trap on_error ERR
+
+die() {
+  echo "[DEPLOY] ERROR: $*" >&2
+  exit 1
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
+}
+
+echo "[DEPLOY] === POL VPS Deployment Operator ==="
+echo "[DEPLOY] root=$ROOT_DIR"
+echo "[DEPLOY] branch=$BRANCH"
+echo "[DEPLOY] log=$LOG_FILE"
+
+require_cmd git
+require_cmd docker
+require_cmd flock
+require_cmd curl
+
+[[ -f .env ]] || die ".env is missing"
+[[ -f docker-compose.vps.yml ]] || die "docker-compose.vps.yml is missing"
+
+echo "[DEPLOY] validating required environment without printing secrets"
+for key in POL_DB_USER POL_DB_PASSWORD POL_JWT_SECRET; do
+  value="$(grep -E "^$key=" .env | head -n1 | cut -d= -f2- || true)"
+  [[ -n "$value" ]] || die "$key is missing/empty in .env"
+done
+
+echo "[DEPLOY] fetching exact deployment ref"
+git fetch origin "refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
+
+echo "[DEPLOY] checkout exact remote branch"
+git checkout -B "$BRANCH" "origin/$BRANCH"
+
+HEAD="$(git rev-parse HEAD)"
+REMOTE_HEAD="$(git rev-parse "origin/$BRANCH")"
+[[ "$HEAD" == "$REMOTE_HEAD" ]] || die "local HEAD does not match origin/$BRANCH"
+
+echo "[DEPLOY] HEAD=$HEAD"
+
+echo "[DEPLOY] validating compose configuration"
+"${COMPOSE[@]}" config >/dev/null
+
+echo "[DEPLOY] building deployment images"
+"${COMPOSE[@]}" build
+
+echo "[DEPLOY] starting PostgreSQL only"
+"${COMPOSE[@]}" up -d postgres
+
+echo "[DEPLOY] waiting for PostgreSQL health"
+POSTGRES_CONTAINER_ID="$("${COMPOSE[@]}" ps -q postgres)"
+[[ -n "$POSTGRES_CONTAINER_ID" ]] || die "could not resolve PostgreSQL container"
+deadline=$((SECONDS + WAIT_SECONDS))
+while true; do
+  status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$POSTGRES_CONTAINER_ID" 2>/dev/null || true)"
+  case "$status" in
+    healthy)
+      echo "[DEPLOY] PostgreSQL healthy"
+      break
+      ;;
+    unhealthy)
+      die "PostgreSQL became unhealthy"
+      ;;
+    exited|dead)
+      die "PostgreSQL exited (status=$status)"
+      ;;
+  esac
+
+  (( SECONDS >= deadline )) && die "timeout waiting for PostgreSQL health"
+  sleep 3
+done
+
+echo "[DEPLOY] applying forward-only production migrations"
+"${COMPOSE[@]}" run --rm migrate
+
+echo "[DEPLOY] starting API/worker/web/nginx"
+"${COMPOSE[@]}" up -d api worker web nginx
+
+echo "[DEPLOY] verifying container state"
+"${COMPOSE[@]}" ps
+
+echo "[DEPLOY] waiting for web and API readiness"
+readiness_deadline=$((SECONDS + 45))
+until curl -fsS --max-time 5 http://127.0.0.1/healthz >/dev/null 2>&1 && \
+      curl -fsS --max-time 5 http://127.0.0.1/readyz >/dev/null 2>&1 && \
+      curl -fsSI --max-time 5 http://127.0.0.1/ >/dev/null 2>&1; do
+  (( SECONDS >= readiness_deadline )) && die "timeout waiting for web and API readiness"
+  sleep 2
+done
+
+echo "[DEPLOY] verifying internal readiness"
+curl -fsS --max-time 15 http://127.0.0.1/healthz
+printf '\\n'
+curl -fsS --max-time 15 http://127.0.0.1/readyz
+printf '\\n'
+
+echo "[DEPLOY] verifying landing page and canonical brand assets"
+LANDING_HTML="$(curl -fsS --max-time 20 http://127.0.0.1/)"
+printf '%s' "$LANDING_HTML" >/tmp/pol-landing.html
+grep -Fq "خرید عمده" <<<"$LANDING_HTML" || die "landing page value proposition marker missing"
+grep -Fq "ساده‌تر از همیشه" <<<"$LANDING_HTML" || die "landing page headline marker missing"
+
+CSS_ASSET="$(grep -oE '/_next/static/css/[^"]+\.css' /tmp/pol-landing.html 2>/dev/null | head -n1 || true)"
+if [[ -z "$CSS_ASSET" ]]; then
+  curl -fsS --max-time 15 http://127.0.0.1/ >/tmp/pol-landing.html
+  CSS_ASSET="$(grep -oE '/_next/static/css/[^"]+\.css' /tmp/pol-landing.html | head -n1 || true)"
+fi
+[[ -n "$CSS_ASSET" ]] || die "landing CSS asset reference missing"
+curl -fsS --max-time 15 "http://127.0.0.1$CSS_ASSET" -o /tmp/pol-landing.css
+test -s /tmp/pol-landing.css || die "landing CSS asset is empty"
+
+for asset in corporate market vendor; do
+  curl -fsS --max-time 15 "http://127.0.0.1/brand/$asset" -o "/tmp/pol-brand-$asset.png"
+  test -s "/tmp/pol-brand-$asset.png" || die "brand asset is empty: $asset"
+  PNG_MAGIC="$(od -An -tx1 -N8 "/tmp/pol-brand-$asset.png" | tr -d " \n")"
+  [[ "$PNG_MAGIC" == "89504e470d0a1a0a" ]] || die "brand asset is not a valid PNG: $asset"
+done
+
+curl -fsS --max-time 15 http://127.0.0.1/ >/tmp/pol-landing.html
+printf 'Landing HTML bytes: '
+wc -c </tmp/pol-landing.html
+printf 'Landing CSS bytes: '
+wc -c </tmp/pol-landing.css
+printf 'Brand asset bytes: corporate='
+wc -c </tmp/pol-brand-corporate.png
+printf ' market='
+wc -c </tmp/pol-brand-market.png
+printf ' vendor='
+wc -c </tmp/pol-brand-vendor.png
+printf '\\n'
+
+if [[ -n "$PUBLIC_BASE_URL" ]]; then
+  echo "[DEPLOY] verifying public URL: $PUBLIC_BASE_URL"
+  curl -fsS --max-time 20 "$PUBLIC_BASE_URL/healthz"
+  printf '\\n'
+  curl -fsS --max-time 20 "$PUBLIC_BASE_URL/readyz"
+  printf '\\n'
+
+  PUBLIC_LANDING_HTML="$(curl -fsS --max-time 20 "$PUBLIC_BASE_URL/")"
+  printf '%s' "$PUBLIC_LANDING_HTML" >/tmp/pol-public-landing.html
+  grep -Fq "خرید عمده" <<<"$PUBLIC_LANDING_HTML" || die "public landing value proposition marker missing"
+  grep -Fq "ساده‌تر از همیشه" <<<"$PUBLIC_LANDING_HTML" || die "public landing headline marker missing"
+
+  PUBLIC_HTML="$PUBLIC_LANDING_HTML"
+  PUBLIC_CSS_ASSET="$(grep -oE '/_next/static/css/[^"]+\.css' <<<"$PUBLIC_HTML" | head -n1 || true)"
+  [[ -n "$PUBLIC_CSS_ASSET" ]] || die "public landing CSS asset reference missing"
+  curl -fsS --max-time 20 "$PUBLIC_BASE_URL$PUBLIC_CSS_ASSET" -o /tmp/pol-public-landing.css
+  test -s /tmp/pol-public-landing.css || die "public landing CSS asset is empty"
+
+  for asset in corporate market vendor; do
+    curl -fsS --max-time 20 "$PUBLIC_BASE_URL/brand/$asset" -o "/tmp/pol-public-brand-$asset.png"
+    test -s "/tmp/pol-public-brand-$asset.png" || die "public brand asset is empty: $asset"
+    PUBLIC_PNG_MAGIC="$(od -An -tx1 -N8 "/tmp/pol-public-brand-$asset.png" | tr -d " \n")"
+    [[ "$PUBLIC_PNG_MAGIC" == "89504e470d0a1a0a" ]] || die "public brand asset is not a valid PNG: $asset"
+  done
+fi
+
+echo "[DEPLOY] === PASS ==="
+echo "[DEPLOY] commit=$HEAD"
+echo "[DEPLOY] log=$LOG_FILE"
