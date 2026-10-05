@@ -89,9 +89,9 @@
 |----|-------|-------|------|--------------|--------|--------|
 | V-01 | Dashboard (queue-first) | `/vendor` | VENDOR_* | GET `/orders` (filters), inventory stale | doc 22 L377–387 | IMPLEMENTED |
 | V-02 | Orders queue | `/vendor/orders` | VENDOR_* | GET `/orders` | doc 22 L389–399; MT VD-02 | IMPLEMENTED |
-| V-03 | Order detail + accept/reject/partial | `/vendor/orders/[id]` | VENDOR_* | accept/reject/partial HTTP | doc 22 L401–410; MT VD-02/18 | IMPLEMENTED |
+| V-03 | Order detail + accept/reject/partial | `/vendor/orders/[id]` | VENDOR_* (fulfillment); VENDOR_OWNER (accept/reject/partial) | accept/reject/partial HTTP | doc 22 L401–410; MT VD-02/18 | IMPLEMENTED |
 | V-04 | Catalog | `/vendor/catalog` | VENDOR_* | `/catalog/vendors/products*` | doc 22 L412–420; MT VD-05 | VERIFIED |
-| V-05 | Pricing | `/vendor/catalog/[id]/prices` | VENDOR_* | prices current/set | doc 22 L422–426 | IMPLEMENTED |
+| V-05 | Pricing | `/vendor/catalog/[id]/prices` | VENDOR_* (view); VENDOR_OWNER (manage) | prices current/set | doc 22 L422–426 | IMPLEMENTED |
 | V-06 | Inventory | `/vendor/inventory` | VENDOR_* | inventory GET/PATCH | doc 22 L428–435; MT VD-01 | IMPLEMENTED |
 | V-07 | Daily inventory confirmation | `/vendor/inventory/daily` | VENDOR_* | inventory/daily/* | doc 22 L437–441 | VERIFIED |
 | V-08 | Referral (attribution only) | `/vendor/referrals` | VENDOR_* | `/referrals*` | doc 22 L443–449; D-016 | VERIFIED |
@@ -100,7 +100,7 @@
 | V-11 | Staff / access + Permission Editor | `/vendor/staff` | VENDOR_OWNER | `GET/POST/PATCH /vendors/staff*` + `/vendors/staff/{membership_id}/permissions*` | doc 22 L463–468; MT VD-07/15; D-026 | IMPLEMENTED |
 | V-12 | Vendor profile | `/profile` vendor ctx | VENDOR_* | profile/context | doc 22 L470–475; MT VD-12 | VERIFIED |
 | V-14 | Storefront visibility / management boundary | `/vendor/storefront` | VENDOR_OWNER | storefront read; MVP write scope is not contractually defined | MT VD-14; D-024 | IMPLEMENTED |
-| V-16 | Barcode / continuous scan | (mobile) | VENDOR_STAFF + inv.scan | match-barcode, continuous-scan **CONTRACT** | MT VD-16; D-028 | NOT_APPLICABLE |
+| V-16 | Barcode / continuous scan | (mobile) | VENDOR_STAFF + `inventory.scan` (Owner inherits) | barcode lookup/match + candidate workflow; continuous-scan/camera runtime remains device-gated | MT VD-16; D-028 | IMPLEMENTED / CAMERA_RUNTIME_GAP |
 | V-17 | Financial activity | `/vendor/finance` | VENDOR_OWNER | settlements/invoices D-021 | MT VD-17 | IMPLEMENTED |
 
 ### §C evidence — Vendor module (QA cycle 1, 2026-09-22)

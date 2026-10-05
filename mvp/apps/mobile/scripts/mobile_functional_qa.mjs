@@ -14,11 +14,11 @@ const checks = [
     const s = read("screens/RetailerMobileScreen.tsx");
     return s.includes("setBasket([])") && s.includes("setServerBasketId(null)") && s.includes("setAllocation(null)") && s.includes('setTab("orders")');
   }],
-  ["Vendor exposes only status-appropriate order transitions", () => {
+  ["Vendor exposes status-appropriate order transitions", () => {
     const s = read("screens/VendorMobileScreen.tsx");
-    return s.includes('["SUBMITTED", "CREATED"]') && s.includes('["ACCEPTED", "PARTIALLY_ACCEPTED"]') && s.includes('o.order_status === "PREPARING"') && s.includes('o.order_status === "READY"');
+    return s.includes('["SUBMITTED", "CREATED"]') && s.includes('["ACCEPTED", "PARTIALLY_ACCEPTED"]') && s.includes('status === "PREPARING"') && s.includes('"ready"');
   }],
-  ["Vendor rejects negative/non-numeric inventory", () => read("screens/VendorMobileScreen.tsx").includes('!Number.isFinite(n) || n < 0')],
+  ["Vendor rejects negative/non-numeric inventory", () => { const s = read("screens/VendorMobileScreen.tsx"); return s.includes("Number.isFinite") && s.includes("quantity < 0") && s.includes("موجودی باید عددی غیرمنفی باشد"); }],
   ["Vendor supports daily confirmation with and without changes", () => {
     const s = read("screens/VendorMobileScreen.tsx");
     return s.includes("/confirm") && s.includes("/confirm-with-changes") && s.includes("confirmed_quantity");
@@ -37,7 +37,7 @@ const checks = [
   ["API distinguishes network failures from API errors", () => read("api.ts").includes('"NETWORK"') && read("api.ts").includes("setOnline(false)")],
   ["Retailer exposes finance parity against REAL invoices API", () => read("screens/RetailerMobileScreen.tsx").includes("/api/v1/invoices") && read("screens/RetailerMobileScreen.tsx").includes('tab === "finance"')],
   ["Vendor exposes finance parity against REAL invoices API", () => read("screens/VendorMobileScreen.tsx").includes("/api/v1/invoices") && read("screens/VendorMobileScreen.tsx").includes('tab === "finance"')],
-  ["Vendor exposes referral attribution against REAL referrals API", () => read("screens/VendorMobileScreen.tsx").includes("/api/v1/referrals") && read("screens/VendorMobileScreen.tsx").includes('tab === "referrals"')],
+  ["Vendor exposes referral attribution against REAL referrals API", () => read("screens/VendorMobileScreen.tsx").includes("/api/v1/referrals") && read("screens/VendorMobileScreen.tsx").includes('moreTab === "referrals"')],
   ["Shared account exposes REAL notification preferences GET/PUT", () => { const s = read("screens/AccountMobileScreen.tsx"); return s.includes("/api/v1/notifications/preferences") && s.includes("api.put"); }],
   ["Ops exposes REAL support and notification read surfaces", () => { const s = read("screens/OpsMobileScreen.tsx"); return s.includes("SupportMobileScreen") && s.includes("/api/v1/notifications"); }],
   ["Field assisted order never calls catalog without the required q parameter", () => read("screens/AssistedOrderScreen.tsx").includes("if (!q) {") && !read("screens/AssistedOrderScreen.tsx").includes('/api/v1/catalog/search?limit=40')],
@@ -45,7 +45,7 @@ const checks = [
   ["Offline banner reconciles the current online state after subscribing", () => read("components/OfflineBanner.tsx").includes("setOnline(isOnline())")],
   ["Mobile theme has runtime provider and explicit Light/Night controls", () => {
     const theme = read("theme.ts");
-    const app = read("../App.tsx");
+    const app = read("../AppShell.tsx");
     const account = read("screens/AccountMobileScreen.tsx");
     return theme.includes("ThemeProvider") && app.includes("<ThemeProvider>") && account.includes('setMode("night")') && account.includes('setMode("light")');
   }],

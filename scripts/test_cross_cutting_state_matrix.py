@@ -8,7 +8,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MATRIX = REPO_ROOT / "mvp" / "CROSS_CUTTING_STATE_ACTION_MATRIX.md"
 MOBILE_API = REPO_ROOT / "mvp" / "apps" / "mobile" / "src" / "api.ts"
-MOBILE_APP = REPO_ROOT / "mvp" / "apps" / "mobile" / "App.tsx"
+MOBILE_APP = REPO_ROOT / "mvp" / "apps" / "mobile" / "AppShell.tsx"
 MOBILE_ACCOUNT = REPO_ROOT / "mvp" / "apps" / "mobile" / "src" / "screens" / "AccountMobileScreen.tsx"
 CHECKOUT_GATEWAY = REPO_ROOT / "scripts" / "checkout_gateway.py"
 REVALIDATION = REPO_ROOT / "scripts" / "revalidation_checkout.py"

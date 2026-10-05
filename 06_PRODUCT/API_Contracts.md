@@ -274,7 +274,7 @@
 ```
 
 ### ۵.۲. پذیرش کامل سفارش توسط بنکدار (`POST /orders/:id/accept`)
-* **مجوز:** بنکدار مقصد در سازمان فعال (VENDOR_OWNER, VENDOR_STAFF). شناسه بنکدار و tenant از ApplicationContext استخراج می‌شود و از کلاینت دریافت نمی‌شود.
+* **مجوز:** بنکدار مالک در سازمان فعال (`VENDOR_OWNER`). شناسه بنکدار و tenant از ApplicationContext استخراج می‌شود و از کلاینت دریافت نمی‌شود.
 * **بدنه درخواست:** ندارد.
 * **انتقال وضعیت:** فقط SUBMITTED -> ACCEPTED.
 * **پیامد کانونیکال:** همه reservationهای فعال سفارش به CONSUMED منتقل می‌شوند، reserved_quantity به همان میزان کاهش و physical_quantity کسر می‌شود، accepted_quantity اقلام برابر مقدار سفارش می‌شود و برای اعضای فعال سازمان خرده‌فروش رویداد ORDER_ACCEPTED در outbox ایجاد می‌شود.
@@ -282,7 +282,7 @@
 * **پاسخ موفق (200 OK):** شامل order_id, order_number, order_group_id, order_status, total_amount_toman, accepted_item_count, reservation_count.
 
 ### ۵.۳. رد کامل سفارش توسط بنکدار (`POST /orders/:id/reject`)
-* **مجوز:** بنکدار مقصد در سازمان فعال (`VENDOR_OWNER`, `VENDOR_STAFF`). شناسه بنکدار و tenant از `ApplicationContext` استخراج می‌شود.
+* **مجوز:** بنکدار مالک در سازمان فعال (`VENDOR_OWNER`). شناسه بنکدار و tenant از `ApplicationContext` استخراج می‌شود.
 * **بدنه درخواست:**
 ```json
 {
@@ -301,7 +301,7 @@
 **مرحله ۱ — پیشنهاد بنکدار**
 `POST /api/v1/orders/:id/partial-acceptance-proposals`
 
-* **مجوز:** بنکدار مقصد در سازمان فعال (`VENDOR_OWNER`, `VENDOR_STAFF`).
+* **مجوز:** بنکدار مالک در سازمان فعال (`VENDOR_OWNER`).
 * **Idempotency:** هدر `Idempotency-Key` باید UUIDv4 باشد.
 * **بدنه درخواست:**
 ```json
