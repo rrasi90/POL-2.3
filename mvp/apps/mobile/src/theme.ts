@@ -19,10 +19,8 @@ export type Palette = {
   dangerBg: string;
   infoBg: string;
   neutralBg: string;
-  onBrand: string;
-  onDanger: string;
-  onWarning: string;
-  shadow: string;
+  elevated: string;
+  brandSoft: string;
 };
 
 const palettes: Record<ThemeMode, Palette> = {
@@ -42,10 +40,8 @@ const palettes: Record<ThemeMode, Palette> = {
     dangerBg: "#FEF2F2",
     infoBg: "#EFF6FF",
     neutralBg: "#F1F5F9",
-    onBrand: "#FFFFFF",
-    onDanger: "#FFFFFF",
-    onWarning: "#FFFFFF",
-    shadow: "#0F172A",
+    elevated: "#FFFFFF",
+    brandSoft: "#E8F0FF",
   },
   night: {
     bg: "#0F141C",
@@ -63,10 +59,8 @@ const palettes: Record<ThemeMode, Palette> = {
     dangerBg: "#3A171A",
     infoBg: "#172A46",
     neutralBg: "#202938",
-    onBrand: "#0F172A",
-    onDanger: "#FFFFFF",
-    onWarning: "#0F172A",
-    shadow: "#000000",
+    elevated: "#202A38",
+    brandSoft: "#172A46",
   },
 };
 
@@ -88,19 +82,14 @@ export function ThemeProvider(props: { children: React.ReactNode }): React.React
     setModeState(next);
   }, []);
 
-  const value = useMemo<ThemeContextValue>(
-    () => ({ mode, colors: palettes[mode], setMode }),
-    [mode, setMode],
-  );
+  const value = useMemo<ThemeContextValue>(() => ({ mode, colors: palettes[mode], setMode }), [mode, setMode]);
 
   return React.createElement(ThemeContext.Provider, { value }, props.children);
 }
 
 export function useTheme(): ThemeContextValue {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useTheme must be used inside ThemeProvider");
-  }
+  if (!context) throw new Error("useTheme must be used inside ThemeProvider");
   return context;
 }
 
@@ -117,18 +106,17 @@ export function getThemeMode(): ThemeMode {
   return activeMode;
 }
 
-/* Backward-compatible dynamic palette access for code that reads colors directly. */
 export const colors = new Proxy({} as Palette, {
   get: (_target, property: string) => palettes[activeMode][property as keyof Palette],
 });
 
-export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 };
+export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
 
 export const card = {
   backgroundColor: colors.surface,
   borderColor: colors.border,
   borderWidth: 1,
-  borderRadius: 12,
+  borderRadius: 16,
   padding: spacing.lg,
 } as const;
 
