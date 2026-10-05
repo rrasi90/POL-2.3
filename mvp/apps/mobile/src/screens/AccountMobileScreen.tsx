@@ -1,48 +1,29 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { api, clearSession } from "../api";
-import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
+import { Btn, Card, Empty, ErrorBox, IconBadge, Input, StatusChip, Screen } from "../components/ui";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 
 type Profile = {
-  user_profile?: {
-    user_id?: string;
-    display_name?: string | null;
-    email?: string | null;
-    preferred_language?: string | null;
-    timezone?: string | null;
-    bio?: string | null;
-    phone_number?: string | null;
-  };
+  user_profile?: { user_id?: string; display_name?: string | null; email?: string | null; preferred_language?: string | null; timezone?: string | null; bio?: string | null; phone_number?: string | null };
   membership?: { organization_id?: string; organization_name?: string | null; role?: string | null } | null;
 };
 type Preferences = { push_enabled?: boolean; sms_enabled?: boolean; email_enabled?: boolean };
-type Notification = {
-  id: string;
-  event_name?: string | null;
-  title?: string | null;
-  body?: string | null;
-  priority?: string | null;
-  created_at?: string | null;
-  read?: boolean;
-  is_read?: boolean;
-};
+type Notification = { id: string; event_name?: string | null; title?: string | null; body?: string | null; priority?: string | null; created_at?: string | null; read?: boolean; is_read?: boolean };
 
 function notificationsOf(data: unknown): Notification[] {
   if (Array.isArray(data)) return data as Notification[];
   if (!data || typeof data !== "object") return [];
   const o = data as Record<string, unknown>;
-  for (const k of ["items", "notifications", "data", "results"]) {
-    if (Array.isArray(o[k])) return o[k] as Notification[];
-  }
+  for (const k of ["items", "notifications", "data", "results"]) if (Array.isArray(o[k])) return o[k] as Notification[];
   return [];
 }
 
 export function AccountMobileScreen(props: { role: Role; onBack?: () => void; onLogout?: () => void }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   const { mode, setMode } = useTheme();
-  const [tab, setTab] = useState<"profile" | "notifications" | "preferences">("profile");
+  const [view, setView] = useState<"profile" | "notifications" | "preferences">("profile");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [preferences, setPreferences] = useState<Preferences>({});
@@ -57,14 +38,8 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
   const loadProfile = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const [p, c] = await Promise.all([
-        api.get<Profile>("/api/v1/profile"),
-        api.get<Profile>("/api/v1/profile/context"),
-      ]);
-      const merged: Profile = {
-        user_profile: p.user_profile,
-        membership: c.membership ?? p.membership ?? null,
-      };
+      const [p, c] = await Promise.all([api.get<Profile>("/api/v1/profile"), api.get<Profile>("/api/v1/profile/context")]);
+      const merged: Profile = { user_profile: p.user_profile, membership: c.membership ?? p.membership ?? null };
       setProfile(merged);
       setDisplayName(merged.user_profile?.display_name || "");
       setEmail(merged.user_profile?.email || "");
@@ -83,16 +58,14 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
 
   const loadNotifications = useCallback(async () => {
     setLoading(true); setError(null);
-    try {
-      const d = await api.get<unknown>("/api/v1/notifications?limit=50&offset=0");
-      setNotifications(notificationsOf(d));
-    } catch (e) { setError(e instanceof Error ? e.message : "دریافت اعلان‌ها ناموفق بود"); }
+    try { const d = await api.get<unknown>("/api/v1/notifications?limit=50&offset=0"); setNotifications(notificationsOf(d)); }
+    catch (e) { setError(e instanceof Error ? e.message : "دریافت اعلان‌ها ناموفق بود"); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
-    void (tab === "profile" ? loadProfile() : tab === "notifications" ? loadNotifications() : loadPreferences());
-  }, [tab, loadProfile, loadNotifications, loadPreferences]);
+    void (view === "profile" ? loadProfile() : view === "notifications" ? loadNotifications() : loadPreferences());
+  }, [view, loadProfile, loadNotifications, loadPreferences]);
 
   async function savePreferences(): Promise<void> {
     setLoading(true); setError(null); setNotice(null);
@@ -101,106 +74,171 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
     finally { setLoading(false); }
   }
 
-  async function logout(): Promise<void> {
-    setLoading(true); setError(null); setNotice(null);
-    try {
-      await api.delete("/api/v1/auth/sessions/current");
-      await clearSession();
-      props.onLogout?.();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "خروج از حساب ناموفق بود");
-    } finally { setLoading(false); }
-  }
-
   async function saveProfile(): Promise<void> {
     if (!displayName.trim()) { setError("نام نمایشی الزامی است."); return; }
     setLoading(true); setError(null); setNotice(null);
     try {
-      await api.put("/api/v1/profile", {
-        display_name: displayName.trim(),
-        email: email.trim() ? email.trim() : null,
-        preferred_language: "fa-IR",
-        timezone: timezone.trim(),
-        bio: bio.trim() ? bio.trim() : null,
-      });
+      await api.put("/api/v1/profile", { display_name: displayName.trim(), email: email.trim() ? email.trim() : null, preferred_language: "fa-IR", timezone: timezone.trim(), bio: bio.trim() ? bio.trim() : null });
       await loadProfile();
       setNotice("حساب ذخیره شد.");
     } catch (e) { setError(e instanceof Error ? e.message : "ذخیره حساب ناموفق بود"); }
     finally { setLoading(false); }
   }
 
+  async function logout(): Promise<void> {
+    setLoading(true); setError(null); setNotice(null);
+    try { await api.delete("/api/v1/auth/sessions/current"); await clearSession(); props.onLogout?.(); }
+    catch (e) { setError(e instanceof Error ? e.message : "خروج از حساب ناموفق بود"); }
+    finally { setLoading(false); }
+  }
+
   return (
     <Screen>
-      <ScrollView>
-        <Title badge={props.role}>حساب کاربری</Title>
-        {props.onBack ? <Btn label="بازگشت" tone="ghost" onPress={props.onBack} /> : null}
-        <View style={styles.tabs}>
-          <Btn label="پروفایل" onPress={() => setTab("profile")} tone={tab === "profile" ? "primary" : "ghost"} />
-          <Btn label="اعلان‌ها" onPress={() => setTab("notifications")} tone={tab === "notifications" ? "primary" : "ghost"} />
-          <Btn label="تنظیمات اعلان" onPress={() => setTab("preferences")} tone={tab === "preferences" ? "primary" : "ghost"} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <View style={styles.header}>
+          <Pressable onPress={props.onBack} style={styles.backButton}><Text style={styles.backText}>›</Text></Pressable>
+          <Text style={styles.title}>پروفایل</Text>
+          <View style={styles.headerSpacer} />
         </View>
+
+        <Card style={styles.profileHero}>
+          <View style={styles.avatar}><Text style={styles.avatarText}>👤</Text></View>
+          <View style={styles.profileCopy}>
+            <Text style={styles.name}>{profile?.user_profile?.display_name || "مغازه‌دار پل"}</Text>
+            <Text style={styles.sub}>{profile?.membership?.organization_name || "فروشگاه شما"}</Text>
+            <StatusChip label="حساب فعال" tone="ok" />
+          </View>
+        </Card>
+
         <ErrorBox message={error} />
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-        {tab === "profile" ? (
-          <Card>
-            <Text style={styles.h2}>اطلاعات حساب</Text>
-            <Text style={styles.meta}>پوسته نمایش: {mode === "night" ? "شب" : "روشن"}</Text>
-            <View style={styles.themeRow}>
-              <Btn label="روشن" onPress={() => setMode("light")} tone={mode === "light" ? "primary" : "ghost"} />
-              <Btn label="شب" onPress={() => setMode("night")} tone={mode === "night" ? "primary" : "ghost"} />
-            </View>
-            <Text style={styles.meta}>نقش: {profile?.membership?.role || props.role}</Text>
-            <Text style={styles.meta}>سازمان: {profile?.membership?.organization_name || profile?.membership?.organization_id || "—"}</Text>
-            <Text style={styles.meta}>شماره: {profile?.user_profile?.phone_number || "—"}</Text>
-            <Input label="نام نمایشی" value={displayName} onChangeText={setDisplayName} maxLength={200} />
-            <Input label="ایمیل" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" maxLength={254} />
-            <Input label="منطقه زمانی" value={timezone} onChangeText={setTimezone} maxLength={100} />
-            <Input label="شرح" value={bio} onChangeText={setBio} multiline numberOfLines={4} maxLength={2000} />
-            <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+
+        {view === "profile" ? (
+          <>
+            <SectionRow icon="🏪" title="اطلاعات فروشگاه" subtitle="نام، تلفن و مشخصات حساب" onPress={() => undefined} />
+            <Card style={styles.editCard}>
+              <Input label="نام نمایشی" value={displayName} onChangeText={setDisplayName} maxLength={200} />
+              <Input label="ایمیل" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" maxLength={254} />
+              <Input label="منطقه زمانی" value={timezone} onChangeText={setTimezone} maxLength={100} />
+              <Input label="شرح" value={bio} onChangeText={setBio} multiline numberOfLines={4} maxLength={2000} />
               <Btn label="ذخیره تغییرات" onPress={() => void saveProfile()} loading={loading} disabled={loading} />
-              <Btn label="خروج از حساب" tone="danger" onPress={() => void logout()} loading={loading} disabled={loading} />
-            </View>
-          </Card>
-        ) : tab === "preferences" ? (
-          <Card>
-            <Text style={styles.h2}>کانال‌های اعلان</Text>
-            <Text style={styles.meta}>این تنظیمات مستقیماً از API اعلان خوانده و ذخیره می‌شوند.</Text>
-            <Btn label={"Push: " + (preferences.push_enabled ? "فعال" : "غیرفعال")} onPress={() => setPreferences((p) => ({ ...p, push_enabled: !p.push_enabled }))} tone="ghost" />
-            <Btn label={"SMS: " + (preferences.sms_enabled ? "فعال" : "غیرفعال")} onPress={() => setPreferences((p) => ({ ...p, sms_enabled: !p.sms_enabled }))} tone="ghost" />
-            <Btn label={"Email: " + (preferences.email_enabled ? "فعال" : "غیرفعال")} onPress={() => setPreferences((p) => ({ ...p, email_enabled: !p.email_enabled }))} tone="ghost" />
-            <Btn label="ذخیره تنظیمات" onPress={() => void savePreferences()} loading={loading} disabled={loading} />
-          </Card>
-        ) : notifications.length === 0 ? (
-          <Empty title="اعلانی وجود ندارد" description="در صورت ثبت اعلان، اینجا نمایش داده می‌شود." />
+            </Card>
+
+            <SectionRow icon="🔔" title="اعلان‌ها" subtitle="سفارش‌ها، پرداخت‌ها و پیام‌های پل" onPress={() => setView("notifications")} />
+            <SectionRow icon="⚙️" title="تنظیمات اعلان" subtitle="Push، پیامک و ایمیل" onPress={() => setView("preferences")} />
+            <Card style={styles.menuCard}>
+              <View style={styles.menuHeader}>
+                <IconBadge symbol="◐" tone="brand" />
+                <View style={styles.grow}><Text style={styles.menuTitle}>پوسته نمایش</Text><Text style={styles.menuSub}>{mode === "night" ? "حالت شب" : "حالت روشن"}</Text></View>
+              </View>
+              <View style={styles.themeRow}>
+                <Btn compact label="روشن" onPress={() => setMode("light")} tone={mode === "light" ? "primary" : "ghost"} />
+                <Btn compact label="شب" onPress={() => setMode("night")} tone={mode === "night" ? "primary" : "ghost"} />
+              </View>
+            </Card>
+
+            <SectionRow icon="🎧" title="پشتیبانی" subtitle="رسیدگی به درخواست‌های شما از داخل پل" onPress={() => undefined} />
+            <SectionRow icon="ℹ️" title="درباره پل" subtitle="بازار عمده‌فروشی برای مغازه‌داران" onPress={() => undefined} />
+            <Btn label="خروج از حساب" tone="danger" onPress={() => void logout()} loading={loading} disabled={loading} />
+          </>
+        ) : view === "notifications" ? (
+          <>
+            <BackToProfile onPress={() => setView("profile")} />
+            {notifications.length === 0 ? <Empty title="اعلانی وجود ندارد" description="در صورت ثبت اعلان، اینجا نمایش داده می‌شود." /> : notifications.map((n) => {
+              const unread = typeof n.is_read === "boolean" ? !n.is_read : typeof n.read === "boolean" ? !n.read : false;
+              return (
+                <Card key={n.id} style={styles.notificationCard}>
+                  <View style={styles.notificationTop}>
+                    <StatusChip label={n.priority || "NORMAL"} tone={n.priority === "CRITICAL" || n.priority === "HIGH" ? "warn" : "info"} />
+                    {unread ? <StatusChip label="جدید" tone="ok" /> : null}
+                  </View>
+                  <Text style={styles.menuTitle}>{n.title || "اعلان"}</Text>
+                  <Text style={styles.body}>{n.body || "—"}</Text>
+                  <Text style={styles.meta}>{n.created_at || "—"}</Text>
+                </Card>
+              );
+            })}
+          </>
         ) : (
-          notifications.map((n) => {
-            const unread = typeof n.is_read === "boolean" ? !n.is_read : typeof n.read === "boolean" ? !n.read : null;
-            return (
-              <Card key={n.id}>
-                <View style={styles.row}>
-                  <StatusChip label={n.priority || "NORMAL"} tone={n.priority === "CRITICAL" || n.priority === "HIGH" ? "warn" : "info"} />
-                  {unread ? <StatusChip label="خوانده‌نشده" tone="info" /> : null}
-                </View>
-                <Text style={styles.h2}>{n.title || "اعلان"}</Text>
-                <Text style={styles.body}>{n.body || "—"}</Text>
-                <Text style={styles.meta}>{n.event_name || "—"} · {n.created_at || "—"}</Text>
-              </Card>
-            );
-          })
+          <>
+            <BackToProfile onPress={() => setView("profile")} />
+            <Card>
+              <Text style={styles.menuTitle}>روش‌های دریافت اعلان</Text>
+              <Text style={styles.meta}>کانال‌های اعلان را انتخاب کنید و ذخیره کنید.</Text>
+              <ToggleRow label="Push" value={Boolean(preferences.push_enabled)} onPress={() => setPreferences((p) => ({ ...p, push_enabled: !p.push_enabled }))} />
+              <ToggleRow label="پیامک" value={Boolean(preferences.sms_enabled)} onPress={() => setPreferences((p) => ({ ...p, sms_enabled: !p.sms_enabled }))} />
+              <ToggleRow label="ایمیل" value={Boolean(preferences.email_enabled)} onPress={() => setPreferences((p) => ({ ...p, email_enabled: !p.email_enabled }))} />
+              <Btn label="ذخیره تنظیمات" onPress={() => void savePreferences()} loading={loading} disabled={loading} />
+            </Card>
+          </>
         )}
       </ScrollView>
     </Screen>
   );
 }
 
+function SectionRow(props: { icon: string; title: string; subtitle: string; onPress: () => void }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <Pressable onPress={props.onPress} style={styles.sectionRow} accessibilityRole="button">
+      <Text style={styles.arrow}>‹</Text>
+      <View style={styles.grow}><Text style={styles.menuTitle}>{props.title}</Text><Text style={styles.menuSub}>{props.subtitle}</Text></View>
+      <View style={styles.menuIcon}><Text>{props.icon}</Text></View>
+    </Pressable>
+  );
+}
+
+function BackToProfile(props: { onPress: () => void }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
+  return <Pressable onPress={props.onPress} style={styles.backLink}><Text style={styles.backLinkText}>›  بازگشت به پروفایل</Text></Pressable>;
+}
+
+function ToggleRow(props: { label: string; value: boolean; onPress: () => void }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <Pressable onPress={props.onPress} style={styles.toggleRow}>
+      <View style={[styles.toggle, props.value && styles.toggleOn]}><View style={[styles.toggleKnob, props.value && styles.toggleKnobOn]} /></View>
+      <Text style={styles.toggleLabel}>{props.label}</Text>
+    </Pressable>
+  );
+}
+
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
-  themeRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
-  tabs: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
-  row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  h2: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 6 },
-  body: { color: colors.text, fontSize: 13, lineHeight: 20 },
-  meta: { color: colors.textSecondary, fontSize: 11, lineHeight: 18, marginBottom: 3 },
-  notice: { color: colors.success, fontSize: 13, marginBottom: spacing.sm },
+    scroll: { paddingBottom: 36 },
+    header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
+    backButton: { width: 42, height: 42, borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
+    backText: { color: colors.text, fontSize: 26 },
+    headerSpacer: { width: 42 },
+    title: { flex: 1, color: colors.text, fontSize: 22, fontWeight: "900", textAlign: "right", marginRight: spacing.sm },
+    profileHero: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.xl },
+    avatar: { width: 78, height: 78, borderRadius: 39, backgroundColor: colors.neutralBg, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+    avatarText: { fontSize: 32 },
+    profileCopy: { flex: 1 },
+    name: { color: colors.text, fontSize: 20, fontWeight: "900", textAlign: "right" },
+    sub: { color: colors.textSecondary, fontSize: 11, marginTop: 3, marginBottom: 7, textAlign: "right" },
+    editCard: { paddingBottom: spacing.md },
+    sectionRow: { minHeight: 72, paddingHorizontal: spacing.md, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm },
+    menuIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: colors.brandSoft, alignItems: "center", justifyContent: "center" },
+    menuTitle: { color: colors.text, fontSize: 14, fontWeight: "800", textAlign: "right" },
+    menuSub: { color: colors.textSecondary, fontSize: 11, marginTop: 3, textAlign: "right" },
+    arrow: { color: colors.textMuted, fontSize: 24 },
+    menuCard: { paddingBottom: spacing.md },
+    menuHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.md },
+    themeRow: { flexDirection: "row", gap: spacing.sm },
+    notice: { color: colors.success, fontSize: 12, textAlign: "right", marginBottom: spacing.sm },
+    grow: { flex: 1, minWidth: 0 },
+    notificationCard: { paddingBottom: spacing.md },
+    notificationTop: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
+    body: { color: colors.text, fontSize: 13, lineHeight: 21, textAlign: "right", marginTop: 4 },
+    meta: { color: colors.textMuted, fontSize: 11, lineHeight: 18, textAlign: "right", marginTop: 5 },
+    backLink: { marginBottom: spacing.md },
+    backLinkText: { color: colors.brand, fontSize: 12, fontWeight: "800", textAlign: "right" },
+    toggleRow: { minHeight: 54, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    toggleLabel: { color: colors.text, fontSize: 13, fontWeight: "700" },
+    toggle: { width: 44, height: 26, borderRadius: 13, backgroundColor: colors.neutralBg, borderWidth: 1, borderColor: colors.border, padding: 3, justifyContent: "center" },
+    toggleOn: { backgroundColor: colors.brand, borderColor: colors.brand },
+    toggleKnob: { width: 18, height: 18, borderRadius: 9, backgroundColor: colors.textMuted },
+    toggleKnobOn: { backgroundColor: "#fff", alignSelf: "flex-end" },
   });
 }
