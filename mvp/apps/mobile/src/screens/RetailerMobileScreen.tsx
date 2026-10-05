@@ -114,10 +114,7 @@ export function RetailerMobileScreen(props: {
   }
 
   async function createBasket(): Promise<void> {
-    if (!basket.length) {
-      setError("سبد خالی است.");
-      return;
-    }
+    if (!basket.length) { setError("سبد خالی است."); return; }
     setLoading(true);
     setError(null);
     try {
@@ -147,10 +144,7 @@ export function RetailerMobileScreen(props: {
   }
 
   async function preview(): Promise<void> {
-    if (!serverBasketId) {
-      setError("ابتدا سبد را روی سرور ثبت کنید.");
-      return;
-    }
+    if (!serverBasketId) { setError("ابتدا سبد را روی سرور ثبت کنید."); return; }
     setLoading(true);
     setError(null);
     try {
@@ -165,10 +159,7 @@ export function RetailerMobileScreen(props: {
   }
 
   async function placeOrder(): Promise<void> {
-    if (!allocation) {
-      setError("ابتدا بررسی تخصیص را اجرا کنید.");
-      return;
-    }
+    if (!allocation) { setError("ابتدا بررسی تخصیص را اجرا کنید."); return; }
     if (address.trim().length < 5) {
       setError("آدرس تحویل باید حداقل ۵ نویسه باشد.");
       return;
@@ -674,7 +665,8 @@ export function RetailerMobileScreen(props: {
     : tab === "orders" ? ordersPage()
     : tab === "vendors" ? vendorsPage()
     : tab === "support" ? supportPage()
-    : financePage();
+    : tab === "finance" ? financePage()
+    : home();
 
   return (
     <Screen>
