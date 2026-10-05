@@ -69,14 +69,14 @@ export function Btn(props: {
   );
 }
 
-export function Input(props: TextInputProps & { label: string; hint?: string }): React.ReactNode {
+export function Input(props: TextInputProps & { label: string; hint?: string; direction?: "rtl" | "ltr" }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
-  const { label, hint, ...rest } = props;
+  const { label, hint, direction, ...rest } = props;
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput {...rest} style={[styles.input, rest.style]} placeholderTextColor={colors.textMuted} />
+      <TextInput {...rest} style={[styles.input, direction ? { writingDirection: direction } : null, rest.style]} placeholderTextColor={colors.textMuted} />
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>
   );
