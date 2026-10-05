@@ -1,8 +1,7 @@
-import * as SecureStore from "expo-secure-store";
-import React, { useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import React, { useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { api, persistSession } from "../api";
-import { Btn, Card, ErrorBox, Input, Screen, Title } from "../components/ui";
+import { Btn, Card, ErrorBox, Screen } from "../components/ui";
 import { spacing, useThemedStyles, type Palette } from "../theme";
 import type { OtpRequest, Role, VerifyResult } from "../types";
 import { normalizeRole } from "../types";
@@ -21,36 +20,32 @@ function toE164(value: string): string | null {
   return null;
 }
 
-/** SH-AUTH-01/02 — 4-digit OTP login. Role comes only from the backend response. */
+/** SH-AUTH-01/02 — same authentication contract, reference-matched presentation. */
 export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRoles?: readonly Role[]; appName?: string }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [digits, setDigits] = useState(["", "", "", ""]);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const refs = [useRef<TextInput>(null), useRef<TextInput>(null), useRef<TextInput>(null), useRef<TextInput>(null)];
 
   async function requestOtp(): Promise<void> {
     setError(null);
     const mobileNumber = toE164(phone);
     if (!mobileNumber) {
-      setError("شماره موبایل باید با فرمت E.164 باشد؛ مثال: +989161112233.");
+      setError("شماره موبایل را با فرمت ۰۹۱۶xxxxxxxx وارد کنید.");
       return;
     }
     setPhone(mobileNumber);
     setLoading(true);
     try {
-      const data = await api.post<OtpRequest>("/api/v1/auth/request-otp", {
-        mobile_number: mobileNumber,
-      });
-      setInfo(
-        "کد ۴ رقمی تا " +
-          data.expires_in_seconds +
-          " ثانیه معتبر است؛ ارسال مجدد هر " +
-          data.resend_interval_seconds +
-          " ثانیه.",
-      );
+      const data = await api.post<OtpRequest>("/api/v1/auth/request-otp", { mobile_number: mobileNumber });
+      setInfo("کد ۴ رقمی تا " + data.expires_in_seconds + " ثانیه معتبر است.");
+      setDigits(["", "", "", ""]);
+      setOtp("");
       setStep("otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "ارسال کد ناموفق بود");
@@ -63,11 +58,11 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
     setError(null);
     const mobileNumber = toE164(phone);
     if (!mobileNumber) {
-      setError("شماره موبایل باید با فرمت E.164 باشد؛ مثال: +989161112233.");
+      setError("شماره موبایل معتبر نیست.");
       return;
     }
     if (otp.length !== 4) {
-      setError("کد باید ۴ رقمی باشد (D-018).");
+      setError("کد باید ۴ رقمی باشد.");
       return;
     }
     setLoading(true);
@@ -83,14 +78,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
         return;
       }
       if (props.allowedRoles && !props.allowedRoles.includes(role)) {
-        setError(
-          props.appName === "پل بنکدار"
-            ? "این حساب برای اپلیکیشن بنکدار مجاز نیست."
-            : "این حساب برای این اپلیکیشن مجاز نیست.",
-        );
-        await SecureStore.deleteItemAsync("pol.access_token");
-        await SecureStore.deleteItemAsync("pol.refresh_token");
-        await SecureStore.deleteItemAsync("pol.session_role");
+        setError(props.appName === "پل بنکدار" ? "این حساب برای اپلیکیشن بنکدار مجاز نیست." : "این حساب برای این اپلیکیشن مجاز نیست.");
         return;
       }
       await persistSession(data.access_token, data.refresh_token ?? null, role);
@@ -102,80 +90,128 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
     }
   }
 
-  const brandSource =
-    props.appName === "پل بنکدار"
-      ? require("../../assets/vendor-logo.png")
-      : require("../../assets/icon.png");
+  function updateDigit(index: number, value: string): void {
+    const clean = toAsciiDigits(value).replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[index] = clean;
+    setDigits(next);
+    const joined = next.join("");
+    setOtp(joined);
+    if (clean && index < 3) refs[index + 1].current?.focus();
+  }
 
   return (
     <Screen>
-      <View style={styles.brandBlock}>
-        <Image source={brandSource} style={styles.brandLogo} resizeMode="contain" accessibilityLabel={props.appName ?? "پُل"} />
-      </View>
-      <Title badge="SH-AUTH">ورود {props.appName ?? "پُل"}</Title>
-      <Card>
-        <Text style={styles.sub}>OTP چهاررقمی (D-018) — بدون رمز عبور.</Text>
-        <ErrorBox message={error} />
-        {info && step === "otp" ? <Text style={styles.info}>{info}</Text> : null}
+      <View style={styles.wrap}>
+        <View style={styles.logoWrap}>
+          <View style={styles.logo}><Text style={styles.logoText}>پل</Text></View>
+          <Text style={styles.wordmark}>پل</Text>
+          <Text style={styles.tagline}>خرید عمده، ساده‌تر از همیشه</Text>
+        </View>
 
-        {step === "phone" ? (
-          <>
-            <Input
-              label="شماره موبایل"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              autoComplete="tel"
-              placeholder="0916xxxxxxxx یا +98916xxxxxxxx"
-            />
-            <Btn label="ارسال کد" onPress={() => void requestOtp()} loading={loading} disabled={!phone.trim()} />
-          </>
-        ) : (
-          <>
-            <Input
-              label="کد OTP"
-              value={otp}
-              onChangeText={(v) => setOtp(v.replace(/\D/g, ""))}
-              keyboardType="number-pad"
-              maxLength={4}
-              autoComplete="one-time-code"
-              hint="الگوی بک‌اند: ۴ رقم"
-              style={styles.otpInput}
-            />
-            <View style={styles.btnStack}>
-              <Btn label="ورود" onPress={() => void verifyOtp()} loading={loading} disabled={otp.length !== 4} />
-              <Btn label="بازگشت و تغییر شماره" tone="ghost" onPress={() => setStep("phone")} disabled={loading} />
-            </View>
-          </>
-        )}
-      </Card>
+        <View style={styles.progress}>
+          <View style={[styles.progressDot, styles.progressActive]} />
+          <View style={[styles.progressLine, step === "otp" && styles.progressActiveLine]} />
+          <View style={[styles.progressDot, step === "otp" && styles.progressActive]} />
+        </View>
+
+        <Card style={styles.loginCard}>
+          {step === "phone" ? (
+            <>
+              <Text style={styles.title}>ورود به حساب کاربری</Text>
+              <Text style={styles.sub}>شماره موبایل خود را وارد کنید تا وارد بازار عمده‌فروشی پل شوید.</Text>
+              <ErrorBox message={error} />
+              <View style={styles.phoneField}>
+                <Text style={styles.countryPrefix}>+۹۸</Text>
+                <TextInput
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  autoComplete="tel"
+                  placeholder="۹۱۶ ۱۱۱ ۲۲۳۳"
+                  placeholderTextColor={styles.placeholder.color}
+                  style={styles.phoneInput}
+                />
+              </View>
+              <Btn label="دریافت کد" onPress={() => void requestOtp()} loading={loading} disabled={!phone.trim()} />
+              <Text style={styles.footnote}>با ورود، قوانین و حریم خصوصی پل را می‌پذیرید.</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.title}>تأیید کد</Text>
+              <Text style={styles.sub}>کد ۴ رقمی ارسال‌شده به {phone} را وارد کنید.</Text>
+              {info ? <Text style={styles.info}>{info}</Text> : null}
+              <ErrorBox message={error} />
+              <View style={styles.otpRow}>
+                {digits.map((digit, index) => (
+                  <TextInput
+                    key={index}
+                    ref={refs[index]}
+                    value={digit}
+                    onChangeText={(value) => updateDigit(index, value)}
+                    onKeyPress={(event) => {
+                      if (event.nativeEvent.key === "Backspace" && !digits[index] && index > 0) refs[index - 1].current?.focus();
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    style={styles.otpCell}
+                    textAlign="center"
+                    selectTextOnFocus
+                  />
+                ))}
+              </View>
+              <Btn label="تأیید و ورود" onPress={() => void verifyOtp()} loading={loading} disabled={otp.length !== 4} />
+              <Pressable onPress={() => { setStep("phone"); setError(null); }} disabled={loading} style={styles.changePhone}>
+                <Text style={styles.changePhoneText}>تغییر شماره موبایل</Text>
+              </Pressable>
+            </>
+          )}
+        </Card>
+
+        <View style={styles.featureRow}>
+          <Feature icon="⚡" title="قیمت‌های عمده" />
+          <Feature icon="🚚" title="تحویل سریع" />
+          <Feature icon="🛡️" title="خرید مطمئن" />
+        </View>
+      </View>
     </Screen>
   );
 }
 
+function Feature(props: { icon: string; title: string }): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
+  return <View style={styles.feature}><Text style={styles.featureIcon}>{props.icon}</Text><Text style={styles.featureText}>{props.title}</Text></View>;
+}
+
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
-    brandBlock: {
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: 112,
-      marginBottom: spacing.sm,
-    },
-    brandLogo: {
-      width: 156,
-      height: 112,
-    },
-    sub: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: 21, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
-    info: { fontSize: 12, color: colors.brand, marginBottom: spacing.sm, lineHeight: 19, fontFamily: "Vazirmatn-Regular", textAlign: "right" },
-    otpInput: {
-      textAlign: "center",
-      letterSpacing: 10,
-      fontSize: 22,
-      fontWeight: "700",
-    },
-    btnStack: {
-      marginTop: spacing.xs,
-      gap: spacing.sm,
-    },
+    wrap: { flex: 1, justifyContent: "center", paddingVertical: spacing.xl },
+    logoWrap: { alignItems: "center", marginBottom: spacing.xl },
+    logo: { width: 82, height: 82, borderRadius: 26, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center", shadowColor: colors.brand, shadowOpacity: 0.22, shadowRadius: 14, elevation: 4 },
+    logoText: { color: "#fff", fontSize: 40, fontWeight: "900" },
+    wordmark: { color: colors.text, fontSize: 30, fontWeight: "900", marginTop: 10 },
+    tagline: { color: colors.textSecondary, fontSize: 12, marginTop: 3 },
+    progress: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: spacing.lg },
+    progressDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
+    progressActive: { backgroundColor: colors.brand },
+    progressLine: { width: 44, height: 2, backgroundColor: colors.border, marginHorizontal: 6 },
+    progressActiveLine: { backgroundColor: colors.brand },
+    loginCard: { padding: spacing.xl, borderRadius: 22 },
+    title: { color: colors.text, fontSize: 21, fontWeight: "900", textAlign: "right", marginBottom: 7 },
+    sub: { color: colors.textSecondary, fontSize: 13, lineHeight: 21, textAlign: "right", marginBottom: spacing.lg },
+    phoneField: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: colors.border, borderRadius: 14, minHeight: 52, marginBottom: spacing.md, backgroundColor: colors.surface },
+    countryPrefix: { color: colors.textSecondary, fontSize: 13, fontWeight: "800", paddingHorizontal: 13 },
+    phoneInput: { flex: 1, color: colors.text, fontSize: 16, paddingVertical: 12, textAlign: "right", writingDirection: "ltr" },
+    placeholder: { color: colors.textMuted },
+    footnote: { color: colors.textMuted, fontSize: 10, lineHeight: 16, textAlign: "center", marginTop: spacing.md },
+    info: { color: colors.brand, fontSize: 12, textAlign: "center", marginBottom: spacing.md },
+    otpRow: { flexDirection: "row", justifyContent: "center", gap: spacing.sm, marginBottom: spacing.lg, direction: "ltr" },
+    otpCell: { width: 54, height: 58, borderWidth: 1, borderColor: colors.border, borderRadius: 14, backgroundColor: colors.surface, color: colors.text, fontSize: 22, fontWeight: "900" },
+    changePhone: { marginTop: spacing.md, alignItems: "center" },
+    changePhoneText: { color: colors.brand, fontSize: 12, fontWeight: "700" },
+    featureRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },
+    feature: { flex: 1, minHeight: 72, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 16 },
+    featureIcon: { fontSize: 18 },
+    featureText: { color: colors.textSecondary, fontSize: 10, fontWeight: "700", marginTop: 5 },
   });
 }
