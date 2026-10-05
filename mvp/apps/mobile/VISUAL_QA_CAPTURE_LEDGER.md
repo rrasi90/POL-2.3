@@ -1,4 +1,4 @@
-# POL Mobile Visual QA Capture Ledger
+# HISTORICAL / SUPERSEDED EVIDENCE\n\n> This ledger records the 2026-09-28 capture branch state. It is retained for provenance and must not be used as current repository/configuration evidence. Current authority is the `main` branch HEAD.\n\n# POL Mobile Visual QA Capture Ledger
 
 ## Run Metadata
 
