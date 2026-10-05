@@ -16,7 +16,7 @@ const checks = [
   }],
   ["Vendor exposes status-appropriate order transitions", () => {
     const s = read("screens/VendorMobileScreen.tsx");
-    return s.includes('["SUBMITTED", "CREATED"]') && s.includes('["ACCEPTED", "PARTIALLY_ACCEPTED"]') && s.includes('status === "PREPARING"') && s.includes('status === "READY"');
+    return s.includes('["SUBMITTED", "CREATED"]') && s.includes('["ACCEPTED", "PARTIALLY_ACCEPTED"]') && s.includes('status === "PREPARING"') && s.includes('"ready"');
   }],
   ["Vendor rejects negative/non-numeric inventory", () => { const s = read("screens/VendorMobileScreen.tsx"); return s.includes("Number.isFinite") && s.includes("quantity < 0") && s.includes("موجودی باید عددی غیرمنفی باشد"); }],
   ["Vendor supports daily confirmation with and without changes", () => {
