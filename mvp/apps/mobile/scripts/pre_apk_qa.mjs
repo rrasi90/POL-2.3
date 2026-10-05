@@ -62,7 +62,7 @@ const expected = variant === "vendor"
       packageId: "ir.pol.market",
       icon: "./assets/icon.png",
       source: "src/screens/RetailerMobileScreen.tsx",
-      loginMessage: "این حساب برای اپلیکیشن بازار مجاز نیست.",
+      loginMessage: "این حساب برای این اپلیکیشن مجاز نیست.",
     };
 
 assert(config.name === expected.name, variant + " app name is canonical");
