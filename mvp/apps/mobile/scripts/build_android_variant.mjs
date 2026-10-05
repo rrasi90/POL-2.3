@@ -37,7 +37,7 @@ function run(command, args, cwd = appDir) {
 
 try {
   if (variant === "vendor") {
-    run("node", ["scripts/pre_apk_qa.mjs"]);
+    run("node", ["scripts/pre_apk_qa.mjs", variant]);
   }
 
   // Metro sees only the selected entrypoint, so the other product's workspace
