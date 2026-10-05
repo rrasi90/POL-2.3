@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "protocol": "POL-2.3 REAL ANDROID SCREEN-BY-SCREEN CAPTURE",
+  "phase": "CAPTURE_ONLY",
+  "repository": "rrasi90/POL-2.3",
+  "branch": "visual-capture/baseline-2026-09-28",
+  "commit": "f90fe3117c1881545e32181381ec50a1a6960f9e",
+  "captured_at": null,
+  "runtime_status": "BLOCKED_RUNTIME",
+  "device": null,
+  "resolution": null,
+  "android_version": null,
+  "captures": [],
+  "blocked_scope": {
+    "count": 60,
+    "reason": "No adb binary and no Android emulator executable available in current execution environment."
+  }
+}
