@@ -10,7 +10,7 @@ import { OrderDetailMobileScreen } from "./src/screens/OrderDetailMobileScreen";
 import { ThemeProvider, useTheme, useThemedStyles } from "./src/theme";
 import type { Role } from "./src/types";
 
-export type WorkspaceProps<R extends Role> = { role: R; onOpenOrder: (orderId: string) => void };
+export type WorkspaceProps<R extends Role> = { role: R; onOpenOrder: (orderId: string) => void; onOpenAccount: () => void };
 
 type AppShellProps<R extends Role> = {
   appName: string;
@@ -86,7 +86,7 @@ function AppContent<R extends Role>(props: AppShellProps<R>): React.ReactNode {
   return (
     <SafeAreaView style={styles.root}>
       <OfflineBanner />
-      {currentRole && route.name !== "account" && route.name !== "order-detail" ? (
+      {currentRole && props.appName !== "پل بازار" && route.name !== "account" && route.name !== "order-detail" ? (
         <SafeAreaView style={styles.accountBar}>
           <Pressable accessibilityRole="button" onPress={() => setRoute({ name: "account", role: currentRole })} style={styles.accountButton}>
             <Text style={styles.accountText}>حساب / اعلان‌ها</Text>
@@ -98,7 +98,7 @@ function AppContent<R extends Role>(props: AppShellProps<R>): React.ReactNode {
       ) : route.name === "order-detail" ? (
         <OrderDetailMobileScreen mode={props.orderMode} role={route.role} orderId={route.orderId} onBack={() => setRoute({ name: "workspace", role: route.role })} />
       ) : currentRole ? (
-        props.workspace({ role: currentRole, onOpenOrder: (orderId) => setRoute({ name: "order-detail", orderId, role: currentRole }) })
+        props.workspace({ role: currentRole, onOpenOrder: (orderId) => setRoute({ name: "order-detail", orderId, role: currentRole }), onOpenAccount: () => setRoute({ name: "account", role: currentRole }) })
       ) : (
         <LoginScreen onAuthed={onAuthed} allowedRoles={props.allowedRoles} appName={props.appName} />
       )}
