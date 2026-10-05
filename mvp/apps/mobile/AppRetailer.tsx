@@ -7,7 +7,7 @@ type RetailerRole = Extract<Role, "RETAILER_OWNER" | "RETAILER_STAFF">;
 
 export default function RetailerApp(): React.ReactNode {
   const workspace = (props: WorkspaceProps<RetailerRole>) => (
-    <RetailerMobileScreen role={props.role} onOpenOrder={props.onOpenOrder} />
+    <RetailerMobileScreen role={props.role} onOpenOrder={props.onOpenOrder} onOpenAccount={props.onOpenAccount} />
   );
   return <AppShell<RetailerRole> appName="پل بازار" allowedRoles={["RETAILER_OWNER", "RETAILER_STAFF"]} workspace={workspace} orderMode="retailer" />;
 }
