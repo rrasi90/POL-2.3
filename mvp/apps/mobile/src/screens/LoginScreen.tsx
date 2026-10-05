@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { api, persistSession } from "../api";
+import { api, clearSession, persistSession } from "../api";
 import { Btn, Card, ErrorBox, Screen } from "../components/ui";
 import { spacing, useThemedStyles, type Palette } from "../theme";
 import type { OtpRequest, Role, VerifyResult } from "../types";
@@ -79,6 +79,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
       }
       if (props.allowedRoles && !props.allowedRoles.includes(role)) {
         setError(props.appName === "پل بنکدار" ? "این حساب برای اپلیکیشن بنکدار مجاز نیست." : "این حساب برای این اپلیکیشن مجاز نیست.");
+        await clearSession();
         return;
       }
       await persistSession(data.access_token, data.refresh_token ?? null, role);
