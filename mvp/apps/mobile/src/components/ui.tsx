@@ -133,7 +133,7 @@ export function IconBadge(props: { symbol: string; tone?: "brand" | "success" | 
 
 function makeStyles(colors: Palette) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.md, paddingTop: spacing.sm },
+    screen: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.md, paddingTop: spacing.sm, direction: "rtl" },
     titleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md },
     title: { fontSize: 22, fontWeight: "800", color: colors.text, letterSpacing: -0.4 },
     badgeWrapper: { backgroundColor: colors.neutralBg, borderColor: colors.border, borderWidth: 1, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
