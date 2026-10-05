@@ -80,7 +80,11 @@ function AppContent(): React.ReactNode {
 
   return (
     <SafeAreaView style={styles.root}>
-      {currentRole && route.name !== "account" && route.name !== "order-detail" ? (
+      {currentRole && !(
+        (currentRole === "RETAILER_OWNER" || currentRole === "RETAILER_STAFF") &&
+        route.name !== "account" &&
+        route.name !== "order-detail"
+      ) && route.name !== "account" && route.name !== "order-detail" ? (
         <SafeAreaView style={styles.accountBar}>
           <Pressable accessibilityRole="button" onPress={() => setRoute({ name: "account", role: currentRole })} style={styles.accountButton}>
             <Text style={styles.accountText}>حساب / اعلان‌ها</Text>
@@ -117,6 +121,7 @@ function AppContent(): React.ReactNode {
         <RetailerMobileScreen
           role={currentRole}
           onOpenOrder={(orderId) => setRoute({ name: "order-detail", orderId, role: currentRole })}
+          onOpenAccount={() => setRoute({ name: "account", role: currentRole })}
         />
       ) : currentRole === "VENDOR_OWNER" || currentRole === "VENDOR_STAFF" ? (
         <VendorMobileScreen
