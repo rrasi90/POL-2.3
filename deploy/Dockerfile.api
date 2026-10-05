@@ -1,0 +1,21 @@
+FROM python:3.11-slim-bookworm
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY scripts ./scripts
+COPY migrations ./migrations
+COPY 00_PROJECT_OVERVIEW ./00_PROJECT_OVERVIEW
+COPY POL_00_PROJECT_CONTROL ./POL_00_PROJECT_CONTROL
+COPY 06_PRODUCT ./06_PRODUCT
+COPY 08_DATA ./08_DATA
+
+EXPOSE 8000
+
+CMD ["uvicorn", "scripts.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]

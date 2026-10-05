@@ -1,0 +1,7 @@
+FROM postgres:18-bookworm
+
+COPY deploy/postgres-entrypoint.sh /usr/local/bin/pol-postgres-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/pol-postgres-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/pol-postgres-entrypoint.sh"]
+CMD ["postgres"]
