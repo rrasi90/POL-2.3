@@ -35,21 +35,23 @@ export function Pulse(props: {
   return (
     <View style={props.style}>
       {props.children}
-      <Animated.View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Animated.View
-            style={{
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              borderWidth: 2,
-              borderColor: colors.brand,
-              opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0] }),
-              transform: [{ scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] }) }],
-            }}
-          />
-        </View>
-      </Animated.View>
+      {props.active && !reduced ? (
+        <Animated.View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <Animated.View
+              style={{
+                width: size,
+                height: size,
+                borderRadius: size / 2,
+                borderWidth: 2,
+                borderColor: colors.brand,
+                opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0] }),
+                transform: [{ scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] }) }],
+              }}
+            />
+          </View>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
