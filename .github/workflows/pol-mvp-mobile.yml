@@ -63,6 +63,10 @@ jobs:
         working-directory: mvp/apps/mobile
         env:
           POL_APP_VARIANT: vendor
+          # CI has no real API endpoint: run the pre-APK contract in QA mode.
+          # The HTTPS/local-host asserts stay mandatory for real release builds
+          # (POL_RELEASE defaults to 1 outside CI).
+          POL_RELEASE: "0"
         run: npm run qa:pre-apk
 
       - name: Expo Android export
