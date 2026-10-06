@@ -2,6 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip } from "../components/ui";
+import { ErrorShake } from "../motion/ErrorShake";
+import { FadeIn } from "../motion/FadeIn";
+import { Pulse } from "../motion/Pulse";
+import { motionDuration } from "../motion/motionTokens";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
@@ -325,6 +329,7 @@ export function VendorMobileScreen(props: {
   const [storefrontProducts, setStorefrontProducts] = useState<StorefrontProduct[]>([]);
   const [barcode, setBarcode] = useState("");
   const [barcodeResult, setBarcodeResult] = useState<BarcodeResult | null>(null);
+  const [scanRevision, setScanRevision] = useState(0);
   const [candidateTitle, setCandidateTitle] = useState("");
   const [candidateBrand, setCandidateBrand] = useState("");
   const [candidateSku, setCandidateSku] = useState("");
@@ -459,6 +464,9 @@ export function VendorMobileScreen(props: {
       setError(e instanceof Error ? e.message : "استعلام بارکد ناموفق بود.");
     } finally {
       setLoading(false);
+      // Drives scan feedback motion: result fade-in and no-match shake replay
+      // on every completed lookup, even with identical payloads.
+      setScanRevision((value2) => value2 + 1);
     }
   }
 
@@ -875,8 +883,11 @@ export function VendorMobileScreen(props: {
             placeholder="6260123456789"
             maxLength={32}
           />
-          <Btn label="استعلام بارکد" onPress={() => void scanBarcode()} loading={loading} disabled={loading || barcode.trim().length < 8} />
+          <Pulse active={loading} size={56}>
+            <Btn label="استعلام بارکد" onPress={() => void scanBarcode()} loading={loading} disabled={loading || barcode.trim().length < 8} />
+          </Pulse>
           {barcodeResult ? (
+            <FadeIn key={scanRevision}>
             <View style={styles.scanResult}>
               <View style={styles.rowBetween}>
                 <StatusChip label={barcodeStatusLabel(barcodeResult.match_type || barcodeResult.match_status)} tone={barcodeResult.match_type === "NO_MATCH" ? "warn" : barcodeResult.match_type === "AMBIGUOUS" ? "danger" : "ok"} />
@@ -902,9 +913,9 @@ export function VendorMobileScreen(props: {
                   <Input label="قیمت فروش (تومان)" value={scanUnitPrice} onChangeText={setScanUnitPrice} keyboardType="numeric" />
                   <Btn label="ثبت در جلسه اسکن" onPress={() => void submitContinuousScan()} loading={loading} disabled={loading} />
                   {scanSessionId ? <Text style={styles.meta}>جلسه: {scanSessionId}</Text> : null}
-                  {scanStatus ? <Text style={styles.successNote}>وضعیت ثبت: {scanStatus}</Text> : null}
+                  {scanStatus ? <FadeIn key={scanStatus} offsetY={0} duration={motionDuration.micro}><Text style={styles.successNote}>وضعیت ثبت: {scanStatus}</Text></FadeIn> : null}
                   {scanSessionId ? <Btn label="انتشار موجودی جلسه" tone="ghost" onPress={() => void publishContinuousScan()} loading={loading} disabled={loading} /> : null}
-                  {publishStatus ? <Text style={styles.successNote}>وضعیت انتشار: {publishStatus}</Text> : null}
+                  {publishStatus ? <FadeIn key={publishStatus} offsetY={0} duration={motionDuration.micro}><Text style={styles.successNote}>وضعیت انتشار: {publishStatus}</Text></FadeIn> : null}
                 </View>
               ) : null}
               {barcodeResult.products?.length ? (
@@ -918,17 +929,20 @@ export function VendorMobileScreen(props: {
                 </View>
               ) : null}
               {barcodeResult.match_type === "NO_MATCH" ? (
-                <View style={styles.candidatePanel}>
-                  <Text style={styles.itemTitle}>کالای ناشناخته</Text>
-                  <Text style={styles.meta}>بارکد ناشناخته به Master Product تبدیل نمی‌شود؛ فقط می‌توان کاندیدای بررسی ثبت کرد.</Text>
-                  <Input label="عنوان پیشنهادی" value={candidateTitle} onChangeText={setCandidateTitle} />
-                  <Input label="برند پیشنهادی" value={candidateBrand} onChangeText={setCandidateBrand} />
-                  <Input label="SKU بنکداری (اختیاری)" value={candidateSku} onChangeText={setCandidateSku} direction="ltr" />
-                  <Btn label="ثبت کاندیدای کالا" onPress={() => void createBarcodeCandidate()} loading={loading} disabled={loading || !candidateTitle.trim()} />
-                  {candidateCreatedId ? <Text style={styles.successNote}>کاندید ثبت شد: {candidateCreatedId}</Text> : null}
-                </View>
+                <ErrorShake trigger={scanRevision}>
+                  <View style={styles.candidatePanel}>
+                    <Text style={styles.itemTitle}>کالای ناشناخته</Text>
+                    <Text style={styles.meta}>بارکد ناشناخته به Master Product تبدیل نمی‌شود؛ فقط می‌توان کاندیدای بررسی ثبت کرد.</Text>
+                    <Input label="عنوان پیشنهادی" value={candidateTitle} onChangeText={setCandidateTitle} />
+                    <Input label="برند پیشنهادی" value={candidateBrand} onChangeText={setCandidateBrand} />
+                    <Input label="SKU بنکداری (اختیاری)" value={candidateSku} onChangeText={setCandidateSku} direction="ltr" />
+                    <Btn label="ثبت کاندیدای کالا" onPress={() => void createBarcodeCandidate()} loading={loading} disabled={loading || !candidateTitle.trim()} />
+                    {candidateCreatedId ? <FadeIn key={candidateCreatedId} offsetY={0} duration={motionDuration.micro}><Text style={styles.successNote}>کاندید ثبت شد: {candidateCreatedId}</Text></FadeIn> : null}
+                  </View>
+                </ErrorShake>
               ) : null}
             </View>
+            </FadeIn>
           ) : null}
         </Card>
         <Segmented labels={[["stock", "موجودی کالا"], ["daily", "تأیید روزانه"]]} selected={inventoryTab} onChange={(value) => setInventoryTab(value as InventoryTab)} />
