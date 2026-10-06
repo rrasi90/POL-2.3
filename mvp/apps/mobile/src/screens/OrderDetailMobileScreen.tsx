@@ -219,7 +219,7 @@ export function OrderDetailMobileScreen(props: {
       setActionError("نام تحویل‌گیرنده الزامی است.");
       return;
     }
-    if (!/^\\d{4}$/.test(deliveryOtp.trim())) {
+    if (!/^\d{4}$/.test(deliveryOtp.trim())) {
       setActionError("کد تحویل باید ۴ رقم باشد.");
       return;
     }
