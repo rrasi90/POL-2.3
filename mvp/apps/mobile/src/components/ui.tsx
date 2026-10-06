@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   StyleSheet,
   Text,
@@ -9,6 +10,10 @@ import {
   type TextInputProps,
 } from "react-native";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
+import { motionCrossfade, motionDuration, motionEasing } from "../motion/motionTokens";
+import { usePressScale } from "../motion/PressScale";
+import { FadeIn } from "../motion/FadeIn";
+import { ErrorShake, useErrorTrigger } from "../motion/ErrorShake";
 
 export function Screen(props: { children: React.ReactNode }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
@@ -46,26 +51,51 @@ export function Btn(props: {
   const { colors } = useTheme();
   const ghost = props.tone === "ghost";
   const danger = props.tone === "danger";
+  const { scale, pressIn, pressOut } = usePressScale({ disabled: props.disabled || props.loading });
+  const [shown, setShown] = useState(props.loading ?? false);
+  const contentOpacity = useRef(new Animated.Value(1)).current;
+
+  // Label ↔ spinner crossfade; the swap happens at full transparency.
+  useEffect(() => {
+    if (props.loading === shown) return;
+    let cancelled = false;
+    Animated.timing(contentOpacity, { toValue: 0, duration: motionCrossfade.out, easing: motionEasing.accelerate, useNativeDriver: true }).start(() => {
+      if (cancelled) return;
+      setShown(props.loading ?? false);
+      Animated.timing(contentOpacity, { toValue: 1, duration: motionCrossfade.in, easing: motionEasing.decelerate, useNativeDriver: true }).start();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [props.loading, shown, contentOpacity]);
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={props.disabled || props.loading}
-      onPress={props.onPress}
-      style={({ pressed }) => [
-        styles.btn,
-        props.compact && styles.btnCompact,
-        ghost && styles.btnGhost,
-        danger && styles.btnDanger,
-        (props.disabled || props.loading) && styles.btnDisabled,
-        pressed && !props.disabled && !props.loading && styles.btnPressed,
-      ]}
-    >
-      {props.loading ? (
-        <ActivityIndicator color={ghost ? colors.brand : "#fff"} />
-      ) : (
-        <Text style={[styles.btnText, ghost && styles.btnTextGhost, danger && styles.btnTextDanger]}>{props.label}</Text>
-      )}
-    </Pressable>
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ busy: props.loading ?? false, disabled: !!(props.disabled || props.loading) }}
+        disabled={props.disabled || props.loading}
+        onPress={props.onPress}
+        onPressIn={pressIn}
+        onPressOut={pressOut}
+        style={({ pressed }) => [
+          styles.btn,
+          props.compact && styles.btnCompact,
+          ghost && styles.btnGhost,
+          danger && styles.btnDanger,
+          (props.disabled || props.loading) && styles.btnDisabled,
+          pressed && !props.disabled && !props.loading && styles.btnPressed,
+        ]}
+      >
+        <Animated.View style={[styles.btnContent, { opacity: contentOpacity }]}>
+          {shown ? (
+            <ActivityIndicator color={ghost ? colors.brand : "#fff"} />
+          ) : (
+            <Text style={[styles.btnText, ghost && styles.btnTextGhost, danger && styles.btnTextDanger]}>{props.label}</Text>
+          )}
+        </Animated.View>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -101,18 +131,46 @@ export function StatusChip(props: { label: string; tone?: "neutral" | "warn" | "
     tone === "warn" ? colors.warning + "33" :
     tone === "info" ? colors.brand + "33" :
     tone === "danger" ? colors.danger + "33" : colors.border;
-  return <View style={[styles.chip, { backgroundColor: bg, borderColor: bc }]}><Text style={[styles.chipText, { color: fg }]}>{props.label}</Text></View>;
+  return (
+    <View style={[styles.chip, { backgroundColor: bg, borderColor: bc }]}>
+      <FadeIn key={props.label} duration={motionDuration.micro} offsetY={0}>
+        <Text style={[styles.chipText, { color: fg }]}>{props.label}</Text>
+      </FadeIn>
+    </View>
+  );
 }
 
-export function ErrorBox(props: { message: string | null }): React.ReactNode {
+export function ErrorBox(props: { message: string | null; revision?: number }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
+  const [messageTrigger, bumpMessageTrigger] = useErrorTrigger();
+  // Signature: explicit revision when provided (repeating the same message
+  // animates again), otherwise the message text itself.
+  const signature = props.revision !== undefined ? props.revision : props.message;
+  const lastSignature = useRef(signature);
+  useEffect(() => {
+    if (props.message && signature !== lastSignature.current) bumpMessageTrigger();
+    lastSignature.current = signature;
+  }, [signature, props.message, bumpMessageTrigger]);
   if (!props.message) return null;
-  return <View style={styles.error}><Text style={styles.errorText}>{props.message}</Text></View>;
+  return (
+    <ErrorShake trigger={messageTrigger}>
+      <View style={styles.error}>
+        <Text style={styles.errorText}>{props.message}</Text>
+      </View>
+    </ErrorShake>
+  );
 }
 
 export function Empty(props: { title: string; description?: string }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
-  return <Card><Text style={styles.emptyTitle}>{props.title}</Text>{props.description ? <Text style={styles.emptyBody}>{props.description}</Text> : null}</Card>;
+  return (
+    <FadeIn>
+      <Card>
+        <Text style={styles.emptyTitle}>{props.title}</Text>
+        {props.description ? <Text style={styles.emptyBody}>{props.description}</Text> : null}
+      </Card>
+    </FadeIn>
+  );
 }
 
 export function IconBadge(props: { symbol: string; tone?: "brand" | "success" | "warning" | "danger" | "neutral" }): React.ReactNode {
@@ -129,6 +187,31 @@ export function IconBadge(props: { symbol: string; tone?: "brand" | "success" | 
     props.tone === "danger" ? colors.danger :
     props.tone === "neutral" ? colors.textSecondary : colors.brand;
   return <View style={[styles.iconBadge, { backgroundColor: bg }]}><Text style={[styles.iconBadgeText, { color: fg }]}>{props.symbol}</Text></View>;
+}
+
+// Shared brand mark (brand square + "پل" glyph) used by splash and login so
+// both variants render one identical mark.
+export function BrandMark(props: { size?: number }): React.ReactNode {
+  const { colors } = useTheme();
+  const size = props.size ?? 82;
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: Math.round(size * 0.317),
+        backgroundColor: colors.brand,
+        alignItems: "center",
+        justifyContent: "center",
+        shadowColor: colors.brand,
+        shadowOpacity: 0.22,
+        shadowRadius: 14,
+        elevation: 4,
+      }}
+    >
+      <Text style={{ color: "#fff", fontSize: Math.round(size * 0.488), fontWeight: "900" }}>پل</Text>
+    </View>
+  );
 }
 
 function makeStyles(colors: Palette) {
@@ -156,7 +239,8 @@ function makeStyles(colors: Palette) {
     btnGhost: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
     btnDanger: { backgroundColor: colors.danger },
     btnDisabled: { opacity: 0.5 },
-    btnPressed: { opacity: 0.82, transform: [{ scale: 0.985 }] },
+    btnPressed: { opacity: 0.82 },
+    btnContent: { alignItems: "center", justifyContent: "center" },
     btnText: { color: "#fff", fontSize: 14, fontWeight: "700", textAlign: "center" },
     btnTextGhost: { color: colors.brand },
     btnTextDanger: { color: "#fff" },
