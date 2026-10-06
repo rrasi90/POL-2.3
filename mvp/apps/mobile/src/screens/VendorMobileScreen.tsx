@@ -816,7 +816,7 @@ export function VendorMobileScreen(props: {
           <QuickAction label="صف سفارش" detail={pendingOrders.length ? "سفارش منتظر بررسی دارید" : "موردی در صف نیست"} onPress={() => setTab("orders")} tone={pendingOrders.length ? "warn" : "neutral"} />
           <QuickAction label="موجودی روزانه" detail={daily?.status ? statusLabel(daily.status) : "وضعیت امروز را ببینید"} onPress={() => { setInventoryTab("daily"); setTab("inventory"); }} tone={daily?.status === "PENDING" ? "warn" : "neutral"} />
           <QuickAction label="موجودی کالاها" detail={inventory.length ? numberFa(inventory.length) + " قلم ثبت شده" : "کاتالوگ خالی است"} onPress={() => { setInventoryTab("stock"); setTab("inventory"); }} />
-          props.role === "VENDOR_OWNER" ? <QuickAction label="مالی" detail="فاکتور و تسویه" onPress={() => setTab("finance")} /> : null
+          {props.role === "VENDOR_OWNER" ? <QuickAction label="مالی" detail="فاکتور و تسویه" onPress={() => setTab("finance")} /> : null}
           <QuickAction label="پشتیبانی" detail="ثبت و پیگیری پرونده‌های پشتیبانی" onPress={() => setTab("support")} />
         </View>
 
