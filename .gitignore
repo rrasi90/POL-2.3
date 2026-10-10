@@ -25,3 +25,16 @@ scratch/
 *.sqlite3
 *.log
 .tools/
+
+# Local-only heavy dirs and runtime captures (not part of the product tree)
+artifacts/
+cartona app/
+design_references/
+gmaps-patch/
+google-maps-scraper-kit/
+graphify-out/
+.freebuff/
+.zcode/
+08_DATA/leads/
+mvp/apps/mobile/dist-android-postpull/
+hypervisor_fix.txt
