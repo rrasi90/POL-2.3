@@ -5,7 +5,7 @@ import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip } from "../compon
 import { ErrorShake } from "../motion/ErrorShake";
 import { FadeIn } from "../motion/FadeIn";
 import { Pulse } from "../motion/Pulse";
-import { motionDuration } from "../motion/motionTokens";
+import { motionDuration, staggerDelay } from "../motion/motionTokens";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
@@ -813,33 +813,41 @@ export function VendorMobileScreen(props: {
         <ErrorBox message={error} />
 
         <View style={styles.metricGrid}>
-          <MetricCard label="منتظر اقدام" value={numberFa(pendingOrders.length)} hint="سفارش جدید" tone={pendingOrders.length > 0 ? "warn" : "ok"} />
-          <MetricCard label="در جریان" value={numberFa(activeOrders.length)} hint="آماده‌سازی و ارسال" tone="info" />
-          <MetricCard label="کالاها" value={numberFa(inventory.length)} hint="ثبت‌شده در کاتالوگ" />
-          <MetricCard label="موجودی نیازمند توجه" value={numberFa(staleInventory.length)} hint="بر اساس وضعیت تازگی" tone={staleInventory.length > 0 ? "warn" : "ok"} />
+          <FadeIn delay={staggerDelay(0)}><MetricCard label="منتظر اقدام" value={numberFa(pendingOrders.length)} hint="سفارش جدید" tone={pendingOrders.length > 0 ? "warn" : "ok"} /></FadeIn>
+          <FadeIn delay={staggerDelay(1)}><MetricCard label="در جریان" value={numberFa(activeOrders.length)} hint="آماده‌سازی و ارسال" tone="info" /></FadeIn>
+          <FadeIn delay={staggerDelay(2)}><MetricCard label="کالاها" value={numberFa(inventory.length)} hint="ثبت‌شده در کاتالوگ" /></FadeIn>
+          <FadeIn delay={staggerDelay(3)}><MetricCard label="موجودی نیازمند توجه" value={numberFa(staleInventory.length)} hint="بر اساس وضعیت تازگی" tone={staleInventory.length > 0 ? "warn" : "ok"} /></FadeIn>
         </View>
 
         <SectionHeader title="اقدام‌های امروز" />
         <View style={styles.quickGrid}>
-          <QuickAction label="صف سفارش" detail={pendingOrders.length ? "سفارش منتظر بررسی دارید" : "موردی در صف نیست"} onPress={() => setTab("orders")} tone={pendingOrders.length ? "warn" : "neutral"} />
-          <QuickAction label="موجودی روزانه" detail={daily?.status ? statusLabel(daily.status) : "وضعیت امروز را ببینید"} onPress={() => { setInventoryTab("daily"); setTab("inventory"); }} tone={daily?.status === "PENDING" ? "warn" : "neutral"} />
-          <QuickAction label="موجودی کالاها" detail={inventory.length ? numberFa(inventory.length) + " قلم ثبت شده" : "کاتالوگ خالی است"} onPress={() => { setInventoryTab("stock"); setTab("inventory"); }} />
-          {props.role === "VENDOR_OWNER" ? <QuickAction label="مالی" detail="فاکتور و تسویه" onPress={() => setTab("finance")} /> : null}
-          <QuickAction label="پشتیبانی" detail="ثبت و پیگیری پرونده‌های پشتیبانی" onPress={() => setTab("support")} />
+          <FadeIn delay={staggerDelay(0)}><QuickAction label="صف سفارش" detail={pendingOrders.length ? "سفارش منتظر بررسی دارید" : "موردی در صف نیست"} onPress={() => setTab("orders")} tone={pendingOrders.length ? "warn" : "neutral"} /></FadeIn>
+          <FadeIn delay={staggerDelay(1)}><QuickAction label="موجودی روزانه" detail={daily?.status ? statusLabel(daily.status) : "وضعیت امروز را ببینید"} onPress={() => { setInventoryTab("daily"); setTab("inventory"); }} tone={daily?.status === "PENDING" ? "warn" : "neutral"} /></FadeIn>
+          <FadeIn delay={staggerDelay(2)}><QuickAction label="موجودی کالاها" detail={inventory.length ? numberFa(inventory.length) + " قلم ثبت شده" : "کاتالوگ خالی است"} onPress={() => { setInventoryTab("stock"); setTab("inventory"); }} /></FadeIn>
+          {props.role === "VENDOR_OWNER" ? <FadeIn delay={staggerDelay(3)}><QuickAction label="مالی" detail="فاکتور و تسویه" onPress={() => setTab("finance")} /></FadeIn> : null}
+          <FadeIn delay={staggerDelay(4)}><QuickAction label="پشتیبانی" detail="ثبت و پیگیری پرونده‌های پشتیبانی" onPress={() => setTab("support")} /></FadeIn>
         </View>
 
         <SectionHeader title="سفارش‌های منتظر اقدام" action="مشاهده همه" onAction={() => setTab("orders")} />
         {pendingOrders.length === 0 ? (
           <Empty title="صف سفارش خالی است" description="در حال حاضر سفارشی برای بررسی فوری وجود ندارد." />
         ) : (
-          pendingOrders.slice(0, 3).map((order) => <OrderCard key={order.id} order={order} role={props.role} onOpen={props.onOpenOrder} onAction={orderAction} loading={loading} />)
+          pendingOrders.slice(0, 3).map((order, index) => (
+            <FadeIn key={order.id} delay={staggerDelay(index)}>
+              <OrderCard order={order} role={props.role} onOpen={props.onOpenOrder} onAction={orderAction} loading={loading} />
+            </FadeIn>
+          ))
         )}
 
         <SectionHeader title="تازه‌ترین موجودی‌ها" action="مشاهده انبار" onAction={() => setTab("inventory")} />
         {inventory.length === 0 ? (
           <Empty title="کالایی ثبت نشده" description="اولین داده‌های کاتالوگ و موجودی بنکداری را از پنل عملیاتی ثبت کنید." />
         ) : (
-          inventory.slice(0, 3).map((row) => <InventoryCard key={row.id} row={row} onSaveInventory={saveInventory} onSavePrice={savePrice} loading={loading} editablePrice={props.role === "VENDOR_OWNER"} compact />)
+          inventory.slice(0, 3).map((row, index) => (
+            <FadeIn key={row.id} delay={staggerDelay(index)}>
+              <InventoryCard row={row} onSaveInventory={saveInventory} onSavePrice={savePrice} loading={loading} editablePrice={props.role === "VENDOR_OWNER"} compact />
+            </FadeIn>
+          ))
         )}
       </ScrollView>
     );
