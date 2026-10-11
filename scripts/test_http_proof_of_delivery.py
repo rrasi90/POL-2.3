@@ -183,6 +183,56 @@ class TestOTPVerification:
 
 
 class TestOTPAttemptCap:
+    def test_other_retailer_cannot_consume_victim_otp_attempts(self, client):
+        data = _seed_dispatched(uuid4().hex[:8], "1234")
+        attacker_user_id = str(uuid4())
+        attacker_org_id = str(uuid4())
+
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO users (id, phone_number, full_name, role) "
+                    "VALUES (%s, %s, 'Other retailer', 'RETAILER_OWNER')",
+                    (attacker_user_id, f"+9892{uuid4().hex[:8]}"),
+                )
+                cur.execute(
+                    "INSERT INTO organizations (id, name, org_type, status) "
+                    "VALUES (%s, 'Other retailer org', 'RETAILER', 'ACTIVE')",
+                    (attacker_org_id,),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships "
+                    "(id, organization_id, user_id, role, status) "
+                    "VALUES (%s, %s, %s, 'RETAILER_OWNER', 'ACTIVE')",
+                    (str(uuid4()), attacker_org_id, attacker_user_id),
+                )
+                attacker_session_id = _create_session(cur, attacker_user_id, attacker_org_id)
+            conn.commit()
+        finally:
+            conn.close()
+
+        attacker_token = encode_access_token(
+            attacker_user_id, attacker_session_id, attacker_org_id, "RETAILER_OWNER"
+        )
+        response = client.post(
+            f"/api/v1/orders/{data['oi']}/deliver",
+            headers={"Authorization": f"Bearer {attacker_token}"},
+            json={"recipient_name": "Intruder", "otp_code": "9999"},
+        )
+        assert response.status_code in (403, 422)
+
+        conn = _db()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT attempt_count FROM delivery_otp_attempts WHERE delivery_id = %s",
+                    (data["di"],),
+                )
+                assert cur.fetchone() is None
+        finally:
+            conn.close()
+
     def test_otp_attempt_limit(self, client):
         data = _seed_dispatched(uuid4().hex[:8], "1234")
         for _ in range(5):
@@ -198,6 +248,17 @@ class TestOTPAttemptCap:
             json={"recipient_name": "Reza", "otp_code": "1234"},
         )
         assert resp.status_code == 422
+
+        conn = _db()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT attempt_count FROM delivery_otp_attempts WHERE delivery_id = %s",
+                    (data["di"],),
+                )
+                assert cur.fetchone()[0] == 5
+        finally:
+            conn.close()
 
 
 class TestDeliveredQuantities:

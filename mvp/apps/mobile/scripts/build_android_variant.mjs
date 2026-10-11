@@ -18,9 +18,7 @@ const variantSource = readFileSync(resolve(appDir, variantEntry), "utf8");
 const env = {
   ...process.env,
   POL_APP_VARIANT: variant,
-  ...(variant === "vendor"
-    ? { POL_RELEASE: process.env.POL_RELEASE === "0" ? "0" : "1" }
-    : {}),
+  POL_RELEASE: process.env.POL_RELEASE === "0" ? "0" : "1",
 };
 
 function run(command, args, cwd = appDir) {
@@ -36,9 +34,8 @@ function run(command, args, cwd = appDir) {
 }
 
 try {
-  if (variant === "vendor") {
-    run("node", ["scripts/pre_apk_qa.mjs", variant]);
-  }
+  // Both products must pass the same release gate before native generation.
+  run("node", ["scripts/pre_apk_qa.mjs", variant]);
 
   // Metro sees only the selected entrypoint, so the other product's workspace
   // is not pulled into this production bundle.

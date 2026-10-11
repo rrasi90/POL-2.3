@@ -758,7 +758,11 @@ class POLApplicationBoundary:
             # before the confirmation transaction starts. An expired or already
             # consumed OTP is not counted; the canonical service still raises
             # the precise error for those cases.
-            self._record_delivery_otp_attempt(order_id)
+            self._record_delivery_otp_attempt(
+                order_id,
+                user_id=self.context.user_id,
+                organization_id=self.context.organization_id,
+            )
         return _confirm_delivery(
             self.cur,
             user_id=self.context.user_id,
@@ -777,13 +781,14 @@ class POLApplicationBoundary:
 
     _DELIVERY_OTP_MAX_ATTEMPTS = 5
 
-    def _record_delivery_otp_attempt(self, order_id):
-        """Record one delivery-OTP verification attempt atomically and durably.
+    def _record_delivery_otp_attempt(self, order_id, *, user_id, organization_id):
+        """Record a retailer-authorized delivery OTP attempt in a durable transaction.
 
-        Uses an independent connection so the counter survives the rollback of
-        the rejected confirmation request. Concurrent verifications serialize on
-        the delivery_otp_attempts row; the cap (5, per D-018 max-attempts policy)
-        is enforced by the guarded RETURNING increment.
+        The independent transaction preserves failed attempts across the
+        confirmation request rollback. Authorization is checked in this same
+        transaction before the counter can change, and row locking plus a
+        guarded upsert serializes concurrent attempts without counting above
+        the configured maximum.
         """
         from scripts.api.db import get_runtime_connection
 
@@ -792,24 +797,69 @@ class POLApplicationBoundary:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO delivery_otp_attempts AS a (delivery_id, attempt_count, last_attempt_at)
-                    SELECT d.id, 1, now()
+                    SELECT
+                        d.id,
+                        d.delivery_otp_used_at,
+                        (
+                            d.delivery_otp_expires_at IS NOT NULL
+                            AND d.delivery_otp_expires_at <= now()
+                        ) AS otp_expired,
+                        (d.delivery_otp IS NOT NULL) AS has_otp
                     FROM deliveries d
-                    WHERE d.order_id = %s
-                      AND d.delivery_otp IS NOT NULL
-                      AND d.delivery_otp_used_at IS NULL
-                      AND (d.delivery_otp_expires_at IS NULL OR d.delivery_otp_expires_at > now())
+                    JOIN orders ord ON ord.id = d.order_id
+                    JOIN retailers r ON r.id = ord.retailer_id
+                    JOIN organizations org ON org.id = r.organization_id
+                    JOIN organization_memberships om
+                      ON om.organization_id = r.organization_id
+                    JOIN users u ON u.id = om.user_id
+                    WHERE ord.id = %s
+                      AND r.organization_id = %s
+                      AND om.user_id = %s
+                      AND om.status = 'ACTIVE'
+                      AND om.role IN ('RETAILER_OWNER', 'RETAILER_STAFF')
+                      AND org.status = 'ACTIVE'
+                      AND u.is_active = TRUE
+                      AND ord.order_status = 'DISPATCHED'
+                      AND d.delivery_status = 'ARRIVED'
+                    ORDER BY d.created_at DESC
+                    LIMIT 1
+                    FOR UPDATE OF d;
+                    """,
+                    (order_id, organization_id, user_id),
+                )
+                delivery = cur.fetchone()
+
+                # An unauthorized caller or an ineligible delivery must never
+                # consume another tenant's OTP-attempt allowance. The canonical
+                # confirmation service still returns the appropriate access,
+                # state, expiry, or consumed-code error.
+                if not delivery:
+                    conn.commit()
+                    return
+
+                delivery_id, used_at, expired, has_otp = delivery
+                if used_at is not None or expired or not has_otp:
+                    conn.commit()
+                    return
+
+                cur.execute(
+                    """
+                    INSERT INTO delivery_otp_attempts AS a (
+                        delivery_id, attempt_count, last_attempt_at
+                    )
+                    VALUES (%s, 1, now())
                     ON CONFLICT (delivery_id) DO UPDATE
                       SET attempt_count = a.attempt_count + 1,
                           last_attempt_at = now(),
                           updated_at = now()
+                      WHERE a.attempt_count < %s
                     RETURNING attempt_count;
                     """,
-                    (order_id,),
+                    (delivery_id, self._DELIVERY_OTP_MAX_ATTEMPTS),
                 )
                 row = cur.fetchone()
                 conn.commit()
-                if row and int(row[0]) > self._DELIVERY_OTP_MAX_ATTEMPTS:
+                if not row:
                     raise ValueError("Delivery OTP attempt limit has been reached.")
         finally:
             conn.close()

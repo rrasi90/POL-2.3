@@ -107,13 +107,11 @@ export function OrderDetailMobileScreen(props: {
       const nextItems = rows<Item>(it, ["items", "data"]);
       setItems(nextItems);
       setReturnItemId((current) => current || nextItems[0]?.id || "");
-      if (props.mode === "retailer") {
-        try {
-          const delivery = await api.get<{ delivery_status?: string | null }>("/api/v1/orders/" + props.orderId + "/delivery");
-          setDeliveryStatus(delivery.delivery_status || null);
-        } catch {
-          setDeliveryStatus(null);
-        }
+      try {
+        const delivery = await api.get<{ delivery_status?: string | null }>("/api/v1/orders/" + props.orderId + "/delivery");
+        setDeliveryStatus(delivery.delivery_status || null);
+      } catch {
+        setDeliveryStatus(null);
       }
       setTimeline(rows<Timeline>(tl, ["events", "items", "data"]));
       const next: Record<string, string> = {};
@@ -416,9 +414,11 @@ export function OrderDetailMobileScreen(props: {
               {status === "READY" ? <Btn compact label="ثبت ارسال" onPress={() => void submitDispatch()} loading={acting === "dispatch"} disabled={acting !== null} /> : null}
               {status === "DISPATCHED" ? (
                 <>
-                  <Btn compact label="جمع‌آوری شد" onPress={() => void submitDeliveryStage("picked-up")} loading={acting === "picked-up"} disabled={acting !== null} />
-                  <Btn compact label="در مسیر" onPress={() => void submitDeliveryStage("in-transit")} loading={acting === "in-transit"} disabled={acting !== null} />
-                  <Btn compact label="رسید" onPress={() => void submitDeliveryStage("arrived")} loading={acting === "arrived"} disabled={acting !== null} />
+                  <StatusChip label={"وضعیت تحویل: " + (deliveryStatus || "نامشخص")} tone="info" />
+                  {deliveryStatus === "ASSIGNED" ? <Btn compact label="جمع‌آوری شد" onPress={() => void submitDeliveryStage("picked-up")} loading={acting === "picked-up"} disabled={acting !== null} /> : null}
+                  {deliveryStatus === "PICKED_UP" ? <Btn compact label="در مسیر" onPress={() => void submitDeliveryStage("in-transit")} loading={acting === "in-transit"} disabled={acting !== null} /> : null}
+                  {deliveryStatus === "IN_TRANSIT" ? <Btn compact label="رسید" onPress={() => void submitDeliveryStage("arrived")} loading={acting === "arrived"} disabled={acting !== null} /> : null}
+                  {deliveryStatus === "FAILED" ? <Text style={styles.meta}>ارسال ناموفق شده است؛ برای ادامه به رسیدگی عملیاتی نیاز دارد.</Text> : null}
                 </>
               ) : null}
             </View>
