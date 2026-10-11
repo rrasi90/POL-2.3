@@ -83,7 +83,7 @@ try {
     Write-Report "EXIT_CODE: $rc"
     if ($rc -ne 0) { Write-Report 'REMOTE_STATUS: UNAVAILABLE_OR_AUTH_FAILED' }
 } catch {
-    Write-Report ("REMOTE_STATUS: ERROR — {0}" -f $_.Exception.Message)
+    Write-Report ('REMOTE_STATUS: ERROR - ' + $_.Exception.Message)
 }
 
 if ($FetchRemote) {
@@ -117,7 +117,7 @@ if ($gh) {
             Write-Report 'NEXT: Run the verification suite ONLY after the local checkout SHA has been confirmed to equal the intended PR head SHA, or after recording why a different SHA is intentionally under test.'
         }
     } catch {
-        Write-Report ("PR_API_STATUS: UNAVAILABLE_OR_PRIVATE — {0}" -f $_.Exception.Message)
+        Write-Report ('PR_API_STATUS: UNAVAILABLE_OR_PRIVATE - ' + $_.Exception.Message)
         Write-Report 'If the repository is private, authenticate gh in this terminal or use the already-authorized GitHub connection available to the local coding agent. Do not paste tokens into logs or this file.'
     }
 }
