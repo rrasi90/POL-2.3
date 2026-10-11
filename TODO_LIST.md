@@ -668,3 +668,14 @@
 - Next TODO-ID / next agent: TODO-006 — open a PR from this feature branch, inspect latest PR SHA and all required CI checks, then merge only with expected-head SHA protection if green. After merge, build browser E2E coverage and test TODO-006 on runtime. TODO-007 then needs installed-device or emulator QA; its source guards alone are insufficient.
 - Working tree: no local checkout used; remote feature branch contains committed updates. Main was not modified by these code changes.
 - Handoff accepted by: PENDING
+
+
+### [2026-10-12 UTC] Agent: ChatGPT — STALE-BASKET-ID-VALIDATION-REFINEMENT
+- State: CODE_UPDATED — the refinement is committed on the existing PR #35 feature branch; the previous CI runs belong to the prior branch head and must not be used to certify this newer version.
+- Reason for refinement: a persisted `serverBasketId` can outlive an OPEN basket on the server. Blindly reusing the ID would block checkout after server-side expiry. An idempotent UI retry must also not hide authentication, route or network errors by treating every failure as “basket missing.”
+- Implementation: `pushToServer` now queries `GET /api/v1/baskets/current`, and reuses the returned basket only if it is OPEN and its item count, product IDs, requested quantities and pack quantities match the current local cart. If the API returns the specific 404/NOT_FOUND message `No OPEN basket exists for the active retailer organization.`, the persisted basket ID is cleared and sync may create a fresh basket. Other errors are surfaced without silently creating a replacement basket. Error-state Retry still uses `reviewAndCheckout()`.
+- Regression evidence: expanded `scripts/ui_audit_regression_guards.py` from 14 to 15 source-contract assertions, including active-basket content match and controlled stale-ID invalidation. The prior 14/14 run passed only for the previous head `24dc802c2b61e701f949e9fdf76f4c5b8013d741`; 15/15 has not yet been established. Require CI on the latest branch SHA.
+- Known risk not closed: if a POST creates a basket and only some item writes succeed, that partial OPEN basket may remain; the current API does not provide a transactional bulk-sync or delete contract. A separate reconciliation/resume design and real browser test are still needed.
+- TODO status: TODO-006 remains OPEN pending runtime browser E2E for initial sync, repeat-click idempotence, 404 recovery, failed item-write/checkout blocking and local cart edits. TODO-007 remains OPEN pending runtime/API and emulator or installed-device QA. Source guards are not behavior-level certification.
+- Next action: verify the current PR #35 head SHA and rerun all required workflows after this commit; merge only with expected-head SHA protection once green. Do not cite the earlier successful workflows as certification for the new SHA.
+- Handoff accepted by: PENDING
