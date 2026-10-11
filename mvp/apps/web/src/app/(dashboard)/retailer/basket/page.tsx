@@ -79,48 +79,52 @@ export default function RetailerBasketPage() {
       setSyncError("سبد خرید خالی است.");
       return false;
     }
-    // The basket store clears serverBasketId whenever local lines change.
-    // Validate the persisted id against the current OPEN server basket first:
-    // localStorage can outlive the server basket, and repeat clicks must not
-    // create duplicate OPEN baskets.
+    // Reconcile with the server's current OPEN basket before creating anything.
+    // This prevents duplicate baskets on repeat clicks and recovers from a lost
+    // success response when the server already received all item writes.
     setSyncing(true);
     setSyncError(null);
     setSynced(false);
     try {
-      if (serverBasketId) {
-        try {
-          const current = await getApi().get<BasketCurrentResult>("/api/v1/baskets/current");
-          const currentItems = current.items ?? [];
-          const contentsMatch =
-            currentItems.length === lines.length &&
-            lines.every((line) => {
-              const item = currentItems.find((candidate) => candidate.product_id === line.product_id);
-              return (
-                item !== undefined &&
-                item.requested_quantity === line.quantity &&
-                item.pack_quantity === (line.pack_quantity > 0 ? line.pack_quantity : 1)
-              );
-            });
-          if (current.status === "OPEN" && current.basket_id && contentsMatch) {
-            setServerBasket(current.basket_id);
-            setSynced(true);
-            return true;
-          }
+      let current: BasketCurrentResult | null = null;
+      try {
+        current = await getApi().get<BasketCurrentResult>("/api/v1/baskets/current");
+      } catch (err) {
+        if (
+          err instanceof ApiError &&
+          err.status === 404 &&
+          err.message.includes("No OPEN basket exists")
+        ) {
+          // No active server basket is normal for a first sync or after expiry.
           setServerBasket(null);
-        } catch (err) {
-          if (
-            err instanceof ApiError &&
-            err.status === 404 &&
-            err.message.includes("No OPEN basket exists")
-          ) {
-            // The persisted basket expired or was closed; clear it and start a
-            // new sync. Do not mask route, auth, or network failures as absence.
-            setServerBasket(null);
-          } else {
-            throw err;
-          }
+        } else {
+          // Do not create another basket when auth, route, or network status is unknown.
+          throw err;
         }
       }
+
+      if (current) {
+        const currentItems = current.items ?? [];
+        const contentsMatch =
+          currentItems.length === lines.length &&
+          lines.every((line) => {
+            const item = currentItems.find((candidate) => candidate.product_id === line.product_id);
+            return (
+              item !== undefined &&
+              item.requested_quantity === line.quantity &&
+              item.pack_quantity === (line.pack_quantity > 0 ? line.pack_quantity : 1)
+            );
+          });
+        if (current.status === "OPEN" && current.basket_id && contentsMatch) {
+          setServerBasket(current.basket_id);
+          setSynced(true);
+          return true;
+        }
+      }
+
+      // The existing basket is absent or differs from the local cart; do not
+      // mistakenly send checkout against it.
+      setServerBasket(null);
       const created = await getApi().post<BasketCreateResult>("/api/v1/baskets");
       let version = created.version;
       const basketId = created.basket_id;
