@@ -76,7 +76,7 @@ jobs:
       - name: Expo Android export
         run: npm run build --workspace @pol/mobile
   android_qa_apks:
-    name: \${{ matrix.variant }} Android QA APK
+    name: ${{ matrix.variant }} Android QA APK
     if: github.event_name == 'pull_request'
     needs: mobile
     strategy:
@@ -88,7 +88,7 @@ jobs:
       run:
         working-directory: mvp/apps/mobile
     env:
-      POL_APP_VARIANT: \${{ matrix.variant }}
+      POL_APP_VARIANT: ${{ matrix.variant }}
       POL_RELEASE: "0"
       EXPO_PUBLIC_DATA_MODE: mock
     steps:
@@ -112,12 +112,12 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Build \${{ matrix.variant }} QA APK
-        run: node scripts/build_android_variant.mjs \${{ matrix.variant }}
+      - name: Build ${{ matrix.variant }} QA APK
+        run: node scripts/build_android_variant.mjs ${{ matrix.variant }}
 
-      - name: Upload \${{ matrix.variant }} QA APK
+      - name: Upload ${{ matrix.variant }} QA APK
         uses: actions/upload-artifact@v4
         with:
-          name: POL-\${{ matrix.variant }}-QA-APK
-          path: mvp/apps/mobile/dist/\${{ matrix.variant }}/*.apk
+          name: POL-${{ matrix.variant }}-QA-APK
+          path: mvp/apps/mobile/dist/${{ matrix.variant }}/*.apk
           if-no-files-found: error
