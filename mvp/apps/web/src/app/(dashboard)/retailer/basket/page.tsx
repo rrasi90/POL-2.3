@@ -65,6 +65,14 @@ export default function RetailerBasketPage() {
       setSyncError("سبد خرید خالی است.");
       return false;
     }
+    // The basket store clears serverBasketId whenever local lines change.
+    // Reuse a successfully synchronized basket on repeat clicks/retries instead
+    // of creating duplicate OPEN baskets on the server.
+    if (serverBasketId) {
+      setSyncError(null);
+      setSynced(true);
+      return true;
+    }
     setSyncing(true);
     setSyncError(null);
     setSynced(false);
@@ -167,7 +175,7 @@ export default function RetailerBasketPage() {
         <ErrorState
           title="همگام‌سازی سبد با سرور ناموفق بود"
           description={syncError}
-          onRetry={() => void pushToServer()}
+          onRetry={() => void reviewAndCheckout()}
         />
       ) : null}
 
