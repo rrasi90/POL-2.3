@@ -2,9 +2,9 @@
 
 **آخرین تجمیع:** 2026-10-12  
 **مخزن هدف:** `rrasi90/POL-2.3`  
-**شاخهٔ اسناد جاری:** `docs/pol-prebuild-checklist-mainbase-20261012`  
+**شاخهٔ اسناد جاری:** `main`  
 **PR #30:** ادغام‌شده در `main`؛ merge commit: `2cd6588206c8b3bddc5ae13aad461bc61f90338f`  
-**PR #34:** `docs/pol-prebuild-checklist-mainbase-20261012` — شاخهٔ نهایی بر پایهٔ `main`؛ در حال تکمیل بررسی CI؛ ادغام فقط پس از سبز شدن شواهد نهایی.
+**PR #34:** ادغام‌شده در `main`؛ merge commit: `dba2bc30ba3e49c3c91c24f347089e77a9542482`. شواهد سه گیت پیش از ادغام سبز بود و tree آزموده‌شده با tree ادغام برابر است.
 
 ## قواعد استفاده از این فهرست
 
@@ -651,3 +651,20 @@
 - Important: this edit updates the checklist after successful CI and therefore changes the docs branch SHA. The pull request CI will rerun on the resulting commit; do not merge until those post-edit checks also pass.
 - Next owner/action: verify all checks on the newest PR #34 head; if green, mark ready, review the exact diff, merge PR #34 and confirm the merged main tree equals the tested tree. Keep device/browser QA status open.
 - Handoff accepted by: pending final merge review.
+
+
+### [2026-10-12 UTC] Agent: ChatGPT — WEB-BASKET-SYNC-REUSE-AND-RETRY-FIX
+- State: DONE_CODE_UNVERIFIED — implementation committed to a feature branch; feature-branch CI and browser behavior still require verification.
+- Incoming handoff: `CURRENT-SHA-EVIDENCE-AND-REGRESSION-CLOSEOUT` and merged PR #34. The evidence bundle for PR #34 verified 663/663 automated tests, Windows PowerShell 5.1 parsing/preflight, and static gates; none of those establishes browser/device QA.
+- Repository / branch / worktree: `rrasi90/POL-2.3`, feature branch `fix/web-basket-sync-reuse-20261012`, based on post-merge `main` commit `dba2bc30ba3e49c3c91c24f347089e77a9542482`.
+- Start SHA -> End SHA: `dba2bc30ba3e49c3c91c24f347089e77a9542482` -> source commits `5a179ea43808918c2c072bcae94b286253f1243f` (web basket fix) and `e565aa04f2fab92ad0ddd85243011841e2b5f41f` (regression guard update); final branch SHA must be reread after the TODO journal commit.
+- Files and symbols changed: `mvp/apps/web/src/app/(dashboard)/retailer/basket/page.tsx` (`pushToServer`, ErrorState retry handler); `scripts/ui_audit_regression_guards.py` (basket store invalidation, repeated sync and retry assertions); this TODO journal.
+- Work completed in this session: source review proved every call to `POST /api/v1/baskets` creates a new OPEN server basket, while web `pushToServer` had unconditionally created one on every click. Added an early return when `serverBasketId` is already set. The Zustand basket store clears `serverBasketId` whenever a local line is added, edited or removed, so changed contents still force a fresh sync. Changed the sync error retry to call `reviewAndCheckout()`, so a successful retry proceeds to checkout. Added three source-contract guards for reuse, invalidation-on-mutation and retry navigation; guard suite now contains 14 assertions.
+- Work inherited from previous agent and verified: PR #34 merged as `dba2bc30ba3e49c3c91c24f347089e77a9542482` with tree `dcce8552735b3add3d1da9f59c64326dcb1c9589`; its static, Windows preflight and independent verification workflows passed before merge. The full independent run generated all three evidence files and reported 663 passed, 0 failed, 0 skipped, with release/pilot certification explicitly not claimed.
+- Commands/tests/environment: source reviewed via GitHub; exact-string guards confirmed insertion points and remote read-back confirmed updated files on the feature branch. The 14-assertion guard suite has not yet been executed on the feature branch; CI is required for the authoritative result. No local browser runner/device was available in this connector-only workspace.
+- Results: code changes are pushed to `fix/web-basket-sync-reuse-20261012`; feature PR and CI pending at time of this entry. TODO-006 remains OPEN because source guards are not browser E2E; TODO-007 remains OPEN for real API/runtime and installed-device QA.
+- Not done / known risks: a failed item write after basket creation can still leave a partial OPEN basket because the current API has no transactional bulk-sync/idempotent create contract; do not claim that partial-failure orphan cleanup is solved. Browser-level success/failure/retry testing, Android installation/screenshots/accessibility, live SMS/storage, payment reconciliation and legal/operational pilot checks remain open.
+- Blocker and responsible owner: Web QA / next agent must execute browser tests against the real web app and test backend, covering initial successful sync, repeated click/retry (exactly one new basket), empty basket, failed item request (checkout blocked), and editing lines after sync (new sync required). Add a supported browser automation fixture/dependency or use the project’s established CI environment; do not mark source assertions as behavioral PASS.
+- Next TODO-ID / next agent: TODO-006 — open a PR from this feature branch, inspect latest PR SHA and all required CI checks, then merge only with expected-head SHA protection if green. After merge, build browser E2E coverage and test TODO-006 on runtime. TODO-007 then needs installed-device or emulator QA; its source guards alone are insufficient.
+- Working tree: no local checkout used; remote feature branch contains committed updates. Main was not modified by these code changes.
+- Handoff accepted by: PENDING
