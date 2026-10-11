@@ -609,3 +609,30 @@
 - **شواهد تست:** 663/663 مربوط به CI روی merge-candidate SHA `83485b25a7042999150daf487dd99c140642a827` است؛ tree آن با `main` بعد از merge برابر است. این نتیجه تست دستگاه واقعی نیست.
 - **کارهای باقی‌ماندهٔ مشخص:** TODO-003 (تأیید `failure_inventory.txt` و final certification report)، TODO-006 (تست اختصاصی sync سبد خریدار)، TODO-007 (assertionهای state تحویل موبایل)، PowerShell runtime validation و نصب/QA روی دستگاه واقعی. بقیهٔ TODOها فقط با evidence جداگانه بسته شوند.
 - **ادامهٔ زنجیره:** TODO-003 → TODO-006 → TODO-007 سپس بر اساس dependency map؛ موارد PRE-BUILD باز باید پیش از گیت TODO-084 تعیین تکلیف شوند، تست‌های دستگاهی بعد از QA APK و قبل از release انجام می‌شوند.
+
+### [2026-10-12 UTC] Agent: ChatGPT — REGRESSION-GUARD-AND-EVIDENCE-AUDIT
+- State: PARTIAL_VERIFIED / FIX_APPLIED_PENDING_RETEST
+- Incoming handoff: `POST-MERGE-VERIFICATION-AND-BRANCH-CLEANUP`; PR #30 is merged, full local TODO and PowerShell helper are on GitHub, PR #31 was superseded/closed and PR #32 became the review candidate.
+- Repository / branch / worktree: `rrasi90/POL-2.3`, branch `docs/todo-list-and-preflight-final-20261012`; most recent commit at time of entry: `1a6a943eb7557e0a401dd1f55e100bbdde82ef4a`.
+- Work completed and verified:
+  - Downloaded and inspected CI artifact `pol-verification-evidence` ID `11718298226` from run [38182246509](https://github.com/rrasi90/POL-2.3/actions/runs/38182246509). Artifact contains `pol-test-results.json`, `failure_inventory.txt`, and `final_certification_65b826d5e5a0d1df2d861e4638301aca65e5cdf7.json`. That tested commit reports 663/663 PASS, 0 failures, 0 skips, exit 0, PostgreSQL 18.6; report verdict `AUTOMATED_TESTS_PASSED`, `release_or_pilot_certification=NOT_CLAIMED`. This proves the evidence-generation workflow works for that run/SHA.
+  - Windows helper check [38182246464](https://github.com/rrasi90/POL-2.3/actions/runs/38182246464) passed the Windows PowerShell 5.1 parser, safe preflight and Python compileall. Its log confirms `adb` and `emulator` were not available; device QA is still open.
+  - Added source-contract guards for the exact web basket-sync failure path and the mobile delivery transition path; an independent JS inspection of the current source verified all 14 corresponding invariants are present. These source checks are not browser/device E2E tests.
+- New failure found:
+  - Run [38182442225](https://github.com/rrasi90/POL-2.3/actions/runs/38182442225) failed 1 of 663 tests: `scripts/test_pytest_collection_guard.py::test_every_test_file_collects_at_least_one_test`. Cause: the new stand-alone source-guard runner was named `scripts/test_ui_audit_regressions.py`, so the repository's pytest collection guard treated it as a test module with no test functions.
+  - Corrective change applied: renamed the runner to `scripts/ui_audit_regression_guards.py` and updated the static and Windows workflows to execute the new path explicitly. The old `test_*.py` file was deleted on this branch. This avoids changing pytest's test-file inventory while preserving the manual guard.
+- What is still NOT verified:
+  - The renamed runner and the latest workflow versions have not yet completed a new GitHub Actions run. The failed run above is for the pre-rename SHA and is not evidence about the corrected version.
+  - TODO-003 stays OPEN until a post-fix exact-SHA run generates and validates all three evidence files.
+  - TODO-006/TODO-007 stay OPEN until the regression guard runs green and real behavior-level browser/mobile QA is added; source assertions alone do not prove user-visible behavior.
+  - Physical-device APK install/screenshots, live SMS, live object storage, payment reconciliation, unresolved policy decisions and legal/operational pilot gates remain open.
+- Commands/tests/environment: Inspected the downloaded ZIP and parsed all three artifacts; re-read current web/mobile source through GitHub; evaluated 14 source conditions against current source; reviewed CI failure inventory. No local Android device/emulator exists in the runner.
+- Next TODO-ID / next agent: trigger a fresh PR CI run from the latest renamed-runner commit; require all three workflows green; inspect new artifact and test inventory; only then update TODO-003 and review/merge the documentation/test PR.
+- Handoff accepted by: PENDING
+
+## Latest execution snapshot — 2026-10-12
+- PR #30: merged to `main` at `2cd6588206c8b3bddc5ae13aad461bc61f90338f`; CI-tested code tree equals post-merge main tree.
+- TODO-003: still OPEN pending successful post-fix exact-SHA run.
+- Regression runner filename: `scripts/ui_audit_regression_guards.py`; it is called by the static and Windows workflows and intentionally does not match pytest's `test_*.py` discovery convention.
+- PR #31: closed as superseded. PR #32: draft review candidate; do not merge until latest CI validates the rename and new runner.
+- Next action: finish fresh CI on the corrected branch/PR; don't mark UI behavior or device QA complete on source checks alone.
