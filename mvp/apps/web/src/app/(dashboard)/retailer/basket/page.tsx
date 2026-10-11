@@ -60,8 +60,11 @@ export default function RetailerBasketPage() {
     return Array.from(byVendor.entries());
   }, [lines]);
 
-  async function pushToServer() {
-    if (lines.length === 0) return;
+  async function pushToServer(): Promise<boolean> {
+    if (lines.length === 0) {
+      setSyncError("سبد خرید خالی است.");
+      return false;
+    }
     setSyncing(true);
     setSyncError(null);
     setSynced(false);
@@ -83,20 +86,20 @@ export default function RetailerBasketPage() {
       }
       setServerBasket(basketId);
       setSynced(true);
+      return true;
     } catch (err) {
       setSyncError(
         err instanceof Error ? err.message : "همگام‌سازی سبد با سرور ناموفق بود",
       );
+      return false;
     } finally {
       setSyncing(false);
     }
   }
 
   async function reviewAndCheckout() {
-    await pushToServer();
-    // navigate only if sync succeeded — pushToServer sets error on failure
-    // (syncError state is set async; check serverBasketId after)
-    router.push("/retailer/checkout");
+    const syncedSuccessfully = await pushToServer();
+    if (syncedSuccessfully) router.push("/retailer/checkout");
   }
 
   if (lines.length === 0) {
