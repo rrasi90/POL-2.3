@@ -79,15 +79,28 @@ def main() -> int:
             ),
         ),
         (
-            "A previously synchronized basket is reused before creating a new server basket",
+            "Stored server basket is reused only when the active OPEN basket matches local lines",
             lambda: require(
-                re.search(
-                    r"if \(serverBasketId\)\s*\{\s*setSyncError\(null\);\s*setSynced\(true\);\s*return true;\s*\}",
-                    push_fn,
-                ) is not None
-                and push_fn.find("if (serverBasketId)")
+                'getApi().get<BasketCurrentResult>("/api/v1/baskets/current")' in push_fn
+                and 'current.status === "OPEN"' in push_fn
+                and "currentItems.length === lines.length" in push_fn
+                and "item.requested_quantity === line.quantity" in push_fn
+                and "item.pack_quantity === (line.pack_quantity > 0 ? line.pack_quantity : 1)" in push_fn
+                and "setServerBasket(current.basket_id)" in push_fn
+                and push_fn.find('getApi().get<BasketCurrentResult>("/api/v1/baskets/current")')
                 < push_fn.find('getApi().post<BasketCreateResult>("/api/v1/baskets")'),
-                "Repeat checkout actions must reuse the existing server basket rather than create another OPEN basket.",
+                "Repeat checkout actions may reuse a basket only when the current OPEN server contents match the local cart.",
+            ),
+        ),
+        (
+            "A stale server basket id is cleared only for the recognized missing-open-basket response",
+            lambda: require(
+                'err instanceof ApiError' in push_fn
+                and 'err.status === 404' in push_fn
+                and 'err.message.includes("No OPEN basket exists")' in push_fn
+                and "setServerBasket(null);" in push_fn
+                and 'import { ApiError } from "@pol/api-client";' in basket,
+                "A disappeared server basket must be invalidated without masking auth, route or network errors.",
             ),
         ),
         (
