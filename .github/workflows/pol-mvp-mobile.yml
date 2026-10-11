@@ -59,13 +59,17 @@ jobs:
           EXPO_PUBLIC_APP_VARIANT: vendor
         run: npx expo config --type public
 
-      - name: Pre-APK release gate
+      - name: Retailer pre-APK QA gate
+        working-directory: mvp/apps/mobile
+        env:
+          POL_APP_VARIANT: retailer
+          POL_RELEASE: "0"
+        run: npm run qa:pre-apk
+
+      - name: Vendor pre-APK QA gate
         working-directory: mvp/apps/mobile
         env:
           POL_APP_VARIANT: vendor
-          # CI has no real API endpoint: run the pre-APK contract in QA mode.
-          # The HTTPS/local-host asserts stay mandatory for real release builds
-          # (POL_RELEASE defaults to 1 outside CI).
           POL_RELEASE: "0"
         run: npm run qa:pre-apk
 
