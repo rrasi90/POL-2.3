@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ApiError } from "@pol/api-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -25,6 +26,19 @@ interface BasketItemResult {
   basket_id: string;
   version: number;
   status: string;
+}
+
+interface BasketCurrentItemResult {
+  product_id: string;
+  requested_quantity: number;
+  pack_quantity: number;
+}
+
+interface BasketCurrentResult {
+  basket_id: string;
+  version: number;
+  status: string;
+  items: BasketCurrentItemResult[];
 }
 
 /**
@@ -66,17 +80,47 @@ export default function RetailerBasketPage() {
       return false;
     }
     // The basket store clears serverBasketId whenever local lines change.
-    // Reuse a successfully synchronized basket on repeat clicks/retries instead
-    // of creating duplicate OPEN baskets on the server.
-    if (serverBasketId) {
-      setSyncError(null);
-      setSynced(true);
-      return true;
-    }
+    // Validate the persisted id against the current OPEN server basket first:
+    // localStorage can outlive the server basket, and repeat clicks must not
+    // create duplicate OPEN baskets.
     setSyncing(true);
     setSyncError(null);
     setSynced(false);
     try {
+      if (serverBasketId) {
+        try {
+          const current = await getApi().get<BasketCurrentResult>("/api/v1/baskets/current");
+          const currentItems = current.items ?? [];
+          const contentsMatch =
+            currentItems.length === lines.length &&
+            lines.every((line) => {
+              const item = currentItems.find((candidate) => candidate.product_id === line.product_id);
+              return (
+                item !== undefined &&
+                item.requested_quantity === line.quantity &&
+                item.pack_quantity === (line.pack_quantity > 0 ? line.pack_quantity : 1)
+              );
+            });
+          if (current.status === "OPEN" && current.basket_id && contentsMatch) {
+            setServerBasket(current.basket_id);
+            setSynced(true);
+            return true;
+          }
+          setServerBasket(null);
+        } catch (err) {
+          if (
+            err instanceof ApiError &&
+            err.status === 404 &&
+            err.message.includes("No OPEN basket exists")
+          ) {
+            // The persisted basket expired or was closed; clear it and start a
+            // new sync. Do not mask route, auth, or network failures as absence.
+            setServerBasket(null);
+          } else {
+            throw err;
+          }
+        }
+      }
       const created = await getApi().post<BasketCreateResult>("/api/v1/baskets");
       let version = created.version;
       const basketId = created.basket_id;
