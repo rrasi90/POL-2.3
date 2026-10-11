@@ -2,8 +2,9 @@
 
 **آخرین تجمیع:** 2026-10-12  
 **مخزن هدف:** `rrasi90/POL-2.3`  
-**شاخهٔ کاری اخیر:** `fix/audit-remediation-20261011`  
-**PR اخیر:** #30 — `Fix audit findings: OTP isolation, checkout sync and mobile release gates`
+**شاخهٔ اسناد جاری:** `docs/todo-list-and-preflight-20261012`  
+**PR #30:** ادغام‌شده در `main`؛ merge commit: `2cd6588206c8b3bddc5ae13aad461bc61f90338f`  
+**PR #31:** `docs/todo-list-and-preflight-20261012` — Draft، باز و ادغام‌نشده تا اعتبارسنجی PowerShell روی Windows.
 
 ## قواعد استفاده از این فهرست
 
@@ -145,8 +146,8 @@
 
 ## P0 — وضعیت فعلی GitHub و گواهی کد
 
-- [x] `TODO-001` **DONE_VERIFIED — تعیین وضعیت PR #30 و CI (بررسی 2026-10-12):** PR #30 باز و ادغام‌نشده است؛ شاخه `fix/audit-remediation-20261011`، head SHA `45ff1e3d6498568596a42b01d9b69d827a49777d`، base `main` با SHA `26e9b8b7766d871cefdd8e7257439646f5b9f399`. شواهد: [PR #30](https://github.com/rrasi90/POL-2.3/pull/30)، [Static Gate run 38130308723](https://github.com/rrasi90/POL-2.3/actions/runs/38130308723) PASS، [Mobile Verification run 38130308664](https://github.com/rrasi90/POL-2.3/actions/runs/38130308664) PASS (typecheck, functional/regression/mock QA, دونوں pre-APK gates و هر دو QA APK build)، [Independent Verification run 38130308606](https://github.com/rrasi90/POL-2.3/actions/runs/38130308606) PASS. GitHub CI verification merge-candidate SHA `83485b25a7042999150daf487dd99c140642a827` را آزمایش کرده است؛ آن را با PR head SHA اشتباه نگیرید. | مالک: ایجنت نگهدارندهٔ TODO | پیش‌نیاز: بدون پیش‌نیاز
-- [x] `TODO-002` **DONE_VERIFIED — full verification روی merge candidate مربوط به PR #30:** CI گزارش `artifacts/pol-test-results.json` را برای SHA تست‌شدهٔ `83485b25a7042999150daf487dd99c140642a827` تولید کرد؛ PostgreSQL 18.6، `663 collected / 663 passed / 0 failed / 0 skipped`, exit code `0`, مدت `199.01s`, working tree clean. Artifact: [pol-test-results run 38130308606](https://github.com/rrasi90/POL-2.3/actions/runs/38130308606) (artifact ID `11698943848`). این PASS به merge-candidate CI مربوط است، نه ادعای تست روی گوشی واقعی و نه ادعای merge شدن PR.
+- [x] `TODO-001` **DONE_VERIFIED — وضعیت نهایی PR #30 و CI:** PR #30 در `2026-10-11T22:47:42Z` ادغام شد؛ merge commit در `main`: `2cd6588206c8b3bddc5ae13aad461bc61f90338f`. PR head قبل از ادغام `45ff1e3d6498568596a42b01d9b69d827a49777d` بود و GitHub merge-candidate SHA `83485b25a7042999150daf487dd99c140642a827` را تست کرد. **Tree SHA merge-candidate و `main` پس از ادغام دقیقاً یکسان است:** `3b14029235ba0c5d61dfe19dee0708a87b75bfe5`. سه workflow سبز بودند: [Static Gate](https://github.com/rrasi90/POL-2.3/actions/runs/38130308723)، [Mobile Verification + Retailer/Vendor QA APK](https://github.com/rrasi90/POL-2.3/actions/runs/38130308664)، [Independent Verification](https://github.com/rrasi90/POL-2.3/actions/runs/38130308606). | مالک: ایجنت نگهدارندهٔ TODO | پیش‌نیاز: بدون پیش‌نیاز
+- [x] `TODO-002` **DONE_VERIFIED — full verification روی همان tree که اکنون در `main` است:** CI برای merge-candidate SHA `83485b25a7042999150daf487dd99c140642a827` گزارش `artifacts/pol-test-results.json` را تولید کرد؛ PostgreSQL 18.6، `663 collected / 663 passed / 0 failed / 0 skipped`, exit code `0`, مدت `199.01s`, working tree clean. Tree این SHA با `main` پس از squash merge برابر `3b14029235ba0c5d61dfe19dee0708a87b75bfe5` است؛ بنابراین این شواهد روی همان snapshot کد `main` اعمال می‌شود، هرچند SHAهای commit متفاوت‌اند. Artifact: [Independent Verification CI](https://github.com/rrasi90/POL-2.3/actions/runs/38130308606) (artifact ID `11698943848`). این مدرک تست روی گوشی واقعی یا release certification بیرونی نیست.
 - [ ] `TODO-003` **OPEN — بازتولید شواهد:** `artifacts/pol-test-results.json`، `artifacts/failure_inventory.txt` و گزارش نهایی certification باید از همان SHA فعلی تولید شوند؛ خروجی‌های قدیمی را به‌عنوان مدرک SHA جدید استفاده نکنید. | مالک: تعیین‌نشده | پیش‌نیاز: TODO-002 باید تعیین تکلیف شود
 - [x] `TODO-004` **DONE_VERIFIED — تست ضد OTP بین tenantها:** در artifact CI با SHA تست‌شدهٔ `83485b25a7042999150daf487dd99c140642a827`، تست `scripts/test_http_proof_of_delivery.py::TestOTPAttemptCap::test_other_retailer_cannot_consume_victim_otp_attempts` دارای نتیجه `passed` است. مدرک: [Independent Verification CI](https://github.com/rrasi90/POL-2.3/actions/runs/38130308606). | پیش‌نیاز شواهد: TODO-002 (خروجی همان suite هر دو آزمون را دربر دارد).
 - [x] `TODO-005` **DONE_VERIFIED — سقف ۵ تلاش OTP:** در artifact CI با SHA تست‌شدهٔ `83485b25a7042999150daf487dd99c140642a827`، تست `scripts/test_http_proof_of_delivery.py::TestOTPAttemptCap::test_otp_attempt_limit` دارای نتیجه `passed` است. مدرک: [Independent Verification CI](https://github.com/rrasi90/POL-2.3/actions/runs/38130308606). | پیش‌نیاز شواهد: TODO-002 (خروجی همان suite این نتیجه را دربر دارد).
@@ -586,10 +587,25 @@
 - Working tree: local files and branch files are synchronized by exact text comparison; no repository code was changed by this documentation recovery.
 - Handoff accepted by: PENDING
 
+### [2026-10-12 UTC] Agent: ChatGPT — POST-MERGE-VERIFICATION-AND-BRANCH-CLEANUP
+- State: DONE_VERIFIED (merge/CI/workflow synchronization; not a claim that all application QA is complete)
+- Incoming handoff: `GITHUB-SYNC-AND-CI-VERIFICATION-RECOVERY`; PR #30 was open with green CI, PR #31 contained complete files but its branch still had the obsolete duplicate-`env` static workflow inherited from old `main`.
+- Repository / branch / worktree: `rrasi90/POL-2.3`; base `main`; docs branch `docs/todo-list-and-preflight-20261012`.
+- Start SHA -> End SHA: PR #30 head `45ff1e3d6498568596a42b01d9b69d827a49777d` -> merged `main` commit `2cd6588206c8b3bddc5ae13aad461bc61f90338f`; docs branch commit after workflow alignment `1f1fc25c1dce58a5aeabafc32796e0f6aeda98f8` (later TODO document update may move this branch again).
+- Files/workflows changed: PR #30 code fixes merged to `main`; `.github/workflows/pol-remediation-static.yml` on docs branch was aligned to canonical current-main blob `48adc16b0ceb58d365faa0bef8eedaadb5c46ca7`, removing duplicate `env` from the branch's own push-workflow definition.
+- Work completed: Confirmed PR #30 had no review submissions or unresolved review threads; all three PR workflows completed success. Merged PR #30 using squash and expected-head SHA guard. Compared Git tree SHA of tested merge candidate `83485b25a7042999150daf487dd99c140642a827` with post-merge `main`; both equal `3b14029235ba0c5d61dfe19dee0708a87b75bfe5`, establishing the tested code tree matches main. Verified the independent test artifact: 663/663 pass, 0 fail, 0 skip; both OTP regression tests were passed. Confirmed the two QA APK artifacts existed in the CI run. Restored `.github/workflows/pol-remediation-static.yml` on docs branch to the fixed canonical file, so it no longer carries the old duplicate `env` version.
+- Tests/evidence: Static run `38130308723` success; Mobile run `38130308664` success (Expo typecheck, functional and regression QA, both variant pre-APK gates, retailer APK and vendor APK); Independent Verification run `38130308606` success; artifact `11698943848`, PostgreSQL 18.6, 663 passed, 199.01 seconds, exit 0. Source-of-truth tree comparison performed through GitHub API.
+- Results: PR #30 merged. Complete `TODO_LIST.md` and `POL_TODO_PREFLIGHT.ps1` were previously fetched back from GitHub and matched exact local contents. PR #31 remains Draft/unmerged; the branch now aligns the static workflow with current main.
+- Not done / known risks: PowerShell script has not been executed/parsed by Windows PowerShell or PowerShell 7 in this environment. TODO-003 remains open because `failure_inventory.txt` and final certification report were not independently confirmed in the downloadable CI artifact. TODO-006 basket sync regression and TODO-007 exact mobile delivery-state assertions remain open; device installation/screenshots and external/live integrations also remain open.
+- Next TODO-ID / next agent: TODO-003 — retrieve/verify failure inventory and certification report for the same code tree; then TODO-006 and TODO-007. Run `POL_TODO_PREFLIGHT.ps1` on Windows/PowerShell 7 from a current main checkout, then review/resolve PR #31. Do not mark APK device checks complete just because CI produced APK artifacts.
+- Working tree: remote GitHub docs branch; no app code changes after PR #30 merge. Local file updated; remote TODO file must be synchronized after this journal entry.
+- Handoff accepted by: PENDING
+
 ## وضعیت آخرین بررسی و کارهای باقی‌مانده
 
-- **GitHub:** اتصال بازیابی شده است. فایل‌های کامل در شاخهٔ `docs/todo-list-and-preflight-20261012` قرار دارند؛ به `main` merge نشده‌اند.
-- **PR #30:** باز و merge نشده؛ CI integration candidate سبز است. این نتیجه مجوز خودکار merge یا انتشار نیست.
-- **PR #31:** Draft و merge نشده؛ محتوای هر دو فایل بازیابی شده، اما اجرای خود فایل PowerShell در ویندوز و review نهایی باقی است. متن توضیح PR باید با وضعیت فعلی هماهنگ باشد و دیگر نباید بگوید فایل‌ها placeholder هستند.
-- **شواهد تست:** 663/663 مربوط به CI روی merge-candidate SHA `83485b25a7042999150daf487dd99c140642a827` است؛ نتیجه را به SHA head یا تست دستگاه واقعی نسبت ندهید.
-- **ادامهٔ زنجیره:** TODO-003 → TODO-006 → TODO-007 و سپس ادامه بر مبنای dependency map. وظایف پیش از ساخت APK که هنوز باز هستند باید قبل از صدور گیت نهایی TODO-084 تعیین تکلیف شوند؛ نصب و QA دستگاهی بعد از QA APK و قبل از release انجام می‌شود.
+- **GitHub:** اتصال فعال است؛ متن کامل `TODO_LIST.md` و `POL_TODO_PREFLIGHT.ps1` روی شاخهٔ `docs/todo-list-and-preflight-20261012` قرار دارد و از راه GitHub دوباره خوانده شده است.
+- **PR #30:** ادغام‌شده در `main`؛ merge commit `2cd6588206c8b3bddc5ae13aad461bc61f90338f`. تمام سه workflow موفق بودند و tree آزمایش‌شده دقیقاً با tree فعلی main برابر است.
+- **PR #31:** Draft و ادغام‌نشده؛ فایل‌ها کامل‌اند و workflow branch با `main` همگام شده است. اجرای PowerShell روی Windows/PowerShell 7 و review نهایی همچنان باقی است.
+- **شواهد تست:** 663/663 مربوط به CI روی merge-candidate SHA `83485b25a7042999150daf487dd99c140642a827` است؛ tree آن با `main` بعد از merge برابر است. این نتیجه تست دستگاه واقعی نیست.
+- **کارهای باقی‌ماندهٔ مشخص:** TODO-003 (تأیید `failure_inventory.txt` و final certification report)، TODO-006 (تست اختصاصی sync سبد خریدار)، TODO-007 (assertionهای state تحویل موبایل)، PowerShell runtime validation و نصب/QA روی دستگاه واقعی. بقیهٔ TODOها فقط با evidence جداگانه بسته شوند.
+- **ادامهٔ زنجیره:** TODO-003 → TODO-006 → TODO-007 سپس بر اساس dependency map؛ موارد PRE-BUILD باز باید پیش از گیت TODO-084 تعیین تکلیف شوند، تست‌های دستگاهی بعد از QA APK و قبل از release انجام می‌شوند.
