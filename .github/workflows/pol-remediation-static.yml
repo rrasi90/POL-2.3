@@ -34,7 +34,7 @@ jobs:
           POL_JWT_SECRET: static-gate-secret-not-for-production
         run: python scripts/test_api_route_hygiene.py
 
-      - name: UI audit regression guards
+      - name: UI audit regression guards (basket synchronization and delivery transitions)
         env:
           PYTHONPATH: .
         run: python scripts/test_ui_audit_regressions.py
