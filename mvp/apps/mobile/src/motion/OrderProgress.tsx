@@ -88,11 +88,19 @@ function StepDot(props: { done: boolean; index: number }): React.ReactNode {
   const wasDone = useRef(props.done);
 
   useEffect(() => {
-    if (props.done && !wasDone.current && !reduced) {
-      scale.setValue(1.3);
-      Animated.spring(scale, { toValue: 1, ...motionSpring.bump, useNativeDriver: true }).start();
-    }
+    const becameDone = props.done && !wasDone.current;
     wasDone.current = props.done;
+    scale.stopAnimation();
+    scale.setValue(1);
+    if (reduced || !becameDone) return;
+    scale.setValue(1.3);
+    const animation = Animated.spring(scale, { toValue: 1, ...motionSpring.bump, useNativeDriver: true });
+    animation.start();
+    return () => {
+      animation.stop();
+      scale.stopAnimation();
+      scale.setValue(1);
+    };
   }, [props.done, reduced, scale]);
 
   return (

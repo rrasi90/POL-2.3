@@ -20,8 +20,9 @@ export function ErrorShake(props: {
   const translateX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (props.trigger <= 0 || reduced) return;
+    translateX.stopAnimation();
     translateX.setValue(0);
+    if (props.trigger <= 0 || reduced) return;
     const a = motionShake.amplitude;
     const s = motionShake.step;
     const animation = Animated.sequence([
@@ -32,7 +33,11 @@ export function ErrorShake(props: {
       Animated.timing(translateX, { toValue: 0, duration: s, useNativeDriver: true }),
     ]);
     animation.start();
-    return () => animation.stop();
+    return () => {
+      animation.stop();
+      translateX.stopAnimation();
+      translateX.setValue(0);
+    };
   }, [props.trigger, reduced, translateX]);
 
   return (
