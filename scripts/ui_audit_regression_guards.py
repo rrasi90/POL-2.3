@@ -11,6 +11,7 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 BASKET_PATH = ROOT / "mvp/apps/web/src/app/(dashboard)/retailer/basket/page.tsx"
 ORDER_PATH = ROOT / "mvp/apps/mobile/src/screens/OrderDetailMobileScreen.tsx"
+BASKET_STORE_PATH = ROOT / "mvp/apps/web/src/lib/basket.ts"
 
 
 def read(path: Path) -> str:
@@ -46,6 +47,7 @@ def check(name: str, fn) -> bool:
 
 def main() -> int:
     basket = read(BASKET_PATH)
+    store = read(BASKET_STORE_PATH)
     order = read(ORDER_PATH)
     push_fn = between(
         basket,
@@ -74,6 +76,42 @@ def main() -> int:
             lambda: require(
                 "async function pushToServer(): Promise<boolean>" in basket,
                 "pushToServer must return Promise<boolean> so checkout can gate navigation.",
+            ),
+        ),
+        (
+            "A previously synchronized basket is reused before creating a new server basket",
+            lambda: require(
+                re.search(
+                    r"if \(serverBasketId\)\s*\{\s*setSyncError\(null\);\s*setSynced\(true\);\s*return true;\s*\}",
+                    push_fn,
+                ) is not None
+                and push_fn.find("if (serverBasketId)")
+                < push_fn.find('getApi().post<BasketCreateResult>("/api/v1/baskets")'),
+                "Repeat checkout actions must reuse the existing server basket rather than create another OPEN basket.",
+            ),
+        ),
+        (
+            "Local basket edits invalidate the previously synchronized server basket id",
+            lambda: require(
+                all(
+                    re.search(
+                        rf"{method}:[\s\S]*?const next = \{{ lines, serverBasketId: null \}};",
+                        store,
+                    ) is not None
+                    for method in (
+                        r"addLine",
+                        r"setQuantity",
+                        r"removeLine",
+                    )
+                ),
+                "Adding, editing, or removing a local line must clear serverBasketId before resynchronization.",
+            ),
+        ),
+        (
+            "Retry after basket-sync failure follows the checkout navigation path",
+            lambda: require(
+                'onRetry={() => void reviewAndCheckout()}' in basket,
+                "A successful retry from the sync error must navigate to checkout instead of only resyncing.",
             ),
         ),
         (
