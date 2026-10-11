@@ -1,0 +1,58 @@
+name: POL TODO preflight validation
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - POL_TODO_PREFLIGHT.ps1
+      - .github/workflows/pol-todo-preflight-windows.yml
+  push:
+    branches:
+      - main
+    paths:
+      - POL_TODO_PREFLIGHT.ps1
+      - .github/workflows/pol-todo-preflight-windows.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  windows-powershell:
+    name: Windows PowerShell parse and safe preflight
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Parse helper with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path ".\POL_TODO_PREFLIGHT.ps1"),
+            [ref]$tokens,
+            [ref]$parseErrors
+          ) | Out-Null
+
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | Format-List *
+            throw "POL_TODO_PREFLIGHT.ps1 has PowerShell syntax errors."
+          }
+
+          Write-Host "PASS: Windows PowerShell parser found no syntax errors."
+
+      - name: Run non-destructive preflight and Python compileall
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          .\POL_TODO_PREFLIGHT.ps1 -RunPythonCompile
