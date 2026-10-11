@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - POL_TODO_PREFLIGHT.ps1
+      - scripts/test_ui_audit_regressions.py
       - .github/workflows/pol-todo-preflight-windows.yml
   push:
     branches:
@@ -59,3 +60,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           .\POL_TODO_PREFLIGHT.ps1 -RunPythonCompile
+
+      - name: Run UI audit regression source guards
+        shell: powershell
+        run: python scripts/test_ui_audit_regressions.py
