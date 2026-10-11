@@ -679,3 +679,12 @@
 - TODO status: TODO-006 remains OPEN pending runtime browser E2E for initial sync, repeat-click idempotence, 404 recovery, failed item-write/checkout blocking and local cart edits. TODO-007 remains OPEN pending runtime/API and emulator or installed-device QA. Source guards are not behavior-level certification.
 - Next action: verify the current PR #35 head SHA and rerun all required workflows after this commit; merge only with expected-head SHA protection once green. Do not cite the earlier successful workflows as certification for the new SHA.
 - Handoff accepted by: PENDING
+
+
+### [2026-10-12 UTC] Agent: ChatGPT — CURRENT-BASKET-RECONCILIATION-EXTENSION
+- State: CODE_UPDATED — the sync path has been broadened; previous runs on SHA `388fff229d9731a85d13b52657e20a780978d6c0` do not certify this latest source revision.
+- Finalized reconciliation behavior: before creating a new server basket, `pushToServer` always queries `GET /api/v1/baskets/current`. If the active OPEN basket has the exact same product IDs, item count, requested quantities and pack quantities as the local cart, the UI records/reuses that basket and continues. This also recovers if all item writes reached the server but the client lost the response before persisting `serverBasketId`. If no OPEN basket exists (recognized `NOT_FOUND` / `No OPEN basket exists` response), the saved ID is cleared and a new sync may start. Other API failures remain visible and do not trigger a duplicate create attempt.
+- Code commit for this extension: `b8650ec613867ee39088a721841e5781da1bdab3`. Current guard suite has 15 checks; the last observed 15/15 run was on source commit `c76a936d18fa1aad40ba881edec52535a78c5e17` before this refinement and must not be used as final evidence.
+- Remaining risk: a partial basket whose items differ from the local cart is not resumed transactionally; a new basket may be created while the partial one remains OPEN. Runtime browser testing is still required for repeat clicks, lost responses, stale ID recovery, 404 behavior, API outage behavior and checkout gating. TODO-006 remains OPEN; TODO-007 remains OPEN pending API/runtime and emulator or installed-device QA.
+- Next action: re-read the latest branch SHA after this journal commit, verify all PR #35 workflows on that exact SHA, inspect the final diff, and merge with expected-head SHA protection only after all checks pass.
+- Handoff accepted by: PENDING
