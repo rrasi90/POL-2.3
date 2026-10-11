@@ -157,4 +157,4 @@ foreach ($cmd in @('python','node','npm','java','adb','emulator')) {
     if ($found) { Write-Report ("{0}: {1}" -f $cmd, $found.Source) } else { Write-Report ("{0}: NOT_FOUND" -f $cmd) }
 }
 Write-Report "`nReport saved at: $reportPath"
-Write-Report 'Next: use PR/SHA/check evidence above to resolve TODO-001. Only then run the full suite for the exact SHA (TODO-002); do not merge, checkout, reset, or push automatically.'
+Write-Report 'Next: review this report together with TODO_LIST.md, confirm the exact tested SHA and CI artifact, then continue with the first OPEN TODO whose dependencies are satisfied. This helper does not merge, checkout, reset, stash, commit, push, or modify credentials automatically.'
