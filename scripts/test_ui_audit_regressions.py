@@ -60,7 +60,7 @@ def main() -> int:
     load_fn = between(
         order,
         "  const load = useCallback(async () => {",
-        "  }, [props.mode, props.orderId]);",
+        "  }, [props.orderId, props.mode]);",
     )
     action_block = between(
         order,
