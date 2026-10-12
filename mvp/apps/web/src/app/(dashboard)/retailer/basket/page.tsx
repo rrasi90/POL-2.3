@@ -152,8 +152,8 @@ export default function RetailerBasketPage() {
       );
       return false;
     } finally {
-      syncInFlight.current = false;
       setSyncing(false);
+      syncInFlight.current = false;
     }
   }
 
