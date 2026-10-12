@@ -32,7 +32,10 @@ export function getApi(): ApiClient {
     client = createApiClient({
       baseUrl: baseUrl(),
       getAccessToken: () => useAuthStore.getState().accessToken,
-      onUnauthorized: () => useAuthStore.getState().clear(),
+      onUnauthorized: () => {
+        useAuthStore.getState().clear();
+        useAuthStore.getState().markSessionExpired();
+      },
       onRefresh: () => {
         if (!refreshInFlight) {
           refreshInFlight = tryRefresh().finally(() => {

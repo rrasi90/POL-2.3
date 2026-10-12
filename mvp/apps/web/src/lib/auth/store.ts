@@ -14,12 +14,16 @@ interface AuthState {
   accessToken: string | null;
   user: AuthUser | null;
   role: Role | null;
+  /** Set when the API rejected the token (401 after refresh); consumed by the login screen. */
+  sessionExpired: boolean;
   setSession: (p: {
     accessToken: string;
     user?: AuthUser | null;
     role?: Role | null;
   }) => void;
   clear: () => void;
+  markSessionExpired: () => void;
+  consumeSessionExpired: () => void;
 }
 
 const LS = "pol.auth.profile" as const;
@@ -49,12 +53,14 @@ function persistProfile(user: AuthUser | null, role: Role | null) {
 
 export const useAuthStore = create<AuthState>((set) => ({
   ...loadInitial(),
+  sessionExpired: false,
   setSession: ({ accessToken, user, role }) => {
     persistProfile(user ?? null, role ?? null);
     set({
       accessToken,
       user: user ?? null,
       role: role ?? null,
+      sessionExpired: false,
     });
   },
   clear: () => {
@@ -64,4 +70,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     set(next);
   },
+  markSessionExpired: () => set({ sessionExpired: true }),
+  consumeSessionExpired: () => set({ sessionExpired: false }),
 }));

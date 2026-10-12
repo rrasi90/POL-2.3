@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ApiError } from "@pol/api-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -60,6 +60,7 @@ export default function RetailerBasketPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [synced, setSynced] = useState(false);
+  const syncInFlight = useRef(false);
 
   const groupPreview = useMemo(() => {
     // Presentation-only grouping of entered lines by vendor_hint if present.
@@ -75,6 +76,7 @@ export default function RetailerBasketPage() {
   }, [lines]);
 
   async function pushToServer(): Promise<boolean> {
+    if (syncInFlight.current) return false;
     if (lines.length === 0) {
       setSyncError("سبد خرید خالی است.");
       return false;
@@ -85,6 +87,7 @@ export default function RetailerBasketPage() {
     setSyncing(true);
     setSyncError(null);
     setSynced(false);
+    syncInFlight.current = true;
     try {
       let current: BasketCurrentResult | null = null;
       try {
@@ -149,6 +152,7 @@ export default function RetailerBasketPage() {
       );
       return false;
     } finally {
+      syncInFlight.current = false;
       setSyncing(false);
     }
   }
