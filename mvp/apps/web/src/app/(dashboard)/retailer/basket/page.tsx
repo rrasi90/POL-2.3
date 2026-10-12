@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ApiError } from "@pol/api-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -25,6 +26,19 @@ interface BasketItemResult {
   basket_id: string;
   version: number;
   status: string;
+}
+
+interface BasketCurrentItemResult {
+  product_id: string;
+  requested_quantity: number;
+  pack_quantity: number;
+}
+
+interface BasketCurrentResult {
+  basket_id: string;
+  version: number;
+  status: string;
+  items: BasketCurrentItemResult[];
 }
 
 /**
@@ -65,10 +79,52 @@ export default function RetailerBasketPage() {
       setSyncError("سبد خرید خالی است.");
       return false;
     }
+    // Reconcile with the server's current OPEN basket before creating anything.
+    // This prevents duplicate baskets on repeat clicks and recovers from a lost
+    // success response when the server already received all item writes.
     setSyncing(true);
     setSyncError(null);
     setSynced(false);
     try {
+      let current: BasketCurrentResult | null = null;
+      try {
+        current = await getApi().get<BasketCurrentResult>("/api/v1/baskets/current");
+      } catch (err) {
+        if (
+          err instanceof ApiError &&
+          err.status === 404 &&
+          err.message.includes("No OPEN basket exists")
+        ) {
+          // No active server basket is normal for a first sync or after expiry.
+          setServerBasket(null);
+        } else {
+          // Do not create another basket when auth, route, or network status is unknown.
+          throw err;
+        }
+      }
+
+      if (current) {
+        const currentItems = current.items ?? [];
+        const contentsMatch =
+          currentItems.length === lines.length &&
+          lines.every((line) => {
+            const item = currentItems.find((candidate) => candidate.product_id === line.product_id);
+            return (
+              item !== undefined &&
+              item.requested_quantity === line.quantity &&
+              item.pack_quantity === (line.pack_quantity > 0 ? line.pack_quantity : 1)
+            );
+          });
+        if (current.status === "OPEN" && current.basket_id && contentsMatch) {
+          setServerBasket(current.basket_id);
+          setSynced(true);
+          return true;
+        }
+      }
+
+      // The existing basket is absent or differs from the local cart; do not
+      // mistakenly send checkout against it.
+      setServerBasket(null);
       const created = await getApi().post<BasketCreateResult>("/api/v1/baskets");
       let version = created.version;
       const basketId = created.basket_id;
@@ -167,7 +223,7 @@ export default function RetailerBasketPage() {
         <ErrorState
           title="همگام‌سازی سبد با سرور ناموفق بود"
           description={syncError}
-          onRetry={() => void pushToServer()}
+          onRetry={() => void reviewAndCheckout()}
         />
       ) : null}
 

@@ -11,6 +11,7 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 BASKET_PATH = ROOT / "mvp/apps/web/src/app/(dashboard)/retailer/basket/page.tsx"
 ORDER_PATH = ROOT / "mvp/apps/mobile/src/screens/OrderDetailMobileScreen.tsx"
+BASKET_STORE_PATH = ROOT / "mvp/apps/web/src/lib/basket.ts"
 
 
 def read(path: Path) -> str:
@@ -46,6 +47,7 @@ def check(name: str, fn) -> bool:
 
 def main() -> int:
     basket = read(BASKET_PATH)
+    store = read(BASKET_STORE_PATH)
     order = read(ORDER_PATH)
     push_fn = between(
         basket,
@@ -74,6 +76,55 @@ def main() -> int:
             lambda: require(
                 "async function pushToServer(): Promise<boolean>" in basket,
                 "pushToServer must return Promise<boolean> so checkout can gate navigation.",
+            ),
+        ),
+        (
+            "Stored server basket is reused only when the active OPEN basket matches local lines",
+            lambda: require(
+                'getApi().get<BasketCurrentResult>("/api/v1/baskets/current")' in push_fn
+                and 'current.status === "OPEN"' in push_fn
+                and "currentItems.length === lines.length" in push_fn
+                and "item.requested_quantity === line.quantity" in push_fn
+                and "item.pack_quantity === (line.pack_quantity > 0 ? line.pack_quantity : 1)" in push_fn
+                and "setServerBasket(current.basket_id)" in push_fn
+                and push_fn.find('getApi().get<BasketCurrentResult>("/api/v1/baskets/current")')
+                < push_fn.find('getApi().post<BasketCreateResult>("/api/v1/baskets")'),
+                "Repeat checkout actions may reuse a basket only when the current OPEN server contents match the local cart.",
+            ),
+        ),
+        (
+            "A stale server basket id is cleared only for the recognized missing-open-basket response",
+            lambda: require(
+                'err instanceof ApiError' in push_fn
+                and 'err.status === 404' in push_fn
+                and 'err.message.includes("No OPEN basket exists")' in push_fn
+                and "setServerBasket(null);" in push_fn
+                and 'import { ApiError } from "@pol/api-client";' in basket,
+                "A disappeared server basket must be invalidated without masking auth, route or network errors.",
+            ),
+        ),
+        (
+            "Local basket edits invalidate the previously synchronized server basket id",
+            lambda: require(
+                all(
+                    re.search(
+                        rf"{method}:[\s\S]*?const next = \{{ lines, serverBasketId: null \}};",
+                        store,
+                    ) is not None
+                    for method in (
+                        r"addLine",
+                        r"setQuantity",
+                        r"removeLine",
+                    )
+                ),
+                "Adding, editing, or removing a local line must clear serverBasketId before resynchronization.",
+            ),
+        ),
+        (
+            "Retry after basket-sync failure follows the checkout navigation path",
+            lambda: require(
+                'onRetry={() => void reviewAndCheckout()}' in basket,
+                "A successful retry from the sync error must navigate to checkout instead of only resyncing.",
             ),
         ),
         (
