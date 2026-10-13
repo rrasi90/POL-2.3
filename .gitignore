@@ -38,3 +38,9 @@ graphify-out/
 08_DATA/leads/
 mvp/apps/mobile/dist-android-postpull/
 hypervisor_fix.txt
+
+# Browser E2E (Playwright) runtime artifacts
+mvp/apps/web/test-results/
+mvp/apps/web/playwright-report/
+mvp/apps/web/trace/
+mvp/apps/web/tests/.e2e-fixture.json

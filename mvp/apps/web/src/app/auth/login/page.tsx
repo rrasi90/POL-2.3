@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, ErrorState, Field } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
+import { toE164 } from "@/lib/auth/phone";
 import { useAuthStore } from "@/lib/auth/store";
 import type { Role } from "@pol/types";
 
@@ -42,21 +43,37 @@ function normalizeRole(raw: unknown): Role | null {
 export default function LoginPage() {
   const router = useRouter();
   const setSession = useAuthStore((s) => s.setSession);
+  const sessionExpired = useAuthStore((s) => s.sessionExpired);
+  const consumeSessionExpired = useAuthStore((s) => s.consumeSessionExpired);
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
+  const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (sessionExpired) {
+      setError("نشست شما منقضی شده است. برای ادامه دوباره وارد شوید.");
+      consumeSessionExpired();
+    }
+  }, [sessionExpired, consumeSessionExpired]);
+
   async function requestOtp(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const e164 = toE164(phone);
+    if (!e164) {
+      setError("شماره همراه معتبر نیست. نمونه: ۰۹۱۲۳۴۵۶۷۸۹");
+      return;
+    }
     setLoading(true);
     try {
       const data = await getApi().post<OtpRequest>("/api/v1/auth/request-otp", {
-        mobile_number: phone,
+        mobile_number: e164,
       });
+      setMobile(e164);
       setInfo(`کد ۴ رقمی تا ${data.expires_in_seconds.toLocaleString("fa-IR")} ثانیه دیگر معتبر است.`);
       setStep("otp");
     } catch (err) {
@@ -76,7 +93,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const data = await getApi().post<VerifyResult>("/api/v1/auth/verify-otp", {
-        mobile_number: phone,
+        mobile_number: mobile,
         otp_code: otp,
         client_platform: "web",
       });
@@ -89,7 +106,7 @@ export default function LoginPage() {
         accessToken: data.access_token,
         user: {
           user_id: data.user?.user_id ?? data.user?.id ?? "",
-          mobile_number: data.user?.mobile_number ?? phone,
+          mobile_number: data.user?.mobile_number ?? mobile,
           organization_id:
             data.organization_id ??
             data.profile?.organization_id ??
@@ -142,7 +159,7 @@ export default function LoginPage() {
           <p className="mt-1.5 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
             {step === "phone"
               ? "جهت ورود به حساب کاربری، شماره موبایل خود را وارد نمایید."
-              : `کد چهاررقمی پیامک‌شده به شماره ${phone} را وارد نمایید.`}
+              : `کد چهاررقمی پیامک‌شده به شماره ${mobile || phone} را وارد نمایید.`}
           </p>
 
           {error ? (

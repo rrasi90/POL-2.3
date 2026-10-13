@@ -1,0 +1,105 @@
+name: POL Browser E2E (TODO-006)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "mvp/**"
+      - "scripts/e2e_*.py"
+      - "scripts/api/**"
+      - "scripts/migration_runner.py"
+      - "migrations/**"
+      - "requirements*.txt"
+      - ".github/workflows/pol-browser-e2e.yml"
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [ main ]
+    paths:
+      - "mvp/**"
+      - "scripts/e2e_*.py"
+      - "scripts/api/**"
+      - "scripts/migration_runner.py"
+      - "migrations/**"
+      - "requirements*.txt"
+      - ".github/workflows/pol-browser-e2e.yml"
+
+jobs:
+  browser-e2e:
+    name: Retailer basket browser E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: pol_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      POL_PG_PORT: "5432"
+      ENVIRONMENT: test
+      POL_JWT_SECRET: ci-test-secret-not-for-production
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8001
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+          cache-dependency-path: mvp/package-lock.json
+
+      - name: Install Workspace Dependencies
+        run: npm ci
+        working-directory: mvp
+
+      - name: Typecheck Web App
+        run: npm run typecheck
+        working-directory: mvp/apps/web
+
+      - name: Migrate Schema and Seed E2E Fixtures
+        run: python scripts/e2e_serve.py --prepare
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: mvp/apps/web
+
+      - name: Run Browser E2E Suite
+        run: npx playwright test
+        working-directory: mvp/apps/web
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pol-browser-e2e-report
+          path: |
+            mvp/apps/web/playwright-report/
+            mvp/apps/web/test-results/
+          retention-days: 14
