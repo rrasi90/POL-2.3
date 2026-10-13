@@ -121,6 +121,12 @@ export default function RetailerCheckoutPage() {
   }, [serverBasketId]);
 
   useEffect(() => {
+    if (result) {
+      // Order placed: clearBasket() nulls serverBasketId, which re-runs this
+      // effect. The confirmation screen must not be replaced by the
+      // empty-basket error, so the preview is never restarted after success.
+      return;
+    }
     if (lines.length === 0 && !serverBasketId) {
       setPhase("error");
       setErrorMessage("سبد خرید خالی است.");

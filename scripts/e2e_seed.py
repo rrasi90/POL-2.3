@@ -307,6 +307,23 @@ def seed() -> dict:
                 )
 
             # ---- clean slate for the seeded tenants ----------------------
+            # Residual orders from previous E2E runs still hold ACTIVE
+            # inventory reservations. Migration 057 enforces, at COMMIT, that
+            # vendor_inventory.reserved_quantity equals the ACTIVE sum, so the
+            # reserved_quantity = 0 reset above would fail without this release.
+            cur.execute(
+                """
+                UPDATE inventory_reservations
+                   SET status = 'RELEASED', released_at = now()
+                 WHERE status = 'ACTIVE'
+                   AND vendor_product_id IN (
+                        SELECT id FROM vendor_products WHERE vendor_id = %s
+                   );
+                """,
+                (vendor_id,),
+            )
+            fixture["released_residual_reservations"] = cur.rowcount
+
             cur.execute(
                 """
                 UPDATE baskets
@@ -330,6 +347,7 @@ def seed() -> dict:
 
             fixture["vendor_id"] = vendor_id
             fixture["vendor_org_id"] = vendor_org_id
+            fixture["vendor_phone"] = VENDOR_PHONE
         conn.commit()
     finally:
         conn.close()
