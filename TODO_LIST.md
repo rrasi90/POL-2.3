@@ -724,7 +724,9 @@
 
 ### [2026-10-13 UTC] Agent: opencode - TODO-007-RUNTIME-DELIVERY-E2E
 - State: DONE_VERIFIED — browser E2E for the full delivery flow is green and the four UI defects found during scoping are fixed.
-- Start SHA -> End SHA: `463d780fc74ade31f01cfc13a4a22124c3f891b9` -> (this commit, pushed on branch `agent/pol-2.4-todo007-delivery-e2e`, merged after CI).
+- Start SHA -> End SHA: `463d780fc74ade31f01cfc13a4a22124c3f891b9` -> merge commit `4e1daa39a8c9d27f2fff93fa43116db24a71ccab` (PR #38, branch `agent/pol-2.4-todo007-delivery-e2e`, head `1ad3b41`, merged only after all four workflows passed on the PR head).
+- Post-merge CI on `main` at `4e1daa39a8c9d27f2fff93fa43116db24a71ccab`: POL Remediation Static Gate (38392667118), POL MVP Mobile Verification (38392667176), POL Browser E2E (TODO-006) (38392667249), POL Independent Verification & Certification CI (38392667116) - all `success`. The only red run remains the scheduled `POL Notification Retention` (38377807571), which is TODO-011 blocked on action secrets and unrelated to this merge.
+- PR #29 (Draft, head `fix/mobile-motion-audit-20261011`) was NOT merged: it is still a Draft and previously reported `mergeable=CONFLICTING` against `main`; the mission allows merging it only with green CI and zero conflicts.
 - Scope executed: TODO-007 as scoped this session = runtime (browser) verification of the cross-persona delivery chain, NOT device/emulator QA (still TODO-018...TODO-024) and not release APK (still BLOCKED_EXTERNAL).
 - What ran (local, this session, all re-run after final edits):
   - `npx playwright test` in `mvp/apps/web` -> **17/17 passed (36.3s)**, including the new `tests/delivery-flow.spec.ts` (checkout -> vendor chain -> arrival -> OTP -> POD, with the negative POD gate before `ARRIVED`).
