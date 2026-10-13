@@ -712,3 +712,12 @@
 - Not done / known risks: a failed item write after `POST /baskets` can still leave a partial OPEN basket (API has no transactional bulk-sync contract - pre-existing, unchanged); OTP rate limit is 3 per phone+IP per 5 minutes, so parallel workers are isolated by phone pool (login tests use `parallelIndex`, basket tests `parallelIndex + 12`); `accessToken` lives only in memory, so specs navigate client-side after login instead of reloading; release APK remains BLOCKED_EXTERNAL (signing key/production endpoint); TODO-011 notification retention remains BLOCKED on secrets; TODO-007 device QA remains OPEN.
 - Next TODO-ID / next agent: merge PR #36 if `main` has not moved and no conflicts; then decide PR #29 (Draft, head `fix/mobile-motion-audit-20261011`) only if its CI is green and conflict-free. Remaining open work: TODO-007 device/emulator delivery QA, TODO-011 secrets, release APK signing.
 - Handoff accepted by: PENDING
+
+
+### [2026-10-13 UTC] Agent: opencode - TODO-006-MERGE-COMPLETION
+- State: DONE_VERIFIED — PR #36 is merged and `main` is green at the merge commit.
+- Start SHA -> End SHA: PR #36 head `9be4c10e63887587986747d2b029bb3906931db1` -> merge commit `ecf3d05177630498c3ec06f13b70c6db99db5735` (merge commit, expected-head protection not applicable: no branch protection on this free private repo).
+- Post-merge CI on `main` at `ecf3d05177630498c3ec06f13b70c6db99db5735`: POL Remediation Static Gate (38326498911), POL MVP Mobile Verification (38326498981), POL Independent Verification & Certification CI (38326499062), POL Browser E2E (TODO-006) (38326499012) — all `success`. The only red run is the scheduled `POL Notification Retention` (38230815473, 2026-10-12), which is TODO-011 blocked on action secrets and unrelated to this merge.
+- PR #29 (Draft, head `fix/mobile-motion-audit-20261011`) was NOT merged: GitHub reports `mergeable=CONFLICTING` / `mergeStateStatus=DIRTY` against the updated `main`, and it is still a Draft. The mission allows merging it only with green CI and zero conflicts, so it stays open.
+- Next TODO-ID / next agent: TODO-007 device/emulator delivery QA; TODO-011 secrets for notification retention; release APK remains BLOCKED_EXTERNAL (signing key / production endpoint). Browser E2E for the basket flow is landed; extend it rather than re-deriving it.
+- Handoff accepted by: PENDING
