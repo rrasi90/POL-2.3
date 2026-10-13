@@ -141,8 +141,10 @@ function deriveProposals(events: TimelineEvent[]): PartialProposalView[] {
 const DELIVERY_STATUS_LABEL: Record<string, string> = {
   PENDING: "در انتظار ارسال",
   ASSIGNED: "محول‌شده",
+  PICKED_UP: "جمع‌آوری‌شده",
   IN_TRANSIT: "در حال ارسال",
   OUT_FOR_DELIVERY: "خارج‌شده برای تحویل",
+  ARRIVED: "رسیده به مقصد",
   DELIVERED: "تحویل‌شده",
   FAILED: "ناموفق",
   CANCELLED: "لغوشده",
@@ -151,8 +153,10 @@ const DELIVERY_STATUS_LABEL: Record<string, string> = {
 const DELIVERY_STATUS_TONE: Record<string, "success" | "warning" | "danger" | "info" | "neutral"> = {
   PENDING: "neutral",
   ASSIGNED: "info",
+  PICKED_UP: "info",
   IN_TRANSIT: "info",
   OUT_FOR_DELIVERY: "warning",
+  ARRIVED: "success",
   DELIVERED: "success",
   FAILED: "danger",
   CANCELLED: "neutral",
@@ -245,6 +249,11 @@ export default function RetailerOrderDetailPage() {
   const [recipientName, setRecipientName] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [issueReported, setIssueReported] = useState("");
+
+  const deliveryStatus = delivery?.delivery_status ?? null;
+  const podReady =
+    order?.order_status === "DISPATCHED" && deliveryStatus === "ARRIVED";
+  const podBlocked = order?.order_status === "DISPATCHED" && !podReady;
 
   const load = useCallback(async () => {
     if (!orderId) return;
@@ -826,6 +835,20 @@ export default function RetailerOrderDetailPage() {
               <p className="mt-0.5 text-[12px] text-[var(--pol-light-text-muted)]">
                 کد پیامک‌شده ۴ رقمی ارسال را در کادر زیر وارد کنید و دکمه تأیید تحویل را بفشارید.
               </p>
+              {podBlocked ? (
+                <p
+                  role="status"
+                  className="mt-1 text-[12px] font-medium text-[var(--pol-light-semantic-warning)]"
+                >
+                  تا رسیدن بار به مقصد (وضعیت ارسال: {deliveryStatus ?? "نامشخص"}) تأیید تحویل
+                  فعال نمی‌شود.
+                </p>
+              ) : null}
+              {order.order_status === "DELIVERED" ? (
+                <p className="mt-1 text-[12px] font-medium text-[var(--pol-light-semantic-success)]">
+                  این سفارش قبلاً تحویل داده شده است.
+                </p>
+              ) : null}
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -861,7 +884,12 @@ export default function RetailerOrderDetailPage() {
             <div className="flex gap-2 pt-1">
               <Button
                 loading={acting === "deliver"}
-                disabled={acting !== null}
+                disabled={
+                  acting !== null ||
+                  !podReady ||
+                  !recipientName.trim() ||
+                  !otpCode.trim()
+                }
                 onClick={() => void confirmDelivery()}
               >
                 تأیید و ثبت نهایی تحویل سفارش

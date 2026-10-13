@@ -99,8 +99,11 @@ function asArray<T>(raw: unknown, ...keys: string[]): T[] {
 
 /**
  * V-03 order detail + accept / reject / partial / fulfill chain.
- * POST /orders/{id}/accept|reject|preparing|ready|dispatch|deliver
+ * POST /orders/{id}/accept|reject|preparing|ready|dispatch
+ * POST /orders/{id}/delivery/picked-up|in-transit|arrived
  * POST /orders/{id}/partial-acceptance-proposals
+ * POST /orders/{id}/deliver is retailer-only (recipient + OTP) and is never
+ * offered here; the vendor advances the delivery record up to ARRIVED.
  */
 export default function VendorOrderDetailPage() {
   const params = useParams<{ id: string }>();
@@ -119,6 +122,10 @@ export default function VendorOrderDetailPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [partialOpen, setPartialOpen] = useState(false);
   const [partialLines, setPartialLines] = useState<Array<{ item_id: string; quantity: string }>>([]);
+  const [deliveryStatus, setDeliveryStatus] = useState<string | null>(null);
+  const [driverName, setDriverName] = useState("");
+  const [driverPlate, setDriverPlate] = useState("");
+  const [driverPhone, setDriverPhone] = useState("");
 
   const load = useCallback(async () => {
     if (!orderId) return;
@@ -126,14 +133,18 @@ export default function VendorOrderDetailPage() {
     setErrorMessage(null);
     setActionError(null);
     try {
-      const [o, it, tl] = await Promise.all([
+      const [o, it, tl, delivery] = await Promise.all([
         getApi().get<OrderDetail>(`/api/v1/orders/${orderId}`),
         getApi().get<unknown>(`/api/v1/orders/${orderId}/items`),
         getApi().get<unknown>(`/api/v1/orders/${orderId}/timeline`),
+        getApi()
+          .get<{ delivery_status?: string | null }>(`/api/v1/orders/${orderId}/delivery`)
+          .catch(() => null),
       ]);
       setOrder(o);
       setItems(asArray<OrderItem>(it, "items"));
       setEvents(asArray<TimelineEvent>(tl, "events"));
+      setDeliveryStatus(delivery?.delivery_status ?? null);
       setState("ready");
       setPartialLines(
         asArray<OrderItem>(it, "items").map((row) => ({
@@ -160,6 +171,42 @@ export default function VendorOrderDetailPage() {
       await load();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "عملیات ناموفق بود");
+    } finally {
+      setActing(null);
+    }
+  }
+
+  async function submitDispatch() {
+    if (!orderId) return;
+    if (!driverName.trim() || !driverPlate.trim() || !driverPhone.trim()) {
+      setActionError("نام راننده، پلاک و تلفن راننده الزامی است.");
+      return;
+    }
+    setActing("dispatch");
+    setActionError(null);
+    try {
+      await getApi().post(`/api/v1/orders/${orderId}/dispatch`, {
+        driver_name: driverName.trim(),
+        vehicle_plate: driverPlate.trim(),
+        driver_phone: driverPhone.trim(),
+      });
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "ثبت ارسال ناموفق بود");
+    } finally {
+      setActing(null);
+    }
+  }
+
+  async function submitDeliveryStage(target: "picked-up" | "in-transit" | "arrived") {
+    if (!orderId) return;
+    setActing(target);
+    setActionError(null);
+    try {
+      await getApi().post(`/api/v1/orders/${orderId}/delivery/${target}`, {});
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "تغییر وضعیت تحویل ناموفق بود");
     } finally {
       setActing(null);
     }
@@ -285,6 +332,46 @@ export default function VendorOrderDetailPage() {
         <ErrorState title="عملیات ناموفق بود" description={actionError} />
       )}
 
+      {/* Dispatch driver details (parity with the mobile fulfillment form) */}
+      {status === "READY" ? (
+        <Card className="p-5 shadow-xs space-y-4">
+          <div>
+            <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
+              مشخصات راننده و خودروی ارسال
+            </h2>
+            <p className="mt-0.5 text-[12px] text-[var(--pol-light-text-secondary)]">
+              برای ثبت ارسال، نام راننده، پلاک و تلفن راننده الزامی است.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field
+              label="نام راننده"
+              value={driverName}
+              onChange={(e) => setDriverName(e.target.value)}
+              maxLength={100}
+              placeholder="مثلاً علی رضایی"
+            />
+            <Field
+              label="پلاک خودرو"
+              value={driverPlate}
+              onChange={(e) => setDriverPlate(e.target.value)}
+              maxLength={20}
+              placeholder="12-A-345"
+              dir="ltr"
+            />
+            <Field
+              label="تلفن راننده"
+              value={driverPhone}
+              onChange={(e) => setDriverPhone(e.target.value)}
+              maxLength={32}
+              placeholder="09121234567"
+              inputMode="tel"
+              dir="ltr"
+            />
+          </div>
+        </Card>
+      ) : null}
+
       {/* Action Controls Bar */}
       {(canAccept || (canFulfill && nextFulfill)) && (
         <Card className="p-4 bg-[var(--pol-light-surface-subtle)] border-[var(--pol-light-brand-primary)]">
@@ -333,25 +420,73 @@ export default function VendorOrderDetailPage() {
                 </>
               )}
 
-              {canFulfill && nextFulfill && (
-                <Button
-                  loading={acting === "fulfill"}
-                  disabled={acting !== null}
-                  onClick={() => {
-                    const path =
-                      status === "ACCEPTED" || status === "PARTIALLY_ACCEPTED"
-                        ? "/preparing"
-                        : status === "PREPARING"
-                          ? "/ready"
-                          : status === "READY"
-                            ? "/dispatch"
-                            : "/deliver";
-                    void act(path, {}, "fulfill");
-                  }}
-                >
-                  {nextFulfill}
-                </Button>
-              )}
+              {canFulfill && status !== "DISPATCHED" && nextFulfill ? (
+                status === "READY" ? (
+                  <Button
+                    loading={acting === "dispatch"}
+                    disabled={acting !== null}
+                    onClick={() => void submitDispatch()}
+                  >
+                    {nextFulfill}
+                  </Button>
+                ) : (
+                  <Button
+                    loading={acting === "fulfill"}
+                    disabled={acting !== null}
+                    onClick={() =>
+                      void act(
+                        status === "ACCEPTED" || status === "PARTIALLY_ACCEPTED"
+                          ? "/preparing"
+                          : "/ready",
+                        {},
+                        "fulfill",
+                      )
+                    }
+                  >
+                    {nextFulfill}
+                  </Button>
+                )
+              ) : null}
+
+              {status === "DISPATCHED" ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusChip tone="info">
+                    وضعیت تحویل: {deliveryStatus ?? "نامشخص"}
+                  </StatusChip>
+                  {deliveryStatus === "ASSIGNED" ? (
+                    <Button
+                      loading={acting === "picked-up"}
+                      disabled={acting !== null}
+                      onClick={() => void submitDeliveryStage("picked-up")}
+                    >
+                      جمع‌آوری شد
+                    </Button>
+                  ) : null}
+                  {deliveryStatus === "PICKED_UP" ? (
+                    <Button
+                      loading={acting === "in-transit"}
+                      disabled={acting !== null}
+                      onClick={() => void submitDeliveryStage("in-transit")}
+                    >
+                      در مسیر
+                    </Button>
+                  ) : null}
+                  {deliveryStatus === "IN_TRANSIT" ? (
+                    <Button
+                      loading={acting === "arrived"}
+                      disabled={acting !== null}
+                      onClick={() => void submitDeliveryStage("arrived")}
+                    >
+                      رسید
+                    </Button>
+                  ) : null}
+                  {deliveryStatus === "FAILED" ? (
+                    <p className="text-[12px] font-medium text-[var(--pol-light-semantic-danger)]">
+                      ارسال ناموفق شده است؛ برای ادامه به رسیدگی عملیاتی نیاز دارد.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </div>
         </Card>

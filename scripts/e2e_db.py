@@ -100,29 +100,102 @@ def counts(phone: str) -> dict:
 
 
 def reset(phone: str) -> dict:
-    """Drop every basket of the tenant so a (re)run starts from zero."""
+    """Drop every basket of the tenant so a (re)run starts from zero.
+
+    Works for retailer and vendor phones: baskets only exist for retailers,
+    but the OTP challenge reset applies to any seeded account (TODO-007 runs
+    a cross-persona flow and logs in as the vendor too).
+    """
     conn = _connect()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            retailer_id = _retailer_id(cur, phone)
-            cur.execute("DELETE FROM baskets WHERE retailer_id = %s;", (retailer_id,))
-            deleted = cur.rowcount
+            cur.execute(
+                """
+                SELECT r.id
+                FROM retailers r
+                JOIN users u ON u.id = r.user_id
+                WHERE u.phone_number = %s
+                LIMIT 1;
+                """,
+                (phone,),
+            )
+            retailer = cur.fetchone()
+            deleted = 0
+            skipped = 0
+            if retailer:
+                # Baskets already converted into an order_group are referenced
+                # (order_groups.basket_id has no ON DELETE action) and are kept;
+                # everything else — including OPEN leftovers of a failed run —
+                # goes, so a CI retry always starts from a clean basket state.
+                cur.execute(
+                    """
+                    DELETE FROM baskets
+                     WHERE retailer_id = %s
+                       AND id NOT IN (
+                           SELECT basket_id FROM order_groups
+                            WHERE basket_id IS NOT NULL
+                       );
+                    """,
+                    (retailer["id"],),
+                )
+                deleted = cur.rowcount
+                cur.execute(
+                    """
+                    SELECT count(*) AS n FROM baskets WHERE retailer_id = %s;
+                    """,
+                    (retailer["id"],),
+                )
+                skipped = cur.fetchone()["n"]
             cur.execute(
                 "DELETE FROM otp_challenges WHERE phone_number = %s;", (phone,)
             )
             otp_deleted = cur.rowcount
         conn.commit()
-        return {"deleted_baskets": deleted, "deleted_otp_challenges": otp_deleted}
+        return {
+            "deleted_baskets": deleted,
+            "kept_ordered_baskets": skipped,
+            "deleted_otp_challenges": otp_deleted,
+        }
     finally:
         conn.close()
 
 
-COMMANDS = {"baskets": baskets, "counts": counts, "reset": reset}
+def otp(order_id: str) -> dict:
+    """Latest delivery OTP for an order, as the retailer inbox receives it.
+
+    The DELIVERY_OTP_GENERATED outbox event is the canonical recipient channel
+    (G-438/G-439): the vendor dispatch response must never contain it.
+    """
+    conn = _connect()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT payload FROM outbox_events
+                WHERE event_name = 'DELIVERY_OTP_GENERATED'
+                  AND payload->>'order_id' = %s
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (order_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise SystemExit(f"no DELIVERY_OTP_GENERATED event for order {order_id}")
+            return {
+                "order_id": order_id,
+                "delivery_otp": row["payload"]["delivery_otp"],
+            }
+    finally:
+        conn.close()
+
+
+COMMANDS = {"baskets": baskets, "counts": counts, "reset": reset, "otp": otp}
 
 
 def main(argv: list[str]) -> int:
     if len(argv) != 2 or argv[0] not in COMMANDS:
-        print(f"usage: python {os.path.basename(__file__)} <{'|'.join(COMMANDS)}> <phone>")
+        print(f"usage: python {os.path.basename(__file__)} <{'|'.join(COMMANDS)}> <phone|order_id>")
         return 2
     result = COMMANDS[argv[0]](argv[1])
     print(json.dumps(result, ensure_ascii=True, sort_keys=True))

@@ -21,7 +21,11 @@ export interface FixtureProduct {
 export interface E2EFixture {
   retailer_phones: string[];
   products: FixtureProduct[];
+  vendor_phone?: string;
 }
+
+/** scripts/e2e_seed.py VENDOR_PHONE; fixture value wins once re-seeded. */
+export const SEEDED_VENDOR_PHONE = "+989123457000";
 
 export interface BasketLineInput {
   product_id: string;
@@ -87,6 +91,10 @@ export function retailerPhone(testInfo: TestInfo, salt = 0): string {
   return phones[index];
 }
 
+export function vendorPhone(): string {
+  return fixture().vendor_phone ?? SEEDED_VENDOR_PHONE;
+}
+
 export function appAlert(page: Page) {
   return page.locator('[role="alert"]:not(#__next-route-announcer__)');
 }
@@ -115,6 +123,12 @@ export function serverBasketCounts(phone: string): { total: number; open: number
 
 export function resetTenant(phone: string): void {
   runDb(["reset", phone]);
+}
+
+/** Recipient delivery OTP from the DELIVERY_OTP_GENERATED outbox event. */
+export function deliveryOtp(orderId: string): string {
+  const out = runDb(["otp", orderId]) as { delivery_otp: string };
+  return out.delivery_otp;
 }
 
 export async function seedCart(page: Page, lines: BasketLineInput[]): Promise<void> {
@@ -147,13 +161,21 @@ export function recordBasketCalls(page: Page): BasketCalls {
   return calls;
 }
 
-export async function loginAsRetailer(page: Page, phone: string): Promise<void> {
+async function login(page: Page, phone: string, home: RegExp): Promise<void> {
   await page.goto("/auth/login");
   await page.getByLabel(/شماره تلفن همراه/).fill(localNumber(phone));
   await page.getByRole("button", { name: "دریافت کد یکبار مصرف" }).click();
   await page.locator('input[maxlength="4"]').fill(OTP_CODE);
   await page.getByRole("button", { name: "تأیید و ورود به سامانه" }).click();
-  await page.waitForURL(/\/retailer$/);
+  await page.waitForURL(home);
+}
+
+export async function loginAsRetailer(page: Page, phone: string): Promise<void> {
+  await login(page, phone, /\/retailer$/);
+}
+
+export async function loginAsVendor(page: Page, phone: string): Promise<void> {
+  await login(page, phone, /\/vendor$/);
 }
 
 export async function openBasket(page: Page): Promise<void> {
