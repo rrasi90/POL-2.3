@@ -29,8 +29,8 @@ for (const number of requiredIds) {
   const row = lines.find((line) => rowPattern.test(line));
   if (!row) {
     blocked.push(`${id}: task row missing or format changed`);
-  } else if (!/^\s*-\s*\[x\]/i.test(row)) {
-    blocked.push(`${id}: not DONE_VERIFIED (checkbox is not checked)`);
+  } else if (!/^\s*-\s*\[x\]/i.test(row) || !row.includes("DONE_VERIFIED")) {
+    blocked.push(`${id}: not DONE_VERIFIED (checked checkbox and explicit status are both required)`);
   }
 }
 
