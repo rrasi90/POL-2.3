@@ -23,6 +23,15 @@ export function stageForDeliveryStatus(deliveryStatus: string | null | undefined
   if (raw === "IN_TRANSIT") return "IN_TRANSIT";
   if (raw === "PICKED_UP") return "PICKED_UP";
   if (raw === "FAILED") return "FAILED";
+
+  // Some older payloads expose only order_status during handover. Use a narrow
+  // fallback only when delivery_status is absent; explicit delivery status wins.
+  if (!raw) {
+    const order = (orderStatus || "").toUpperCase().replace(/-/g, "_");
+    if (order === "DELIVERED") return "DELIVERED";
+    if (order === "DISPATCHED") return "IN_TRANSIT";
+    if (order === "FAILED") return "FAILED";
+  }
   return "PENDING";
 }
 
