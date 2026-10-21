@@ -157,6 +157,11 @@ const checks = [
     const s = read("components/OfflineBanner.tsx");
     return s.includes("../motion/SlideIn") && s.includes("SlideIn") && s.includes("setOnline(isOnline())");
   }],
+  ["Splash entrance stops when boot is ready before its sequence finishes", () => {
+    const s = read("motion/SplashSequence.tsx");
+    return s.includes("reduced || props.ready") && s.includes("[reduced, props.ready, mark, wordmark, tagline]") &&
+      s.includes("return () => animation.stop();");
+  }],
   ["PopOnChange cancels interrupted springs and resets scale", () => {
     const s = read("motion/PopOnChange.tsx");
     return s.includes("scale.stopAnimation()") && s.includes("animation.stop()") &&
