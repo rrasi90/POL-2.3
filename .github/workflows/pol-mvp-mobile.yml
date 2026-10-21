@@ -91,6 +91,8 @@ jobs:
       POL_APP_VARIANT: ${{ matrix.variant }}
       POL_RELEASE: "0"
       EXPO_PUBLIC_DATA_MODE: mock
+      POL_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      POL_PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -141,6 +143,8 @@ jobs:
       POL_APP_VARIANT: ${{ matrix.variant }}
       POL_RELEASE: "0"
       EXPO_PUBLIC_DATA_MODE: mock
+      POL_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      POL_PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
