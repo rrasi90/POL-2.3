@@ -25,9 +25,19 @@ export function PopOnChange(props: {
     }
     if (previous.current === props.value) return;
     previous.current = props.value;
-    if (reduced) return;
+    scale.stopAnimation();
+    if (reduced) {
+      scale.setValue(1);
+      return;
+    }
     scale.setValue(props.scaleTo ?? motionScale.pop);
-    Animated.spring(scale, { toValue: 1, ...motionSpring.bump, useNativeDriver: true }).start();
+    const animation = Animated.spring(scale, { toValue: 1, ...motionSpring.bump, useNativeDriver: true });
+    animation.start();
+    return () => {
+      animation.stop();
+      scale.stopAnimation();
+      scale.setValue(1);
+    };
   }, [props.value, props.scaleTo, reduced, scale]);
 
   return (
