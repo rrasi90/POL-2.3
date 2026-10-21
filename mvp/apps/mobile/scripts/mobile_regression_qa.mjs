@@ -156,6 +156,21 @@ const checks = [
   ["Offline banner entrance respects reduced-motion configuration", () => {
     const s = read("components/OfflineBanner.tsx");
     return s.includes("../motion/SlideIn") && s.includes("SlideIn") && s.includes("setOnline(isOnline())");
+  }],,
+  ["PopOnChange cancels interrupted springs and resets scale", () => {
+    const s = read("motion/PopOnChange.tsx");
+    return s.includes("scale.stopAnimation()") && s.includes("animation.stop()") &&
+      s.includes("scale.setValue(1)");
+  }],
+  ["PressScale respects reduced motion and cleans up on unmount", () => {
+    const s = read("motion/PressScale.tsx");
+    return s.includes("if (reduced)") && s.includes("scale.stopAnimation()") &&
+      s.includes("useEffect(() => () =>") && s.includes("scale.setValue(1)");
+  }],
+  ["Delivery progress uses order-status fallback only when delivery status is absent", () => {
+    const s = read("motion/DeliveryProgress.tsx");
+    return s.includes("if (!raw)") && s.includes('order === "DISPATCHED"') &&
+      s.includes('order === "DELIVERED"') && s.includes('raw === "PICKED_UP"');
   }],
 ];
 
