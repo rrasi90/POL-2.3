@@ -119,6 +119,43 @@ const checks = [
   ["No Driver App is introduced into Phase 3 mobile source", () => {
     const p = fs.readFileSync(path.resolve(process.cwd(), "src/__tests__/parity.md"), "utf8");
     return p.includes("No Driver App (D-023)");
+  }],,
+  ["Reduced-motion hook follows the native preference and removes unmounted subscribers", () => {
+    const s = read("motion/useReducedMotion.ts");
+    return s.includes("AccessibilityInfo.isReduceMotionEnabled()") &&
+      s.includes('addEventListener("reduceMotionChanged", publish)') &&
+      s.includes("listeners.delete(setReduced)");
+  }],
+  ["ErrorShake cancels interrupted animations and resets its transform", () => {
+    const s = read("motion/ErrorShake.tsx");
+    return s.includes("translateX.stopAnimation()") && s.includes("animation.stop()") &&
+      s.includes("translateX.setValue(0)") && s.includes("if (props.trigger <= 0 || reduced) return;");
+  }],
+  ["Order progress preserves canonical state mapping and animation cleanup", () => {
+    const s = read("motion/OrderProgress.tsx");
+    return s.includes("stageIndexForOrderStatus") && s.includes('status === "DELIVERED"') &&
+      s.includes('status === "ARRIVED"') && s.includes("animation.stop()") &&
+      s.includes("scale.setValue(1)");
+  }],
+  ["App shell gates splash exit on boot and fonts and transitions routed screens", () => {
+    const s = readMobile("AppShell.tsx");
+    return s.includes("fontsLoaded && booted") && s.includes("onExited={() => setSplashExited(true)}") &&
+      s.includes('<ScreenTransition transitionKey={routeKey}') &&
+      s.includes('<ScreenTransition transitionKey="login"');
+  }],
+  ["Motion primitives are integrated into Retailer, Vendor, delivery and login journeys", () => {
+    const login = read("screens/LoginScreen.tsx");
+    const retailer = read("screens/RetailerMobileScreen.tsx");
+    const vendor = read("screens/VendorMobileScreen.tsx");
+    const order = read("screens/OrderDetailMobileScreen.tsx");
+    return login.includes("../motion/FadeIn") && login.includes("../motion/PopOnChange") &&
+      retailer.includes("../motion/SkeletonPulse") && retailer.includes("../motion/SuccessCheck") &&
+      vendor.includes("../motion/ErrorShake") && order.includes("../motion/DeliveryProgress") &&
+      order.includes("../motion/OrderProgress");
+  }],
+  ["Offline banner entrance respects reduced-motion configuration", () => {
+    const s = read("components/OfflineBanner.tsx");
+    return s.includes("../motion/SlideIn") && s.includes("SlideIn") && s.includes("setOnline(isOnline())");
   }],
 ];
 
