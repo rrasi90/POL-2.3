@@ -115,11 +115,14 @@ jobs:
       - name: Build ${{ matrix.variant }} QA APK
         run: node scripts/build_android_variant.mjs ${{ matrix.variant }}
 
-      - name: Upload ${{ matrix.variant }} QA APK
+      - name: Verify APK metadata and write SHA-256 provenance
+        run: node scripts/write_qa_artifact_manifest.mjs ${{ matrix.variant }} arm64
+
+      - name: Upload ${{ matrix.variant }} QA APK and provenance
         uses: actions/upload-artifact@v4
         with:
           name: POL-${{ matrix.variant }}-QA-APK
-          path: mvp/apps/mobile/dist/${{ matrix.variant }}/*.apk
+          path: mvp/apps/mobile/dist/${{ matrix.variant }}/*.apk*
           if-no-files-found: error
 
   android_qa_x86_apks:
@@ -162,9 +165,12 @@ jobs:
       - name: Build ${{ matrix.variant }} x86_64 emulator QA APK
         run: node scripts/build_qa_x86.mjs ${{ matrix.variant }}
 
-      - name: Upload ${{ matrix.variant }} x86_64 emulator QA APK
+      - name: Verify emulator APK metadata and write SHA-256 provenance
+        run: node scripts/write_qa_artifact_manifest.mjs ${{ matrix.variant }} x86_64
+
+      - name: Upload ${{ matrix.variant }} x86_64 emulator QA APK and provenance
         uses: actions/upload-artifact@v4
         with:
           name: POL-${{ matrix.variant }}-QA-x86_64-APK
-          path: mvp/apps/mobile/dist/${{ matrix.variant }}/*-qa-x86_64.apk
+          path: mvp/apps/mobile/dist/${{ matrix.variant }}/*-qa-x86_64.apk*
           if-no-files-found: error
