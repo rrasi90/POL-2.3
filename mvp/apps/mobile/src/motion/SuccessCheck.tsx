@@ -25,7 +25,8 @@ export function SuccessCheck(props: { size?: number; delay?: number }): React.Re
       Animated.timing(check, {
         toValue: 1,
         delay: (props.delay ?? 0) + motionDuration.micro,
-        duration: motionDuration.emphasis,
+        // delay + duration stays within the 400ms complex-sequence budget.
+        duration: motionDuration.base,
         easing: motionEasing.standard,
         useNativeDriver: true,
       }),
