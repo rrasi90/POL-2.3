@@ -42,19 +42,28 @@ function AppContent<R extends Role>(props: AppShellProps<R>): React.ReactNode {
   const [splashExited, setSplashExited] = useState(false);
 
   const refresh = useCallback(async () => {
-    const restored = await restoreSession();
-    if (restored.restored && restored.role && props.allowedRoles.includes(restored.role as R)) {
-      const restoredRole = restored.role as R;
-      setRole(restoredRole);
-      setRoute({ name: "workspace", role: restoredRole });
-    } else if (restored.restored) {
+    try {
+      const restored = await restoreSession();
+      if (restored.restored && restored.role && props.allowedRoles.includes(restored.role as R)) {
+        const restoredRole = restored.role as R;
+        setRole(restoredRole);
+        setRoute({ name: "workspace", role: restoredRole });
+      } else if (restored.restored) {
+        await clearSession();
+        setRole(null);
+        setRoute({ name: "login" });
+      } else {
+        await healthz();
+      }
+    } catch {
+      // Storage/session restoration must never strand the app behind its splash.
       await clearSession();
       setRole(null);
       setRoute({ name: "login" });
-    } else {
       await healthz();
+    } finally {
+      setBooted(true);
     }
-    setBooted(true);
   }, [props.allowedRoles]);
 
   useEffect(() => { void refresh(); }, [refresh]);
