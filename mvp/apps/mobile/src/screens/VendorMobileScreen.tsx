@@ -2,6 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip } from "../components/ui";
+import { ErrorShake } from "../motion/ErrorShake";
+import { FadeIn } from "../motion/FadeIn";
+import { Pulse } from "../motion/Pulse";
+import { motionDuration, staggerDelay } from "../motion/motionTokens";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
@@ -325,6 +329,7 @@ export function VendorMobileScreen(props: {
   const [storefrontProducts, setStorefrontProducts] = useState<StorefrontProduct[]>([]);
   const [barcode, setBarcode] = useState("");
   const [barcodeResult, setBarcodeResult] = useState<BarcodeResult | null>(null);
+  const [scanRevision, setScanRevision] = useState(0);
   const [candidateTitle, setCandidateTitle] = useState("");
   const [candidateBrand, setCandidateBrand] = useState("");
   const [candidateSku, setCandidateSku] = useState("");
@@ -459,6 +464,9 @@ export function VendorMobileScreen(props: {
       setError(e instanceof Error ? e.message : "استعلام بارکد ناموفق بود.");
     } finally {
       setLoading(false);
+      // Drives scan feedback motion: result fade-in and no-match shake replay
+      // on every completed lookup, even with identical payloads.
+      setScanRevision((value2) => value2 + 1);
     }
   }
 
@@ -805,33 +813,41 @@ export function VendorMobileScreen(props: {
         <ErrorBox message={error} />
 
         <View style={styles.metricGrid}>
-          <MetricCard label="منتظر اقدام" value={numberFa(pendingOrders.length)} hint="سفارش جدید" tone={pendingOrders.length > 0 ? "warn" : "ok"} />
-          <MetricCard label="در جریان" value={numberFa(activeOrders.length)} hint="آماده‌سازی و ارسال" tone="info" />
-          <MetricCard label="کالاها" value={numberFa(inventory.length)} hint="ثبت‌شده در کاتالوگ" />
-          <MetricCard label="موجودی نیازمند توجه" value={numberFa(staleInventory.length)} hint="بر اساس وضعیت تازگی" tone={staleInventory.length > 0 ? "warn" : "ok"} />
+          <FadeIn delay={staggerDelay(0)}><MetricCard label="منتظر اقدام" value={numberFa(pendingOrders.length)} hint="سفارش جدید" tone={pendingOrders.length > 0 ? "warn" : "ok"} /></FadeIn>
+          <FadeIn delay={staggerDelay(1)}><MetricCard label="در جریان" value={numberFa(activeOrders.length)} hint="آماده‌سازی و ارسال" tone="info" /></FadeIn>
+          <FadeIn delay={staggerDelay(2)}><MetricCard label="کالاها" value={numberFa(inventory.length)} hint="ثبت‌شده در کاتالوگ" /></FadeIn>
+          <FadeIn delay={staggerDelay(3)}><MetricCard label="موجودی نیازمند توجه" value={numberFa(staleInventory.length)} hint="بر اساس وضعیت تازگی" tone={staleInventory.length > 0 ? "warn" : "ok"} /></FadeIn>
         </View>
 
         <SectionHeader title="اقدام‌های امروز" />
         <View style={styles.quickGrid}>
-          <QuickAction label="صف سفارش" detail={pendingOrders.length ? "سفارش منتظر بررسی دارید" : "موردی در صف نیست"} onPress={() => setTab("orders")} tone={pendingOrders.length ? "warn" : "neutral"} />
-          <QuickAction label="موجودی روزانه" detail={daily?.status ? statusLabel(daily.status) : "وضعیت امروز را ببینید"} onPress={() => { setInventoryTab("daily"); setTab("inventory"); }} tone={daily?.status === "PENDING" ? "warn" : "neutral"} />
-          <QuickAction label="موجودی کالاها" detail={inventory.length ? numberFa(inventory.length) + " قلم ثبت شده" : "کاتالوگ خالی است"} onPress={() => { setInventoryTab("stock"); setTab("inventory"); }} />
-          {props.role === "VENDOR_OWNER" ? <QuickAction label="مالی" detail="فاکتور و تسویه" onPress={() => setTab("finance")} /> : null}
-          <QuickAction label="پشتیبانی" detail="ثبت و پیگیری پرونده‌های پشتیبانی" onPress={() => setTab("support")} />
+          <FadeIn delay={staggerDelay(0)}><QuickAction label="صف سفارش" detail={pendingOrders.length ? "سفارش منتظر بررسی دارید" : "موردی در صف نیست"} onPress={() => setTab("orders")} tone={pendingOrders.length ? "warn" : "neutral"} /></FadeIn>
+          <FadeIn delay={staggerDelay(1)}><QuickAction label="موجودی روزانه" detail={daily?.status ? statusLabel(daily.status) : "وضعیت امروز را ببینید"} onPress={() => { setInventoryTab("daily"); setTab("inventory"); }} tone={daily?.status === "PENDING" ? "warn" : "neutral"} /></FadeIn>
+          <FadeIn delay={staggerDelay(2)}><QuickAction label="موجودی کالاها" detail={inventory.length ? numberFa(inventory.length) + " قلم ثبت شده" : "کاتالوگ خالی است"} onPress={() => { setInventoryTab("stock"); setTab("inventory"); }} /></FadeIn>
+          {props.role === "VENDOR_OWNER" ? <FadeIn delay={staggerDelay(3)}><QuickAction label="مالی" detail="فاکتور و تسویه" onPress={() => setTab("finance")} /></FadeIn> : null}
+          <FadeIn delay={staggerDelay(4)}><QuickAction label="پشتیبانی" detail="ثبت و پیگیری پرونده‌های پشتیبانی" onPress={() => setTab("support")} /></FadeIn>
         </View>
 
         <SectionHeader title="سفارش‌های منتظر اقدام" action="مشاهده همه" onAction={() => setTab("orders")} />
         {pendingOrders.length === 0 ? (
           <Empty title="صف سفارش خالی است" description="در حال حاضر سفارشی برای بررسی فوری وجود ندارد." />
         ) : (
-          pendingOrders.slice(0, 3).map((order) => <OrderCard key={order.id} order={order} role={props.role} onOpen={props.onOpenOrder} onAction={orderAction} loading={loading} />)
+          pendingOrders.slice(0, 3).map((order, index) => (
+            <FadeIn key={order.id} delay={staggerDelay(index)}>
+              <OrderCard order={order} role={props.role} onOpen={props.onOpenOrder} onAction={orderAction} loading={loading} />
+            </FadeIn>
+          ))
         )}
 
         <SectionHeader title="تازه‌ترین موجودی‌ها" action="مشاهده انبار" onAction={() => setTab("inventory")} />
         {inventory.length === 0 ? (
           <Empty title="کالایی ثبت نشده" description="اولین داده‌های کاتالوگ و موجودی بنکداری را از پنل عملیاتی ثبت کنید." />
         ) : (
-          inventory.slice(0, 3).map((row) => <InventoryCard key={row.id} row={row} onSaveInventory={saveInventory} onSavePrice={savePrice} loading={loading} editablePrice={props.role === "VENDOR_OWNER"} compact />)
+          inventory.slice(0, 3).map((row, index) => (
+            <FadeIn key={row.id} delay={staggerDelay(index)}>
+              <InventoryCard row={row} onSaveInventory={saveInventory} onSavePrice={savePrice} loading={loading} editablePrice={props.role === "VENDOR_OWNER"} compact />
+            </FadeIn>
+          ))
         )}
       </ScrollView>
     );
@@ -875,8 +891,11 @@ export function VendorMobileScreen(props: {
             placeholder="6260123456789"
             maxLength={32}
           />
-          <Btn label="استعلام بارکد" onPress={() => void scanBarcode()} loading={loading} disabled={loading || barcode.trim().length < 8} />
+          <Pulse active={loading} size={56}>
+            <Btn label="استعلام بارکد" onPress={() => void scanBarcode()} loading={loading} disabled={loading || barcode.trim().length < 8} />
+          </Pulse>
           {barcodeResult ? (
+            <FadeIn key={scanRevision}>
             <View style={styles.scanResult}>
               <View style={styles.rowBetween}>
                 <StatusChip label={barcodeStatusLabel(barcodeResult.match_type || barcodeResult.match_status)} tone={barcodeResult.match_type === "NO_MATCH" ? "warn" : barcodeResult.match_type === "AMBIGUOUS" ? "danger" : "ok"} />
@@ -902,9 +921,9 @@ export function VendorMobileScreen(props: {
                   <Input label="قیمت فروش (تومان)" value={scanUnitPrice} onChangeText={setScanUnitPrice} keyboardType="numeric" />
                   <Btn label="ثبت در جلسه اسکن" onPress={() => void submitContinuousScan()} loading={loading} disabled={loading} />
                   {scanSessionId ? <Text style={styles.meta}>جلسه: {scanSessionId}</Text> : null}
-                  {scanStatus ? <Text style={styles.successNote}>وضعیت ثبت: {scanStatus}</Text> : null}
+                  {scanStatus ? <FadeIn key={scanStatus} offsetY={0} duration={motionDuration.micro}><Text style={styles.successNote}>وضعیت ثبت: {scanStatus}</Text></FadeIn> : null}
                   {scanSessionId ? <Btn label="انتشار موجودی جلسه" tone="ghost" onPress={() => void publishContinuousScan()} loading={loading} disabled={loading} /> : null}
-                  {publishStatus ? <Text style={styles.successNote}>وضعیت انتشار: {publishStatus}</Text> : null}
+                  {publishStatus ? <FadeIn key={publishStatus} offsetY={0} duration={motionDuration.micro}><Text style={styles.successNote}>وضعیت انتشار: {publishStatus}</Text></FadeIn> : null}
                 </View>
               ) : null}
               {barcodeResult.products?.length ? (
@@ -918,17 +937,20 @@ export function VendorMobileScreen(props: {
                 </View>
               ) : null}
               {barcodeResult.match_type === "NO_MATCH" ? (
-                <View style={styles.candidatePanel}>
-                  <Text style={styles.itemTitle}>کالای ناشناخته</Text>
-                  <Text style={styles.meta}>بارکد ناشناخته به Master Product تبدیل نمی‌شود؛ فقط می‌توان کاندیدای بررسی ثبت کرد.</Text>
-                  <Input label="عنوان پیشنهادی" value={candidateTitle} onChangeText={setCandidateTitle} />
-                  <Input label="برند پیشنهادی" value={candidateBrand} onChangeText={setCandidateBrand} />
-                  <Input label="SKU بنکداری (اختیاری)" value={candidateSku} onChangeText={setCandidateSku} direction="ltr" />
-                  <Btn label="ثبت کاندیدای کالا" onPress={() => void createBarcodeCandidate()} loading={loading} disabled={loading || !candidateTitle.trim()} />
-                  {candidateCreatedId ? <Text style={styles.successNote}>کاندید ثبت شد: {candidateCreatedId}</Text> : null}
-                </View>
+                <ErrorShake trigger={scanRevision}>
+                  <View style={styles.candidatePanel}>
+                    <Text style={styles.itemTitle}>کالای ناشناخته</Text>
+                    <Text style={styles.meta}>بارکد ناشناخته به Master Product تبدیل نمی‌شود؛ فقط می‌توان کاندیدای بررسی ثبت کرد.</Text>
+                    <Input label="عنوان پیشنهادی" value={candidateTitle} onChangeText={setCandidateTitle} />
+                    <Input label="برند پیشنهادی" value={candidateBrand} onChangeText={setCandidateBrand} />
+                    <Input label="SKU بنکداری (اختیاری)" value={candidateSku} onChangeText={setCandidateSku} direction="ltr" />
+                    <Btn label="ثبت کاندیدای کالا" onPress={() => void createBarcodeCandidate()} loading={loading} disabled={loading || !candidateTitle.trim()} />
+                    {candidateCreatedId ? <FadeIn key={candidateCreatedId} offsetY={0} duration={motionDuration.micro}><Text style={styles.successNote}>کاندید ثبت شد: {candidateCreatedId}</Text></FadeIn> : null}
+                  </View>
+                </ErrorShake>
               ) : null}
             </View>
+            </FadeIn>
           ) : null}
         </Card>
         <Segmented labels={[["stock", "موجودی کالا"], ["daily", "تأیید روزانه"]]} selected={inventoryTab} onChange={(value) => setInventoryTab(value as InventoryTab)} />
