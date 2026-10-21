@@ -157,6 +157,18 @@ const checks = [
     const s = read("components/OfflineBanner.tsx");
     return s.includes("../motion/SlideIn") && s.includes("SlideIn") && s.includes("setOnline(isOnline())");
   }],
+  ["Finite Pulse creates independent burst animation instances", () => {
+    const s = read("motion/Pulse.tsx");
+    return s.includes("const createBurst = () => Animated.sequence([") &&
+      s.includes("Animated.sequence([createBurst(), createBurst(), createBurst()])") &&
+      s.includes("Animated.loop(createBurst())");
+  }],
+  ["SuccessCheck fits the canonical complex-sequence timing budget", () => {
+    const s = read("motion/SuccessCheck.tsx");
+    return s.includes("delay: (props.delay ?? 0) + motionDuration.micro") &&
+      s.includes("duration: motionDuration.base") &&
+      s.includes("Whole sequence stays inside the canonical ≤400ms complex-sequence band.");
+  }],
   ["Splash entrance stops when boot is ready before its sequence finishes", () => {
     const s = read("motion/SplashSequence.tsx");
     return s.includes("reduced || props.ready") && s.includes("[reduced, props.ready, mark, wordmark, tagline]") &&
