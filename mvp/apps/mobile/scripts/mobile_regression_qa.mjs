@@ -156,7 +156,7 @@ const checks = [
   ["Offline banner entrance respects reduced-motion configuration", () => {
     const s = read("components/OfflineBanner.tsx");
     return s.includes("../motion/SlideIn") && s.includes("SlideIn") && s.includes("setOnline(isOnline())");
-  }],,
+  }],
   ["PopOnChange cancels interrupted springs and resets scale", () => {
     const s = read("motion/PopOnChange.tsx");
     return s.includes("scale.stopAnimation()") && s.includes("animation.stop()") &&
