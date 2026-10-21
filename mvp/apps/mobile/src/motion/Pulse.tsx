@@ -23,11 +23,15 @@ export function Pulse(props: {
       progress.setValue(0);
       return;
     }
-    const burst = Animated.sequence([
+    const createBurst = () => Animated.sequence([
       Animated.timing(progress, { toValue: 1, duration: motionDuration.base, easing: motionEasing.decelerate, useNativeDriver: true }),
       Animated.timing(progress, { toValue: 0, duration: motionDuration.base, easing: motionEasing.accelerate, useNativeDriver: true }),
     ]);
-    const animation = props.loop === false ? Animated.sequence([burst, burst, burst]) : Animated.loop(burst);
+    // Each sequence position needs a fresh animation instance; reusing one
+    // CompositeAnimation object can prevent the finite pulse from replaying.
+    const animation = props.loop === false
+      ? Animated.sequence([createBurst(), createBurst(), createBurst()])
+      : Animated.loop(createBurst());
     animation.start();
     return () => animation.stop();
   }, [progress, props.active, props.loop, reduced]);
