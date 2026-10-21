@@ -51,8 +51,8 @@ if (actualPackageId !== expectedPackageId) {
 }
 
 const signatureOutput = run(apksigner, ["verify", "--verbose", artifactPath]);
-if (!/Verified using v[123] scheme/i.test(signatureOutput)) {
-  throw new Error("apksigner did not report a verified APK signing scheme");
+if (!/Verified using v[1-3] scheme.*:\s*true/im.test(signatureOutput)) {
+  throw new Error("apksigner did not report a successful v1/v2/v3 APK signing scheme");
 }
 
 const entries = run("unzip", ["-Z1", artifactPath]).split(/\r?\n/);
@@ -80,6 +80,8 @@ const manifest = {
   signatureVerified: true,
   signatureVerificationTool: basename(apksigner),
   sourceSha: process.env.GITHUB_SHA || "UNKNOWN",
+  pullRequestHeadSha: process.env.POL_PR_HEAD_SHA || null,
+  pullRequestBaseSha: process.env.POL_PR_BASE_SHA || null,
   workflowRunId: process.env.GITHUB_RUN_ID || "UNKNOWN",
   workflowRunAttempt: process.env.GITHUB_RUN_ATTEMPT || "UNKNOWN",
   createdAt: new Date().toISOString(),
