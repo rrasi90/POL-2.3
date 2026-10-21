@@ -121,3 +121,50 @@ jobs:
           name: POL-${{ matrix.variant }}-QA-APK
           path: mvp/apps/mobile/dist/${{ matrix.variant }}/*.apk
           if-no-files-found: error
+
+  android_qa_x86_apks:
+    name: ${{ matrix.variant }} x86_64 Emulator QA APK
+    if: github.event_name == 'pull_request'
+    needs: mobile
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [retailer, vendor]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mvp/apps/mobile
+    env:
+      POL_APP_VARIANT: ${{ matrix.variant }}
+      POL_RELEASE: "0"
+      EXPO_PUBLIC_DATA_MODE: mock
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22.23.1
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+          cache-dependency-path: mvp/package-lock.json
+
+      - name: Install
+        working-directory: mvp
+        run: npm ci
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Build ${{ matrix.variant }} x86_64 emulator QA APK
+        run: node scripts/build_qa_x86.mjs ${{ matrix.variant }}
+
+      - name: Upload ${{ matrix.variant }} x86_64 emulator QA APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: POL-${{ matrix.variant }}-QA-x86_64-APK
+          path: mvp/apps/mobile/dist/${{ matrix.variant }}/*-qa-x86_64.apk
+          if-no-files-found: error
