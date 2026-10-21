@@ -137,6 +137,14 @@ const checks = [
       s.includes('status === "ARRIVED"') && s.includes("animation.stop()") &&
       s.includes("scale.setValue(1)");
   }],
+  ["Session-restore failures cannot strand the app behind splash", () => {
+    const s = readMobile("AppShell.tsx");
+    const start = s.indexOf("const refresh = useCallback(async () =>");
+    const end = s.indexOf("}, [props.allowedRoles]);", start);
+    const refresh = start >= 0 && end > start ? s.slice(start, end) : "";
+    return refresh.includes("try {") && refresh.includes("catch {") &&
+      refresh.includes("finally {") && refresh.includes("setBooted(true);");
+  }],
   ["App shell gates splash exit on boot and fonts and transitions routed screens", () => {
     const s = readMobile("AppShell.tsx");
     return s.includes("fontsLoaded && booted") && s.includes("onExited={() => setSplashExited(true)}") &&
