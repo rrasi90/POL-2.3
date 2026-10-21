@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Animated, Pressable, type AccessibilityRole, type StyleProp, type ViewStyle } from "react-native";
 import { motionScale, motionSpring } from "./motionTokens";
 import { useReducedMotion } from "./useReducedMotion";
@@ -17,13 +17,26 @@ export function usePressScale(options?: { disabled?: boolean; scaleTo?: number }
   const scaleTo = options?.scaleTo ?? motionScale.press;
 
   const pressIn = useCallback(() => {
-    if (disabled || reduced) return;
+    scale.stopAnimation();
+    if (disabled || reduced) {
+      scale.setValue(1);
+      return;
+    }
     Animated.spring(scale, { toValue: scaleTo, ...motionSpring.press, useNativeDriver: true }).start();
   }, [scale, disabled, reduced, scaleTo]);
 
-  // Restore unconditionally — it corrects state, it is not itself motion.
   const pressOut = useCallback(() => {
+    scale.stopAnimation();
+    if (reduced) {
+      scale.setValue(1);
+      return;
+    }
     Animated.spring(scale, { toValue: 1, ...motionSpring.press, useNativeDriver: true }).start();
+  }, [scale, reduced]);
+
+  useEffect(() => () => {
+    scale.stopAnimation();
+    scale.setValue(1);
   }, [scale]);
 
   return { scale, pressIn, pressOut };
