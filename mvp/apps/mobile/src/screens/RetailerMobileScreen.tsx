@@ -1,7 +1,14 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { api, ApiError } from "../api";
 import { Btn, Card, Empty, ErrorBox, IconBadge, Input, Screen, StatusChip } from "../components/ui";
+import { FadeIn } from "../motion/FadeIn";
+import { PopOnChange } from "../motion/PopOnChange";
+import { ScreenTransition } from "../motion/ScreenTransition";
+import { RetailerCatalogSkeleton, RetailerOrderSkeleton } from "../motion/SkeletonPulse";
+import { SuccessCheck } from "../motion/SuccessCheck";
+import { motionDuration, motionEasing, staggerDelay } from "../motion/motionTokens";
+import { useReducedMotion } from "../motion/useReducedMotion";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
@@ -88,6 +95,8 @@ export function RetailerMobileScreen(props: {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [removingIds, setRemovingIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (tab === "orders") void loadOrders();
@@ -232,11 +241,14 @@ export function RetailerMobileScreen(props: {
   }
 
   async function loadOrders(): Promise<void> {
+    setOrdersLoading(true);
     try {
       const data = await api.get<unknown>("/api/v1/orders?limit=50&offset=0");
       setOrders(rows<Order>(data, "orders"));
     } catch (e) {
       setError(e instanceof Error ? e.message : "دریافت سفارش‌ها ناموفق بود");
+    } finally {
+      setOrdersLoading(false);
     }
   }
 
@@ -310,13 +322,15 @@ export function RetailerMobileScreen(props: {
   }
 
   function changeQty(id: string, delta: number): void {
-    setBasket((prev) =>
-      prev.flatMap((item) => {
-        if (item.id !== id) return [item];
-        const quantity = item.quantity + delta;
-        return quantity > 0 ? [{ ...item, quantity }] : [];
-      }),
-    );
+    const target = basket.find((item) => item.id === id);
+    if (!target) return;
+    const quantity = target.quantity + delta;
+    if (quantity > 0) {
+      setBasket((prev) => prev.map((item) => (item.id === id ? { ...item, quantity } : item)));
+      return;
+    }
+    // Quantity hit zero: fade the line out first, then drop it from state.
+    setRemovingIds((ids) => (ids.includes(id) ? ids : ids.concat(id)));
   }
 
   const basketTotal = useMemo(() => basket.reduce((sum, x) => sum + x.quantity, 0), [basket]);
@@ -352,46 +366,56 @@ export function RetailerMobileScreen(props: {
           </Pressable>
         </View>
 
-        <View style={styles.searchBox}>
-          <Text style={styles.searchIcon}>⌕</Text>
-          <Input
-            label=""
-            value={q}
-            onChangeText={setQ}
-            placeholder="جستجوی کالا، برند یا SKU…"
-            onSubmitEditing={() => void search()}
-            returnKeyType="search"
-            style={styles.searchInput}
-          />
-        </View>
-        <Btn label="جستجوی کالا" onPress={() => void search()} loading={loading} disabled={!q.trim()} />
+        <FadeIn>
+          <View style={styles.searchBox}>
+            <Text style={styles.searchIcon}>⌕</Text>
+            <Input
+              label=""
+              value={q}
+              onChangeText={setQ}
+              placeholder="جستجوی کالا، برند یا SKU…"
+              onSubmitEditing={() => void search()}
+              returnKeyType="search"
+              style={styles.searchInput}
+            />
+          </View>
+          <Btn label="جستجوی کالا" onPress={() => void search()} loading={loading} disabled={!q.trim()} />
+        </FadeIn>
 
-        <Card style={styles.heroCard}>
-          <View style={styles.heroCopy}>
-            <Text style={styles.heroKicker}>خرید عمده سریع‌تر و آسان‌تر</Text>
-            <Text style={styles.heroTitle}>قیمت و موجودی را یکجا ببینید</Text>
-            <Text style={styles.heroBody}>از چند فروشنده مقایسه کنید و یک سفارش کامل بسازید.</Text>
-          </View>
-          <View style={styles.heroArt}>
-            <Text style={styles.heroCarton}>▦</Text>
-            <Text style={styles.heroBag}>▥</Text>
-          </View>
-        </Card>
+        <FadeIn delay={60}>
+          <Card style={styles.heroCard}>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>خرید عمده سریع‌تر و آسان‌تر</Text>
+              <Text style={styles.heroTitle}>قیمت و موجودی را یکجا ببینید</Text>
+              <Text style={styles.heroBody}>از چند فروشنده مقایسه کنید و یک سفارش کامل بسازید.</Text>
+            </View>
+            <View style={styles.heroArt}>
+              <Text style={styles.heroCarton}>▦</Text>
+              <Text style={styles.heroBag}>▥</Text>
+            </View>
+          </Card>
+        </FadeIn>
 
         <SectionTitle title="دسته‌بندی کالاها" action="مشاهده همه" onPress={() => setTab("categories")} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRow}>
-          {categories.slice(0, 6).map(([icon, label, tone]) => (
-            <Pressable key={label} onPress={() => categoryPress(label)} style={styles.categoryCard}>
-              <IconBadge symbol={icon} tone={tone} />
-              <Text style={styles.categoryText}>{label}</Text>
-            </Pressable>
+          {categories.slice(0, 6).map(([icon, label, tone], index) => (
+            <FadeIn key={label} delay={staggerDelay(index)}>
+              <Pressable onPress={() => categoryPress(label)} style={styles.categoryCard}>
+                <IconBadge symbol={icon} tone={tone} />
+                <Text style={styles.categoryText}>{label}</Text>
+              </Pressable>
+            </FadeIn>
           ))}
         </ScrollView>
 
         <SectionTitle title="پیشنهادهای ویژه" action="مشاهده همه" onPress={() => setTab("products")} />
         {products.length ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.productRow}>
-            {products.slice(0, 6).map((p) => <ProductMiniCard key={p.id} product={p} onOpen={() => setSelectedProduct(p)} onAdd={() => add(p)} />)}
+            {products.slice(0, 6).map((p, index) => (
+              <FadeIn key={p.id} delay={staggerDelay(index)}>
+                <ProductMiniCard product={p} onOpen={() => setSelectedProduct(p)} onAdd={() => add(p)} />
+              </FadeIn>
+            ))}
           </ScrollView>
         ) : (
           <Card style={styles.emptyCommerce}>
@@ -402,9 +426,9 @@ export function RetailerMobileScreen(props: {
 
         <SectionTitle title="دسترسی سریع" />
         <View style={styles.quickGrid}>
-          <QuickAction icon="🏪" label="بنکداران" onPress={() => { setTab("vendors"); void loadVendors(); }} />
-          <QuickAction icon="🧾" label="فاکتورها" onPress={() => { setTab("finance"); void loadInvoices(); }} />
-          <QuickAction icon="🎧" label="پشتیبانی" onPress={() => setTab("support")} />
+          <FadeIn delay={staggerDelay(0)}><QuickAction icon="🏪" label="بنکداران" onPress={() => { setTab("vendors"); void loadVendors(); }} /></FadeIn>
+          <FadeIn delay={staggerDelay(1)}><QuickAction icon="🧾" label="فاکتورها" onPress={() => { setTab("finance"); void loadInvoices(); }} /></FadeIn>
+          <FadeIn delay={staggerDelay(2)}><QuickAction icon="🎧" label="پشتیبانی" onPress={() => setTab("support")} /></FadeIn>
         </View>
       </>
     );
@@ -438,10 +462,16 @@ export function RetailerMobileScreen(props: {
           <Text style={styles.meta}>{products.length.toLocaleString("fa-IR")} کالا</Text>
           <StatusChip label="مرتبط‌ترین" tone="info" />
         </View>
-        {products.length === 0 ? (
+        {loading && products.length === 0 ? (
+          <RetailerCatalogSkeleton />
+        ) : products.length === 0 ? (
           <Empty title="نتیجه‌ای نیست" description="عبارت جستجو را وارد کنید." />
         ) : (
-          products.map((p) => <ProductRow key={p.id} product={p} onOpen={() => setSelectedProduct(p)} onAdd={() => add(p)} />)
+          products.map((p, index) => (
+            <FadeIn key={p.id} delay={staggerDelay(index)}>
+              <ProductRow product={p} onOpen={() => setSelectedProduct(p)} onAdd={() => add(p)} />
+            </FadeIn>
+          ))
         )}
       </>
     );
@@ -452,25 +482,31 @@ export function RetailerMobileScreen(props: {
     return (
       <>
         <PageHeader title="جزئیات محصول" onBack={() => setSelectedProduct(null)} />
-        <Card style={styles.productHero}>
-          <View style={styles.productVisual}><Text style={styles.productEmoji}>🛍️</Text></View>
-          <View style={styles.productHeroCopy}>
-            <Text style={styles.productTitle}>{selectedProduct.canonical_name_fa || "بدون نام"}</Text>
-            <Text style={styles.meta}>{selectedProduct.brand_name || "برند ثبت نشده"}</Text>
-            <Text style={styles.sku}>{selectedProduct.master_sku || selectedProduct.id}</Text>
-          </View>
-        </Card>
-        <Card>
-          <Text style={styles.sectionCardTitle}>اطلاعات محصول</Text>
-          <InfoRow label="واحد پایه" value={selectedProduct.base_unit || "—"} />
-          <InfoRow label="نوع بسته‌بندی" value={selectedProduct.default_pack_unit || "—"} />
-          <InfoRow label="تعداد در بسته" value={String(selectedProduct.default_pack_quantity ?? "—")} />
-        </Card>
-        <Card style={styles.priceCard}>
-          <Text style={styles.meta}>قیمت از ویترین فروشندگان</Text>
-          <Text style={styles.priceLarge}>مقایسه و انتخاب</Text>
-          <Btn label="افزودن به سبد خرید" onPress={() => { add(selectedProduct); setSelectedProduct(null); setTab("basket"); }} />
-        </Card>
+        <FadeIn>
+          <Card style={styles.productHero}>
+            <View style={styles.productVisual}><Text style={styles.productEmoji}>🛍️</Text></View>
+            <View style={styles.productHeroCopy}>
+              <Text style={styles.productTitle}>{selectedProduct.canonical_name_fa || "بدون نام"}</Text>
+              <Text style={styles.meta}>{selectedProduct.brand_name || "برند ثبت نشده"}</Text>
+              <Text style={styles.sku}>{selectedProduct.master_sku || selectedProduct.id}</Text>
+            </View>
+          </Card>
+        </FadeIn>
+        <FadeIn delay={60}>
+          <Card>
+            <Text style={styles.sectionCardTitle}>اطلاعات محصول</Text>
+            <InfoRow label="واحد پایه" value={selectedProduct.base_unit || "—"} />
+            <InfoRow label="نوع بسته‌بندی" value={selectedProduct.default_pack_unit || "—"} />
+            <InfoRow label="تعداد در بسته" value={String(selectedProduct.default_pack_quantity ?? "—")} />
+          </Card>
+        </FadeIn>
+        <FadeIn delay={120}>
+          <Card style={styles.priceCard}>
+            <Text style={styles.meta}>قیمت از ویترین فروشندگان</Text>
+            <Text style={styles.priceLarge}>مقایسه و انتخاب</Text>
+            <Btn label="افزودن به سبد خرید" onPress={() => { add(selectedProduct); setSelectedProduct(null); setTab("basket"); }} />
+          </Card>
+        </FadeIn>
       </>
     );
   }
@@ -478,34 +514,36 @@ export function RetailerMobileScreen(props: {
   function basketPage(): React.ReactNode {
     return (
       <>
-        <PageHeader title="سبد خرید" onBack={() => setTab("home")} action={basket.length ? "پاک کردن همه" : undefined} onAction={basket.length ? () => setBasket([]) : undefined} />
+        <PageHeader title="سبد خرید" onBack={() => setTab("home")} action={basket.length ? "پاک کردن همه" : undefined} onAction={basket.length ? () => { setBasket([]); setRemovingIds([]); } : undefined} />
         {basket.length === 0 ? (
           <Empty title="سبد خالی است" description="از کاتالوگ کالا اضافه کنید." />
         ) : (
           basket.map((x) => (
-            <Card key={x.id} style={styles.cartCard}>
-              <View style={styles.cartVisual}><Text style={styles.cartEmoji}>📦</Text></View>
-              <View style={styles.cartMain}>
-                <Text style={styles.productTitle}>{x.canonical_name_fa || "—"}</Text>
-                <Text style={styles.meta}>{x.brand_name || ""} · {x.default_pack_unit || "بسته"}</Text>
-                <View style={styles.qtyRow}>
-                  <Pressable onPress={() => changeQty(x.id, 1)} style={styles.qtyButton}><Text style={styles.qtyText}>+</Text></Pressable>
-                  <Text style={styles.qtyValue}>{x.quantity.toLocaleString("fa-IR")}</Text>
-                  <Pressable onPress={() => changeQty(x.id, -1)} style={styles.qtyButtonSecondary}><Text style={styles.qtyTextSecondary}>−</Text></Pressable>
-                </View>
-              </View>
-            </Card>
+            <BasketLine
+              key={x.id}
+              item={x}
+              removing={removingIds.includes(x.id)}
+              onQty={(delta) => changeQty(x.id, delta)}
+              onRemoved={() => {
+                setBasket((prev) => prev.filter((item) => item.id !== x.id));
+                setRemovingIds((ids) => ids.filter((value) => value !== x.id));
+              }}
+            />
           ))
         )}
 
         {checkout && !showSuccess ? (
-          <Card style={styles.checkoutCard}>
-            <StatusChip label={"فروشنده: " + String(allocation?.vendor_count || 0)} tone="info" />
-            <Text style={styles.sectionCardTitle}>خلاصه سفارش</Text>
-            <Text style={styles.meta}>اقلام درخواستی: {String(allocation?.summary?.total_items_requested || 0)}</Text>
-            <Text style={styles.meta}>تخصیص‌یافته: {String(allocation?.summary?.total_items_allocated || 0)}</Text>
-            <Text style={styles.priceLarge}>{money(allocation?.summary?.total_amount_toman)}</Text>
-          </Card>
+          <FadeIn>
+            <Card style={styles.checkoutCard}>
+              <StatusChip label={"فروشنده: " + String(allocation?.vendor_count || 0)} tone="info" />
+              <Text style={styles.sectionCardTitle}>خلاصه سفارش</Text>
+              <Text style={styles.meta}>اقلام درخواستی: {String(allocation?.summary?.total_items_requested || 0)}</Text>
+              <Text style={styles.meta}>تخصیص‌یافته: {String(allocation?.summary?.total_items_allocated || 0)}</Text>
+              <PopOnChange value={allocation?.summary?.total_amount_toman ?? 0}>
+                <Text style={styles.priceLarge}>{money(allocation?.summary?.total_amount_toman)}</Text>
+              </PopOnChange>
+            </Card>
+          </FadeIn>
         ) : null}
 
         {!allocation && basket.length ? (
@@ -516,14 +554,18 @@ export function RetailerMobileScreen(props: {
         ) : null}
 
         {allocation && !showSuccess ? (
-          <Card style={styles.checkoutCard}>
-            <StatusChip label={(allocation.vendor_count || 0).toLocaleString("fa-IR") + " فروشنده"} tone="info" />
-            <Text style={styles.sectionCardTitle}>تایید سفارش</Text>
-            <Text style={styles.meta}>جمع تقریبی سفارش</Text>
-            <Text style={styles.priceLarge}>{money(allocation.summary?.total_amount_toman)}</Text>
-            <Input label="آدرس تحویل" value={address} onChangeText={setAddress} multiline numberOfLines={3} placeholder="آدرس کامل فروشگاه…" />
-            <Btn label="ثبت نهایی سفارش" onPress={() => void placeOrder()} loading={loading} disabled={loading} />
-          </Card>
+          <FadeIn>
+            <Card style={styles.checkoutCard}>
+              <StatusChip label={(allocation.vendor_count || 0).toLocaleString("fa-IR") + " فروشنده"} tone="info" />
+              <Text style={styles.sectionCardTitle}>تایید سفارش</Text>
+              <Text style={styles.meta}>جمع تقریبی سفارش</Text>
+              <PopOnChange value={allocation.summary?.total_amount_toman ?? 0}>
+                <Text style={styles.priceLarge}>{money(allocation.summary?.total_amount_toman)}</Text>
+              </PopOnChange>
+              <Input label="آدرس تحویل" value={address} onChangeText={setAddress} multiline numberOfLines={3} placeholder="آدرس کامل فروشگاه…" />
+              <Btn label="ثبت نهایی سفارش" onPress={() => void placeOrder()} loading={loading} disabled={loading} />
+            </Card>
+          </FadeIn>
         ) : null}
       </>
     );
@@ -533,13 +575,17 @@ export function RetailerMobileScreen(props: {
     return (
       <>
         <View style={styles.successWrap}>
-          <View style={styles.successIcon}><Text style={styles.successCheck}>✓</Text></View>
-          <Text style={styles.successTitle}>سفارش شما ثبت شد!</Text>
-          <Text style={styles.successBody}>سفارش با موفقیت ثبت شد و از همین‌جا می‌توانید وضعیت آن را پیگیری کنید.</Text>
-          {checkout ? <Text selectable style={styles.orderCode}>{checkout.order_group_id}</Text> : null}
-          {checkout ? <Text style={styles.priceLarge}>{money(checkout.total_amount_toman)}</Text> : null}
-          <Btn label="مشاهده سفارش‌ها" onPress={() => { setShowSuccess(false); setTab("orders"); void loadOrders(); }} />
-          <Btn label="بازگشت به خانه" tone="ghost" onPress={() => { setShowSuccess(false); setTab("home"); }} />
+          <SuccessCheck size={92} />
+          <FadeIn delay={160}><Text style={styles.successTitle}>سفارش شما ثبت شد!</Text></FadeIn>
+          <FadeIn delay={200}><Text style={styles.successBody}>سفارش با موفقیت ثبت شد و از همین‌جا می‌توانید وضعیت آن را پیگیری کنید.</Text></FadeIn>
+          {checkout ? <FadeIn delay={240}><Text selectable style={styles.orderCode}>{checkout.order_group_id}</Text></FadeIn> : null}
+          {checkout ? <FadeIn delay={280}><Text style={styles.priceLarge}>{money(checkout.total_amount_toman)}</Text></FadeIn> : null}
+          <FadeIn delay={300}>
+            <View style={styles.successActions}>
+              <Btn label="مشاهده سفارش‌ها" onPress={() => { setShowSuccess(false); setTab("orders"); void loadOrders(); }} />
+              <Btn label="بازگشت به خانه" tone="ghost" onPress={() => { setShowSuccess(false); setTab("home"); }} />
+            </View>
+          </FadeIn>
         </View>
       </>
     );
@@ -555,20 +601,24 @@ export function RetailerMobileScreen(props: {
           <StatusChip label="در حال ارسال" />
           <StatusChip label="تحویل شده" tone="ok" />
         </View>
-        {orders.length === 0 ? (
+        {ordersLoading && orders.length === 0 ? (
+          <RetailerOrderSkeleton />
+        ) : orders.length === 0 ? (
           <Empty title="سفارشی نیست" description="سفارش‌های ثبت‌شده شما اینجا نمایش داده می‌شوند." />
         ) : (
-          orders.map((o) => (
-            <Pressable key={o.id} onPress={() => props.onOpenOrder(o.id)} accessibilityRole="button">
-              <Card style={styles.orderCard}>
-                <View style={styles.orderTop}>
-                  <StatusChip label={o.order_status || "—"} tone={o.order_status === "DELIVERED" ? "ok" : "info"} />
-                  <Text style={styles.orderNumber}>{o.order_number || o.id}</Text>
-                </View>
-                <Text style={styles.priceMedium}>{money(o.total_amount_toman)}</Text>
-                <Text style={styles.meta}>برای مشاهده جزئیات و خط زمانی سفارش لمس کنید.</Text>
-              </Card>
-            </Pressable>
+          orders.map((o, index) => (
+            <FadeIn key={o.id} delay={staggerDelay(index)}>
+              <Pressable onPress={() => props.onOpenOrder(o.id)} accessibilityRole="button">
+                <Card style={styles.orderCard}>
+                  <View style={styles.orderTop}>
+                    <StatusChip label={o.order_status || "—"} tone={o.order_status === "DELIVERED" ? "ok" : "info"} />
+                    <Text style={styles.orderNumber}>{o.order_number || o.id}</Text>
+                  </View>
+                  <Text style={styles.priceMedium}>{money(o.total_amount_toman)}</Text>
+                  <Text style={styles.meta}>برای مشاهده جزئیات و خط زمانی سفارش لمس کنید.</Text>
+                </Card>
+              </Pressable>
+            </FadeIn>
           ))
         )}
       </>
@@ -668,12 +718,16 @@ export function RetailerMobileScreen(props: {
     : tab === "finance" ? financePage()
     : home();
 
+  const transitionKey = showSuccess ? "success" : selectedProduct ? "product:" + selectedProduct.id : tab;
+
   return (
     <Screen>
       <View style={styles.root}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <ErrorBox message={error} />
-          {content}
+          <ScreenTransition transitionKey={transitionKey}>
+            <ErrorBox message={error} />
+            {content}
+          </ScreenTransition>
         </ScrollView>
         <View style={styles.bottomNav}>
           <NavItem label="حساب" icon="◯" onPress={() => props.onOpenAccount?.()} active={false} />
@@ -695,6 +749,52 @@ function ProductMiniCard(props: { product: Product; onOpen: () => void; onAdd: (
       <Text style={styles.meta}>{props.product.brand_name || "—"}</Text>
       <Btn compact label="+" onPress={props.onAdd} />
     </Pressable>
+  );
+}
+
+// Basket line with animated quantity pop and two-phase removal (fade, then drop).
+function BasketLine(props: {
+  item: Product & { quantity: number };
+  removing: boolean;
+  onQty: (delta: number) => void;
+  onRemoved: () => void;
+}): React.ReactNode {
+  const styles = useThemedStyles(makeStyles);
+  const reduced = useReducedMotion();
+  const opacity = useRef(new Animated.Value(1)).current;
+  const removedCallback = useRef(props.onRemoved);
+  removedCallback.current = props.onRemoved;
+
+  useEffect(() => {
+    if (!props.removing) return;
+    if (reduced) {
+      removedCallback.current();
+      return;
+    }
+    const animation = Animated.timing(opacity, { toValue: 0, duration: motionDuration.micro, easing: motionEasing.accelerate, useNativeDriver: true });
+    animation.start(({ finished }) => {
+      if (finished) removedCallback.current();
+    });
+    return () => animation.stop();
+  }, [props.removing, reduced, opacity]);
+
+  return (
+    <Animated.View style={{ opacity }}>
+      <Card style={styles.cartCard}>
+        <View style={styles.cartVisual}><Text style={styles.cartEmoji}>📦</Text></View>
+        <View style={styles.cartMain}>
+          <Text style={styles.productTitle}>{props.item.canonical_name_fa || "—"}</Text>
+          <Text style={styles.meta}>{props.item.brand_name || ""} · {props.item.default_pack_unit || "بسته"}</Text>
+          <View style={styles.qtyRow}>
+            <Pressable onPress={() => props.onQty(1)} style={styles.qtyButton}><Text style={styles.qtyText}>+</Text></Pressable>
+            <PopOnChange value={props.item.quantity}>
+              <Text style={styles.qtyValue}>{props.item.quantity.toLocaleString("fa-IR")}</Text>
+            </PopOnChange>
+            <Pressable onPress={() => props.onQty(-1)} style={styles.qtyButtonSecondary}><Text style={styles.qtyTextSecondary}>−</Text></Pressable>
+          </View>
+        </View>
+      </Card>
+    </Animated.View>
   );
 }
 
@@ -726,7 +826,11 @@ function NavItem(props: { label: string; icon: string; onPress: () => void; acti
   const styles = useThemedStyles(makeStyles);
   return (
     <Pressable onPress={props.onPress} style={styles.navItem} accessibilityRole="button">
-      {props.badge ? <View style={styles.navBadge}><Text style={styles.navBadgeText}>{props.badge}</Text></View> : null}
+      {props.badge ? (
+        <PopOnChange value={props.badge} style={styles.navBadge}>
+          <Text style={styles.navBadgeText}>{props.badge}</Text>
+        </PopOnChange>
+      ) : null}
       <Text style={[styles.navIcon, props.active && styles.navIconActive]}>{props.icon}</Text>
       <Text style={[styles.navLabel, props.active && styles.navLabelActive]}>{props.label}</Text>
     </Pressable>
@@ -847,8 +951,7 @@ function makeStyles(colors: Palette) {
     actionStack: { gap: spacing.sm, marginTop: spacing.sm, marginBottom: spacing.sm },
     checkoutCard: { borderColor: colors.brand + "55", backgroundColor: colors.surface },
     successWrap: { alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.lg, paddingTop: 80 },
-    successIcon: { width: 92, height: 92, borderRadius: 46, backgroundColor: colors.successBg, alignItems: "center", justifyContent: "center", marginBottom: spacing.lg },
-    successCheck: { color: colors.success, fontSize: 54, fontWeight: "700" },
+    successActions: { alignSelf: "stretch", gap: spacing.sm, marginTop: spacing.lg },
     successTitle: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "center" },
     successBody: { color: colors.textSecondary, fontSize: 13, lineHeight: 21, textAlign: "center", marginTop: spacing.sm, marginBottom: spacing.lg },
     orderCode: { color: colors.textSecondary, fontSize: 11, marginBottom: spacing.sm, textAlign: "center" },
