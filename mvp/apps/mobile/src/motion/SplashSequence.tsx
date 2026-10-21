@@ -21,7 +21,9 @@ export function SplashSequence(props: { ready: boolean; onExited?: () => void })
   exitedCallback.current = props.onExited;
 
   useEffect(() => {
-    if (reduced) {
+    // If boot wins the race with the decorative intro, cancel the unfinished
+    // entrance and complete the brand layers before starting the exit fade.
+    if (reduced || props.ready) {
       mark.setValue(1);
       wordmark.setValue(1);
       tagline.setValue(1);
@@ -34,7 +36,7 @@ export function SplashSequence(props: { ready: boolean; onExited?: () => void })
     ]);
     animation.start();
     return () => animation.stop();
-  }, [reduced, mark, wordmark, tagline]);
+  }, [reduced, props.ready, mark, wordmark, tagline]);
 
   useEffect(() => {
     if (props.ready) setExiting(true);
