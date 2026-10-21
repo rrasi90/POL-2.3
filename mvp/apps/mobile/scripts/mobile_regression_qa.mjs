@@ -119,7 +119,7 @@ const checks = [
   ["No Driver App is introduced into Phase 3 mobile source", () => {
     const p = fs.readFileSync(path.resolve(process.cwd(), "src/__tests__/parity.md"), "utf8");
     return p.includes("No Driver App (D-023)");
-  }],,
+  }],
   ["Reduced-motion hook follows the native preference and removes unmounted subscribers", () => {
     const s = read("motion/useReducedMotion.ts");
     return s.includes("AccessibilityInfo.isReduceMotionEnabled()") &&
