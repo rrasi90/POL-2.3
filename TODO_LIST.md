@@ -1053,3 +1053,10 @@
 - **Canonical-source follow-up:** PR #42 `agent/source-authority-reconcile-20261022` targets the stale migration-head claim, missing API-boundary paths, and historical API-map provenance. Its route-by-route HTTP contract validation remains out of scope for the documentation PR and is correctly left to TODO-069/TODO-135.
 - **Unverified / required local handoff:** local `git status --short --branch`, local HEAD, remote-tracking state, ahead/behind graph, backup refs, untracked files, and installed Python/Node/Expo/Android tooling were not observable in this GitHub-only session. Do not assert the local tree is clean or reconstruct it from historical reports. The next executor with access to `/c/Star/pol/POL-2.3` must run the exact preflight required by TODO-061 and record its real output before continuing the dependent local-environment chain.
 - **Safety:** no file on main was modified; no external DNS/TLS/SMS action was attempted; TODO-061 was not falsely marked complete.
+
+### [2026-10-22 UTC] Agent: ChatGPT — PR #42 SOURCE-FRESHNESS REVIEW COMMENT
+
+- Submitted a non-blocking GitHub review comment on [PR #42](https://github.com/rrasi90/POL-2.3/pull/42), review ID `5612521888`, anchored to head `49af7f064715e4a05b5aa07a0c6a36af3736bbb4`.
+- Finding: although the PR adds a targeted freshness note, `mvp/BUILD_PLAN.md` still contains undated “currently fails before useful step execution” statements in its phase/status tables. The review asks that these statements be tied to the historical checkpoint and branch/SHA or explicitly rewritten as historical claims.
+- Evidence kept separate: Independent Verification on main SHA `d9505cfa62c953546b479f4ca8aec1997ca57fbc` passed 663/663; the separate scheduled Notification Retention run `39743316303` failed because both database connection secrets were empty.
+- The review did not merge, close, or otherwise change the state of PR #42. TODO-061 remains OPEN until the local worktree and toolchain checks can be run by an executor with access to the local checkout.
