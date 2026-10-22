@@ -106,4 +106,4 @@ assert.match(blockedMalformed.output, /^allow_qa_apk=false\n$/m);
 assert.match(blockedMalformed.stdout, /TODO-061: expected exactly one canonical task row; found 0/);
 console.log("PASS: malformed required task row => allow_qa_apk=false");
 
-console.log("All TODO-084 gate fixture tests passed (6/6).");
+console.log("All TODO-084 gate fixture tests passed (7/7).");
