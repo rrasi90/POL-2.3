@@ -4,7 +4,7 @@
 **Root:** `mvp/`  
 **Authorized branch:** `main`  
 **Updated:** 2026-09-28 · Stage 6 mobile QA Cycle 3 closed; remaining executable gates are Night visual verification and live basket→checkout/idempotency E2E  
-**Targeted status note (2026-10-22):** CI-failure statements in this file are dated checkpoint snapshots and do not establish current CI status. Use the live workflow run for the exact branch/SHA before deciding that a gate is blocked or passed. The main migration directory and `DATABASE_SCHEMA_MANIFEST.md` agree on a contiguous chain `001`–`076` at `main` @ `d9505cfa62c953546b479f4ca8aec1997ca57fbc`; this targeted note is not a full runtime/release audit.  
+**Targeted status note (2026-10-22):** CI-failure statements below are historical checkpoint snapshots, not current status. At main SHA d9505cfa62c953546b479f4ca8aec1997ca57fbc, Independent Verification run [38403047479](https://github.com/rrasi90/POL-2.3/actions/runs/38403047479) reported 663 passed / 0 failed / 0 skipped; the separate scheduled Notification Retention run [39743316303](https://github.com/rrasi90/POL-2.3/actions/runs/39743316303) failed because both database DSN secrets were empty. These workflows test different responsibilities. Always use a live run on the exact branch/SHA. The main migration directory and DATABASE_SCHEMA_MANIFEST.md agree on a contiguous chain 001–076; this targeted note is not a full runtime/release audit.
 **Authority hierarchy:** `DECISION_REGISTER.md` (D-001…D-028 on branch) → CURRENT_SOURCE_OF_TRUTH → this file → module evidence files.
 
 **Rule:** NOT DONE = KEEP WORKING. Do not stop to ask which track. Isolate external deps as `BLOCKED_EXTERNAL` and continue everything else. Later-discovered defects in earlier phases ⇒ reopen, root-cause fix, retest, return.
@@ -20,15 +20,15 @@
 | 3 | Phase 0 + GATE 0 | **DONE** | Artifacts + skeleton; typecheck/build green. |
 | 4 | Phase 1 foundation + design system | **DONE** | tokens, ui package, shell, middleware role gates. |
 | 5 | Full Web MVP | **IMPLEMENTED / PARTIAL E2E** | Current screen matrix remains the authoritative capability ledger; management/customer/staff/candidate surfaces are now source-implemented. Historical cycle-5 counts remain historical evidence only. |
-| 6 | Phase 3 Android | **SOURCE IMPLEMENTED / REVERIFY** | Supported mobile parity plus post-remediation LOCAL-01…04 evidence is recorded. Barcode matching backend is implemented; camera transport remains a separate runtime scope. Fresh CI reruns currently fail before step-level execution. |
+| 6 | Phase 3 Android | **SOURCE IMPLEMENTED / REVERIFY** | Supported mobile parity plus post-remediation LOCAL-01…04 evidence is recorded. Barcode matching backend is implemented; camera transport remains a separate runtime scope. Historical checkpoint (2026-09-26): CI reruns for the then-targeted remediation branch were reported to fail before useful step execution. This is not current branch status; check a live run for the exact SHA. |
 | 7 | OpenPencil WAVE-02 | **BLOCKED_EXTERNAL** | MCP `:7600` not listening (app not running). WAVE-01 evidence on disk. |
-| 8 | Global QA + regression | **SOURCE COMPLETE / FRESH CI BLOCKED** | LOCAL-02 16/16 and LOCAL-03 12/12 are historical device evidence; latest remediation pull-request CI runs fail before useful steps. No fresh green certification is claimed. |
+| 8 | Global QA + regression | **SOURCE COMPLETE / FRESH CI BLOCKED** | LOCAL-02 16/16 and LOCAL-03 12/12 are historical device evidence; the 2026-09-26 checkpoint recorded remediation pull-request runs failing before useful steps. No fresh green certification is claimed without checking a live run for the exact target SHA. |
 | 9 | Structural audit | **DONE** (2026-09-23) | `python artifacts/structural_audit.py` → EXIT 0: window_loc=0, console_log=0, fake_success=0 (biz_calc hits all backend). |
 | 10 | Anti-vibe-coding audit | **DONE** (2026-09-23) | same checklist green; rules file restored to `.agents/rules/00-pol-canonical-safety.md`. |
 | 11 | GitHub reconciliation | **DONE (2026-09-23)** | Current code commit `f8ef267e6666a03b483afdd8618585ed82086014` has fresh backend verification CI **SUCCESS** (run 35893284312) and mobile Cycle 3 verification CI **SUCCESS** (run 35893284378). |
 | 12 | Independent 2nd-pass audit | **DONE** | `verify_repository_consistency.py` PASS 8/8 EXIT 0 (D-015/016/017 + hierarchy restored). |
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
-| 14 | Regression | **REVERIFY** | Historical backend/mobile CI was green; current remediation pull-request jobs still fail before useful step execution. Local regression/E2E evidence is historical and separately recorded. |
+| 14 | Regression | **REVERIFY** | Historical backend/mobile CI was green; the 2026-09-26 checkpoint recorded remediation pull-request jobs failing before useful step execution. Local regression/E2E evidence is historical and separately recorded; verify current status at the exact branch/SHA. |
 | 15 | Repeat until DoD | **OPEN — EVIDENCE/DECISION GATE** | Source-level remediation is advanced; remaining DoD blockers are the explicit decisions in §2, deployment/provider/observability evidence, selected deep mobile parity, and fresh CI certification. |
 | 16 | Phase 5 delivery | **OPEN — FINAL EVIDENCE RECONCILIATION** | Night, live checkout and idempotency device/local gates are historical PASS evidence. Remaining closure is fresh CI certification plus explicit product/security/deployment decisions/evidence. |
 
@@ -51,7 +51,7 @@
 - OTP transport contract: `VerifyOTPRequest.mobile_number` now enforces the same E.164 pattern as request-OTP, with explicit HTTP/schema regression coverage.
 - Mobile source parity expanded: Ops mobile now covers risk signals, pilot analytics, catalog-candidate review, and ADMIN_SUPER user/organization status management; Vendor mobile customer/staff management is already source-implemented.
 - Media target binding hardening: migration 048 binds presigned uploads to their authorized target and confirm-upload rejects retargeting; schema + unit regressions added.
-- CI remains an external evidence blocker: latest remediation runs terminate before useful step execution (`steps:null`). No fresh green certification is claimed.
+- Historical checkpoint (2026-09-26): the then-latest remediation runs terminated before useful step execution (steps:null). This is not a live status claim; resolve current certification from the workflow run on the exact target SHA.
 
 ### BUILD GATE 0 — checklist (Master Instruction §8)
 
@@ -274,7 +274,7 @@ MVP is DONE only when **all** hold:
 | B-02 | OpenPencil MCP `127.0.0.1:7600` down | not listening; config exists | launch OpenPencil app → then WAVE-02 Golden Components |
 | B-03 | SMS/OTP provider (SMS.ir) live send | no provider creds in workspace | env credentials |
 | B-04 | Live e2e VERIFIED promotion | **PARTIAL UNBLOCKED** (2026-09-23) | API:8000 + Next:3001 up; 19 screens promoted; basket/checkout POST e2e remains Phase 4 |
-| B-05 | CI green on origin | last workflow runs **failure** | push reconciled commits; fix CI job if still red |
+| B-05 | CI green on origin | Historical status (2026-09-26 checkpoint): last observed remediation workflow runs failed | Recheck current origin/branch SHA and fix CI only if its live run is still red |
 | B-06 | Docker `pol_test` empty | host PG holds schema | prefer host DSN; optional re-bootstrap into container |
 | B-07 | Grafana :3000 vs Next :3000 | both default 3000 | run Next on 3001 when both up |
 
@@ -341,7 +341,7 @@ Update MATRIX / API_MAP / GAPS when a status changes. Never mark VERIFIED withou
 
 ### 2026-09-26 remediation re-audit overlay
 
-- Current remediation branch: `remediation/full-closure-2026-09-25`.
+- Branch named in the 2026-09-26 remediation checkpoint: remediation/full-closure-2026-09-25; re-resolve the active branch and SHA from live GitHub state before using it as current.
 - Current head at checkpoint: `194daf012ee5a8312f335ebc0123d0865aca263b`.
 - Additional source hardening completed after the prior audit: owner-only basket/checkout, owner-only partial acceptance and vendor acceptance/rejection, formal dispute opening, role-aware delegated-permission ceilings, auth organization-switch regression, and Expo SDK 57 Node toolchain alignment.
 - Expo SDK 57 requires Node.js 22.13.x minimum; mobile CI now uses Node 22.23.1 and the monorepo declares Node >=22.13.0.
