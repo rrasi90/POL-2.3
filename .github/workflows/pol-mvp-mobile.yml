@@ -73,6 +73,13 @@ jobs:
           POL_RELEASE: "0"
         run: npm run qa:pre-apk
 
+      - name: Validate QA artifact tooling syntax
+        working-directory: mvp/apps/mobile
+        run: |
+          node --check scripts/build_qa_x86.mjs
+          node --check scripts/write_qa_artifact_manifest.mjs
+          node --check scripts/check_prebuild_todo_gate.mjs
+
       - name: Expo Android export
         run: npm run build --workspace @pol/mobile
 
