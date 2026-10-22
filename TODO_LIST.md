@@ -961,3 +961,13 @@
 - **Acceptance limits:** No merge, no canonical-main change, no generated APK, no device/release certification. PR #43 remains Draft; TODO-009/TODO-084/TODO-154 remain open. TODO-061 still needs the real checkout's local HEAD and working-tree/toolchain evidence.
 - **Working tree:** not accessible from this GitHub-only session.
 - **Handoff accepted by:** PENDING
+
+
+
+### [2026-10-22 UTC] Agent: ChatGPT — GATE FIXTURE COUNT CORRECTION
+- **State:** SOURCE CORRECTION COMMITTED / REVALIDATION PENDING.
+- **Finding:** On the prior gate test run for head b39e4a5b2a21d8b017859b549fb712e7314bbabc, the raw test log contained seven separate PASS assertions (allow-all-valid, unchecked task, missing task, duplicate task ID, extended future ID, invalid checkbox marker, malformed row) but the final test-script summary still said 6/6. This was a reporting inconsistency; it did not correspond to a failing assertion.
+- **Correction:** Updated only the summary line in mvp/apps/mobile/scripts/test_prebuild_todo_gate.mjs to report 7/7, committed as 065959ad89e56b6259e5c6f28fd4b454e552bc60 on PR #43's gate branch.
+- **Current SHA validation:** workflow runs for 065959ad89e56b6259e5c6f28fd4b454e552bc60: Static Gate 39753019889 QUEUED; Independent Verification 39753019914 IN_PROGRESS; Browser E2E 39753019946 IN_PROGRESS; Mobile Verification 39753019929 QUEUED at the last poll. No current-SHA final verdict is asserted yet.
+- **Next:** confirm Mobile Verification log explicitly ends with “7/7”, confirm the real TODO ledger remains blocked and APK matrix remains SKIPPED/no artifacts, then capture terminal outcomes for all workflows on this SHA.
+- **Tasks remain open:** TODO-009, TODO-061, TODO-084 and TODO-154. PR #43 is OPEN/Draft/unmerged; no source change has reached main.
