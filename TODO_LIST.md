@@ -1089,3 +1089,9 @@
 - Added comment `6338268192` on PR #42 identifying this exact run and recommending the central gate land through the authorized review process before further `mvp/**` changes are merged. No PR was merged or closed.
 - Added comment `6338278528` on PR #40: its earlier gate checks 82 rows and lacks the journey preconditions TODO-012…017 and stricter malformed/duplicate-ID detection introduced in PR #43. Because #40 and #43 both modify the same workflow, the final combined version must preserve the stronger #43 gate, then be re-verified on the exact resulting SHA.
 - **Required sequencing:** review/integrate one canonical gate implementation, verify that APK jobs are conditioned on its output, and rerun the actual-ledger gate after integration. Do not promote historical or ungated APK archives to accepted QA evidence.
+
+### [2026-10-22 UTC] Agent: ChatGPT — PRODUCT-VISION D-003 / D-014 CONTRADICTION
+
+- Read current `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md`: D-003 explicitly states the single-vendor basket was historical MVP v0 and is **SUPERSEDED by D-014**; D-014 defines the single unified multi-wholesaler basket as MVP v1.0. `06_PRODUCT/MVP_Definition.md` agrees with D-014.
+- `06_PRODUCT/Product_Vision.md` on main still says the Ahvaz pilot starts with a single-vendor model under D-003 and places multi-vendor allocation in Year 2–3. This is an actual canonical-document contradiction, not a new product decision.
+- Added comment `6338305133` to PR #42 to make this gap visible. It is not silently corrected in this bounded source-path/CI-freshness patch; a separate scoped documentation repair or explicit scope extension is still needed.
