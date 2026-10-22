@@ -16,9 +16,9 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "ios": "expo start --ios",
+    "ios": "expo run:ios",
     "web": "expo start --web",
-    "android": "expo start --android",
+    "android": "expo run:android",
     "start": "expo start",
     "build": "expo export --platform android --output-dir ./dist",
     "qa:functional": "node scripts/mobile_functional_qa.mjs",
