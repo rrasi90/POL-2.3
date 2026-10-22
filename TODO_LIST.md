@@ -928,3 +928,24 @@
 - **Next independent blocker:** TODO-061 still cannot close because this session cannot inspect the actual local checkout/worktree. Obtain local HEAD, git status --short --branch, untracked-file inventory and toolchain versions from the local agent. Then continue TODO-062 onward in the stated dependency order.
 - **Working tree:** not accessible in this session; clean/dirty status remains NOT VERIFIED.
 - **Handoff accepted by:** PENDING
+
+
+
+### [2026-10-22 UTC] Agent: ChatGPT — TODO-154 GATE HARDENING AND FIXTURE TESTS (LATEST RUNS)
+- **State:** IMPLEMENTED IN DRAFT PR / CI PARTIAL — do not close TODO-154 yet.
+- **Gate improvements in follow-up commits on PR #43:** the central eligibility list now also includes TODO-012…TODO-017, because TODO-009 explicitly requires those high-level journeys to be completed or independently traced/reviewed. The parser now reads all canonical task rows, requires exactly one row per ID, rejects duplicate IDs, and fails closed if it encounters an unsupported future TODO number greater than TODO-154. Required rows must be checked and contain explicit DONE_VERIFIED. This avoids accepting the first of multiple conflicting rows or ignoring an unknown new gate task.
+- **Focused behavior suite added:** mvp/apps/mobile/scripts/test_prebuild_todo_gate.mjs; workflow now runs both syntax checks and the behavior fixture. On tested head 372009d92a241707b3d065c936ca2fe30b098704, mobile workflow 39752101356 completed SUCCESS and the log shows 6/6 gate fixture cases passed:
+  1. all required tasks DONE_VERIFIED → allow=true;
+  2. unchecked required task → allow=false;
+  3. missing required task → allow=false;
+  4. duplicate task ID → allow=false;
+  5. unknown future task ID → allow=false;
+  6. malformed required row → allow=false.
+- **Negative current-ledger evidence:** same run 39752101356 has central gate job SUCCESS but the gate outcome is a policy BLOCKED result; at this revision the 88 required rows are expected to remain unverified, so the Android APK matrix is SKIPPED and the run publishes no APK artifacts. Gate-job SUCCESS means the guard evaluated correctly, not that TODO-084 passed.
+- **Current checks at last poll on exact SHA 372009d92a241707b3d065c936ca2fe30b098704:** Static Gate 39752101561 SUCCESS; Mobile Verification 39752101356 SUCCESS; Browser E2E 39752101134 IN_PROGRESS; Independent Verification 39752101071 IN_PROGRESS. Re-poll the last two before finalizing the PR result; do not borrow results from previous heads.
+- **PR status:** PR #43 (https://github.com/rrasi90/POL-2.3/pull/43) is OPEN / Draft / unmerged. No change has reached main. The workflow gate has not been positively exercised against a real all-DONE ledger; the positive branch above is tested only with temporary synthetic fixture data and is not release authorization.
+- **Earlier artifact incident remains relevant:** PR #42's ungated build produced the two archives noted in the prior journal entry. They remain explicitly non-qualifying for TODO-009/TODO-084 and were not re-labelled as accepted deliverables.
+- **Next actions:** obtain terminal results from Browser E2E and Independent Verification for SHA 372009d...; after all four checks are green, request normal review/integration for PR #43. Then re-run the guard after integration on canonical main; only a real, fully reviewed and genuinely DONE_VERIFIED ledger can ever permit QA APK generation.
+- **Unchanged blockers:** TODO-061 remains open until an agent with access to the real local checkout reports its HEAD, full branch name, git status --short --branch, untracked files and toolchain versions. TODO-009 and TODO-084 remain open. No physical-device, staging, live-provider or release evidence is claimed.
+- **Working tree:** unavailable to this GitHub-only session; not asserted clean.
+- **Handoff accepted by:** PENDING
