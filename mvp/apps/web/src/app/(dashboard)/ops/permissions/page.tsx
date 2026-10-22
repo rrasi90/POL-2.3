@@ -33,9 +33,11 @@ export default function OpsPermissionsPage() {
     void load();
   }, []);
 
+  const roles = data?.roles ?? null;
+
   const filteredRoles = useMemo(() => {
-    if (!data?.roles) return [];
-    const entries = Object.entries(data.roles);
+    if (!roles) return [];
+    const entries = Object.entries(roles);
     const q = query.trim().toLowerCase();
     if (!q) return entries;
     return entries.filter(
@@ -43,9 +45,9 @@ export default function OpsPermissionsPage() {
         role.toLowerCase().includes(q) ||
         perms.some((p) => p.toLowerCase().includes(q)),
     );
-  }, [data?.roles, query]);
+  }, [roles, query]);
 
-  const totalRoles = data?.roles ? Object.keys(data.roles).length : 0;
+  const totalRoles = roles ? Object.keys(roles).length : 0;
 
   if (state === "loading") {
     return (
