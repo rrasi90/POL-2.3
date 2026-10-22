@@ -1060,3 +1060,9 @@
 - Finding: although the PR adds a targeted freshness note, `mvp/BUILD_PLAN.md` still contains undated “currently fails before useful step execution” statements in its phase/status tables. The review asks that these statements be tied to the historical checkpoint and branch/SHA or explicitly rewritten as historical claims.
 - Evidence kept separate: Independent Verification on main SHA `d9505cfa62c953546b479f4ca8aec1997ca57fbc` passed 663/663; the separate scheduled Notification Retention run `39743316303` failed because both database connection secrets were empty.
 - The review did not merge, close, or otherwise change the state of PR #42. TODO-061 remains OPEN until the local worktree and toolchain checks can be run by an executor with access to the local checkout.
+
+### [2026-10-22 UTC] Agent: ChatGPT — TODO-061 STALE-REMOTE-SHA CONFLICT FOUND
+
+- The supplied historical handoff text reports local `origin/main = f90fe3117c1881545e32181381ec50a1a6960f9e`. A fresh GitHub API read in this session returns `refs/heads/main = d9505cfa62c953546b479f4ca8aec1997ca57fbc`, authored 2026-10-13, and the referenced `f90fe3117c1881545e32181381ec50a1a6960f9e` commit itself dates to 2026-09-28. Therefore the supplied local/remote snapshot is stale or otherwise inconsistent with the live remote; it must not be reused as the current main SHA.
+- **Required resolution:** from the actual local checkout run `git fetch origin main`, then `git ls-remote origin refs/heads/main`, `git rev-parse origin/main`, and `git status --short --branch`; compare results, preserve local uncommitted work, and record exact output before branching or porting commits. Do not reset, rebase, force-push, or delete branches as part of resolving this discrepancy.
+- This conflict further confirms `TODO-061` remains **OPEN** until a local-capable executor validates the checkout against the live GitHub ref.
