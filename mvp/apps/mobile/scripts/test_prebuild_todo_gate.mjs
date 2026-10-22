@@ -123,7 +123,7 @@ const blockedMissingLedger = (() => {
     assert.equal(result.status, 0, result.stderr || result.stdout);
     const output = existsSync(outputPath) ? readFileSync(outputPath, "utf8") : "";
     assert.match(output, /^allow_qa_apk=false\n$/m);
-    assert.match(result.stdout ?? "", /could not read/);
+    assert.match(`${result.stdout ?? ""}${result.stderr ?? ""}`, /could not read/);
     return true;
   } finally {
     rmSync(root, { recursive: true, force: true });
