@@ -6,6 +6,8 @@ import { resolve } from "node:path";
 // Missing/malformed task rows fail closed; this job reports a blocked gate
 // without failing the non-build CI checks.
 const requiredIds = [
+  // High-level user journeys referenced by TODO-009 must not be bypassed.
+  ...Array.from({ length: 6 }, (_, index) => 12 + index),
   ...Array.from({ length: 23 }, (_, index) => 61 + index),
   ...Array.from({ length: 46 }, (_, index) => 85 + index),
   131, 132, 133, 134, 135, 136, 138, 139, 144, 145, 147, 149, 84,
