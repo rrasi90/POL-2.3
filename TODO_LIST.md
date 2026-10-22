@@ -949,3 +949,15 @@
 - **Unchanged blockers:** TODO-061 remains open until an agent with access to the real local checkout reports its HEAD, full branch name, git status --short --branch, untracked files and toolchain versions. TODO-009 and TODO-084 remain open. No physical-device, staging, live-provider or release evidence is claimed.
 - **Working tree:** unavailable to this GitHub-only session; not asserted clean.
 - **Handoff accepted by:** PENDING
+
+
+
+### [2026-10-22 UTC] Agent: ChatGPT — TODO-154 PARSER EDGE-CASE HARDENING (LATEST SHA CHECKS PENDING)
+- **State:** CODE CHANGED / VALIDATION IN PROGRESS — TODO-154 remains OPEN until the current SHA completes CI and the PR is reviewed/integrated.
+- **Exact change:** On PR #43 branch fix/central-todo-084-apk-gate-20261022, head was advanced to b39e4a5b2a21d8b017859b549fb712e7314bbabc. The task-row parser now recognizes any single checkbox marker (not only space/x/X), so an invalid marker is counted as an invalid task rather than potentially being invisible; it accepts 3-or-more digits to detect unsupported extended IDs such as TODO-1000. Existing duplicate detection and the unsupported-ID ceiling remain in place.
+- **Fixture updates:** mvp/apps/mobile/scripts/test_prebuild_todo_gate.mjs now covers the extended TODO-1000 ID and an invalid [!] checkbox marker in addition to the earlier six cases. The expected suite is 7 cases; the PASS count is not asserted until the new workflow run reports it.
+- **Latest workflow state for this SHA:** Mobile Verification run 39752839719, Browser E2E run 39752839846, and Static Gate run 39752839985 were all IN_PROGRESS at the latest poll. Mobile jobs were still starting the central gate and typecheck; do not treat prior-SHA results as certification for b39e4a5.
+- **Next:** inspect the log of the central gate/fixture step once available, verify the expected 7/7 result and negative behavior (matrix SKIPPED/no APK artifacts), and wait for Browser E2E/Independent Verification outcomes for this same SHA. If a fixture fails, fix and rerun before describing the gate as validated.
+- **Acceptance limits:** No merge, no canonical-main change, no generated APK, no device/release certification. PR #43 remains Draft; TODO-009/TODO-084/TODO-154 remain open. TODO-061 still needs the real checkout's local HEAD and working-tree/toolchain evidence.
+- **Working tree:** not accessible from this GitHub-only session.
+- **Handoff accepted by:** PENDING
