@@ -64,7 +64,8 @@ Copy this block per defect:
 | BUG-001 | S4 | `DEFERRED` | `test_photo_proof_requires_delivery_bound_media` used a fixed `storage_key='x'`, so the run failed on any second execution against the same test database — test isolation defect, not a product defect | QA harness | `afa46fc` | `TODO-016`, `TODO-090` | unassigned |
 | BUG-002 | S2 | `FIXED` | Missing resources on order paths returned 422 `INVALID_REQUEST` instead of 404 `NOT_FOUND` | Retailer owner / vendor owner | `c65c282` | `TODO-014` | unassigned |
 | BUG-003 | S2 | `FIXED` | Stale allocation plan at checkout returned 422 `INVALID_REQUEST`, contradicting the canonical 409 `CONFLICT` contract (G-326) | Retailer owner | `c65c282` | \TODO-014\ | unassigned |
-
+| BUG-004 | S2 | `FIXED` | OTP failed-attempt counter was rolled back with the request transaction, so brute-force lockout never engaged over HTTP (unlimited 4-digit guesses) | All login personas | `c65c282` | `TODO-070` | unassigned |
+| BUG-005 | S3 | `FIXED` | Revoking another user's session returned 401 `INVALID_ACCESS_TOKEN` (as if the caller's token were invalid) instead of 403 `FORBIDDEN` | Any authenticated user | `c65c282` | `TODO-070` | unassigned |
 ### BUG-002 — Order/order-group/delivery-exception lookups by unknown id answered 422 instead of 404
 
 | Field | Value |
@@ -116,3 +117,51 @@ Residual (intentional, not a defect): payload-referenced ids (payment evidence m
 ### Not a defect — DB session `expires_at` is not enforced on the access-token path
 
 `scripts/auth_boundary.py::validate_access_token` rejects unknown, revoked and EXPIRED sessions but does not compare `user_sessions.expires_at`; access-token lifetime is bounded by the JWT `exp` claim, and `AuthService.refresh_access_token` enforces both `status == 'EXPIRED'` and `expires_at <= now`. Verified by `test_expired_status_session_is_401` (EXPIRED row returns 401). Documented as design, not filed as a defect.
+
+### BUG-004 — OTP brute-force lockout was ineffective over HTTP
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S2 |
+| Role / persona | All login personas (retailer, vendor, ops, field) |
+| Build / variant | API `/api/v1` · local runtime |
+| Branch / SHA | `test/journey-evidence-20261022` @ `c65c282` (fixed in TODO-070 commit) |
+| Environment | local test · PostgreSQL 18.4 · FastAPI TestClient vs `pol_test` |
+| Seed / data | `scripts/test_http_transport.py::_seed_user` (unique phone per test) |
+| Preconditions | A pending LOGIN OTP challenge for the victim phone |
+| Steps to reproduce | 1. `POST /auth/request-otp` 2. call `POST /auth/verify-otp` with a wrong code up to ten times 3. inspect `otp_challenges.attempts_count` |
+| Expected | Each wrong code increments `attempts_count`; the 5th returns 429 `OTP_LOCKED` and sets `status = BLOCKED`, blocking further guesses |
+| Actual | Every attempt returned 422 with `Attempt 1/5`; `attempts_count` stayed `0` and no lockout ever occurred |
+| Evidence | `scripts/test_http_auth_matrix.py::TestOtpFailures::test_wrong_otp_persists_attempt_counter`, `..._test_fifth_wrong_otp_locks_the_phone` |
+| Suspected cause | `scripts/api/db.py::get_db_cursor` rolls back on any exception, so the `UPDATE otp_challenges SET attempts_count = ... ` executed inside `domain_services.AuthService.verify_otp` was discarded when `InvalidOTPError` propagated to the error handler. Boundary-level tests passed because they inspect the row inside the same open transaction |
+| Linked TODO / BUG | `TODO-070` |
+| Owner | unassigned |
+| Fix SHA | TODO-070 commit on `test/journey-evidence-20261022` |
+| Regression test | `scripts/test_http_auth_matrix.py::TestOtpFailures` (counter persistence, 429 lockout, request-otp during lockout) |
+| Verified by / at | full suite 695/695 PASS (227.7s) |
+
+Fix: `scripts/api/routes/auth.py::verify_otp` commits the failed-attempt accounting (`cur.connection.commit()`) before re-raising `InvalidOTPError` / `OTPLockoutError`. Successful-path handlers are unchanged.
+
+### BUG-005 — Revoking another user's session answered 401 instead of 403
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 |
+| Role / persona | Any authenticated user |
+| Build / variant | API `/api/v1` · local runtime |
+| Branch / SHA | `test/journey-evidence-20261022` @ `c65c282` (fixed in TODO-070 commit) |
+| Environment | local test · PostgreSQL 18.4 · FastAPI TestClient vs `pol_test` |
+| Seed / data | two users seeded via `_seed_user`, one session each |
+| Preconditions | User A holds a valid access token; user B has an active session |
+| Steps to reproduce | 1. login A and B 2. `DELETE /auth/sessions/{session_of_B}` with A's bearer token |
+| Expected | 403 `FORBIDDEN` — the caller's token is valid, the target session is not theirs |
+| Actual | 401 `INVALID_ACCESS_TOKEN`, which told clients (and the SPA 401 interceptor) to discard a perfectly valid session |
+| Evidence | `scripts/test_http_auth_matrix.py::TestSessionLifecycle::test_cannot_revoke_another_users_session` |
+| Suspected cause | `scripts/auth_application.py::revoke_session` raised `AuthError` for an ownership violation, and `AuthError` maps to 401 |
+| Linked TODO / BUG | `TODO-070` |
+| Owner | unassigned |
+| Fix SHA | TODO-070 commit on `test/journey-evidence-20261022` |
+| Regression test | `...::test_cannot_revoke_another_users_session` (also asserts victim session still works) |
+| Verified by / at | full suite 695/695 PASS (227.7s) |

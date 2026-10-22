@@ -136,7 +136,7 @@ class AuthApplicationService:
                 (target_session_id, claims["sub"]),
             )
             if not cur.fetchone():
-                raise AuthError("Session not found or not owned by authenticated user.")
+                raise PermissionError("Session not found or not owned by authenticated user.")
         AuthService.revoke_session(cur, target_session_id)
 
     @staticmethod

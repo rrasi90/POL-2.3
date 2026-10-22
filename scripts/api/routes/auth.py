@@ -18,6 +18,7 @@ from scripts.api.schemas import (
     VerifyOTPRequest,
 )
 from scripts.auth_application import AuthApplicationService
+from scripts.auth_boundary import InvalidOTPError, InvalidRefreshTokenError, OTPLockoutError
 from scripts.operational_config import OTP_RESEND_INTERVAL_SECONDS, OTP_TTL_SECONDS
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -55,11 +56,17 @@ def request_otp(payload: RequestOTPRequest, request: Request, cur=Depends(get_db
 
 @router.post("/verify-otp")
 def verify_otp(payload: VerifyOTPRequest, response: Response, cur=Depends(get_db_cursor)):
-    result = AuthApplicationService.verify_otp(
-        cur,
-        payload.mobile_number,
-        payload.otp_code,
-    )
+    try:
+        result = AuthApplicationService.verify_otp(
+            cur,
+            payload.mobile_number,
+            payload.otp_code,
+        )
+    except (InvalidOTPError, OTPLockoutError):
+        # Failed-attempt accounting must survive the request-level rollback that
+        # the error handler triggers; otherwise brute-force lockout never engages.
+        cur.connection.commit()
+        raise
     refresh_token = result.get("refresh_token")
     if refresh_token and payload.client_platform == "web":
         _set_refresh_cookie(response, refresh_token)
