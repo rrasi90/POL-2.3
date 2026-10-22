@@ -24,7 +24,7 @@ try {
 }
 
 const blocked = [];
-const taskRowPattern = /^\s*-\s*\[([^\]\r\n])\]\s+`TODO-(\d{3,})`(?:\s|$)/;
+const taskRowPattern = /^\s*(?:[-*+]|\d+\.)\s+\[([^\]\r\n])\]\s+(?:`)?TODO-(\d{3,})(?:`)?(?:\s|$)/;
 const rowsById = new Map();
 for (const line of lines) {
   const match = line.match(taskRowPattern);
