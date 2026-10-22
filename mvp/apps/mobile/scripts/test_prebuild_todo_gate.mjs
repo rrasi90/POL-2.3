@@ -81,12 +81,21 @@ assert.match(blockedDuplicate.output, /^allow_qa_apk=false\n$/m);
 assert.match(blockedDuplicate.stdout, /TODO-061: duplicate task row \(2 occurrences\)/);
 console.log("PASS: duplicate task ID => allow_qa_apk=false");
 
-const unknownTask = [...doneRows(), "- [x] `TODO-155` DONE_VERIFIED — unsupported future task"];
+const unknownTask = [...doneRows(), "- [x] `TODO-1000` DONE_VERIFIED — unsupported future task"];
 const blockedUnknown = evaluate(unknownTask);
 assert.match(blockedUnknown.output, /^allow_qa_apk=false\n$/m);
-assert.match(blockedUnknown.stdout, /TODO-155: task ID exceeds the gate-supported range TODO-154/);
-console.log("PASS: unknown future task ID => allow_qa_apk=false");
+assert.match(blockedUnknown.stdout, /TODO-1000: task ID exceeds the gate-supported range TODO-154/);
+console.log("PASS: extended future task ID => allow_qa_apk=false");
 
+const invalidCheckbox = doneRows().map((row) =>
+  row.startsWith("- [x] `TODO-061`")
+    ? "- [!] `TODO-061` DONE_VERIFIED — invalid checkbox fixture row"
+    : row,
+);
+const blockedCheckbox = evaluate(invalidCheckbox);
+assert.match(blockedCheckbox.output, /^allow_qa_apk=false\n$/m);
+assert.match(blockedCheckbox.stdout, /TODO-061: not DONE_VERIFIED/);
+console.log("PASS: invalid checkbox marker => allow_qa_apk=false");
 const malformedTask = doneRows().map((row) =>
   row.startsWith("- [x] `TODO-061`")
     ? "- [x] TODO-061 DONE_VERIFIED — malformed fixture row"
