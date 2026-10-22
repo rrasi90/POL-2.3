@@ -87,7 +87,11 @@ jobs:
         run: python scripts/e2e_serve.py --prepare
 
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
+        # The hosted Ubuntu runner already includes Playwright's system
+        # libraries. Avoid apt's optional Microsoft package refresh here:
+        # packages.microsoft.com can return 403 and prevent browser tests
+        # from starting before the test suite is reached.
+        run: npx playwright install chromium
         working-directory: mvp/apps/web
 
       - name: Run Browser E2E Suite
