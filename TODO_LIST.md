@@ -1011,3 +1011,14 @@
 - **Latest SHA under validation:** 154f02100292b6b13ae3d6c53fde13596cf8f0c7. Four workflow runs were newly visible as IN_PROGRESS: Browser E2E 39754475735, Independent Verification 39754475706, Mobile Verification 39754475496, Static Gate 39754475677. No result on this new SHA is claimed until the runs complete. Re-poll the Mobile log for an explicit 9/9 line and real ledger result 88/88 BLOCKED with APK matrix SKIPPED/no artifacts.
 - **Tasks remain open:** TODO-009, TODO-061, TODO-084, TODO-154. PR #43 is still Draft/unmerged; no code has reached main, and no APK/release/device evidence is claimed.
 - **Working tree:** unavailable to this GitHub-only session; local HEAD and git status remain unverified.
+
+
+
+### [2026-10-22 UTC] Agent: ChatGPT — TODO-084 NONCANONICAL DUPLICATE DETECTION (LATEST CI PENDING)
+- **State:** HARDENING COMMITTED / LATEST CI PENDING.
+- **Additional parser protection:** the gate's row-discovery regex now recognizes checkbox task rows even when Markdown code delimiters around the TODO ID are missing, and accepts bullet/list markers only for discovery. Eligibility still requires the canonical checked dash-list row and exact `**DONE_VERIFIED` prefix. This closes a bypass where a valid checked row plus an extra malformed duplicate such as `- [x] TODO-061 ...` might previously have escaped duplicate detection.
+- **New regression case:** test fixture adds a malformed duplicate ID alongside the valid canonical row and asserts the gate returns allow=false. The suite now has 10 cases: valid synthetic positive; unchecked required task; missing required row; canonical duplicate; malformed duplicate without backticks; extended future ID; invalid checkbox marker; malformed required row; missing TODO ledger; checked checkbox with formal OPEN status and later DONE_VERIFIED prose.
+- **Latest code/test commit:** PR #43 head `48f0fa627d406158834fe71864db034c8d4852f2`; parser blob `ccab1d5ee06e01c8afedfadcc3de2c3127811d0b`; fixture blob `53f457cd439e40f4de20eb52d8548cc8b2bb7a38`. Summary in test source says 10/10; this is not considered validated until the current workflow log explicitly reports 10/10.
+- **Current-head runs at last poll:** Mobile Verification `39754776648` QUEUED; Browser E2E `39754776638` IN_PROGRESS; Independent Verification `39754776738` IN_PROGRESS; Static Gate `39754776688` IN_PROGRESS.
+- **Next action:** confirm 10/10 fixture execution, real ledger result remains 88/88 unverified and both APK builds are skipped/no artifacts, then capture all current-head terminal results. Any failing case must remain recorded and be fixed before calling this safety gate validated.
+- **No task status promotion:** TODO-009, TODO-061, TODO-084, and TODO-154 remain open. PR #43 remains Draft/unmerged and main is unchanged by this branch.
