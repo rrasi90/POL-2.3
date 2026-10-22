@@ -911,3 +911,20 @@
 - **Next steps:** finish polling Browser E2E and Independent Verification on PR #43; append exact terminal results. Do not merge PR #43 without approval. Keep TODO-154, TODO-084 and TODO-009 open until the relevant integration and evidence requirements are satisfied.
 - **Working tree:** local checkout unavailable to this session; no clean/dirty claim.
 - **Handoff accepted by:** PENDING
+
+
+
+### [2026-10-22 UTC] Agent: ChatGPT — TODO-154 CURRENT-HEAD CI CLOSED OUT (NEGATIVE PATH ONLY)
+- **State:** NEGATIVE_GATE_VERIFIED / TODO-154 STILL OPEN — the focused PR passes all four current-head workflows and proves that incomplete TODO evidence blocks APK construction; the code is not merged, and a positive-path/release/device certification is not claimed.
+- **Repository / branch:** rrasi90/POL-2.3; fix/central-todo-084-apk-gate-20261022; tested head d74eb6130428167f13299498bdfd3895342d49d8, base d9505cfa62c953546b479f4ca8aec1997ca57fbc. PR #43 (https://github.com/rrasi90/POL-2.3/pull/43) remains OPEN / Draft / unmerged.
+- **Current-head CI evidence:**
+  - Static Gate run 39750190099: SUCCESS.
+  - Mobile Verification run 39750190097: SUCCESS. Gate job 119728523859 log states PREBUILD_QA_APK_GATE=BLOCKED — 82 of 82 required TODO rows are not verified; TODO-084 is not DONE_VERIFIED; step output sets allow_qa_apk=false. Android matrix job 119728875994 is SKIPPED and the run has no APK artifacts. Mobile typecheck, functional state-transition QA, regression QA, mock transport QA, both Expo config validations, both per-app pre-APK checks, gate script syntax validation and Expo Android export passed.
+  - Browser E2E run 39750190165: SUCCESS, Playwright 17 passed.
+  - Independent Verification run 39750190128: SUCCESS, 663 passed, 0 failed, 0 skipped, duration 126.86s in the pytest summary; one warning recorded. Evidence artifact pol-verification-evidence ID 12413322281, 15,501-byte archive, not expired.
+- **Safety conclusion:** This negative-path result proves that open/unverified TODO evidence prevents the APK matrix from starting. It does not mark TODO-084 complete, and it is not a release/device certification. The PR remains unmerged; no APK artifacts were created by the gated PR #43 run.
+- **Related incident on PR #42:** main's prior workflow lacks the central gate; its docs-only run built/uploaded archives POL-vendor-QA-APK ID 12413600149 and POL-retailer-QA-APK ID 12413242711. These are explicitly non-qualifying for TODO-009/TODO-084. PR #42 description and this journal preserve that evidence.
+- **Remaining acceptance work:** review and integrate PR #43 only through the authorized process; check the current branch's TODO ledger after PR #41 is reviewed/merged; prove the gate on canonical main after integration and on any later workflow SHA; only test positive eligibility when the required TODO rows are truly DONE_VERIFIED. Do not falsify checklist rows to exercise the positive path.
+- **Next independent blocker:** TODO-061 still cannot close because this session cannot inspect the actual local checkout/worktree. Obtain local HEAD, git status --short --branch, untracked-file inventory and toolchain versions from the local agent. Then continue TODO-062 onward in the stated dependency order.
+- **Working tree:** not accessible in this session; clean/dirty status remains NOT VERIFIED.
+- **Handoff accepted by:** PENDING
