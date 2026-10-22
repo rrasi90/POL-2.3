@@ -1104,3 +1104,10 @@
 - Independent Verification run [39761057579](https://github.com/rrasi90/POL-2.3/actions/runs/39761057579): **663 passed / 0 failed / 0 skipped**, PostgreSQL 18.6 / Python 3.11.17; artifact `pol-verification-evidence` ID `12418107341`, 15,635 bytes. The job emitted one warning; automated tests passed, which is not release authorization.
 - Mobile Verification run [39761057597](https://github.com/rrasi90/POL-2.3/actions/runs/39761057597): typecheck/export job **SUCCESS**, but retailer APK job `119765477567` and vendor APK job `119765477650` were still `in_progress` at the last poll; neither upload step had run and no artifacts were listed. Do not record mobile workflow as terminal PASS, and do not treat any later APKs from this ungated base workflow as TODO-009/TODO-084 accepted evidence.
 - These are CI results on PR #42's documentation commit, not a new main commit and not local device, staging, domain/TLS, live SMS, storage-restore, or release certification.
+
+### [2026-10-22 UTC] Agent: ChatGPT — D-014 PRODUCT-VISION CONTRADICTION FIX PROPOSED
+
+- Created one-file documentation branch `docs/product-vision-d014-20261022` from main SHA `d9505cfa62c953546b479f4ca8aec1997ca57fbc`.
+- Changed only `06_PRODUCT/Product_Vision.md` at commit `658b5a2b3e858ccc1960f4de5edb73c3fd17a5e2`: D-003 is now explicitly historical MVP v0; the Ahvaz Year-1 MVP starts with the unified multi-vendor basket required by D-014; Year 2–3 focuses on evidence-driven optimization and cluster expansion.
+- Read the committed file back from GitHub and checked the edited passages against `DECISION_REGISTER.md` and `MVP_Definition.md`. This is a documentation proposal only; no business behavior or implementation changed.
+- Opened [Draft PR #44](https://github.com/rrasi90/POL-2.3/pull/44) for normal review. It targets main, changes one file (4 additions / 4 deletions), and does not alter the mobile workflow or trigger the mobile APK path filter. PR remains unmerged.
