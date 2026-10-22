@@ -1074,3 +1074,10 @@
 - Read-back verification: fetched the committed file from GitHub at blob `a06687e1aac034921222992465658b2ace802f39`; the targeted scan found zero remaining matches for the identified unqualified phrases `current remediation runs fail`, `fresh CI evidence is blocked before step execution`, or `currently fail before step-level execution`.
 - CI at the latest poll: four workflows on commit `d0914f0761821d25acd05d9ef91eb21e00327276` were `in_progress` (Independent Verification, Static Gate, Mobile Verification, Browser E2E). No PASS/FAIL result is claimed until terminal results are observed.
 - PR #42 remains open/Draft/unmerged. This change is documentation-only; no application code, migration, secret, deployment configuration, or product behavior was changed. TODO-061 still remains OPEN because the actual local worktree/toolchain and the contradictory local remote-SHA report require verification from the user's checkout.
+
+### [2026-10-22 UTC] Agent: ChatGPT — PR #29 DISPOSITION CROSS-CHECK
+
+- Read the live PR object and compared `fix/mobile-motion-audit-20261011` against the live `main` ref. PR #29 remains OPEN / Draft / dirty (`mergeable=false`), head `f4fcf5a92c8c6bfa331c9c2d73017a3ef4a34b89`; comparison reports 9 commits ahead, 22 behind, and 46 changed files.
+- Compared its changed-file set with current-main-based PR #40 (`agent/mobile-motion-port-20261022` @ `1c793b5363efda1fd6db0c32bf098472a6e9a6f9`): 24 of PR #29's 46 files overlap, including the motion spec, motion components, AppShell, OfflineBanner, shared UI and retailer/vendor/order screens. This supports **do not merge PR #29 wholesale**.
+- Added a factual disposition comment to PR #29, comment ID `6338252183`, documenting the comparison and recommended sequence: decide/review PR #40 first; then identify any independently required #29-only delta and either port that delta or close #29 as superseded. The PR and branch were not closed, merged, rebased or modified.
+- PR #40 remains a separate Draft, so the overlap is a conflict-risk finding rather than proof that either PR has been accepted into main.
