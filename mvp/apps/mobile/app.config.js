@@ -1,4 +1,4 @@
-const base = require("./app.json").expo;
+const base = require("./app.base.json").expo;
 const variant = (process.env.POL_APP_VARIANT || "retailer").toLowerCase();
 const isVendor = variant === "vendor";
 
