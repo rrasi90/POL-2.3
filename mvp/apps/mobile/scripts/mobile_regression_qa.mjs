@@ -192,6 +192,21 @@ const checks = [
     return s.includes("if (reduced)") && s.includes("scale.stopAnimation()") &&
       s.includes("useEffect(() => () =>") && s.includes("scale.setValue(1)");
   }],
+  ["QA APK provenance verifier covers canonical package IDs, signatures, ABIs and source SHA", () => {
+    const s = readMobile("scripts/write_qa_artifact_manifest.mjs");
+    return s.includes('variant === "retailer" ? "ir.pol.market" : "ir.pol.vendor"') &&
+      s.includes('run(aapt, ["dump", "badging", artifactPath])') &&
+      s.includes('run(apksigner, ["verify", "--verbose", artifactPath])') &&
+      s.includes('profile === "arm64" ? "arm64-v8a" : "x86_64"') &&
+      s.includes("sha256") && s.includes("pullRequestHeadSha") && s.includes("pullRequestBaseSha");
+  }],
+  ["QA APK builder gates both variants and never emits a release artifact", () => {
+    const arm = readMobile("scripts/build_android_variant.mjs");
+    const x86 = readMobile("scripts/build_qa_x86.mjs");
+    return arm.includes("scripts/pre_apk_qa.mjs") && x86.includes("scripts/pre_apk_qa.mjs") &&
+      arm.includes("POL_RELEASE: process.env.POL_RELEASE === \"0\" ? \"0\" : \"1\"") &&
+      x86.includes('POL_RELEASE: "0"') && x86.includes("reactNativeArchitectures=arm64-v8a,x86_64");
+  }],
   ["Delivery progress uses order-status fallback only when delivery status is absent", () => {
     const s = read("motion/DeliveryProgress.tsx");
     return s.includes("if (!raw)") && s.includes('order === "DISPATCHED"') &&
