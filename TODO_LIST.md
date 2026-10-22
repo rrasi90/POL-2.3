@@ -1162,3 +1162,11 @@
 - **Security note:** the sibling clone `C:\Star\pol\2.4` previously stored a GitHub personal access token inside its `origin` URL. It has been removed from `.git/config` and moved to the Windows credential helper; the token value is not recorded anywhere in this repository. **The exposed token should still be rotated/revoked by the owner** because it was stored in plaintext in a working copy.
 - **Next TODO-ID / next agent:** raise the `next`/`shell-quote` critical advisories (TODO-084 precondition), then TODO-019 APK-level confirmation and TODO-020…024 once a gate-eligible QA APK exists; TODO-025 afterwards. PR #45 stays Draft until #43's base is resolved into `main`.
 - **Workspace state:** branch `agent/pol-2.3-exec-20261022` pushed to the canonical branch; only untracked `freellmapi/` remains; no source file outside the single lint fix was modified.
+
+### [2026-10-22 20:40 UTC] Agent: opencode (local executor) — CI BILLING BLOCKER ON PR #46
+
+- **State:** PR #46 (branch `fix/mobile-dependency-alignment-20261022`, head `429867f8f88b49d8900c1453b80c2e1dd8516c08`) was opened against `main` and every workflow failed within seconds with the annotation: *"The job was not started because recent account payments have failed or your spending limit needs to be increased."* This is an **external billing blocker**, not a code failure; no job executed a single step.
+- **Evidence:** all six check-runs failed between 20:40:06Z and 20:40:11Z; `Expo mobile typecheck` job `120076202564` has no steps and carries only that billing annotation. PR #43 (`a7c99a9`) and PR #41 (`ef7cdef`) had passed the same workflows minutes earlier, so the regression is account-level.
+- **Consequence:** PR #46 must not be merged without green checks (standing rule). Its local verification is complete and recorded in the PR description; merge stays blocked until the owner fixes GitHub Actions billing / spending limit.
+- **Owner actions:** (1) restore GitHub Actions billing or raise the spending limit; (2) rotate/revoke the GitHub PAT that was previously stored in this clone's `origin` URL (removed locally, still needs revocation on GitHub).
+
