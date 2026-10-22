@@ -4,6 +4,7 @@
 **Root:** `mvp/`  
 **Authorized branch:** `main`  
 **Updated:** 2026-09-28 · Stage 6 mobile QA Cycle 3 closed; remaining executable gates are Night visual verification and live basket→checkout/idempotency E2E  
+**Targeted status note (2026-10-22):** CI-failure statements in this file are dated checkpoint snapshots and do not establish current CI status. Use the live workflow run for the exact branch/SHA before deciding that a gate is blocked or passed. The main migration directory and `DATABASE_SCHEMA_MANIFEST.md` agree on a contiguous chain `001`–`076` at `main` @ `d9505cfa62c953546b479f4ca8aec1997ca57fbc`; this targeted note is not a full runtime/release audit.  
 **Authority hierarchy:** `DECISION_REGISTER.md` (D-001…D-028 on branch) → CURRENT_SOURCE_OF_TRUTH → this file → module evidence files.
 
 **Rule:** NOT DONE = KEEP WORKING. Do not stop to ask which track. Isolate external deps as `BLOCKED_EXTERNAL` and continue everything else. Later-discovered defects in earlier phases ⇒ reopen, root-cause fix, retest, return.
