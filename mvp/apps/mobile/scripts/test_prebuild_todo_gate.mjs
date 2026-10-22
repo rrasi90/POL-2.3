@@ -106,4 +106,30 @@ assert.match(blockedMalformed.output, /^allow_qa_apk=false\n$/m);
 assert.match(blockedMalformed.stdout, /TODO-061: expected exactly one canonical task row; found 0/);
 console.log("PASS: malformed required task row => allow_qa_apk=false");
 
-console.log("All TODO-084 gate fixture tests passed (7/7).");
+const blockedMissingLedger = (() => {
+  const root = mkdtempSync(join(tmpdir(), "pol-todo-084-no-ledger-"));
+  const cwd = join(root, "mvp", "apps", "mobile");
+  const outputPath = join(root, "github-output.txt");
+  mkdirSync(cwd, { recursive: true });
+
+  try {
+    const result = spawnSync(process.execPath, [gateScript], {
+      cwd,
+      encoding: "utf8",
+      env: { ...process.env, GITHUB_OUTPUT: outputPath },
+      timeout: 10_000,
+    });
+    assert.ifError(result.error);
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const output = existsSync(outputPath) ? readFileSync(outputPath, "utf8") : "";
+    assert.match(output, /^allow_qa_apk=false\\n$/m);
+    assert.match(result.stdout ?? "", /could not read/);
+    return true;
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+})();
+assert.equal(blockedMissingLedger, true);
+console.log("PASS: missing TODO ledger => allow_qa_apk=false");
+
+console.log("All TODO-084 gate fixture tests passed (8/8).");
