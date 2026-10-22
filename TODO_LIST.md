@@ -446,7 +446,7 @@
 
 ## آخرین گیت بیرونی پس از تکمیل تست‌ها
 
-- [ ] `TODO-153` **OPEN · FINAL EXTERNAL GATE — دامنه، DNS و HTTPS عمومی:** فقط پس از قبولی software tests، QA APK/device tests و آماده‌شدن staging، رکوردهای DNS را در registrar/CDN اعمال کنید؛ delegation/NS، A/AAAA/CNAME، propagation، TLS certificate، redirect/renewal، CORS allowlist، API base URL برای هر دو variant، deep-link/app-link و endpointهای callback را روی محیط هدف تأیید کنید. health/readiness، لاگ بدون secret، firewall و rollback را بررسی کنید. هیچ credential در TODO ثبت نشود. تست‌های قبلی باید دامنه‌ندار باقی بمانند و این مرحله نباید بهانه‌ای برای جلو انداختن SMS زنده باشد. | مالک: تعیین‌نشده | پیش‌نیاز: TODO-029، TODO-030، TODO-032، TODO-033، TODO-054 و آمادگی staging
+- [ ] `TODO-153` **OPEN · FINAL EXTERNAL GATE — دامنه، DNS و HTTPS عمومی:** فقط پس از قبولی software tests، QA APK/device tests و آماده‌شدن staging، رکوردهای DNS را در registrar/CDN اعمال کنید؛ delegation/NS، A/AAAA/CNAME، propagation، TLS certificate، redirect/renewal، CORS allowlist، API base URL برای هر دو variant، deep-link/app-link و endpointهای callback را روی محیط هدف تأیید کنید. health/readiness، لاگ بدون secret، firewall و rollback را بررسی کنید. هیچ credential در TODO ثبت نشود. تست‌های قبلی باید دامنه‌ندار باقی بمانند و این مرحله نباید بهانه‌ای برای جلو انداختن SMS زنده باشد. | مالک: تعیین‌نشده | پیش‌نیاز: TODO-018…TODO-024، TODO-029، TODO-030، TODO-032، TODO-033، TODO-054، TODO-137، TODO-140…TODO-143، TODO-146، TODO-151…TODO-152 و آمادگی staging
 
 ## منابعی که در این تجمیع بررسی شدند
 
