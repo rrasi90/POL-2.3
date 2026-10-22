@@ -22,7 +22,7 @@ try {
 }
 
 const blocked = [];
-const taskRowPattern = /^\\s*-\\s*\\[([ xX])\\]\\s+`TODO-(\\d{3})`(?:\\s|$)/;
+const taskRowPattern = /^\s*-\s*\[([ xX])\]\s+`TODO-(\d{3})`(?:\s|$)/;
 const rowsById = new Map();
 for (const line of lines) {
   const match = line.match(taskRowPattern);
@@ -49,7 +49,7 @@ for (const number of requiredIds) {
     continue;
   }
   const row = rows[0];
-  if (!/^\\s*-\\s*\\[x\\]/i.test(row) || !row.includes("DONE_VERIFIED")) {
+  if (!/^\s*-\s*\[x\]/i.test(row) || !row.includes("DONE_VERIFIED")) {
     blocked.push(`${id}: not DONE_VERIFIED (checked checkbox and explicit status are both required)`);
   }
 }
