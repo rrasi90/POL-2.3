@@ -51,7 +51,7 @@ for (const number of requiredIds) {
     continue;
   }
   const row = rows[0];
-  if (!/^\s*-\s*\[x\]/i.test(row) || !row.includes("DONE_VERIFIED")) {
+  if (!/^\s*-\s*\[x\]\s+`TODO-\d{3,}`\s+\*\*DONE_VERIFIED\b/i.test(row)) {
     blocked.push(`${id}: not DONE_VERIFIED (checked checkbox and explicit status are both required)`);
   }
 }
