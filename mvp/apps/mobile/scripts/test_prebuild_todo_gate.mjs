@@ -26,7 +26,7 @@ const requiredIds = [
 
 const doneRows = () =>
   requiredIds.map((number) =>
-    `- [x] \`TODO-${String(number).padStart(3, "0")}\` DONE_VERIFIED — fixture row`,
+    `- [x] \`TODO-${String(number).padStart(3, "0")}\` **DONE_VERIFIED — fixture row`,
   );
 
 function evaluate(rows) {
@@ -68,6 +68,16 @@ const blockedOpen = evaluate(openTask);
 assert.match(blockedOpen.output, /^allow_qa_apk=false\n$/m);
 assert.match(blockedOpen.stdout, /TODO-084: not DONE_VERIFIED/);
 console.log("PASS: unchecked required task => allow_qa_apk=false");
+
+const contradictoryStatus = doneRows().map((row) =>
+  row.startsWith("- [x] `TODO-061`")
+    ? "- [x] `TODO-061` **OPEN — prose mentions DONE_VERIFIED but status is still open"
+    : row,
+);
+const blockedContradictory = evaluate(contradictoryStatus);
+assert.match(blockedContradictory.output, /^allow_qa_apk=false\n$/m);
+assert.match(blockedContradictory.stdout, /TODO-061: not DONE_VERIFIED/);
+console.log("PASS: checked box with OPEN status but DONE_VERIFIED in prose => allow_qa_apk=false");
 
 const missingTask = doneRows().filter((row) => !row.startsWith("- [x] `TODO-061`"));
 const blockedMissing = evaluate(missingTask);
@@ -132,4 +142,4 @@ const blockedMissingLedger = (() => {
 assert.equal(blockedMissingLedger, true);
 console.log("PASS: missing TODO ledger => allow_qa_apk=false");
 
-console.log("All TODO-084 gate fixture tests passed (8/8).");
+console.log("All TODO-084 gate fixture tests passed (9/9).");
