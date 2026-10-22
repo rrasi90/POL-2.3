@@ -999,3 +999,15 @@
 - **TODO ledger integrity:** this branch has 154 unique canonical task rows (TODO-001 through TODO-154), no duplicate or missing task IDs; 8 pre-existing checked rows and 146 open rows. No row has been checked as a consequence of documentation or gate changes.
 - **Independent blocker:** TODO-061 is still OPEN because this GitHub-only session cannot inspect the actual local checkout; local HEAD, git status --short --branch, untracked files and local toolchain remain NOT VERIFIED.
 - **Working tree:** unavailable; clean/dirty status is not asserted.
+
+
+
+### [2026-10-22 UTC] Agent: ChatGPT — TODO-084 STATUS-PREFIX HARDENING (CI PENDING)
+- **State:** CODE AND TESTS UPDATED / LATEST SHA VALIDATION PENDING — do not close TODO-154 yet.
+- **New source-level finding:** the prior eligibility check used row.includes("DONE_VERIFIED"), which did not anchor the status token to the task's canonical status position. In theory, a checked row with a formal OPEN status and the phrase DONE_VERIFIED later in the description could be accepted. This is a safety defect in the gate's status parser, distinct from the earlier malformed-row and duplicate-ID checks.
+- **Correction submitted on PR #43 branch fix/central-todo-084-apk-gate-20261022:** gate script commit e5a36d0c0e7005a14613463d0e3ea9573c3f5beb now requires a canonical row start, a checked [x] marker, the exact TODO ID, and an immediately-following **DONE_VERIFIED status prefix (case-insensitive). Text elsewhere in the description cannot satisfy the status test.
+- **Regression fixture:** test script commit 154f02100292b6b13ae3d6c53fde13596cf8f0c7 updates the synthetic valid rows to use the real canonical format and adds a contradictory fixture: checkbox [x] + formal **OPEN status + a later mention of DONE_VERIFIED must return allow_qa_apk=false. The summary is now 9/9, adding that to the previous eight scenarios.
+- **Previous verified SHA evidence retained:** on SHA 0d037011930c618d1fb8834b63a43aeffcf8dd74, Mobile Verification passed with 8/8 fixture cases; actual TODO ledger gate reported 88/88 unverified and skipped the APK matrix; Static Gate and Browser E2E succeeded. Independent Verification for that SHA was still in progress at the last reliable poll, so do not claim a full four-check green set for that SHA.
+- **Latest SHA under validation:** 154f02100292b6b13ae3d6c53fde13596cf8f0c7. Four workflow runs were newly visible as IN_PROGRESS: Browser E2E 39754475735, Independent Verification 39754475706, Mobile Verification 39754475496, Static Gate 39754475677. No result on this new SHA is claimed until the runs complete. Re-poll the Mobile log for an explicit 9/9 line and real ledger result 88/88 BLOCKED with APK matrix SKIPPED/no artifacts.
+- **Tasks remain open:** TODO-009, TODO-061, TODO-084, TODO-154. PR #43 is still Draft/unmerged; no code has reached main, and no APK/release/device evidence is claimed.
+- **Working tree:** unavailable to this GitHub-only session; local HEAD and git status remain unverified.
