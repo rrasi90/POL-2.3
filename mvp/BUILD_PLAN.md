@@ -20,15 +20,15 @@
 | 3 | Phase 0 + GATE 0 | **DONE** | Artifacts + skeleton; typecheck/build green. |
 | 4 | Phase 1 foundation + design system | **DONE** | tokens, ui package, shell, middleware role gates. |
 | 5 | Full Web MVP | **IMPLEMENTED / PARTIAL E2E** | Current screen matrix remains the authoritative capability ledger; management/customer/staff/candidate surfaces are now source-implemented. Historical cycle-5 counts remain historical evidence only. |
-| 6 | Phase 3 Android | **SOURCE IMPLEMENTED / REVERIFY** | Supported mobile parity plus post-remediation LOCAL-01…04 evidence is recorded. Barcode matching backend is implemented; camera transport remains a separate runtime scope. Historical checkpoint (2026-09-26): CI reruns for the then-targeted remediation branch were reported to fail before useful step execution. This is not current branch status; check a live run for the exact SHA. |
+| 6 | Phase 3 Android | **SOURCE IMPLEMENTED / REVERIFY** | Supported mobile parity plus post-remediation LOCAL-01…04 evidence is recorded. Barcode matching backend is implemented; camera transport remains a separate runtime scope. Historical checkpoint (2026-09-26): CI reruns for remediation/full-closure-2026-09-25 @ 5c40c14a619e0c530ae795638b556d79d7f86705 were reported to fail before useful step execution. This is not current branch status; check a live run for the exact SHA. |
 | 7 | OpenPencil WAVE-02 | **BLOCKED_EXTERNAL** | MCP `:7600` not listening (app not running). WAVE-01 evidence on disk. |
-| 8 | Global QA + regression | **SOURCE COMPLETE / FRESH CI BLOCKED** | LOCAL-02 16/16 and LOCAL-03 12/12 are historical device evidence; the 2026-09-26 checkpoint recorded remediation pull-request runs failing before useful steps. No fresh green certification is claimed without checking a live run for the exact target SHA. |
+| 8 | Global QA + regression | **SOURCE COMPLETE / FRESH CI BLOCKED** | LOCAL-02 16/16 and LOCAL-03 12/12 are historical device evidence; the 2026-09-26 checkpoint recorded remediation PR runs failing before useful steps at the then-targeted remediation head 5c40c14a619e0c530ae795638b556d79d7f86705. No fresh green certification is claimed without checking a live run for the exact target SHA. |
 | 9 | Structural audit | **DONE** (2026-09-23) | `python artifacts/structural_audit.py` → EXIT 0: window_loc=0, console_log=0, fake_success=0 (biz_calc hits all backend). |
 | 10 | Anti-vibe-coding audit | **DONE** (2026-09-23) | same checklist green; rules file restored to `.agents/rules/00-pol-canonical-safety.md`. |
 | 11 | GitHub reconciliation | **DONE (2026-09-23)** | Current code commit `f8ef267e6666a03b483afdd8618585ed82086014` has fresh backend verification CI **SUCCESS** (run 35893284312) and mobile Cycle 3 verification CI **SUCCESS** (run 35893284378). |
 | 12 | Independent 2nd-pass audit | **DONE** | `verify_repository_consistency.py` PASS 8/8 EXIT 0 (D-015/016/017 + hierarchy restored). |
 | 13 | Fix cycle | **DONE (this batch)** | G-022 OTP persistence + D-016/017 register + CST hierarchy; defect log §11. |
-| 14 | Regression | **REVERIFY** | Historical backend/mobile CI was green; the 2026-09-26 checkpoint recorded remediation pull-request jobs failing before useful step execution. Local regression/E2E evidence is historical and separately recorded; verify current status at the exact branch/SHA. |
+| 14 | Regression | **REVERIFY** | Historical backend/mobile CI was green; the 2026-09-26 checkpoint recorded remediation PR jobs failing before useful step execution at the then-targeted remediation head 5c40c14a619e0c530ae795638b556d79d7f86705. Local regression/E2E evidence is historical and separately recorded; verify current status at the exact branch/SHA. |
 | 15 | Repeat until DoD | **OPEN — EVIDENCE/DECISION GATE** | Source-level remediation is advanced; remaining DoD blockers are the explicit decisions in §2, deployment/provider/observability evidence, selected deep mobile parity, and fresh CI certification. |
 | 16 | Phase 5 delivery | **OPEN — FINAL EVIDENCE RECONCILIATION** | Night, live checkout and idempotency device/local gates are historical PASS evidence. Remaining closure is fresh CI certification plus explicit product/security/deployment decisions/evidence. |
 
@@ -41,7 +41,7 @@
 | 0 | Discovery & Artifacts | **DONE** (2026-09-22) · BUILD GATE 0 **PASS** |
 | 1 | Foundation + Design System | **DONE** (2026-09-22) |
 | 2 | Web MVP | **DONE (impl + partial e2e)** — 68 screens; ≥3 QA cycles/module; 19 VERIFIED live (cycle 5) |
-| 3 | Android MVP (Expo) | **SOURCE IMPLEMENTED / REVERIFY** — Field-first plus supported retailer/vendor/ops parity is implemented; selected deep admin/management screens remain web-first; fresh CI evidence is blocked before step execution |
+| 3 | Android MVP (Expo) | **SOURCE IMPLEMENTED / REVERIFY** — Field-first plus supported retailer/vendor/ops parity is implemented; selected deep admin/management screens remain web-first; the 2026-09-26 checkpoint did not provide fresh CI evidence; inspect a live run on the exact target SHA |
 | 4 | Global QA + Regression | **SOURCE REMEDIATED / FRESH CERTIFICATION BLOCKED** — historical 497/497 remains evidence; current branch needs a useful CI execution before new certification |
 | 5 | Delivery + Final Audit | **OPEN — EVIDENCE RECONCILIATION** — source remediation is advanced; remaining gates are fresh CI, explicit product/security decisions and deployment/provider evidence |
 
@@ -230,12 +230,12 @@ Rules: min 3 cycles/module; no identical failed check without new evidence; 2 id
 - [x] ≥3 mobile QA cycles evidenced: Cycle 1 run `35884012647`; Cycle 2 run `35886815013` (23/23); Cycle 3 run `35893284378` (11/11 regression + 23/23 functional + Expo config/export)  
 
 ### Phase 4 (Global QA)
-- [ ] Full pytest/verification suite **fresh at current HEAD** — historical run 35884012589 was green, but current remediation runs fail before useful step execution (`steps: null`); fresh certification remains pending.
+- [ ] Full pytest/verification suite **fresh at current HEAD** — historical run 35884012589 was green; the 2026-09-26 remediation checkpoint at 5c40c14a619e0c530ae795638b556d79d7f86705 recorded failures before useful step execution (`steps: null`). Fresh certification remains pending until a run for the exact target SHA is inspected.
 - [x] Web typecheck + lint + build (lint 0 errors, 15 warnings pre-existing)  
 - [x] Live e2e smoke — auth/profile/notif/catalog/orders/invoices/storefront/search/field/referrals/settlements/daily-inv; post-remediation LOCAL-02 covers basket→allocation→checkout→order (16/16)  
 - [x] Structural audit checklist green  
 - [x] Anti-vibe-coding audit green  
-- [ ] GitHub reconciliation + current CI — historical runs were green at an earlier HEAD; current remediation runs fail before useful step execution (`steps: null`), so fresh CI certification is pending.  
+- [ ] GitHub reconciliation + current CI — historical runs were green at an earlier HEAD; the 2026-09-26 remediation checkpoint at 5c40c14a619e0c530ae795638b556d79d7f86705 recorded failures before useful step execution (`steps: null`). Fresh CI certification is pending until the exact target SHA has a useful, inspectable run.  
 - [x] Independent second-pass audit (`verify_repository_consistency.py` PASS 8/8 EXIT=0; D-015/016/017 restored, hierarchy docs complete)  
 - [x] Mobile fix + re-regression closed: commit `f8ef267e` → mobile Cycle 3 11/11 and backend verification SUCCESS
 - [x] Final executable local gates previously evidenced: LOCAL-01 Night visual PASS + LOCAL-02 16/16 basket→allocation→checkout→order + LOCAL-03 12/12 idempotency replay; current source-level remediation is ahead of those historical runtime snapshots and requires fresh certification.  
