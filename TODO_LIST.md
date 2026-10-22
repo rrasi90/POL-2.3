@@ -971,3 +971,13 @@
 - **Current SHA validation:** workflow runs for 065959ad89e56b6259e5c6f28fd4b454e552bc60: Static Gate 39753019889 QUEUED; Independent Verification 39753019914 IN_PROGRESS; Browser E2E 39753019946 IN_PROGRESS; Mobile Verification 39753019929 QUEUED at the last poll. No current-SHA final verdict is asserted yet.
 - **Next:** confirm Mobile Verification log explicitly ends with “7/7”, confirm the real TODO ledger remains blocked and APK matrix remains SKIPPED/no artifacts, then capture terminal outcomes for all workflows on this SHA.
 - **Tasks remain open:** TODO-009, TODO-061, TODO-084 and TODO-154. PR #43 is OPEN/Draft/unmerged; no source change has reached main.
+
+
+
+### [2026-10-22 UTC] Agent: ChatGPT — MISSING-LEDGER FIXTURE FAILURE AND CORRECTION
+- **State:** FAILURE PRESERVED / FIX COMMITTED / FRESH SHA CI PENDING.
+- **Failure evidence:** Mobile Verification run 39753488781 on SHA bfb7dbfcc95fee6f50ee272801875e93e8eac4da failed in the new missing-ledger fixture at test script line 125. The gate correctly wrote allow_qa_apk=false and exited zero when TODO_LIST.md could not be read, but the fixture's regex was over-escaped and looked for the two literal characters backslash+n instead of the actual newline. All preceding seven fixture cases passed. The APK matrix was SKIPPED; no artifact was generated.
+- **Correction:** Fixed the assertion to use the same newline regex form as the other fixtures. Commit 933ad0c382f3f995fb12831525c660da147541b0 on PR #43 branch fix/central-todo-084-apk-gate-20261022. The fixture summary remains 8/8, now including missing ledger. This is a test assertion correction; gate behavior itself was already fail-closed.
+- **Current SHA runs:** Immediately after the fix, Independent Verification run 39753662063 was QUEUED for SHA 933ad0c382f3f995fb12831525c660da147541b0. Poll current-head runs before stating that the fix passes; do not reuse any green check from bfb7dbf.
+- **Next:** verify the full 8/8 fixture output and ensure actual current-ledger result remains BLOCKED (88/88 rows not verified) with APK matrix SKIPPED/no artifacts. Then collect current-SHA workflow results and update PR #43 and this journal again.
+- **Tasks:** TODO-009, TODO-061, TODO-084 and TODO-154 remain open; PR #43 remains Draft/unmerged. No source change reached main, and no APK build is authorized.
