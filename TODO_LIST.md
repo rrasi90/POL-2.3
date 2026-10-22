@@ -809,3 +809,17 @@
 - The machine-readable evidence expressly says release/pilot certification is NOT claimed and excludes physical-device visual QA, live SMS, live object storage, banking reconciliation and operational pilot readiness.
 - Classification: real, machine-readable **historical** evidence for SHA `b697986...`, not current-head evidence for PR #40 at `1c793b5363efda1fd6db0c32bf098472a6e9a6f9`. The old report cannot replace the currently running independent test suite.
 - No APK was present in this ZIP. User-reported local APK claims remain LOCAL-ONLY and unavailable for independent hashing/signature validation in this session.
+
+
+### [2026-10-22 UTC] Final current-head evidence — PR #40
+- Tested source SHA: `1c793b5363efda1fd6db0c32bf098472a6e9a6f9`; base: `d9505cfa62c953546b479f4ca8aec1997ca57fbc`; PR #40 remains OPEN / Draft / not merged.
+- Static Gate run `39697848982`: SUCCESS.
+- Browser E2E run `39697848996`: SUCCESS, 17/17 Playwright tests. Chromium installation succeeded with `npx playwright install chromium` after removing `--with-deps`'s apt metadata refresh that returned HTTP 403 from packages.microsoft.com.
+- Mobile verification run `39697848991`: SUCCESS — typecheck, 28/28 functional checks, 38/38 regression checks, deterministic Vendor mock QA, both Expo configs, both static pre-APK gates, Node syntax checks of the QA/x86 and manifest/gate scripts, and Expo Android export passed.
+- Independent Verification run `39697848994`: SUCCESS — 663 passed, 0 failed, 0 skipped; PostgreSQL 18.6 / Python 3.11.17. Raw log shows one Starlette/httpx deprecation warning only.
+- Artifact provenance: current-SHA verification evidence ZIP id `12392005802`, SHA-256 `11489fdabda258b299eac48c30c0954b10e2f528cf177d2b07373daaec27eed1`, URL `https://api.github.com/repos/rrasi90/POL-2.3/actions/artifacts/12392005802/zip`, expires 2026-11-21. Browser report ZIP id `12391324089`, SHA-256 `c96cac177374726e331c0e03df8563f904f36990a1424f04baf3731110592f74`, URL `https://api.github.com/repos/rrasi90/POL-2.3/actions/artifacts/12391324089/zip`, expires 2026-11-05.
+- QA APK eligibility run is part of mobile run `39697848991`: SUCCESS as a policy evaluator but result is BLOCKED — 82/82 required pre-build rows are not `DONE_VERIFIED`. Both standard and x86_64 APK matrices were SKIPPED by design. No APK, package ID, signing result, file SHA or size is claimed for current SHA.
+- Prior SHA `ab8e488...`'s 663/663 + 17/17 + 36/36 evidence and user-provided ZIP tested on `b697986...` remain valid only for those older SHAs; the current-head evidence above supersedes them for automated software checks, not for device or live-provider acceptance.
+- PR #29 remains OPEN / Draft / non-mergeable and was not modified or closed. Original `feat/mobile-motion-layer` SHA `2dfdd26a672c3bec44b6a00685a833d0fa7d0090` is preserved by an identical backup branch. PR #40 keeps its code-only current-main motion port, excludes 21 un-re-certified historical motion screenshots, and remains Draft/not merged.
+- Remaining blockers: TODO-061 local worktree status remains unavailable in this GitHub-only runtime; TODO-084 remains open and blocks all QA APK construction; physical emulator/device visual QA and package/signature/hash checks of newly built APKs remain open; DNS/domain, public TLS and real SMS remain deferred per user's instruction.
+- Handoff accepted by: PENDING
