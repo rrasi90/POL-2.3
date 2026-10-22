@@ -22,18 +22,37 @@ try {
 }
 
 const blocked = [];
+const taskRowPattern = /^\\s*-\\s*\\[([ xX])\\]\\s+`TODO-(\\d{3})`(?:\\s|$)/;
+const rowsById = new Map();
+for (const line of lines) {
+  const match = line.match(taskRowPattern);
+  if (!match) continue;
+  const id = `TODO-${match[2]}`;
+  const number = Number(match[2]);
+  if (number > 154) {
+    blocked.push(`${id}: task ID exceeds the gate-supported range TODO-154; review/update the gate before APK eligibility`);
+  }
+  const existing = rowsById.get(id) ?? [];
+  existing.push(line);
+  rowsById.set(id, existing);
+}
+
+for (const [id, rows] of rowsById) {
+  if (rows.length !== 1) blocked.push(`${id}: duplicate task row (${rows.length} occurrences)`);
+}
+
 for (const number of requiredIds) {
   const id = `TODO-${String(number).padStart(3, "0")}`;
-  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const rowPattern = new RegExp(`^\\s*-\\s*\\[([ xX])\\]\\s+` + "`" + escaped + "`" + `(?:\\s|$)`);
-  const row = lines.find((line) => rowPattern.test(line));
-  if (!row) {
-    blocked.push(`${id}: task row missing or format changed`);
-  } else if (!/^\s*-\s*\[x\]/i.test(row) || !row.includes("DONE_VERIFIED")) {
+  const rows = rowsById.get(id) ?? [];
+  if (rows.length !== 1) {
+    blocked.push(`${id}: expected exactly one canonical task row; found ${rows.length}`);
+    continue;
+  }
+  const row = rows[0];
+  if (!/^\\s*-\\s*\\[x\\]/i.test(row) || !row.includes("DONE_VERIFIED")) {
     blocked.push(`${id}: not DONE_VERIFIED (checked checkbox and explicit status are both required)`);
   }
 }
-
 const allowed = blocked.length === 0;
 const output = allowed ? "true" : "false";
 if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `allow_qa_apk=${output}\n`);
