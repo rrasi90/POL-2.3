@@ -800,3 +800,12 @@
 - QA APK policy remains fail-closed: in earlier CI SHA `ab8e4882420d8f953cd21dd73dde4e51d9f634bc`, the pre-build gate reported 82/82 TODO rows not `DONE_VERIFIED`, so all four APK jobs were correctly skipped. Pre-gate artifacts previously built on `8200f397` are stale and are not accepted as current deliverables. Do not bypass TODO-084.
 - Next action: poll all four runs for the newest PR #40 head; if browser succeeds with the no-apt install, preserve that evidence. Then append a final journal entry with the final CI SHA/results and artifact gate status. Keep PR #40 and #41 Draft; leave PR #29 untouched pending evidence-based supersession. Local checkout status remains unavailable and must not be inferred.
 - Handoff accepted by: PENDING
+
+
+### [2026-10-22 UTC] Evidence intake — user-provided `pol-verification-evidence.zip`
+- Container path: `/mnt/data/pol-verification-evidence.zip`; ZIP contents were inspected directly.
+- Files: `pol-test-results.json`, `failure_inventory.txt`, and `final_certification_b69798659beedb782cc3969268bb5f12d5efe01d.json`.
+- JSON provenance: tested commit/workflow SHA `b69798659beedb782cc3969268bb5f12d5efe01d`; GitHub Actions run `38186170942`, attempt `1`; PostgreSQL 18.6; Python 3.11.17; result `663 collected / 663 passed / 0 failed / 0 skipped`, 203.26 seconds; verdict `AUTOMATED_TESTS_PASSED`.
+- The machine-readable evidence expressly says release/pilot certification is NOT claimed and excludes physical-device visual QA, live SMS, live object storage, banking reconciliation and operational pilot readiness.
+- Classification: real, machine-readable **historical** evidence for SHA `b697986...`, not current-head evidence for PR #40 at `1c793b5363efda1fd6db0c32bf098472a6e9a6f9`. The old report cannot replace the currently running independent test suite.
+- No APK was present in this ZIP. User-reported local APK claims remain LOCAL-ONLY and unavailable for independent hashing/signature validation in this session.
