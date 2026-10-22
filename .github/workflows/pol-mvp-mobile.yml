@@ -73,9 +73,12 @@ jobs:
           POL_RELEASE: "0"
         run: npm run qa:pre-apk
 
-      - name: Validate central TODO-084 gate syntax
+      - name: Validate central TODO-084 gate syntax and behavior
         working-directory: mvp/apps/mobile
-        run: node --check scripts/check_prebuild_todo_gate.mjs
+        run: |
+          node --check scripts/check_prebuild_todo_gate.mjs
+          node --check scripts/test_prebuild_todo_gate.mjs
+          node scripts/test_prebuild_todo_gate.mjs
 
       - name: Expo Android export
         run: npm run build --workspace @pol/mobile
