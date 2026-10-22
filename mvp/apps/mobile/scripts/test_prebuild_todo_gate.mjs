@@ -91,6 +91,12 @@ assert.match(blockedDuplicate.output, /^allow_qa_apk=false\n$/m);
 assert.match(blockedDuplicate.stdout, /TODO-061: duplicate task row \(2 occurrences\)/);
 console.log("PASS: duplicate task ID => allow_qa_apk=false");
 
+const duplicateMalformedTask = [...doneRows(), "- [x] TODO-061 **DONE_VERIFIED — malformed duplicate without code delimiters"];
+const blockedDuplicateMalformed = evaluate(duplicateMalformedTask);
+assert.match(blockedDuplicateMalformed.output, /^allow_qa_apk=false\n$/m);
+assert.match(blockedDuplicateMalformed.stdout, /TODO-061: duplicate task row \(2 occurrences\)/);
+console.log("PASS: malformed duplicate TODO ID => allow_qa_apk=false");
+
 const unknownTask = [...doneRows(), "- [x] `TODO-1000` DONE_VERIFIED — unsupported future task"];
 const blockedUnknown = evaluate(unknownTask);
 assert.match(blockedUnknown.output, /^allow_qa_apk=false\n$/m);
@@ -113,7 +119,7 @@ const malformedTask = doneRows().map((row) =>
 );
 const blockedMalformed = evaluate(malformedTask);
 assert.match(blockedMalformed.output, /^allow_qa_apk=false\n$/m);
-assert.match(blockedMalformed.stdout, /TODO-061: expected exactly one canonical task row; found 0/);
+assert.match(blockedMalformed.stdout, /TODO-061: not DONE_VERIFIED/);
 console.log("PASS: malformed required task row => allow_qa_apk=false");
 
 const blockedMissingLedger = (() => {
@@ -142,4 +148,4 @@ const blockedMissingLedger = (() => {
 assert.equal(blockedMissingLedger, true);
 console.log("PASS: missing TODO ledger => allow_qa_apk=false");
 
-console.log("All TODO-084 gate fixture tests passed (9/9).");
+console.log("All TODO-084 gate fixture tests passed (10/10).");
