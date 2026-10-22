@@ -981,3 +981,21 @@
 - **Current SHA runs:** Immediately after the fix, Independent Verification run 39753662063 was QUEUED for SHA 933ad0c382f3f995fb12831525c660da147541b0. Poll current-head runs before stating that the fix passes; do not reuse any green check from bfb7dbf.
 - **Next:** verify the full 8/8 fixture output and ensure actual current-ledger result remains BLOCKED (88/88 rows not verified) with APK matrix SKIPPED/no artifacts. Then collect current-SHA workflow results and update PR #43 and this journal again.
 - **Tasks:** TODO-009, TODO-061, TODO-084 and TODO-154 remain open; PR #43 remains Draft/unmerged. No source change reached main, and no APK build is authorized.
+
+
+
+### [2026-10-22 UTC] Agent: ChatGPT — TODO-084 MISSING-LEDGER TEST FIXED / 8-CASE SUITE PASS
+- **State:** TEST SUITE PASS / FULL CURRENT SHA CI PARTIAL; TODO-154 remains OPEN pending terminal Browser E2E/Independent Verification and normal PR integration.
+- **Failure preserved:** Mobile run 39753662051 on 933ad0c382f3f995fb12831525c660da147541b0 failed the missing-ledger fixture's diagnostic assertion. The gate wrote allow_qa_apk=false but printed its missing-file diagnostic to stderr; the fixture inspected only stdout. A subsequent run against bfb7dbfcc95fee6f50ee272801875e93e8eac4da failed one step earlier because the output-file assertion was over-escaped. Both failed attempts are retained as history; neither APK matrix was allowed to run.
+- **Correction:** Current test script at blob 29e9038599b1db623e99d539e7b33741409686eb (commit 0d037011930c618d1fb8834b63a43aeffcf8dd74) now checks the newline correctly and searches both stdout and stderr for the missing-ledger diagnostic. The gate itself remains fail-closed for an unreadable/missing TODO ledger.
+- **Current-SHA evidence:** On 0d037011930c618d1fb8834b63a43aeffcf8dd74:
+  - Static Gate run 39753665833 — SUCCESS.
+  - Mobile Verification run 39753665769 — SUCCESS. Fixture log: 8/8 passed. The real ledger gate reports 88/88 required rows not verified and writes allow_qa_apk=false; Android QA APK matrix job was SKIPPED; artifact list is empty.
+  - Browser E2E run 39753665855 — IN_PROGRESS at the last poll.
+  - Independent Verification run 39753665817 — IN_PROGRESS at the last poll.
+- **Fixture coverage:** synthetic valid ledger permits; unchecked required task blocks; missing task blocks; duplicate ID blocks; extended future ID (TODO-1000) blocks; invalid checkbox marker blocks; malformed required row blocks; absent TODO_LIST.md blocks. Synthetic allow=true demonstrates parser behavior only and is not authorization to build from the actual project ledger.
+- **PR #43:** description refreshed with current SHA and the 8/8 evidence. PR remains OPEN/Draft/unmerged; no change reached main.
+- **Remaining acceptance:** poll Browser and Independent runs for the same SHA; then review PR #43 through the normal process. After approved integration to canonical main, rerun gate on that canonical SHA and keep TODO-009/TODO-084 open until genuine prerequisites are done. Physical device, staging, public domain, real SMS, storage and release certification are not covered by this gate test.
+- **TODO ledger integrity:** this branch has 154 unique canonical task rows (TODO-001 through TODO-154), no duplicate or missing task IDs; 8 pre-existing checked rows and 146 open rows. No row has been checked as a consequence of documentation or gate changes.
+- **Independent blocker:** TODO-061 is still OPEN because this GitHub-only session cannot inspect the actual local checkout; local HEAD, git status --short --branch, untracked files and local toolchain remain NOT VERIFIED.
+- **Working tree:** unavailable; clean/dirty status is not asserted.
