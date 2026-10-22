@@ -1095,3 +1095,12 @@
 - Read current `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md`: D-003 explicitly states the single-vendor basket was historical MVP v0 and is **SUPERSEDED by D-014**; D-014 defines the single unified multi-wholesaler basket as MVP v1.0. `06_PRODUCT/MVP_Definition.md` agrees with D-014.
 - `06_PRODUCT/Product_Vision.md` on main still says the Ahvaz pilot starts with a single-vendor model under D-003 and places multi-vendor allocation in Year 2–3. This is an actual canonical-document contradiction, not a new product decision.
 - Added comment `6338305133` to PR #42 to make this gap visible. It is not silently corrected in this bounded source-path/CI-freshness patch; a separate scoped documentation repair or explicit scope extension is still needed.
+
+### [2026-10-22 UTC] Agent: ChatGPT — PR #42 HEAD CI EVIDENCE UPDATE
+
+- Exact tested PR #42 commit: `d0914f0761821d25acd05d9ef91eb21e00327276` (base main `d9505cfa62c953546b479f4ca8aec1997ca57fbc`).
+- Static Gate run [39761057624](https://github.com/rrasi90/POL-2.3/actions/runs/39761057624): **SUCCESS**.
+- Browser E2E run [39761057646](https://github.com/rrasi90/POL-2.3/actions/runs/39761057646): **17 passed**, artifact `pol-browser-e2e-report` ID `12418281822`, 234,683 bytes.
+- Independent Verification run [39761057579](https://github.com/rrasi90/POL-2.3/actions/runs/39761057579): **663 passed / 0 failed / 0 skipped**, PostgreSQL 18.6 / Python 3.11.17; artifact `pol-verification-evidence` ID `12418107341`, 15,635 bytes. The job emitted one warning; automated tests passed, which is not release authorization.
+- Mobile Verification run [39761057597](https://github.com/rrasi90/POL-2.3/actions/runs/39761057597): typecheck/export job **SUCCESS**, but retailer APK job `119765477567` and vendor APK job `119765477650` were still `in_progress` at the last poll; neither upload step had run and no artifacts were listed. Do not record mobile workflow as terminal PASS, and do not treat any later APKs from this ungated base workflow as TODO-009/TODO-084 accepted evidence.
+- These are CI results on PR #42's documentation commit, not a new main commit and not local device, staging, domain/TLS, live SMS, storage-restore, or release certification.
