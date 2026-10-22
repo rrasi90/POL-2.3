@@ -8,11 +8,18 @@ from scripts.reservation_expiry_worker import ReservationExpiryWorker
 
 
 def _db():
+    import os
+
+    from scripts.db_safety import assert_isolated_test_target
+
+    dbname = assert_isolated_test_target(
+        operation="reservation expiry worker test",
+    )
     return psycopg2.connect(
-        dbname="pol_test",
-        user="postgres",
-        host="127.0.0.1",
-        port=5432,
+        dbname=dbname,
+        user=os.environ.get("PGUSER", "postgres"),
+        host=os.environ.get("PGHOST", "127.0.0.1"),
+        port=int(os.environ.get("POL_PG_PORT") or os.environ.get("PGPORT") or "5432"),
         cursor_factory=RealDictCursor,
     )
 
@@ -110,13 +117,28 @@ def test_reservation_expiry_releases_inventory_and_is_idempotent():
                     (res_id, vp_id, f"expiry-{uuid.uuid4()}"),
                 )
 
+                # Other tests may leave expired reservations behind in the shared
+                # test database, so assert on this reservation's outcome rather
+                # than on a global count.
+                cur.execute(
+                    """
+                    SELECT count(*) AS pending
+                    FROM inventory_reservations
+                    WHERE status = 'ACTIVE'
+                      AND expires_at < now()
+                      AND id <> %s
+                    """,
+                    (res_id,),
+                )
+                baseline = cur.fetchone()["pending"]
+
                 result = ReservationExpiryWorker.process_expired(
                     cur,
                     now=None,
-                    limit=10,
+                    limit=1000,
                 )
-                assert result["expired_reservation_count"] == 1
-                assert result["released_quantity"] == 20
+                assert result["expired_reservation_count"] == baseline + 1
+                assert result["released_quantity"] >= 20
 
                 cur.execute(
                     "SELECT reserved_quantity FROM vendor_inventory WHERE vendor_product_id=%s",

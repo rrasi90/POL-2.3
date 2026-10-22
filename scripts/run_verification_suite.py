@@ -40,6 +40,8 @@ class PytestResultCollector:
 
 def configure_test_environment():
     """Make the master suite propagate one isolated PostgreSQL test configuration."""
+    from scripts.db_safety import assert_isolated_test_target
+
     pg_host = os.environ.get("PGHOST", "127.0.0.1")
     pg_port = os.environ.get("POL_PG_PORT") or os.environ.get("PGPORT") or "5432"
     os.environ.setdefault("PGHOST", pg_host)
@@ -54,6 +56,13 @@ def configure_test_environment():
     )
     os.environ.setdefault("ENVIRONMENT", "test")
     os.environ.setdefault("POL_JWT_SECRET", "test-secret-key-for-auth-contract-tests-only-32bytes!!")
+
+    # Fail closed before any test touches the database.
+    assert_isolated_test_target(
+        dbname=os.environ["POL_API_DB_NAME"],
+        host=pg_host,
+        operation="verification suite",
+    )
 
 def get_git_info():
     info = {"commit": "unknown", "branch": "unknown", "is_dirty": False}

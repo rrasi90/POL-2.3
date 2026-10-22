@@ -66,6 +66,7 @@ Copy this block per defect:
 | BUG-003 | S2 | `FIXED` | Stale allocation plan at checkout returned 422 `INVALID_REQUEST`, contradicting the canonical 409 `CONFLICT` contract (G-326) | Retailer owner | `c65c282` | \TODO-014\ | unassigned |
 | BUG-004 | S2 | `FIXED` | OTP failed-attempt counter was rolled back with the request transaction, so brute-force lockout never engaged over HTTP (unlimited 4-digit guesses) | All login personas | `c65c282` | `TODO-070` | unassigned |
 | BUG-005 | S3 | `FIXED` | Revoking another user's session returned 401 `INVALID_ACCESS_TOKEN` (as if the caller's token were invalid) instead of 403 `FORBIDDEN` | Any authenticated user | `c65c282` | `TODO-070` | unassigned |
+| BUG-006 | S4 | `FIXED` | `test_reservation_expiry_worker` asserted a global `expired_reservation_count == 1` while the worker sweeps every expired reservation, so it failed whenever other fixtures left expired rows behind (order-dependent, passed only in full-suite order) | QA harness | `1cf0cc4` | `TODO-090`, `TODO-073` | unassigned |
 ### BUG-002 — Order/order-group/delivery-exception lookups by unknown id answered 422 instead of 404
 
 | Field | Value |
@@ -165,3 +166,27 @@ Fix: `scripts/api/routes/auth.py::verify_otp` commits the failed-attempt account
 | Fix SHA | TODO-070 commit on `test/journey-evidence-20261022` |
 | Regression test | `...::test_cannot_revoke_another_users_session` (also asserts victim session still works) |
 | Verified by / at | full suite 695/695 PASS (227.7s) |
+
+### BUG-006 — Reservation-expiry regression test was order-dependent and asserted a global sweep count
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S4 |
+| Role / persona | QA harness |
+| Build / variant | Backend verification suite · PostgreSQL 18.4 |
+| Branch / SHA | `test/journey-evidence-20261022` @ `1cf0cc4` |
+| Environment | local test · `pol_test` |
+| Seed / data | one vendor product with `reserved_quantity=20` and one `ACTIVE` reservation expired 1 minute ago |
+| Preconditions | Another module (for example `test_e2e_mvp_platform`) already left expired `ACTIVE` reservations in the shared test database |
+| Steps to reproduce | 1. Run `pytest scripts/test_e2e_mvp_platform.py scripts/test_reservation_expiry_worker.py` 2. Observe the worker processed 10 rows, not 1 |
+| Expected | The test asserts this reservation's own effect and stays green in any order or repetition |
+| Actual | `assert result["expired_reservation_count"] == 1` failed with `10 == 1` because `limit=10` swept other rows; the module also hardcoded `dbname/pol_test`, `user/postgres`, `host/127.0.0.1` instead of reading the environment |
+| Evidence | `136 passed in 96.13s` for the G3 batch after the fix; `1 passed` alone, `36 passed` combined with `test_e2e_mvp_platform.py` |
+| Suspected cause | Global-count assertion against a shared database plus missing isolation of pre-existing expired rows |
+| Linked TODO / BUG | `TODO-090`, `TODO-073` |
+| Owner | unassigned |
+| Fix SHA | commit `test: isolate reservation expiry assertion and add destructive-db guards` |
+| Regression test | `scripts/test_reservation_expiry_worker.py::test_reservation_expiry_releases_inventory_and_is_idempotent` |
+| Verified by / at | 2026-10-23, three orderings (alone / with E2E module / full G3 batch) all green |
+
