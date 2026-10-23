@@ -182,7 +182,7 @@ HTTP may also set `X-Correlation-ID`.
 | GET | `/invoices/{invoice_id}` (as implemented) |
 | GET | `/vendors/settlements` |
 | GET | `/settlements/{settlement_id}` |
-| GET | `/orders/{order_id}/invoices` (order_invoice_router on `/orders`) |
+| GET | `/orders/{order_id}/invoice` | `order_invoice_router` on `/orders` — singular `invoice` as implemented (verified against `app.openapi()`, TODO-135) |
 
 ### 3.12 Reconciliation — `reconciliation.py`
 

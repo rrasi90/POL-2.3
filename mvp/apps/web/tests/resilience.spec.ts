@@ -54,6 +54,31 @@ test.describe("resilience and error surfaces", () => {
     await expect(page.locator('input[maxlength="4"]')).toHaveCount(0);
   });
 
+  test("an API error envelope is shown verbatim so auth/conflict/server stay distinguishable", async ({
+    page,
+  }, testInfo) => {
+    await page.route("**/api/v1/auth/request-otp", (route) =>
+      route.fulfill({
+        status: 429,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: false,
+          error: {
+            code: "OTP_RATE_LIMITED",
+            message: "درخواست کد بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید.",
+            details: {},
+          },
+        }),
+      }),
+    );
+    await page.goto("/auth/login");
+    await page.getByLabel(/شماره تلفن همراه/).fill(localNumber(retailerPhone(testInfo)));
+    await page.getByRole("button", { name: "دریافت کد یکبار مصرف" }).click();
+
+    await expect(appAlert(page)).toContainText("بیش از حد مجاز");
+    await expect(page.locator('input[maxlength="4"]')).toHaveCount(0);
+  });
+
   test("an unparsable JSON response surfaces an error instead of a crash", async ({
     page,
   }, testInfo) => {

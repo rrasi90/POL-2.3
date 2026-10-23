@@ -74,6 +74,7 @@ Copy this block per defect:
 | BUG-011 | S3 | `FIXED` | Integer fields silently coerced booleans to 1 and accepted values beyond the 32-bit column range, producing unintended quantities or overflow errors | Retailer owner/staff, vendor owner/staff | `c4aa4c8` | `TODO-134` | unassigned |
 | BUG-012 | S3 | `FIXED` | The Next.js app had no `error.tsx`, `global-error.tsx` or `not-found.tsx`; a render exception fell back to the framework default (English, no tracking id) and unknown routes rendered inside the login shell instead of a Persian not-found page | Retailer/vendor web users | `0b58574` | `TODO-087` | unassigned |
 | BUG-013 | S3 | `FIXED` | `@pol/api-client` returned `payload.data` whenever `success` was not explicitly `false`, so a malformed 200 response (no envelope) was treated as success with `undefined` data instead of raising `PARSE_ERROR` | Web users on any screen | `0b58574` | `TODO-087` | unassigned |
+| BUG-014 | S4 | `FIXED` | `MVP_API_MAP.md` documented `GET /orders/{order_id}/invoices` (server serves singular `/invoice`) and listed `/healthz`/`/readyz` under the `/api/v1` prefix although they are served at the root | API consumers, QA readers | `1f4bd39` | `TODO-135` | unassigned |
 ### BUG-002 — Order/order-group/delivery-exception lookups by unknown id answered 422 instead of 404
 
 | Field | Value |
@@ -330,4 +331,24 @@ Fix: `scripts/api/routes/auth.py::verify_otp` commits the failed-attempt account
 | Fix SHA | commit `fix(web): error boundaries, not-found page and correlation-aware client` |
 | Regression test | `mvp/apps/web/tests/resilience.spec.ts` (invalid-envelope case) |
 | Verified by / at | 2026-10-23 · browser suite 23 passed; `@pol/api-client` typecheck exit 0 |
+
+### BUG-014 — MVP_API_MAP drift against the live OpenAPI document
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S4 |
+| Role / persona | API consumers and QA reading the contract map |
+| Branch / SHA | `test/journey-evidence-20261022` @ `1f4bd39` |
+| Environment | local test · `app.openapi()` on the current tree |
+| Steps to reproduce | 1. Parse `MVP_API_MAP.md` rows into `(method, path)` 2. Compare with `app.openapi()["paths"]` |
+| Expected | Every documented route/method exists; the map's stated prefix rule holds or documents exceptions |
+| Actual | `GET /api/v1/orders/{order_id}/invoices` had no matching operation (actual route is `/orders/{order_id}/invoice`); `/healthz` and `/readyz` were listed under “prefix all with `/api/v1`” but are mounted at the root |
+| Evidence | `scripts/test_api_contract_drift.py::test_api_map_rows_exist_in_openapi` failed with those four rows before the map edit and passes after |
+| Suspected cause | The map was written before the invoice route was renamed to the singular form and kept the OPS transport in the same prefixed table |
+| Linked TODO / BUG | `TODO-135` |
+| Owner | unassigned |
+| Fix SHA | commit `test(api): guard OpenAPI, API-map and client contract drift` |
+| Regression test | `scripts/test_api_contract_drift.py` (map/method parity + client call-site parity) |
+| Verified by / at | 2026-10-23 · `pytest scripts/test_api_contract_drift.py` 3 passed |
 

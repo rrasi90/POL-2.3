@@ -1,0 +1,2890 @@
+{
+  "/api/v1/admin/audit-logs": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/broadcasts": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {
+          "channel": [
+            "IN_APP",
+            "SMS",
+            "PUSH",
+            "INBOX_AND_SMS",
+            "ALL"
+          ],
+          "priority": [
+            "LOW",
+            "NORMAL",
+            "HIGH",
+            "URGENT"
+          ]
+        },
+        "properties": [
+          "body",
+          "channel",
+          "priority",
+          "scheduled_at",
+          "target_criteria",
+          "title"
+        ],
+        "ref": "AdminBroadcastCreateRequest",
+        "required": [
+          "body",
+          "title"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/broadcasts/{broadcast_id}/dispatch": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/categories": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "display_order",
+          "icon_url",
+          "name_fa",
+          "slug"
+        ],
+        "ref": "AdminCategoryCreateRequest",
+        "required": [
+          "name_fa",
+          "slug"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/categories/{category_id}": {
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "display_order",
+          "icon_url",
+          "name_fa",
+          "slug"
+        ],
+        "ref": "AdminCategoryUpdateRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/exceptions/dashboard": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/organizations": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ],
+        [
+          "org_type",
+          false
+        ],
+        [
+          "query",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/organizations/{organization_id}/status": {
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {
+          "status": [
+            "LEAD",
+            "DOCUMENTS_PENDING",
+            "UNDER_REVIEW",
+            "VERIFICATION_PENDING",
+            "APPROVED",
+            "ACTIVE",
+            "REJECTED",
+            "SUSPENDED"
+          ]
+        },
+        "properties": [
+          "status"
+        ],
+        "ref": "AdminOrganizationStatusRequest",
+        "required": [
+          "status"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/product-candidates": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ],
+        [
+          "query",
+          false
+        ],
+        [
+          "status",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/product-candidates/{candidate_id}": {
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {
+          "action": [
+            "APPROVE_CANONICAL",
+            "MERGE_EXISTING",
+            "REJECT"
+          ]
+        },
+        "properties": [
+          "action",
+          "brand_id",
+          "canonical_name_fa",
+          "category_id",
+          "reason",
+          "subcategory_id",
+          "target_product_id"
+        ],
+        "ref": "AdminProductCandidateReviewRequest",
+        "required": [
+          "action",
+          "reason"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/sla-overrides": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "extension_minutes",
+          "order_id",
+          "reason"
+        ],
+        "ref": "AdminSlaOverrideRequest",
+        "required": [
+          "extension_minutes",
+          "order_id",
+          "reason"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/users": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ],
+        [
+          "query",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/admin/users/{user_id}/status": {
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "is_active"
+        ],
+        "ref": "AdminUserStatusRequest",
+        "required": [
+          "is_active"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/auth/logout-all": {
+    "post": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/auth/refresh": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/auth/request-otp": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "client_fingerprint",
+          "mobile_number"
+        ],
+        "ref": "RequestOTPRequest",
+        "required": [
+          "mobile_number"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/auth/sessions/current": {
+    "delete": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/auth/sessions/{session_id}": {
+    "delete": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/auth/switch-organization": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "target_organization_id"
+        ],
+        "ref": "SwitchOrganizationRequest",
+        "required": [
+          "target_organization_id"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/auth/verify-otp": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "client_platform",
+          "device_info",
+          "mobile_number",
+          "otp_code"
+        ],
+        "ref": "VerifyOTPRequest",
+        "required": [
+          "mobile_number",
+          "otp_code"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/baskets": {
+    "post": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/baskets/current": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/baskets/{basket_id}/allocation-preview": {
+    "post": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/baskets/{basket_id}/items": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "expected_version",
+          "pack_quantity",
+          "product_id",
+          "requested_quantity"
+        ],
+        "ref": "BasketItemRequest",
+        "required": [
+          "expected_version",
+          "product_id",
+          "requested_quantity"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/barcode/lookup": {
+    "get": {
+      "query_params": [
+        [
+          "barcode",
+          true
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/categories": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/products/{product_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/products/{product_id}/compare-inventory": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/products/{product_id}/compare-prices": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/products/{product_id}/vendors": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/search": {
+    "get": {
+      "query_params": [
+        [
+          "category_id",
+          false
+        ],
+        [
+          "limit",
+          false
+        ],
+        [
+          "q",
+          true
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/vendors/products": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "candidate_id",
+          "initial_price_toman",
+          "moq",
+          "pack_quantity",
+          "packaging_unit",
+          "product_id",
+          "sales_unit",
+          "vendor_sku"
+        ],
+        "ref": "VendorCatalogCreateRequest",
+        "required": [
+          "vendor_sku"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/vendors/products/{vendor_product_id}": {
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "is_active",
+          "moq",
+          "pack_quantity",
+          "packaging_unit",
+          "sales_unit"
+        ],
+        "ref": "VendorCatalogUpdateRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/vendors/products/{vendor_product_id}/inventory": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "new_physical_quantity",
+          "reason"
+        ],
+        "ref": "VendorInventoryAdjustRequest",
+        "required": [
+          "new_physical_quantity"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/vendors/products/{vendor_product_id}/prices": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "price_toman"
+        ],
+        "ref": "VendorPriceSetRequest",
+        "required": [
+          "price_toman"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/catalog/vendors/products/{vendor_product_id}/prices/current": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/categories": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200"
+      ]
+    }
+  },
+  "/api/v1/disputes/{dispute_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/disputes/{dispute_id}/close": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "reason"
+        ],
+        "ref": "DisputeTransitionReasonRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/disputes/{dispute_id}/investigate": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "reason"
+        ],
+        "ref": "DisputeTransitionReasonRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/disputes/{dispute_id}/resolve": {
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {
+          "outcome": [
+            "ADJUSTED_SHORTAGE",
+            "REPLACEMENT_ORDER",
+            "REJECTED_CLAIM",
+            "MUTUAL_AGREEMENT"
+          ]
+        },
+        "properties": [
+          "approved_amount_toman",
+          "outcome",
+          "reason"
+        ],
+        "ref": "DisputeResolveRequest",
+        "required": [
+          "approved_amount_toman",
+          "outcome",
+          "reason"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/field/tasks": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ],
+        [
+          "status",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "assigned_to_user_id",
+          "notes",
+          "retailer_id",
+          "task_type",
+          "vendor_id"
+        ],
+        "ref": "FieldTaskCreateRequest",
+        "required": [
+          "assigned_to_user_id",
+          "task_type"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/field/tasks/{task_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "notes",
+          "status"
+        ],
+        "ref": "FieldTaskUpdateRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/finance/reconciliation": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ],
+        [
+          "status",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/finance/reconciliation/{case_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/finance/reconciliation/{case_id}/resolve": {
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "resolution_note"
+        ],
+        "ref": "ReconciliationCaseResolveRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/finance/refunds": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/finance/refunds/issue": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "amount_toman",
+          "dispute_id",
+          "payment_id",
+          "reason"
+        ],
+        "ref": "RefundIssueRequest",
+        "required": [
+          "amount_toman",
+          "dispute_id",
+          "reason"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/finance/refunds/{refund_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/finance/refunds/{refund_id}/approve": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "reason"
+        ],
+        "ref": "RefundApproveRequest",
+        "required": [
+          "reason"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/finance/refunds/{refund_id}/complete": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "reason"
+        ],
+        "ref": "RefundCompleteRequest",
+        "required": [
+          "reason"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/inbox/items": {
+    "get": {
+      "query_params": [
+        [
+          "category",
+          false
+        ],
+        [
+          "is_read",
+          false
+        ],
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/inbox/items/read-all": {
+    "patch": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/inbox/items/{item_id}/read": {
+    "patch": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/inventory/daily/{confirmation_date}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/inventory/daily/{confirmation_date}/confirm": {
+    "post": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/inventory/daily/{confirmation_date}/confirm-with-changes": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "changes",
+          "confirmation_date"
+        ],
+        "ref": "DailyInventoryConfirmWithChangesRequest",
+        "required": [
+          "changes",
+          "confirmation_date"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/invoices": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/invoices/{invoice_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/media/confirm-upload": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {
+          "target_type": [
+            "PRODUCT",
+            "VENDOR",
+            "CANDIDATE",
+            "DISPUTE",
+            "DELIVERY",
+            "PAYMENT",
+            "SUPPORT"
+          ]
+        },
+        "properties": [
+          "media_id",
+          "target_id",
+          "target_type"
+        ],
+        "ref": "MediaConfirmUploadRequest",
+        "required": [
+          "media_id",
+          "target_id",
+          "target_type"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/media/presigned-url": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {
+          "mime_type": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ],
+          "target_type": [
+            "PRODUCT",
+            "VENDOR",
+            "CANDIDATE",
+            "DISPUTE",
+            "DELIVERY",
+            "PAYMENT",
+            "SUPPORT"
+          ]
+        },
+        "properties": [
+          "file_size_bytes",
+          "filename",
+          "mime_type",
+          "target_id",
+          "target_type"
+        ],
+        "ref": "MediaPresignRequest",
+        "required": [
+          "file_size_bytes",
+          "mime_type",
+          "target_id",
+          "target_type"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/media/resumable/complete": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "parts",
+          "session_id"
+        ],
+        "ref": "MediaResumableCompleteRequest",
+        "required": [
+          "parts",
+          "session_id"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/media/resumable/init": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {
+          "mime_type": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ],
+          "target_type": [
+            "PRODUCT",
+            "VENDOR",
+            "CANDIDATE",
+            "DISPUTE",
+            "DELIVERY",
+            "PAYMENT",
+            "SUPPORT"
+          ]
+        },
+        "properties": [
+          "file_size_bytes",
+          "filename",
+          "mime_type",
+          "target_id",
+          "target_type"
+        ],
+        "ref": "MediaResumableInitRequest",
+        "required": [
+          "file_size_bytes",
+          "mime_type",
+          "target_id",
+          "target_type"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/membership/profile": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "put": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "default_contact_channel",
+          "display_name_override",
+          "locale_override",
+          "preferences",
+          "title"
+        ],
+        "ref": "MembershipProfileUpdateRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/notifications": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ],
+        [
+          "status",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/notifications/preferences": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "put": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "channel",
+          "event_name",
+          "is_enabled"
+        ],
+        "ref": "NotificationPreferenceUpdateRequest",
+        "required": [
+          "channel",
+          "event_name",
+          "is_enabled"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/ops/analytics": {
+    "get": {
+      "query_params": [
+        [
+          "end_date",
+          true
+        ],
+        [
+          "start_date",
+          true
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/ops/analytics/weekly": {
+    "get": {
+      "query_params": [
+        [
+          "snapshot_date",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/ops/permissions": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/ops/permissions/audit": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "membership_id",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/ops/returns": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ],
+        [
+          "status",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ],
+        [
+          "status",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {
+          "preferred_payment_method": [
+            "CASH_ON_DELIVERY",
+            "POS_DRIVER",
+            "DIRECT_BANK_TRANSFER",
+            "CHEQUE_SAYYAD",
+            "ONLINE_MOCK"
+          ]
+        },
+        "properties": [
+          "allocation_plan_id",
+          "delivery_address",
+          "preferred_payment_method"
+        ],
+        "ref": "CheckoutRequest",
+        "required": [
+          "allocation_plan_id",
+          "delivery_address",
+          "preferred_payment_method"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/delivery-exceptions/{exception_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/delivery-exceptions/{exception_id}/escalate": {
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/delivery-exceptions/{exception_id}/resolve": {
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "resolution_note",
+          "resolution_type"
+        ],
+        "ref": "DeliveryExceptionResolveRequest",
+        "required": [
+          "resolution_type"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/group/{order_group_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/group/{order_group_id}/orders": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/accept": {
+    "post": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/cancel": {
+    "post": {
+      "query_params": [
+        [
+          "reason",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/deliver": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/delivery": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/delivery-exceptions": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ],
+        [
+          "status",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "delivery_id",
+          "description",
+          "exception_type",
+          "order_id"
+        ],
+        "ref": "DeliveryExceptionReportRequest",
+        "required": [
+          "delivery_id",
+          "exception_type",
+          "order_id"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/delivery/arrived": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/delivery/failed": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "reason"
+        ],
+        "ref": "DeliveryStageRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/delivery/in-transit": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/delivery/picked-up": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/delivery/proof": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/dispatch": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/disputes": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "claimed_amount_toman",
+          "description",
+          "evidence_media_id",
+          "items"
+        ],
+        "ref": "DisputeOpenRequest",
+        "required": [
+          "claimed_amount_toman",
+          "description",
+          "evidence_media_id",
+          "items"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/invoice": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/items": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/partial-acceptance-proposals": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ],
+        [
+          "status",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "items"
+        ],
+        "ref": "VendorPartialAcceptanceProposalRequest",
+        "required": [
+          "items"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/partial-acceptance-proposals/{proposal_id}/approve": {
+    "post": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/partial-acceptance-proposals/{proposal_id}/decline": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/payments/direct-transfer": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {
+          "evidence_type": [
+            "BANK_REFERENCE",
+            "POS_REFERENCE",
+            "RECEIPT_IMAGE",
+            "VENDOR_CONFIRMATION",
+            "RETAILER_CONFIRMATION"
+          ]
+        },
+        "properties": [
+          "amount_toman",
+          "evidence_media_id",
+          "evidence_type",
+          "notes",
+          "payment_id",
+          "reference_number"
+        ],
+        "ref": "PaymentEvidenceRequest",
+        "required": [
+          "amount_toman",
+          "evidence_type",
+          "reference_number"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/payments/evidence": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {
+          "evidence_type": [
+            "BANK_REFERENCE",
+            "POS_REFERENCE",
+            "RECEIPT_IMAGE",
+            "VENDOR_CONFIRMATION",
+            "RETAILER_CONFIRMATION"
+          ]
+        },
+        "properties": [
+          "amount_toman",
+          "evidence_media_id",
+          "evidence_type",
+          "notes",
+          "payment_id",
+          "reference_number"
+        ],
+        "ref": "PaymentEvidenceRequest",
+        "required": [
+          "amount_toman",
+          "evidence_type",
+          "reference_number"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/payments/verify": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/payments/{payment_id}/verify": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/preparing": {
+    "post": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/ready": {
+    "post": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/reject": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "reason"
+        ],
+        "ref": "VendorOrderRejectRequest",
+        "required": [
+          "reason"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/returns": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "claimed_refund_amount_toman",
+          "idempotency_key",
+          "items",
+          "reason"
+        ],
+        "ref": "ReturnRequestRequest",
+        "required": [
+          "claimed_refund_amount_toman",
+          "idempotency_key",
+          "items",
+          "reason"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/orders/{order_id}/timeline": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/privacy/deletion": {
+    "post": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/privacy/export": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "inline": [
+          "anyOf",
+          "title"
+        ]
+      },
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/product-candidates": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "barcode",
+          "photo_asset_id",
+          "proposed_brand",
+          "proposed_title",
+          "vendor_sku"
+        ],
+        "ref": "ProductCandidateCreateRequest",
+        "required": [
+          "proposed_title"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/products/match-barcode": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "barcode",
+          "create_candidate",
+          "pack_quantity",
+          "packaging_unit",
+          "proposed_title",
+          "raw_barcode",
+          "scan_source",
+          "vendor_sku"
+        ],
+        "ref": "BarcodeMatchRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/products/search": {
+    "get": {
+      "query_params": [
+        [
+          "category_id",
+          false
+        ],
+        [
+          "limit",
+          false
+        ],
+        [
+          "page",
+          false
+        ],
+        [
+          "q",
+          true
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/profile": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "put": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "avatar_media_asset_id",
+          "bio",
+          "display_name",
+          "email",
+          "preferred_language",
+          "timezone"
+        ],
+        "ref": "ProfileUpdateRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/profile/completion": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/profile/context": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/referrals": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "expires_at",
+          "max_redemptions",
+          "referral_code"
+        ],
+        "ref": "ReferralCreateRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/referrals/{referral_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/referrals/{referral_id}/redeem": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [],
+        "ref": "ReferralRedeemRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/returns/{return_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "approved_refund_amount_toman",
+          "reason",
+          "target_status"
+        ],
+        "ref": "ReturnTransitionRequest",
+        "required": [
+          "target_status"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/returns/{return_id}/refund/approve": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "approved_refund_amount_toman",
+          "reason",
+          "target_status"
+        ],
+        "ref": "ReturnTransitionRequest",
+        "required": [
+          "target_status"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/search": {
+    "get": {
+      "query_params": [
+        [
+          "page",
+          false
+        ],
+        [
+          "page_size",
+          false
+        ],
+        [
+          "q",
+          true
+        ],
+        [
+          "type",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/settlements/{settlement_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/storefront/vendors": {
+    "get": {
+      "query_params": [
+        [
+          "category_id",
+          false
+        ],
+        [
+          "page",
+          false
+        ],
+        [
+          "page_size",
+          false
+        ],
+        [
+          "q",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/storefront/vendors/{vendor_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/storefront/vendors/{vendor_id}/products": {
+    "get": {
+      "query_params": [
+        [
+          "category_id",
+          false
+        ],
+        [
+          "page",
+          false
+        ],
+        [
+          "page_size",
+          false
+        ],
+        [
+          "q",
+          false
+        ],
+        [
+          "sort",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/support/cases": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "case_type",
+          "priority",
+          "related_order_id",
+          "subject"
+        ],
+        "ref": "SupportCaseCreateRequest",
+        "required": [
+          "case_type",
+          "subject"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/support/cases/{case_id}": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "resolution_code",
+          "resolution_note",
+          "target_status"
+        ],
+        "ref": "SupportCaseTransitionRequest",
+        "required": [
+          "target_status"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/support/cases/{case_id}/assign": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "assignee_user_id"
+        ],
+        "ref": "SupportCaseAssignRequest",
+        "required": [
+          "assignee_user_id"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/support/cases/{case_id}/messages": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "message_text"
+        ],
+        "ref": "SupportCaseMessageRequest",
+        "required": [
+          "message_text"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/support/cases/{case_id}/status": {
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "resolution_code",
+          "resolution_note",
+          "target_status"
+        ],
+        "ref": "SupportCaseTransitionRequest",
+        "required": [
+          "target_status"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/vendors/customers": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ],
+        [
+          "query",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/vendors/inventory/continuous-scan": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "consumer_price_per_unit_toman",
+          "pack_quantity",
+          "packaging_unit",
+          "physical_quantity",
+          "product_id",
+          "session_id",
+          "unit_price_toman",
+          "vendor_sku"
+        ],
+        "ref": "VendorInventoryContinuousScanRequest",
+        "required": [
+          "pack_quantity",
+          "packaging_unit",
+          "physical_quantity",
+          "product_id",
+          "session_id",
+          "unit_price_toman",
+          "vendor_sku"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/vendors/inventory/publish": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "session_id"
+        ],
+        "ref": "VendorInventoryPublishRequest",
+        "required": [
+          "session_id"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/vendors/settlements": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/vendors/staff": {
+    "get": {
+      "query_params": [
+        [
+          "limit",
+          false
+        ],
+        [
+          "offset",
+          false
+        ]
+      ],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/vendors/staff/invite": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "full_name",
+          "phone_number"
+        ],
+        "ref": "VendorStaffInviteRequest",
+        "required": [
+          "full_name",
+          "phone_number"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "201",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/vendors/staff/{membership_id}": {
+    "patch": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "role",
+          "status"
+        ],
+        "ref": "VendorStaffUpdateRequest",
+        "required": []
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/vendors/staff/{membership_id}/permissions": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200",
+        "422"
+      ]
+    },
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {
+          "permission_key": [
+            "catalog.view",
+            "catalog.manage",
+            "inventory.view",
+            "inventory.scan",
+            "inventory.adjust",
+            "price.view",
+            "price.manage",
+            "order.view",
+            "order.accept",
+            "order.fulfillment",
+            "delivery.dispatch",
+            "delivery.handoff",
+            "payment.view",
+            "payment.record",
+            "settlement.view",
+            "membership.manage",
+            "reports.view"
+          ]
+        },
+        "properties": [
+          "client",
+          "permission_key",
+          "reason"
+        ],
+        "ref": "DelegatedPermissionGrantRequest",
+        "required": [
+          "permission_key",
+          "reason"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/api/v1/vendors/staff/{membership_id}/permissions/{permission_key}/revoke": {
+    "post": {
+      "query_params": [],
+      "request_body": {
+        "enums": {},
+        "properties": [
+          "client",
+          "reason"
+        ],
+        "ref": "DelegatedPermissionRevokeRequest",
+        "required": [
+          "reason"
+        ]
+      },
+      "request_body_required": true,
+      "responses": [
+        "200",
+        "422"
+      ]
+    }
+  },
+  "/healthz": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200"
+      ]
+    }
+  },
+  "/readyz": {
+    "get": {
+      "query_params": [],
+      "request_body": null,
+      "request_body_required": false,
+      "responses": [
+        "200"
+      ]
+    }
+  }
+}
