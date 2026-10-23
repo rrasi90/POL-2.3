@@ -8,15 +8,26 @@ export interface ApiClientOptions {
   onRefresh?: () => Promise<boolean>;
 }
 
+let lastCorrelationId: string | null = null;
+
+/** Correlation id of the most recent response, for error surfaces (TODO-087). */
+export function getLastCorrelationId(): string | null {
+  return lastCorrelationId;
+}
+
 export class ApiError extends Error {
+  public readonly correlationId: string | null;
+
   constructor(
     public readonly code: string,
     message: string,
     public readonly details: Record<string, unknown>,
     public readonly status: number,
+    correlationId: string | null = lastCorrelationId,
   ) {
     super(message);
     this.name = "ApiError";
+    this.correlationId = correlationId;
   }
 }
 
@@ -46,6 +57,8 @@ export function createApiClient(opts: ApiClientOptions) {
       if (refreshed) return request<T>(method, path, body, init, true);
     }
 
+    lastCorrelationId = res.headers.get("X-Correlation-ID");
+
     let payload: ApiResponse<T>;
     try {
       payload = (await res.json()) as ApiResponse<T>;
@@ -57,6 +70,14 @@ export function createApiClient(opts: ApiClientOptions) {
       const err = payload.error;
       if (res.status === 401) opts.onUnauthorized?.();
       throw new ApiError(err.code, err.message, err.details, res.status);
+    }
+    if (payload.success !== true) {
+      throw new ApiError(
+        "PARSE_ERROR",
+        "Response envelope is missing the success flag",
+        {},
+        res.status,
+      );
     }
     if (res.status === 401) {
       opts.onUnauthorized?.();

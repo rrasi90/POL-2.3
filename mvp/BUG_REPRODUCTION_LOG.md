@@ -72,6 +72,8 @@ Copy this block per defect:
 | BUG-009 | S2 | `FIXED` | `confirmation_date` was only regex-checked, so calendar-invalid dates (`2026-13-01`, `2026-02-30`) reached PostgreSQL and surfaced as a server error instead of 422 | Vendor owner/staff | `c4aa4c8` | `TODO-134` | unassigned |
 | BUG-010 | S3 | `FIXED` | Free-text fields accepted control characters (`\x00`, `\x1b`), which can break PostgreSQL text inserts or corrupt logs | All personas | `c4aa4c8` | `TODO-134` | unassigned |
 | BUG-011 | S3 | `FIXED` | Integer fields silently coerced booleans to 1 and accepted values beyond the 32-bit column range, producing unintended quantities or overflow errors | Retailer owner/staff, vendor owner/staff | `c4aa4c8` | `TODO-134` | unassigned |
+| BUG-012 | S3 | `FIXED` | The Next.js app had no `error.tsx`, `global-error.tsx` or `not-found.tsx`; a render exception fell back to the framework default (English, no tracking id) and unknown routes rendered inside the login shell instead of a Persian not-found page | Retailer/vendor web users | `0b58574` | `TODO-087` | unassigned |
+| BUG-013 | S3 | `FIXED` | `@pol/api-client` returned `payload.data` whenever `success` was not explicitly `false`, so a malformed 200 response (no envelope) was treated as success with `undefined` data instead of raising `PARSE_ERROR` | Web users on any screen | `0b58574` | `TODO-087` | unassigned |
 ### BUG-002 — Order/order-group/delivery-exception lookups by unknown id answered 422 instead of 404
 
 | Field | Value |
@@ -286,4 +288,46 @@ Fix: `scripts/api/routes/auth.py::verify_otp` commits the failed-attempt account
 | Fix SHA | commit `harden(schemas): enforce ASCII digits, calendar dates, control-char and integer bounds` |
 | Regression test | `TestNumericBoundaries::test_boolean_quantity_is_rejected` and `test_int4_overflow_quantity_is_rejected` |
 | Verified by / at | 2026-10-23 · full suite 789/789 PASS |
+
+### BUG-012 — No app-level error boundary or not-found page
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 |
+| Role / persona | Retailer/vendor web users |
+| Build / variant | `@pol/web` (Next.js App Router) |
+| Branch / SHA | `test/journey-evidence-20261022` @ `0b58574` |
+| Environment | local test · `next dev` on 3000 · API on 8001 · Playwright chromium |
+| Steps to reproduce | 1. Open a route that does not exist under `/auth/…` 2. Force a render exception inside a route segment |
+| Expected | Persian, branded error/not-found surface with a tracking id, a way back home, and no sensitive detail (TODO-087) |
+| Actual | Unknown routes were rewritten by middleware into the login shell (HTTP 200) and render failures fell back to the framework default error overlay with no user-facing Persian message or tracking id. There was also no app-level boundary at all — the files were absent. |
+| Evidence | Before fix: `tests/resilience.spec.ts` not-found case failed with `Expected: 404, Received: 200`; after fix: 5/5 resilience cases pass, full browser suite 23 passed (33.9s) |
+| Suspected cause | `mvp/apps/web/src/app/` had no `error.tsx`, `global-error.tsx`, `not-found.tsx`; middleware rewrites every unauthenticated path to `/auth/login` |
+| Linked TODO / BUG | `TODO-087` |
+| Owner | unassigned |
+| Fix SHA | commit `fix(web): error boundaries, not-found page and correlation-aware client` |
+| Regression test | `mvp/apps/web/tests/resilience.spec.ts` (not-found + 500 + invalid JSON + dropped connection + invalid envelope) |
+| Verified by / at | 2026-10-23 · `npx playwright test` 23 passed; `next build` exit 0; `tsc --noEmit` exit 0; `eslint` 0 errors |
+
+### BUG-013 — Missing success envelope treated as success
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 |
+| Role / persona | Web users on any screen using `@pol/api-client` |
+| Build / variant | `@pol/api-client` 0.1.0 · web app |
+| Branch / SHA | `test/journey-evidence-20261022` @ `0b58574` |
+| Environment | local test · Playwright chromium |
+| Steps to reproduce | 1. Stub `POST /api/v1/auth/request-otp` to answer `200` with `{"foo":"bar"}` 2. Submit the login form |
+| Expected | A visible error and no navigation (`PARSE_ERROR`), never a success path with `undefined` data |
+| Actual | `request()` only threw when `payload.success === false`; any other shape fell through to `return payload.data`, so screens could proceed on `undefined` (the login screen only failed later by accident) |
+| Evidence | `tests/resilience.spec.ts` → “a 200 response without the success envelope is rejected, not treated as data” |
+| Suspected cause | `mvp/packages/api-client/src/index.ts` checked `success === false` but not `success !== true` |
+| Linked TODO / BUG | `TODO-087` |
+| Owner | unassigned |
+| Fix SHA | commit `fix(web): error boundaries, not-found page and correlation-aware client` |
+| Regression test | `mvp/apps/web/tests/resilience.spec.ts` (invalid-envelope case) |
+| Verified by / at | 2026-10-23 · browser suite 23 passed; `@pol/api-client` typecheck exit 0 |
 

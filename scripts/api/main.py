@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 
+from scripts.api.logging_config import get_access_logger
 from scripts.api.errors import (
     auth_error_handler,
     generic_error_handler,
@@ -119,7 +121,35 @@ def create_app() -> FastAPI:
         supplied = request.headers.get("X-Correlation-ID", "").strip()
         correlation_id = supplied if _CORRELATION_ID_RE.fullmatch(supplied) else str(uuid4())
         request.state.correlation_id = correlation_id
-        response = await call_next(request)
+        access_log = get_access_logger()
+        started = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            access_log.exception(
+                "request.failed",
+                extra={
+                    "fields": {
+                        "correlation_id": correlation_id,
+                        "method": request.method,
+                        "path": request.url.path,
+                        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                    }
+                },
+            )
+            raise
+        access_log.info(
+            "request.completed",
+            extra={
+                "fields": {
+                    "correlation_id": correlation_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status": response.status_code,
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                }
+            },
+        )
         response.headers["X-Correlation-ID"] = correlation_id
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
