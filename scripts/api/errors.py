@@ -128,6 +128,21 @@ async def key_error_handler(request: Request, exc: KeyError):
     return _response(request, "NOT_FOUND", str(exc), 404)
 
 
+async def data_integrity_handler(request: Request, exc: Exception):
+    """A client-supplied reference or value violated a database constraint.
+
+    Schema-level validation should catch these first; this handler is the last
+    line of defence so an unknown enum value or a dangling foreign key can never
+    surface as a 500 with an internal detail leak (TODO-131).
+    """
+    return _response(
+        request,
+        "INVALID_REQUEST",
+        "The request references data that does not exist or is not allowed.",
+        422,
+    )
+
+
 async def generic_error_handler(request: Request, exc: Exception):
     # Deliberately do not expose exception details or request bodies.
     return _response(

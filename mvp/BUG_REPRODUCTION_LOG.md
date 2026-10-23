@@ -352,3 +352,63 @@ Fix: `scripts/api/routes/auth.py::verify_otp` commits the failed-attempt account
 | Regression test | `scripts/test_api_contract_drift.py` (map/method parity + client call-site parity) |
 | Verified by / at | 2026-10-23 · `pytest scripts/test_api_contract_drift.py` 3 passed |
 
+### BUG-015 — Free-string enums surface as 500 from database CHECK constraints
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 |
+| Role / persona | retailer (support cases), admin (field tasks), admin (broadcasts), any user (notification preferences) |
+| Branch / SHA | `test/journey-evidence-20261022` @ `a05b0d3` |
+| Environment | local test · `ENVIRONMENT=test` · `pol_test` |
+| Steps to reproduce | 1. `POST /api/v1/support/cases` with `{"case_type":"BOGUS","subject":"x"}` 2. `POST /api/v1/field/tasks` with `{"task_type":"BOGUS", …}` 3. `POST /api/v1/admin/broadcasts` with `{"channel":"BOGUS", …}` 4. `PUT /api/v1/notifications/preferences` with `{"channel":"BOGUS", …}` |
+| Expected | 422 `VALIDATION_ERROR` naming the field, no row written |
+| Actual | Request passed schema validation, hit the PostgreSQL CHECK constraint and returned 500 with a driver-level error (support case / field task / broadcast / preferences) |
+| Evidence | `scripts/test_owasp_api_top10.py::test_invalid_enum_or_reference_is_422_not_500` (8 parameterised cases) — all 422 after the fix |
+| Suspected cause | `SupportCaseCreateRequest.case_type/priority`, `SupportCaseTransitionRequest.target_status`, `FieldTaskCreateRequest.task_type`, `DeliveryExceptionReportRequest.exception_type`, `DeliveryExceptionResolveRequest.resolution_type`, `BroadcastCreateRequest.channel/priority`, `NotificationPreferenceUpdateRequest.channel` and `ReturnItemRequest.reason_code` were typed `str` while the database enforced enumerations |
+| Linked TODO / BUG | `TODO-131` |
+| Owner | unassigned |
+| Fix SHA | commit `fix(api): validate enum and reference fields, map integrity errors to 422` |
+| Regression test | `scripts/test_owasp_api_top10.py` (invalid enum/reference matrix) + `scripts/test_schema_fuzz_boundaries.py` |
+| Verified by / at | 2026-10-23 · `pytest scripts/test_owasp_api_top10.py` 20 passed |
+
+### BUG-016 — Malformed UUID references and dangling foreign keys return 500
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 |
+| Role / persona | retailer (support cases, delivery exceptions), admin (field tasks), vendor (catalog product linking) |
+| Branch / SHA | `test/journey-evidence-20261022` @ `a05b0d3` |
+| Environment | local test · `ENVIRONMENT=test` · `pol_test` |
+| Steps to reproduce | 1. `POST /api/v1/support/cases` with `related_order_id: "not-a-uuid"` 2. `POST /api/v1/field/tasks` with `assigned_to_user_id: "not-a-uuid"` 3. `POST /api/v1/catalog/vendors/products` with a well-formed but nonexistent `product_id` |
+| Expected | 422 with a generic “reference does not exist or is not allowed” message; no database detail leaked |
+| Actual | psycopg2 `InvalidTextRepresentation` / `ForeignKeyViolation` propagated to the generic 500 handler |
+| Evidence | `scripts/test_owasp_api_top10.py::test_invalid_enum_or_reference_is_422_not_500` — the dangling-`product_id` case now returns `INVALID_REQUEST` from `data_integrity_handler` |
+| Suspected cause | FK-bearing fields were `str` without UUID parsing, and no exception handler mapped database integrity errors to the API error contract |
+| Linked TODO / BUG | `TODO-131` |
+| Owner | unassigned |
+| Fix SHA | commit `fix(api): validate enum and reference fields, map integrity errors to 422` |
+| Regression test | `scripts/test_owasp_api_top10.py` (UUID/FK matrix) |
+| Verified by / at | 2026-10-23 · `pytest scripts/test_owasp_api_top10.py` 20 passed; full suite 857 passed |
+
+### BUG-017 — Provider adapter reported an unverifiable 2xx as delivered
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 |
+| Role / persona | all users depending on OTP/transactional SMS |
+| Branch / SHA | `test/journey-evidence-20261022` @ `a05b0d3` |
+| Environment | local test · adapter unit contract |
+| Steps to reproduce | Call a provider adapter with a stub transport answering `200` and a body without any message identifier (e.g. `{}` or `[]`) |
+| Expected | `ProviderTransientError` — the send cannot be confirmed, so it must be retried, never recorded as delivered |
+| Actual | `send` returned a success payload with `message_id=None`, so callers could persist a delivery that the provider never acknowledged |
+| Evidence | `scripts/test_provider_adapter_contract.py::test_unverifiable_2xx_is_not_reported_as_success` and the array-body case |
+| Suspected cause | The 2xx branch extracted an id from a dict body but fell through to `None` instead of raising |
+| Linked TODO / BUG | `TODO-133` |
+| Owner | unassigned |
+| Fix SHA | commit `fix(api): fail closed on unverifiable provider responses` |
+| Regression test | `scripts/test_provider_adapter_contract.py` (10 tests) |
+| Verified by / at | 2026-10-23 · `pytest scripts/test_provider_adapter_contract.py` 10 passed |
+

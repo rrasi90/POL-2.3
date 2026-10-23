@@ -828,7 +828,16 @@
     "post": {
       "query_params": [],
       "request_body": {
-        "enums": {},
+        "enums": {
+          "task_type": [
+            "ONBOARD_RETAILER",
+            "TRAIN_RETAILER",
+            "FIRST_ORDER_ASSIST",
+            "FOLLOW_UP",
+            "VENDOR_VISIT",
+            "DISPUTE_VISIT"
+          ]
+        },
         "properties": [
           "assigned_to_user_id",
           "notes",
@@ -1359,7 +1368,12 @@
     "put": {
       "query_params": [],
       "request_body": {
-        "enums": {},
+        "enums": {
+          "channel": [
+            "PUSH",
+            "SMS"
+          ]
+        },
         "properties": [
           "channel",
           "event_name",
@@ -1555,7 +1569,16 @@
     "patch": {
       "query_params": [],
       "request_body": {
-        "enums": {},
+        "enums": {
+          "resolution_type": [
+            "FULL_REFUND",
+            "PARTIAL_REFUND",
+            "REPLACEMENT",
+            "NO_ACTION",
+            "RETURN_PICKUP",
+            "ESCALATED_TO_OPS"
+          ]
+        },
         "properties": [
           "resolution_note",
           "resolution_type"
@@ -1685,7 +1708,17 @@
     "post": {
       "query_params": [],
       "request_body": {
-        "enums": {},
+        "enums": {
+          "exception_type": [
+            "DOORSTEP_REJECTION",
+            "DAMAGED_GOODS",
+            "ITEM_DISCREPANCY",
+            "INCOMPLETE_DELIVERY",
+            "VENDOR_NO_SHOW",
+            "QUALITY_ISSUE",
+            "OTHER"
+          ]
+        },
         "properties": [
           "delivery_id",
           "description",
@@ -2523,7 +2556,23 @@
     "post": {
       "query_params": [],
       "request_body": {
-        "enums": {},
+        "enums": {
+          "case_type": [
+            "GENERAL",
+            "ORDER_INQUIRY",
+            "PAYMENT_ASSISTANCE",
+            "DELIVERY_DELAY",
+            "ACCOUNT_ISSUE",
+            "CATALOG_SUGGESTION",
+            "INVOICE_INQUIRY"
+          ],
+          "priority": [
+            "LOW",
+            "NORMAL",
+            "HIGH",
+            "URGENT"
+          ]
+        },
         "properties": [
           "case_type",
           "priority",
@@ -2556,7 +2605,15 @@
     "patch": {
       "query_params": [],
       "request_body": {
-        "enums": {},
+        "enums": {
+          "target_status": [
+            "OPEN",
+            "IN_PROGRESS",
+            "WAITING_ON_USER",
+            "RESOLVED",
+            "CLOSED"
+          ]
+        },
         "properties": [
           "resolution_code",
           "resolution_note",
@@ -2618,7 +2675,15 @@
     "patch": {
       "query_params": [],
       "request_body": {
-        "enums": {},
+        "enums": {
+          "target_status": [
+            "OPEN",
+            "IN_PROGRESS",
+            "WAITING_ON_USER",
+            "RESOLVED",
+            "CLOSED"
+          ]
+        },
         "properties": [
           "resolution_code",
           "resolution_note",

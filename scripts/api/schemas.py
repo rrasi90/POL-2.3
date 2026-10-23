@@ -4,14 +4,25 @@ from __future__ import annotations
 
 import re
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
 INT4_MAX = 2_147_483_647
 
 CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def _uuid_string(value: str) -> str:
+    """Validate a UUID-shaped reference while keeping the transport type a string."""
+    try:
+        return str(UUID(str(value)))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("must be a valid UUID") from exc
+
+
+UuidString = Annotated[str, AfterValidator(_uuid_string)]
 
 
 class APIBaseModel(BaseModel):
@@ -107,7 +118,7 @@ class ProfileUpdateRequest(APIBaseModel):
     preferred_language: str | None = None
     timezone: str | None = None
     bio: str | None = None
-    avatar_media_asset_id: str | None = Field(default=None, max_length=64)
+    avatar_media_asset_id: UuidString | None = Field(default=None, max_length=64)
 
 
 class MembershipProfileUpdateRequest(APIBaseModel):
@@ -193,7 +204,7 @@ class DeliveryConfirmRequest(APIBaseModel):
     recipient_name: str | None = Field(default=None, max_length=200)
     otp_code: str | None = Field(default=None, pattern=r"^[0-9]{4}$")
     proof_type: Literal["OTP_CODE", "PHYSICAL_SIGNATURE", "STORE_STAMP", "PHOTO_PROOF"] = "OTP_CODE"
-    proof_media_id: str | None = Field(default=None, max_length=64)
+    proof_media_id: UuidString | None = Field(default=None, max_length=64)
     issue_reported: str | None = Field(default=None, max_length=500)
     delivered_items: list[DeliveredItemRequest] | None = Field(default=None, max_length=500)
 
@@ -232,14 +243,20 @@ class DeliveryStageRequest(APIBaseModel):
 
 
 class DeliveryExceptionReportRequest(APIBaseModel):
-    delivery_id: str = Field(min_length=1, max_length=64)
-    order_id: str = Field(min_length=1, max_length=64)
-    exception_type: str = Field(min_length=1, max_length=30)
+    delivery_id: UuidString = Field(min_length=1, max_length=64)
+    order_id: UuidString = Field(min_length=1, max_length=64)
+    exception_type: Literal[
+        "DOORSTEP_REJECTION", "DAMAGED_GOODS", "ITEM_DISCREPANCY",
+        "INCOMPLETE_DELIVERY", "VENDOR_NO_SHOW", "QUALITY_ISSUE", "OTHER",
+    ]
     description: str | None = Field(default=None, max_length=2000)
 
 
 class DeliveryExceptionResolveRequest(APIBaseModel):
-    resolution_type: str = Field(min_length=1, max_length=30)
+    resolution_type: Literal[
+        "FULL_REFUND", "PARTIAL_REFUND", "REPLACEMENT",
+        "NO_ACTION", "RETURN_PICKUP", "ESCALATED_TO_OPS",
+    ]
     resolution_note: str | None = Field(default=None, max_length=2000)
 
 
@@ -263,8 +280,8 @@ class BroadcastCreateRequest(APIBaseModel):
     title: str = Field(min_length=1, max_length=255)
     body: str = Field(min_length=1, max_length=20000)
     target_criteria: dict[str, object] = Field(min_length=1)
-    channel: str = Field(default="IN_APP", max_length=32)
-    priority: str = Field(default="NORMAL", max_length=32)
+    channel: Literal["IN_APP", "SMS", "PUSH", "INBOX_AND_SMS", "ALL"] = "IN_APP"
+    priority: Literal["LOW", "NORMAL", "HIGH", "URGENT"] = "NORMAL"
     scheduled_at: str | None = None
 
 class BroadcastDispatchRequest(APIBaseModel):
@@ -272,15 +289,18 @@ class BroadcastDispatchRequest(APIBaseModel):
 
 class NotificationPreferenceUpdateRequest(APIBaseModel):
     event_name: str = Field(min_length=1, max_length=100)
-    channel: str = Field(min_length=1, max_length=10)
+    channel: Literal["PUSH", "SMS"]
     is_enabled: bool
 
 
 class FieldTaskCreateRequest(APIBaseModel):
-    task_type: str = Field(min_length=1, max_length=30)
-    assigned_to_user_id: str = Field(min_length=1, max_length=64)
-    retailer_id: str | None = Field(default=None, max_length=64)
-    vendor_id: str | None = Field(default=None, max_length=64)
+    task_type: Literal[
+        "ONBOARD_RETAILER", "TRAIN_RETAILER", "FIRST_ORDER_ASSIST",
+        "FOLLOW_UP", "VENDOR_VISIT", "DISPUTE_VISIT",
+    ]
+    assigned_to_user_id: UuidString = Field(min_length=1, max_length=64)
+    retailer_id: UuidString | None = Field(default=None, max_length=64)
+    vendor_id: UuidString | None = Field(default=None, max_length=64)
     notes: str | None = Field(default=None, max_length=2000)
 
 
@@ -292,7 +312,9 @@ class FieldTaskUpdateRequest(APIBaseModel):
 class ReturnItemRequest(APIBaseModel):
     order_item_id: UUID
     quantity: int = Field(gt=0)
-    reason_code: str = Field(default="OTHER", max_length=30)
+    reason_code: Literal[
+        "DAMAGED", "SHORTAGE", "WRONG_ITEM", "QUALITY", "DELIVERY_ERROR", "OTHER",
+    ] = "OTHER"
     unit_refund_amount_toman: int | None = Field(default=None, ge=0)
 
 
@@ -344,10 +366,13 @@ class ReconciliationCaseResolveRequest(APIBaseModel):
 
 
 class SupportCaseCreateRequest(APIBaseModel):
-    case_type: str = Field(min_length=1, max_length=50)
+    case_type: Literal[
+        "GENERAL", "ORDER_INQUIRY", "PAYMENT_ASSISTANCE", "DELIVERY_DELAY",
+        "ACCOUNT_ISSUE", "CATALOG_SUGGESTION", "INVOICE_INQUIRY",
+    ]
     subject: str = Field(min_length=1, max_length=500)
-    related_order_id: str | None = Field(default=None, max_length=64)
-    priority: str = Field(default="NORMAL", max_length=20)
+    related_order_id: UuidString | None = Field(default=None, max_length=64)
+    priority: Literal["LOW", "NORMAL", "HIGH", "URGENT"] = "NORMAL"
 
 
 class SupportCaseMessageRequest(APIBaseModel):
@@ -366,7 +391,7 @@ class SupportCaseAssignRequest(APIBaseModel):
 
 
 class SupportCaseTransitionRequest(APIBaseModel):
-    target_status: str = Field(min_length=1, max_length=30)
+    target_status: Literal["OPEN", "IN_PROGRESS", "WAITING_ON_USER", "RESOLVED", "CLOSED"]
     resolution_code: str | None = Field(default=None, max_length=50)
     resolution_note: str | None = Field(default=None, max_length=2000)
 

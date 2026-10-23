@@ -19,6 +19,7 @@ from fastapi.exceptions import RequestValidationError
 from scripts.api.logging_config import get_access_logger
 from scripts.api.errors import (
     auth_error_handler,
+    data_integrity_handler,
     generic_error_handler,
     http_exception_handler,
     key_error_handler,
@@ -28,6 +29,8 @@ from scripts.api.errors import (
     request_validation_handler,
     value_error_handler,
 )
+from psycopg2 import errors as pg_errors
+
 from scripts.api.routes.auth import router as auth_router
 from scripts.api.routes.baskets import router as baskets_router
 from scripts.api.routes.catalog import router as catalog_router
@@ -78,14 +81,16 @@ _CORRELATION_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 
 def create_app() -> FastAPI:
+    environment = os.getenv("ENVIRONMENT", "").lower()
+    is_production = environment in {"prod", "production"}
     app = FastAPI(
         title="POL API",
         version="1.0.0",
-        docs_url="/docs",
-        redoc_url="/redoc",
+        docs_url=None if is_production else "/docs",
+        redoc_url=None if is_production else "/redoc",
+        openapi_url=None if is_production else "/openapi.json",
     )
 
-    environment = os.getenv("ENVIRONMENT", "").lower()
     configured_origins = [
         origin.strip()
         for origin in os.getenv("POL_CORS_ORIGINS", "").split(",")
@@ -93,7 +98,7 @@ def create_app() -> FastAPI:
     ]
     if configured_origins:
         cors_origins = configured_origins
-    elif environment in {"prod", "production"}:
+    elif is_production:
         raise RuntimeError("POL_CORS_ORIGINS must be configured in production.")
     else:
         cors_origins = [
@@ -104,7 +109,7 @@ def create_app() -> FastAPI:
         ]
 
     if "*" in cors_origins:
-        if environment in {"prod", "production"}:
+        if is_production:
             raise RuntimeError("Wildcard CORS is forbidden in production.")
         cors_origins = [o for o in cors_origins if o != "*"]
 
@@ -155,7 +160,7 @@ def create_app() -> FastAPI:
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-        if environment in {"prod", "production"}:
+        if is_production:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
@@ -225,6 +230,8 @@ def create_app() -> FastAPI:
     app.add_exception_handler(PermissionError, permission_handler)
     app.add_exception_handler(ValueError, value_error_handler)
     app.add_exception_handler(KeyError, key_error_handler)
+    app.add_exception_handler(pg_errors.ForeignKeyViolation, data_integrity_handler)
+    app.add_exception_handler(pg_errors.CheckViolation, data_integrity_handler)
     app.add_exception_handler(Exception, generic_error_handler)
 
     return app
