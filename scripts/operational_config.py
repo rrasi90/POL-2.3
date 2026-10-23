@@ -36,6 +36,12 @@ REFRESH_TOKEN_BYTES = 32          # 256-bit opaque refresh token
 PILOT_COMMISSION_RATE = 0.000
 PAYMENT_CUSTODY_MODEL = "NON_CUSTODIAL_DIRECT"
 
+# Payload guards (technical abuse limits, not business rules)
+# Technical abuse limits, not commercial policy: they only bound the cost of a
+# single request and are independent of any pricing/business cap.
+MAX_JSON_BODY_BYTES = 1_048_576   # 1 MiB per JSON request body (TODO-132)
+MAX_BULK_ITEMS = 500              # max rows in one bulk request array (TODO-132)
+
 # Notifications & Messaging
 NOTIFICATION_MAX_RETRIES = 3
 NOTIFICATION_BACKOFF_SECONDS = [30, 120, 600]

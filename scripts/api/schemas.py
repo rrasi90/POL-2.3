@@ -9,6 +9,8 @@ from uuid import UUID
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
+from scripts.operational_config import MAX_BULK_ITEMS
+
 INT4_MAX = 2_147_483_647
 
 CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
@@ -102,7 +104,7 @@ class VendorPartialAcceptanceItemRequest(APIBaseModel):
 
 
 class VendorPartialAcceptanceProposalRequest(APIBaseModel):
-    items: list[VendorPartialAcceptanceItemRequest] = Field(min_length=1)
+    items: list[VendorPartialAcceptanceItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
 
 
 class RetailerPartialAcceptanceDeclineRequest(APIBaseModel):
@@ -174,7 +176,7 @@ class DailyInventoryChangeItemRequest(APIBaseModel):
 
 class DailyInventoryConfirmWithChangesRequest(APIBaseModel):
     confirmation_date: str = Field(pattern=r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
-    changes: list[DailyInventoryChangeItemRequest] = Field(min_length=1)
+    changes: list[DailyInventoryChangeItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
 
     @field_validator("confirmation_date")
     @classmethod
@@ -319,7 +321,7 @@ class ReturnItemRequest(APIBaseModel):
 
 
 class ReturnRequestRequest(APIBaseModel):
-    items: list[ReturnItemRequest] = Field(min_length=1)
+    items: list[ReturnItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
     reason: str = Field(min_length=1, max_length=1000)
     idempotency_key: str = Field(min_length=1, max_length=128)
     claimed_refund_amount_toman: int = Field(ge=0)
@@ -342,7 +344,7 @@ class DisputeOpenRequest(APIBaseModel):
     claimed_amount_toman: int = Field(gt=0)
     description: str = Field(min_length=1, max_length=2000)
     evidence_media_id: UUID
-    items: list[DisputeItemRequest] = Field(min_length=1)
+    items: list[DisputeItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
 
 
 class PaymentEvidenceRequest(APIBaseModel):

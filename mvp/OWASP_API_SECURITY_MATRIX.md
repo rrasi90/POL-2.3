@@ -62,10 +62,12 @@ Public allowlist: `POST /api/v1/auth/request-otp`, `POST /api/v1/auth/verify-otp
 
 ### API4 — Unrestricted Resource Consumption
 
-Owned by **`TODO-132`** (OTP/login/search/pagination/upload rate and size caps). Existing evidence:
-OTP rate limit + lockout (429), pagination caps (`limit ≤ 200`, `test_schema_fuzz_boundaries.py`),
-basket/order idempotency. No new commercial limit is invented here; caps come from existing policy
-constants and tests.
+See [`RESOURCE_LIMITS.md`](RESOURCE_LIMITS.md) for the full table. In-process caps: OTP budget
+(`OTP_RATE_LIMIT_COUNT`), phone lockout (`OTP_MAX_ATTEMPTS`), hard page-size maximums on every list
+route, bulk-array cap (`MAX_BULK_ITEMS`), 1 MiB JSON body cap (`MAX_JSON_BODY_BYTES` → 413) and the
+5 MiB declared-upload cap. Evidence: `test_resource_limits.py` (21 tests). The limits that need a
+shared counter or transport control (per-IP read throttling, TLS/connection limits) are explicitly
+assigned to the edge gateway in the same document — they are not silently claimed as done.
 
 ### API5 — Broken Function Level Authorization
 

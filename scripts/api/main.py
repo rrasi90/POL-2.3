@@ -16,7 +16,9 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 
+from scripts.api.errors import error_payload
 from scripts.api.logging_config import get_access_logger
+from scripts.operational_config import MAX_JSON_BODY_BYTES
 from scripts.api.errors import (
     auth_error_handler,
     data_integrity_handler,
@@ -80,6 +82,18 @@ from scripts.auth_boundary import (
 _CORRELATION_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 
+def _payload_too_large():
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(
+        status_code=413,
+        content=error_payload(
+            "PAYLOAD_TOO_LARGE",
+            f"Request body exceeds the {MAX_JSON_BODY_BYTES} byte limit.",
+        ),
+    )
+
+
 def create_app() -> FastAPI:
     environment = os.getenv("ENVIRONMENT", "").lower()
     is_production = environment in {"prod", "production"}
@@ -121,6 +135,26 @@ def create_app() -> FastAPI:
         allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Correlation-ID"],
         expose_headers=["X-Correlation-ID"],
     )
+    @app.middleware("http")
+    async def body_size_middleware(request: Request, call_next):
+        """Reject oversized JSON bodies before they reach a route (TODO-132).
+
+        Uploads never traverse this API (media uses presigned storage URLs), so
+        any multipart request is refused outright and JSON/chunked bodies are
+        measured rather than trusted from Content-Length alone.
+        """
+        content_type = (request.headers.get("content-type") or "").lower()
+        if content_type.startswith("multipart/"):
+            return _payload_too_large()
+        declared = (request.headers.get("content-length") or "").strip()
+        if declared.isdigit() and int(declared) > MAX_JSON_BODY_BYTES:
+            return _payload_too_large()
+        if request.method in {"POST", "PUT", "PATCH"}:
+            body = await request.body()
+            if len(body) > MAX_JSON_BODY_BYTES:
+                return _payload_too_large()
+        return await call_next(request)
+
     @app.middleware("http")
     async def correlation_middleware(request: Request, call_next):
         supplied = request.headers.get("X-Correlation-ID", "").strip()

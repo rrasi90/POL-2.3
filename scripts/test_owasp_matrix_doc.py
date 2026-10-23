@@ -77,6 +77,6 @@ def test_uncovered_or_na_rows_state_a_reason(risk: str) -> None:
     start = text.index(f"### {risk} ")
     end = text.find("### ", start + 1)
     section = text[start:end]
-    assert ("TODO-132" in section) or ("Not applicable" in section), (
+    assert ("TODO-132" in section) or ("RESOURCE_LIMITS.md" in section) or ("Not applicable" in section), (
         f"{risk} must link the closing TODO or explain why it does not apply"
     )

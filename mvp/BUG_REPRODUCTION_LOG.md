@@ -412,3 +412,23 @@ Fix: `scripts/api/routes/auth.py::verify_otp` commits the failed-attempt account
 | Regression test | `scripts/test_provider_adapter_contract.py` (10 tests) |
 | Verified by / at | 2026-10-23 · `pytest scripts/test_provider_adapter_contract.py` 10 passed |
 
+### BUG-018 — Unbounded request bodies and bulk arrays could exhaust the API
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 |
+| Role / persona | any authenticated caller (retailer, vendor, admin) |
+| Branch / SHA | `test/journey-evidence-20261022` @ `c874459` |
+| Environment | local test · `ENVIRONMENT=test` · `pol_test` |
+| Steps to reproduce | 1. `POST /api/v1/auth/request-otp` with a body larger than 1 MiB 2. `POST /api/v1/orders/{id}/disputes` with an `items` array of 100k rows |
+| Expected | 413 `PAYLOAD_TOO_LARGE` for the oversized body and 422 for an over-cap array, before any database work |
+| Actual | Request bodies had no size cap and four bulk arrays (`items`/`changes`) had no `max_length`, so a single caller could force unbounded parsing and row loops |
+| Evidence | `scripts/test_resource_limits.py::test_oversized_json_body_is_413_with_envelope`, `test_chunked_body_without_content_length_is_still_bounded`, `test_oversized_dispute_item_list_is_rejected` |
+| Suspected cause | No body-limit middleware and no shared array cap; uploads correctly bypass the API via presigned storage, but JSON bodies were never measured |
+| Linked TODO / BUG | `TODO-132` |
+| Owner | unassigned |
+| Fix SHA | commit `fix(api): bound request bodies, bulk arrays and document resource limits` |
+| Regression test | `scripts/test_resource_limits.py` (21 tests) + `mvp/RESOURCE_LIMITS.md` |
+| Verified by / at | 2026-10-23 · full suite 878 passed |
+
