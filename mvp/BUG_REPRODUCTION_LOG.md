@@ -68,6 +68,10 @@ Copy this block per defect:
 | BUG-005 | S3 | `FIXED` | Revoking another user's session returned 401 `INVALID_ACCESS_TOKEN` (as if the caller's token were invalid) instead of 403 `FORBIDDEN` | Any authenticated user | `c65c282` | `TODO-070` | unassigned |
 | BUG-006 | S4 | `FIXED` | `test_reservation_expiry_worker` asserted a global `expired_reservation_count == 1` while the worker sweeps every expired reservation, so it failed whenever other fixtures left expired rows behind (order-dependent, passed only in full-suite order) | QA harness | `1cf0cc4` | `TODO-090`, `TODO-073` | unassigned |
 | BUG-007 | S3 | `FIXED` | Mobile API client issued `fetch` without any abort timeout, so a stalled connection could hang a screen indefinitely with no error, no offline banner and no way to retry | Retailer / vendor app users | `69fe074` | `TODO-074`, `TODO-088` | unassigned |
+| BUG-008 | S3 | `FIXED` | `otp_code` pattern `^\d{4}$` accepted non-ASCII digits (Arabic-Indic, fullwidth), so an unusable code passed schema validation instead of returning 422 | All login personas | `c4aa4c8` | `TODO-134` | unassigned |
+| BUG-009 | S2 | `FIXED` | `confirmation_date` was only regex-checked, so calendar-invalid dates (`2026-13-01`, `2026-02-30`) reached PostgreSQL and surfaced as a server error instead of 422 | Vendor owner/staff | `c4aa4c8` | `TODO-134` | unassigned |
+| BUG-010 | S3 | `FIXED` | Free-text fields accepted control characters (`\x00`, `\x1b`), which can break PostgreSQL text inserts or corrupt logs | All personas | `c4aa4c8` | `TODO-134` | unassigned |
+| BUG-011 | S3 | `FIXED` | Integer fields silently coerced booleans to 1 and accepted values beyond the 32-bit column range, producing unintended quantities or overflow errors | Retailer owner/staff, vendor owner/staff | `c4aa4c8` | `TODO-134` | unassigned |
 ### BUG-002 — Order/order-group/delivery-exception lookups by unknown id answered 422 instead of 404
 
 | Field | Value |
@@ -213,4 +217,73 @@ Fix: `scripts/api/routes/auth.py::verify_otp` commits the failed-attempt account
 | Fix SHA | commit `fix(mobile): bound live API requests with an abort timeout` |
 | Regression test | `scripts/mobile_regression_qa.mjs` — "API client bounds every live request with an abort timeout" |
 | Verified by / at | 2026-10-23 · typecheck exit 0 · qa:regression 26/26 · qa:pre-apk retailer PASS, vendor PASS |
+
+### BUG-008 — OTP pattern accepted non-ASCII digits
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 |
+| Role / persona | All login personas |
+| Branch / SHA | `test/journey-evidence-20261022` @ `c4aa4c8` |
+| Preconditions | Any OTP verify request |
+| Steps to reproduce | 1. `POST /api/v1/auth/verify-otp` with `otp_code="١٢٣٤"` (Arabic-Indic) or fullwidth digits |
+| Expected | 422 `VALIDATION_ERROR` — OTP codes are ASCII digits |
+| Actual | Schema accepted the value because Python `\d` matches Unicode digits; the service then compared a code that can never match |
+| Evidence | `scripts/test_schema_fuzz_boundaries.py::TestOtpInputBoundaries` (schema + HTTP 422) |
+| Linked TODO / BUG | `TODO-134`, `TODO-070` |
+| Fix SHA | commit `harden(schemas): enforce ASCII digits, calendar dates, control-char and integer bounds` |
+| Regression test | `TestOtpInputBoundaries::test_unicode_otp_is_rejected_over_http` |
+| Verified by / at | 2026-10-23 · full suite 789/789 PASS |
+
+### BUG-009 — Calendar-invalid `confirmation_date` reached the database
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S2 |
+| Role / persona | Vendor owner/staff (daily inventory confirmation) |
+| Branch / SHA | `test/journey-evidence-20261022` @ `c4aa4c8` |
+| Steps to reproduce | 1. `GET /api/v1/vendor/inventory/daily?confirmation_date=2026-13-01` (or the confirm POST) |
+| Expected | 422 `VALIDATION_ERROR` for an impossible date |
+| Actual | The regex `^\d{4}-\d{2}-\d{2}$` accepted it; PostgreSQL raised `date/time field value out of range` and the request failed as a server error |
+| Evidence | `scripts/test_schema_fuzz_boundaries.py::TestCollectionAndPaginationBoundaries::test_date_format_is_strict_ascii` |
+| Linked TODO / BUG | `TODO-134` |
+| Fix SHA | commit `harden(schemas): enforce ASCII digits, calendar dates, control-char and integer bounds` |
+| Regression test | `TestCollectionAndPaginationBoundaries::test_date_format_is_strict_ascii` |
+| Verified by / at | 2026-10-23 · full suite 789/789 PASS |
+
+### BUG-010 — Control characters accepted in free-text fields
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 |
+| Role / persona | All personas submitting text (address, reasons, notes) |
+| Branch / SHA | `test/journey-evidence-20261022` @ `c4aa4c8` |
+| Steps to reproduce | 1. `POST /api/v1/orders/.../checkout` with `delivery_address` containing `\x00` |
+| Expected | 422 `VALIDATION_ERROR` |
+| Actual | The value passed validation; PostgreSQL rejects NUL bytes, producing a server error, and other control characters can corrupt logs |
+| Evidence | `scripts/test_schema_fuzz_boundaries.py::TestTextBoundaries::test_control_characters_are_rejected` |
+| Linked TODO / BUG | `TODO-134` |
+| Fix SHA | commit `harden(schemas): enforce ASCII digits, calendar dates, control-char and integer bounds` |
+| Regression test | `TestTextBoundaries::test_control_characters_are_rejected` |
+| Verified by / at | 2026-10-23 · full suite 789/789 PASS |
+
+### BUG-011 — Booleans and int32 overflow accepted in integer fields
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 |
+| Role / persona | Retailer owner/staff, vendor owner/staff |
+| Branch / SHA | `test/journey-evidence-20261022` @ `c4aa4c8` |
+| Steps to reproduce | 1. `POST /api/v1/baskets/current/items` with `requested_quantity=true` 2. Repeat with `2147483648` |
+| Expected | 422 for a boolean and for a value outside the 32-bit column range |
+| Actual | Pydantic coerced `true` to `1` and accepted the overflow value, deferring failure to the database |
+| Evidence | `scripts/test_schema_fuzz_boundaries.py::TestNumericBoundaries` |
+| Linked TODO / BUG | `TODO-134` |
+| Fix SHA | commit `harden(schemas): enforce ASCII digits, calendar dates, control-char and integer bounds` |
+| Regression test | `TestNumericBoundaries::test_boolean_quantity_is_rejected` and `test_int4_overflow_quantity_is_rejected` |
+| Verified by / at | 2026-10-23 · full suite 789/789 PASS |
 
