@@ -2,25 +2,53 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+import re
+from datetime import date, datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+INT4_MAX = 2_147_483_647
+
+CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 
 class APIBaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    @field_validator("*", mode="before")
+    @classmethod
+    def _reject_boolean_and_overflowing_integers(cls, value, info):
+        if isinstance(value, bool):
+            annotation = cls.model_fields[info.field_name].annotation
+            if "bool" not in str(annotation):
+                raise ValueError(f"{info.field_name} must be an integer, not a boolean")
+            return value
+        if isinstance(value, int) and not isinstance(value, bool):
+            annotation = str(cls.model_fields[info.field_name].annotation)
+            if "str" not in annotation and abs(value) > INT4_MAX:
+                raise ValueError(
+                    f"{info.field_name} exceeds the supported 32-bit integer range"
+                )
+        return value
+
+    @field_validator("*", mode="after")
+    @classmethod
+    def _reject_control_characters(cls, value):
+        if isinstance(value, str) and CONTROL_CHARACTERS.search(value):
+            raise ValueError("control characters are not allowed in text fields")
+        return value
+
 
 class RequestOTPRequest(APIBaseModel):
-    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9]\d{7,14}$")
+    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9][0-9]{7,14}$")
     client_fingerprint: str | None = Field(default=None, max_length=128)
 
 
 class VerifyOTPRequest(APIBaseModel):
-    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9]\d{7,14}$")
-    otp_code: str = Field(pattern=r"^\d{4}$")
+    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9][0-9]{7,14}$")
+    otp_code: str = Field(pattern=r"^[0-9]{4}$")
     device_info: dict[str, Any] | None = None
     client_platform: Literal["web", "mobile"] | None = None
 
@@ -119,7 +147,13 @@ class VendorInventoryAdjustRequest(APIBaseModel):
 
 
 class DailyInventoryConfirmRequest(APIBaseModel):
-    confirmation_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    confirmation_date: str = Field(pattern=r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+
+    @field_validator("confirmation_date")
+    @classmethod
+    def _calendar_valid_date(cls, value: str) -> str:
+        date.fromisoformat(value)
+        return value
 
 
 class DailyInventoryChangeItemRequest(APIBaseModel):
@@ -128,8 +162,14 @@ class DailyInventoryChangeItemRequest(APIBaseModel):
 
 
 class DailyInventoryConfirmWithChangesRequest(APIBaseModel):
-    confirmation_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    confirmation_date: str = Field(pattern=r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
     changes: list[DailyInventoryChangeItemRequest] = Field(min_length=1)
+
+    @field_validator("confirmation_date")
+    @classmethod
+    def _calendar_valid_date(cls, value: str) -> str:
+        date.fromisoformat(value)
+        return value
 
 
 class OrderQueryParams(APIBaseModel):
@@ -151,7 +191,7 @@ class DeliveredItemRequest(APIBaseModel):
 
 class DeliveryConfirmRequest(APIBaseModel):
     recipient_name: str | None = Field(default=None, max_length=200)
-    otp_code: str | None = Field(default=None, pattern=r"^\d{4}$")
+    otp_code: str | None = Field(default=None, pattern=r"^[0-9]{4}$")
     proof_type: Literal["OTP_CODE", "PHYSICAL_SIGNATURE", "STORE_STAMP", "PHOTO_PROOF"] = "OTP_CODE"
     proof_media_id: str | None = Field(default=None, max_length=64)
     issue_reported: str | None = Field(default=None, max_length=500)
@@ -346,7 +386,7 @@ class VendorStaffInviteRequest(APIBaseModel):
     phone_number: str = Field(
         min_length=8,
         max_length=16,
-        pattern=r"^\+[1-9]\d{7,14}$",
+        pattern=r"^\+[1-9][0-9]{7,14}$",
     )
     full_name: str = Field(min_length=1, max_length=100)
 
