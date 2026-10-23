@@ -492,3 +492,23 @@ Fix: `scripts/api/routes/auth.py::verify_otp` commits the failed-attempt account
 | Regression test | `navigation-states.spec.ts` (reload case) |
 | Verified by / at | 2026-10-23 · browser suite 44 passed |
 
+### BUG-022 — 13 screens were marked VERIFIED with only an API smoke
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 (evidence integrity: the gate reads these statuses) |
+| Role / persona | n/a (process + documentation) |
+| Branch / SHA | `test/journey-evidence-20261022` @ `6368f42` |
+| Environment | repository evidence review |
+| Steps to reproduce | 1. Parse `mvp/MVP_SCREEN_MATRIX.md` screen rows 2. Take rows whose status is `VERIFIED` 3. Ask which Playwright spec drives that route |
+| Expected | `VERIFIED` means a browser test exercised the screen end to end, as the pre-build gate assumes |
+| Actual | 13 routes (`/profile`, `/notifications`, `/notifications/preferences`, `/field`, `/retailer/catalog`, `/retailer/finance`, `/retailer/vendors`, `/retailer/vendors/{id}`, `/vendor/catalog`, `/vendor/inventory/daily`, `/vendor/referrals`, `/vendor/settlements`, plus one duplicate `SH-*` row) were marked `VERIFIED` on the strength of an authenticated API call + a static route 200 — no click-through |
+| Evidence | `mvp/SCREEN_TEST_PARITY.md` shows those routes as `GAP`; `scripts/test_screen_parity.py::test_verified_screens_have_a_browser_test` now fails if the state returns |
+| Suspected cause | The 2026-09-23 QA cycle promoted screens from "static route 200" without a browser assertion, and no guard compared matrix status against specs |
+| Linked TODO / BUG | `TODO-080` |
+| Owner | unassigned |
+| Fix SHA | commit `test(web): add screen/api/test parity ledger and guards` |
+| Regression test | `scripts/test_screen_parity.py` (7 tests) |
+| Verified by / at | 2026-10-23 · python suite 891 passed |
+

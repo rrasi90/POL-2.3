@@ -20,9 +20,9 @@
 | SH-AUTH-01 | Login phone + OTP request | `/auth/login` | PUBLIC_ANON → all | POST `/auth/request-otp` | route map §1; D-018; doc 22 §3.1 | VERIFIED |
 | SH-AUTH-02 | Verify OTP (4-digit) | `/auth/login` (step) | PUBLIC_ANON → all | POST `/auth/verify-otp` | D-018; route map (OTP digits → 4) | VERIFIED |
 | SH-AUTH-03 | Refresh (implicit) | (client) | all | POST `/auth/refresh` | route map §1 | VERIFIED |
-| SH-PROFILE-01 | Account / profile | `/profile` | authenticated | GET/PUT `/profile`, GET `/profile/context` | route map; R-13; V-12 | VERIFIED |
-| SH-NOTIF-01 | Notifications inbox | `/notifications` | authenticated | GET `/notifications` | route map + durable inbox projection | VERIFIED |
-| SH-NOTIF-02 | Notification preferences | `/notifications/preferences` | authenticated | GET/PUT `/notifications/preferences` | route map | VERIFIED |
+| SH-PROFILE-01 | Account / profile | `/profile` | authenticated | GET/PUT `/profile`, GET `/profile/context` | route map; R-13; V-12 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
+| SH-NOTIF-01 | Notifications inbox | `/notifications` | authenticated | GET `/notifications` | route map + durable inbox projection | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
+| SH-NOTIF-02 | Notification preferences | `/notifications/preferences` | authenticated | GET/PUT `/notifications/preferences` | route map | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
 
 ### §A evidence — Phase 2 Module 1 + web build (QA cycle 1, 2026-09-22)
 
@@ -42,7 +42,7 @@
 |----|-------|-------|------|--------------|--------|--------|
 | R-01 | Onboarding / activation | `/auth/*` progressive | RETAILER_OWNER | auth + profile context | doc 22 L222–233; doc 30 R-01A–G; MT RT-01 | IMPLEMENTED |
 | R-02 | Home / operational hub | `/retailer` | RETAILER_OWNER/STAFF | GET `/orders` (actions), profile | doc 22 L235–244; MT RT-02 | VERIFIED |
-| R-03 | Search / catalog | `/retailer/catalog` | RETAILER_* | GET `/catalog/search`, `/catalog/categories`, GET `/search` | doc 22 L246–260; MT RT-06 | VERIFIED |
+| R-03 | Search / catalog | `/retailer/catalog` | RETAILER_* | GET `/catalog/search`, `/catalog/categories`, GET `/search` | doc 22 L246–260; MT RT-06 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
 | R-03B | Barcode / SKU entry | (in catalog) | RETAILER_* (+scan perm) | POST `/products/match-barcode` | D-028; catalog matching routes | IMPLEMENTED |
 | R-04 | Product detail | `/retailer/catalog/[id]` | RETAILER_* | GET `/catalog/products/{id}`, `/vendors`, compare-* | doc 22 L262–275; MT RT-07 | IMPLEMENTED |
 | R-05 | Vendor comparison | (in product) | RETAILER_* | compare-prices, compare-inventory | doc 22 L277–289; MT RT-07 | IMPLEMENTED |
@@ -58,9 +58,9 @@
 | R-11 | Returns / disputes | `/retailer/orders/[id]/returns` | RETAILER_OWNER | POST/GET `/orders/{id}/returns`, disputes | doc 22 L351–353; MT RT-09 | IMPLEMENTED |
 | R-12 | Support | `/retailer/support` | RETAILER_* | `/support/cases*` | doc 22 L355–363; MT RT-13 | IMPLEMENTED |
 | R-13 | Account | `/profile` (+ org) | RETAILER_* | profile/context; staff management via `/vendors/staff*` | doc 22 L365–373; MT RT-12 | IMPLEMENTED |
-| R-16 | Financial activity | `/retailer/finance` | RETAILER_OWNER | GET `/invoices` (D-021 no wallet) | MT RT-16; D-021 | VERIFIED |
-| R-17 | Vendor search | `/retailer/vendors` | RETAILER_* | GET `/storefront/vendors` | MT RT-17; D-024 | VERIFIED |
-| R-18 | Vendor storefront | `/retailer/vendors/[id]` | RETAILER_* | GET storefront vendor + products | MT RT-18; D-024 | VERIFIED |
+| R-16 | Financial activity | `/retailer/finance` | RETAILER_OWNER | GET `/invoices` (D-021 no wallet) | MT RT-16; D-021 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
+| R-17 | Vendor search | `/retailer/vendors` | RETAILER_* | GET `/storefront/vendors` | MT RT-17; D-024 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
+| R-18 | Vendor storefront | `/retailer/vendors/[id]` | RETAILER_* | GET storefront vendor + products | MT RT-18; D-024 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
 
 ### §B evidence — Retailer module (QA cycle 1, 2026-09-22)
 
@@ -90,15 +90,15 @@
 | V-01 | Dashboard (queue-first) | `/vendor` | VENDOR_* | GET `/orders` (filters), inventory stale | doc 22 L377–387 | IMPLEMENTED |
 | V-02 | Orders queue | `/vendor/orders` | VENDOR_* | GET `/orders` | doc 22 L389–399; MT VD-02 | IMPLEMENTED |
 | V-03 | Order detail + accept/reject/partial | `/vendor/orders/[id]` | VENDOR_* (fulfillment); VENDOR_OWNER (accept/reject/partial) | accept/reject/partial HTTP | doc 22 L401–410; MT VD-02/18 | IMPLEMENTED |
-| V-04 | Catalog | `/vendor/catalog` | VENDOR_* | `/catalog/vendors/products*` | doc 22 L412–420; MT VD-05 | VERIFIED |
+| V-04 | Catalog | `/vendor/catalog` | VENDOR_* | `/catalog/vendors/products*` | doc 22 L412–420; MT VD-05 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
 | V-05 | Pricing | `/vendor/catalog/[id]/prices` | VENDOR_* (view); VENDOR_OWNER (manage) | prices current/set | doc 22 L422–426 | IMPLEMENTED |
 | V-06 | Inventory | `/vendor/inventory` | VENDOR_* | inventory GET/PATCH | doc 22 L428–435; MT VD-01 | IMPLEMENTED |
-| V-07 | Daily inventory confirmation | `/vendor/inventory/daily` | VENDOR_* | inventory/daily/* | doc 22 L437–441 | VERIFIED |
-| V-08 | Referral (attribution only) | `/vendor/referrals` | VENDOR_* | `/referrals*` | doc 22 L443–449; D-016 | VERIFIED |
+| V-07 | Daily inventory confirmation | `/vendor/inventory/daily` | VENDOR_* | inventory/daily/* | doc 22 L437–441 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
+| V-08 | Referral (attribution only) | `/vendor/referrals` | VENDOR_* | `/referrals*` | doc 22 L443–449; D-016 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
 | V-09 | Customers | `/vendor/customers` | VENDOR_* | `GET /vendors/customers` | doc 22 L451–455; MT VD-09 | IMPLEMENTED |
-| V-10 | Reconciliation / documents | `/vendor/settlements` | VENDOR_OWNER | `/vendors/settlements`, invoices | doc 22 L457–461; MT VD-06/10/13 | VERIFIED |
+| V-10 | Reconciliation / documents | `/vendor/settlements` | VENDOR_OWNER | `/vendors/settlements`, invoices | doc 22 L457–461; MT VD-06/10/13 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
 | V-11 | Staff / access + Permission Editor | `/vendor/staff` | VENDOR_OWNER | `GET/POST/PATCH /vendors/staff*` + `/vendors/staff/{membership_id}/permissions*` | doc 22 L463–468; MT VD-07/15; D-026 | IMPLEMENTED |
-| V-12 | Vendor profile | `/profile` vendor ctx | VENDOR_* | profile/context | doc 22 L470–475; MT VD-12 | VERIFIED |
+| V-12 | Vendor profile | `/profile` vendor ctx | VENDOR_* | profile/context | doc 22 L470–475; MT VD-12 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
 | V-14 | Storefront visibility / management boundary | `/vendor/storefront` | VENDOR_OWNER | storefront read; MVP write scope is not contractually defined | MT VD-14; D-024 | IMPLEMENTED |
 | V-16 | Barcode / continuous scan | (mobile) | VENDOR_STAFF + `inventory.scan` (Owner inherits) | barcode lookup/match + candidate workflow; continuous-scan/camera runtime remains device-gated | MT VD-16; D-028 | IMPLEMENTED / CAMERA_RUNTIME_GAP |
 | V-17 | Financial activity | `/vendor/finance` | VENDOR_OWNER | settlements/invoices D-021 | MT VD-17 | IMPLEMENTED |
@@ -134,6 +134,8 @@
 | O-09 | Pilot analytics | `/ops/analytics` | OPS_AGENT | `GET /ops/analytics`, `/ops/analytics/weekly` | doc 22 L545–554; KPI SSoT | IMPLEMENTED |
 | O-10 | Admin / context | `/ops/admin` | OPS_AGENT, ADMIN_SUPER | `/admin/audit-logs`, `/admin/exceptions/dashboard` | doc 22 L556–561; MT OP-10 | IMPLEMENTED |
 | O-10B | Admin users/orgs | `/admin/users`, `/admin/orgs` | ADMIN_SUPER | `GET/PATCH /admin/users*`, `GET/PATCH /admin/organizations*` | route map §6 | IMPLEMENTED |
+| ADM-01 | Admin home | `/admin` | ADMIN_SUPER | GET `/admin/users`, GET `/admin/organizations` | route map; doc 50 §38 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
+| DEV-01 | Design-component gallery | `/dev/components` | PUBLIC_ANON (dev builds) | — | internal style gallery | NOT_APPLICABLE |
 | OP-11 | Permission catalog | `/ops/permissions` | ADMIN_SUPER/OPS | `GET /ops/permissions` | MT OP-11; management route | IMPLEMENTED |
 | OP-13 | Master SKU / candidate review | `/ops/catalog-candidates` | OPS/ADMIN | `GET/PATCH /admin/product-candidates*` | MT OP-13; management route | IMPLEMENTED |
 
@@ -152,7 +154,7 @@
 
 | ID | Title | Route | Role | Primary APIs | Source | Status |
 |----|-------|-------|------|--------------|--------|--------|
-| F-01 | Today / task list | `/field` | FIELD_ACTIVATOR | GET `/field/tasks` | doc 22 L564–567; MT FA-01 | VERIFIED |
+| F-01 | Today / task list | `/field` | FIELD_ACTIVATOR | GET `/field/tasks` | doc 22 L564–567; MT FA-01 | IMPLEMENTED (API smoke only — no browser test; see SCREEN_TEST_PARITY.md) |
 | F-02 | Retailer activation | `/field/tasks/[id]` activation | FIELD_ACTIVATOR | PATCH task; profile create patterns | doc 22 L569–576; MT FA-02 | IMPLEMENTED |
 | F-03 | Assisted order | (link into retailer flows) | FIELD_ACTIVATOR | baskets + orders as retailer ctx | doc 22 L578–584; MT FA-03 | IMPLEMENTED |
 | F-04 | Follow-up | task detail notes | FIELD_ACTIVATOR | PATCH `/field/tasks/{id}` | doc 22 L586–590; MT FA-04 | IMPLEMENTED |
