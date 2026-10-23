@@ -6,6 +6,12 @@ export interface ApiClientOptions {
   onUnauthorized?: () => void;
   /** SH-AUTH-03: invoked once on 401; return true to retry with the refreshed token. */
   onRefresh?: () => Promise<boolean>;
+  /**
+   * Fetch credentials mode. Defaults to "include" so the httpOnly refresh
+   * cookie set by /auth/verify-otp is stored and sent (BUG-020); clients that
+   * only use bearer tokens are unaffected.
+   */
+  credentials?: RequestCredentials;
 }
 
 let lastCorrelationId: string | null = null;
@@ -46,6 +52,7 @@ export function createApiClient(opts: ApiClientOptions) {
     if (token) headers.set("Authorization", `Bearer ${token}`);
 
     const res = await fetch(`${opts.baseUrl}${path}`, {
+      credentials: opts.credentials ?? "include",
       ...init,
       method,
       headers,

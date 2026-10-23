@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { toE164 } from "../src/lib/auth/phone";
+import { postLoginDestination } from "../src/lib/auth/routes";
 import { appAlert, localNumber, loginAsRetailer, resetTenant, retailerPhone } from "./helpers";
 
 test.describe("login phone normalization", () => {
@@ -54,5 +55,28 @@ test.describe("login phone normalization", () => {
     resetTenant(phone);
     await loginAsRetailer(page, phone);
     await expect(page).toHaveURL(/\/retailer$/);
+  });
+});
+
+test.describe("post-login destination", () => {
+  test("honours a safe deep link the role may open", () => {
+    expect(postLoginDestination("RETAILER_OWNER", "/retailer/orders")).toBe("/retailer/orders");
+    expect(postLoginDestination("VENDOR_OWNER", "/vendor/orders")).toBe("/vendor/orders");
+  });
+
+  test("falls back to the role home without a link", () => {
+    expect(postLoginDestination("ADMIN_SUPER", null)).toBe("/admin");
+    expect(postLoginDestination("OPS_AGENT", "")).toBe("/ops");
+  });
+
+  test("refuses a link the role may not open", () => {
+    expect(postLoginDestination("RETAILER_OWNER", "/admin/users")).toBe("/retailer");
+    expect(postLoginDestination("VENDOR_OWNER", "/retailer/orders")).toBe("/vendor");
+  });
+
+  test("refuses off-site and malformed links", () => {
+    expect(postLoginDestination("RETAILER_OWNER", "//evil.example/retailer")).toBe("/retailer");
+    expect(postLoginDestination("RETAILER_OWNER", "https://evil.example/")).toBe("/retailer");
+    expect(postLoginDestination("RETAILER_OWNER", "/not-a-route")).toBe("/retailer");
   });
 });

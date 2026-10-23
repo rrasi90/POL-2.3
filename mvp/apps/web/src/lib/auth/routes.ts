@@ -13,6 +13,26 @@ export const roleHome: Record<Role, string> = {
 
 export type RouteAccess = "public" | "auth" | Role[];
 
+/**
+ * Post-login destination: honour a safe `?next=` deep link when the role may
+ * open it, otherwise fall back to the role home. `next` must be a single-slash
+ * absolute path so the middleware cannot be turned into an open redirect.
+ */
+export function postLoginDestination(role: Role, next: string | null | undefined): string {
+  const fallback = roleHome[role] ?? "/";
+  if (!next) return fallback;
+  if (!next.startsWith("/") || next.startsWith("//")) return fallback;
+  if (next.includes("\\")) return fallback;
+  try {
+    const url = new URL(next, "http://pol.local");
+    if (url.origin !== "http://pol.local") return fallback;
+  } catch {
+    return fallback;
+  }
+  if (!pathAllowed(next, role)) return fallback;
+  return next;
+}
+
 /** Route prefix → allowed (UX gate only). */
 export const routeAccess: Record<string, RouteAccess> = {
   "/auth": "public",

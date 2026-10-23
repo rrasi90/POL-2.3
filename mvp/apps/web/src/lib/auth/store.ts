@@ -21,6 +21,8 @@ interface AuthState {
     user?: AuthUser | null;
     role?: Role | null;
   }) => void;
+  /** Refresh path: replace the access token without touching the persisted profile. */
+  setAccessToken: (accessToken: string) => void;
   clear: () => void;
   markSessionExpired: () => void;
   consumeSessionExpired: () => void;
@@ -63,6 +65,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       sessionExpired: false,
     });
   },
+  setAccessToken: (accessToken) => set({ accessToken, sessionExpired: false }),
   clear: () => {
     const next = { accessToken: null, user: null, role: null };
     if (typeof window !== "undefined") {

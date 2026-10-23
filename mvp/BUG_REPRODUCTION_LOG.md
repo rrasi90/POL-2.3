@@ -432,3 +432,63 @@ Fix: `scripts/api/routes/auth.py::verify_otp` commits the failed-attempt account
 | Regression test | `scripts/test_resource_limits.py` (21 tests) + `mvp/RESOURCE_LIMITS.md` |
 | Verified by / at | 2026-10-23 · full suite 878 passed |
 
+### BUG-019 — `?next=` deep link was dropped and ADMIN_SUPER landed on /ops
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S4 |
+| Role / persona | every role returning to a deep link; admin super |
+| Branch / SHA | `test/journey-evidence-20261022` @ `9f53af2` |
+| Environment | local test · Playwright chromium |
+| Steps to reproduce | 1. Open `/retailer/orders` while logged out → middleware redirects to `/auth/login?next=%2Fretailer%2Forders` 2. Complete OTP login 3. Log in as `ADMIN_SUPER` |
+| Expected | After login the user lands on the page they asked for (when their role may open it); `ADMIN_SUPER` lands on `/admin` |
+| Actual | Login ignored `next` and always used a hardcoded role map that sent `ADMIN_SUPER` to `/ops`; the `next` parameter was dead code |
+| Evidence | `tests/navigation-states.spec.ts` (deep-link restore + role fallback) and `tests/login.spec.ts` ("post-login destination" 4 tests) |
+| Suspected cause | `middleware.ts` wrote `next` but the login page navigated from an inline ternary map instead of a shared, validated resolver |
+| Linked TODO / BUG | `TODO-079` |
+| Owner | unassigned |
+| Fix SHA | commit `fix(web): restore deep links and survive reload without re-login` |
+| Regression test | `mvp/apps/web/tests/login.spec.ts` + `navigation-states.spec.ts` |
+| Verified by / at | 2026-10-23 · browser suite 44 passed |
+
+### BUG-020 — API client never sent or stored the refresh cookie
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S2 (session lost on reload after the 15-minute access token) |
+| Role / persona | all web users |
+| Branch / SHA | `test/journey-evidence-20261022` @ `9f53af2` |
+| Environment | local test · web on `127.0.0.1:3000`, API on `127.0.0.1:8001` |
+| Steps to reproduce | 1. Log in through the UI (`client_platform: "web"`) 2. Reload a protected page 3. Observe `auth/refresh` |
+| Expected | The httpOnly `pol_refresh` cookie set by `/auth/verify-otp` is stored and sent on `/auth/refresh`, so a reload silently restores the session |
+| Actual | `@pol/api-client` called `fetch` without `credentials`, so the browser discarded the `Set-Cookie`; `pol_refresh` never existed and every reload/expiry logged the user out |
+| Evidence | `context.cookies()` probe showed only `pol.session`/`pol.role`; after the fix `pol_refresh` is present and refresh returns 200. `tests/navigation-states.spec.ts::refresh keeps the session…` |
+| Suspected cause | Client library written for bearer-token-only mobile and reused by the web app without a credentials option |
+| Linked TODO / BUG | `TODO-079` |
+| Owner | unassigned |
+| Fix SHA | commit `fix(web): restore deep links and survive reload without re-login` |
+| Regression test | `navigation-states.spec.ts` (reload + session-expiry tests) |
+| Verified by / at | 2026-10-23 · browser suite 44 passed |
+
+### BUG-021 — Token refresh overwrote the persisted profile with nulls
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S2 (silent logout on every reload that refreshes) |
+| Role / persona | all web users |
+| Branch / SHA | `test/journey-evidence-20261022` @ `9f53af2` |
+| Environment | local test · Playwright chromium |
+| Steps to reproduce | 1. Log in 2. Reload a protected page (access token is memory-only, so a refresh runs) 3. Read `localStorage["pol.auth.profile"]` |
+| Expected | Refresh replaces only the access token; user/role stay available for route guards |
+| Actual | `tryRefresh` called `setSession({ accessToken })`, which persisted `{user:null, role:null}`; `RequireRole` then saw `role:null` and redirected to login |
+| Evidence | Before/after reload probe printed `{"user":null,"role":null}` in localStorage and a jump to `/auth/login`; after the fix the profile and URL survive the reload (`navigation-states.spec.ts::refresh keeps the session…`) |
+| Suspected cause | One store action (`setSession`) used for two different intents (full login vs token-only refresh) |
+| Linked TODO / BUG | `TODO-079` |
+| Owner | unassigned |
+| Fix SHA | commit `fix(web): restore deep links and survive reload without re-login` |
+| Regression test | `navigation-states.spec.ts` (reload case) |
+| Verified by / at | 2026-10-23 · browser suite 44 passed |
+

@@ -20,7 +20,7 @@ async function tryRefresh(): Promise<boolean> {
     const payload = (await res.json()) as { success?: boolean; data?: RefreshResponse };
     const next = payload?.success === true ? payload.data?.access_token : undefined;
     if (typeof next !== "string" || next.length === 0) return false;
-    useAuthStore.getState().setSession({ accessToken: next });
+    useAuthStore.getState().setAccessToken(next);
     return true;
   } catch {
     return false;
