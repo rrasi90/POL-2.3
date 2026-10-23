@@ -67,6 +67,7 @@ Copy this block per defect:
 | BUG-004 | S2 | `FIXED` | OTP failed-attempt counter was rolled back with the request transaction, so brute-force lockout never engaged over HTTP (unlimited 4-digit guesses) | All login personas | `c65c282` | `TODO-070` | unassigned |
 | BUG-005 | S3 | `FIXED` | Revoking another user's session returned 401 `INVALID_ACCESS_TOKEN` (as if the caller's token were invalid) instead of 403 `FORBIDDEN` | Any authenticated user | `c65c282` | `TODO-070` | unassigned |
 | BUG-006 | S4 | `FIXED` | `test_reservation_expiry_worker` asserted a global `expired_reservation_count == 1` while the worker sweeps every expired reservation, so it failed whenever other fixtures left expired rows behind (order-dependent, passed only in full-suite order) | QA harness | `1cf0cc4` | `TODO-090`, `TODO-073` | unassigned |
+| BUG-007 | S3 | `FIXED` | Mobile API client issued `fetch` without any abort timeout, so a stalled connection could hang a screen indefinitely with no error, no offline banner and no way to retry | Retailer / vendor app users | `c6c0a20` | `TODO-074`, `TODO-088` | unassigned |
 ### BUG-002 — Order/order-group/delivery-exception lookups by unknown id answered 422 instead of 404
 
 | Field | Value |
@@ -189,4 +190,27 @@ Fix: `scripts/api/routes/auth.py::verify_otp` commits the failed-attempt account
 | Fix SHA | commit `test: isolate reservation expiry assertion and add destructive-db guards` |
 | Regression test | `scripts/test_reservation_expiry_worker.py::test_reservation_expiry_releases_inventory_and_is_idempotent` |
 | Verified by / at | 2026-10-23, three orderings (alone / with E2E module / full G3 batch) all green |
+
+### BUG-007 — Mobile API client had no request timeout, so stalled connections never surfaced an error
+
+| Field | Value |
+| --- | --- |
+| Status | FIXED |
+| Severity | S3 |
+| Role / persona | Retailer owner/staff, vendor owner/staff |
+| Build / variant | Expo mobile, both variants (`ir.pol.market`, `ir.pol.vendor`) |
+| Branch / SHA | `test/journey-evidence-20261022` @ `c6c0a20` |
+| Environment | source-level review + `qa:regression` / `qa:pre-apk` gates (device run pending, see TODO-093) |
+| Seed / data | n/a |
+| Preconditions | Live data mode; server or network accepts the TCP connection but never answers (or answers after minutes) |
+| Steps to reproduce | 1. Set `EXPO_PUBLIC_DATA_MODE=live` 2. Put a black-hole endpoint behind `EXPO_PUBLIC_API_BASE_URL` 3. Open any screen that loads data |
+| Expected | Request fails within a bounded time with a `NETWORK` error, offline banner appears, user can retry |
+| Actual | `fetch` had no timeout or `AbortController`, so the promise never settled; the screen stayed in its loading state forever |
+| Evidence | `mvp/apps/mobile/src/api.ts` now wraps every live request in `AbortController` (`REQUEST_TIMEOUT_MS=20000`, `HEALTH_TIMEOUT_MS=5000`), clears the timer in `finally`, maps `AbortError` to `ApiError("NETWORK", ...)`; `qa:regression` 26/26 and `qa:pre-apk` PASS for both variants |
+| Suspected cause | The client relied on the platform default (no timeout) |
+| Linked TODO / BUG | `TODO-074`, `TODO-088` |
+| Owner | unassigned |
+| Fix SHA | commit `fix(mobile): bound live API requests with an abort timeout` |
+| Regression test | `scripts/mobile_regression_qa.mjs` — "API client bounds every live request with an abort timeout" |
+| Verified by / at | 2026-10-23 · typecheck exit 0 · qa:regression 26/26 · qa:pre-apk retailer PASS, vendor PASS |
 

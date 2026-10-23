@@ -114,6 +114,29 @@ const checks = [
     const s = read("screens/AssistedOrderScreen.tsx");
     return s.includes("if (!q) {") && s.includes("canonical_name_fa") && s.includes("master_sku");
   }],
+  ["API client bounds every live request with an abort timeout", () => {
+    const s = read("api.ts");
+    return s.includes("REQUEST_TIMEOUT_MS") &&
+      s.includes("HEALTH_TIMEOUT_MS") &&
+      s.includes("AbortController") &&
+      s.includes("signal: controller.signal") &&
+      s.includes("clearTimeout(timer)") &&
+      s.includes('err.name === "AbortError"');
+  }],
+  ["API client never treats an error envelope or unparsable body as success", () => {
+    const s = read("api.ts");
+    return s.includes("payload.success === false") &&
+      s.includes("throw new ApiError(payload.error.code") &&
+      s.includes("PARSE_ERROR");
+  }],
+  ["API client does not blind-retry mutations on network or server errors", () => {
+    const s = read("api.ts");
+    const hasRefreshOnlyRetry = s.includes("res.status === 401 && !retried");
+    const noTimerRetry = !/setTimeout\([^)]*(retry|request)/i.test(s);
+    const noLoopRetry = !/for\s*\([^)]*(attempt|retry)/i.test(s);
+    const networkCatchThrows = /catch \(err\) \{[\s\S]*"NETWORK"/.test(s);
+    return hasRefreshOnlyRetry && noTimerRetry && noLoopRetry && networkCatchThrows;
+  }],
   ["Offline banner captures current connectivity after effect subscription", () => read("components/OfflineBanner.tsx").includes("setOnline(isOnline())")],
   ["Login auth uses E.164 normalization", () => read("screens/LoginScreen.tsx").includes("toE164")],
   ["No Driver App is introduced into Phase 3 mobile source", () => {
