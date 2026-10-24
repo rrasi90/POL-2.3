@@ -52,7 +52,7 @@ HTTP may also set `X-Correlation-ID`.
 
 | Method | Path | Notes |
 |--------|------|-------|
-| POST | `/auth/request-otp` | OTP 4-digit D-018; returns otp_request_id, TTL |
+| POST | `/auth/request-otp` | OTP 6-digit D-018 (amended 2026-10-25); returns otp_request_id, TTL |
 | POST | `/auth/verify-otp` | returns tokens + profile context |
 | POST | `/auth/refresh` | issues a new access token and currently rotates the persisted refresh token; replay of the previously presented token fails. **D-018 policy wording remains OPEN** |
 | POST | `/auth/switch-organization` | |
