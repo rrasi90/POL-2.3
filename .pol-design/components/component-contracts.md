@@ -36,4 +36,4 @@
   - Stale warning indicator (> 24 hours unconfirmed)
   - Fast-confirm action button
 - **Delivery Handoff Card**:
-  - Delivery OTP 4-digit code entry, recipient signature/photo proof confirmation
+  - Delivery OTP 6-digit code entry, recipient signature/photo proof confirmation

@@ -1,3 +1,5 @@
+> **Historical record note (2026-10-25):** this report documents the earlier four-digit OTP implementation. The active D-018 policy is now six numeric digits for authentication and delivery; historical fixtures/results below are preserved for traceability and are not evidence that the amended contract has been re-tested.
+
 # POL MVP — Phase 5 Delivery Report
 
 **Date:** 2026-09-26  

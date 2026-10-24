@@ -59,8 +59,8 @@ Every scenario is evaluated against the POL specification under realistic operat
 
 #### RET-003: Invalid OTP Code Submission
 - **Persona:** Retailer Owner
-- **Preconditions:** Valid OTP `48291` issued for `+989161234567`.
-- **User Action:** User inputs `11111` to `POST /api/v1/auth/otp/verify`.
+- **Preconditions:** Valid OTP `482916` issued for `+989161234567`.
+- **User Action:** User inputs `111111` to `POST /api/v1/auth/otp/verify`.
 - **Expected System Behavior:** System increments failed attempt counter in Redis; returns HTTP 400 Bad Request (`error: "INVALID_OTP"`, remaining attempts: 2).
 - **Expected DB State:** No change to database; JWT tokens not issued.
 - **Expected Event(s):** `auth_failed`.
@@ -688,7 +688,7 @@ Every scenario is evaluated against the POL specification under realistic operat
 #### RET-041: Normal Cargo Delivery with OTP Verification
 - **Persona:** Retailer Owner + Carrier Driver
 - **Preconditions:** Order `DISPATCHED`; delivery truck arrives at store.
-- **User Action:** Driver requests OTP; Retailer provides 4-digit OTP code `8412`; Driver submits to app.
+- **User Action:** Driver requests OTP; Retailer provides 6-digit OTP code `841205`; Driver submits to app.
 - **Expected System Behavior:** System verifies OTP; transitions delivery to `DELIVERED`; transitions order to `DELIVERED`; initiates 4-hour dispute window.
 - **Expected DB State:** `deliveries.delivery_status = 'DELIVERED'`, `orders.order_status = 'DELIVERED'`, `proof_of_delivery (proof_type='OTP_CODE', otp_verified=TRUE)`.
 - **Expected Event(s):** `delivery_completed`, `order_delivered`.

@@ -1757,7 +1757,7 @@ Unauthenticated until verification; after login, scope by active membership.
 Light + Night.
 
 ### Conflict
-Technical Architecture currently specifies a **4-digit OTP**. Older retailer design specs/design artifacts contain 6-digit / 5-box variants. Target new canonical design must use the current backend/auth contract; do not preserve an older OTP shape silently.
+Technical Architecture now specifies the **six-digit OTP** under the 2026-10-25 D-018 amendment. Older retailer design specs/design artifacts contain 6-digit / 5-box variants. Target new canonical design must use the current backend/auth contract; do not preserve an older OTP shape silently.
 
 ---
 
@@ -7013,7 +7013,7 @@ ROUTE-PARTIAL-ACCEPTANCE
 | FJ-12 | Off-hours / holiday order | order accepted; SLA clock pauses until working calendar opens |
 
 Historical containment:
-- login OTP shown as 6-digit → superseded by D-018 4-digit login OTP
+- historical login OTP shown as 6-digit → former D-018 4-digit rule (superseded 2026-10-25) login OTP
 - full Driver App → superseded by D-023 lightweight Delivery Handoff
 - EXPIRED_UNRESPONSIVE timeout wording → current timeout semantics are SUBMITTED → CANCELLED with VENDOR_TIMEOUT
 - nearest-vendor recommendation after rejection is not a guaranteed MVP requirement unless independently authorized
@@ -7219,7 +7219,7 @@ Known conflicts:
 - old target stack: NestJS / Next.js / React Native
 - current runtime authority: Python + FastAPI
 - old login OTP references: 6-digit
-- current login OTP: 4-digit
+- current login OTP: 6-digit (D-018 amendment, 2026-10-25)
 - old full Driver App references
 - current MVP: lightweight Delivery Handoff
 - old timeout wording: EXPIRED_UNRESPONSIVE
