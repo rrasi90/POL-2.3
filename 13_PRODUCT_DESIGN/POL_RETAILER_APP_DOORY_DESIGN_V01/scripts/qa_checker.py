@@ -21,6 +21,9 @@ import json
 import re
 from pathlib import Path
 
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 ARABIC_YEH = "\u064A"
 ARABIC_KAF = "\u0643"
 ZWNJ = "\u200C"
