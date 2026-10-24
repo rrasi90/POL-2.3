@@ -194,7 +194,7 @@ class TestG440ArrivedRuntime:
 
 class TestG441ConcurrentPod:
     def test_concurrent_confirmation_is_single_terminal_mutation(self, client):
-        data = _seed_dispatch(uuid4().hex[:8], delivery_status="ARRIVED", otp="1234")
+        data = _seed_dispatch(uuid4().hex[:8], delivery_status="ARRIVED", otp="123456")
 
         def confirm(_):
             c = TestClient(app, raise_server_exceptions=False)

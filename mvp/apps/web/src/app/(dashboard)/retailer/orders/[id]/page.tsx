@@ -350,6 +350,10 @@ export default function RetailerOrderDetailPage() {
 
   async function confirmDelivery() {
     if (!orderId) return;
+    if (otpCode.trim() && !/^\d{6}$/.test(otpCode.trim())) {
+      setActionError("کد تحویل باید دقیقاً ۶ رقم باشد.");
+      return;
+    }
     setActing("deliver");
     setActionError(null);
     try {

@@ -349,3 +349,14 @@ def test_verify_otp_rejects_non_e164_mobile_number():
         pass
     else:
         raise AssertionError("Four-digit OTP must be rejected by the API schema")
+
+    from scripts.api.schemas import DeliveryConfirmRequest
+    valid_delivery = DeliveryConfirmRequest(recipient_name="Reza", otp_code="001234")
+    assert valid_delivery.otp_code == "001234"  # preserve leading zeroes
+
+    try:
+        DeliveryConfirmRequest(recipient_name="Reza", otp_code="1234")
+    except ValidationError:
+        pass
+    else:
+        raise AssertionError("Four-digit delivery OTP must be rejected by the API schema")

@@ -284,7 +284,7 @@ export async function mockRequest<T>(
   if (method === "POST" && pathname === "/api/v1/auth/verify-otp") {
     const phone = String((body as Record<string, unknown> | undefined)?.mobile_number || "");
     const otp = String((body as Record<string, unknown> | undefined)?.otp_code || "");
-    if (!/^\+?[1-9]\d{7,14}$/.test(phone) || !/^\d{4}$/.test(otp)) {
+    if (!/^\+?[1-9]\d{7,14}$/.test(phone) || !/^\d{6}$/.test(otp)) {
       throw new Error("Mock OTP must contain an E.164 phone and 6 digits.");
     }
     const mockRole: MockRole = phone.endsWith("0002") ? "VENDOR_STAFF" : "VENDOR_OWNER";
