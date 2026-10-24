@@ -218,7 +218,7 @@ export function OrderDetailMobileScreen(props: {
       return;
     }
     if (!/^\d{4}$/.test(deliveryOtp.trim())) {
-      setActionError("کد تحویل باید ۴ رقم باشد.");
+      setActionError("کد تحویل باید ۶ رقم باشد.");
       return;
     }
     setActing("deliver");
@@ -453,7 +453,7 @@ export function OrderDetailMobileScreen(props: {
               <>
                 <StatusChip label={"تحویل: " + (deliveryStatus || "نامشخص")} tone="info" />
                 <Input label="نام تحویل‌گیرنده" value={deliveryRecipient} onChangeText={setDeliveryRecipient} maxLength={200} />
-                <Input label="کد تحویل ۴ رقمی" value={deliveryOtp} onChangeText={setDeliveryOtp} keyboardType="numeric" maxLength={4} />
+                <Input label="کد تحویل ۶ رقمی" value={deliveryOtp} onChangeText={setDeliveryOtp} keyboardType="numeric" maxLength={6} />
                 <Btn label="ثبت تحویل" onPress={() => void submitDelivery()} loading={acting === "deliver"} disabled={acting !== null || deliveryStatus !== "ARRIVED" || !deliveryRecipient.trim() || !deliveryOtp.trim()} />
               </>
             ) : null}
