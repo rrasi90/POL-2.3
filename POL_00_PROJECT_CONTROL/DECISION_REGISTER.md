@@ -221,8 +221,8 @@ SMSIR_LINE_NUMBER=<configured line if required>
 - Do NOT ask the founder to paste credentials into chat or commit them.
 - Use the provider adapter boundary already defined in `scripts/provider_adapters.py`.
 - Keep provider-specific behavior behind the adapter; do not expose SMS.ir details to product/domain services.
-- Future SMS.ir OTP template MUST support a 4-digit verification code (per D-018).
-- Do NOT create or approve a 6-digit template.
+- Future SMS.ir OTP template MUST support an exactly six-digit numeric verification code (per D-018 amended 2026-10-25).
+- Do NOT approve a template that truncates, pads, or reformats the six-digit code.
 - Do NOT modify auth runtime in this batch — this is decision formalization only.
 
 ---

@@ -309,10 +309,10 @@ MVP is DONE only when **all** hold:
 | Structural | `test_e2e_mvp_platform` still imported legacy `CheckoutService` | switched to `CanonicalCheckoutGateway` + `unit_price_toman` |
 | Structural | `checkout_gateway.py` docstring tripped source ban on `CheckoutService` | reworded docstring |
 | Structural | `scripts/api/**` + auth/canonical deps missing from main working tree (only `.pyc`) | restored from `origin/research-hardening-2026-09-14` |
-| Decision drift | `OTP_CODE_LENGTH = 6` on main vs D-018 = 4 | restored D-018 config from research-hardening |
+| Decision drift (historical, before 2026-10-25) | `OTP_CODE_LENGTH = 6` on main vs then-current D-018 = 4 | historically restored the four-digit decision; superseded by the six-digit amendment dated 2026-10-25 |
 | Structural | `DECISION_REGISTER.md` missing D-016/D-017; `Assumptions_and_Hypotheses.md` missing D-015/016/017; `CURRENT_SOURCE_OF_TRUTH.md` missing `AllocationPlan`/`OrderItem` hierarchy | restored from `origin/research-hardening-2026-09-14`; `verify_repository_consistency` PASS 8/8 |
 | Contract | Delivery OTP schema `^\d{6}$` + generation 6-digit + `delivery_otp` never persisted on INSERT (G-022) | schema `^\d{4}$`, generation via `OTP_CODE_LENGTH`, INSERT now includes `delivery_otp`; UI `maxLength={4}`; tests aligned to `"1234"`/`"9999"`; dispatch roundtrip asserts `otp_verified is True` |
-| Structural | `migrations/030_delivery_otp_column.sql` comment still said 6-digit | comment updated to D-018 4-digit (column stays VARCHAR(6); no new migration) |
+| Structural (historical G-022 closure) | `migrations/030_delivery_otp_column.sql` comment still said 6-digit | the comment was updated to the then-current four-digit rule; this branch updates it again for the six-digit contract (column remains `VARCHAR(6)`) |
 | Infra | stale/missing `.next`, failed root `npm install` | install from `mvp/`; clean rebuild green |
 | Test | `pol_test` schema wiped | Historical evidence: re-bootstrap produced 95 tables under the 001–031 snapshot; current execution must derive the count from the active migration chain. |
 | Structural | 62 research files missing (`daily_inventory_boundary`, `notification_providers`, analytics/pilot/revalidation/canonical worker + ~55 tests) | restored from `origin/research-hardening-2026-09-14` |

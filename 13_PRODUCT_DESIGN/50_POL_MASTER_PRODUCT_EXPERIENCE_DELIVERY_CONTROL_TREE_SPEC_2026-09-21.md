@@ -3568,7 +3568,7 @@ Never declare 100% PASS merely because frames exist.
 | Topic | Existing Source | Current Canonical Direction | Design Action |
 |---|---|---|---|
 | Vendor acceptance | design tool contains 30m | 120 working minutes / 2h | Replace all stale 30m references |
-| OTP | Older design tool/spec has 5/6-box OTP | Technical auth contract states 4-digit | Canonicalize design to auth contract; keep conflict recorded until verified |
+| OTP | Older design tool/spec has 5/6-box OTP | D-018 amended 2026-10-25: all active auth/delivery OTPs are exactly six numeric digits | Canonicalize active designs and runtime validation to six digits; dated screenshots/logs remain historical evidence |
 | Settlement | design tool contains guarantee-like wording | Neutral settlement visibility | Replace guarantee language |
 | Driver | Some older architecture/test references mention Driver App | Wave 01 explicitly says no full Driver App in MVP | Keep lightweight handoff surface only |
 | Offline | FA-05 implies richer offline flow | Rich offline sync is P2 | Constrain MVP to preserved input/retry/sync feedback |
@@ -5661,10 +5661,10 @@ Current design tool contains:
 
 `01 — Components / Form Inputs, Stepper & 5-Digit OTP`
 
-Current Technical Architecture describes 4-digit OTP.
+This finding was valid under the former D-018 rule; the 2026-10-25 amendment now sets six numeric digits.
 
 ### Required action
-Rename/update the component to canonical runtime value after contract verification.
+Update the component to a six-digit input and re-run design/runtime parity QA. The primary source JSON already has six-digit labels and six boxes, but fresh runtime evidence remains required.
 
 ---
 
