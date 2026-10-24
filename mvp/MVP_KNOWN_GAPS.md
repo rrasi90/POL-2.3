@@ -1,3 +1,5 @@
+> **سیاست جاری OTP — اصلاحیهٔ ۲۰۲۶-۱۰-۲۵:** تمام کدهای یک‌بارمصرف ورود/ثبت‌نام و تأیید تحویل دقیقاً ۶ رقم عددی هستند. مهلت اعتبار ورود (۱۲۰ ثانیه)، فاصلهٔ ارسال مجدد (۶۰ ثانیه)، محدودیت درخواست، تعداد تلاش و قفل موقت تغییری نکرده‌اند. ارجاع‌های چهاررقمی در بخش‌های تاریخچه فقط سابقه‌اند و قرارداد اجرایی جاری نیستند.
+
 # POL MVP — KNOWN GAPS / CONFLICTS / BLOCKED
 
 **Rule (Master Instruction §3):** higher authority wins; log here; unresolved = screen status `GAP` + minimal stub; do not guess; do not stop build unless critical dependency.
@@ -6,7 +8,7 @@
 
 ---
 
-## G-001 — OTP digit count (CONFLICT — RESOLVED)
+## G-001 — OTP digit count (HISTORICAL RESOLUTION; SUPERSEDED 2026-10-25)
 
 - **Sources:** `frontend_route_contract_map.md` “OTP 6-digit” vs **D-018** + `scripts/operational_config.py` `OTP_CODE_LENGTH = 4`
 - **Resolution:** D-018 wins → **4-digit**. Route map note is stale.
@@ -126,7 +128,7 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 - `GET /api/v1/orders/{order_id}/partial-acceptance-proposals` now returns the canonical proposal rows and item reductions, with vendor/retailer tenant scoping.
 - **Status:** RESOLVED
 
-## G-022 — Delivery OTP schema vs D-018 (RESOLVED)
+## G-022 — Delivery OTP schema vs D-018 (HISTORICAL RESOLUTION; POLICY AMENDED 2026-10-25)
 
 - **Sources:** `DeliveryConfirmRequest.otp_code` pattern was `^\d{6}$` vs **D-018** 4-digit OTP (`OTP_CODE_LENGTH = 4`).
 - **Resolution:** **RESOLVED (2026-09-23).** Backend aligned end-to-end: schema pattern `^\d{4}$`; `fulfillment_service.dispatch_order` generates via `OTP_CODE_LENGTH` and **persists** `delivery_otp` (was generated-but-not-saved); web R-09E OTP input `maxLength={4}`; POD tests use 4-digit codes. Migration `030` column stays `VARCHAR(6)` for historical rows; comment updated to D-018 4-digit.
@@ -206,7 +208,7 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 ## G-033 — Deterministic OTP outside explicit test environment (SECURITY GAP — REMEDIATED)
 
 - **Finding (2026-09-25):** AuthService.request_otp previously selected deterministic `1234` for every non-production environment, so an unset/unknown environment could silently inherit the test credential.
-- **Resolution:** deterministic OTP is now allowed only when `ENVIRONMENT=test` and production-mode detection is false. All other environments use cryptographically random 4-digit OTPs. The `test_code` response field is exposed only in the explicit test environment.
+- **Resolution:** deterministic OTP is now allowed only when `ENVIRONMENT=test` and production-mode detection is false. All other environments use cryptographically random 6-digit OTPs. The `test_code` response field is exposed only in the explicit test environment.
 - **Regression proof:** scripts/test_auth_contract.py::test_static_otp_is_strictly_test_only covers explicit test mode plus development, unknown and unset environment cases.
 - **CI status:** source and test remediation committed; fresh GitHub Actions certification remains blocked by the current runner/check execution failure before useful job steps.
 - **Status:** SOURCE REMEDIATED / CI PENDING

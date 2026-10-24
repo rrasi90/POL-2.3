@@ -70,7 +70,7 @@ All active documents MUST represent the current architecture:
 - Vendor Referral is active MVP (`D-016`) without rewards/wallet/credit incentives.
 - Universal User Profile + Membership Persona Context is active MVP (`D-017`).
 - PostgreSQL 18 is the sole canonical runtime database.
-- Authentication OTP policy: 4-digit, 120s TTL, 3/5min rate limit per phone+IP, 15-min access token, 30-day refresh (`D-018`).
+- Authentication and delivery OTP policy: 6-digit numeric code; auth TTL 120s, 3/5min rate limit per phone+IP, 15-min access token, 30-day refresh (`D-018`).
 - Production backend runtime: Python; canonical domain/application implementation (`D-019`).
 - Production HTTP framework: FastAPI as thin transport adapter behind `POLApplicationBoundary` (`D-020`).
 

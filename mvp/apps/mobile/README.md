@@ -6,7 +6,7 @@ source of business rules and keeps the mobile API client local to the app.
 ## Current implementation
 
 - Backend-derived role routing for all seven canonical roles.
-- 4-digit OTP auth (D-018).
+- 6-digit OTP auth (D-018 amended 2026-10-25).
 - Field-first F-01…F-05 with request-failure offline state + healthz retry.
 - Retailer foundation: catalog search, basket, allocation preview, checkout with Idempotency-Key, orders and order detail.
 - Vendor foundation: order queue/actions, partial-acceptance proposal, inventory, daily confirmation, settlements and order detail.
@@ -46,7 +46,7 @@ Use the same Vendor UI and API client with deterministic in-memory mock data bef
 EXPO_PUBLIC_DATA_MODE=mock npx expo start
 ```
 
-Mock mode covers Vendor OTP login, role boundary, orders/lifecycle, inventory, pricing, daily confirmation, finance, customers, staff/delegated permissions, storefront, barcode lookup/candidate flow, continuous scan/publish, invoice/settlement detail, support, profile and notifications. For manual testing, use an Owner phone such as +989160000001 or a Staff phone ending in 0002; the Mock OTP accepts any four numeric digits. Mock mode is for QA only and is rejected by the Vendor release build gate.
+Mock mode covers Vendor OTP login, role boundary, orders/lifecycle, inventory, pricing, daily confirmation, finance, customers, staff/delegated permissions, storefront, barcode lookup/candidate flow, continuous scan/publish, invoice/settlement detail, support, profile and notifications. For manual testing, use an Owner phone such as +989160000001 or a Staff phone ending in 0002; the Mock OTP accepts any six numeric digits. Mock mode is for QA only and is rejected by the Vendor release build gate.
 
 The mobile source produces two independent Android products from the same canonical client:
 

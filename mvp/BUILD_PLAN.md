@@ -1,3 +1,5 @@
+> **سیاست جاری OTP — اصلاحیهٔ ۲۰۲۶-۱۰-۲۵:** تمام کدهای یک‌بارمصرف ورود/ثبت‌نام و تأیید تحویل دقیقاً ۶ رقم عددی هستند. مهلت اعتبار ورود (۱۲۰ ثانیه)، فاصلهٔ ارسال مجدد (۶۰ ثانیه)، محدودیت درخواست، تعداد تلاش و قفل موقت تغییری نکرده‌اند. ارجاع‌های چهاررقمی در بخش‌های تاریخچه فقط سابقه‌اند و قرارداد اجرایی جاری نیستند.
+
 # POL MVP — AUTHORITATIVE BUILD_PLAN (Master TODO)
 
 **Contract:** Master Build Instruction (repo root session) + master loop (DISCOVER→PLAN→BUILD→TEST→RECONCILE→AUDIT→FIX→…→DELIVERY)  
