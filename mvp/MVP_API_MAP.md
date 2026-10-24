@@ -1,5 +1,7 @@
 # POL MVP — API MAP
 
+> **Current OTP contract (2026-10-25):** six numeric digits; D-018 governs login/registration and D-029 governs delivery verification. Historical implementation notes elsewhere in the repository are not current contract guidance.
+
 **Authority:** `POL_00_PROJECT_CONTROL/API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md` (50-endpoint contract) + **actual** FastAPI routes on `origin/research-hardening-2026-09-14` `scripts/api/**` + `API_APPLICATION_BOUNDARY.md`.  
 **Rule:** No endpoint outside this map without adding a sourced row first (CONTRACT_ONLY or REAL). Never invent fields.
 
@@ -52,7 +54,7 @@ HTTP may also set `X-Correlation-ID`.
 
 | Method | Path | Notes |
 |--------|------|-------|
-| POST | `/auth/request-otp` | OTP 4-digit D-018; returns otp_request_id, TTL |
+| POST | `/auth/request-otp` | OTP 6-digit D-018 (revised 2026-10-25); returns otp_request_id, TTL |
 | POST | `/auth/verify-otp` | returns tokens + profile context |
 | POST | `/auth/refresh` | issues a new access token and currently rotates the persisted refresh token; replay of the previously presented token fails. **D-018 policy wording remains OPEN** |
 | POST | `/auth/switch-organization` | |
@@ -148,7 +150,7 @@ HTTP may also set `X-Correlation-ID`.
 | POST | `/orders/{order_id}/preparing` |
 | POST | `/orders/{order_id}/ready` |
 | POST | `/orders/{order_id}/dispatch` |
-| POST | `/orders/{order_id}/deliver` | DeliveryConfirmRequest; otp pattern `^\d{4}$` (D-018; G-022 RESOLVED) |
+| POST | `/orders/{order_id}/deliver` | DeliveryConfirmRequest; otp pattern `^\d{6}$` (D-029 delivery format; G-022 persistence fix historical) |
 | GET | `/orders/{order_id}/delivery` | R-09D |
 | GET | `/orders/{order_id}/delivery/proof` | R-09E; may return `{message:"No proof…"}` |
 | POST/GET | `/orders/{order_id}/delivery-exceptions` |

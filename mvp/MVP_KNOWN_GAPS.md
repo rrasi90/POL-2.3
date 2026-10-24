@@ -1,16 +1,18 @@
 # POL MVP — KNOWN GAPS / CONFLICTS / BLOCKED
 
+> **Current OTP contract (2026-10-25): six numeric digits for authentication and delivery.** D-018 governs authentication/registration; D-029 governs delivery. Historical G-001/G-022 findings do not override those current decisions.
+
 **Rule (Master Instruction §3):** higher authority wins; log here; unresolved = screen status `GAP` + minimal stub; do not guess; do not stop build unless critical dependency.
 
 **Status values in this file:** `RESOLVED` | `CONFLICT` | `GAP` | `BLOCKED_EXTERNAL` | `PROPOSED`
 
 ---
 
-## G-001 — OTP digit count (CONFLICT — RESOLVED)
+## G-001 — OTP digit count (HISTORICAL CONFLICT — SIX-DIGIT CONTRACT)
 
-- **Sources:** `frontend_route_contract_map.md` “OTP 6-digit” vs **D-018** + `scripts/operational_config.py` `OTP_CODE_LENGTH = 4`
-- **Resolution:** D-018 wins → **4-digit**. Route map note is stale.
-- **Action:** implement 4-digit; no further guess.
+- **Historical source conflict:** the route-map specified six digits while the September 2026 D-018/config snapshot specified four; the prior four-digit choice was applied at that time.
+- **Current resolution (2026-10-25):** D-018 now requires six numeric digits for authentication and registration. `OTP_CODE_LENGTH` is 6; the auth schema and clients enforce six digits.
+- **Current action:** do not restore the four-digit authentication contract; rerun affected tests and UI QA.
 
 ## G-002 — Master Tree filename / legacy reference (CONFLICT — RESOLVED)
 
@@ -126,11 +128,11 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 - `GET /api/v1/orders/{order_id}/partial-acceptance-proposals` now returns the canonical proposal rows and item reductions, with vendor/retailer tenant scoping.
 - **Status:** RESOLVED
 
-## G-022 — Delivery OTP schema vs D-018 (RESOLVED)
+## G-022 — Delivery OTP persistence (historical fix) / D-029 six-digit format (2026-10-25)
 
-- **Sources:** `DeliveryConfirmRequest.otp_code` pattern was `^\d{6}$` vs **D-018** 4-digit OTP (`OTP_CODE_LENGTH = 4`).
-- **Resolution:** **RESOLVED (2026-09-23).** Backend aligned end-to-end: schema pattern `^\d{4}$`; `fulfillment_service.dispatch_order` generates via `OTP_CODE_LENGTH` and **persists** `delivery_otp` (was generated-but-not-saved); web R-09E OTP input `maxLength={4}`; POD tests use 4-digit codes. Migration `030` column stays `VARCHAR(6)` for historical rows; comment updated to D-018 4-digit.
-- **Status:** RESOLVED
+- **Historical finding:** the September 2026 delivery schema differed from the then-current D-018 policy, and dispatch generated but did not persist its OTP.
+- **Current contract (2026-10-25):** D-029 requires exactly six numeric digits for delivery verification. The delivery schema, delivery-specific generator, web/mobile inputs and POD fixtures use six digits. The existing `VARCHAR(6)` column already supports this; migration 077 updates the comment without rewriting historical migration 030.
+- **Status:** persistence defect remains resolved; D-029 six-digit length is current.
 
 ---
 
@@ -206,7 +208,7 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 ## G-033 — Deterministic OTP outside explicit test environment (SECURITY GAP — REMEDIATED)
 
 - **Finding (2026-09-25):** AuthService.request_otp previously selected deterministic `1234` for every non-production environment, so an unset/unknown environment could silently inherit the test credential.
-- **Resolution:** deterministic OTP is now allowed only when `ENVIRONMENT=test` and production-mode detection is false. All other environments use cryptographically random 4-digit OTPs. The `test_code` response field is exposed only in the explicit test environment.
+- **Resolution:** the fixed test-only authentication code is six digits (`123456`) and is exposed only when `ENVIRONMENT=test` and production-mode detection is false. All non-test authentication codes use cryptographically random six digits; `test_code` is never exposed outside explicit test mode.
 - **Regression proof:** scripts/test_auth_contract.py::test_static_otp_is_strictly_test_only covers explicit test mode plus development, unknown and unset environment cases.
 - **CI status:** source and test remediation committed; fresh GitHub Actions certification remains blocked by the current runner/check execution failure before useful job steps.
 - **Status:** SOURCE REMEDIATED / CI PENDING

@@ -1,5 +1,7 @@
 # POL MVP — AUTHORITATIVE BUILD_PLAN (Master TODO)
 
+> **Current OTP contract (2026-10-25):** D-018 sets six-digit login/registration OTP; D-029 sets six-digit delivery OTP. Dated execution records and defect logs below may describe the former four-digit behavior and remain historical evidence, not the current contract.
+
 **Contract:** Master Build Instruction (repo root session) + master loop (DISCOVER→PLAN→BUILD→TEST→RECONCILE→AUDIT→FIX→…→DELIVERY)  
 **Root:** `mvp/`  
 **Authorized branch:** `main`  
@@ -14,7 +16,7 @@
 
 | Step | Name | Status | Notes |
 |------|------|--------|-------|
-| 1 | Infra / DB | **DONE** (2026-09-23) | Historical baseline only: the earlier `pol` / `pol_test` environment recorded 95 tables under migrations 001–031. Current schema authority is the contiguous migration chain through 076; active table count is runtime-derived. Current remediation artifact evidence is tracked separately and is not copied here as a certification claim. |
+| 1 | Infra / DB | **DONE** (2026-09-23) | Historical baseline only: the earlier `pol` / `pol_test` environment recorded 95 tables under migrations 001–031. Current schema authority is the contiguous migration chain through 077 (six-digit delivery OTP metadata migration); active table count is runtime-derived. Current remediation artifact evidence is tracked separately and is not copied here as a certification claim. |
 | 2 | Open decisions | **PARTIAL** | Remaining explicit decisions: D-018 refresh-token rotation policy, invoice timing, plus external design/observability/provider dependencies → §2. D-024 is fixed to read/order storefront scope; D-026 delegated permissions are implemented pending fresh runtime evidence. |
 | 3 | Phase 0 + GATE 0 | **DONE** | Artifacts + skeleton; typecheck/build green. |
 | 4 | Phase 1 foundation + design system | **DONE** | tokens, ui package, shell, middleware role gates. |
@@ -76,7 +78,7 @@
 
 | ID / topic | Authority | Status | Action |
 |------------|-----------|--------|--------|
-| OTP length 4 vs 6 | D-018 | **RESOLVED** (this session) | `operational_config.OTP_CODE_LENGTH = 4`; **both** login + delivery schemas `^\d{4}$` (G-022 closed); dispatch persists 4-digit `delivery_otp` |
+| Login OTP length | D-018 revised 2026-10-25 | **SIX-DIGIT CONTRACT** | `operational_config.OTP_CODE_LENGTH = 6`; auth schema accepts exactly six digits; web/mobile login UI and auth tests use six digits |
 | Multi-vendor basket | D-014 | **RESOLVED** | enforced |
 | PG 18 canonical | D-015 | **RESOLVED** | host PG 18.2 |
 | Refresh-token rotation | D-018 note | **SOURCE IMPLEMENTED / POLICY OPEN** | Current source rotates refresh tokens and rejects replay; product/security policy remains an explicit D-018 decision and is not inferred from implementation |
@@ -86,7 +88,7 @@
 | Design-tool / OpenPencil MCP | WAVE-02 | **BLOCKED_EXTERNAL** | start OpenPencil app or continue without design-board WAVE-02 |
 | Catalog path `/products/search` vs `/catalog/search` | G-003 | **RESOLVED / DUAL COMPATIBILITY** | both canonical public HTTP paths are registered; current retailer screen uses `/catalog/search` |
 | Inbox path | G-004 | **RESOLVED** | durable `/inbox/items*` and `/notifications*` projections are both registered; screen uses `/notifications` |
-| Delivery OTP 6 vs D-018 4 | G-022 | **RESOLVED** | schema `^\d{4}$`, generation via `OTP_CODE_LENGTH`, dispatch persists `delivery_otp`, UI `maxLength={4}` |
+| Delivery OTP length | D-029 / G-022 persistence fix | **SIX-DIGIT CONTRACT** | `DELIVERY_OTP_CODE_LENGTH = 6`; delivery schema accepts exactly six digits; dispatch persists `delivery_otp`; web/mobile inputs use `maxLength={6}` |
 
 ---
 

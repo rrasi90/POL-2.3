@@ -1,4 +1,6 @@
 # POL Vendor Android — Mock Data Verification Plan
+
+> **Current-contract overlay (2026-10-25): mock login OTPs and OTP validation tests use six numeric digits. Earlier test notes are superseded wherever they imply four-digit codes.**
 **Date:** 2026-09-29
 **Branch:** `feat/vendor-app-production-20260928-v2`
 
@@ -8,7 +10,7 @@ Verify the Vendor Android application against deterministic mock data before nat
 ## Test accounts
 - Vendor Owner: `+989160000001`
 - Vendor Staff: `+989160000002`
-- Mock OTP: any four numeric digits.
+- Mock OTP: any six numeric digits.
 
 ## Pass criteria
 A flow is PASS only when:

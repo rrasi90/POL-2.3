@@ -1,4 +1,6 @@
 # Phase 3 Android parity matrix — functional, not pixel
+> **Current OTP policy overlay (2026-10-25):** login/registration screens use six numeric digits (D-018); delivery confirmation uses six numeric digits under separate D-029. Historical parity statements or earlier screenshot evidence must be rerun against the six-cell login input and the six-digit delivery form.
+
 
 The mobile implementation must preserve business capability, applicable screen/route semantics,
 permissions, API semantics and platform-appropriate states. UI does not need to be pixel-identical.

@@ -20,7 +20,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-MIN_EXPECTED_MIGRATION_HEAD = 76
+MIN_EXPECTED_MIGRATION_HEAD = 77
 EXPECTED_CORE_TABLES = [
     "users",
     "organizations",

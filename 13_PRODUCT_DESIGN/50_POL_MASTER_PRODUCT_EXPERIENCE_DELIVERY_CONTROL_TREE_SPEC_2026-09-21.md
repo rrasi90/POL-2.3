@@ -1,3 +1,4 @@
+> **OTP policy update (2026-10-25):** D-018 sets six numeric digits for authentication/registration; D-029 sets six numeric digits for delivery verification. These domains retain separate lifecycle/security rules. Earlier four-digit statements in this dated design audit are historical unless explicitly marked current.
 # POL — Master Product / Experience / Delivery Control Tree Specification
 ## Canonical Master Product / Experience / Service / Domain / System / Delivery Tree — GitHub × Product Architecture × IA × Service Blueprint × API × Data × Permissions × States × Light/Night
 
@@ -1757,7 +1758,7 @@ Unauthenticated until verification; after login, scope by active membership.
 Light + Night.
 
 ### Conflict
-Technical Architecture currently specifies a **4-digit OTP**. Older retailer design specs/design artifacts contain 6-digit / 5-box variants. Target new canonical design must use the current backend/auth contract; do not preserve an older OTP shape silently.
+The pre-2026-10-25 Technical Architecture snapshot specified a **4-digit login/registration OTP**. D-018 was revised on 2026-10-25 to six numeric digits for authentication; delivery OTP is a separate contract under D-029 and also uses six numeric digits. Older design artifacts and audit notes below remain historical evidence.
 
 ---
 
@@ -3568,7 +3569,7 @@ Never declare 100% PASS merely because frames exist.
 | Topic | Existing Source | Current Canonical Direction | Design Action |
 |---|---|---|---|
 | Vendor acceptance | design tool contains 30m | 120 working minutes / 2h | Replace all stale 30m references |
-| OTP | Older design tool/spec has 5/6-box OTP | Technical auth contract states 4-digit | Canonicalize design to auth contract; keep conflict recorded until verified |
+| OTP | Historical design tools/specs used 5/6-box variants | Prior technical auth contract stated four digits | D-018 revised 2026-10-25: login/registration is six digits; D-029 separately sets six-digit delivery verification. Retest UI/runtime; do not treat old screenshots as current evidence |
 | Settlement | design tool contains guarantee-like wording | Neutral settlement visibility | Replace guarantee language |
 | Driver | Some older architecture/test references mention Driver App | Wave 01 explicitly says no full Driver App in MVP | Keep lightweight handoff surface only |
 | Offline | FA-05 implies richer offline flow | Rich offline sync is P2 | Constrain MVP to preserved input/retry/sync feedback |
@@ -3922,7 +3923,7 @@ Historical design artifacts must remain classified as evidence/historical unless
 
 **Primary next action:** Create the empty target design tool file, run WAVE-00 preflight, then construct it from `58_POL_MASTER_TREE_GREENFIELD_BUILD_PROFILE_2026-09-21.md`; only after new artifacts persist should their exact IDs/revisions be written back into the Master Tree.
 
-**Critical unresolved source conflicts:** OTP length representation, historical Driver App references, richer offline implications, and other stale design tool wording must remain visible until canonicalized by the governing runtime/API contract.
+**Remaining source conflicts:** historical Driver App references, richer offline implications, and other stale design-tool wording remain visible. The OTP-length conflict is resolved by D-018 (six-digit login/registration, revised 2026-10-25) and D-029 (six-digit delivery verification); runtime and visual QA still require fresh verification.
 
 
 ---
@@ -5661,7 +5662,7 @@ Current design tool contains:
 
 `01 — Components / Form Inputs, Stepper & 5-Digit OTP`
 
-Current Technical Architecture describes 4-digit OTP.
+The pre-2026-10-25 Technical Architecture snapshot described a four-digit login/registration OTP; current D-018 requires six numeric digits and current D-029 separately requires six-digit delivery verification.
 
 ### Required action
 Rename/update the component to canonical runtime value after contract verification.
@@ -7013,7 +7014,7 @@ ROUTE-PARTIAL-ACCEPTANCE
 | FJ-12 | Off-hours / holiday order | order accepted; SLA clock pauses until working calendar opens |
 
 Historical containment:
-- login OTP shown as 6-digit → superseded by D-018 4-digit login OTP
+- historical login OTP shown as 6-digit was superseded temporarily by the former four-digit D-018; D-018 was revised again on 2026-10-25, so six-digit login OTP is current
 - full Driver App → superseded by D-023 lightweight Delivery Handoff
 - EXPIRED_UNRESPONSIVE timeout wording → current timeout semantics are SUBMITTED → CANCELLED with VENDOR_TIMEOUT
 - nearest-vendor recommendation after rejection is not a guaranteed MVP requirement unless independently authorized
@@ -7219,7 +7220,7 @@ Known conflicts:
 - old target stack: NestJS / Next.js / React Native
 - current runtime authority: Python + FastAPI
 - old login OTP references: 6-digit
-- current login OTP: 4-digit
+- current login OTP: 6-digit (D-018 revised 2026-10-25)
 - old full Driver App references
 - current MVP: lightweight Delivery Handoff
 - old timeout wording: EXPIRED_UNRESPONSIVE

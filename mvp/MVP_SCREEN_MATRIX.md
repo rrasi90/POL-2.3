@@ -1,7 +1,9 @@
 # POL MVP — SCREEN MATRIX
 
+> **Current OTP contract (2026-10-25):** D-018 sets six numeric digits for login/registration; D-029 sets six numeric digits for delivery verification. Affected login and handoff surfaces are marked `RETEST_REQUIRED`; older dated QA evidence is historical.
+
 **Sources:** doc 22 §5–9; doc 30 (R-*); doc 31 (V/O/F/C); Master Tree 50 §7–11 + §38 roles; route map (research-hardening) + 2026-09-20 amendment; DECISION_REGISTER.  
-**Status legend:** `IMPLEMENTED` | `VERIFIED` | `BLOCKED_EXTERNAL` | `GAP` | `NOT_APPLICABLE`  
+**Status legend:** `IMPLEMENTED` | `VERIFIED` | `BLOCKED_EXTERNAL` | `GAP` | `NOT_APPLICABLE` | `RETEST_REQUIRED`  
 **Pre-build:** `PENDING` (Phase 0 Gate).  
 **Role context:** `PUBLIC_ANON` for corporate; authenticated roles otherwise.
 
@@ -18,7 +20,7 @@
 | ID | Title | Route (canonical/prop) | Role/context | Primary APIs (API_MAP) | Source | Status |
 |----|-------|------------------------|--------------|------------------------|--------|--------|
 | SH-AUTH-01 | Login phone + OTP request | `/auth/login` | PUBLIC_ANON → all | POST `/auth/request-otp` | route map §1; D-018; doc 22 §3.1 | VERIFIED |
-| SH-AUTH-02 | Verify OTP (4-digit) | `/auth/login` (step) | PUBLIC_ANON → all | POST `/auth/verify-otp` | D-018; route map (OTP digits → 4) | VERIFIED |
+| SH-AUTH-02 | Verify OTP (6-digit) | `/auth/login` (step) | PUBLIC_ANON → all | POST `/auth/verify-otp` | D-018; route map (OTP digits → 6 per revised D-018) | RETEST_REQUIRED |
 | SH-AUTH-03 | Refresh (implicit) | (client) | all | POST `/auth/refresh` | route map §1 | VERIFIED |
 | SH-PROFILE-01 | Account / profile | `/profile` | authenticated | GET/PUT `/profile`, GET `/profile/context` | route map; R-13; V-12 | VERIFIED |
 | SH-NOTIF-01 | Notifications inbox | `/notifications` | authenticated | GET `/notifications` | route map + durable inbox projection | VERIFIED |
@@ -28,7 +30,7 @@
 
 | ID | Implementation | Verification |
 |----|----------------|--------------|
-| SH-AUTH-01/02 | `apps/web/src/app/auth/login/page.tsx` (4-digit OTP) | `cd mvp && npm run typecheck` → exit 0; `cd mvp && npm run build` → exit 0 |
+| SH-AUTH-01/02 | `apps/web/src/app/auth/login/page.tsx` (6-digit OTP) | `cd mvp && npm run typecheck` → exit 0; `cd mvp && npm run build` → exit 0 |
 | SH-AUTH-03 | `packages/api-client/src/index.ts` (onRefresh on 401 → single retry); `apps/web/src/lib/auth/api.ts` | typecheck/build exit 0 |
 | SH-PROFILE-01 | `apps/web/src/app/(dashboard)/profile/page.tsx` | typecheck/build exit 0 |
 | SH-NOTIF-01 | `apps/web/src/app/(dashboard)/notifications/page.tsx` | typecheck/build exit 0 |
@@ -53,7 +55,7 @@
 | R-09B | Child order detail | `/retailer/orders/[id]` | RETAILER_* | GET `/orders/{id}`, items, timeline | doc 22; MT RT-08 | IMPLEMENTED |
 | R-09C | Partial acceptance review | (order detail) | RETAILER_OWNER | POST approve/decline partial proposals (derive `proposal_id` from timeline `event_data`) | MT RT-20 | IMPLEMENTED |
 | R-09D | Delivery tracking | (order detail) | RETAILER_* | GET `/orders/{id}/delivery` | MT RT-05 | IMPLEMENTED |
-| R-09E | Handoff / receiver confirm | (order or link) | receiver | GET delivery/proof; POST `/orders/{id}/deliver` | MT RT-19; D-023 | IMPLEMENTED |
+| R-09E | Handoff / receiver confirm | (order or link) | receiver | GET delivery/proof; POST `/orders/{id}/deliver` | MT RT-19; D-023 | RETEST_REQUIRED |
 | R-10 | Reorder / history | `/retailer/orders` | RETAILER_* | GET `/orders` | doc 22 L343–349; MT RT-10 | VERIFIED |
 | R-11 | Returns / disputes | `/retailer/orders/[id]/returns` | RETAILER_OWNER | POST/GET `/orders/{id}/returns`, disputes | doc 22 L351–353; MT RT-09 | IMPLEMENTED |
 | R-12 | Support | `/retailer/support` | RETAILER_* | `/support/cases*` | doc 22 L355–363; MT RT-13 | IMPLEMENTED |
@@ -73,7 +75,7 @@
 | R-09B | `retailer/orders/[id]/page.tsx` | typecheck/build exit 0 |
 | R-09C | `retailer/orders/[id]/page.tsx` partial-acceptance panel (approve/decline; proposal_id from timeline event_data) | typecheck/build exit 0 |
 | R-09D | same file delivery panel (GET `/orders/{id}/delivery`) | typecheck/build exit 0 |
-| R-09E | same file handoff/proof + POST `/deliver` (OTP 4-digit schema; G-022 RESOLVED) | typecheck/build exit 0 |
+| R-09E | same file handoff/proof + POST `/deliver` (OTP 6-digit schema; D-029 revised 2026-10-25) | typecheck/build exit 0 |
 | R-09C/D/E | same order detail: derive proposals from timeline; GET delivery + proof; POST approve/decline/deliver | typecheck/build exit 0 |
 | R-11 | `retailer/orders/[id]/returns/page.tsx` | typecheck/build exit 0 |
 | R-12 | `retailer/support/page.tsx` | typecheck/build exit 0 |
@@ -187,6 +189,8 @@
 | C-01…C-08 | `app/page.tsx`, `retailers/`, `vendors/`, `how/`, `pilot/`, `about/`, `contact/`, `legal/` | typecheck/build exit 0 (static prerender 50 routes) |
 
 ---
+
+> **Historical proof only:** sample OTP `1234` and PASS statuses in this dated block were recorded under the former four-digit contract; rerun before treating them as current evidence.
 
 ### §Live-evidence — QA cycle 5 (2026-09-23) — live FastAPI + Next smoke
 

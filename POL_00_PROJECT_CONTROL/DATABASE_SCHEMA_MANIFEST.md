@@ -10,7 +10,7 @@
 
 ## ۱. زنجیره کانونیکال مهاجرت پایگاه داده (Canonical Migration Chain)
 
-زنجیره مایگریشن پایگاه داده پلتفرم پُل یک زنجیره forward-only و ترتیبی است و در main فعلی تا migration `076_reservation_and_candidate_event_templates.sql` امتداد یافته است:
+زنجیره مایگریشن پایگاه داده پلتفرم پُل یک زنجیره forward-only و ترتیبی است. در این تغییر، migration شماره‌دار `077_six_digit_delivery_otp_comment.sql` به زنجیرهٔ موجود افزوده می‌شود:
 
 ```text
 migrations/001_initial_schema.sql
@@ -25,14 +25,14 @@ migrations/032 … migrations/046
        ↓ (integrity، fulfillment، checkout، inventory، notification، candidate/barcode hardening)
 migrations/047_delegated_permissions_and_audit.sql
        ↓ (delegated permission grants/revokes + append-only permission audit)
-migrations/048 … migrations/076
+migrations/048 … migrations/077
        ↓ (media, privacy, reservations, financial/dispute hardening, delivery/POD, idempotency and event-template reconciliation)
 
 **Authority note:** این مانیفست باید از زنجیره واقعی migrationها عقب نماند؛ تغییرات بعدی باید فقط با migration شماره‌دار جدید ثبت شوند. فهرست جدول‌های legacy این سند ممکن است نیازمند refresh مستقل داشته باشد و نباید آن را به‌عنوان شمارش فعلی جدول‌ها تلقی کرد.
 ```
 
 > **اصل تغییرناپذیری مایگریشن‌ها:**  
-> فایل‌های migration تاریخی پس از اعمال نباید rewrite شوند. کلیه تطبیق‌ها، رفع تناقض‌ها و سخت‌سازی‌های بعدی باید صرفاً از طریق migrationهای forward-only شماره‌دار بعدی (تا `076` در `main` فعلی) اعمال شوند.
+> **اصل تغییرناپذیری مایگریشن‌ها:** فایل‌های migration تاریخی پس از اعمال نباید rewrite شوند. هر تغییر بعدی باید از طریق migrationهای forward-only شماره‌دار جدید انجام شود؛ head زنجیره در این changeset، 077 است.
 
 ---
 

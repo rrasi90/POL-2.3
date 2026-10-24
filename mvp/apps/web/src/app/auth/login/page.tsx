@@ -74,7 +74,7 @@ export default function LoginPage() {
         mobile_number: e164,
       });
       setMobile(e164);
-      setInfo(`کد ۴ رقمی تا ${data.expires_in_seconds.toLocaleString("fa-IR")} ثانیه دیگر معتبر است.`);
+      setInfo(`کد ۶ رقمی تا ${data.expires_in_seconds.toLocaleString("fa-IR")} ثانیه دیگر معتبر است.`);
       setStep("otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "ارسال کد ناموفق بود");
@@ -86,7 +86,7 @@ export default function LoginPage() {
   async function verifyOtp(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (otp.length !== 4) {
+    if (otp.length !== 6) {
       setError("کد تأیید باید دقیقاً ۴ رقم باشد.");
       return;
     }
@@ -159,7 +159,7 @@ export default function LoginPage() {
           <p className="mt-1.5 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
             {step === "phone"
               ? "جهت ورود به حساب کاربری، شماره موبایل خود را وارد نمایید."
-              : `کد چهاررقمی پیامک‌شده به شماره ${mobile || phone} را وارد نمایید.`}
+              : `کد شش‌رقمی پیامک‌شده به شماره ${mobile || phone} را وارد نمایید.`}
           </p>
 
           {error ? (
@@ -203,10 +203,10 @@ export default function LoginPage() {
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  maxLength={4}
+                  maxLength={6}
                   placeholder="••••"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   required
                   className="h-12 w-full rounded-xl border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] text-center font-mono text-[22px] font-bold tracking-[0.5em] text-[var(--pol-light-text-primary)] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--pol-light-focus-ring)]"
                   dir="ltr"

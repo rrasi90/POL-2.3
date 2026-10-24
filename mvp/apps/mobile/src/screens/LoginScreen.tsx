@@ -26,7 +26,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
-  const [digits, setDigits] = useState(["", "", "", ""]);
+  const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,8 +43,8 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
     setLoading(true);
     try {
       const data = await api.post<OtpRequest>("/api/v1/auth/request-otp", { mobile_number: mobileNumber });
-      setInfo("کد ۴ رقمی تا " + data.expires_in_seconds + " ثانیه معتبر است.");
-      setDigits(["", "", "", ""]);
+      setInfo("کد ۶ رقمی تا " + data.expires_in_seconds + " ثانیه معتبر است.");
+      setDigits(["", "", "", "", "", ""]);
       setOtp("");
       setStep("otp");
     } catch (err) {
@@ -61,8 +61,8 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
       setError("شماره موبایل معتبر نیست.");
       return;
     }
-    if (otp.length !== 4) {
-      setError("کد باید ۴ رقمی باشد.");
+    if (otp.length !== 6) {
+      setError("کد باید ۶ رقمی باشد.");
       return;
     }
     setLoading(true);
@@ -140,7 +140,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
           ) : (
             <>
               <Text style={styles.title}>تأیید کد</Text>
-              <Text style={styles.sub}>کد ۴ رقمی ارسال‌شده به {phone} را وارد کنید.</Text>
+              <Text style={styles.sub}>کد ۶ رقمی ارسال‌شده به {phone} را وارد کنید.</Text>
               {info ? <Text style={styles.info}>{info}</Text> : null}
               <ErrorBox message={error} />
               <View style={styles.otpRow}>
@@ -161,7 +161,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
                   />
                 ))}
               </View>
-              <Btn label="تأیید و ورود" onPress={() => void verifyOtp()} loading={loading} disabled={otp.length !== 4} />
+              <Btn label="تأیید و ورود" onPress={() => void verifyOtp()} loading={loading} disabled={otp.length !== 6} />
               <Pressable onPress={() => { setStep("phone"); setError(null); }} disabled={loading} style={styles.changePhone}>
                 <Text style={styles.changePhoneText}>تغییر شماره موبایل</Text>
               </Pressable>
@@ -207,7 +207,7 @@ function makeStyles(colors: Palette) {
     footnote: { color: colors.textMuted, fontSize: 10, lineHeight: 16, textAlign: "center", marginTop: spacing.md },
     info: { color: colors.brand, fontSize: 12, textAlign: "center", marginBottom: spacing.md },
     otpRow: { flexDirection: "row", justifyContent: "center", gap: spacing.sm, marginBottom: spacing.lg, direction: "ltr" },
-    otpCell: { width: 54, height: 58, borderWidth: 1, borderColor: colors.border, borderRadius: 14, backgroundColor: colors.surface, color: colors.text, fontSize: 22, fontWeight: "900" },
+    otpCell: { width: 44, height: 58, borderWidth: 1, borderColor: colors.border, borderRadius: 14, backgroundColor: colors.surface, color: colors.text, fontSize: 22, fontWeight: "900" },
     changePhone: { marginTop: spacing.md, alignItems: "center" },
     changePhoneText: { color: colors.brand, fontSize: 12, fontWeight: "700" },
     featureRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },

@@ -151,7 +151,7 @@ EXPECTED_19_PLATFORM_TABLES = {
 }
 
 EXPECTED_BASE_TABLES = EXPECTED_37_TABLES | EXPECTED_19_PLATFORM_TABLES
-MIN_EXPECTED_MIGRATION_HEAD = 76
+MIN_EXPECTED_MIGRATION_HEAD = 77
 
 def verify_tables(conn):
     print("\n[VERIFICATION 1] Verifying canonical baseline tables in public schema...")

@@ -452,7 +452,7 @@
 ```json
 {
   "mobile_number": "+989161112233",
-  "otp_code": "7341",
+  "otp_code": "734182",
   "device_info": {
     "device_type": "MOBILE_ANDROID",
     "fcm_token": "fcm_dK9sL2...",

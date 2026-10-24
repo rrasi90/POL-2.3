@@ -27,11 +27,11 @@ test.describe("login phone normalization", () => {
     await page.goto("/auth/login");
     await page.getByLabel(/شماره تلفن همراه/).fill(localNumber(phone));
     await page.getByRole("button", { name: "دریافت کد یکبار مصرف" }).click();
-    await expect(page.locator('input[maxlength="4"]')).toBeVisible();
+    await expect(page.locator('input[maxlength="6"]')).toBeVisible();
 
     expect(payloads).toEqual([{ mobile_number: phone }]);
 
-    await page.locator('input[maxlength="4"]').fill("1234");
+    await page.locator('input[maxlength="6"]').fill("123456");
     await page.getByRole("button", { name: "تأیید و ورود به سامانه" }).click();
     await page.waitForURL(/\/retailer$/);
   });
@@ -46,7 +46,7 @@ test.describe("login phone normalization", () => {
     await page.getByRole("button", { name: "دریافت کد یکبار مصرف" }).click();
 
     await expect(appAlert(page)).toBeVisible();
-    await expect(page.locator('input[maxlength="4"]')).toHaveCount(0);
+    await expect(page.locator('input[maxlength="6"]')).toHaveCount(0);
   });
 
   test("complete OTP login lands on the retailer workspace", async ({ page }, testInfo) => {

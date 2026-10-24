@@ -71,7 +71,7 @@ export default function CorporateRetailersPage() {
                 ورود سریع با موبایل (D-018)
               </h2>
               <p className="mt-1 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
-                بدون نیاز به ثبت‌نام طولانی یا مدارک پیچیده؛ ورود مستقیم تنها با شماره موبایل و کد پیامکی ۴ رقمی.
+                بدون نیاز به ثبت‌نام طولانی یا مدارک پیچیده؛ ورود مستقیم تنها با شماره موبایل و کد پیامکی ۶ رقمی.
               </p>
             </div>
           </div>

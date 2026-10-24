@@ -1,4 +1,6 @@
 # POL — PRE-MVP 100-SCENARIO BEHAVIORAL STRESS TEST MATRIX
+> **Historical scenario suite:** this document contains older API paths, rate-limit assumptions and sample data. Current OTP contract as of 2026-10-25 is six numeric digits: D-018 for login/registration and D-029 for delivery. Treat old route/policy assertions below as historical until reconciled with current API schemas; do not use its old PASS status as current certification.
+
 
 **Document ID:** `POL-STM-001`  
 **Status:** `VERIFIED & HARDENED`  
@@ -29,10 +31,10 @@ Every scenario is evaluated against the POL specification under realistic operat
 - **Persona:** Retailer Owner
 - **Preconditions:** Unregistered mobile phone (`+989161234567`), phone is valid E.164.
 - **User Action:** Submits phone number to `POST /api/v1/auth/otp/request`.
-- **Expected System Behavior:** System validates phone regex, generates cryptographically secure 5-digit OTP (expires in 120s), dispatches SMS via Kavenegar, creates rate-limit bucket in Redis (`5 requests / hour / IP`).
+- **Expected System Behavior:** System validates phone regex, generates cryptographically secure six-digit numeric OTP (expires in 120s), dispatches SMS via Kavenegar, creates rate-limit bucket in Redis (`5 requests / hour / IP`).
 - **Expected DB State:** New row in `users (phone_number, role='RETAILER_OWNER', is_active=TRUE)`.
 - **Expected Event(s):** `user_registered`, `otp_dispatched`.
-- **Expected Notification:** SMS to Retailer: *"کد تایید ورود به پُل: 48291"*.
+- **Expected Notification:** SMS to Retailer: *"کد تایید ورود به پُل: 482916"*.
 - **Expected Financial Effect:** None.
 - **Expected Inventory Effect:** None.
 - **Expected Authorization:** Anonymous (`PUBLIC`).
@@ -59,8 +61,8 @@ Every scenario is evaluated against the POL specification under realistic operat
 
 #### RET-003: Invalid OTP Code Submission
 - **Persona:** Retailer Owner
-- **Preconditions:** Valid OTP `48291` issued for `+989161234567`.
-- **User Action:** User inputs `11111` to `POST /api/v1/auth/otp/verify`.
+- **Preconditions:** Valid OTP `482916` issued for `+989161234567`.
+- **User Action:** User inputs `111111` to `POST /api/v1/auth/otp/verify`.
 - **Expected System Behavior:** System increments failed attempt counter in Redis; returns HTTP 400 Bad Request (`error: "INVALID_OTP"`, remaining attempts: 2).
 - **Expected DB State:** No change to database; JWT tokens not issued.
 - **Expected Event(s):** `auth_failed`.
@@ -688,7 +690,7 @@ Every scenario is evaluated against the POL specification under realistic operat
 #### RET-041: Normal Cargo Delivery with OTP Verification
 - **Persona:** Retailer Owner + Carrier Driver
 - **Preconditions:** Order `DISPATCHED`; delivery truck arrives at store.
-- **User Action:** Driver requests OTP; Retailer provides 4-digit OTP code `8412`; Driver submits to app.
+- **User Action:** Driver requests OTP; Retailer provides six-digit delivery OTP code `841205`; Driver submits to app.
 - **Expected System Behavior:** System verifies OTP; transitions delivery to `DELIVERED`; transitions order to `DELIVERED`; initiates 4-hour dispute window.
 - **Expected DB State:** `deliveries.delivery_status = 'DELIVERED'`, `orders.order_status = 'DELIVERED'`, `proof_of_delivery (proof_type='OTP_CODE', otp_verified=TRUE)`.
 - **Expected Event(s):** `delivery_completed`, `order_delivered`.

@@ -1,4 +1,6 @@
 # POL MVP — Phase 5 Delivery Report
+> **Historical delivery report (2026-09-26):** any four-digit OTP statements and their verification results describe the prior implementation. Current policy as of 2026-10-25 is six numeric digits for login/registration (D-018) and delivery verification (D-029). Retest before treating this report as current evidence.
+
 
 **Date:** 2026-09-26  
 **Branch:** `main`  

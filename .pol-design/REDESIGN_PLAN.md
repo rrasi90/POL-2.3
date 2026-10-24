@@ -1,4 +1,6 @@
 # POL Precision Commerce — Visual Redesign Execution Plan
+> **OTP policy update (2026-10-25):** six digits are canonical for login/registration (D-018) and delivery verification (D-029). Older screenshots and visual regression snapshots must be recaptured; do not carry forward their prior pass status.
+
 
 ## 1. Operating Boundaries
 - **No Domain Changes**: Zero changes to business logic, API requests/payloads, permissions, database, or state machine transitions.
@@ -98,7 +100,7 @@
   - `mvp/apps/web/src/app/auth/login/page.tsx`
 - **Objectives**:
   - Editorial Precision Commerce layout with brand typography and pilot proof points.
-  - Polished phone + 4-digit OTP login screen with accessible focus states.
+  - Polished phone + 6-digit OTP login screen with accessible focus states.
 
 ### Slice 8: Mobile Parity & Verification (Phase G)
 - **Target Files**:

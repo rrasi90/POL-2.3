@@ -43,7 +43,7 @@ Screens before the user is a fully-verified retailer. Evidence: assets (`splash.
 
 ## 2.4 Login — phone step
 
-**هدف:** returning retailers sign in with phone + OTP.
+**هدف:** returning retailers sign in with phone + six-digit numeric OTP (current D-018 policy, revised 2026-10-25).
 
 **آناتومی:**
 - Brand-blue header block with logo

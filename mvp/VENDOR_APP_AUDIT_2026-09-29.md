@@ -1,4 +1,6 @@
 # POL Vendor Android App — Full Audit & Pre-Mock Readiness
+> **Historical audit (2026-09-29):** the login/authentication source contract was four-digit at that time. Current D-018 (revised 2026-10-25) and D-029 specify six numeric digits for login/registration and delivery verification respectively. Re-run affected flows before using this audit as current verification.
+
 **Date:** 2026-09-29
 **Repository:** `rrasi90/POL-2.3`
 **Branch:** `feat/vendor-app-production-20260928-v2`

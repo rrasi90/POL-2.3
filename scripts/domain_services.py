@@ -31,6 +31,7 @@ from scripts.operational_config import (
     PILOT_COMMISSION_RATE,
     PAYMENT_CUSTODY_MODEL,
     OTP_MAX_ATTEMPTS,
+    OTP_CODE_LENGTH,
     OTP_RATE_LIMIT_COUNT,
     OTP_RATE_LIMIT_WINDOW_MINUTES,
     OTP_LOCKOUT_MINUTES,
@@ -114,11 +115,11 @@ class AuthService:
         is_test = environment == "test"
         # Deterministic OTP is strictly test-only. Any non-test environment,
         # including an unset/unknown environment, must use a cryptographically
-        # random code so a deployment misconfiguration cannot silently expose 1234.
+        # random code so a deployment misconfiguration cannot silently expose the deterministic test-only OTP.
         if is_test and not is_prod:
-            code = "1234"
+            code = "123456"
         else:
-            code = f"{secrets.randbelow(10_000):04d}"
+            code = f"{secrets.randbelow(10 ** OTP_CODE_LENGTH):0{OTP_CODE_LENGTH}d}"
 
         code_hash = store_otp_hash(code)
         cur.execute("""

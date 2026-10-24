@@ -102,7 +102,7 @@ def _seed_delivered(suffix):
             cur.execute(
                 "INSERT INTO deliveries (id, order_id, vendor_id, delivery_status, driver_name, vehicle_plate, delivery_otp, dispatched_at, delivered_at, created_at) "
                 "VALUES (%s, %s, %s, \'DELIVERED\', \'Ali\', \'12-A-345\', %s, now(), now(), now())",
-                (di, oi, vi, "1234"),
+                (di, oi, vi, "123456"),
             )
             media_id = str(uuid4())
             cur.execute("INSERT INTO media_assets (id, storage_key, file_size_bytes, uploaded_by_user_id, status, provenance, checksum_sha256, created_at) "

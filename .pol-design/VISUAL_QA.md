@@ -1,5 +1,7 @@
 # POL Precision Commerce — Visual QA Matrix & Final Quality Gate
 
+> **Revalidation required (2026-10-25):** OTP login now uses six digits. Older PASS rows/screenshots recorded against the four-digit contract are historical; recapture and recheck the six-cell layout before marking this surface verified again.
+
 ## Executive Verification Summary
 
 - **Redesign Specification**: `POL-DESIGN-VISUAL-001` v2.0.0 (Doc 56 `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`)
@@ -85,7 +87,7 @@
 | Legal Terms & Settlement Directives | `/legal` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Retailer Benefits & Onboarding | `/retailers` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Vendor Benefits & Wholesale Flow | `/vendors` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
-| Unified 4-Digit OTP Login Card | `/auth/login` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
+| Unified 6-Digit OTP Login Card | `/auth/login` | Editorial | RETEST_REQUIRED | RETEST_REQUIRED | RETEST_REQUIRED | RETEST_REQUIRED | RETEST_REQUIRED | RETEST_REQUIRED | RETEST_REQUIRED |
 
 ### 1.5. Mobile Application Surfaces (`@pol/mobile`)
 

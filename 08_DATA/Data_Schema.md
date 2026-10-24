@@ -909,7 +909,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 );
 
 -- 5. OTP Challenges (Rate-Limiting & Brute Force Defense)
--- Application contract: authentication OTPs are exactly 4 digits (D-018); non-auth
+-- Application contract: authentication OTPs are exactly 6 digits (D-018 revised 2026-10-25); non-auth
 -- purposes must be consumed by their dedicated domain flow, not auth verification.
 CREATE TABLE IF NOT EXISTS otp_challenges (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

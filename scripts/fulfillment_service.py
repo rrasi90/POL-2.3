@@ -14,7 +14,7 @@ from scripts.media_service import MediaService, validate_ready_attachment
 from datetime import datetime, timezone
 from uuid import uuid4, uuid5, NAMESPACE_URL
 
-from scripts.operational_config import OTP_CODE_LENGTH
+from scripts.operational_config import DELIVERY_OTP_CODE_LENGTH
 from scripts.operational_policies import AllocationIntegrityError
 
 VALID_FULFILLMENT_TRANSITIONS = {
@@ -226,7 +226,7 @@ def dispatch_order(cur, *, user_id, organization_id, order_id, driver_name=None,
         raise ValueError("driver_name, driver_phone and vehicle_plate are required for dispatch.")
 
     delivery_id = str(uuid4())
-    otp = f"{uuid4().int % (10 ** OTP_CODE_LENGTH):0{OTP_CODE_LENGTH}d}"
+    otp = f"{uuid4().int % (10 ** DELIVERY_OTP_CODE_LENGTH):0{DELIVERY_OTP_CODE_LENGTH}d}"
     cur.execute(
         """
         INSERT INTO deliveries (

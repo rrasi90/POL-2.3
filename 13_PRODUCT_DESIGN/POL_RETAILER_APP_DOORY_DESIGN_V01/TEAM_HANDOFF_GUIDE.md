@@ -98,7 +98,7 @@
 | ۱ | **شروع و خوش‌آمدگویی** | بارگذاری اولیه و شناسایی هویت بصری «پل» | [مشاهده صفحه ۱](https://github.com/rrasi90/POL-2.3/blob/main/13_PRODUCT_DESIGN/POL_RETAILER_APP_DOORY_DESIGN_V01/images/page_01_splash_welcome.png) |
 | ۲ | **معرفی ارزش‌ها** | معرفی خرید کارتنی، قیمت دست اول و ارسال باربری | [مشاهده صفحه ۲](https://github.com/rrasi90/POL-2.3/blob/main/13_PRODUCT_DESIGN/POL_RETAILER_APP_DOORY_DESIGN_V01/images/page_02_onboarding_features.png) |
 | ۳ | **ورود با موبایل** | لاگین با کیبورد عددی و کد اعتبارسنجی | [مشاهده صفحه ۳](https://github.com/rrasi90/POL-2.3/blob/main/13_PRODUCT_DESIGN/POL_RETAILER_APP_DOORY_DESIGN_V01/images/page_03_login_phone.png) |
-| ۴ | **تأیید پیامکی** | دریافت کد ۴ رقمی و امکان ویرایش شماره | [مشاهده صفحه ۴](https://github.com/rrasi90/POL-2.3/blob/main/13_PRODUCT_DESIGN/POL_RETAILER_APP_DOORY_DESIGN_V01/images/page_04_verify_otp.png) |
+| ۴ | **تأیید پیامکی** | دریافت کد ۶ رقمی و امکان ویرایش شماره | [مشاهده صفحه ۴](https://github.com/rrasi90/POL-2.3/blob/main/13_PRODUCT_DESIGN/POL_RETAILER_APP_DOORY_DESIGN_V01/images/page_04_verify_otp.png) |
 | ۵ | **انتخاب شهر** | فیلتر تأمین‌کنندگان و باربری‌های فعال در شهر مقصد | [مشاهده صفحه ۵](https://github.com/rrasi90/POL-2.3/blob/main/13_PRODUCT_DESIGN/POL_RETAILER_APP_DOORY_DESIGN_V01/images/page_05_city_selection.png) |
 | ۶ | **خانه و ویترین** | جستجوی سریع، بنر کارخانجات و تخفیف‌های ویژه | [مشاهده صفحه ۶](https://github.com/rrasi90/POL-2.3/blob/main/13_PRODUCT_DESIGN/POL_RETAILER_APP_DOORY_DESIGN_V01/images/page_06_home_feed.png) |
 | ۷ | **دسته‌بندی‌ها** | دسته‌بندی مواد شوینده، خوراکی، سلولزی و بهداشتی | [مشاهده صفحه ۷](https://github.com/rrasi90/POL-2.3/blob/main/13_PRODUCT_DESIGN/POL_RETAILER_APP_DOORY_DESIGN_V01/images/page_07_categories.png) |

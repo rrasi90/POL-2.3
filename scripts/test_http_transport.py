@@ -329,14 +329,21 @@ def test_transport_validation_uses_canonical_error_envelope(client):
     assert "timestamp" in body["error"]
 
     
-def test_verify_otp_rejects_non_e164_mobile_number():
+def test_verify_otp_rejects_non_e164_mobile_number_and_requires_six_digits():
     from pydantic import ValidationError
-    from scripts.api.schemas import VerifyOTPRequest
+    from scripts.api.schemas import DeliveryConfirmRequest, VerifyOTPRequest
 
     with pytest.raises(ValidationError):
-        VerifyOTPRequest(mobile_number="09121234567", otp_code="1234")
+        VerifyOTPRequest(mobile_number="09121234567", otp_code="123456")
     with pytest.raises(ValidationError):
-        VerifyOTPRequest(mobile_number="989121234567", otp_code="1234")
-
-    request = VerifyOTPRequest(mobile_number="+989121234567", otp_code="1234")
+        VerifyOTPRequest(mobile_number="989121234567", otp_code="123456")
+    with pytest.raises(ValidationError):
+        VerifyOTPRequest(mobile_number="+989121234567", otp_code="1234")
+    request = VerifyOTPRequest(mobile_number="+989121234567", otp_code="123456")
     assert request.mobile_number == "+989121234567"
+    assert request.otp_code == "123456"
+
+    with pytest.raises(ValidationError):
+        DeliveryConfirmRequest(otp_code="1234")
+    delivery = DeliveryConfirmRequest(otp_code="123456")
+    assert delivery.otp_code == "123456"

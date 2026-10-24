@@ -1,4 +1,6 @@
 # POL — Local Execution & Verification Tracker
+> **Historical runtime tracker:** the dated test results in this file may include a four-digit OTP used by the then-current code. Current contract (2026-10-25): six digits for authentication/registration (D-018) and six digits for delivery (D-029). Re-run impacted checks on the final PR SHA; do not promote prior-SHA evidence.
+
 
 **Purpose:** This file is the handoff/control sheet for work that cannot be completed through the GitHub repository integration alone.  
 **Rule:** When a local item is completed, tell the assistant **«انجام شد»** (or provide the result/log). The assistant will re-check the repository, CI evidence, and this tracker before closing the item.
