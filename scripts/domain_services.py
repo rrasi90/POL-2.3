@@ -114,9 +114,9 @@ class AuthService:
         is_test = environment == "test"
         # Deterministic OTP is strictly test-only. Any non-test environment,
         # including an unset/unknown environment, must use a cryptographically
-        # random code so a deployment misconfiguration cannot silently expose 1234.
+        # random code so a deployment misconfiguration cannot silently expose 123456.
         if is_test and not is_prod:
-            code = "1234"
+            code = "123456"
         else:
             code = f"{secrets.randbelow(10_000):04d}"
 
