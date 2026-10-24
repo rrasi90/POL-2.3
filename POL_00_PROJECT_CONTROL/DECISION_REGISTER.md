@@ -70,8 +70,8 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 **Supersedes:**
 - `06_PRODUCT/Technical_Architecture_Spec.md` §3 — OTP digit count, access-token lifetime, rate-limit parameters now authoritative.
 - `08_DATA/IDENTITY_AND_MEMBERSHIP.md` §2.5 — `code_hash` description ("5-digit") is superseded.
-- `06_PRODUCT/API_Contracts.md` §7 — `otp_code` example (6-digit), `expires_in` (86400), rate-limit (3/10min) are superseded.
-- `scripts/operational_config.py` — the old `OTP_CODE_LENGTH = 6` / `SESSION_TTL_HOURS = 24` values are superseded; current implementation has been synchronized to the D-018 values.
+- `06_PRODUCT/API_Contracts.md` §7 — earlier four-digit `otp_code` examples, `expires_in=86400`, and 3-per-10-minute rate-limit wording are superseded; the current contract is six-digit OTP, 120-second TTL, and 3 requests per 5-minute phone+IP window.
+- `scripts/operational_config.py` — the prior value mismatch is superseded; active values are `OTP_CODE_LENGTH = 6` and `SESSION_TTL_HOURS = 720` (30 days), per revised D-018.
 - `POL_00_PROJECT_CONTROL/PRE_MVP_100_SCENARIO_STRESS_TEST.md` §32 — 5/hour rate limit superseded.
 
 **Does NOT change:**
