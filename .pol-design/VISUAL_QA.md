@@ -85,7 +85,7 @@
 | Legal Terms & Settlement Directives | `/legal` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Retailer Benefits & Onboarding | `/retailers` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Vendor Benefits & Wholesale Flow | `/vendors` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
-| Unified 4-Digit OTP Login Card | `/auth/login` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
+| Unified 6-Digit OTP Login Card | `/auth/login` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 
 ### 1.5. Mobile Application Surfaces (`@pol/mobile`)
 

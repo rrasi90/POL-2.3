@@ -10,9 +10,9 @@
 
 ## G-001 — OTP digit count (HISTORICAL RESOLUTION; SUPERSEDED 2026-10-25)
 
-- **Sources:** `frontend_route_contract_map.md` “OTP 6-digit” vs **D-018** + `scripts/operational_config.py` `OTP_CODE_LENGTH = 4`
-- **Resolution:** D-018 wins → **4-digit**. Route map note is stale.
-- **Action:** implement 4-digit; no further guess.
+- **Historical sources (2026-09-23):** `frontend_route_contract_map.md` described a six-digit OTP; the then-current D-018 and implementation selected four digits. That decision was superseded by the six-digit D-018 amendment on 2026-10-25.
+- **Historical resolution (2026-09-23):** D-018 selected four digits at that time. This former choice is superseded; the current rule is exactly six numeric digits.
+- **Current action:** implement and verify exactly six numeric digits for authentication and delivery OTP. Do not use the former four-digit rule.
 
 ## G-002 — Master Tree filename / legacy reference (CONFLICT — RESOLVED)
 
@@ -130,8 +130,8 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 
 ## G-022 — Delivery OTP schema vs D-018 (HISTORICAL RESOLUTION; POLICY AMENDED 2026-10-25)
 
-- **Sources:** `DeliveryConfirmRequest.otp_code` pattern was `^\d{6}$` vs **D-018** 4-digit OTP (`OTP_CODE_LENGTH = 4`).
-- **Resolution:** **RESOLVED (2026-09-23).** Backend aligned end-to-end: schema pattern `^\d{4}$`; `fulfillment_service.dispatch_order` generates via `OTP_CODE_LENGTH` and **persists** `delivery_otp` (was generated-but-not-saved); web R-09E OTP input `maxLength={4}`; POD tests use 4-digit codes. Migration `030` column stays `VARCHAR(6)` for historical rows; comment updated to D-018 4-digit.
+- **Historical source state (2026-09-23):** delivery schema and auth D-018 had conflicting lengths (`^\\d{6}$` versus the then-current four-digit auth policy). The 2026-10-25 amendment now makes six digits canonical for both flows.
+- **Historical resolution (2026-09-23):** the backend was aligned end-to-end to the then-current four-digit rule, and delivery OTP persistence was fixed. The 2026-10-25 amendment supersedes the former length: current schemas, UI and fixtures now require six digits; the persistence fix remains valid. Fresh test evidence is pending.
 - **Status:** RESOLVED
 
 ---
