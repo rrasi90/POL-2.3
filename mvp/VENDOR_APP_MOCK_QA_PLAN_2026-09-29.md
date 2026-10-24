@@ -8,7 +8,7 @@ Verify the Vendor Android application against deterministic mock data before nat
 ## Test accounts
 - Vendor Owner: `+989160000001`
 - Vendor Staff: `+989160000002`
-- Mock OTP: any four numeric digits.
+- Mock OTP: any six numeric digits.
 
 ## Pass criteria
 A flow is PASS only when:
