@@ -36,6 +36,19 @@ test.describe("login phone normalization", () => {
     await page.waitForURL(/\/retailer$/);
   });
 
+  test("legacy four-digit OTP is rejected by the login screen", async ({ page }, testInfo) => {
+    const phone = retailerPhone(testInfo, 40);
+    resetTenant(phone);
+    await page.goto("/auth/login");
+    await page.getByLabel(/شماره تلفن همراه/).fill(localNumber(phone));
+    await page.getByRole("button", { name: "دریافت کد یکبار مصرف" }).click();
+    const otpInput = page.locator('input[maxlength="6"]');
+    await expect(otpInput).toBeVisible();
+    await otpInput.fill("1234");
+    await page.getByRole("button", { name: "تأیید و ورود به سامانه" }).click();
+    await expect(appAlert(page)).toContainText("کد تأیید باید دقیقاً ۶ رقم باشد.");
+  });
+
   test("too-short number is rejected instead of sending an invalid payload", async ({
     page,
   }, testInfo) => {

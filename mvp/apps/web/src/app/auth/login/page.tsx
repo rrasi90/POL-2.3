@@ -87,7 +87,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     if (otp.length !== 6) {
-      setError("کد تأیید باید دقیقاً ۴ رقم باشد.");
+      setError("کد تأیید باید دقیقاً ۶ رقم باشد.");
       return;
     }
     setLoading(true);

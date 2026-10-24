@@ -341,22 +341,21 @@ def test_verify_otp_rejects_non_e164_mobile_number():
     request = VerifyOTPRequest(mobile_number="+989121234567", otp_code="123456")
     assert request.mobile_number == "+989121234567"
 
-    # The canonical contract now requires six numeric digits; old four-digit
-    # clients must fail validation instead of being silently accepted.
-    try:
+
+
+def test_otp_schemas_require_six_numeric_digits_for_auth_and_delivery():
+    from pydantic import ValidationError
+    from scripts.api.schemas import DeliveryConfirmRequest, VerifyOTPRequest
+
+    # Leading zeroes are meaningful and must be preserved as strings.
+    auth_request = VerifyOTPRequest(mobile_number="+989121234567", otp_code="001234")
+    assert auth_request.otp_code == "001234"
+    delivery_request = DeliveryConfirmRequest(recipient_name="Reza", otp_code="001234")
+    assert delivery_request.otp_code == "001234"
+
+    with pytest.raises(ValidationError):
         VerifyOTPRequest(mobile_number="+989121234567", otp_code="1234")
-    except ValidationError:
-        pass
-    else:
-        raise AssertionError("Four-digit OTP must be rejected by the API schema")
-
-    from scripts.api.schemas import DeliveryConfirmRequest
-    valid_delivery = DeliveryConfirmRequest(recipient_name="Reza", otp_code="001234")
-    assert valid_delivery.otp_code == "001234"  # preserve leading zeroes
-
-    try:
+    with pytest.raises(ValidationError):
         DeliveryConfirmRequest(recipient_name="Reza", otp_code="1234")
-    except ValidationError:
-        pass
-    else:
-        raise AssertionError("Four-digit delivery OTP must be rejected by the API schema")
+    with pytest.raises(ValidationError):
+        VerifyOTPRequest(mobile_number="+989121234567", otp_code="12x456")
