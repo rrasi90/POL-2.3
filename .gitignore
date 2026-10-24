@@ -44,3 +44,5 @@ mvp/apps/web/test-results/
 mvp/apps/web/playwright-report/
 mvp/apps/web/trace/
 mvp/apps/web/tests/.e2e-fixture.json
+
+freellmapi/
