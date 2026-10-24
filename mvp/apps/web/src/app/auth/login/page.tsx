@@ -197,14 +197,14 @@ export default function LoginPage() {
             <form onSubmit={verifyOtp} className="mt-6 flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
-                  کد تأیید ۴ رقمی
+                  کد تأیید ۶ رقمی
                 </label>
                 <input
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={6}
-                  placeholder="••••"
+                  placeholder="••••••"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   required

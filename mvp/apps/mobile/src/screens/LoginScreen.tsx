@@ -30,7 +30,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const refs = [useRef<TextInput>(null), useRef<TextInput>(null), useRef<TextInput>(null), useRef<TextInput>(null)];
+  const refs = [useRef<TextInput>(null), useRef<TextInput>(null), useRef<TextInput>(null), useRef<TextInput>(null), useRef<TextInput>(null), useRef<TextInput>(null)];
 
   async function requestOtp(): Promise<void> {
     setError(null);
@@ -98,7 +98,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
     setDigits(next);
     const joined = next.join("");
     setOtp(joined);
-    if (clean && index < 3) refs[index + 1].current?.focus();
+    if (clean && index < 5) refs[index + 1].current?.focus();
   }
 
   return (

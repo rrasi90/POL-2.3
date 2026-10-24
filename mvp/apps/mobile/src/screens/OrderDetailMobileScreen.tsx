@@ -218,7 +218,7 @@ export function OrderDetailMobileScreen(props: {
       return;
     }
     if (!/^\d{6}$/.test(deliveryOtp.trim())) {
-      setActionError("کد تحویل باید ۴ رقم باشد.");
+      setActionError("کد تحویل باید ۶ رقم باشد.");
       return;
     }
     setActing("deliver");
