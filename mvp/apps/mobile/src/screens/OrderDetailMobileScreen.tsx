@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
+import { toAsciiDigits } from "../utils/otp";
 import { spacing, useThemedStyles, type Palette } from "../theme";
 import type { Role } from "../types";
 
@@ -453,7 +454,7 @@ export function OrderDetailMobileScreen(props: {
               <>
                 <StatusChip label={"تحویل: " + (deliveryStatus || "نامشخص")} tone="info" />
                 <Input label="نام تحویل‌گیرنده" value={deliveryRecipient} onChangeText={setDeliveryRecipient} maxLength={200} />
-                <Input label="کد تحویل ۶ رقمی" value={deliveryOtp} onChangeText={setDeliveryOtp} keyboardType="numeric" maxLength={6} />
+                <Input label="کد تحویل ۶ رقمی" value={deliveryOtp} onChangeText={(v) => setDeliveryOtp(toAsciiDigits(v).replace(/\D/g, "").slice(0, 6))} keyboardType="numeric" maxLength={6} />
                 <Btn label="ثبت تحویل" onPress={() => void submitDelivery()} loading={acting === "deliver"} disabled={acting !== null || deliveryStatus !== "ARRIVED" || !deliveryRecipient.trim() || !deliveryOtp.trim()} />
               </>
             ) : null}

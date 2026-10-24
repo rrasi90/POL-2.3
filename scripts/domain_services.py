@@ -35,6 +35,7 @@ from scripts.operational_config import (
     OTP_RATE_LIMIT_WINDOW_MINUTES,
     OTP_LOCKOUT_MINUTES,
     OTP_TTL_SECONDS,
+    OTP_CODE_LENGTH,
     SESSION_TTL_HOURS,
     JWT_ACCESS_TTL_SECONDS,
 )
@@ -118,7 +119,7 @@ class AuthService:
         if is_test and not is_prod:
             code = "123456"
         else:
-            code = f"{secrets.randbelow(10_000):04d}"
+            code = f"{secrets.randbelow(10 ** OTP_CODE_LENGTH):0{OTP_CODE_LENGTH}d}"
 
         code_hash = store_otp_hash(code)
         cur.execute("""

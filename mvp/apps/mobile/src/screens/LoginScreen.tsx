@@ -6,11 +6,7 @@ import { spacing, useThemedStyles, type Palette } from "../theme";
 import type { OtpRequest, Role, VerifyResult } from "../types";
 import { normalizeRole } from "../types";
 
-function toAsciiDigits(value: string): string {
-  return value
-    .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
-    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
-}
+import { distributePastedOtp, toAsciiDigits } from "../utils/otp";
 
 function toE164(value: string): string | null {
   const raw = toAsciiDigits(value).replace(/[\s()-]/g, "");
@@ -92,13 +88,23 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
   }
 
   function updateDigit(index: number, value: string): void {
-    const clean = toAsciiDigits(value).replace(/\D/g, "").slice(-1);
+    const cleanDigits = toAsciiDigits(value).replace(/\D/g, "");
+    if (cleanDigits.length > 1) {
+      const { updatedDigits, nextFocusIndex } = distributePastedOtp(cleanDigits, index, digits, 6);
+      setDigits(updatedDigits);
+      setOtp(updatedDigits.join(""));
+      refs[nextFocusIndex]?.current?.focus();
+      return;
+    }
+
+    const single = cleanDigits.slice(-1);
     const next = [...digits];
-    next[index] = clean;
+    next[index] = single;
     setDigits(next);
-    const joined = next.join("");
-    setOtp(joined);
-    if (clean && index < 5) refs[index + 1].current?.focus();
+    setOtp(next.join(""));
+    if (single && index < 5) {
+      refs[index + 1].current?.focus();
+    }
   }
 
   return (
@@ -154,7 +160,9 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
                       if (event.nativeEvent.key === "Backspace" && !digits[index] && index > 0) refs[index - 1].current?.focus();
                     }}
                     keyboardType="number-pad"
-                    maxLength={1}
+                    maxLength={6}
+                    autoComplete="sms-otp"
+                    textContentType="oneTimeCode"
                     style={styles.otpCell}
                     textAlign="center"
                     selectTextOnFocus

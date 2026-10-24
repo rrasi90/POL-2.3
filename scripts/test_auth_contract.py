@@ -1242,3 +1242,70 @@ def test_verify_otp_cannot_consume_non_authentication_challenge(auth_env):
     finally:
         cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s;", (phone,))
         conn.commit()
+
+
+def test_production_otp_generator_format_and_leading_zeros(auth_env, monkeypatch):
+    """Verify production OTP generation strictly enforces 6 digits and preserves leading zeros."""
+    from scripts import domain_services
+    from scripts.domain_services import AuthService
+    from scripts.operational_config import OTP_CODE_LENGTH
+
+    cur = auth_env["cur"]
+    phone = f"+9891{uuid.uuid4().hex[:8]}"
+    ip = "10.240.0.11"
+
+    # Simulate production environment without sending real SMS
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.delenv("POL_ENV", raising=False)
+
+    class DummyAdapter:
+        def send(self, **kwargs):
+            return {"status": "DELIVERED"}
+    monkeypatch.setattr("scripts.provider_adapters.build_adapter", lambda channel: DummyAdapter())
+
+    # 1. Test leading zero preservation (e.g. randbelow returns 42 -> "000042")
+    monkeypatch.setattr(domain_services.secrets, "randbelow", lambda upper: 42)
+    cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
+    auth_env["conn"].commit()
+
+    res = AuthService.request_otp(cur, phone, ip, "LOGIN")
+    assert "test_code" not in res
+    cur.execute("SELECT code_hash FROM otp_challenges WHERE id=%s", (res["id"],))
+    stored_hash = cur.fetchone()["code_hash"]
+    assert verify_otp_hash("000042", stored_hash)
+    assert not verify_otp_hash("42", stored_hash)
+
+    # 2. Test boundary leading zero (e.g. 1234 -> "001234")
+    monkeypatch.setattr(domain_services.secrets, "randbelow", lambda upper: 1234)
+    cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
+    auth_env["conn"].commit()
+
+    res2 = AuthService.request_otp(cur, phone, ip, "LOGIN")
+    cur.execute("SELECT code_hash FROM otp_challenges WHERE id=%s", (res2["id"],))
+    stored_hash2 = cur.fetchone()["code_hash"]
+    assert verify_otp_hash("001234", stored_hash2)
+    assert not verify_otp_hash("1234", stored_hash2)
+
+    user_id = auth_env["user_id"]
+    org_a = auth_env["org_a"]
+    cur.execute("UPDATE users SET phone_number=%s WHERE id=%s", (phone, user_id))
+    auth_env["conn"].commit()
+
+    # 3. Test verification with leading zero code
+    verify_res = AuthService.verify_otp(cur, phone, "001234", user_id, org_a)
+    assert "access_token" in verify_res
+
+    # 4. Rejection of truncated 4-digit code during verification
+    monkeypatch.setattr(domain_services.secrets, "randbelow", lambda upper: 1234)
+    cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
+    auth_env["conn"].commit()
+    res3 = AuthService.request_otp(cur, phone, ip, "LOGIN")
+    try:
+        AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+        assert False, "Verification should have failed for 4-digit code"
+    except Exception as exc:
+        assert "Invalid OTP code" in str(exc) or "attempts" in str(exc).lower()
+
+    cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
+    auth_env["conn"].commit()
+
