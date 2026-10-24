@@ -54,7 +54,7 @@ def _create_session(cur, user_id, org_id):
     return session_id
 
 
-def _seed_dispatch(suffix, *, delivery_status="ASSIGNED", otp="1234",
+def _seed_dispatch(suffix, *, delivery_status="ASSIGNED", otp="123456",
                    ordered=10, accepted=10):
     """Dispatched order + item + delivery in the requested stage."""
     conn = _db()
@@ -201,7 +201,7 @@ class TestG441ConcurrentPod:
             return c.post(
                 f"/api/v1/orders/{data['oi']}/deliver",
                 headers=_h(data["r_token"]),
-                json={"recipient_name": "Reza", "otp_code": "1234"},
+                json={"recipient_name": "Reza", "otp_code": "123456"},
             )
 
         with ThreadPoolExecutor(max_workers=2) as pool:

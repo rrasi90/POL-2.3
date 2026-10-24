@@ -21,7 +21,7 @@
 | `/orders/:id/accept` | `POST` | `orders`, `vendor_inventory`, `inventory_audit_log` | `order_id` → وضعیت `ACCEPTED` | ۱۰۰٪ مطابق | **VERIFIED** |
 | `/orders/:id/partial-accept` | `POST` | `orders`, `order_items` | `items: [{ order_item_id, accepted_quantity, reason }]` | ۱۰۰٪ مطابق | **VERIFIED** |
 | `/orders/:id/dispatch` | `POST` | `orders`, `deliveries` | `driver_name`, `driver_phone`, `vehicle_plate`, `carrier_name` | ۱۰۰٪ مطابق | **VERIFIED** |
-| `/orders/:id/deliver` | `POST` | `orders`, `deliveries`, `proof_of_delivery` | `otp_code` / `signature` → وضعیت `DELIVERED` | ۱۰۰٪ مطابق | **VERIFIED** |
+| `/orders/:id/deliver` | `POST` | `orders`, `deliveries`, `proof_of_delivery` | `otp_code` دقیقاً ۶ رقم عددی / `signature` → وضعیت `DELIVERED` | قرارداد شش‌رقمی؛ اجرای آزمون تازه لازم است | **IMPLEMENTED / REVERIFY** |
 | `/orders/:id/disputes` | `POST` | `disputes`, `orders` | `claimed_amount_toman`, `description`, `evidence_media_id` | ۱۰۰٪ مطابق | **VERIFIED** |
 | `/disputes/:id/resolve` | `PATCH` | `disputes`, `settlement_adjustments` | `outcome`, `approved_amount_toman`, `reason` | ۱۰۰٪ مطابق | **VERIFIED** |
 

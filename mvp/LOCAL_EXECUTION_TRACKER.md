@@ -1,3 +1,5 @@
+> Historical execution evidence: entries below record runs under the former four-digit OTP contract. Active policy was amended on 2026-10-25 to six numeric digits for authentication and delivery OTP. Preserve old records for auditability, but do not count them as verification of the six-digit contract; rerun those checks against the amended branch.
+
 # POL — Local Execution & Verification Tracker
 
 **Purpose:** This file is the handoff/control sheet for work that cannot be completed through the GitHub repository integration alone.  
