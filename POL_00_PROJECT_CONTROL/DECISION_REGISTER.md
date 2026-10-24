@@ -223,7 +223,7 @@ SMSIR_LINE_NUMBER=<configured line if required>
 - Keep provider-specific behavior behind the adapter; do not expose SMS.ir details to product/domain services.
 - Future SMS.ir OTP template MUST support an exactly six-digit numeric verification code (per D-018 amended 2026-10-25).
 - Do NOT approve a template that truncates, pads, or reformats the six-digit code.
-- Do NOT modify auth runtime in this batch — this is decision formalization only.
+- Historical scope note from the original decision-formalization batch (2026-09-28): auth runtime was out of scope for that batch. This historical note does not restrict the D-018 six-digit amendment dated 2026-10-25.
 
 ---
 

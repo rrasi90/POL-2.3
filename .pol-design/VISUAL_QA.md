@@ -1,5 +1,7 @@
 # POL Precision Commerce — Visual QA Matrix & Final Quality Gate
 
+> **OTP amendment note (2026-10-25):** This matrix contains historical QA snapshots. The OTP code has been changed to six digits, but prior PASS labels do not prove the six-digit implementation was re-tested. OTP-related rows below are marked **REVERIFY REQUIRED** pending fresh screenshots and current-SHA runtime checks.
+
 ## Executive Verification Summary
 
 - **Redesign Specification**: `POL-DESIGN-VISUAL-001` v2.0.0 (Doc 56 `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`)
@@ -85,13 +87,13 @@
 | Legal Terms & Settlement Directives | `/legal` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Retailer Benefits & Onboarding | `/retailers` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Vendor Benefits & Wholesale Flow | `/vendors` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
-| Unified 6-Digit OTP Login Card | `/auth/login` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
+| Unified 6-Digit OTP Login Card | `/auth/login` | Editorial | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY REQUIRED |
 
 ### 1.5. Mobile Application Surfaces (`@pol/mobile`)
 
 | Surface | Screen / File | Density | Light | Night | RTL | Responsive | Tabular/Numerics | Touch >= 44px | Status |
 |---|---|---|---|---|---|---|---|---|---|
-| Mobile Authentication (E.164 + OTP) | `LoginScreen.tsx` | Mobile | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
+| Mobile Authentication (E.164 + OTP, six digits) | `LoginScreen.tsx` | Mobile | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY REQUIRED |
 | Retailer Mobile Catalog & Orders | `RetailerMobileScreen.tsx` | Mobile | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Vendor Mobile Inventory & Orders | `VendorMobileScreen.tsx` | Mobile | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Order Detail, RMA & Timeline | `OrderDetailMobileScreen.tsx` | Mobile | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |

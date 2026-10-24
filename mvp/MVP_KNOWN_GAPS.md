@@ -132,7 +132,7 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 
 - **Historical source state (2026-09-23):** delivery schema and auth D-018 had conflicting lengths (`^\\d{6}$` versus the then-current four-digit auth policy). The 2026-10-25 amendment now makes six digits canonical for both flows.
 - **Historical resolution (2026-09-23):** the backend was aligned end-to-end to the then-current four-digit rule, and delivery OTP persistence was fixed. The 2026-10-25 amendment supersedes the former length: current schemas, UI and fixtures now require six digits; the persistence fix remains valid. Fresh test evidence is pending.
-- **Status:** RESOLVED
+- **Status:** historical persistence defect remains resolved; six-digit implementation is **REVERIFY REQUIRED** until fresh tests pass.
 
 ---
 
