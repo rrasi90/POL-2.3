@@ -78,7 +78,7 @@
 
 | ID / topic | Authority | Status | Action |
 |------------|-----------|--------|--------|
-| OTP length 4 vs 6 | D-018 | **RESOLVED** (this session) | `operational_config.OTP_CODE_LENGTH = 4`; **both** login + delivery schemas `^\d{4}$` (G-022 closed); dispatch persists 4-digit `delivery_otp` |
+| OTP length standardization | D-018 amended 2026-10-25 | **IMPLEMENTED IN CHANGE BRANCH; fresh test evidence pending** | `OTP_CODE_LENGTH = 6`; login and delivery schemas require exactly six numeric digits; dispatch persists six-digit `delivery_otp` |
 | Multi-vendor basket | D-014 | **RESOLVED** | enforced |
 | PG 18 canonical | D-015 | **RESOLVED** | host PG 18.2 |
 | Refresh-token rotation | D-018 note | **SOURCE IMPLEMENTED / POLICY OPEN** | Current source rotates refresh tokens and rejects replay; product/security policy remains an explicit D-018 decision and is not inferred from implementation |
@@ -88,7 +88,7 @@
 | Design-tool / OpenPencil MCP | WAVE-02 | **BLOCKED_EXTERNAL** | start OpenPencil app or continue without design-board WAVE-02 |
 | Catalog path `/products/search` vs `/catalog/search` | G-003 | **RESOLVED / DUAL COMPATIBILITY** | both canonical public HTTP paths are registered; current retailer screen uses `/catalog/search` |
 | Inbox path | G-004 | **RESOLVED** | durable `/inbox/items*` and `/notifications*` projections are both registered; screen uses `/notifications` |
-| Delivery OTP 6 vs D-018 4 | G-022 | **RESOLVED** | schema `^\d{4}$`, generation via `OTP_CODE_LENGTH`, dispatch persists `delivery_otp`, UI `maxLength={4}` |
+| Delivery OTP length — G-022 historical closure | G-022 / D-018 amended 2026-10-25 | **HISTORICAL RESOLUTION; fresh verification pending** | The former four-digit resolution is superseded. Current schema, generation and UI require six numeric digits; `VARCHAR(6)` is sufficient. |
 
 ---
 
@@ -311,7 +311,7 @@ MVP is DONE only when **all** hold:
 | Structural | `scripts/api/**` + auth/canonical deps missing from main working tree (only `.pyc`) | restored from `origin/research-hardening-2026-09-14` |
 | Decision drift (historical, before 2026-10-25) | `OTP_CODE_LENGTH = 6` on main vs then-current D-018 = 4 | historically restored the four-digit decision; superseded by the six-digit amendment dated 2026-10-25 |
 | Structural | `DECISION_REGISTER.md` missing D-016/D-017; `Assumptions_and_Hypotheses.md` missing D-015/016/017; `CURRENT_SOURCE_OF_TRUTH.md` missing `AllocationPlan`/`OrderItem` hierarchy | restored from `origin/research-hardening-2026-09-14`; `verify_repository_consistency` PASS 8/8 |
-| Contract | Delivery OTP schema `^\d{6}$` + generation 6-digit + `delivery_otp` never persisted on INSERT (G-022) | schema `^\d{4}$`, generation via `OTP_CODE_LENGTH`, INSERT now includes `delivery_otp`; UI `maxLength={4}`; tests aligned to `"1234"`/`"9999"`; dispatch roundtrip asserts `otp_verified is True` |
+| Contract (historical G-022 closure, before 2026-10-25) | Old delivery OTP schema/generation and persistence defect | Then-current four-digit length was applied while persistence was fixed; the six-digit amendment supersedes only the length, and current six-digit regression evidence is pending. |
 | Structural (historical G-022 closure) | `migrations/030_delivery_otp_column.sql` comment still said 6-digit | the comment was updated to the then-current four-digit rule; this branch updates it again for the six-digit contract (column remains `VARCHAR(6)`) |
 | Infra | stale/missing `.next`, failed root `npm install` | install from `mvp/`; clean rebuild green |
 | Test | `pol_test` schema wiped | Historical evidence: re-bootstrap produced 95 tables under the 001–031 snapshot; current execution must derive the count from the active migration chain. |
