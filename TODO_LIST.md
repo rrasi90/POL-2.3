@@ -2481,3 +2481,24 @@
 - Added capture assertions for category-label uniqueness and absent known placeholder labels.
 - These changes are committed to the same UI branch and documented here as **pending verification**. Existing PNGs are not yet regenerated; the capture suite must run against this HEAD before updated screenshots can be claimed.
 - Follow-up TODO: TODO-174.
+
+
+### TODO-175 — Obtain executable CI evidence for UI screen-completion branch
+
+- **Status:** BLOCKED — GitHub Actions jobs fail before runner allocation; source/test result not available.
+- **Branch / PR:** `ui/visual-qa-screen-completion-20261025` / [PR #51](https://github.com/rrasi90/POL-2.3/pull/51).
+- **Workflow added:** `.github/workflows/pol-ui-screen-visual-qa.yml`; it is intended to run web visual capture, web regression/typecheck/lint/build, mobile typecheck, functional/regression/mock QA and Expo Android export on pushes to this branch and PRs targeting the OTP branch.
+- **Actual Actions evidence:**
+  - Push run: [40184775977](https://github.com/rrasi90/POL-2.3/actions/runs/40184775977), HEAD `308ae91e3e3d4498ae88fe7afea4aba0f356b04f`, failed at `2026-10-25T10:26:23Z).
+  - PR run: [40184779625](https://github.com/rrasi90/POL-2.3/actions/runs/40184779625), HEAD `308ae91e3e3d4498ae88fe7afea4aba0f356b04f`, failed at `2026-10-25T10:26:27Z).
+  - Both jobs show `completed/failure`, zero recorded steps and `runner_id=0`; log download returns `BlobNotFound`. Thus there is no step-level error to attribute to source code, and no test command is evidenced as having started.
+- **Latest source changes after those runs:** catalog placeholder-category filtering and category-filter UX, Persian order/delivery status maps on web/mobile, viewport-sized mobile screenshots, capture portal suppression, responsive/route/body/pageerror checks, catalog category assertions and Persian/Arabic OTP numeral regression. None has current-SHA execution evidence yet.
+- **Next action:** inspect repository Actions availability/billing/runner policy from GitHub settings or rerun via an available authorized runner. Once jobs execute steps, fix real test failures, regenerate `.pol-design/evidence/screenshots/`, attach current-SHA results and then close TODO-172…TODO-175 as evidence allows.
+- **Do not claim:** the new workflow passed or failed a test assertion; current evidence shows it failed before test steps.
+
+### [2026-10-25 14:35 +03:30] Agent: ChatGPT — CI EXECUTION GATE RECONCILIATION
+
+- Added `.github/workflows/pol-ui-screen-visual-qa.yml` and observed the first push and pull-request workflow runs.
+- Retrieved the run and job summaries from GitHub Actions. Both jobs terminated in under three seconds, with no steps, no allocated runner (`runner_id=0`) and unavailable log blobs (`BlobNotFound`).
+- These runs are classified as **CI runner/workflow execution unavailable**, not as a source test assertion failure.
+- TODO-175 remains BLOCKED until an authorized runner executes the jobs and publishes logs/artifacts.
