@@ -2582,3 +2582,25 @@
 - Added regression guards for these UI invariants.
 - Current-SHA execution remains pending because GitHub Actions still fails before allocating a runner. No test PASS is claimed.
 - Follow-up TODO: TODO-180.
+
+
+### TODO-181 — Preserve custom Persian packaging-unit names
+
+- **Status:** OPEN — current-SHA test execution pending.
+- **Finding:** the existing web status-label suite explicitly expects `formatPackagingUnit("لیتر")` to preserve that Persian name unchanged. The mobile formatter originally treated any non-enum string as an unknown code and returned `واحد دیگر`.
+- **Fix pushed:** `mvp/apps/mobile/src/utils/statusLabels.ts` now detects non-ASCII/custom localized names and returns them unchanged; known ASCII enum values are still mapped to Persian, and unknown ASCII codes still use the safe generic fallback.
+- **Regression guard added:** `mvp/apps/mobile/scripts/mobile_regression_qa.mjs` checks the custom-Persian-name pass-through logic.
+- **Verification:** no unit, typecheck or runtime suite has executed on the current SHA. Web `tests/status-labels.spec.ts` covers the existing web behavior; mobile QA must execute the new guard before this item is verified.
+
+### [2026-10-25 15:05 +03:30] Agent: ChatGPT — CUSTOM PERSIAN UNIT REGRESSION
+
+- Compared the Web status-label test’s explicit custom Persian unit case with the Mobile unit formatter.
+- Fixed Mobile so Persian unit names pass through unchanged, and added a source-based regression guard.
+- Current-SHA test execution remains pending due to GitHub Actions jobs failing before runner allocation.
+- Follow-up TODO: TODO-181.
+
+### [2026-10-25 15:06 +03:30] Agent: ChatGPT — LATEST ACTIONS RUN CHECK
+
+- Latest push run: [40187839429](https://github.com/rrasi90/POL-2.3/actions/runs/40187839429), HEAD `545cb6aeb2c67cc6b73b6e57e2b755faa300714c`, failed at `2026-10-25T11:11:45Z`.
+- Both jobs report `completed/failure`, `steps=null`, no log URL; no test step is evidenced as having started.
+- This remains a CI execution/runner blocker, not a source assertion failure. Current screenshots remain historical captures and have not been regenerated after the source changes.

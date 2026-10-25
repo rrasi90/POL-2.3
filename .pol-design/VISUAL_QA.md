@@ -393,3 +393,10 @@ A source audit of `vendor_catalog_list_products` confirmed that the response exp
 - Vendor scan, return-reason, support-history and notification-channel copy no longer exposes the known internal English text. Packaging units are translated across relevant mobile and Web surfaces.
 - Retailer storefront presentation avoids raw IDs when names are missing and formats product stock and packaging units for Persian users.
 - Mobile source-based regression checks cover these areas, but **the current SHA has not passed execution**. GitHub Actions still terminates before runner steps, and prior PNG artifacts are not regenerated. Track in `TODO-180`; resolve the runner blocker tracked in `TODO-175` before marking this polish verified.
+
+
+## Custom Persian packaging-unit pass-through — 2026-10-25
+
+- The Web status-label test expects a custom Persian unit name such as `لیتر` to be preserved. The Mobile formatter has been aligned: known ASCII enum values are localized, existing non-ASCII/custom localized names pass through, and unknown ASCII codes return the generic Persian fallback.
+- Mobile source-based QA now includes a guard for this pass-through behavior.
+- Latest run [40187839429](https://github.com/rrasi90/POL-2.3/actions/runs/40187839429) failed before runner steps; both jobs have no step/log evidence. Current-SHA tests and screenshot regeneration remain pending; see TODO-181 and TODO-175.
