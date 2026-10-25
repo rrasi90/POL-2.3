@@ -1,8 +1,16 @@
 import { expect, test } from "@playwright/test";
-import { toE164 } from "../src/lib/auth/phone";
+import { toE164, toAsciiDigits } from "../src/lib/auth/phone";
 import { appAlert, localNumber, loginAsRetailer, resetTenant, retailerPhone } from "./helpers";
 
 test.describe("login phone normalization", () => {
+  test("toAsciiDigits converts Persian and Arabic OTP numerals and preserves leading zeroes", () => {
+    expect(toAsciiDigits("۰۰۱۲۳۴")).toBe("001234");
+    expect(toAsciiDigits("٠٠١٢٣٤")).toBe("001234");
+    expect(toAsciiDigits("۱۲۳۴۵۶")).toBe("123456");
+    expect(toAsciiDigits("١٢٣٤٥٦")).toBe("123456");
+    expect(toAsciiDigits("")).toBe("");
+  });
+
   test("toE164 accepts local, national and international digit forms", () => {
     expect(toE164("09123456789")).toBe("+989123456789");
     expect(toE164("9123456789")).toBe("+989123456789");
