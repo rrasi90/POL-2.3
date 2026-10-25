@@ -178,7 +178,7 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(400);
 
-      if (item.route === "/vendor/inventory") {
+      if (item.route === "/vendor/inventory" || item.route === "/vendor/catalog") {
         await expect(page.getByText("کالای بدون نام", { exact: true })).toHaveCount(0);
       }
 
