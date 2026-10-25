@@ -128,6 +128,22 @@ class CanonicalSupportService:
         return case
 
     @classmethod
+    def list_messages(cls, cur, actor_user_id: str, case_id: str):
+        # Reuse the case authorization and audit trail before reading any messages.
+        cls.get_case(cur, actor_user_id, case_id)
+        # Internal notes must never be returned by the customer-facing history endpoint.
+        cur.execute(
+            """
+            SELECT id, support_case_id, sender_user_id, sender_type, message_text, created_at
+            FROM support_case_messages
+            WHERE support_case_id = %s AND is_internal = FALSE
+            ORDER BY created_at ASC, id ASC;
+            """,
+            (case_id,),
+        )
+        return cur.fetchall()
+
+    @classmethod
     def add_message(cls, cur, actor_user_id: str, case_id: str, message_text: str,
                     internal: bool = False, sender_type: str | None = None):
         if not message_text.strip():
