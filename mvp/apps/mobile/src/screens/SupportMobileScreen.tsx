@@ -110,7 +110,7 @@ export function SupportMobileScreen(props: { role: Role; onBack?: () => void }):
           </Card>
           <Card>
             <Text style={styles.h2}>پیام‌های این نشست</Text>
-            {messages.length === 0 ? <Empty title="پیامی در این نشست نیست" description="API فعلی GET برای فهرست پیام‌ها ندارد." /> : messages.map((m) => (
+            {messages.length === 0 ? <Empty title="پیامی در این نشست نیست" description="پیام‌های قبلی در این نسخه قابل بارگذاری نیستند؛ می‌توانید پیام جدید ارسال کنید." /> : messages.map((m) => (
               <View key={m.id} style={styles.message}>
                 <Text style={styles.body}>{m.message_text || "—"}</Text>
                 <Text style={styles.meta}>{formatRole(m.sender_role)} · {formatTehranDateTime(m.created_at)}</Text>
