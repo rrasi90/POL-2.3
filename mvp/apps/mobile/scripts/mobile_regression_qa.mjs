@@ -146,6 +146,47 @@ const checks = [
       detail.includes("formatReturnStatus(x.status)") &&
       detail.includes("formatTimelineEvent(x.event_type)");
   }],
+  ["Ops mobile localizes order, reconciliation, notification, candidate and organization states", () => {
+    const screen = read("screens/OpsMobileScreen.tsx");
+    const labels = read("utils/statusLabels.ts");
+    return screen.includes("formatNotificationPriority(n.priority)") &&
+      screen.includes("formatOrderStatus(o.order_status)") &&
+      screen.includes("formatReconciliationStatus(r.status)") &&
+      screen.includes("formatCandidateStatus(c.status)") &&
+      screen.includes("formatOrganizationStatus(o.status)") &&
+      labels.includes("export function formatAuditAction") &&
+      screen.includes("formatAuditAction(a.action)");
+  }],
+  ["Support mobile localizes case status, priority, type, role and timestamps", () => {
+    const screen = read("screens/SupportMobileScreen.tsx");
+    return screen.includes("formatSupportStatus(selected.status)") &&
+      screen.includes("formatSupportPriority(selected.priority)") &&
+      screen.includes("formatSupportType(selected.case_type)") &&
+      screen.includes("formatRole(m.sender_role)") &&
+      screen.includes("formatTehranDateTime(m.created_at)");
+  }],
+  ["Vendor finance, referrals and delegated permissions use Persian labels", () => {
+    const screen = read("screens/VendorMobileScreen.tsx");
+    const labels = read("utils/statusLabels.ts");
+    return screen.includes("formatInvoiceStatus(invoice.status)") &&
+      screen.includes("formatSettlementStatus(settlement.status)") &&
+      screen.includes("formatReferralStatus(referral.status)") &&
+      screen.includes("formatPermission(permission)") &&
+      screen.includes("formatGrantStatus(grant.status)") &&
+      labels.includes("export function formatPermission");
+  }],
+  ["Retailer invoice and account notification statuses use Persian labels", () => {
+    const retailer = read("screens/RetailerMobileScreen.tsx");
+    const account = read("screens/AccountMobileScreen.tsx");
+    return retailer.includes("formatInvoiceStatus(i.status)") &&
+      account.includes("formatNotificationPriority(n.priority)");
+  }],
+  ["Order timeline and return issue details do not expose raw state enums", () => {
+    const detail = read("screens/OrderDetailMobileScreen.tsx");
+    return detail.includes("formatOperationalStatus(x.from_status)") &&
+      detail.includes("formatReturnIssue(x.issue_type)") &&
+      detail.includes("formatTimelineEvent(x.event_type)");
+  }],
   ["No Driver App is introduced into Phase 3 mobile source", () => {
     const p = fs.readFileSync(path.resolve(process.cwd(), "src/__tests__/parity.md"), "utf8");
     return p.includes("No Driver App (D-023)");
