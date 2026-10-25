@@ -11,10 +11,7 @@ export default function AdminUsersOrgsPage() {
             <h1 className="text-[22px] leading-[30px] font-bold text-[var(--pol-light-text-primary)]">
               مدیریت کاربران و سازمان‌ها
             </h1>
-            <StatusChip tone="warning">G-007 GAP</StatusChip>
-            <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-medium text-[var(--pol-light-text-secondary)]">
-              O-10B
-            </span>
+            <StatusChip tone="warning">نیازمند تکمیل</StatusChip>
           </div>
           <p className="mt-1 text-[13px] text-[var(--pol-light-text-muted)]">
             کنترل هویت کاربران، ساختار سازمان‌های همکار و تعیین وضعیت حساب‌های کاربری
@@ -25,7 +22,7 @@ export default function AdminUsersOrgsPage() {
       {/* Architecture GAP Notice */}
       <div className="rounded-xl border border-[var(--pol-light-semantic-warning)]/30 bg-[var(--pol-light-semantic-warning)]/10 p-4">
         <p className="text-[14px] font-bold text-[var(--pol-light-semantic-warning)]">
-          اطلاعیه معماری — شکاف داده‌ای G-007
+          محدودیت فعلی مدیریت کاربران
         </p>
         <p className="mt-1 text-[13px] leading-[20px] text-[var(--pol-light-text-secondary)]">
           در قرارداد فعلی MVP، مسیرهای جامع مدیریت کاربران و سازمان‌ها تنها شامل خواندن اولیه و تغییر وضعیت ادمین است. هیچ‌گونه فرم CRUD جعلی در این صفحات قرار نگرفته تا یکپارچگی سیستمی حفظ شود.
