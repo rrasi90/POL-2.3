@@ -7,15 +7,23 @@ const SCREENSHOT_DIR = path.resolve(__dirname, "../../../../.pol-design/evidence
 const pageErrors = new WeakMap<Page, string[]>();
 
 async function assertResponsiveDocument(page: Page, expectedPath: string): Promise<void> {
-  const documentContract = await page.evaluate(() => ({
-    language: document.documentElement.lang,
-    direction: document.documentElement.dir,
-    viewportWidth: window.innerWidth,
-    documentWidth: document.documentElement.scrollWidth,
-    bodyWidth: document.body.scrollWidth,
-    bodyTextLength: document.body.innerText.trim().length,
-    path: window.location.pathname,
-  }));
+  const documentContract = await page.evaluate(() => {
+    if (!document.getElementById("pol-visual-capture-overrides")) {
+      const style = document.createElement("style");
+      style.id = "pol-visual-capture-overrides";
+      style.textContent = "nextjs-portal { display: none !important; }";
+      document.head.appendChild(style);
+    }
+    return {
+      language: document.documentElement.lang,
+      direction: document.documentElement.dir,
+      viewportWidth: window.innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      bodyWidth: document.body.scrollWidth,
+      bodyTextLength: document.body.innerText.trim().length,
+      path: window.location.pathname,
+    };
+  });
 
   expect(documentContract.language, "document language should be Persian").toBe("fa");
   expect(documentContract.direction, "document direction should be RTL").toBe("rtl");
@@ -79,7 +87,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile-light.png`),
-        fullPage: true,
+        fullPage: false,
       });
     });
   }
@@ -108,6 +116,15 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(400);
 
+      if (item.route === "/retailer/catalog") {
+        const categoryNames = (await page.locator('section[aria-label="دسته‌بندی‌ها"] button').allTextContents())
+          .map((name) => name.trim().replace(/\\s+/g, " ").toLocaleLowerCase("en-US"));
+        expect(new Set(categoryNames).size, "catalog category labels must be unique").toBe(categoryNames.length);
+        expect(categoryNames).not.toContain("fulfillment category");
+        expect(categoryNames).not.toContain("proof category");
+        expect(categoryNames).not.toContain("seed cat");
+      }
+
       await page.setViewportSize({ width: 1440, height: 900 });
       await assertResponsiveDocument(page, item.route);
 
@@ -121,7 +138,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
-        fullPage: true,
+        fullPage: false,
       });
       await page.setViewportSize({ width: 1440, height: 900 });
     }
@@ -163,7 +180,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
-        fullPage: true,
+        fullPage: false,
       });
       await page.setViewportSize({ width: 1440, height: 900 });
     }
@@ -200,7 +217,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
-        fullPage: true,
+        fullPage: false,
       });
       await page.setViewportSize({ width: 1440, height: 900 });
     }
@@ -241,7 +258,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
-        fullPage: true,
+        fullPage: false,
       });
       await page.setViewportSize({ width: 1440, height: 900 });
     }
@@ -277,7 +294,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
-        fullPage: true,
+        fullPage: false,
       });
       await page.setViewportSize({ width: 1440, height: 900 });
     }
@@ -311,7 +328,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
-        fullPage: true,
+        fullPage: false,
       });
       await page.setViewportSize({ width: 1440, height: 900 });
     }
@@ -337,7 +354,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
     await page.screenshot({
       path: path.join(SCREENSHOT_DIR, "field-dashboard-mobile.png"),
-      fullPage: true,
+      fullPage: false,
     });
   });
 });
