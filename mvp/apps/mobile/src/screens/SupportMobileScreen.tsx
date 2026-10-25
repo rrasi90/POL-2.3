@@ -4,6 +4,8 @@ import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import type { Role } from "../types";
 import { spacing, useThemedStyles, type Palette } from "../theme";
+import { formatRole, formatSupportPriority, formatSupportStatus, formatSupportType } from "../utils/statusLabels";
+import { formatTehranDateTime } from "../i18n/fa";
 
 type CaseRow = {
   id: string;
@@ -91,15 +93,15 @@ export function SupportMobileScreen(props: { role: Role; onBack?: () => void }):
     return (
       <Screen>
         <ScrollView>
-          <Title badge={props.role}>پشتیبانی · جزئیات</Title>
+          <Title badge={formatRole(props.role)}>پشتیبانی · جزئیات</Title>
           {props.onBack ? <Btn label="بازگشت" tone="ghost" onPress={() => { setSelected(null); props.onBack?.(); }} /> : null}
           <ErrorBox message={error} />
           <Card>
-            <StatusChip label={selected.status || "—"} tone={selected.status === "RESOLVED" ? "ok" : "info"} />
+            <StatusChip label={formatSupportStatus(selected.status)} tone={selected.status === "RESOLVED" ? "ok" : "info"} />
             <Text style={styles.h2}>{selected.subject || "بدون موضوع"}</Text>
             <Text style={styles.meta}>{selected.case_number || selected.id}</Text>
-            <Text style={styles.meta}>{selected.priority || "NORMAL"} · {selected.case_type || "GENERAL"}</Text>
-            {selected.related_order_id ? <Text style={styles.meta}>Order: {selected.related_order_id}</Text> : null}
+            <Text style={styles.meta}>{formatSupportPriority(selected.priority)} · {formatSupportType(selected.case_type)}</Text>
+            {selected.related_order_id ? <Text style={styles.meta}>شناسه سفارش: {selected.related_order_id}</Text> : null}
           </Card>
           <Card>
             <Text style={styles.h2}>پیام جدید</Text>
@@ -111,7 +113,7 @@ export function SupportMobileScreen(props: { role: Role; onBack?: () => void }):
             {messages.length === 0 ? <Empty title="پیامی در این نشست نیست" description="API فعلی GET برای فهرست پیام‌ها ندارد." /> : messages.map((m) => (
               <View key={m.id} style={styles.message}>
                 <Text style={styles.body}>{m.message_text || "—"}</Text>
-                <Text style={styles.meta}>{m.sender_role || "—"} · {m.created_at || "—"}</Text>
+                <Text style={styles.meta}>{formatRole(m.sender_role)} · {formatTehranDateTime(m.created_at)}</Text>
               </View>
             ))}
           </Card>
@@ -123,7 +125,7 @@ export function SupportMobileScreen(props: { role: Role; onBack?: () => void }):
   return (
     <Screen>
       <ScrollView>
-        <Title badge={props.role}>پشتیبانی</Title>
+        <Title badge={formatRole(props.role)}>پشتیبانی</Title>
         <ErrorBox message={error} />
         <Card>
           <Text style={styles.h2}>پرونده جدید</Text>
@@ -140,7 +142,7 @@ export function SupportMobileScreen(props: { role: Role; onBack?: () => void }):
             <View key={c.id} style={styles.caseRow}>
               <View style={styles.grow}>
                 <Text style={styles.h2}>{c.subject || "بدون موضوع"}</Text>
-                <Text style={styles.meta}>{c.case_number || c.id} · {c.status || "—"}</Text>
+                <Text style={styles.meta}>{c.case_number || c.id} · {formatSupportStatus(c.status)}</Text>
               </View>
               <Btn label="باز کردن" tone="ghost" onPress={() => void loadCase(c.id)} />
             </View>
