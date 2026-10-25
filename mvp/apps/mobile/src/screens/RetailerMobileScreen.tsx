@@ -4,7 +4,7 @@ import { api, ApiError } from "../api";
 import { Btn, Card, Empty, ErrorBox, IconBadge, Input, Screen, StatusChip } from "../components/ui";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
-import { formatOrderStatus } from "../utils/statusLabels";
+import { formatOrderStatus, formatInvoiceStatus } from "../utils/statusLabels";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 
 type Product = {
@@ -647,7 +647,7 @@ export function RetailerMobileScreen(props: {
           <Empty title="فاکتوری نیست" description="فاکتورهای صادرشده شما اینجا نمایش داده می‌شوند." />
         ) : invoices.map((i) => (
           <Card key={i.id} style={styles.orderCard}>
-            <StatusChip label={i.status || "—"} tone="info" />
+            <StatusChip label={formatInvoiceStatus(i.status)} tone="info" />
             <Text style={styles.orderNumber}>{i.invoice_number || i.id}</Text>
             <Text style={styles.priceMedium}>{money(i.total_amount_toman)}</Text>
             <Text style={styles.meta}>{i.issued_at || "—"}</Text>
