@@ -18,6 +18,10 @@ import {
   disputeStatusLabel,
   disputeStatusTone,
   formatDateTime,
+  formatOperationalStatus,
+  formatTimelineEventLabel,
+  reconStatusLabel,
+  returnStatusLabel,
   formatToman,
   idOf,
   itemsOf,
@@ -576,11 +580,11 @@ export default function OpsObjectDetailPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-[13px] font-semibold text-[var(--pol-light-text-primary)]">
-                      {ev.event_type ?? "رویداد"}
+                      {formatTimelineEventLabel(ev.event_type)}
                     </span>
                     {ev.from_status || ev.to_status ? (
                       <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 font-mono text-[11px] text-[var(--pol-light-text-secondary)]" dir="ltr">
-                        {ev.from_status ?? "∅"} → {ev.to_status ?? "∅"}
+                        {formatOperationalStatus(ev.from_status, "∅")} → {formatOperationalStatus(ev.to_status, "∅")}
                       </span>
                     ) : null}
                   </div>

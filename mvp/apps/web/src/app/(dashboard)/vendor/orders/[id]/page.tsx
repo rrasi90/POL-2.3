@@ -22,6 +22,9 @@ import { getApi } from "@/lib/auth/api";
 import {
   disputeStatusLabel,
   formatDateTime,
+  formatOperationalStatus,
+  formatDeliveryStatus,
+  formatTimelineEventLabel,
   formatToman,
   fulfillmentLabel,
   idOf,
@@ -451,7 +454,7 @@ export default function VendorOrderDetailPage() {
               {status === "DISPATCHED" ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusChip tone="info">
-                    وضعیت تحویل: {deliveryStatus ?? "نامشخص"}
+                    وضعیت تحویل: {formatDeliveryStatus(deliveryStatus)}
                   </StatusChip>
                   {deliveryStatus === "ASSIGNED" ? (
                     <Button
@@ -675,7 +678,7 @@ export default function VendorOrderDetailPage() {
                   />
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[13px] font-bold text-[var(--pol-light-text-primary)]">
-                      {ev.event_type ?? "رویداد سیستمی"}
+                      {formatTimelineEventLabel(ev.event_type)}
                     </span>
                     <span className="text-[11px] text-[var(--pol-light-text-muted)]">
                       {formatDateTime(ev.created_at)}
@@ -683,7 +686,7 @@ export default function VendorOrderDetailPage() {
                   </div>
                   {ev.from_status || ev.to_status ? (
                     <div className="mt-1 text-[12px] font-mono text-[var(--pol-light-text-secondary)]" dir="ltr">
-                      {ev.from_status ?? "START"} → {ev.to_status ?? "END"}
+                      {formatOperationalStatus(ev.from_status, "شروع")} → {formatOperationalStatus(ev.to_status, "پایان")}
                     </div>
                   ) : null}
                 </li>
@@ -703,7 +706,7 @@ export default function VendorOrderDetailPage() {
             {proposals.map((p) => (
               <Card key={String(p.id)} className="p-4">
                 <div className="flex items-center justify-between">
-                  <StatusChip tone="info">{p.status ?? "—"}</StatusChip>
+                  <StatusChip tone="info">{formatOperationalStatus(p.status)}</StatusChip>
                   <span className="text-[12px] text-[var(--pol-light-text-muted)]">
                     {formatDateTime(p.created_at)}
                   </span>

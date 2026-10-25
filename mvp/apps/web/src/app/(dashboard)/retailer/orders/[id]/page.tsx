@@ -29,7 +29,10 @@ import {
   groupStatusLabel,
   groupStatusTone,
   orderStatusTone,
-  orderStatusLabel,
+  orderStatusLabel,
+  formatOperationalStatus,
+  formatFulfillmentStatus,
+  formatTimelineEventLabel,
 } from "../../shared";
 
 interface DeliveryRecord {
@@ -527,7 +530,7 @@ export default function RetailerOrderDetailPage() {
                         </span>
                       ) : null}
                       {it.fulfillment_status ? (
-                        <StatusChip tone="info">{it.fulfillment_status}</StatusChip>
+                        <StatusChip tone="info">{formatFulfillmentStatus(it.fulfillment_status)}</StatusChip>
                       ) : null}
                     </div>
                   </TableCell>
@@ -926,11 +929,11 @@ export default function RetailerOrderDetailPage() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-[13px] font-bold text-[var(--pol-light-text-primary)]">
-                        {ev.event_type ?? "رویداد"}
+                        {formatTimelineEventLabel(ev.event_type)}
                       </span>
                       {ev.from_status || ev.to_status ? (
                         <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-mono text-[var(--pol-light-text-secondary)] border border-[var(--pol-light-border-subtle)]" dir="ltr">
-                          {ev.from_status ?? "∅"} → {ev.to_status ?? "∅"}
+                          {formatOperationalStatus(ev.from_status, "∅")} → {formatOperationalStatus(ev.to_status, "∅")}
                         </span>
                       ) : null}
                     </div>

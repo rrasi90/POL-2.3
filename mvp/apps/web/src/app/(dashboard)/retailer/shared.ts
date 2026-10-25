@@ -109,6 +109,113 @@ export const supportStatusLabel: Record<string, string> = {
 
 const OPEN_ORDER_STATUSES = new Set(["PENDING", "ACCEPTED", "PROCESSING", "SHIPPED"]);
 
+
+const OPERATIONAL_STATUS_LABELS: Record<string, string> = {
+  PENDING: "در انتظار بررسی",
+  ASSIGNED: "راننده تعیین‌شده",
+  PICKED_UP: "جمع‌آوری‌شده",
+  IN_TRANSIT: "در مسیر",
+  OUT_FOR_DELIVERY: "در مسیر تحویل",
+  ARRIVED: "رسیده به مقصد",
+  FAILED: "تحویل ناموفق",
+  RETURNED: "مرجوع‌شده",
+  FULFILLED: "تکمیل‌شده",
+  PARTIALLY_FULFILLED: "تکمیل جزئی",
+  UNFULFILLED: "تکمیل‌نشده",
+  PROPOSED: "پیشنهادشده",
+  DECLINED: "ردشده",
+  EXPIRED: "منقضی‌شده",
+  MATCHED: "مطابق",
+  PARTIALLY_MATCHED: "مطابق جزئی",
+  MISMATCH: "عدم تطابق",
+  START: "شروع",
+  END: "پایان",
+};
+
+const DELIVERY_STATUS_LABELS: Record<string, string> = {
+  PENDING: "در انتظار تخصیص",
+  ASSIGNED: "راننده تعیین‌شده",
+  PICKED_UP: "جمع‌آوری‌شده",
+  IN_TRANSIT: "در مسیر",
+  OUT_FOR_DELIVERY: "در مسیر تحویل",
+  ARRIVED: "رسیده به مقصد",
+  DELIVERED: "تحویل‌شده",
+  FAILED: "تحویل ناموفق",
+  RETURNED: "مرجوع‌شده",
+  CANCELLED: "لغوشده",
+  EXPIRED: "منقضی‌شده",
+};
+
+const FULFILLMENT_STATUS_LABELS: Record<string, string> = {
+  PENDING: "در انتظار تکمیل",
+  ACCEPTED: "پذیرفته‌شده",
+  PARTIALLY_ACCEPTED: "پذیرش جزئی",
+  FULFILLED: "تکمیل‌شده",
+  PARTIALLY_FULFILLED: "تکمیل جزئی",
+  UNFULFILLED: "تکمیل‌نشده",
+  REJECTED: "ردشده",
+  CANCELLED: "لغوشده",
+};
+
+const TIMELINE_EVENT_LABELS: Record<string, string> = {
+  ORDER_CREATED: "سفارش ایجاد شد",
+  ORDER_SUBMITTED: "سفارش ثبت شد",
+  ORDER_ACCEPTED: "سفارش پذیرفته شد",
+  ORDER_PARTIALLY_ACCEPTED: "پذیرش جزئی سفارش",
+  ORDER_REJECTED: "سفارش رد شد",
+  ORDER_CANCELLED: "سفارش لغو شد",
+  ORDER_PREPARING: "آماده‌سازی سفارش آغاز شد",
+  ORDER_READY: "سفارش آمادهٔ ارسال شد",
+  ORDER_DISPATCHED: "سفارش ارسال شد",
+  ORDER_DELIVERED: "سفارش تحویل شد",
+  ORDER_PARTIAL_ACCEPTANCE_PROPOSED: "پیشنهاد پذیرش جزئی ثبت شد",
+  ORDER_PARTIAL_ACCEPTANCE_APPROVED: "پیشنهاد پذیرش جزئی تأیید شد",
+  ORDER_PARTIAL_ACCEPTANCE_DECLINED: "پیشنهاد پذیرش جزئی رد شد",
+  DELIVERY_ASSIGNED: "راننده تعیین شد",
+  DELIVERY_PICKED_UP: "کالا جمع‌آوری شد",
+  DELIVERY_IN_TRANSIT: "محموله در مسیر است",
+  DELIVERY_ARRIVED: "محموله به مقصد رسید",
+  DELIVERY_COMPLETED: "تحویل ثبت شد",
+  DELIVERY_FAILED: "تحویل ناموفق بود",
+  PROOF_OF_DELIVERY_CREATED: "مدرک تحویل ثبت شد",
+  DISPUTE_OPENED: "اختلاف ثبت شد",
+  RETURN_REQUESTED: "درخواست مرجوعی ثبت شد",
+  PAYMENT_RECEIPT_SUBMITTED: "رسید پرداخت ثبت شد",
+  INVOICE_ISSUED: "فاکتور صادر شد",
+  SUPPORT_CASE_CREATED: "درخواست پشتیبانی ثبت شد",
+  SUPPORT_MESSAGE_SENT: "پیام پشتیبانی ثبت شد",
+};
+
+export function formatOperationalStatus(value: unknown, fallback = "—"): string {
+  if (typeof value !== "string" || !value.trim()) return fallback;
+  const status = value.trim();
+  return orderStatusLabel[status]
+    ?? groupStatusLabel[status]
+    ?? disputeLabel[status]
+    ?? returnStatusLabel[status]
+    ?? supportStatusLabel[status]
+    ?? OPERATIONAL_STATUS_LABELS[status]
+    ?? status.replace(/_/g, " ");
+}
+
+export function formatDeliveryStatus(value: unknown, fallback = "نامشخص"): string {
+  if (typeof value !== "string" || !value.trim()) return fallback;
+  const status = value.trim();
+  return DELIVERY_STATUS_LABELS[status] ?? "وضعیت تحویل نامشخص";
+}
+
+export function formatFulfillmentStatus(value: unknown, fallback = "—"): string {
+  if (typeof value !== "string" || !value.trim()) return fallback;
+  const status = value.trim();
+  return FULFILLMENT_STATUS_LABELS[status] ?? "وضعیت تکمیل نامشخص";
+}
+
+export function formatTimelineEventLabel(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return "رویداد ثبت‌شده";
+  const eventType = value.trim();
+  return TIMELINE_EVENT_LABELS[eventType] ?? "رویداد ثبت‌شده";
+}
+
 export function isOpenOrderStatus(status: unknown): boolean {
   return typeof status === "string" && OPEN_ORDER_STATUSES.has(status);
 }
