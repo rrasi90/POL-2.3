@@ -7,13 +7,13 @@ export default function CorporateHowPage() {
     {
       step: 1,
       title: "ورود امن با شماره همراه",
-      body: "بدون نیاز به حفظ رمز عبور پیچیده؛ ورود با کد شش‌رقمی OTP پیامک‌شده به تلفن همراه (D-018).",
+      body: "بدون نیاز به حفظ رمز عبور پیچیده؛ ورود با کد شش‌رقمی OTP پیامک‌شده به تلفن همراه .",
       icon: "📱",
     },
     {
       step: 2,
       title: "جست‌وجو و سبد خرید چندفروشنده‌ای",
-      body: "امکان انتخاب اقلام سوپرمارکتی از چندین بنکدار و تأمین‌کننده معتبر به صورت همزمان در یک سبد خرید یکپارچه (D-014).",
+      body: "امکان انتخاب اقلام سوپرمارکتی از چندین بنکدار و تأمین‌کننده معتبر به صورت همزمان در یک سبد خرید یکپارچه .",
       icon: "🛒",
     },
     {
@@ -31,7 +31,7 @@ export default function CorporateHowPage() {
     {
       step: 5,
       title: "ارسال و تحویل چابک با لینک",
-      body: "متصدیان پخش و رانندگان بدون نیاز به اپ مجزا، تحویل را با لینک اختصاصی و تأیید بارکد/حواله نهایی می‌کنند (D-023).",
+      body: "متصدیان پخش و رانندگان بدون نیاز به اپ مجزا، تحویل را با لینک اختصاصی و تأیید بارکد/حواله نهایی می‌کنند.",
       icon: "🚚",
     },
     {
@@ -60,6 +60,19 @@ export default function CorporateHowPage() {
           </div>
         </div>
       </header>
+
+      <nav
+        aria-label="پیوندهای اصلی موبایل"
+        className="flex md:hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-4 py-3 text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
+      >
+        <Link href="/" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">خانه</Link>
+        <Link href="/about" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">درباره ما</Link>
+        <Link href="/how" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">نحوه کار</Link>
+        <Link href="/retailers" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">خرده‌فروشان</Link>
+        <Link href="/vendors" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">بنکداران</Link>
+        <Link href="/pilot" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">پایلوت اهواز</Link>
+        <Link href="/contact" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">تماس</Link>
+      </nav>
 
       <main className="flex-1 py-12 md:py-16">
         <div className="mx-auto max-w-4xl px-6">
