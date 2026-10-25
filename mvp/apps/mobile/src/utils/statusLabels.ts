@@ -370,3 +370,24 @@ export function formatResourceType(value: string | null | undefined): string {
   if (!value) return "منبع نامشخص";
   return RESOURCE_TYPE_LABELS[value.toLocaleLowerCase("en-US")] ?? "سایر منابع";
 }
+
+const PACKAGING_UNIT_LABELS: Readonly<Record<string, string>> = {
+  CARTON: "کارتن",
+  BOX: "جعبه",
+  PACK: "بسته",
+  PIECE: "عدد",
+  UNIT: "واحد",
+  KG: "کیلوگرم",
+  GRAM: "گرم",
+  LITER: "لیتر",
+  BUNDLE: "دسته",
+  BAG: "کیسه",
+  BOTTLE: "بطری",
+  CAN: "قوطی",
+  CASE: "کارتن",
+};
+
+export function formatPackagingUnit(value: string | null | undefined): string {
+  if (!value) return "واحد نامشخص";
+  return PACKAGING_UNIT_LABELS[value.toLocaleUpperCase("en-US")] ?? "واحد دیگر";
+}
