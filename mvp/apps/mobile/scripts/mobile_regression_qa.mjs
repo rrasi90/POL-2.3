@@ -227,6 +227,18 @@ const checks = [
       screen.includes("formatTehranDateTime(n.created_at)") &&
       screen.includes('subtitle="اعلان برنامه، پیامک و ایمیل"');
   }],
+  ["Retailer storefront localizes product units, stock counts and missing-name fallbacks", () => {
+    const screen = read("screens/RetailerMobileScreen.tsx");
+    return screen.includes("formatPackagingUnit(selectedProduct.base_unit)") &&
+      screen.includes("numberFa(p.stock_quantity)") &&
+      screen.includes('"کالای ثبت‌نشده"') &&
+      screen.includes('"بنکدار"');
+  }],
+  ["Operations counts and numeric KPI values use Persian numerals", () => {
+    const screen = read("screens/OpsMobileScreen.tsx");
+    return screen.includes('(dash?.delivery_exceptions?.open_count ?? 0).toLocaleString("fa-IR")') &&
+      screen.includes('value.toLocaleString("fa-IR")');
+  }],
   ["No Driver App is introduced into Phase 3 mobile source", () => {
     const p = fs.readFileSync(path.resolve(process.cwd(), "src/__tests__/parity.md"), "utf8");
     return p.includes("No Driver App (D-023)");
