@@ -61,19 +61,19 @@ export default function ContactPage() {
 
           <div className="mt-8 rounded-2xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-6 shadow-[var(--pol-shadow-card)]">
             {submitted ? (
-              <div className="py-6 text-center">
-                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[var(--pol-light-semantic-success)]/10 text-[24px] text-[var(--pol-light-semantic-success)]">
-                  ✓
+              <div className="py-6 text-center" role="status" aria-live="polite">
+                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[var(--pol-light-semantic-warning)]/10 text-[24px] text-[var(--pol-light-semantic-warning)]">
+                  !
                 </div>
                 <h2 className="mt-3 text-[18px] font-bold text-[var(--pol-light-text-primary)]">
-                  پیام شما با موفقیت ثبت شد
+                  ارسال آنلاین این فرم هنوز فعال نیست
                 </h2>
                 <p className="mt-2 text-[13px] text-[var(--pol-light-text-muted)]">
-                  اطلاعات فرم در کلاینت اعتبارسنجی شد (C-07). کارشناسان ما به زودی با شماره {mobile} تماس خواهند گرفت.
+                  اطلاعات واردشده فقط در مرورگر بررسی شده و برای تیم پل ارسال نشده است. برای ثبت درخواست، از راه ارتباطی اعلام‌شده توسط کارشناس پل استفاده کنید.
                 </p>
                 <div className="mt-6">
                   <Button variant="secondary" onClick={() => setSubmitted(false)}>
-                    ارسال پیام دیگر
+                    بازگشت به فرم
                   </Button>
                 </div>
               </div>
@@ -113,8 +113,8 @@ export default function ContactPage() {
                   />
                 </div>
 
-                <div className="rounded-lg bg-[var(--pol-light-surface-subtle)] p-3 text-[11px] leading-[18px] text-[var(--pol-light-text-muted)]">
-                  اطلاعات واردشده پیش از ارسال بررسی می‌شود تا درخواست شما دقیق‌تر ثبت شود.
+                <div className="rounded-lg border border-[var(--pol-light-semantic-warning)]/40 bg-[var(--pol-light-surface-subtle)] p-3 text-[11px] leading-[18px] text-[var(--pol-light-text-muted)]">
+                  این فرم هنوز به ثبت سروری متصل نیست. اطلاعات واردشده به سامانه ارسال یا ذخیره نمی‌شود.
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-3">
