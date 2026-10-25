@@ -3,8 +3,9 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import { toAsciiDigits } from "../utils/otp";
+import { formatTehranDateTime } from "../i18n/fa";
 import { spacing, useThemedStyles, type Palette } from "../theme";
-import { formatOrderStatus, formatDeliveryStatus, formatReturnStatus, formatReturnIssue, formatTimelineEvent, formatOperationalStatus } from "../utils/statusLabels";
+import { formatOrderStatus, formatDeliveryStatus, formatReturnStatus, formatReturnIssue, formatTimelineEvent, formatOperationalStatus, formatPackagingUnit } from "../utils/statusLabels";
 import type { Role } from "../types";
 
 type Mode = "retailer" | "vendor";
@@ -437,8 +438,8 @@ export function OrderDetailMobileScreen(props: {
               <View style={styles.itemVisual}><Text style={styles.itemEmoji}>📦</Text></View>
               <View style={styles.itemMain}>
                 <Text style={styles.itemTitle}>{x.product_name_snapshot || x.id}</Text>
-                <Text style={styles.meta}>{x.brand_name_snapshot || ""} · {x.packaging_unit_snapshot || ""}</Text>
-                <Text style={styles.meta}>درخواست: {String(x.ordered_quantity ?? 0)} · پذیرفته: {String(x.accepted_quantity ?? "—")}</Text>
+                <Text style={styles.meta}>{x.brand_name_snapshot || ""} · {x.packaging_unit_snapshot ? formatPackagingUnit(x.packaging_unit_snapshot) : ""}</Text>
+                <Text style={styles.meta}>درخواست: {(x.ordered_quantity ?? 0).toLocaleString("fa-IR")} · پذیرفته: {x.accepted_quantity != null ? x.accepted_quantity.toLocaleString("fa-IR") : "—"}}</Text>
                 {vendorMode && ["SUBMITTED", "CREATED"].includes(status) ? (
                   <Input label="تعداد پیشنهادی" value={partial[x.id] || ""} onChangeText={(v) => setPartial((p) => ({ ...p, [x.id]: v }))} keyboardType="numeric" />
                 ) : null}
@@ -491,7 +492,7 @@ export function OrderDetailMobileScreen(props: {
               <View style={styles.timelineBody}>
                 <Text style={styles.itemTitle}>{formatTimelineEvent(x.event_type)}</Text>
                 <Text style={styles.meta}>{x.from_status ? formatOperationalStatus(x.from_status) : "شروع"} ← {x.to_status ? formatOperationalStatus(x.to_status) : "وضعیت جدید"}</Text>
-                <Text style={styles.meta}>{x.created_at || "—"}</Text>
+                <Text style={styles.meta}>{formatTehranDateTime(x.created_at)}</Text>
               </View>
             </View>
           ))}
