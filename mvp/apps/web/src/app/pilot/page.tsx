@@ -22,6 +22,19 @@ export default function CorporatePilotPage() {
         </div>
       </header>
 
+      <nav
+        aria-label="پیوندهای اصلی موبایل"
+        className="flex md:hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-4 py-3 text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
+      >
+        <Link href="/" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">خانه</Link>
+        <Link href="/about" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">درباره ما</Link>
+        <Link href="/how" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">نحوه کار</Link>
+        <Link href="/retailers" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">خرده‌فروشان</Link>
+        <Link href="/vendors" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">بنکداران</Link>
+        <Link href="/pilot" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">پایلوت اهواز</Link>
+        <Link href="/contact" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">تماس</Link>
+      </nav>
+
       <main className="flex-1 py-12 md:py-16">
         <div className="mx-auto max-w-4xl px-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--pol-light-brand-primary)]/20 bg-[var(--pol-light-brand-primary)]/10 px-3 py-0.5 text-[11px] font-semibold text-[var(--pol-light-brand-primary)]">
@@ -31,13 +44,13 @@ export default function CorporatePilotPage() {
             طرح پایلوت بنکداری و زنجیره تأمین اهواز
           </h1>
           <p className="mt-4 text-[15px] leading-[26px] text-[var(--pol-light-text-secondary)]">
-            نسخه فعلی پلتفرم پول (MVP) به صورت اختصاصی بر روی بازار بنکداران و سوپرمارکت‌های شهر اهواز متمرکز است (D-001). این تمرکز هدفمند امکان دستیابی به بالاترین نرخ تکمیل موفق سفارش (OTIF) و هماهنگی دقیق میدانی را فراهم می‌سازد.
+            نسخه فعلی پلتفرم پول (MVP) به صورت اختصاصی بر روی بازار بنکداران و سوپرمارکت‌های شهر اهواز متمرکز است. این تمرکز هدفمند امکان دستیابی به بالاترین نرخ تکمیل موفق سفارش (OTIF) و هماهنگی دقیق میدانی را فراهم می‌سازد.
           </p>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5 shadow-[var(--pol-shadow-card)]">
               <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
-                تک‌شهره و تمرکز جغرافیایی (D-001)
+                تمرکز پایلوت در اهواز
               </h2>
               <p className="mt-2 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
                 تمام تراکنش‌ها، ردیابی ناوگان و انبارها مربوط به منطقه شهری اهواز است؛ توسعه به شهرهای همجوار در فازهای بعدی پس از تثبیت شاخص‌های کلیدی صورت خواهد گرفت.
@@ -55,7 +68,7 @@ export default function CorporatePilotPage() {
 
             <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5 shadow-[var(--pol-shadow-card)]">
               <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
-                سادگی فرآیند بدون کیف پول واسط (D-021)
+                تسویه مستقیم میان طرفین
               </h2>
               <p className="mt-2 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
                 پلتفرم حساب بانکی واسط یا پول مسدودشده ندارد؛ پرداخت‌ها مستقیماً بر اساس فاکتورهای رسمی و توافقات مالی بین خریدار و تأمین‌کننده مدیریت می‌شوند.
@@ -64,7 +77,7 @@ export default function CorporatePilotPage() {
 
             <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5 shadow-[var(--pol-shadow-card)]">
               <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
-                ردیابی مدرن تحویل با پیوند اختصاصی (D-023)
+                پیگیری تحویل با لینک اختصاصی
               </h2>
               <p className="mt-2 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
                 پایان وابستگی به اپلیکیشن‌های متعدد رانندگان؛ متصدی ارسال حواله تحویل را با یک لمس روی پیوند امن ثبت و امضا می‌نماید.
