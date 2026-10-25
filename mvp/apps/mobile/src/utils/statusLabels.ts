@@ -429,3 +429,40 @@ export function formatKpiLabel(key: string | null | undefined): string {
   if (!key) return "شاخص عملیاتی";
   return KPI_LABELS[key.toLocaleLowerCase("en-US")] ?? "سایر شاخص‌های عملیاتی";
 }
+
+
+const FIELD_TASK_STATUS_LABELS: Readonly<Record<string, string>> = {
+  PENDING: "در انتظار",
+  IN_PROGRESS: "در حال انجام",
+  ASSIGNED: "واگذارشده",
+  COMPLETED: "تکمیل‌شده",
+  DONE: "انجام‌شده",
+  CANCELLED: "لغوشده",
+  OPEN: "باز",
+  CLOSED: "بسته",
+  BLOCKED: "متوقف‌شده",
+  NEEDS_FOLLOW_UP: "نیازمند پیگیری",
+};
+
+const FIELD_TASK_TYPE_LABELS: Readonly<Record<string, string>> = {
+  VENDOR_ONBOARDING: "ثبت‌نام و فعال‌سازی بنکدار",
+  RETAILER_ONBOARDING: "ثبت‌نام و فعال‌سازی فروشگاه",
+  TRAINING: "آموزش کاربر",
+  CATALOG_AUDIT: "بررسی کاتالوگ کالا",
+  FOLLOW_UP: "پیگیری میدانی",
+  ORDER_ASSISTANCE: "کمک در ثبت سفارش",
+  DOCUMENT_COLLECTION: "دریافت مدارک",
+  FIRST_ORDER: "پیگیری نخستین سفارش",
+  STORE_VISIT: "بازدید از فروشگاه",
+  VENDOR_VISIT: "بازدید از بنکداری",
+  RETAILER_VISIT: "بازدید از فروشگاه",
+  GENERAL: "وظیفه عمومی",
+};
+
+export function formatFieldTaskStatus(value: string | null | undefined): string {
+  return mappedLabel(value, FIELD_TASK_STATUS_LABELS, "وضعیت وظیفه نامشخص");
+}
+
+export function formatFieldTaskType(value: string | null | undefined): string {
+  return mappedLabel(value, FIELD_TASK_TYPE_LABELS, "وظیفه میدانی دیگر");
+}
