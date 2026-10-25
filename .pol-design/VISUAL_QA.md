@@ -325,3 +325,16 @@ pm run qa:mock -> PASS.
 - The login test suite now covers Persian and Arabic OTP digit normalization and preservation of leading zeroes in the shared web normalizer.
 - These assertions and regression tests were added after the screenshot manifest was originally captured. **Their execution is pending** on the updated branch; the earlier test counts are not evidence that this latest change passes.
 - See `TODO-173` in `TODO_LIST.md` and [PR #51](https://github.com/rrasi90/POL-2.3/pull/51).
+
+
+## Screenshot-driven UI fixes — 2026-10-25 (verification pending)
+
+Direct review of committed screenshots identified several user-facing QA defects:
+- Retailer catalog mobile screenshot contained repeated seeded English category labels (“Fulfillment Category”, “Proof Category”, “Seed Cat”).
+- Mobile screenshots used `fullPage: true`, causing the fixed bottom navigation to appear midway through the long image rather than showing a genuine device-sized viewport.
+- Operations order previews showed a raw English enum such as `DELIVERED`.
+- Native mobile order/delivery status chips also displayed raw enum values.
+
+Source changes now remove the known placeholder labels from the catalog presentation, deduplicate visible category labels, clarify category-only search, localize order/delivery states, hide the Next.js development portal during capture, and capture mobile views as the actual 390×844 viewport. The visual test also asserts the absence of the three placeholder labels and duplicated category names.
+
+**Status: PENDING RE-VERIFICATION.** The existing PNGs are from the earlier capture and have not yet been regenerated. The current capture, web regression/typecheck/build and mobile QA suites must be executed on the latest SHA before these fixes or updated screenshots are marked verified. See TODO-174 in `TODO_LIST.md`.
