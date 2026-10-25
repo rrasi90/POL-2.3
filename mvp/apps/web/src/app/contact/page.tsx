@@ -114,7 +114,7 @@ export default function ContactPage() {
                 </div>
 
                 <div className="rounded-lg bg-[var(--pol-light-surface-subtle)] p-3 text-[11px] leading-[18px] text-[var(--pol-light-text-muted)]">
-                  یادداشت فنی: این فرم بر اساس مشخصات نسخه MVP دارای اعتبارسنجی سمت کلاینت است (C-07).
+                  اطلاعات واردشده پیش از ارسال بررسی می‌شود تا درخواست شما دقیق‌تر ثبت شود.
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-3">
