@@ -44,6 +44,17 @@ export default function HomePage() {
         </div>
       </header>
 
+      <nav
+        aria-label="پیوندهای اصلی موبایل"
+        className="flex md:hidden items-center gap-4 overflow-x-auto whitespace-nowrap border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-4 py-3 text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
+      >
+        <Link href="/about" className="shrink-0 hover:text-[var(--pol-light-brand-primary)]">درباره ما</Link>
+        <Link href="/how" className="shrink-0 hover:text-[var(--pol-light-brand-primary)]">نحوه کار</Link>
+        <Link href="/retailers" className="shrink-0 hover:text-[var(--pol-light-brand-primary)]">برای خرده‌فروشان</Link>
+        <Link href="/vendors" className="shrink-0 hover:text-[var(--pol-light-brand-primary)]">برای تأمین‌کنندگان</Link>
+        <Link href="/pilot" className="shrink-0 hover:text-[var(--pol-light-brand-primary)]">پایلوت اهواز</Link>
+      </nav>
+
       {/* Hero Section */}
       <main className="flex-1">
         <section className="mx-auto max-w-5xl px-6 py-20 text-center md:py-28">
@@ -118,29 +129,35 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Architectural badges */}
-          <div className="mt-14 rounded-2xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5">
-            <p className="text-[12px] font-semibold text-[var(--pol-light-text-muted)]">
-              اصول معماری نسخه پایلوت (MVP Constraints)
+          {/* Customer-facing pilot principles */}
+          <section
+            aria-labelledby="pol-pilot-principles-title"
+            className="mt-14 rounded-2xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5 sm:p-6"
+          >
+            <h2
+              id="pol-pilot-principles-title"
+              className="text-[15px] font-bold text-[var(--pol-light-text-primary)]"
+            >
+              خرید عمده با فرایندی روشن و قابل پیگیری
+            </h2>
+            <p className="mx-auto mt-2 max-w-2xl text-[13px] leading-6 text-[var(--pol-light-text-secondary)]">
+              از انتخاب کالا و ثبت سفارش تا پیگیری وضعیت و تأیید تحویل، هر مرحله برای خریدار و تأمین‌کننده روشن است.
             </p>
-            <div className="mt-3 flex flex-wrap justify-center gap-2">
-              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
-                تک‌شهر اهواز (D-001)
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1.5 text-[12px] text-[var(--pol-light-text-secondary)]">
+                پایلوت متمرکز در اهواز
               </span>
-              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
-                سبد چندفروشنده‌ای (D-014)
+              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1.5 text-[12px] text-[var(--pol-light-text-secondary)]">
+                سبد یکپارچه از چند بنکدار
               </span>
-              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
-                OTP شش‌رقمی (D-018)
+              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1.5 text-[12px] text-[var(--pol-light-text-secondary)]">
+                پیگیری سفارش تا تحویل
               </span>
-              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
-                تحویل با لینک (D-023)
-              </span>
-              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
-                بدون کیف پول / اسکرو (D-021 / D-025)
+              <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1.5 text-[12px] text-[var(--pol-light-text-secondary)]">
+                تسویه مستقیم میان طرفین
               </span>
             </div>
-          </div>
+          </section>
         </section>
       </main>
 
