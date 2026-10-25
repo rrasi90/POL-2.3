@@ -20,8 +20,21 @@ export default function CorporateRetailersPage() {
             </Link>
           </div>
         </div>
-      </header>
-
+      </header>
+
+      <nav
+        aria-label="پیوندهای اصلی موبایل"
+        className="flex md:hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-4 py-3 text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
+      >
+        <Link href="/" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">خانه</Link>
+        <Link href="/about" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">درباره ما</Link>
+        <Link href="/how" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">نحوه کار</Link>
+        <Link href="/retailers" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">خرده‌فروشان</Link>
+        <Link href="/vendors" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">بنکداران</Link>
+        <Link href="/pilot" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">پایلوت اهواز</Link>
+        <Link href="/contact" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">تماس</Link>
+      </nav>
+
       <main className="flex-1 py-12 md:py-16">
         <div className="mx-auto max-w-4xl px-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--pol-light-brand-primary)]/20 bg-[var(--pol-light-brand-primary)]/10 px-3 py-0.5 text-[11px] font-semibold text-[var(--pol-light-brand-primary)]">
@@ -38,7 +51,7 @@ export default function CorporateRetailersPage() {
             <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5 shadow-[var(--pol-shadow-card)]">
               <div className="text-[20px]">🛒</div>
               <h2 className="mt-2 text-[15px] font-bold text-[var(--pol-light-text-primary)]">
-                سبد خرید چندفروشنده‌ای (D-014)
+                سبد خرید چندبنکداری
               </h2>
               <p className="mt-1 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
                 خرید همزمان برنج، روغن، لبنیات و شوینده از چندین بنکدار مختلف با یک کلیک و تفکیک خودکار پیش‌فاکتورها.
@@ -68,7 +81,7 @@ export default function CorporateRetailersPage() {
             <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5 shadow-[var(--pol-shadow-card)]">
               <div className="text-[20px]">📱</div>
               <h2 className="mt-2 text-[15px] font-bold text-[var(--pol-light-text-primary)]">
-                ورود سریع با موبایل (D-018)
+                ورود امن با شماره موبایل
               </h2>
               <p className="mt-1 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
                 بدون نیاز به ثبت‌نام طولانی یا مدارک پیچیده؛ ورود مستقیم تنها با شماره موبایل و کد پیامکی ۶ رقمی.
