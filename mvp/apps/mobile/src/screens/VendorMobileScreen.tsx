@@ -6,7 +6,7 @@ import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 import { formatFaNumber, formatTehranDateTime, formatToman, todayTehranIso, toAsciiDigits } from "../i18n/fa";
-import { formatGrantStatus, formatInvoiceStatus, formatOrderStatus, formatPackagingUnit, formatPermission, formatReferralStatus, formatRole, formatSettlementStatus } from "../utils/statusLabels";
+import { formatGrantStatus, formatInvoiceStatus, formatOperationalStatus, formatOrderStatus, formatPackagingUnit, formatPermission, formatReferralStatus, formatRole, formatSettlementStatus } from "../utils/statusLabels";
 
 type MainTab = "home" | "orders" | "inventory" | "finance" | "more" | "support";
 type InventoryTab = "stock" | "daily";
@@ -215,7 +215,7 @@ function barcodeStatusLabel(status: string | null | undefined): string {
     AMBIGUOUS: "چند تطبیق",
     NO_MATCH: "یافت نشد",
   };
-  return status ? map[status] || status : "نامشخص";
+  return status ? map[status] || "وضعیت تطبیق نامشخص" : "نامشخص";
 }
 
 function statusLabel(status: string | null | undefined): string {
@@ -238,7 +238,7 @@ function statusLabel(status: string | null | undefined): string {
     CALCULATED: "محاسبه‌شده",
     PAID: "پرداخت‌شده",
   };
-  return map[status ?? ""] ?? status ?? "—";
+  return map[status ?? ""] ?? formatOperationalStatus(status);
 }
 
 function toneForOrderStatus(status: string | null | undefined): "neutral" | "warn" | "ok" | "info" | "danger" {
@@ -899,9 +899,10 @@ export function VendorMobileScreen(props: {
               {barcodeResult.product ? (
                 <View style={styles.candidatePanel}>
                   <Text style={styles.itemTitle}>ثبت در موجودی با اسکن</Text>
-                  <Text style={styles.meta}>در این مرحله دوربین واقعی هنوز device-gated است؛ همین فرم همان contract اسکن پیوسته را با داده متصل می‌کند.</Text>
-                  <Input label="SKU فروشنده" value={scanSku} onChangeText={setScanSku} direction="ltr" />
-                  <Input label="واحد بسته‌بندی" value={scanPackaging} onChangeText={setScanPackaging} direction="ltr" />
+                  <Text style={styles.meta}>برای استفاده از دوربین، اجرای برنامه روی دستگاه پشتیبانی‌شده لازم است؛ فعلاً اطلاعات کالا را از همین فرم ثبت کنید.</Text>
+                  <Input label="کد فروشنده" value={scanSku} onChangeText={setScanSku} direction="ltr" />
+                  <Input label="کد واحد بسته‌بندی" value={scanPackaging} onChangeText={setScanPackaging} direction="ltr" />
+                  <Text style={styles.meta}>معادل فارسی: {formatPackagingUnit(scanPackaging)}</Text>
                   <Input label="تعداد در بسته" value={scanPackQuantity} onChangeText={setScanPackQuantity} keyboardType="numeric" />
                   <Input label="موجودی فیزیکی" value={scanPhysicalQuantity} onChangeText={setScanPhysicalQuantity} keyboardType="numeric" />
                   <Input label="قیمت فروش (تومان)" value={scanUnitPrice} onChangeText={setScanUnitPrice} keyboardType="numeric" />
