@@ -129,7 +129,7 @@ export default function VendorCatalogPage() {
         <div className="w-full max-w-md">
           <SearchField
             label="جستجوی کالا"
-            placeholder="نام کالا، برند یا کد SKU..."
+            placeholder="نام کالا، برند یا کد فروشنده..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
