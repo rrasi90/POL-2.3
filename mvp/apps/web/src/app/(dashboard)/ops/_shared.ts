@@ -37,6 +37,7 @@ export const orderStatusTone: Record<string, StatusTone> = {
 
 export const orderStatusLabel: Record<string, string> = {
   PENDING: "در انتظار پذیرش",
+  PROCESSING: "در حال پردازش",
   CREATED: "ایجادشده",
   SUBMITTED: "ثبت‌شده",
   ACCEPTED: "پذیرفته‌شده",
@@ -181,6 +182,10 @@ const OPERATIONAL_STATUS_LABELS: Record<string, string> = {
   MATCHED: "مطابق",
   PARTIALLY_MATCHED: "مطابق جزئی",
   MISMATCH: "عدم تطابق",
+  ACTIVE: "فعال",
+  COMPLETED: "تکمیل‌شده",
+  PARTIALLY_COMPLETED: "تکمیل جزئی",
+  DRAFT: "پیش‌نویس",
   START: "شروع",
   END: "پایان",
 };
@@ -243,10 +248,10 @@ export function formatOperationalStatus(value: unknown, fallback = "—"): strin
   if (typeof value !== "string" || !value.trim()) return fallback;
   const status = value.trim();
   return orderStatusLabel[status]
-    ?? status === "ACTIVE" ? "فعال" : status === "COMPLETED" ? "تکمیل‌شده" : status === "PARTIALLY_COMPLETED" ? "تکمیل جزئی" : status === "DRAFT" ? "پیش‌نویس" : undefined
     ?? disputeStatusLabel[status]
     ?? returnStatusLabel[status]
     ?? supportStatusLabel[status]
+    ?? reconStatusLabel[status]
     ?? OPERATIONAL_STATUS_LABELS[status]
     ?? status.replace(/_/g, " ");
 }

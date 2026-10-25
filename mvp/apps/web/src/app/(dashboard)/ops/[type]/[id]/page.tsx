@@ -362,11 +362,7 @@ export default function OpsObjectDetailPage() {
                     : "neutral"
               }
             >
-              {type === "orders"
-                ? orderStatusLabel[status] ?? status
-                : type === "support"
-                  ? supportStatusLabel[status] ?? status
-                  : status}
+              {formatOperationalStatus(status)}
             </StatusChip>
           ) : (
             <StatusChip tone="neutral">{TYPE_LABEL[type]}</StatusChip>

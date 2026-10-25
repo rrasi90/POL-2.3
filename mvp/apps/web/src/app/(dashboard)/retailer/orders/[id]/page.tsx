@@ -31,6 +31,7 @@ import {
   orderStatusTone,
   orderStatusLabel,
   formatOperationalStatus,
+  formatDeliveryStatus,
   formatFulfillmentStatus,
   formatTimelineEventLabel,
 } from "../../shared";
@@ -849,7 +850,7 @@ export default function RetailerOrderDetailPage() {
                   role="status"
                   className="mt-1 text-[12px] font-medium text-[var(--pol-light-semantic-warning)]"
                 >
-                  تا رسیدن بار به مقصد (وضعیت ارسال: {deliveryStatus ?? "نامشخص"}) تأیید تحویل
+                  تا رسیدن بار به مقصد (وضعیت ارسال: {formatDeliveryStatus(deliveryStatus)}) تأیید تحویل
                   فعال نمی‌شود.
                 </p>
               ) : null}
