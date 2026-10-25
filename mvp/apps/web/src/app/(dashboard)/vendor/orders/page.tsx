@@ -205,7 +205,7 @@ export default function VendorOrdersPage() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
-                      {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
+                      {orderStatusLabel[o.order_status ?? ""] ?? "وضعیت نامشخص"}
                     </StatusChip>
                     {o.dispute_status && o.dispute_status !== "NONE" && (
                       <StatusChip tone="danger">اختلاف ثبت‌شده</StatusChip>

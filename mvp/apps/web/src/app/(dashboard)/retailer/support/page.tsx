@@ -332,7 +332,7 @@ export default function RetailerSupportPage() {
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusChip tone={supportStatusTone[c.status ?? ""] ?? "neutral"}>
-                        {supportStatusLabel[c.status ?? ""] ?? c.status ?? "—"}
+                        {supportStatusLabel[c.status ?? ""] ?? "وضعیت نامشخص"}
                       </StatusChip>
                       <StatusChip tone={supportPriorityTone[c.priority ?? ""] ?? "neutral"}>
                         {PRIORITY_LABEL[c.priority ?? ""] ?? c.priority ?? "—"}
@@ -390,7 +390,7 @@ export default function RetailerSupportPage() {
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusChip tone={supportStatusTone[detail.status ?? ""] ?? "neutral"}>
-                    {supportStatusLabel[detail.status ?? ""] ?? detail.status ?? "—"}
+                    {supportStatusLabel[detail.status ?? ""] ?? "وضعیت نامشخص"}
                   </StatusChip>
                   <StatusChip tone={supportPriorityTone[detail.priority ?? ""] ?? "neutral"}>
                     {PRIORITY_LABEL[detail.priority ?? ""] ?? detail.priority ?? "—"}

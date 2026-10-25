@@ -308,11 +308,11 @@ export default function VendorOrderDetailPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2.5">
             <StatusChip tone={orderStatusTone[status] ?? "neutral"}>
-              {orderStatusLabel[status] ?? status ?? "—"}
+              {orderStatusLabel[status] ?? "وضعیت نامشخص"}
             </StatusChip>
             {order.dispute_status && order.dispute_status !== "NONE" && (
               <StatusChip tone="danger">
-                {disputeStatusLabel[order.dispute_status] ?? order.dispute_status}
+                {disputeStatusLabel[order.dispute_status ?? ""] ?? "وضعیت نامشخص"}
               </StatusChip>
             )}
             {order.delivery_address && (

@@ -199,7 +199,7 @@ export default function OpsReconciliationPage() {
                 <option value="">همه وضعیت‌ها</option>
                 {STATUS_OPTIONS.filter(Boolean).map((s) => (
                   <option key={s} value={s}>
-                    {reconStatusLabel[s] ?? s}
+                    {reconStatusLabel[s] ?? "وضعیت نامشخص"}
                   </option>
                 ))}
               </select>
@@ -228,7 +228,7 @@ export default function OpsReconciliationPage() {
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusChip tone={reconStatusTone[item.status ?? ""] ?? "neutral"}>
-                        {reconStatusLabel[item.status ?? ""] ?? item.status ?? "—"}
+                        {reconStatusLabel[item.status ?? ""] ?? "وضعیت نامشخص"}
                       </StatusChip>
                       <span className="ms-auto text-[11px] text-[var(--pol-light-text-muted)]">
                         {ageLabel(item.opened_at)}
@@ -287,7 +287,7 @@ export default function OpsReconciliationPage() {
             <Card className="p-5 space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-3">
                 <StatusChip tone={reconStatusTone[detail.status ?? ""] ?? "neutral"}>
-                  {reconStatusLabel[detail.status ?? ""] ?? detail.status ?? "—"}
+                  {reconStatusLabel[detail.status ?? ""] ?? "وضعیت نامشخص"}
                 </StatusChip>
                 <span className="text-[12px] text-[var(--pol-light-text-muted)]">
                   زمان ثبت: {formatDateTime(detail.opened_at)}

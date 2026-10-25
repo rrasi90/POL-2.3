@@ -7,6 +7,19 @@ import { Button, ErrorState, Skeleton, StatusChip, type StatusTone } from "@pol/
 import { getApi } from "@/lib/auth/api";
 import { cardCls, formatDateTime, inputCls, str, type LoadState } from "../../../ops/_shared";
 
+const fieldTaskTypeLabel: Record<string, string> = {
+  VENDOR_ONBOARDING: "فعال‌سازی بنکدار",
+  RETAILER_ONBOARDING: "فعال‌سازی خرده‌فروش",
+  STORE_VISIT: "بازدید فروشگاه",
+  TRAINING: "آموزش",
+  CATALOG_REVIEW: "بررسی کاتالوگ",
+  INVENTORY_CHECK: "بررسی موجودی",
+  ORDER_FOLLOW_UP: "پیگیری سفارش",
+  DELIVERY_FOLLOW_UP: "پیگیری تحویل",
+  SUPPORT_FOLLOW_UP: "پیگیری پشتیبانی",
+  GENERAL: "وظیفه عمومی",
+};
+
 const taskStatusTone: Record<string, StatusTone> = {
   PENDING: "warning",
   IN_PROGRESS: "info",
@@ -151,10 +164,10 @@ export default function FieldTaskDetailPage() {
       <section className={cardCls}>
         <div className="flex flex-wrap items-center gap-2">
           <StatusChip tone={taskStatusTone[task?.status ?? ""] ?? "neutral"}>
-            {taskStatusLabel[task?.status ?? ""] ?? task?.status ?? "—"}
+            {taskStatusLabel[task?.status ?? ""] ?? "وضعیت نامشخص"}
           </StatusChip>
           <span className="text-[13px] text-[var(--pol-light-text-secondary)]" dir="ltr">
-            {task?.task_type ?? "—"}
+            {task?.task_type ? fieldTaskTypeLabel[task.task_type] ?? "نوع وظیفه دیگر" : "—"}
           </span>
           <span className="text-[12px] text-[var(--pol-light-text-muted)]" dir="ltr">
             {task?.id}

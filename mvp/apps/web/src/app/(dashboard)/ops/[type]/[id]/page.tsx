@@ -380,8 +380,7 @@ export default function OpsObjectDetailPage() {
             <StatusChip
               tone={disputeStatusTone[String(record.dispute_status)] ?? "neutral"}
             >
-              {disputeStatusLabel[String(record.dispute_status)] ??
-                String(record.dispute_status)}
+              {disputeStatusLabel[String(record.dispute_status)] ?? "وضعیت نامشخص"}
             </StatusChip>
           ) : null}
 

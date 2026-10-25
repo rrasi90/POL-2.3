@@ -439,11 +439,11 @@ export default function RetailerOrderDetailPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <StatusChip tone={orderStatusTone[order.order_status ?? ""] ?? "neutral"}>
-              {orderStatusLabel[order.order_status ?? ""] ?? order.order_status ?? "—"}
+              {orderStatusLabel[order.order_status ?? ""] ?? "وضعیت نامشخص"}
             </StatusChip>
             {order.group_status ? (
               <StatusChip tone={groupStatusTone[order.group_status] ?? "neutral"}>
-                گروه: {groupStatusLabel[order.group_status] ?? order.group_status}
+                گروه: {groupStatusLabel[order.group_status ?? ""] ?? "وضعیت نامشخص"}
               </StatusChip>
             ) : null}
             <StatusChip tone={disputeTone[order.dispute_status ?? "NONE"] ?? "neutral"}>
