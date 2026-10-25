@@ -2545,7 +2545,7 @@
   - Web vendor inventory now reads `canonical_name_fa`, maps `physical_quantity` into the displayed stock field, keeps vendor/master SKUs searchable and sends `new_physical_quantity` to the existing API route.
   - Web vendor catalog reads canonical names, displays available stock from `available_quantity` when the presentation alias is absent, and flags unlinked/unnamed products as needing catalog matching instead of showing the generic placeholder.
   - Native Vendor mobile inventory cards now use `canonical_name_fa` and vendor SKU as fallback identity.
-- **Regression guards added:** mobile cross-module QA asserts the canonical field, quantity mapping and PATCH field; browser capture asserts vendor inventory does not display the old exact placeholder `کالای بدون نام`.
+- **Regression guards added:** mobile cross-module QA asserts the canonical field, quantity mapping and PATCH field; browser capture asserts both vendor catalog and inventory routes do not display the old exact placeholder `کالای بدون نام`.
 - **Verification:** no tests executed on the new source revision yet. The dedicated workflow continues to be blocked by Actions runner allocation; do not close this item until web typecheck/build, Playwright capture and mobile QA pass and screenshots are regenerated.
 
 
