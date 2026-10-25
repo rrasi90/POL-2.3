@@ -230,11 +230,11 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
           <>
             <Card>
               <Text style={styles.h2}>استثناهای عملیاتی</Text>
-              <Text style={styles.metric}>{String(dash?.delivery_exceptions?.open_count ?? 0)}</Text>
-              <Text style={styles.meta}>تحویل باز · ارتقا {String(dash?.delivery_exceptions?.escalated_count ?? 0)}</Text>
-              <Text style={styles.metric}>{String(dash?.disputes?.open_disputes ?? 0)}</Text>
+              <Text style={styles.metric}>{(dash?.delivery_exceptions?.open_count ?? 0).toLocaleString("fa-IR")}</Text>
+              <Text style={styles.meta}>تحویل باز · ارتقا {(dash?.delivery_exceptions?.escalated_count ?? 0).toLocaleString("fa-IR")}</Text>
+              <Text style={styles.metric}>{(dash?.disputes?.open_disputes ?? 0).toLocaleString("fa-IR")}</Text>
               <Text style={styles.meta}>اختلاف باز</Text>
-              <Text style={styles.metric}>{String(dash?.support_cases?.open_cases ?? 0)}</Text>
+              <Text style={styles.metric}>{(dash?.support_cases?.open_cases ?? 0).toLocaleString("fa-IR")}</Text>
               <Text style={styles.meta}>پرونده پشتیبانی باز</Text>
             </Card>
             {orders.length === 0 ? (
@@ -255,10 +255,10 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
               <Card>
                 <Text style={styles.h2}>سیگنال‌های ریسک واقعی</Text>
                 <Text style={styles.meta}>
-                  تحویل باز: {String(dash?.delivery_exceptions?.open_count ?? 0)} · ارتقا: {String(dash?.delivery_exceptions?.escalated_count ?? 0)}
+                  تحویل باز: {(dash?.delivery_exceptions?.open_count ?? 0).toLocaleString("fa-IR")} · ارتقا: {(dash?.delivery_exceptions?.escalated_count ?? 0).toLocaleString("fa-IR")}
                 </Text>
-                <Text style={styles.meta}>اختلاف باز: {String(dash?.disputes?.open_disputes ?? 0)}</Text>
-                <Text style={styles.meta}>پشتیبانی باز: {String(dash?.support_cases?.open_cases ?? 0)}</Text>
+                <Text style={styles.meta}>اختلاف باز: {(dash?.disputes?.open_disputes ?? 0).toLocaleString("fa-IR")}</Text>
+                <Text style={styles.meta}>پشتیبانی باز: {(dash?.support_cases?.open_cases ?? 0).toLocaleString("fa-IR")}</Text>
               </Card>
             ) : null}
             {recon.length === 0 ? (
@@ -283,7 +283,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
               Object.entries(analytics.kpis).map(([key, value]) => (
                 <Card key={key}>
                   <Text style={styles.h2}>{prettyKpi(key)}</Text>
-                  <Text style={styles.metric}>{String(value ?? "—")}</Text>
+                  <Text style={styles.metric}>{typeof value === "number" ? value.toLocaleString("fa-IR") : String(value ?? "—")}</Text>
                 </Card>
               ))
             ) : (
@@ -313,7 +313,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
               <Card key={u.id}>
                 <StatusChip label={formatOrganizationStatus(u.is_active ? "ACTIVE" : "INACTIVE")} tone={u.is_active ? "ok" : "warn"} />
                 <Text style={styles.h2}>{u.full_name || u.phone_number || u.id}</Text>
-                <Text style={styles.meta}>نقش: {formatRole(u.role)} · عضویت‌ها: {String(u.membership_count ?? 0)}</Text>
+                <Text style={styles.meta}>نقش: {formatRole(u.role)} · عضویت‌ها: {(u.membership_count ?? 0).toLocaleString("fa-IR")}</Text>
                 <Btn
                   label={u.is_active ? "غیرفعال کردن" : "فعال کردن"}
                   tone="ghost"
@@ -330,7 +330,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
               <Card key={o.id}>
                 <StatusChip label={formatOrganizationStatus(o.status)} tone={o.status === "ACTIVE" ? "ok" : "info"} />
                 <Text style={styles.h2}>{o.name || o.id}</Text>
-                <Text style={styles.meta}>نوع: {formatOrganizationType(o.org_type)} · عضویت‌ها: {String(o.membership_count ?? 0)}</Text>
+                <Text style={styles.meta}>نوع: {formatOrganizationType(o.org_type)} · عضویت‌ها: {(o.membership_count ?? 0).toLocaleString("fa-IR")}</Text>
                 {o.status === "ACTIVE" || o.status === "SUSPENDED" ? (
                   <Btn
                     label={o.status === "ACTIVE" ? "تعلیق سازمان" : "فعال‌سازی سازمان"}
