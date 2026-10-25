@@ -42,7 +42,18 @@ async function assertResponsiveDocument(page: Page, expectedPath: string): Promi
 
 async function assertCanonicalUserFacingCopy(page: Page, expectedPath: string): Promise<void> {
   const visibleText = await page.locator("body").innerText();
-  expect(visibleText, `internal brand leaked on ${expectedPath}`).not.toContain("Precision Commerce");
+  for (const internalTerm of [
+    "Precision Commerce",
+    "FMCG",
+    "B2B",
+    "OTIF",
+    "RBAC",
+    "MVP Constraints",
+    "G-007",
+    "O-10B",
+  ]) {
+    expect(visibleText, `${expectedPath} contains internal/English term: ${internalTerm}`).not.toContain(internalTerm);
+  }
 
   if (expectedPath === "/contact") {
     expect(visibleText).toMatch(/این فرم هنوز به ثبت سروری متصل نیست|ارسال آنلاین این فرم هنوز فعال نیست/);
