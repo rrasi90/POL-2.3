@@ -208,6 +208,25 @@ const checks = [
       ops.includes("return formatKpiLabel(key)") &&
       labels.includes("export function formatKpiLabel");
   }],
+  ["Field-task and assisted-order screens localize status, type and timestamp content", () => {
+    const list = read("screens/FieldTaskListScreen.tsx");
+    const detail = read("screens/FieldTaskDetailScreen.tsx");
+    const assisted = read("screens/AssistedOrderScreen.tsx");
+    const labels = read("utils/statusLabels.ts");
+    return list.includes("formatFieldTaskStatus(item.status)") &&
+      list.includes("formatFieldTaskType(item.task_type)") &&
+      detail.includes("statusOptions.map(([code, label])") &&
+      detail.includes("formatTehranDateTime(task?.due_date)") &&
+      labels.includes("export function formatFieldTaskStatus") &&
+      assisted.includes('badge="سفارش کمکی"') &&
+      !assisted.includes('badge="F-03"');
+  }],
+  ["Account notifications use Persian channel labels and Tehran timestamps", () => {
+    const screen = read("screens/AccountMobileScreen.tsx");
+    return screen.includes('label="اعلان برنامه"') &&
+      screen.includes("formatTehranDateTime(n.created_at)") &&
+      screen.includes('subtitle="اعلان برنامه، پیامک و ایمیل"');
+  }],
   ["No Driver App is introduced into Phase 3 mobile source", () => {
     const p = fs.readFileSync(path.resolve(process.cwd(), "src/__tests__/parity.md"), "utf8");
     return p.includes("No Driver App (D-023)");
