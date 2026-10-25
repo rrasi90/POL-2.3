@@ -19,8 +19,21 @@ export default function LegalPage() {
             </Link>
           </div>
         </div>
-      </header>
-
+      </header>
+
+      <nav
+        aria-label="پیوندهای اصلی موبایل"
+        className="flex md:hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-4 py-3 text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
+      >
+        <Link href="/" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">خانه</Link>
+        <Link href="/about" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">درباره ما</Link>
+        <Link href="/how" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">نحوه کار</Link>
+        <Link href="/retailers" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">خرده‌فروشان</Link>
+        <Link href="/vendors" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">بنکداران</Link>
+        <Link href="/pilot" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">پایلوت اهواز</Link>
+        <Link href="/contact" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">تماس</Link>
+      </nav>
+
       <main className="flex-1 py-12 md:py-16">
         <div className="mx-auto max-w-4xl px-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--pol-light-brand-primary)]/20 bg-[var(--pol-light-brand-primary)]/10 px-3 py-0.5 text-[11px] font-semibold text-[var(--pol-light-brand-primary)]">
@@ -45,7 +58,7 @@ export default function LegalPage() {
 
             <section className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-6 shadow-[var(--pol-shadow-card)]">
               <h2 className="text-[16px] font-bold text-[var(--pol-light-text-primary)]">
-                ۲. احراز هویت، کنترل دسترسی و ممیزی (D-018)
+                ۲. احراز هویت، کنترل دسترسی و ممیزی
               </h2>
               <ul className="mt-2 list-disc space-y-1.5 ps-5 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
                 <li>ورود کاربران صرفاً از طریق پیامک رمز یکبار مصرف ۶ رقمی (OTP) با طول عمر ۱۲۰ ثانیه امکان‌پذیر است.</li>
@@ -56,7 +69,7 @@ export default function LegalPage() {
 
             <section className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-6 shadow-[var(--pol-shadow-card)]">
               <h2 className="text-[16px] font-bold text-[var(--pol-light-text-primary)]">
-                ۳. شرایط سفارش، تسویه و عدم نگهداری وجوه (D-021 / D-025)
+                ۳. شرایط سفارش و تسویه مستقیم
               </h2>
               <p className="mt-2 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
                 پلتفرم پُل یک سامانه مدیریت سفارش است و نه یک نهاد بانکی یا واسط مالی؛ هیچ‌گونه کیف پول اعتباری یا حساب اسکرو در سیستم وجود ندارد. تسویه‌حساب‌ها طبق فاکتورهای رسمی و توافقات عرفی میان خریدار و تأمین‌کننده انجام می‌گیرد.
@@ -65,7 +78,7 @@ export default function LegalPage() {
 
             <section className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-6 shadow-[var(--pol-shadow-card)]">
               <h2 className="text-[16px] font-bold text-[var(--pol-light-text-primary)]">
-                ۴. فرآیند تحویل و مرجوعی کالا (D-023)
+                ۴. فرآیند تحویل و مرجوعی کالا
               </h2>
               <p className="mt-2 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
                 تحویل بار با ارائه لینک رمزنگاری‌شده و ثبت تأیید تحویل از سوی تحویل‌گیرنده نهایی می‌شود. در صورت کسری بار، آسیب یا مغایرت اقلام، مراتب از طریق بخش پشتیبانی و استثناهای سفارش ظرف مهلت مقرر ثبت خواهد شد.
