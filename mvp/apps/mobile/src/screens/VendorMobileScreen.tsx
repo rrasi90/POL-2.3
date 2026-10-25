@@ -6,7 +6,7 @@ import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 import { formatFaNumber, formatTehranDateTime, formatToman, todayTehranIso, toAsciiDigits } from "../i18n/fa";
-import { formatCandidateStatus, formatGrantStatus, formatInvoiceStatus, formatOperationalStatus, formatOrderStatus, formatPermission, formatReferralStatus, formatRole, formatSettlementStatus } from "../utils/statusLabels";
+import { formatGrantStatus, formatInvoiceStatus, formatOrderStatus, formatPermission, formatReferralStatus, formatSettlementStatus } from "../utils/statusLabels";
 
 type MainTab = "home" | "orders" | "inventory" | "finance" | "more" | "support";
 type InventoryTab = "stock" | "daily";
