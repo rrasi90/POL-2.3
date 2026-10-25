@@ -2634,3 +2634,15 @@
 - Reran the failed jobs for workflow run [40188108864](https://github.com/rrasi90/POL-2.3/actions/runs/40188108864) via the authorized GitHub Actions connection.
 - The run briefly queued, then completed as failure again. Both jobs report completed/failure, steps=null, no log URL.
 - No test commands are evidenced as having started, so this is still an execution/runner availability blocker, not a failing source assertion. TODO-175 remains BLOCKED.
+
+
+### TODO-183 — Full front-end completeness audit findings
+
+- **Status:** OPEN — remediation and current-SHA verification required.
+- **Audit artifact:** `.pol-design/FRONTEND_COMPLETENESS_AUDIT_2026-10-25.md`.
+- **Confirmed P1 findings:** public contact form sets client-side success without sending/storing a request; Native notification preferences do not match the actual list-shaped GET and `event_name/channel/is_enabled` PUT contract and expose unsupported EMAIL; Support mobile cannot load prior messages because no GET history flow is implemented.
+- **Confirmed design / scope gaps:** `/admin` explicitly documents G-007 and lacks full user/org CRUD; operations notifications is a log view whose provider operations are delegated to background service; authenticated app shell still shows English “Precision Commerce” and public contact confirmation still exposes C-07.
+- **Coverage discrepancy:** 56 Web page files vs 41 screenshot-captured routes; 14 product-facing routes plus `/dev/components` are not in the capture suite. The 82 screenshot PNGs are historical, contain no Night/Dark variants, and do not represent a Native Android visual sweep (only 5 canonical Native capture PNGs exist).
+- **Documentation discrepancy:** the audit records the unresolved 41-route capture / 58-surface visual matrix / 68-entry MVP matrix mismatch noted in TODO-172.
+- **Verification blocker:** latest run [40188334807](https://github.com/rrasi90/POL-2.3/actions/runs/40188334807) ended with both jobs failed before steps (`steps=null`, no logs). Do not infer test assertions passed or failed; the tests were not evidenced to have started.
+- **Acceptance:** fix API/UI contracts and client-only success, decide remaining MVP scope, capture all production-facing routes plus relevant states/themes, run the full current-SHA Web/Mobile/Expo gates, and update the design matrix only with backed evidence.

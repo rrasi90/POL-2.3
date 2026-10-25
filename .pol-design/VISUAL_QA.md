@@ -413,3 +413,16 @@ A source audit of `vendor_catalog_list_products` confirmed that the response exp
 ### CI retry observation — 2026-10-25
 
 Workflow run [40188108864](https://github.com/rrasi90/POL-2.3/actions/runs/40188108864) was retried (attempt 2) through GitHub Actions. It again ended before any step executed; both jobs report no steps and no log URL. The current code changes remain unverified until an executor can allocate a runner.
+
+
+## Full front-end completeness audit — 2026-10-25
+
+See `.pol-design/FRONTEND_COMPLETENESS_AUDIT_2026-10-25.md` for the full route inventory, confirmed API/UI mismatches and prioritized gaps.
+
+Key reconciliation points:
+- 56 Web route page files (including the root page), 10 Native screen modules, 41 routes in the Web capture suite, and 82 historical canonical PNGs.
+- 14 product-facing page routes plus `/dev/components` are not explicitly captured. The canonical screenshot set has no Night/Dark variants; the 5 Native capture PNGs do not constitute screen-by-screen device QA.
+- The source has confirmed gaps: contact submit is client-only while claiming success; Native notification preferences do not match backend GET/PUT shape and include unsupported EMAIL; Support Mobile cannot load prior messages; Admin explicitly marks G-007 CRUD as a gap; operations notification provider management is outside the current page.
+- The Web capture/visual matrix/MVP matrix inventory is still inconsistent (41 / 58 / 68), and current-SHA tests cannot be certified while Actions jobs terminate before steps.
+
+Do not mark the complete UI audit as verified until these findings have explicit owners/scope decisions, tests execute, and screenshots are regenerated on the current SHA.
