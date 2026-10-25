@@ -464,7 +464,7 @@ export function RetailerMobileScreen(props: {
         <Card>
           <Text style={styles.sectionCardTitle}>اطلاعات محصول</Text>
           <InfoRow label="واحد پایه" value={selectedProduct.base_unit || "—"} />
-          <InfoRow label="نوع بسته‌بندی" value={selectedProduct.default_pack_unit || "—"} />
+          <InfoRow label="نوع بسته‌بندی" value={formatPackagingUnit(selectedProduct.default_pack_unit)} />
           <InfoRow label="تعداد در بسته" value={String(selectedProduct.default_pack_quantity ?? "—")} />
         </Card>
         <Card style={styles.priceCard}>
@@ -488,7 +488,7 @@ export function RetailerMobileScreen(props: {
               <View style={styles.cartVisual}><Text style={styles.cartEmoji}>📦</Text></View>
               <View style={styles.cartMain}>
                 <Text style={styles.productTitle}>{x.canonical_name_fa || "—"}</Text>
-                <Text style={styles.meta}>{x.brand_name || ""} · {x.default_pack_unit || "بسته"}</Text>
+                <Text style={styles.meta}>{x.brand_name || ""} · {formatPackagingUnit(x.default_pack_unit)}</Text>
                 <View style={styles.qtyRow}>
                   <Pressable onPress={() => changeQty(x.id, 1)} style={styles.qtyButton}><Text style={styles.qtyText}>+</Text></Pressable>
                   <Text style={styles.qtyValue}>{x.quantity.toLocaleString("fa-IR")}</Text>
