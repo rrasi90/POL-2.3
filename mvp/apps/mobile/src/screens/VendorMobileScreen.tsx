@@ -1284,7 +1284,7 @@ function OrderCard(props: {
   return (
     <Card>
       <View style={styles.rowBetween}>
-        <StatusChip label={statusLabel(status)} tone={toneForOrderStatus(status)} />
+        <StatusChip label={formatOrderStatus(status)} tone={toneForOrderStatus(status)} />
         <Text style={styles.meta}>{dateTimeFa(props.order.created_at)}</Text>
       </View>
       <Text style={styles.itemTitle}>{props.order.order_number || props.order.id}</Text>
