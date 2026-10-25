@@ -2444,3 +2444,11 @@
 - Added a web regression test covering both Persian and Arabic digits plus leading-zero preservation in the shared OTP digit normalizer.
 - All edits were committed through the GitHub contents API to the screen-completion branch and verified by reading back the branch. **No test execution result is claimed for these new changes.**
 - Follow-up TODO: TODO-173.
+
+
+### [2026-10-25 14:10 +03:30] Agent: ChatGPT — VISUAL CAPTURE RUNTIME-ERROR HARDENING
+
+- Updated `mvp/apps/web/tests/visual-capture.spec.ts` to fail when a captured page has no visible body text or emits uncaught browser `pageerror` exceptions.
+- The test now checks route identity, `lang="fa"`, `dir="rtl"`, positive viewport width and absence of document/body horizontal overflow at each capture point.
+- Added no new PASS claims. The latest test edits were read back from GitHub, but could not be run from this execution environment because the GitHub host could not be resolved from the local shell and no existing workspace checkout was available here.
+- Follow-up: execute TODO-172 and TODO-173 commands on a connected local executor or CI runner; repair any real page/overflow/runtime failures and recapture artifacts only after rerunning the suite.
