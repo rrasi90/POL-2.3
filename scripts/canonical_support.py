@@ -128,13 +128,28 @@ class CanonicalSupportService:
         return case
 
     @classmethod
-    def list_messages(cls, cur, actor_user_id: str, case_id: str):
+    def list_messages(cls, cur, actor_user_id: str, case_id: str,
+                     organization_id: str | None = None):
         # Reuse the case authorization and audit trail before reading any messages.
-        cls.get_case(cur, actor_user_id, case_id)
-        # Internal notes must never be returned by the customer-facing history endpoint.
+        case = cls.get_case(cur, actor_user_id, case_id)
+        is_ops = cls._is_ops_actor(cur, actor_user_id)
+        # A user can belong to several organizations. Do not let an otherwise
+        # valid user token read a conversation while acting in another tenant.
+        if (
+            not is_ops
+            and organization_id is not None
+            and str(case["organization_id"]) != str(organization_id)
+        ):
+            cls._audit(cur, case_id, actor_user_id, "READ_MESSAGES", False,
+                       "active tenant does not own this support case")
+            raise SupportAccessError(
+                "Support messages are not available in the active organization."
+            )
+        # Return only the minimum public message fields; never expose internal notes
+        # or sender user IDs through the customer-facing history endpoint.
         cur.execute(
             """
-            SELECT id, support_case_id, sender_user_id, sender_type, message_text, created_at
+            SELECT id, sender_type, message_text, created_at
             FROM support_case_messages
             WHERE support_case_id = %s AND is_internal = FALSE
             ORDER BY created_at ASC, id ASC;
