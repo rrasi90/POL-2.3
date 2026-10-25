@@ -203,3 +203,12 @@ export function errorEnvelope(code: string, message: string) {
     },
   };
 }
+
+
+export async function loginAsAdmin(page: Page, phone: string = "+989119402598"): Promise<void> {
+  await login(page, phone, /\/ops$/);
+}
+
+export async function loginAsField(page: Page, phone: string = "+989104320979"): Promise<void> {
+  await login(page, phone, /\/field$/);
+}

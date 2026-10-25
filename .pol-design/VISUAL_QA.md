@@ -209,3 +209,99 @@ Mobile regression/cross-module QA: 20/20 checks passed.
 - [x] **DIMENSION 7: Absolute Zero Domain / API Changes**
   - Backend API route endpoints, HTTP methods, payloads, and validation constraints untouched.
   - Database schema, Prisma/migration files, and domain models preserved with 100% integrity.
+
+---
+
+## 4. Visual Capture Automated Suite & Screenshot Manifest (82 Golden Artifacts)
+
+### 4.1. Visual Capture Suite Execution
+Command: 
+px playwright test tests/visual-capture.spec.ts in mvp/apps/web
+- **Viewports Tested**: Desktop (1440x900), Mobile (390x844)
+- **Total Test Cases**: 13 passed (100% PASS in 1.2m)
+- **Output Directory**: .pol-design/evidence/screenshots/
+
+### 4.2. Captured Golden Route Manifest (41 Routes x 2 Viewports = 82 Artifacts)
+
+#### Public & Corporate (9 routes x 2 = 18 PNGs)
+1. / (Corporate Home): corporate-home-desktop.png, corporate-home-mobile.png
+2. /about (Mission & Values): bout-mission-desktop.png, bout-mission-mobile.png
+3. /how (How It Works): how-it-works-desktop.png, how-it-works-mobile.png
+4. /pilot (Ahvaz Pilot Scope): pilot-ahvaz-desktop.png, pilot-ahvaz-mobile.png
+5. /contact (Support Contact): contact-support-desktop.png, contact-support-mobile.png
+6. /legal (Legal & Settlements): legal-terms-desktop.png, legal-terms-mobile.png
+7. /retailers (Retailers Landing): 
+etailers-info-desktop.png, 
+etailers-info-mobile.png
+8. /vendors (Vendors Landing): endors-info-desktop.png, endors-info-mobile.png
+9. /auth/login (6-Digit OTP Login): uth-login-desktop.png, uth-login-mobile.png
+
+#### Retailer D1 Spacious (7 routes x 2 = 14 PNGs)
+10. /retailer (Retailer Hub): 
+etailer-dashboard-desktop.png, 
+etailer-dashboard-mobile.png
+11. /retailer/catalog (Product Catalog): 
+etailer-catalog-desktop.png, 
+etailer-catalog-mobile.png
+12. /retailer/basket (Active Basket): 
+etailer-basket-desktop.png, 
+etailer-basket-mobile.png
+13. /retailer/orders (Order Tracking): 
+etailer-orders-desktop.png, 
+etailer-orders-mobile.png
+14. /retailer/finance (Financial Ledgers): 
+etailer-finance-desktop.png, 
+etailer-finance-mobile.png
+15. /retailer/support (Support Tickets): 
+etailer-support-desktop.png, 
+etailer-support-mobile.png
+16. /retailer/vendors (Vendor Directory): 
+etailer-vendors-desktop.png, 
+etailer-vendors-mobile.png
+
+#### Vendor D2 Balanced (11 routes x 2 = 22 PNGs)
+17. /vendor (Vendor Dashboard): endor-dashboard-desktop.png, endor-dashboard-mobile.png
+18. /vendor/orders (Order Fulfillment): endor-orders-desktop.png, endor-orders-mobile.png
+19. /vendor/catalog (Product Catalog): endor-catalog-desktop.png, endor-catalog-mobile.png
+20. /vendor/inventory (Inventory Management): endor-inventory-desktop.png, endor-inventory-mobile.png
+21. /vendor/inventory/daily (Daily Ritual): endor-inventory-daily-desktop.png, endor-inventory-daily-mobile.png
+22. /vendor/settlements (Direct Settlements): endor-settlements-desktop.png, endor-settlements-mobile.png
+23. /vendor/customers (Retailer Directory): endor-customers-desktop.png, endor-customers-mobile.png
+24. /vendor/finance (Financial Reports): endor-finance-desktop.png, endor-finance-mobile.png
+25. /vendor/staff (Staff & Delegation): endor-staff-desktop.png, endor-staff-mobile.png
+26. /vendor/storefront (Storefront Config): endor-storefront-desktop.png, endor-storefront-mobile.png
+27. /vendor/referrals (Referral Attribution): endor-referrals-desktop.png, endor-referrals-mobile.png
+
+#### Ops & Admin D3 Dense Command (13 routes x 2 = 26 PNGs)
+28. /ops (Ops Command Center): ops-dashboard-desktop.png, ops-dashboard-mobile.png
+29. /ops/queues (Triage Queues): ops-queues-desktop.png, ops-queues-mobile.png
+30. /ops/support (Support Console): ops-support-desktop.png, ops-support-mobile.png
+31. /ops/reconciliation (Reconciliation Console): ops-reconciliation-desktop.png, ops-reconciliation-mobile.png
+32. /ops/rma (RMA Disputes Desk): ops-rma-desktop.png, ops-rma-mobile.png
+33. /ops/admin (Audit & Trace): ops-admin-desktop.png, ops-admin-mobile.png
+34. /admin (Platform Admin Root): dmin-root-desktop.png, dmin-root-mobile.png
+35. /ops/catalog-candidates (Candidate Approvals): ops-catalog-candidates-desktop.png, ops-catalog-candidates-mobile.png
+36. /ops/permissions (Role Permissions): ops-permissions-desktop.png, ops-permissions-mobile.png
+37. /ops/analytics (Operational KPIs): ops-analytics-desktop.png, ops-analytics-mobile.png
+38. /ops/risk (System Risk Monitor): ops-risk-desktop.png, ops-risk-mobile.png
+39. /admin/users (User Management): dmin-users-desktop.png, dmin-users-mobile.png
+40. /admin/orgs (Organizations): dmin-orgs-desktop.png, dmin-orgs-mobile.png
+
+#### Field Activator (1 route x 2 = 2 PNGs)
+41. /field (Field Dashboard): ield-dashboard-desktop.png, ield-dashboard-mobile.png
+
+---
+
+## 5. Automated Build & Regression Evidence
+
+- **Web Production Build**: 
+pm run build in mvp/apps/web -> Exit 0, 50 static routes + dynamic routes compiled cleanly.
+- **Core Playwright Suites**: login.spec.ts, 11y.spec.ts, asket-sync.spec.ts, delivery-flow.spec.ts -> 20/20 PASS in 39s.
+- **Workspace Typecheck**: 
+pm run typecheck across all 6 workspaces -> 0 errors.
+- **Mobile Functional QA**: 
+pm run qa:functional -> 28/28 PASS.
+- **Mobile Regression QA**: 
+pm run qa:regression -> 23/23 PASS.
+- **Mobile Mock QA**: 
+pm run qa:mock -> PASS.

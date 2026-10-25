@@ -44,6 +44,7 @@ const navLinks = [
   { href: "/ops/reconciliation", title: "تطبیق و انطباق مالی", desc: "بررسی عدم تطابق‌های پرداخت و تسویه", icon: "⚖️" },
   { href: "/ops/rma", title: "مرجوعی‌ها و استرداد کالا", desc: "بررسی شکایات و عودت وجه", icon: "🔄" },
   { href: "/ops/admin", title: "استثناها و لاگ‌های ممیزی", desc: "داشبورد وقایع سیستمی و Audit Logs", icon: "🛡️" },
+  { href: "/ops/permissions", title: "ماتریس دسترسی و مجوزها", desc: "مدیریت دسترسی‌های سیستمی و اعطای نقش‌ها", icon: "🔑" },
   { href: "/ops/catalog-candidates", title: "تأیید کالاهای کاتالوگ", desc: "بررسی بارکدها و پیشنهادهای بنکداران", icon: "🏷️" },
   { href: "/ops/notifications", title: "مرکز اعلان‌ها و پیامک", desc: "لاگ پیام‌های سیستمی و تحویل پیامک", icon: "🔔" },
   { href: "/ops/analytics", title: "داشبورد شاخص‌های کلیدی", desc: "تحلیل شاخص‌های ده‌گانه پایلوت FMCG", icon: "📈" },

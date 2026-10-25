@@ -40,6 +40,7 @@ const navLinks = [
   { href: "/vendor/catalog", title: "کاتالوگ فروشنده", desc: "مدیریت تنوع کالا و سطوح قیمت‌گذاری", icon: "📦" },
   { href: "/vendor/inventory", title: "مدیریت انبار و موجودی", desc: "به‌روزرسانی سریع موجودی اقلام", icon: "📊" },
   { href: "/vendor/settlements", title: "تسویه‌حساب و فاکتورها", desc: "مشاهده دوره‌های تسویه مالی و اسناد", icon: "💳" },
+  { href: "/vendor/finance", title: "داشبورد مالی و فاکتورها", desc: "تحلیل واریزها، مطالبات و گردش حساب", icon: "💰" },
   { href: "/vendor/customers", title: "فهرست مشتریان", desc: "سوپرمارکت‌ها و خرده‌فروشان طرف قرارداد", icon: "👥" },
   { href: "/vendor/storefront", title: "ویترین فروشگاه", desc: "نمای عمومی محصولات برای خرده‌فروشان", icon: "🏪" },
   { href: "/vendor/staff", title: "دسترسی کارکنان", desc: "مدیریت دسترسی‌های پرسنل بنکداری", icon: "🔑" },
