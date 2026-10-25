@@ -9,6 +9,7 @@ import {
   ageTone,
   formatDateTime,
   itemsOf,
+  orderStatusLabel,
   str,
   type LoadState,
 } from "./_shared";
@@ -73,7 +74,7 @@ export default function OpsOverviewPage() {
           id: str(item.id, ""),
           kind: "order" as const,
           title: str(item.order_number ?? item.id),
-          subtitle: str(item.order_status),
+          subtitle: orderStatusLabel[str(item.order_status)] ?? "وضعیت نامشخص",
           created_at: typeof item.created_at === "string" ? item.created_at : null,
         })),
       );
