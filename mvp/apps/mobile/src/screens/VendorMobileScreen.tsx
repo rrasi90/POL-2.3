@@ -6,7 +6,7 @@ import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 import { formatFaNumber, formatTehranDateTime, formatToman, todayTehranIso, toAsciiDigits } from "../i18n/fa";
-import { formatOrderStatus } from "../utils/statusLabels";
+import { formatCandidateStatus, formatGrantStatus, formatInvoiceStatus, formatOperationalStatus, formatOrderStatus, formatPermission, formatReferralStatus, formatRole, formatSettlementStatus } from "../utils/statusLabels";
 
 type MainTab = "home" | "orders" | "inventory" | "finance" | "more" | "support";
 type InventoryTab = "stock" | "daily";
@@ -892,7 +892,7 @@ export function VendorMobileScreen(props: {
               {barcodeResult.product ? (
                 <View style={styles.scanProduct}>
                   <Text style={styles.itemTitle}>{barcodeResult.product.canonical_name_fa || "کالای تطبیق‌شده"}</Text>
-                  <Text style={styles.meta}>SKU: {barcodeResult.product.master_sku || "—"} · برند: {barcodeResult.product.brand_name || "—"}</Text>
+                  <Text style={styles.meta}>کد کالا: {barcodeResult.product.master_sku || "—"} · برند: {barcodeResult.product.brand_name || "—"}</Text>
                   <Text style={styles.meta}>بسته‌بندی: {barcodeResult.product.default_pack_unit || "—"} · تعداد: {numberFa(barcodeResult.product.default_pack_quantity)}</Text>
                 </View>
               ) : null}
@@ -991,7 +991,7 @@ export function VendorMobileScreen(props: {
             <Btn label="بازگشت به فهرست فاکتورها" tone="ghost" onPress={() => setInvoiceDetail(null)} />
             <Card>
               <View style={styles.rowBetween}>
-                <StatusChip label={statusLabel(invoiceDetail.status)} tone="info" />
+                <StatusChip label={formatInvoiceStatus(invoiceDetail.status)} tone="info" />
                 <Text style={styles.meta}>{dateTimeFa(invoiceDetail.issued_at)}</Text>
               </View>
               <Text style={styles.itemTitle}>{invoiceDetail.invoice_number || invoiceDetail.id}</Text>
@@ -1011,7 +1011,7 @@ export function VendorMobileScreen(props: {
             <Btn label="بازگشت به فهرست تسویه‌ها" tone="ghost" onPress={() => setSettlementDetail(null)} />
             <Card>
               <View style={styles.rowBetween}>
-                <StatusChip label={statusLabel(settlementDetail.status)} tone={settlementDetail.status === "PAID" ? "ok" : "info"} />
+                <StatusChip label={formatSettlementStatus(settlementDetail.status)} tone={settlementDetail.status === "PAID" ? "ok" : "info"} />
                 <Text style={styles.meta}>{dateTimeFa(settlementDetail.settled_at)}</Text>
               </View>
               <Text style={styles.itemTitle}>{settlementDetail.settlement_number || settlementDetail.id}</Text>
@@ -1038,7 +1038,7 @@ export function VendorMobileScreen(props: {
                   <Pressable key={invoice.id} accessibilityRole="button" onPress={() => void loadInvoiceDetail(invoice.id)}>
                     <Card>
                       <View style={styles.rowBetween}>
-                        <StatusChip label={statusLabel(invoice.status)} tone="info" />
+                        <StatusChip label={formatInvoiceStatus(invoice.status)} tone="info" />
                         <Text style={styles.meta}>{dateTimeFa(invoice.issued_at)}</Text>
                       </View>
                       <Text style={styles.itemTitle}>{invoice.invoice_number || invoice.id}</Text>
@@ -1054,7 +1054,7 @@ export function VendorMobileScreen(props: {
                 <Pressable key={settlement.id} accessibilityRole="button" onPress={() => void loadSettlementDetail(settlement.id)}>
                   <Card>
                     <View style={styles.rowBetween}>
-                      <StatusChip label={statusLabel(settlement.status)} tone={settlement.status === "PAID" ? "ok" : "info"} />
+                      <StatusChip label={formatSettlementStatus(settlement.status)} tone={settlement.status === "PAID" ? "ok" : "info"} />
                       <Text style={styles.itemTitle}>{settlement.settlement_number || settlement.id}</Text>
                     </View>
                     <Text style={styles.metricSmall}>{money(settlement.amount_toman ?? settlement.net_vendor_amount_toman ?? settlement.gross_amount_toman)}</Text>
@@ -1074,7 +1074,7 @@ export function VendorMobileScreen(props: {
         <View style={styles.pageIntro}>
           <Text style={styles.eyebrow}>مدیریت بنکداری</Text>
           <Text style={styles.pageTitle}>بیشتر</Text>
-          <Text style={styles.pageBody}>مشتریان، ارجاع‌ها و همکاران در این بخش قرار دارند تا navigation روزانه خلوت بماند.</Text>
+          <Text style={styles.pageBody}>مشتریان، ارجاع‌ها و همکاران در این بخش قرار دارند تا پیمایش روزانه ساده بماند.</Text>
         </View>
         <Segmented
           labels={[
@@ -1106,10 +1106,10 @@ export function VendorMobileScreen(props: {
         ) : null}
 
         {moreTab === "referrals" ? (
-          referrals.length === 0 ? <Empty title="ارجاعی ثبت نشده" description="Referral در MVP برای attribution استفاده می‌شود؛ reward wallet در این نسخه وجود ندارد." /> : referrals.map((referral) => (
+          referrals.length === 0 ? <Empty title="ارجاعی ثبت نشده" description="ارجاع برای شناسایی منبع معرفی استفاده می‌شود؛ کیف پاداش در این نسخه ارائه نمی‌شود." /> : referrals.map((referral) => (
             <Card key={referral.id}>
               <View style={styles.rowBetween}>
-                <StatusChip label={statusLabel(referral.status)} tone="info" />
+                <StatusChip label={formatReferralStatus(referral.status)} tone="info" />
                 <Text style={styles.meta}>{referral.referral_code || "—"}</Text>
               </View>
               <Text style={styles.meta}>سازمان ارجاع‌شده: {referral.referred_organization_id || "—"}</Text>
@@ -1182,23 +1182,23 @@ export function VendorMobileScreen(props: {
 
                 {permissionMemberId === member.membership_id && permissionDetail && props.role === "VENDOR_OWNER" ? (
                   <View style={styles.permissionPanel}>
-                    <Text style={styles.itemTitle}>Effective Access</Text>
+                    <Text style={styles.itemTitle}>دسترسی‌های مؤثر</Text>
                     <Text style={styles.meta}>{numberFa(permissionDetail.effective_permissions.length)} مجوز مؤثر</Text>
                     <View style={styles.chipWrap}>
-                      {permissionDetail.effective_permissions.map((permission) => <StatusChip key={permission} label={permission} tone="info" />)}
+                      {permissionDetail.effective_permissions.map((permission) => <StatusChip key={permission} label={formatPermission(permission)} tone="info" />)}
                     </View>
                     <Text style={styles.meta}>مجوزهای قابل اعطا</Text>
                     <View style={styles.chipWrap}>
                       {permissionDetail.grantable_permissions.map((permission) => (
-                        <Btn key={permission} label={permission} tone={permissionKey === permission ? "primary" : "ghost"} onPress={() => setPermissionKey(permission)} />
+                        <Btn key={permission} label={formatPermission(permission)} tone={permissionKey === permission ? "primary" : "ghost"} onPress={() => setPermissionKey(permission)} />
                       ))}
                     </View>
                     <Input label="دلیل" value={permissionReason} onChangeText={setPermissionReason} />
                     <Btn label="اعطای مجوز" onPress={() => void grantStaffPermission()} loading={loading} disabled={!permissionKey || !permissionReason.trim() || loading} />
                     {permissionDetail.delegated_grants.map((grant) => (
                       <View key={grant.id} style={styles.grantRow}>
-                        <StatusChip label={grant.status} tone={grant.status === "GRANTED" ? "ok" : "neutral"} />
-                        <Text style={styles.meta}>{grant.permission_key}</Text>
+                        <StatusChip label={formatGrantStatus(grant.status)} tone={grant.status === "GRANTED" ? "ok" : "neutral"} />
+                        <Text style={styles.meta}>{formatPermission(grant.permission_key)}</Text>
                         {grant.status === "GRANTED" ? (
                           <Btn label="لغو" tone="ghost" onPress={() => void revokeStaffPermission(grant.permission_key)} disabled={loading || !permissionReason.trim()} />
                         ) : null}
