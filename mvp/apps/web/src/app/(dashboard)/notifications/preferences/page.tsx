@@ -8,9 +8,24 @@ import type { NotificationPreference, NotificationPreferenceUpdate } from "@pol/
 type Channel = "PUSH" | "SMS";
 
 const channelLabel: Record<Channel, string> = {
-  PUSH: "پوش",
+  PUSH: "اعلان برنامه",
   SMS: "پیامک",
 };
+
+const notificationCategoryLabels: Readonly<Record<string, string>> = {
+  ORDER_STATUS_CHANGED: "تغییر وضعیت سفارش",
+  DELIVERY_STATUS_CHANGED: "تغییر وضعیت تحویل",
+  RETURN_STATUS_CHANGED: "وضعیت مرجوعی",
+  PAYMENT_STATUS_CHANGED: "تغییر وضعیت پرداخت",
+  SETTLEMENT_UPDATED: "به‌روزرسانی تسویه",
+  SUPPORT_CASE_UPDATED: "به‌روزرسانی درخواست پشتیبانی",
+  LOW_STOCK_ALERT: "هشدار کاهش موجودی",
+  REFERRAL_REDEEMED: "استفاده از معرفی بنکدار",
+};
+
+function formatNotificationCategory(category: string): string {
+  return notificationCategoryLabels[category] ?? "سایر اعلان‌ها";
+}
 
 type LoadState = "loading" | "error" | "ready";
 
@@ -191,7 +206,7 @@ export default function NotificationPreferencesPage() {
                   <ToggleSwitch
                     checked={pref.push_enabled}
                     disabled={pendingKey === `${pref.category}:PUSH`}
-                    label={`${pref.category} — ${channelLabel.PUSH}`}
+                    label={`${formatNotificationCategory(pref.category)} — ${channelLabel.PUSH}`}
                     onToggle={(next) => void toggle(pref, "PUSH", next)}
                   />
                 </div>
@@ -199,7 +214,7 @@ export default function NotificationPreferencesPage() {
                   <ToggleSwitch
                     checked={pref.sms_enabled}
                     disabled={pendingKey === `${pref.category}:SMS`}
-                    label={`${pref.category} — ${channelLabel.SMS}`}
+                    label={`${formatNotificationCategory(pref.category)} — ${channelLabel.SMS}`}
                     onToggle={(next) => void toggle(pref, "SMS", next)}
                   />
                 </div>
