@@ -2452,3 +2452,32 @@
 - The test now checks route identity, `lang="fa"`, `dir="rtl"`, positive viewport width and absence of document/body horizontal overflow at each capture point.
 - Added no new PASS claims. The latest test edits were read back from GitHub, but could not be run from this execution environment because the GitHub host could not be resolved from the local shell and no existing workspace checkout was available here.
 - Follow-up: execute TODO-172 and TODO-173 commands on a connected local executor or CI runner; repair any real page/overflow/runtime failures and recapture artifacts only after rerunning the suite.
+
+
+### TODO-174 — Fix screenshot-discovered catalog and status UI defects
+
+- **Status:** OPEN — verification and artifact recapture pending.
+- **Branch / PR:** `ui/visual-qa-screen-completion-20261025` / [PR #51](https://github.com/rrasi90/POL-2.3/pull/51).
+- **Findings observed directly in committed screenshot PNGs:**
+  - `retailer-catalog-mobile.png` displayed repeated English placeholder categories: “Fulfillment Category”, “Proof Category”, and “Seed Cat”.
+  - Mobile full-page screenshots showed the fixed bottom navigation repeated/overlaid midway through the full-height capture, making the image misleading as a mobile viewport screenshot.
+  - Operations order previews displayed raw English state enum `DELIVERED`.
+  - Retailer/vendor/order-detail native mobile screens displayed raw state enum values in status chips.
+- **Changes pushed to this branch:**
+  - `mvp/apps/web/src/app/(dashboard)/retailer/catalog/page.tsx`: added a presentation-only display filter that removes the three observed placeholder category labels, deduplicates names and improves the no-query category-filter prompt. The filter changes display only; it does not mutate database/API data.
+  - `mvp/apps/web/src/app/(dashboard)/ops/_shared.ts` and `mvp/apps/web/src/app/(dashboard)/ops/page.tsx`: added Persian delivery/order-state labels and replaced raw state strings in the Operations dashboard preview.
+  - `mvp/apps/mobile/src/utils/statusLabels.ts`: added shared Persian labels for canonical order/delivery states; wired the retailer screen, vendor order card and order detail/delivery status chips to those labels.
+  - `mvp/apps/web/tests/visual-capture.spec.ts`: mobile-sized browser screenshots now capture the actual viewport (`fullPage: false`); capture removes the Next.js development portal from screenshots; catalog capture asserts that category labels are unique and the three observed placeholder names are absent.
+  - Corrected whitespace-normalization regex literals to `/\\s+/g`.
+- **Verification:** no tests were executed after these changes in this session. The existing 82 PNGs are the previously committed images; they have **not** been regenerated with the improved capture routine. Do not mark this task DONE_VERIFIED.
+- **Required next action:** run visual capture + web typecheck/build + core Playwright tests and mobile typecheck/functional/regression QA on the current HEAD. If they pass, regenerate the screenshot manifest and inspect the updated catalog/mobile captures. If they fail, fix the actual failures and repeat.
+- **Acceptance commands:** `npx playwright test tests/visual-capture.spec.ts`; `npx playwright test tests/login.spec.ts tests/a11y.spec.ts tests/basket-sync.spec.ts tests/delivery-flow.spec.ts`; `npm run typecheck`; `npm run build`; and from `mvp/apps/mobile`, `npm run typecheck`, `npm run qa:functional`, `npm run qa:regression`, `npm run qa:mock`.
+
+
+### [2026-10-25 14:25 +03:30] Agent: ChatGPT — SCREENSHOT-DRIVEN UI FIXES
+
+- Inspected real committed images for retailer desktop/mobile, vendor dashboard, operations dashboard, catalog mobile, operations queue mobile and login mobile.
+- Fixed the source issues visible in those screenshots: test-placeholder category labels and duplicates, English order/delivery status chips, confusing category-only search feedback, the fixed Next.js portal in captures, and mobile screenshots incorrectly captured as full-page documents.
+- Added capture assertions for category-label uniqueness and absent known placeholder labels.
+- These changes are committed to the same UI branch and documented here as **pending verification**. Existing PNGs are not yet regenerated; the capture suite must run against this HEAD before updated screenshots can be claimed.
+- Follow-up TODO: TODO-174.
