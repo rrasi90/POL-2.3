@@ -239,6 +239,12 @@ const checks = [
     return screen.includes('(dash?.delivery_exceptions?.open_count ?? 0).toLocaleString("fa-IR")') &&
       screen.includes('value.toLocaleString("fa-IR")');
   }],
+  ["Persian custom packaging names are preserved by the mobile unit formatter", () => {
+    const labels = read("utils/statusLabels.ts");
+    return labels.includes("if (/[^^") === false &&
+      labels.includes("if (/[^\\\\x00-\\\\x7F]/.test(normalized)) return normalized;") &&
+      labels.includes('return PACKAGING_UNIT_LABELS[normalized.toLocaleUpperCase("en-US")] ?? "واحد دیگر";');
+  }],
   ["No Driver App is introduced into Phase 3 mobile source", () => {
     const p = fs.readFileSync(path.resolve(process.cwd(), "src/__tests__/parity.md"), "utf8");
     return p.includes("No Driver App (D-023)");
