@@ -241,8 +241,7 @@ const checks = [
   }],
   ["Persian custom packaging names are preserved by the mobile unit formatter", () => {
     const labels = read("utils/statusLabels.ts");
-    return labels.includes("if (/[^^") === false &&
-      labels.includes("if (/[^\\\\x00-\\\\x7F]/.test(normalized)) return normalized;") &&
+    return labels.includes("normalized.split(\"\").some((character) => character.charCodeAt(0) > 127)") &&
       labels.includes('return PACKAGING_UNIT_LABELS[normalized.toLocaleUpperCase("en-US")] ?? "واحد دیگر";');
   }],
   ["No Driver App is introduced into Phase 3 mobile source", () => {
