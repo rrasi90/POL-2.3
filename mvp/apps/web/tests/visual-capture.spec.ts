@@ -85,6 +85,15 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.setViewportSize({ width: 390, height: 844 });
       await assertResponsiveDocument(page, item.route);
 
+      if (item.route === "/") {
+        await expect(page.getByRole("navigation", { name: "پیوندهای اصلی موبایل" })).toBeVisible();
+        const homeText = await page.locator("body").innerText();
+        expect(homeText).not.toContain("MVP Constraints");
+        expect(homeText).not.toContain("D-001");
+        expect(homeText).not.toContain("D-014");
+        expect(homeText).not.toContain("D-018");
+      }
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile-light.png`),
         fullPage: false,
