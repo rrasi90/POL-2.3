@@ -40,6 +40,54 @@ async function assertResponsiveDocument(page: Page, expectedPath: string): Promi
   ).toBeLessThanOrEqual(documentContract.viewportWidth);
 }
 
+async function assertCanonicalUserFacingCopy(page: Page, expectedPath: string): Promise<void> {
+  const visibleText = await page.locator("body").innerText();
+  expect(visibleText, `internal brand leaked on ${expectedPath}`).not.toContain("Precision Commerce");
+
+  if (expectedPath === "/contact") {
+    expect(visibleText).toContain("این فرم هنوز به ثبت سروری متصل نیست");
+    expect(visibleText).not.toContain("پیام شما با موفقیت ثبت شد");
+    expect(visibleText).not.toContain("C-07");
+  }
+
+  if (expectedPath.startsWith("/admin")) {
+    expect(visibleText).not.toContain("G-007");
+    expect(visibleText).not.toContain("O-10B");
+  }
+
+  if (expectedPath === "/notifications/preferences") {
+    expect(visibleText).toContain("اعلان برنامه");
+    expect(visibleText).toContain("پیامک");
+    expect(visibleText).not.toContain("پوش");
+  }
+}
+
+async function captureAuthenticatedRoute(
+  page: Page,
+  route: string,
+  name: string,
+): Promise<void> {
+  await page.goto(route);
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(300);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await assertResponsiveDocument(page, route);
+  await assertCanonicalUserFacingCopy(page, route);
+  await page.screenshot({
+    path: path.join(SCREENSHOT_DIR, `${name}-desktop.png`),
+    fullPage: true,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await assertResponsiveDocument(page, route);
+  await assertCanonicalUserFacingCopy(page, route);
+  await page.screenshot({
+    path: path.join(SCREENSHOT_DIR, `${name}-mobile.png`),
+    fullPage: false,
+  });
+}
+
 test.describe("Visual Quality Assurance Suite", () => {
   test.beforeEach(async ({ page }) => {
     const errors: string[] = [];
@@ -100,6 +148,7 @@ test.describe("Visual Quality Assurance Suite", () => {
         ]) {
           expect(publicCopy, `public page ${item.route} contains internal/English term: ${internalTerm}`).not.toContain(internalTerm);
         }
+        await assertCanonicalUserFacingCopy(page, item.route);
       }
 
       if (item.route === "/") {
@@ -152,6 +201,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       await page.setViewportSize({ width: 1440, height: 900 });
       await assertResponsiveDocument(page, item.route);
+      await assertCanonicalUserFacingCopy(page, item.route);
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-desktop.png`),
@@ -166,6 +216,16 @@ test.describe("Visual Quality Assurance Suite", () => {
         fullPage: false,
       });
       await page.setViewportSize({ width: 1440, height: 900 });
+    }
+
+    // These authenticated routes are real product surfaces but are not reached
+    // from the retailer's primary navigation during the golden-surface sweep.
+    for (const item of [
+      { name: "retailer-profile", route: "/profile" },
+      { name: "notifications-inbox", route: "/notifications" },
+      { name: "notification-preferences", route: "/notifications/preferences" },
+    ]) {
+      await captureAuthenticatedRoute(page, item.route, item.name);
     }
   });
 
@@ -305,6 +365,8 @@ test.describe("Visual Quality Assurance Suite", () => {
       { name: "ops-analytics", route: "/ops/analytics" },
       { name: "ops-risk", route: "/ops/risk" },
     ];
+
+    await captureAuthenticatedRoute(page, "/ops/notifications", "ops-notifications");
 
     for (const item of opsSubPages) {
       await page.locator('a[href="/ops"]').first().click();
