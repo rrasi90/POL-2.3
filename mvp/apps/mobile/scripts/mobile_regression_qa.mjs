@@ -221,11 +221,20 @@ const checks = [
       assisted.includes('badge="سفارش کمکی"') &&
       !assisted.includes('badge="F-03"');
   }],
-  ["Account notifications use Persian channel labels and Tehran timestamps", () => {
+  ["Account notification preferences match category/channel API contract without unsupported email", () => {
     const screen = read("screens/AccountMobileScreen.tsx");
-    return screen.includes('label="اعلان برنامه"') &&
-      screen.includes("formatTehranDateTime(n.created_at)") &&
-      screen.includes('subtitle="اعلان برنامه، پیامک و ایمیل"');
+    return screen.includes("type Preferences = NotificationPreference[]") &&
+      screen.includes('api.get<unknown>("/api/v1/notifications/preferences")') &&
+      screen.includes("event_name: preference.category") &&
+      screen.includes('channel: "PUSH"') &&
+      screen.includes('channel: "SMS"') &&
+      screen.includes("is_enabled: Boolean(preference.push_enabled)") &&
+      screen.includes("is_enabled: Boolean(preference.sms_enabled)") &&
+      !screen.includes("email_enabled") &&
+      !screen.includes('label="ایمیل"') &&
+      screen.includes('subtitle="اعلان برنامه و پیامک"') &&
+      screen.includes('label="اعلان برنامه"') &&
+      screen.includes("formatTehranDateTime(n.created_at)");
   }],
   ["Retailer storefront localizes product units, stock counts and missing-name fallbacks", () => {
     const screen = read("screens/RetailerMobileScreen.tsx");
