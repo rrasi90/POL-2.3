@@ -31,7 +31,9 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.waitForLoadState("networkidle");
 
       const htmlDir = await page.getAttribute("html", "dir");
-      expect(htmlDir === "rtl" || true).toBeTruthy();
+      expect(htmlDir).toBe("rtl");
+      const htmlLang = await page.getAttribute("html", "lang");
+      expect(htmlLang).toBe("fa");
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-desktop-light.png`),
