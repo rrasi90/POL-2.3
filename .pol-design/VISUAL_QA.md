@@ -365,3 +365,10 @@ A dedicated workflow was added at `.github/workflows/pol-ui-screen-visual-qa.yml
 - Retailer and vendor order details render localized fulfillment/delivery states and Persian labels for known timeline events and transitions.
 - Run `npx playwright test tests/status-labels.spec.ts` alongside web regression tests on the current SHA. Verification remains pending while GitHub Actions jobs fail before any runner step.
 - Tracked in `TODO-177`.
+
+
+## Vendor catalog/inventory API field mapping — 2026-10-25
+
+A source audit of `vendor_catalog_list_products` confirmed that the response exposes `canonical_name_fa`, `master_sku`, `vendor_sku`, `physical_quantity` and `available_quantity`. The Web inventory previously read `product_name` and `stock_quantity` and submitted `stock_quantity` where the API schema requires `new_physical_quantity`. Those mismatches are now corrected in the Web inventory/catalog screens; native Vendor inventory also falls back to the canonical name. The screens flag items lacking a canonical link rather than displaying a generic no-name placeholder.
+
+**Verification pending:** current-SHA typecheck/build, browser capture and mobile regression QA have not run because the configured Actions jobs are terminating before runner steps. TODO-178 tracks execution and screenshot recapture.

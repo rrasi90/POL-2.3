@@ -116,6 +116,17 @@ const checks = [
   }],
   ["Offline banner captures current connectivity after effect subscription", () => read("components/OfflineBanner.tsx").includes("setOnline(isOnline())")],
   ["Login auth uses E.164 normalization", () => read("screens/LoginScreen.tsx").includes("toE164")],
+  ["Vendor catalog/inventory maps canonical names, physical quantity and PATCH schema", () => {
+    const webInventory = readMobile("../web/src/app/(dashboard)/vendor/inventory/page.tsx");
+    const webCatalog = readMobile("../web/src/app/(dashboard)/vendor/catalog/page.tsx");
+    const mobileVendor = read("screens/VendorMobileScreen.tsx");
+    return webInventory.includes("p.canonical_name_fa") &&
+      webInventory.includes("p.physical_quantity") &&
+      webInventory.includes("new_physical_quantity: n") &&
+      webCatalog.includes("p.canonical_name_fa") &&
+      webCatalog.includes("p.available_quantity") &&
+      mobileVendor.includes("props.row.canonical_name_fa");
+  }],
   ["Retailer/vendor order status chips use canonical Persian labels", () => {
     const labels = read("utils/statusLabels.ts");
     const retailer = read("screens/RetailerMobileScreen.tsx");

@@ -178,6 +178,10 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(400);
 
+      if (item.route === "/vendor/inventory") {
+        await expect(page.getByText("کالای بدون نام", { exact: true })).toHaveCount(0);
+      }
+
       await page.setViewportSize({ width: 1440, height: 900 });
       await assertResponsiveDocument(page, item.route);
 

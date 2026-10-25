@@ -2535,3 +2535,15 @@
 - Added that spec to the dedicated UI QA workflow's core web regression command.
 - The same change localizes raw order/fulfillment/delivery/timeline values in retailer and vendor order detail screens and localizes order/support/reconciliation/return statuses in the operations detail view, selecting label maps by entity type to avoid ambiguous states such as `PENDING`.
 - Current-SHA verification remains blocked by GitHub Actions jobs failing with zero steps and no allocated runner. Do not mark this TODO as verified until the workflow actually executes.
+
+
+### TODO-178 — Fix vendor catalog response mapping and inventory mutation contract
+
+- **Status:** OPEN — current-SHA execution and screenshot recapture pending.
+- **Confirmed root cause:** `GET /api/v1/catalog/vendors/products` returns `canonical_name_fa`, `master_sku`, `vendor_sku`, `physical_quantity` and `available_quantity` (see `scripts/application_boundary.py::vendor_catalog_list_products`). The vendor catalog/inventory pages read `product_name`/`name` and `stock_quantity`, so they discarded the canonical name and treated physical stock as zero. The inventory PATCH route schema requires `new_physical_quantity`, but the Web inventory screen sent `stock_quantity`, causing a contract mismatch.
+- **Source fixes pushed:**
+  - Web vendor inventory now reads `canonical_name_fa`, maps `physical_quantity` into the displayed stock field, keeps vendor/master SKUs searchable and sends `new_physical_quantity` to the existing API route.
+  - Web vendor catalog reads canonical names, displays available stock from `available_quantity` when the presentation alias is absent, and flags unlinked/unnamed products as needing catalog matching instead of showing the generic placeholder.
+  - Native Vendor mobile inventory cards now use `canonical_name_fa` and vendor SKU as fallback identity.
+- **Regression guards added:** mobile cross-module QA asserts the canonical field, quantity mapping and PATCH field; browser capture asserts vendor inventory does not display the old exact placeholder `کالای بدون نام`.
+- **Verification:** no tests executed on the new source revision yet. The dedicated workflow continues to be blocked by Actions runner allocation; do not close this item until web typecheck/build, Playwright capture and mobile QA pass and screenshots are regenerated.

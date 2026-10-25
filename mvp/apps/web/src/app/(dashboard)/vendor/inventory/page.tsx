@@ -25,6 +25,11 @@ interface InventoryRow {
   vendor_product_id?: string | null;
   product_id?: string | null;
   product_name?: string | null;
+  canonical_name_fa?: string | null;
+  master_sku?: string | null;
+  vendor_sku?: string | null;
+  candidate_id?: string | null;
+  physical_quantity?: number | null;
   name?: string | null;
   stock_quantity?: number | null;
   reserved_quantity?: number | null;
@@ -61,8 +66,13 @@ export default function VendorInventoryPage() {
           id: vpId,
           vendor_product_id: vpId,
           product_id: p.product_id,
-          product_name: p.product_name ?? p.name,
-          stock_quantity: p.stock_quantity,
+          product_name: p.product_name?.trim() || p.canonical_name_fa?.trim() || p.name?.trim() || null,
+          canonical_name_fa: p.canonical_name_fa,
+          master_sku: p.master_sku,
+          vendor_sku: p.vendor_sku,
+          candidate_id: p.candidate_id,
+          physical_quantity: p.physical_quantity,
+          stock_quantity: p.physical_quantity ?? p.stock_quantity,
           packaging_unit: p.packaging_unit,
           updated_at: p.updated_at,
           is_active: p.is_active,
@@ -95,7 +105,7 @@ export default function VendorInventoryPage() {
     try {
       await getApi().patch(
         `/api/v1/catalog/vendors/products/${vpId}/inventory`,
-        { stock_quantity: n },
+        { new_physical_quantity: n },
       );
       setSavedId(vpId);
       await load();
@@ -111,6 +121,8 @@ export default function VendorInventoryPage() {
     const q = query.trim().toLowerCase();
     return (
       str(r.product_name, "").toLowerCase().includes(q) ||
+      str(r.vendor_sku, "").toLowerCase().includes(q) ||
+      str(r.master_sku, "").toLowerCase().includes(q) ||
       str(r.id).toLowerCase().includes(q)
     );
   });
@@ -215,7 +227,7 @@ export default function VendorInventoryPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
-                        {r.product_name ?? "کالای بدون نام"}
+                        {r.product_name || (r.vendor_sku ? `کالای کد ${r.vendor_sku}` : "کالای ثبت‌نشده")}
                       </h3>
                       {r.is_active === false ? (
                         <StatusChip tone="neutral">غیرفعال</StatusChip>

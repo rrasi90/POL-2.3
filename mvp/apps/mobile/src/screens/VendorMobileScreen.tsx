@@ -27,6 +27,10 @@ type Inv = {
   id: string;
   vendor_product_id?: string | null;
   product_name?: string | null;
+  canonical_name_fa?: string | null;
+  master_sku?: string | null;
+  product_id?: string | null;
+  candidate_id?: string | null;
   vendor_sku?: string | null;
   packaging_unit?: string | null;
   pack_quantity?: number | null;
@@ -1332,7 +1336,7 @@ function InventoryCard(props: {
     <Card>
       <View style={styles.rowBetween}>
         <View style={styles.flexOne}>
-          <Text style={styles.itemTitle}>{props.row.product_name || props.row.id}</Text>
+          <Text style={styles.itemTitle}>{props.row.product_name?.trim() || props.row.canonical_name_fa?.trim() || (props.row.vendor_sku ? `کالای کد ${props.row.vendor_sku}` : props.row.id)}</Text>
           <Text style={styles.meta}>
             {props.row.vendor_sku ? "SKU: " + props.row.vendor_sku : "SKU ثبت نشده"}
             {props.row.packaging_unit ? " · " + props.row.packaging_unit : ""}
