@@ -2646,3 +2646,26 @@
 - **Documentation discrepancy:** the audit records the unresolved 41-route capture / 58-surface visual matrix / 68-entry MVP matrix mismatch noted in TODO-172.
 - **Verification blocker:** latest run [40188334807](https://github.com/rrasi90/POL-2.3/actions/runs/40188334807) ended with both jobs failed before steps (`steps=null`, no logs). Do not infer test assertions passed or failed; the tests were not evidenced to have started.
 - **Acceptance:** fix API/UI contracts and client-only success, decide remaining MVP scope, capture all production-facing routes plus relevant states/themes, run the full current-SHA Web/Mobile/Expo gates, and update the design matrix only with backed evidence.
+
+### TODO-184 — Align Native notification preferences and complete support message history
+
+- **Status:** OPEN — current-SHA tests and runtime verification required.
+- **Changes committed on `ui/visual-qa-screen-completion-20261025`:**
+  - Native notification preferences now read the list-shaped GET response by category, persist each supported channel with `event_name`, `channel`, and `is_enabled`, and no longer expose unsupported email notification toggles.
+  - Native support case detail now loads previous public messages from `GET /api/v1/support/cases/{id}/messages`, renders sender and Tehran timestamp, and distinguishes a true empty conversation from the old “history unavailable” copy.
+  - Added tenant-authorized history API in `scripts/api/routes/support.py` and `scripts/application_boundary.py`; the canonical service reuses case authorization/audit and filters `is_internal = FALSE` so internal staff notes are never returned to customers.
+  - Added HTTP regression tests for public chronological history, internal-note exclusion and cross-tenant access denial in `scripts/test_http_support.py`; extended the mobile regression source guard.
+  - Web notification preferences now use natural Persian labels for supported channels and known categories.
+- **Verification required:** the changes have not been run in this environment. Latest known GitHub Actions runs for this branch end with both jobs reporting `steps=null` and no retrievable job logs. Do not mark this item resolved until API tests, mobile typecheck/regression/mock QA and Web checks run successfully on the final branch SHA.
+- **Acceptance:** API history returns only authorized public messages in chronological order; unauthorized tenants receive 403; internal notes never leak; mobile can reload and display a prior conversation; notification toggles persist with the canonical contract.
+
+### TODO-185 — Eliminate false contact-form success and internal presentation identifiers
+
+- **Status:** OPEN — contact endpoint decision and current-SHA visual verification required.
+- **Changes committed on `ui/visual-qa-screen-completion-20261025`:**
+  - Public contact form no longer claims a message was successfully submitted and no longer says an employee will call when no server request is sent. It clearly states that online submission is not available and that form data is not transmitted or stored.
+  - Authenticated app-shell branding is Persian-first; the admin root no longer displays internal identifiers `G-007` or `O-10B`; the user-facing admin warning remains honest about incomplete management functionality.
+  - Web notification channel/category labels are now more natural Persian. Visual QA assertions check contact copy, the absence of the false-success statement, internal identifiers, and the former “پوش” label.
+  - Visual capture coverage was expanded to include `/profile`, `/notifications`, `/notifications/preferences`, and `/ops/notifications` with desktop and mobile-sized captures.
+- **Important limitation:** the public contact form still has no discovered public persistence endpoint or email/lead integration. It is now honest, not fully functional. Do not close the contact-form gap until a real, authorized submission contract is implemented and tested, or product scope explicitly removes online submission.
+- **Verification required:** regenerate screenshots after all changes, run Web typecheck/lint/build/Playwright plus Mobile QA and Expo export, and inspect the new route captures. No current-SHA PASS is established yet.
