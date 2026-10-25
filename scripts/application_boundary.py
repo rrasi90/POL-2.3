@@ -1002,6 +1002,11 @@ class POLApplicationBoundary:
     def support_get(self, *, case_id):
         return CanonicalSupportService.get_case(self.cur, self.context.user_id, case_id)
 
+    def support_messages_list(self, *, case_id):
+        return CanonicalSupportService.list_messages(
+            self.cur, self.context.user_id, case_id
+        )
+
     def support_message(self, *, case_id, message_text, internal=False):
         return CanonicalSupportService.add_message(
             self.cur, self.context.user_id, case_id, message_text, internal=internal
