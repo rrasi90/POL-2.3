@@ -242,7 +242,7 @@ export default function VendorInventoryPage() {
                       )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[var(--pol-light-text-secondary)]">
-                      <span>واحد: {r.packaging_unit ?? "بسته"}</span>
+                      <span>واحد: {formatPackagingUnit(r.packaging_unit)}</span>
                       <span>·</span>
                       <span>آخرین به‌روزرسانی: {formatDateTime(r.updated_at)}</span>
                     </div>
