@@ -66,7 +66,9 @@ function recentStart(days: number): string {
   d.setDate(d.getDate() - days);
   return dateKey(d);
 }
-function prettyKpi(key: string): string {\n  return formatKpiLabel(key);\n}
+function prettyKpi(key: string): string {
+  return formatKpiLabel(key);
+}
 
 export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMIN_SUPER"> }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
