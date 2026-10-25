@@ -5,17 +5,8 @@ import { OfflineBanner } from "../components/OfflineBanner";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import { spacing, useThemedStyles, type Palette } from "../theme";
 import type { FieldTask } from "../types";
-
-const statusLabel: Record<string, string> = {
-  PENDING: "در انتظار",
-  IN_PROGRESS: "در حال انجام",
-  ASSIGNED: "واگذارشده",
-  COMPLETED: "تکمیل‌شده",
-  CANCELLED: "لغوشده",
-  OPEN: "باز",
-  DONE: "انجام‌شده",
-  CLOSED: "بسته",
-};
+import { formatFieldTaskStatus, formatFieldTaskType } from "../utils/statusLabels";
+import { formatTehranDateTime } from "../i18n/fa";
 
 function statusTone(status?: string | null): "neutral" | "warn" | "ok" | "info" {
   if (status === "COMPLETED" || status === "DONE") return "ok";
@@ -75,11 +66,11 @@ export function FieldTaskListScreen(props: {
   return (
     <Screen>
       <OfflineBanner />
-      <Title badge="F-01 / F-05">فعال‌سازی میدانی</Title>
+      <Title badge="وظایف میدانی">فعال‌سازی میدانی</Title>
       <ErrorBox message={error} />
       <View style={styles.actions}>
         <Btn label="به‌روزرسانی" tone="ghost" onPress={() => void load()} loading={loading} />
-        <Btn label="سفارش کمکی (F-03)" onPress={props.onAssistedOrder} />
+        <Btn label="ثبت سفارش به کمک کارشناس" onPress={props.onAssistedOrder} />
       </View>
       <Input
         label="جستجوی وظیفه"
@@ -102,9 +93,9 @@ export function FieldTaskListScreen(props: {
             <Pressable accessibilityRole="button" onPress={() => props.onOpenTask(item.id)}>
               <Card>
                 <View style={styles.row}>
-                  <StatusChip label={statusLabel[item.status ?? ""] ?? item.status ?? "—"} tone={statusTone(item.status)} />
+                  <StatusChip label={formatFieldTaskStatus(item.status)} tone={statusTone(item.status)} />
                   <Text style={styles.type} numberOfLines={1}>
-                    {item.task_type ?? "—"}
+                    {formatFieldTaskType(item.task_type)}
                   </Text>
                 </View>
                 {item.notes ? (
@@ -112,7 +103,7 @@ export function FieldTaskListScreen(props: {
                     {item.notes}
                   </Text>
                 ) : null}
-                <Text style={styles.meta}>{item.created_at ?? ""}</Text>
+                <Text style={styles.meta}>{formatTehranDateTime(item.created_at)}</Text>
               </Card>
             </Pressable>
           )}
