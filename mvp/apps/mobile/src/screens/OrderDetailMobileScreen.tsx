@@ -4,6 +4,7 @@ import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import { toAsciiDigits } from "../utils/otp";
 import { spacing, useThemedStyles, type Palette } from "../theme";
+import { formatOrderStatus, formatDeliveryStatus } from "../utils/statusLabels";
 import type { Role } from "../types";
 
 type Mode = "retailer" | "vendor";
@@ -368,7 +369,7 @@ export function OrderDetailMobileScreen(props: {
 
         <Card style={styles.summaryCard}>
           <View style={styles.summaryTop}>
-            <StatusChip label={status || "—"} tone={status === "DELIVERED" ? "ok" : "info"} />
+            <StatusChip label={formatOrderStatus(status)} tone={status === "DELIVERED" ? "ok" : "info"} />
             <Text style={styles.orderNumber}>{order.order_number || order.id}</Text>
           </View>
           <Text style={styles.metric}>{money(order.total_amount_toman)}</Text>
@@ -415,7 +416,7 @@ export function OrderDetailMobileScreen(props: {
               {status === "READY" ? <Btn compact label="ثبت ارسال" onPress={() => void submitDispatch()} loading={acting === "dispatch"} disabled={acting !== null} /> : null}
               {status === "DISPATCHED" ? (
                 <>
-                  <StatusChip label={"وضعیت تحویل: " + (deliveryStatus || "نامشخص")} tone="info" />
+                  <StatusChip label={"وضعیت تحویل: " + formatDeliveryStatus(deliveryStatus)} tone="info" />
                   {deliveryStatus === "ASSIGNED" ? <Btn compact label="جمع‌آوری شد" onPress={() => void submitDeliveryStage("picked-up")} loading={acting === "picked-up"} disabled={acting !== null} /> : null}
                   {deliveryStatus === "PICKED_UP" ? <Btn compact label="در مسیر" onPress={() => void submitDeliveryStage("in-transit")} loading={acting === "in-transit"} disabled={acting !== null} /> : null}
                   {deliveryStatus === "IN_TRANSIT" ? <Btn compact label="رسید" onPress={() => void submitDeliveryStage("arrived")} loading={acting === "arrived"} disabled={acting !== null} /> : null}
@@ -452,7 +453,7 @@ export function OrderDetailMobileScreen(props: {
             <Text style={styles.sectionTitle}>تحویل، مرجوعی و اختلاف</Text>
             {status === "DISPATCHED" ? (
               <>
-                <StatusChip label={"تحویل: " + (deliveryStatus || "نامشخص")} tone="info" />
+                <StatusChip label={"تحویل: " + formatDeliveryStatus(deliveryStatus)} tone="info" />
                 <Input label="نام تحویل‌گیرنده" value={deliveryRecipient} onChangeText={setDeliveryRecipient} maxLength={200} />
                 <Input label="کد تحویل ۶ رقمی" value={deliveryOtp} onChangeText={(v) => setDeliveryOtp(toAsciiDigits(v).replace(/\D/g, "").slice(0, 6))} keyboardType="numeric" maxLength={6} />
                 <Btn label="ثبت تحویل" onPress={() => void submitDelivery()} loading={acting === "deliver"} disabled={acting !== null || deliveryStatus !== "ARRIVED" || !deliveryRecipient.trim() || !deliveryOtp.trim()} />
