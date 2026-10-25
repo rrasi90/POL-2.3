@@ -46,13 +46,14 @@ export default function HomePage() {
 
       <nav
         aria-label="پیوندهای اصلی موبایل"
-        className="flex md:hidden items-center gap-4 overflow-x-auto whitespace-nowrap border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-4 py-3 text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
+        className="flex md:hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-4 py-3 text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
       >
         <Link href="/about" className="shrink-0 hover:text-[var(--pol-light-brand-primary)]">درباره ما</Link>
         <Link href="/how" className="shrink-0 hover:text-[var(--pol-light-brand-primary)]">نحوه کار</Link>
         <Link href="/retailers" className="shrink-0 hover:text-[var(--pol-light-brand-primary)]">برای خرده‌فروشان</Link>
         <Link href="/vendors" className="shrink-0 hover:text-[var(--pol-light-brand-primary)]">برای تأمین‌کنندگان</Link>
-        <Link href="/pilot" className="shrink-0 hover:text-[var(--pol-light-brand-primary)]">پایلوت اهواز</Link>
+        <Link href="/pilot" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">پایلوت اهواز</Link>
+        <Link href="/contact" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">تماس با ما</Link>
       </nav>
 
       {/* Hero Section */}
