@@ -7,7 +7,6 @@ import { spacing, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 import { formatAuditAction, formatCandidateStatus, formatNotificationPriority, formatOrderStatus, formatOrganizationStatus, formatOrganizationType, formatReconciliationStatus, formatResourceType, formatRole } from "../utils/statusLabels";
 import { formatTehranDateTime } from "../i18n/fa";
-import { formatAuditAction, formatCandidateStatus, formatNotificationPriority, formatOrderStatus, formatOrganizationStatus, formatOrganizationType, formatReconciliationStatus, formatResourceType, formatRole } from "../utils/statusLabels";
 
 type Dash = {
   delivery_exceptions?: { open_count?: number; escalated_count?: number; total?: number };
