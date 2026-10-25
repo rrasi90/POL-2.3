@@ -167,6 +167,10 @@ const checks = [
       screen.includes("formatSupportType(selected.case_type)") &&
       screen.includes('api.get<unknown>("/api/v1/support/cases/" + id + "/messages")') &&
       screen.includes("setMessages(rows<Message>(history))") &&
+      screen.includes("const [historyError, setHistoryError]") &&
+      screen.includes("const [historyLoading, setHistoryLoading]") &&
+      screen.includes("تلاش دوباره برای دریافت پیام‌ها") &&
+      screen.includes("در حال دریافت پیام‌ها") &&
       screen.includes('sender_type === "AGENT"') &&
       screen.includes("formatTehranDateTime(m.created_at)") &&
       !screen.includes("پیام‌های قبلی در این نسخه قابل بارگذاری نیستند");
