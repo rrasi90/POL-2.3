@@ -4,6 +4,7 @@ import { api, ApiError } from "../api";
 import { Btn, Card, Empty, ErrorBox, IconBadge, Input, Screen, StatusChip } from "../components/ui";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
+import { formatOrderStatus } from "../utils/statusLabels";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 
 type Product = {
