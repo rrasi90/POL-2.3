@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPackagingUnit } from "@/lib/format-labels";
+
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -294,7 +296,7 @@ export default function VendorDailyInventoryPage() {
                       {line.product_name ?? id.slice(0, 8)}
                     </TableCell>
                     <TableCell className="text-[var(--pol-light-text-secondary)]">
-                      {line.packaging_unit ?? "بسته"}
+                      {formatPackagingUnit(line.packaging_unit)}
                     </TableCell>
                     <TableCell className="font-mono text-[var(--pol-light-text-secondary)]">
                       {exp.toLocaleString("fa-IR")}

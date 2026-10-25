@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPackagingUnit } from "@/lib/format-labels";
+
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -219,7 +221,7 @@ export default function RetailerVendorStorefrontPage() {
                           </span>
                           <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
                             {Number(p.stock_quantity).toLocaleString("fa-IR")}{" "}
-                            {p.packaging_unit ?? "بسته"}
+                            {formatPackagingUnit(p.packaging_unit)}
                           </span>
                         </div>
                       )}

@@ -186,7 +186,7 @@ const TIMELINE_EVENT_LABELS: Record<string, string> = {
   SUPPORT_MESSAGE_SENT: "پیام پشتیبانی ثبت شد",
 };
 
-export function formatOperationalStatus(value: unknown, fallback = "—"): string {
+export function formatOperationalStatus(value: unknown, fallback = "وضعیت نامشخص"): string {
   if (typeof value !== "string" || !value.trim()) return fallback;
   const status = value.trim();
   return orderStatusLabel[status]
@@ -195,7 +195,7 @@ export function formatOperationalStatus(value: unknown, fallback = "—"): strin
     ?? returnStatusLabel[status]
     ?? supportStatusLabel[status]
     ?? OPERATIONAL_STATUS_LABELS[status]
-    ?? status.replace(/_/g, " ");
+    ?? fallback;
 }
 
 export function formatDeliveryStatus(value: unknown, fallback = "نامشخص"): string {

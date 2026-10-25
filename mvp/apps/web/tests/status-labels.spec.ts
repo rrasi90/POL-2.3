@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { formatPackagingUnit } from "../src/lib/format-labels";
 import {
   formatDeliveryStatus as formatOpsDeliveryStatus,
   formatFulfillmentStatus as formatOpsFulfillmentStatus,
@@ -37,5 +38,21 @@ test.describe("Persian operational status labels", () => {
     expect(formatOpsEvent("DELIVERY_COMPLETED")).toBe("تحویل ثبت شد");
     expect(formatRetailEvent("ORDER_PARTIAL_ACCEPTANCE_PROPOSED")).toBe("پیشنهاد پذیرش جزئی ثبت شد");
     expect(formatOpsEvent("UNKNOWN_SYSTEM_EVENT")).toBe("رویداد ثبت‌شده");
+  });
+});
+
+test.describe("Persian packaging and enum fallbacks", () => {
+  test("common packaging units are Persian-first and preserve custom Persian names", () => {
+    expect(formatPackagingUnit("CARTON")).toBe("کارتن");
+    expect(formatPackagingUnit("PACK")).toBe("بسته");
+    expect(formatPackagingUnit("KG")).toBe("کیلوگرم");
+    expect(formatPackagingUnit("لیتر")).toBe("لیتر");
+    expect(formatPackagingUnit("UNLISTED_UNIT")).toBe("واحد دیگر");
+    expect(formatPackagingUnit(null)).toBe("واحد نامشخص");
+  });
+
+  test("unknown internal status enums do not leak raw identifiers", () => {
+    expect(formatOpsStatus("UNKNOWN_INTERNAL_STATUS")).toBe("وضعیت نامشخص");
+    expect(formatRetailStatus("UNKNOWN_INTERNAL_STATUS")).toBe("وضعیت نامشخص");
   });
 });

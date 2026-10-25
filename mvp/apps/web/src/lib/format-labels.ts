@@ -17,11 +17,24 @@ const PACKAGING_UNIT_LABELS: Readonly<Record<string, string>> = {
   BAG: "کیسه",
   BOTTLE: "بطری",
   CAN: "قوطی",
+  METER: "متر",
+  M: "متر",
+  DOZEN: "دوجین",
+  PAIR: "جفت",
+  ROLL: "رول",
+  SET: "ست",
+  CRATE: "سبد",
+  SACK: "گونی",
+  PALLET: "پالت",
 };
 
 export function formatPackagingUnit(value: string | null | undefined): string {
-  if (!value) return "واحد نامشخص";
-  return PACKAGING_UNIT_LABELS[value.toUpperCase()] ?? "واحد دیگر";
+  if (!value || !value.trim()) return "واحد نامشخص";
+  const unit = value.trim();
+  const normalized = unit.toUpperCase();
+  if (PACKAGING_UNIT_LABELS[normalized]) return PACKAGING_UNIT_LABELS[normalized];
+  if (/[\u0600-\u06FF]/.test(unit)) return unit;
+  return "واحد دیگر";
 }
 
 const FRESHNESS_LABELS: Readonly<Record<string, string>> = {

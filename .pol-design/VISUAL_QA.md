@@ -372,3 +372,12 @@ A dedicated workflow was added at `.github/workflows/pol-ui-screen-visual-qa.yml
 A source audit of `vendor_catalog_list_products` confirmed that the response exposes `canonical_name_fa`, `master_sku`, `vendor_sku`, `physical_quantity` and `available_quantity`. The Web inventory previously read `product_name` and `stock_quantity` and submitted `stock_quantity` where the API schema requires `new_physical_quantity`. Those mismatches are now corrected in the Web inventory/catalog screens; native Vendor inventory also falls back to the canonical name. The screens flag items lacking a canonical link rather than displaying a generic no-name placeholder.
 
 **Verification pending:** current-SHA typecheck/build, browser capture and mobile regression QA have not run because the configured Actions jobs are terminating before runner steps. TODO-178 tracks execution and screenshot recapture.
+
+
+## Persian packaging unit labels — 2026-10-25
+
+- Shared `formatPackagingUnit` now localizes common packaging enums, preserves custom Persian labels, and gives a safe fallback for unknown codes.
+- Applied to Web vendor inventory/catalog/storefront, daily inventory, retailer vendor storefront and order item packaging, and vendor order item packaging.
+- Unknown operational status enums now return Persian fallback text instead of exposing raw codes.
+- Added unit tests for common packaging mappings and unknown status fallback.
+- **Pending:** run `tests/status-labels.spec.ts`, typecheck/build and visual capture on the current SHA; historic PNGs do not yet reflect these changes.

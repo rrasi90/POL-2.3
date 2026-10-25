@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPackagingUnit } from "@/lib/format-labels";
+
 import { toAsciiDigits } from "@/lib/auth/phone";
 
 import { useCallback, useEffect, useState } from "react";
@@ -549,7 +551,7 @@ export default function RetailerOrderDetailPage() {
                       : "—"}
                   </TableCell>
                   <TableCell className="text-[var(--pol-light-text-secondary)]">
-                    {it.packaging_unit_snapshot ?? "—"}
+                    {formatPackagingUnit(it.packaging_unit_snapshot)}
                     {it.pack_quantity_snapshot
                       ? ` ×${it.pack_quantity_snapshot.toLocaleString("fa-IR")}`
                       : ""}

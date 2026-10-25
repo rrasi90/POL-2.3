@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPackagingUnit } from "@/lib/format-labels";
+
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -560,7 +562,7 @@ export default function VendorOrderDetailPage() {
                     </span>
                     <span className="block text-[12px] text-[var(--pol-light-text-muted)]">
                       سفارش اولیه: {Number(item?.ordered_quantity ?? 0).toLocaleString("fa-IR")}{" "}
-                      {item?.packaging_unit_snapshot ?? "بسته"}
+                      {formatPackagingUnit(item?.packaging_unit_snapshot)}
                     </span>
                   </div>
 
@@ -646,7 +648,7 @@ export default function VendorOrderDetailPage() {
                       : "—"}
                   </TableCell>
                   <TableCell className="text-[var(--pol-light-text-secondary)]">
-                    {it.packaging_unit_snapshot ?? "—"}
+                    {formatPackagingUnit(it.packaging_unit_snapshot)}
                     {it.pack_quantity_snapshot ? ` ×${it.pack_quantity_snapshot.toLocaleString("fa-IR")}` : ""}
                   </TableCell>
                   <TableCell className="font-bold text-[var(--pol-light-text-primary)]">

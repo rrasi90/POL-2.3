@@ -2547,3 +2547,12 @@
   - Native Vendor mobile inventory cards now use `canonical_name_fa` and vendor SKU as fallback identity.
 - **Regression guards added:** mobile cross-module QA asserts the canonical field, quantity mapping and PATCH field; browser capture asserts vendor inventory does not display the old exact placeholder `کالای بدون نام`.
 - **Verification:** no tests executed on the new source revision yet. The dedicated workflow continues to be blocked by Actions runner allocation; do not close this item until web typecheck/build, Playwright capture and mobile QA pass and screenshots are regenerated.
+
+
+### TODO-179 — Normalize packaging-unit labels across Web surfaces
+
+- **Status:** OPEN — current-SHA test execution and screenshot recapture pending.
+- Enhanced shared `mvp/apps/web/src/lib/format-labels.ts` and applied Persian unit labels to vendor catalog/inventory/daily inventory/storefront, retailer vendor storefront/order detail and vendor order detail. Existing Persian unit names are preserved and unknown codes use a safe fallback.
+- Updated Web operational status helpers to return a Persian fallback for unknown internal enums instead of exposing underscore-separated English identifiers.
+- Added assertions for packaging mappings and unknown-status fallbacks to `tests/status-labels.spec.ts`; the file is already included in the dedicated UI QA workflow.
+- **Verification pending:** no current-SHA tests/build have executed because Actions jobs terminate before runner steps. Regenerate screenshots after the workflow executes.

@@ -12,6 +12,7 @@ import {
   StatusChip,
 } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
+import { formatPackagingUnit } from "@/lib/format-labels";
 import {
   formatDateTime,
   inputCls,
