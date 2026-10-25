@@ -6,7 +6,7 @@ import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 import { formatFaNumber, formatTehranDateTime, formatToman, todayTehranIso, toAsciiDigits } from "../i18n/fa";
-import { formatGrantStatus, formatInvoiceStatus, formatOrderStatus, formatPermission, formatReferralStatus, formatSettlementStatus } from "../utils/statusLabels";
+import { formatGrantStatus, formatInvoiceStatus, formatOrderStatus, formatPackagingUnit, formatPermission, formatReferralStatus, formatSettlementStatus } from "../utils/statusLabels";
 
 type MainTab = "home" | "orders" | "inventory" | "finance" | "more" | "support";
 type InventoryTab = "stock" | "daily";
@@ -1141,9 +1141,9 @@ export function VendorMobileScreen(props: {
                     <Text style={styles.itemTitle}>{product.product_name || product.name || "—"}</Text>
                     {product.is_available === false ? <StatusChip label="ناموجود" tone="warn" /> : <StatusChip label="فعال" tone="ok" />}
                   </View>
-                  <Text style={styles.meta}>{product.brand_name || "—"} · بسته‌بندی: {product.packaging_unit || "—"}</Text>
+                  <Text style={styles.meta}>{product.brand_name || "—"} · بسته‌بندی: {formatPackagingUnit(product.packaging_unit)}</Text>
                   <Text style={styles.metricSmall}>{money(product.price_toman)}</Text>
-                  {product.stock_quantity != null ? <Text style={styles.meta}>موجودی ویترین: {numberFa(product.stock_quantity)} {product.packaging_unit || ""}</Text> : null}
+                  {product.stock_quantity != null ? <Text style={styles.meta}>موجودی ویترین: {numberFa(product.stock_quantity)} {product.packaging_unit ? formatPackagingUnit(product.packaging_unit) : ""}</Text> : null}
                 </Card>
               ))
             )}
@@ -1342,8 +1342,8 @@ function InventoryCard(props: {
         <View style={styles.flexOne}>
           <Text style={styles.itemTitle}>{productName || (props.row.vendor_sku ? `کالای کد ${props.row.vendor_sku}` : props.row.id)}</Text>
           <Text style={styles.meta}>
-            {props.row.vendor_sku ? "SKU: " + props.row.vendor_sku : "SKU ثبت نشده"}
-            {props.row.packaging_unit ? " · " + props.row.packaging_unit : ""}
+            {props.row.vendor_sku ? "کد فروشنده: " + props.row.vendor_sku : "SKU ثبت نشده"}
+            {props.row.packaging_unit ? " · " + formatPackagingUnit(props.row.packaging_unit) : ""}
             {props.row.pack_quantity ? " · " + numberFa(props.row.pack_quantity) : ""}
           </Text>
         </View>
