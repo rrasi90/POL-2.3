@@ -231,7 +231,7 @@ const checks = [
       screen.includes("is_enabled: Boolean(preference.push_enabled)") &&
       screen.includes("is_enabled: Boolean(preference.sms_enabled)") &&
       !screen.includes("email_enabled") &&
-      !screen.includes('label="ایمیل"') &&
+      !screen.includes('<ToggleRow label="ایمیل"') &&
       screen.includes('subtitle="اعلان برنامه و پیامک"') &&
       screen.includes('label="اعلان برنامه"') &&
       screen.includes("formatTehranDateTime(n.created_at)");
