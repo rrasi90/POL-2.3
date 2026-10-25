@@ -478,7 +478,7 @@ export function OrderDetailMobileScreen(props: {
             {returns.length > 0 ? (
               <View style={styles.returnList}>
                 <Text style={styles.meta}>آخرین مرجوعی‌ها</Text>
-                {returns.map((x) => <View key={x.id} style={styles.returnRow}><StatusChip label={formatReturnStatus(x.status)} tone="info" /><Text style={styles.meta}>{formatReturnIssue(x.issue_type)}</Text><Text style={styles.meta}>{x.created_at || "—"}</Text></View>)}
+                {returns.map((x) => <View key={x.id} style={styles.returnRow}><StatusChip label={formatReturnStatus(x.status)} tone="info" /><Text style={styles.meta}>{formatReturnIssue(x.issue_type)}</Text><Text style={styles.meta}>{formatTehranDateTime(x.created_at)}</Text></View>)}
               </View>
             ) : null}
           </Card>
