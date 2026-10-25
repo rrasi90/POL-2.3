@@ -4,6 +4,7 @@ import path from "node:path";
 import { loginAsRetailer, loginAsVendor, loginAsAdmin, loginAsField, resetTenant, retailerPhone, vendorPhone } from "./helpers";
 
 const SCREENSHOT_DIR = path.resolve(__dirname, "../../../../.pol-design/evidence/screenshots");
+const pageErrors = new WeakMap<Page, string[]>();
 
 async function assertResponsiveDocument(page: Page, expectedPath: string): Promise<void> {
   const documentContract = await page.evaluate(() => ({
@@ -12,6 +13,7 @@ async function assertResponsiveDocument(page: Page, expectedPath: string): Promi
     viewportWidth: window.innerWidth,
     documentWidth: document.documentElement.scrollWidth,
     bodyWidth: document.body.scrollWidth,
+    bodyTextLength: document.body.innerText.trim().length,
     path: window.location.pathname,
   }));
 
@@ -19,6 +21,7 @@ async function assertResponsiveDocument(page: Page, expectedPath: string): Promi
   expect(documentContract.direction, "document direction should be RTL").toBe("rtl");
   expect(documentContract.path, "the captured route should match the expected route").toBe(expectedPath);
   expect(documentContract.viewportWidth).toBeGreaterThan(0);
+  expect(documentContract.bodyTextLength, `blank page captured at ${expectedPath}`).toBeGreaterThan(0);
   expect(
     documentContract.documentWidth,
     `document horizontal overflow on ${expectedPath}: ${documentContract.documentWidth}px > ${documentContract.viewportWidth}px`,
@@ -30,6 +33,16 @@ async function assertResponsiveDocument(page: Page, expectedPath: string): Promi
 }
 
 test.describe("Visual Quality Assurance Suite", () => {
+  test.beforeEach(async ({ page }) => {
+    const errors: string[] = [];
+    pageErrors.set(page, errors);
+    page.on("pageerror", (error) => errors.push(error.message));
+  });
+
+  test.afterEach(async ({ page }) => {
+    expect(pageErrors.get(page) ?? [], "uncaught browser page errors").toEqual([]);
+  });
+
   test.beforeAll(() => {
     if (!fs.existsSync(SCREENSHOT_DIR)) {
       fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
