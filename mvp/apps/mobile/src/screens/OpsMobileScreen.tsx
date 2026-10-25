@@ -5,6 +5,9 @@ import { Btn, Card, Empty, ErrorBox, Screen, StatusChip, Title } from "../compon
 import type { Role } from "../types";
 import { spacing, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
+import { formatAuditAction, formatCandidateStatus, formatNotificationPriority, formatOrderStatus, formatOrganizationStatus, formatOrganizationType, formatReconciliationStatus, formatResourceType, formatRole } from "../utils/statusLabels";
+import { formatTehranDateTime } from "../i18n/fa";
+import { formatAuditAction, formatCandidateStatus, formatNotificationPriority, formatOrderStatus, formatOrganizationStatus, formatOrganizationType, formatReconciliationStatus, formatResourceType, formatRole } from "../utils/statusLabels";
 
 type Dash = {
   delivery_exceptions?: { open_count?: number; escalated_count?: number; total?: number };
@@ -188,7 +191,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
 
   return (
     <Screen>
-      <Title badge={props.role}>موبایل عملیات</Title>
+      <Title badge={formatRole(props.role)}>موبایل عملیات</Title>
       <ScrollView>
         <Text style={styles.note}>
           این سطح موبایل برای قابلیت‌های عملیاتی موجود API است؛ همه business ruleها در backend canonical باقی می‌مانند.
@@ -218,7 +221,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
             ) : (
               notifications.map((n) => (
                 <Card key={n.id}>
-                  <StatusChip label={n.priority || "NORMAL"} tone="info" />
+                  <StatusChip label={formatNotificationPriority(n.priority)} tone="info" />
                   <Text style={styles.h2}>{n.title || "اعلان"}</Text>
                   <Text style={styles.meta}>{n.body || "—"}</Text>
                   <Text style={styles.meta}>{n.created_at || "—"}</Text>
@@ -229,7 +232,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
         ) : tab === "overview" ? (
           <>
             <Card>
-              <Text style={styles.h2}>O-01 استثناها</Text>
+              <Text style={styles.h2}>استثناهای عملیاتی</Text>
               <Text style={styles.metric}>{String(dash?.delivery_exceptions?.open_count ?? 0)}</Text>
               <Text style={styles.meta}>تحویل باز · ارتقا {String(dash?.delivery_exceptions?.escalated_count ?? 0)}</Text>
               <Text style={styles.metric}>{String(dash?.disputes?.open_disputes ?? 0)}</Text>
@@ -242,7 +245,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
             ) : (
               orders.slice(0, 10).map((o) => (
                 <Card key={o.id}>
-                  <StatusChip label={o.order_status || "—"} tone="info" />
+                  <StatusChip label={formatOrderStatus(o.order_status)} tone="info" />
                   <Text style={styles.h2}>{o.order_number || o.id}</Text>
                   <Text style={styles.metric}>{money(o.total_amount_toman)}</Text>
                 </Card>
@@ -266,7 +269,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
             ) : (
               recon.map((r) => (
                 <Card key={r.id}>
-                  <StatusChip label={r.status || "OPEN"} tone={r.status === "MISMATCH" ? "warn" : "info"} />
+                  <StatusChip label={formatReconciliationStatus(r.status)} tone={r.status === "MISMATCH" ? "warn" : "info"} />
                   <Text style={styles.metric}>{money(r.expected_amount_toman)}</Text>
                   <Text style={styles.meta}>مشاهده: {money(r.observed_amount_toman)}</Text>
                 </Card>
@@ -296,7 +299,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
           ) : (
             candidates.map((c) => (
               <Card key={c.candidate_id}>
-                <StatusChip label={c.status || "PENDING_REVIEW"} tone="warn" />
+                <StatusChip label={formatCandidateStatus(c.status)} tone="warn" />
                 <Text style={styles.h2}>{c.proposed_title || "بدون عنوان"}</Text>
                 <Text style={styles.meta}>فروشنده: {c.vendor_name || "—"}</Text>
                 <Text style={styles.meta}>SKU: {c.vendor_sku || "—"} · بارکد: {c.barcode || "—"}</Text>
@@ -311,9 +314,9 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
           ) : (
             users.map((u) => (
               <Card key={u.id}>
-                <StatusChip label={u.is_active ? "ACTIVE" : "INACTIVE"} tone={u.is_active ? "ok" : "warn"} />
+                <StatusChip label={formatOrganizationStatus(u.is_active ? "ACTIVE" : "INACTIVE")} tone={u.is_active ? "ok" : "warn"} />
                 <Text style={styles.h2}>{u.full_name || u.phone_number || u.id}</Text>
-                <Text style={styles.meta}>نقش: {u.role || "—"} · عضویت‌ها: {String(u.membership_count ?? 0)}</Text>
+                <Text style={styles.meta}>نقش: {formatRole(u.role)} · عضویت‌ها: {String(u.membership_count ?? 0)}</Text>
                 <Btn
                   label={u.is_active ? "غیرفعال کردن" : "فعال کردن"}
                   tone="ghost"
@@ -328,9 +331,9 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
           ) : (
             organizations.map((o) => (
               <Card key={o.id}>
-                <StatusChip label={o.status || "—"} tone={o.status === "ACTIVE" ? "ok" : "info"} />
+                <StatusChip label={formatOrganizationStatus(o.status)} tone={o.status === "ACTIVE" ? "ok" : "info"} />
                 <Text style={styles.h2}>{o.name || o.id}</Text>
-                <Text style={styles.meta}>نوع: {o.org_type || "—"} · عضویت‌ها: {String(o.membership_count ?? 0)}</Text>
+                <Text style={styles.meta}>نوع: {formatOrganizationType(o.org_type)} · عضویت‌ها: {String(o.membership_count ?? 0)}</Text>
                 {o.status === "ACTIVE" || o.status === "SUSPENDED" ? (
                   <Btn
                     label={o.status === "ACTIVE" ? "تعلیق سازمان" : "فعال‌سازی سازمان"}
@@ -349,10 +352,10 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
           ) : (
             audit.map((a) => (
               <Card key={a.id}>
-                <Text style={styles.h2}>{a.action || "—"}</Text>
-                <Text style={styles.meta}>{a.resource_type || "—"}</Text>
+                <Text style={styles.h2}>{formatAuditAction(a.action)}</Text>
+                <Text style={styles.meta}>{formatResourceType(a.resource_type)}</Text>
                 <Text style={styles.meta}>{a.actor_user_id || "—"}</Text>
-                <Text style={styles.meta}>{a.created_at || "—"}</Text>
+                <Text style={styles.meta}>{formatTehranDateTime(a.created_at)}</Text>
               </Card>
             ))
           )
