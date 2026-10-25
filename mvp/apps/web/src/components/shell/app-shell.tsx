@@ -98,7 +98,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   POL
                 </span>
                 <span className="text-[10px] text-[var(--pol-light-text-muted)] tracking-wider">
-                  Precision Commerce
+                  سامانه همکاری تجاری
                 </span>
               </div>
             </Link>
