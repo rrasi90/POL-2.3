@@ -133,6 +133,19 @@ export function str(v: unknown, fallback = "—"): string {
   return fallback;
 }
 
+/** Prefer canonical master-catalog names; reject generic placeholders. */
+export function vendorProductDisplayName(...values: unknown[]): string | null {
+  const placeholders = new Set(["کالای بدون نام", "بدون نام", "unknown product", "unnamed product"]);
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const candidate = value.trim();
+    if (!candidate) continue;
+    if (placeholders.has(candidate.toLocaleLowerCase("fa-IR"))) continue;
+    return candidate;
+  }
+  return null;
+}
+
 export function idOf(v: unknown): string {
   if (typeof v === "string") return v;
   if (typeof v === "number") return String(v);

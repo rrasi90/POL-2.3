@@ -17,6 +17,7 @@ import {
   inputCls,
   itemsOf,
   str,
+  vendorProductDisplayName,
   type LoadState,
 } from "../_shared";
 
@@ -66,7 +67,7 @@ export default function VendorInventoryPage() {
           id: vpId,
           vendor_product_id: vpId,
           product_id: p.product_id,
-          product_name: p.product_name?.trim() || p.canonical_name_fa?.trim() || p.name?.trim() || null,
+          product_name: vendorProductDisplayName(p.canonical_name_fa, p.product_name, p.name),
           canonical_name_fa: p.canonical_name_fa,
           master_sku: p.master_sku,
           vendor_sku: p.vendor_sku,
@@ -229,6 +230,7 @@ export default function VendorInventoryPage() {
                       <h3 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
                         {r.product_name || (r.vendor_sku ? `کالای کد ${r.vendor_sku}` : "کالای ثبت‌نشده")}
                       </h3>
+                      {!r.product_name ? <StatusChip tone="warning">نیازمند تطبیق کاتالوگ</StatusChip> : null}
                       {r.is_active === false ? (
                         <StatusChip tone="neutral">غیرفعال</StatusChip>
                       ) : currentStock === 0 ? (

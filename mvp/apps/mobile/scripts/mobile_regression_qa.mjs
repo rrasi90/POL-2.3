@@ -119,8 +119,11 @@ const checks = [
   ["Vendor catalog/inventory maps canonical names, physical quantity and PATCH schema", () => {
     const webInventory = readMobile("../web/src/app/(dashboard)/vendor/inventory/page.tsx");
     const webCatalog = readMobile("../web/src/app/(dashboard)/vendor/catalog/page.tsx");
+    const vendorShared = readMobile("../web/src/app/(dashboard)/vendor/_shared.ts");
     const mobileVendor = read("screens/VendorMobileScreen.tsx");
-    return webInventory.includes("p.canonical_name_fa") &&
+    return vendorShared.includes("vendorProductDisplayName") &&
+      vendorShared.includes("کالای بدون نام") &&
+      webInventory.includes("p.canonical_name_fa") &&
       webInventory.includes("p.physical_quantity") &&
       webInventory.includes("new_physical_quantity: n") &&
       webCatalog.includes("p.canonical_name_fa") &&

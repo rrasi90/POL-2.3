@@ -15,6 +15,7 @@ import { getApi } from "@/lib/auth/api";
 import {
   formatToman,
   itemsOf,
+  vendorProductDisplayName,
   str,
   type LoadState,
 } from "../_shared";
@@ -68,7 +69,7 @@ export default function VendorCatalogPage() {
     if (!query.trim()) return true;
     const q = query.trim().toLowerCase();
     return (
-      str(p.canonical_name_fa ?? p.product_name ?? p.name, "").toLowerCase().includes(q) ||
+      str(vendorProductDisplayName(p.canonical_name_fa, p.product_name, p.name), "").toLowerCase().includes(q) ||
       str(p.vendor_sku, "").toLowerCase().includes(q) ||
       str(p.brand_name, "").toLowerCase().includes(q)
     );
@@ -147,9 +148,9 @@ export default function VendorCatalogPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => {
             const vpId = str(p.vendor_product_id ?? p.id, "");
-            const hasCanonicalName = Boolean(p.canonical_name_fa?.trim() || p.product_name?.trim() || p.name?.trim());
-            const productName = p.canonical_name_fa?.trim() || p.product_name?.trim() || p.name?.trim() ||
-              (p.vendor_sku ? `کالای کد ${p.vendor_sku}` : "کالای ثبت‌نشده");
+            const canonicalName = vendorProductDisplayName(p.canonical_name_fa, p.product_name, p.name);
+            const hasCanonicalName = Boolean(canonicalName);
+            const productName = canonicalName || (p.vendor_sku ? `کالای کد ${p.vendor_sku}` : "کالای ثبت‌نشده");
             const needsCatalogMatch = !p.product_id || !hasCanonicalName;
 
             return (

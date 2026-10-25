@@ -1332,22 +1332,29 @@ function InventoryCard(props: {
   useEffect(() => setQuantity(String(props.row.physical_quantity ?? 0)), [props.row.physical_quantity]);
   useEffect(() => setPrice(String(props.row.current_price_toman ?? props.row.price_toman ?? "")), [props.row.current_price_toman, props.row.price_toman]);
 
+  const candidateName = props.row.canonical_name_fa?.trim() || props.row.product_name?.trim() || "";
+  const productName = ["کالای بدون نام", "بدون نام"].includes(candidateName) ? "" : candidateName;
+  const needsCatalogMatch = !props.row.product_id || !productName;
+
   return (
     <Card>
       <View style={styles.rowBetween}>
         <View style={styles.flexOne}>
-          <Text style={styles.itemTitle}>{props.row.product_name?.trim() || props.row.canonical_name_fa?.trim() || (props.row.vendor_sku ? `کالای کد ${props.row.vendor_sku}` : props.row.id)}</Text>
+          <Text style={styles.itemTitle}>{productName || (props.row.vendor_sku ? `کالای کد ${props.row.vendor_sku}` : props.row.id)}</Text>
           <Text style={styles.meta}>
             {props.row.vendor_sku ? "SKU: " + props.row.vendor_sku : "SKU ثبت نشده"}
             {props.row.packaging_unit ? " · " + props.row.packaging_unit : ""}
             {props.row.pack_quantity ? " · " + numberFa(props.row.pack_quantity) : ""}
           </Text>
         </View>
-        {props.row.is_stale === true || ["STALE", "EXPIRED"].includes(props.row.freshness_status ?? "") ? (
-          <StatusChip label="نیازمند توجه" tone="warn" />
-        ) : (
-          <StatusChip label="عادی" tone="ok" />
-        )}
+        <View style={styles.chipWrap}>
+          {needsCatalogMatch ? <StatusChip label="نیازمند تطبیق کاتالوگ" tone="warn" /> : null}
+          {props.row.is_stale === true || ["STALE", "EXPIRED"].includes(props.row.freshness_status ?? "") ? (
+            <StatusChip label="نیازمند توجه" tone="warn" />
+          ) : (
+            <StatusChip label="عادی" tone="ok" />
+          )}
+        </View>
       </View>
 
       <View style={styles.inventoryStats}>
