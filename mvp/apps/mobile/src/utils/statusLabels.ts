@@ -396,3 +396,36 @@ export function formatPackagingUnit(value: string | null | undefined): string {
   if (!value) return "واحد نامشخص";
   return PACKAGING_UNIT_LABELS[value.toLocaleUpperCase("en-US")] ?? "واحد دیگر";
 }
+
+
+const KPI_LABELS: Readonly<Record<string, string>> = {
+  total_orders: "تعداد کل سفارش‌ها",
+  orders_created: "سفارش‌های ایجادشده",
+  orders_submitted: "سفارش‌های ثبت‌شده",
+  orders_accepted: "سفارش‌های پذیرفته‌شده",
+  orders_delivered: "سفارش‌های تحویل‌شده",
+  active_vendors: "بنکداران فعال",
+  active_retailers: "خرده‌فروشان فعال",
+  gmv_toman: "ارزش کل سفارش‌ها",
+  gross_merchandise_value_toman: "ارزش کل سفارش‌ها",
+  average_order_value_toman: "میانگین مبلغ سفارش",
+  cancellation_rate: "نرخ لغو سفارش",
+  otif_rate: "نرخ تحویل به‌موقع و کامل",
+  on_time_in_full_rate: "نرخ تحویل به‌موقع و کامل",
+  fulfillment_rate: "نرخ تکمیل سفارش",
+  open_disputes: "اختلاف‌های باز",
+  open_support_cases: "پرونده‌های پشتیبانی باز",
+  delivery_exceptions: "موارد استثنای تحویل",
+  total_revenue_toman: "مجموع مبلغ فروش",
+  settlement_total_toman: "مجموع تسویه‌ها",
+  conversion_rate: "نرخ تبدیل",
+  repeat_order_rate: "نرخ سفارش مجدد",
+  stockout_rate: "نرخ اتمام موجودی",
+  median_fulfillment_minutes: "میانه زمان تکمیل سفارش",
+  average_fulfillment_minutes: "میانگین زمان تکمیل سفارش",
+};
+
+export function formatKpiLabel(key: string | null | undefined): string {
+  if (!key) return "شاخص عملیاتی";
+  return KPI_LABELS[key.toLocaleLowerCase("en-US")] ?? "سایر شاخص‌های عملیاتی";
+}
