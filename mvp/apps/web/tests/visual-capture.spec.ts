@@ -55,7 +55,6 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.waitForLoadState("networkidle");
 
       await assertResponsiveDocument(page, item.route);
-      await assertResponsiveDocument(page, item.route);
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-desktop-light.png`),
