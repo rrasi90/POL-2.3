@@ -50,6 +50,24 @@ interface UnifiedSearchData {
 
 type LoadState = "idle" | "loading" | "error" | "ready";
 
+const PLACEHOLDER_CATEGORY_NAMES = new Set([
+  "fulfillment category",
+  "proof category",
+  "seed cat",
+]);
+
+function getDisplayableCategories(input: CatalogCategory[]): CatalogCategory[] {
+  const seen = new Set<string>();
+  return input.filter((category) => {
+    const name = category.name_fa.trim().replace(/\\s+/g, " ");
+    if (!name) return false;
+    const key = name.normalize("NFKC").toLocaleLowerCase("en-US");
+    if (PLACEHOLDER_CATEGORY_NAMES.has(key) || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 const inputCls = [
   "h-10 w-full rounded-[8px] border border-[var(--pol-light-border-strong)] bg-[var(--pol-light-surface-default)] px-3",
   "text-[14px] leading-[22px] text-[var(--pol-light-text-primary)]",
@@ -70,6 +88,8 @@ export default function RetailerCatalogPage() {
   const [searchState, setSearchState] = useState<LoadState>("idle");
   const [searchError, setSearchError] = useState<string | null>(null);
   const [activeQuery, setActiveQuery] = useState("");
+
+  const visibleCategories = getDisplayableCategories(categories);
 
   const loadCategories = useCallback(async () => {
     setCatState("loading");
@@ -244,9 +264,9 @@ export default function RetailerCatalogPage() {
             description={catError ?? undefined}
             onRetry={() => void loadCategories()}
           />
-        ) : categories.length === 0 ? (
+        ) : visibleCategories.length === 0 ? (
           <p className="text-[13px] text-[var(--pol-light-text-muted)]">
-            دسته‌بندی‌ای موجود نیست.
+            {categories.length === 0 ? "دسته‌بندی‌ای موجود نیست." : "دسته‌بندی معتبری برای نمایش پیدا نشد."}
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
@@ -258,7 +278,7 @@ export default function RetailerCatalogPage() {
             >
               همه کالاها
             </button>
-            {categories.map((c) => (
+            {visibleCategories.map((c) => (
               <button
                 key={c.id}
                 type="button"
@@ -272,9 +292,9 @@ export default function RetailerCatalogPage() {
           </div>
         )}
 
-        {categories.length > 0 && categoryId ? (
+        {visibleCategories.length > 0 && categoryId ? (
           (() => {
-            const active = categories.find((c) => c.id === categoryId);
+            const active = visibleCategories.find((c) => c.id === categoryId);
             if (!active?.subcategories?.length) return null;
             return (
               <div className="flex flex-wrap items-center gap-1.5 rounded-[10px] bg-[var(--pol-light-surface-subtle)] p-2.5 border border-[var(--pol-light-border-subtle)]">
@@ -331,6 +351,15 @@ export default function RetailerCatalogPage() {
             description={searchError ?? undefined}
             onRetry={() => void runSearch(debounced, categoryId)}
           />
+        ) : categoryId && !debounced ? (
+          <Card variant="subtle" className="p-6">
+            <EmptyState
+              title="برای فیلتر دسته‌بندی، یک عبارت جست‌وجو وارد کنید"
+              description="فیلتر دسته‌بندی همراه با نام کالا، برند یا کد SKU اعمال می‌شود. ابتدا عبارت جست‌وجو را وارد کنید."
+              actionLabel="پاک کردن فیلتر دسته"
+              onAction={() => setCategoryId(null)}
+            />
+          </Card>
         ) : !hasQuery ? (
           <Card variant="subtle" className="p-6">
             <EmptyState
