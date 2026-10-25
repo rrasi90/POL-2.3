@@ -4,6 +4,7 @@ import { api, clearSession } from "../api";
 import { Btn, Card, Empty, ErrorBox, IconBadge, Input, StatusChip, Screen } from "../components/ui";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
+import { formatNotificationPriority } from "../utils/statusLabels";
 
 type Profile = {
   user_profile?: { user_id?: string; display_name?: string | null; email?: string | null; preferred_language?: string | null; timezone?: string | null; bio?: string | null; phone_number?: string | null };
@@ -149,7 +150,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
               return (
                 <Card key={n.id} style={styles.notificationCard}>
                   <View style={styles.notificationTop}>
-                    <StatusChip label={n.priority || "NORMAL"} tone={n.priority === "CRITICAL" || n.priority === "HIGH" ? "warn" : "info"} />
+                    <StatusChip label={formatNotificationPriority(n.priority)} tone={n.priority === "CRITICAL" || n.priority === "HIGH" ? "warn" : "info"} />
                     {unread ? <StatusChip label="جدید" tone="ok" /> : null}
                   </View>
                   <Text style={styles.menuTitle}>{n.title || "اعلان"}</Text>
