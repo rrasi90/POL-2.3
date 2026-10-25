@@ -160,13 +160,16 @@ const checks = [
       labels.includes("export function formatAuditAction") &&
       screen.includes("formatAuditAction(a.action)");
   }],
-  ["Support mobile localizes case status, priority, type, role and timestamps", () => {
+  ["Support mobile loads public conversation history and localizes case details", () => {
     const screen = read("screens/SupportMobileScreen.tsx");
     return screen.includes("formatSupportStatus(selected.status)") &&
       screen.includes("formatSupportPriority(selected.priority)") &&
       screen.includes("formatSupportType(selected.case_type)") &&
-      screen.includes("formatRole(m.sender_role)") &&
-      screen.includes("formatTehranDateTime(m.created_at)");
+      screen.includes('api.get<unknown>("/api/v1/support/cases/" + id + "/messages")') &&
+      screen.includes("setMessages(rows<Message>(history))") &&
+      screen.includes('sender_type === "AGENT"') &&
+      screen.includes("formatTehranDateTime(m.created_at)") &&
+      !screen.includes("پیام‌های قبلی در این نسخه قابل بارگذاری نیستند");
   }],
   ["Vendor finance, referrals and delegated permissions use Persian labels", () => {
     const screen = read("screens/VendorMobileScreen.tsx");
