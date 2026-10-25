@@ -108,7 +108,7 @@ jobs:
 
       - name: Run core web login, accessibility, basket and delivery regressions
         working-directory: mvp/apps/web
-        run: npx playwright test tests/login.spec.ts tests/a11y.spec.ts tests/basket-sync.spec.ts tests/delivery-flow.spec.ts
+        run: npx playwright test tests/login.spec.ts tests/a11y.spec.ts tests/basket-sync.spec.ts tests/delivery-flow.spec.ts tests/status-labels.spec.ts
 
       - name: Web typecheck
         working-directory: mvp/apps/web

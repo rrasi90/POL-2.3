@@ -356,3 +356,12 @@ A dedicated workflow was added at `.github/workflows/pol-ui-screen-visual-qa.yml
 - Removed visible internal decision IDs from the public landing/legal/pilot copy and replaced implementation notes with user-facing language.
 - The homepage no longer exposes the internal “MVP Constraints” badge or decision identifiers; its section now describes benefits in plain Persian.
 - **Pending verification:** no current-SHA browser/build suite has executed because GitHub Actions jobs have not allocated a runner. The existing screenshot PNGs were not regenerated and do not yet show these copy/navigation changes. Track in `TODO-176` and `TODO-175`.
+
+
+## Status-label regression coverage — 2026-10-25
+
+- Added a web unit-style Playwright suite for Persian order/group/reconciliation, delivery, fulfillment, return and timeline labels.
+- Operations detail now selects the correct resource-specific status map (orders vs support vs reconciliation vs returns); this avoids rendering return `PENDING` using the order meaning.
+- Retailer and vendor order details render localized fulfillment/delivery states and Persian labels for known timeline events and transitions.
+- Run `npx playwright test tests/status-labels.spec.ts` alongside web regression tests on the current SHA. Verification remains pending while GitHub Actions jobs fail before any runner step.
+- Tracked in `TODO-177`.

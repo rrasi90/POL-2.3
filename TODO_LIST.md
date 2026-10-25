@@ -2526,3 +2526,12 @@
 - Added route-capture assertions requiring visible mobile navigation for public content routes while excluding the focused OTP login screen.
 - Current-SHA tests and screenshot regeneration remain pending. No new PASS claim is made.
 - Follow-up TODO: TODO-176.
+
+
+### TODO-177 — Persian status-label regression coverage
+
+- **Status:** OPEN — test execution pending.
+- Added `mvp/apps/web/tests/status-labels.spec.ts` to cover order/group/reconciliation states, delivery and fulfillment labels, returns, timeline events and unknown-event fallback.
+- Added that spec to the dedicated UI QA workflow's core web regression command.
+- The same change localizes raw order/fulfillment/delivery/timeline values in retailer and vendor order detail screens and localizes order/support/reconciliation/return statuses in the operations detail view, selecting label maps by entity type to avoid ambiguous states such as `PENDING`.
+- Current-SHA verification remains blocked by GitHub Actions jobs failing with zero steps and no allocated runner. Do not mark this TODO as verified until the workflow actually executes.
