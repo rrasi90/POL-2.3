@@ -395,6 +395,50 @@ class TestListSupportMessages:
         assert resp.json()["success"] is False
 
 
+    def test_list_messages_rejects_same_user_in_wrong_active_organization(self, client):
+        owner = _seed_support(uuid4().hex[:8])
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {owner['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Tenant-bound history"},
+        )
+        assert create_resp.status_code == 201
+        case_id = create_resp.json()["data"]["id"]
+
+        other_org = str(uuid4())
+        other_session = None
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO organizations (id, name, org_type, status) VALUES (%s, 'Other active org', 'RETAILER', 'ACTIVE')",
+                    (other_org,),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status) VALUES (%s, %s, %s, 'RETAILER_OWNER', 'ACTIVE')",
+                    (str(uuid4()), other_org, owner["ru"]),
+                )
+                other_session = _create_session(cur, owner["ru"], other_org)
+            conn.commit()
+            other_token = encode_access_token(
+                owner["ru"], other_session, other_org, "RETAILER_OWNER"
+            )
+            resp = client.get(
+                f"/api/v1/support/cases/{case_id}/messages",
+                headers={"Authorization": f"Bearer {other_token}"},
+            )
+            assert resp.status_code == 403
+            assert resp.json()["success"] is False
+        finally:
+            with conn.cursor() as cur:
+                if other_session:
+                    cur.execute("DELETE FROM user_sessions WHERE id = %s", (other_session,))
+                cur.execute("DELETE FROM organization_memberships WHERE organization_id = %s", (other_org,))
+                cur.execute("DELETE FROM organizations WHERE id = %s", (other_org,))
+            conn.commit()
+            conn.close()
+
+
 class TestSupportAssignment:
     def test_assign_case_uses_canonical_route(self, client):
         data = _seed_support(uuid4().hex[:8], include_ops=True)
