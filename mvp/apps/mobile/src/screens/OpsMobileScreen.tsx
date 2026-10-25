@@ -223,7 +223,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
                   <StatusChip label={formatNotificationPriority(n.priority)} tone="info" />
                   <Text style={styles.h2}>{n.title || "اعلان"}</Text>
                   <Text style={styles.meta}>{n.body || "—"}</Text>
-                  <Text style={styles.meta}>{n.created_at || "—"}</Text>
+                  <Text style={styles.meta}>{formatTehranDateTime(n.created_at)}</Text>
                 </Card>
               ))
             )}
@@ -302,7 +302,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
                 <Text style={styles.h2}>{c.proposed_title || "بدون عنوان"}</Text>
                 <Text style={styles.meta}>فروشنده: {c.vendor_name || "—"}</Text>
                 <Text style={styles.meta}>کد فروشنده: {c.vendor_sku || "—"} · بارکد: {c.barcode || "—"}</Text>
-                <Text style={styles.meta}>ایجاد: {c.created_at || "—"}</Text>
+                <Text style={styles.meta}>ایجاد: {formatTehranDateTime(c.created_at)}</Text>
                 <Btn label="رد کاندید" tone="ghost" onPress={() => void reviewCandidate(c.candidate_id)} />
               </Card>
             ))
