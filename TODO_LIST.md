@@ -2502,3 +2502,27 @@
 - Retrieved the run and job summaries from GitHub Actions. Both jobs terminated in under three seconds, with no steps, no allocated runner (`runner_id=0`) and unavailable log blobs (`BlobNotFound`).
 - These runs are classified as **CI runner/workflow execution unavailable**, not as a source test assertion failure.
 - TODO-175 remains BLOCKED until an authorized runner executes the jobs and publishes logs/artifacts.
+
+
+### TODO-176 — Public mobile navigation and customer-facing copy
+
+- **Status:** OPEN — visual/browser verification and screenshot recapture pending.
+- **Branch / PR:** `ui/visual-qa-screen-completion-20261025` / [PR #51](https://github.com/rrasi90/POL-2.3/pull/51).
+- **Changes pushed:**
+  - Added a consistent mobile-only public navigation row to the home, about, how-it-works, pilot, contact, legal, retailer and vendor landing pages. It provides direct links to the public destinations without requiring a long scroll to the footer.
+  - Replaced internal architecture badges and decision IDs on the public home page with customer-facing benefits and pilot principles.
+  - Removed visible decision references such as `D-014`, `D-018`, `D-021`, `D-023` from public copy and rewrote the public pilot text to avoid internal terms such as `MVP` and `OTIF`.
+  - Replaced the technical contact-form note `C-07` with a user-facing explanation, and expanded jargon such as `RBAC`/FMCG/OTP into natural Persian where appropriate.
+  - Added a Playwright assertion that public content pages expose the mobile navigation; `/auth/login` is intentionally excluded because it is a focused authentication screen.
+- **Verification:** not run on current SHA; CI runs continue to fail before step execution. Do not mark as verified until browser tests and build execute.
+- **Acceptance:** run `npx playwright test tests/visual-capture.spec.ts`, the core browser regressions, web typecheck/lint/build; inspect home, legal, pilot, contact and public mobile navigation at 390×844 and 1440×900; regenerate screenshots after successful visual capture.
+- **Evidence/next step:** TODO-175 is BLOCKED by GitHub Actions runner execution (zero steps / runner_id 0 / unavailable logs). Re-run these tests on an authorized working runner, fix actual failures and only then promote this task to verified.
+
+### [2026-10-25 14:45 +03:30] Agent: ChatGPT — PUBLIC MOBILE NAVIGATION & COPY POLISH
+
+- Reviewed the committed mobile screenshots and the corresponding public page source.
+- Added mobile navigation rows to the public content pages where the header previously exposed only the logo and sign-in button.
+- Removed internal decision IDs and implementation notes from user-facing copy; simplified pilot, OTP, legal-security and product terminology.
+- Added route-capture assertions requiring visible mobile navigation for public content routes while excluding the focused OTP login screen.
+- Current-SHA tests and screenshot regeneration remain pending. No new PASS claim is made.
+- Follow-up TODO: TODO-176.

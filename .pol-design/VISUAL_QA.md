@@ -348,3 +348,11 @@ A dedicated workflow was added at `.github/workflows/pol-ui-screen-visual-qa.yml
 - GitHub job metadata reports zero steps and `runner_id=0`; log downloads return `BlobNotFound`.
 - This is **not evidence of failing visual assertions** because the steps never ran. It is also not a passing verification. Current-SHA tests and screenshot recapture remain pending until an authorized runner executes the workflow.
 - Tracked in `TODO-175` in the canonical `TODO_LIST.md`.
+
+
+## Public mobile navigation and copy polish — 2026-10-25
+
+- Added a visible mobile navigation row to the public home/about/how/pilot/contact/legal/retailer/vendor pages. The screenshot suite asserts that it appears at 390×844 on public content routes; the focused `/auth/login` screen is intentionally excluded.
+- Removed visible internal decision IDs from the public landing/legal/pilot copy and replaced implementation notes with user-facing language.
+- The homepage no longer exposes the internal “MVP Constraints” badge or decision identifiers; its section now describes benefits in plain Persian.
+- **Pending verification:** no current-SHA browser/build suite has executed because GitHub Actions jobs have not allocated a runner. The existing screenshot PNGs were not regenerated and do not yet show these copy/navigation changes. Track in `TODO-176` and `TODO-175`.

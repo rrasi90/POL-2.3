@@ -14,6 +14,11 @@ on:
       - "requirements*.txt"
       - ".github/workflows/pol-ui-screen-visual-qa.yml"
   pull_request:
+    # Push events run on every commit; limit PR-triggered duplicates to lifecycle transitions.
+    types:
+      - opened
+      - reopened
+      - ready_for_review
     branches:
       - fix/otp-six-digit-standard-20261025
     paths:
