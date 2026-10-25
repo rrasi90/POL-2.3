@@ -562,7 +562,7 @@ export function RetailerMobileScreen(props: {
             <Pressable key={o.id} onPress={() => props.onOpenOrder(o.id)} accessibilityRole="button">
               <Card style={styles.orderCard}>
                 <View style={styles.orderTop}>
-                  <StatusChip label={o.order_status || "—"} tone={o.order_status === "DELIVERED" ? "ok" : "info"} />
+                  <StatusChip label={formatOrderStatus(o.order_status)} tone={o.order_status === "DELIVERED" ? "ok" : "info"} />
                   <Text style={styles.orderNumber}>{o.order_number || o.id}</Text>
                 </View>
                 <Text style={styles.priceMedium}>{money(o.total_amount_toman)}</Text>
