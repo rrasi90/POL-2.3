@@ -308,6 +308,76 @@ class TestAddMessage:
         assert resp.json()["data"]["sender_type"] == "USER"
 
 
+class TestListSupportMessages:
+    def test_list_messages_excludes_internal_notes_and_returns_public_thread(self, client):
+        data = _seed_support(uuid4().hex[:8], include_ops=True)
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "History test"},
+        )
+        assert create_resp.status_code == 201
+        case_id = create_resp.json()["data"]["id"]
+
+        first = client.post(
+            f"/api/v1/support/cases/{case_id}/messages",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"message_text": "پیام خرده‌فروش"},
+        )
+        assert first.status_code == 201
+
+        reply = client.post(
+            f"/api/v1/support/cases/{case_id}/messages",
+            headers={"Authorization": f"Bearer {data['o_token']}"},
+            json={"message_text": "پاسخ پشتیبانی"},
+        )
+        assert reply.status_code == 201
+
+        conn = _db()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO support_case_messages
+                        (id, support_case_id, sender_user_id, sender_type, message_text, is_internal)
+                    VALUES (%s, %s, %s, 'AGENT', %s, TRUE)
+                    """,
+                    (str(uuid4()), case_id, data["ou"], "یادداشت داخلی تیم پشتیبانی"),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+
+        resp = client.get(
+            f"/api/v1/support/cases/{case_id}/messages",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["success"] is True
+        messages = body["data"]
+        assert [m["message_text"] for m in messages] == ["پیام خرده‌فروش", "پاسخ پشتیبانی"]
+        assert "یادداشت داخلی تیم پشتیبانی" not in [m["message_text"] for m in messages]
+        timestamps = [m["created_at"] for m in messages]
+        assert timestamps == sorted(timestamps)
+
+    def test_list_messages_rejects_another_tenant(self, client):
+        owner = _seed_support(uuid4().hex[:8])
+        other = _seed_support(uuid4().hex[:8])
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {owner['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Private history"},
+        )
+        case_id = create_resp.json()["data"]["id"]
+        resp = client.get(
+            f"/api/v1/support/cases/{case_id}/messages",
+            headers={"Authorization": f"Bearer {other['r_token']}"},
+        )
+        assert resp.status_code == 403
+        assert resp.json()["success"] is False
+
+
 class TestSupportAssignment:
     def test_assign_case_uses_canonical_route(self, client):
         data = _seed_support(uuid4().hex[:8], include_ops=True)
