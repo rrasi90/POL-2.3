@@ -59,7 +59,7 @@ const PLACEHOLDER_CATEGORY_NAMES = new Set([
 function getDisplayableCategories(input: CatalogCategory[]): CatalogCategory[] {
   const seen = new Set<string>();
   return input.filter((category) => {
-    const name = category.name_fa.trim().replace(/\\s+/g, " ");
+    const name = category.name_fa.trim().replace(/\s+/g, " ");
     if (!name) return false;
     const key = name.normalize("NFKC").toLocaleLowerCase("en-US");
     if (PLACEHOLDER_CATEGORY_NAMES.has(key) || seen.has(key)) return false;
