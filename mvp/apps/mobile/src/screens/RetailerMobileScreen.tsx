@@ -463,9 +463,9 @@ export function RetailerMobileScreen(props: {
         </Card>
         <Card>
           <Text style={styles.sectionCardTitle}>اطلاعات محصول</Text>
-          <InfoRow label="واحد پایه" value={selectedProduct.base_unit || "—"} />
+          <InfoRow label="واحد پایه" value={formatPackagingUnit(selectedProduct.base_unit)} />
           <InfoRow label="نوع بسته‌بندی" value={formatPackagingUnit(selectedProduct.default_pack_unit)} />
-          <InfoRow label="تعداد در بسته" value={String(selectedProduct.default_pack_quantity ?? "—")} />
+          <InfoRow label="تعداد در بسته" value={selectedProduct.default_pack_quantity != null ? numberFa(selectedProduct.default_pack_quantity) : "—"} />
         </Card>
         <Card style={styles.priceCard}>
           <Text style={styles.meta}>قیمت از ویترین فروشندگان</Text>
@@ -592,7 +592,7 @@ export function RetailerMobileScreen(props: {
             <View style={styles.vendorAvatar}><Text style={styles.vendorAvatarText}>🏪</Text></View>
             <View style={styles.vendorCopy}>
               <StatusChip label={selectedVendor.is_active === false ? "غیرفعال" : "فعال"} tone={selectedVendor.is_active === false ? "neutral" : "ok"} />
-              <Text style={styles.productTitle}>{selectedVendor.name || selectedVendor.display_name || selectedVendor.id}</Text>
+              <Text style={styles.productTitle}>{selectedVendor.name || selectedVendor.display_name || "بنکدار"}</Text>
               <Text style={styles.meta}>{selectedVendor.city || "—"} · {String(selectedVendor.product_count || 0)} کالا</Text>
             </View>
           </Card>
@@ -601,10 +601,10 @@ export function RetailerMobileScreen(props: {
             <Card key={p.id} style={styles.vendorProductCard}>
               <View style={styles.productVisualSmall}><Text>📦</Text></View>
               <View style={styles.grow}>
-                <Text style={styles.productTitle}>{p.product_name || p.name || p.id}</Text>
+                <Text style={styles.productTitle}>{p.product_name?.trim() || p.name?.trim() || "کالای ثبت‌نشده"}</Text>
                 <Text style={styles.meta}>{p.brand_name || ""} · {p.packaging_unit ? formatPackagingUnit(p.packaging_unit) : ""}</Text>
                 <Text style={styles.priceMedium}>{money(p.price_toman)}</Text>
-                <Text style={styles.meta}>موجودی: {String(p.stock_quantity ?? "—")}</Text>
+                <Text style={styles.meta}>موجودی: {p.stock_quantity != null ? numberFa(p.stock_quantity) : "—"}</Text>
               </View>
               <Btn compact label="+" onPress={() => addVendorProduct(p)} disabled={p.is_available === false} />
             </Card>
