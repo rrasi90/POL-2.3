@@ -2556,3 +2556,29 @@
 - Updated Web operational status helpers to return a Persian fallback for unknown internal enums instead of exposing underscore-separated English identifiers.
 - Added assertions for packaging mappings and unknown-status fallbacks to `tests/status-labels.spec.ts`; the file is already included in the dedicated UI QA workflow.
 - **Verification pending:** no current-SHA tests/build have executed because Actions jobs terminate before runner steps. Regenerate screenshots after the workflow executes.
+
+
+### TODO-180 — Mobile operations and field-task Persian UI polish
+
+- **Status:** OPEN — current-SHA execution and device/browser recapture pending.
+- **Branch / PR:** `ui/visual-qa-screen-completion-20261025` / [PR #51](https://github.com/rrasi90/POL-2.3/pull/51).
+- **Additional presentation fixes pushed:**
+  - Centralized Persian labels for field-task status/type and replaced the raw status-code input with selectable Persian choices that submit the existing canonical enum values.
+  - Formatted field-task, order, return, timeline, audit and notification timestamps with the Tehran-aware formatter.
+  - Removed internal field-screen IDs from visible mobile headings and rewrote the assisted-order heading in customer/agent-facing Persian.
+  - Added Persian KPI labels and Persian numeral formatting to the Operations mobile dashboard; unknown KPI labels fall back to a generic Persian label instead of title-cased English keys.
+  - Added Persian unit and missing-name fallbacks to retailer storefront/detail/cart; missing vendor/store names no longer fall back to a raw UUID.
+  - Replaced the raw return-reason code text input with canonical reason choices displayed in Persian; the selected underlying codes remain unchanged for API submission.
+  - Localized notification channel wording, field-task note counter, scan unit help copy, support-history empty state, and packaging unit labels.
+- **Regression guards added:** mobile source-based QA now checks field-task, operations KPI, support/account notification, vendor scan, return reason, storefront quantity/unit and Persian status-label mappings.
+- **Verification:** these tests were **not executed** in this session. The GitHub Actions workflow keeps terminating before any runner step; historical screenshots have not been regenerated after these source changes. Do not mark as verified until a working runner completes the current-SHA checks and the visual evidence is recaptured.
+- **Acceptance:** run mobile typecheck, functional/regression/mock QA and Expo export; run web typecheck/lint/build and Playwright capture plus `tests/status-labels.spec.ts`; inspect field-task, assisted-order, account notifications, operations dashboard, retailer storefront and return selection on supported viewports/devices. Regenerate screenshots only after a successful run.
+- **Next dependency:** TODO-175 remains BLOCKED by CI runner allocation; keep PR #51 draft until evidence exists.
+
+### [2026-10-25 14:55 +03:30] Agent: ChatGPT — MOBILE WORKFLOW AND LABEL POLISH
+
+- Removed user-facing raw enum/code fallbacks from vendor scan and field-task screens where the canonical labels are known.
+- Added localized return reason choices, support-history explanatory copy, account notification channel/timestamp formatting, Persian KPI labels and Persian-formatted operational counters.
+- Added regression guards for these UI invariants.
+- Current-SHA execution remains pending because GitHub Actions still fails before allocating a runner. No test PASS is claimed.
+- Follow-up TODO: TODO-180.

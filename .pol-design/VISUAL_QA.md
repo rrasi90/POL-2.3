@@ -384,3 +384,12 @@ A source audit of `vendor_catalog_list_products` confirmed that the response exp
 
 
 - The visual capture suite asserts the generic product-name placeholder is absent on both vendor catalog and vendor inventory routes.
+
+
+## Mobile operations and field-task Persian UI polish — 2026-10-25
+
+- Field tasks now display Persian status/type labels and Tehran-aware dates; the editor offers Persian status choices while preserving canonical API enum values.
+- Operations KPI names and displayed numeric counts use Persian labels/numerals. Unknown KPI keys use a safe Persian fallback.
+- Vendor scan, return-reason, support-history and notification-channel copy no longer exposes the known internal English text. Packaging units are translated across relevant mobile and Web surfaces.
+- Retailer storefront presentation avoids raw IDs when names are missing and formats product stock and packaging units for Persian users.
+- Mobile source-based regression checks cover these areas, but **the current SHA has not passed execution**. GitHub Actions still terminates before runner steps, and prior PNG artifacts are not regenerated. Track in `TODO-180`; resolve the runner blocker tracked in `TODO-175` before marking this polish verified.
