@@ -5,6 +5,30 @@ import { loginAsRetailer, loginAsVendor, loginAsAdmin, loginAsField, resetTenant
 
 const SCREENSHOT_DIR = path.resolve(__dirname, "../../../../.pol-design/evidence/screenshots");
 
+async function assertResponsiveDocument(page: Page, expectedPath: string): Promise<void> {
+  const documentContract = await page.evaluate(() => ({
+    language: document.documentElement.lang,
+    direction: document.documentElement.dir,
+    viewportWidth: window.innerWidth,
+    documentWidth: document.documentElement.scrollWidth,
+    bodyWidth: document.body.scrollWidth,
+    path: window.location.pathname,
+  }));
+
+  expect(documentContract.language, "document language should be Persian").toBe("fa");
+  expect(documentContract.direction, "document direction should be RTL").toBe("rtl");
+  expect(documentContract.path, "the captured route should match the expected route").toBe(expectedPath);
+  expect(documentContract.viewportWidth).toBeGreaterThan(0);
+  expect(
+    documentContract.documentWidth,
+    `document horizontal overflow on ${expectedPath}: ${documentContract.documentWidth}px > ${documentContract.viewportWidth}px`,
+  ).toBeLessThanOrEqual(documentContract.viewportWidth);
+  expect(
+    documentContract.bodyWidth,
+    `body horizontal overflow on ${expectedPath}: ${documentContract.bodyWidth}px > ${documentContract.viewportWidth}px`,
+  ).toBeLessThanOrEqual(documentContract.viewportWidth);
+}
+
 test.describe("Visual Quality Assurance Suite", () => {
   test.beforeAll(() => {
     if (!fs.existsSync(SCREENSHOT_DIR)) {
@@ -30,10 +54,8 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.goto(item.route);
       await page.waitForLoadState("networkidle");
 
-      const htmlDir = await page.getAttribute("html", "dir");
-      expect(htmlDir).toBe("rtl");
-      const htmlLang = await page.getAttribute("html", "lang");
-      expect(htmlLang).toBe("fa");
+      await assertResponsiveDocument(page, item.route);
+      await assertResponsiveDocument(page, item.route);
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-desktop-light.png`),
@@ -41,6 +63,8 @@ test.describe("Visual Quality Assurance Suite", () => {
       });
 
       await page.setViewportSize({ width: 390, height: 844 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile-light.png`),
         fullPage: true,
@@ -73,12 +97,16 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.waitForTimeout(400);
 
       await page.setViewportSize({ width: 1440, height: 900 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-desktop.png`),
         fullPage: true,
       });
 
       await page.setViewportSize({ width: 390, height: 844 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
         fullPage: true,
@@ -111,12 +139,16 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.waitForTimeout(400);
 
       await page.setViewportSize({ width: 1440, height: 900 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-desktop.png`),
         fullPage: true,
       });
 
       await page.setViewportSize({ width: 390, height: 844 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
         fullPage: true,
@@ -144,12 +176,16 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.waitForTimeout(400);
 
       await page.setViewportSize({ width: 1440, height: 900 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-desktop.png`),
         fullPage: true,
       });
 
       await page.setViewportSize({ width: 390, height: 844 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
         fullPage: true,
@@ -181,12 +217,16 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.waitForTimeout(400);
 
       await page.setViewportSize({ width: 1440, height: 900 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-desktop.png`),
         fullPage: true,
       });
 
       await page.setViewportSize({ width: 390, height: 844 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
         fullPage: true,
@@ -213,12 +253,16 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.waitForTimeout(400);
 
       await page.setViewportSize({ width: 1440, height: 900 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-desktop.png`),
         fullPage: true,
       });
 
       await page.setViewportSize({ width: 390, height: 844 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
         fullPage: true,
@@ -243,12 +287,16 @@ test.describe("Visual Quality Assurance Suite", () => {
       await page.waitForTimeout(400);
 
       await page.setViewportSize({ width: 1440, height: 900 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-desktop.png`),
         fullPage: true,
       });
 
       await page.setViewportSize({ width: 390, height: 844 });
+      await assertResponsiveDocument(page, item.route);
+
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-mobile.png`),
         fullPage: true,
@@ -265,12 +313,16 @@ test.describe("Visual Quality Assurance Suite", () => {
     await page.waitForTimeout(400);
 
     await page.setViewportSize({ width: 1440, height: 900 });
+    await assertResponsiveDocument(page, "/field");
+
     await page.screenshot({
       path: path.join(SCREENSHOT_DIR, "field-dashboard-desktop.png"),
       fullPage: true,
     });
 
     await page.setViewportSize({ width: 390, height: 844 });
+    await assertResponsiveDocument(page, "/field");
+
     await page.screenshot({
       path: path.join(SCREENSHOT_DIR, "field-dashboard-mobile.png"),
       fullPage: true,
