@@ -66,7 +66,7 @@ export default function HomePage() {
           </div>
 
           <h1 className="mt-6 text-[36px] font-black leading-[48px] tracking-tight text-[var(--pol-light-text-primary)] sm:text-[46px] sm:leading-[58px]">
-            زیرساخت مدرن سفارش‌گذاری و زنجیره تأمین بنکداری B2B
+            زیرساخت مدرن سفارش‌گذاری و زنجیره تأمین برای خرید عمده
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-[26px] text-[var(--pol-light-text-secondary)]">
@@ -168,7 +168,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <span className="font-bold text-[var(--pol-light-text-primary)]">POL (پُــــل)</span>
             <span>·</span>
-            <span>پایلوت بنکداری و زنجیره تأمین FMCG</span>
+            <span>پایلوت بنکداری و زنجیره تأمین کالاهای تندمصرف</span>
           </div>
 
           <nav aria-label="پیوندهای فوتر" className="flex flex-wrap items-center gap-5">
