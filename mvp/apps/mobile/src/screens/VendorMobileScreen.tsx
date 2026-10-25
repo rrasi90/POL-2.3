@@ -6,7 +6,7 @@ import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 import { formatFaNumber, formatTehranDateTime, formatToman, todayTehranIso, toAsciiDigits } from "../i18n/fa";
-import { formatGrantStatus, formatInvoiceStatus, formatOrderStatus, formatPackagingUnit, formatPermission, formatReferralStatus, formatSettlementStatus } from "../utils/statusLabels";
+import { formatGrantStatus, formatInvoiceStatus, formatOrderStatus, formatPackagingUnit, formatPermission, formatReferralStatus, formatRole, formatSettlementStatus } from "../utils/statusLabels";
 
 type MainTab = "home" | "orders" | "inventory" | "finance" | "more" | "support";
 type InventoryTab = "stock" | "daily";
@@ -893,7 +893,7 @@ export function VendorMobileScreen(props: {
                 <View style={styles.scanProduct}>
                   <Text style={styles.itemTitle}>{barcodeResult.product.canonical_name_fa || "کالای تطبیق‌شده"}</Text>
                   <Text style={styles.meta}>کد کالا: {barcodeResult.product.master_sku || "—"} · برند: {barcodeResult.product.brand_name || "—"}</Text>
-                  <Text style={styles.meta}>بسته‌بندی: {barcodeResult.product.default_pack_unit || "—"} · تعداد: {numberFa(barcodeResult.product.default_pack_quantity)}</Text>
+                  <Text style={styles.meta}>بسته‌بندی: {formatPackagingUnit(barcodeResult.product.default_pack_unit)} · تعداد: {numberFa(barcodeResult.product.default_pack_quantity)}</Text>
                 </View>
               ) : null}
               {barcodeResult.product ? (
@@ -1170,7 +1170,7 @@ export function VendorMobileScreen(props: {
                   <StatusChip label={statusLabel(member.status)} tone={member.status === "ACTIVE" ? "ok" : "neutral"} />
                   <Text style={styles.itemTitle}>{member.full_name || member.user_id}</Text>
                 </View>
-                <Text style={styles.meta}>{member.phone_number || "—"} · {member.role || "—"}</Text>
+                <Text style={styles.meta}>{member.phone_number || "—"} · {formatRole(member.role)}</Text>
                 {props.role === "VENDOR_OWNER" && member.role !== "VENDOR_OWNER" ? (
                   <View style={styles.actionRow}>
                     <Btn label="فعال" onPress={() => void updateStaff(member.membership_id, { status: "ACTIVE" })} disabled={loading} />
