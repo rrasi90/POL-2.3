@@ -19,13 +19,13 @@ type CaseRow = {
   updated_at?: string | null;
   resolution_note?: string | null;
 };
-type Message = { id: string; message_text?: string | null; created_at?: string | null; sender_role?: string | null };
+type Message = { id: string; message_text?: string | null; created_at?: string | null; sender_type?: string | null; sender_role?: string | null };
 
 function rows<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[];
   if (!data || typeof data !== "object") return [];
   const o = data as Record<string, unknown>;
-  for (const k of ["cases", "items", "data", "results"]) {
+  for (const k of ["cases", "items", "messages", "data", "results"]) {
     if (Array.isArray(o[k])) return o[k] as T[];
   }
   return [];
@@ -57,6 +57,8 @@ export function SupportMobileScreen(props: { role: Role; onBack?: () => void }):
       const data = await api.get<CaseRow>("/api/v1/support/cases/" + id);
       setSelected(data);
       setMessages([]);
+      const history = await api.get<unknown>("/api/v1/support/cases/" + id + "/messages");
+      setMessages(rows<Message>(history));
     } catch (e) { setError(e instanceof Error ? e.message : "دریافت پرونده ناموفق بود"); }
     finally { setLoading(false); }
   }, []);
@@ -110,10 +112,10 @@ export function SupportMobileScreen(props: { role: Role; onBack?: () => void }):
           </Card>
           <Card>
             <Text style={styles.h2}>پیام‌های این نشست</Text>
-            {messages.length === 0 ? <Empty title="پیامی در این نشست نیست" description="پیام‌های قبلی در این نسخه قابل بارگذاری نیستند؛ می‌توانید پیام جدید ارسال کنید." /> : messages.map((m) => (
+            {messages.length === 0 ? <Empty title="پیامی در این نشست نیست" description="هنوز پیامی برای این پرونده ثبت نشده است؛ می‌توانید پیام تازه بفرستید." /> : messages.map((m) => (
               <View key={m.id} style={styles.message}>
                 <Text style={styles.body}>{m.message_text || "—"}</Text>
-                <Text style={styles.meta}>{formatRole(m.sender_role)} · {formatTehranDateTime(m.created_at)}</Text>
+                <Text style={styles.meta}>{m.sender_type === "AGENT" ? "پشتیبانی پل" : "کاربر"} · {formatTehranDateTime(m.created_at)}</Text>
               </View>
             ))}
           </Card>
