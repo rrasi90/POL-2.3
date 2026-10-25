@@ -400,3 +400,11 @@ A source audit of `vendor_catalog_list_products` confirmed that the response exp
 - The Web status-label test expects a custom Persian unit name such as `لیتر` to be preserved. The Mobile formatter has been aligned: known ASCII enum values are localized, existing non-ASCII/custom localized names pass through, and unknown ASCII codes return the generic Persian fallback.
 - Mobile source-based QA now includes a guard for this pass-through behavior.
 - Latest run [40187839429](https://github.com/rrasi90/POL-2.3/actions/runs/40187839429) failed before runner steps; both jobs have no step/log evidence. Current-SHA tests and screenshot regeneration remain pending; see TODO-181 and TODO-175.
+
+
+## Final public-copy cleanup — 2026-10-25
+
+- Replaced the remaining PRECISION COMMERCE badge text on public pages with Persian پل phrasing and removed the remaining visible B2B/FMCG acronyms from corporate copy.
+- The public visual-capture suite now rejects visible internal/product-development terms (PRECISION COMMERCE, MVP Constraints, known decision IDs, B2B, FMCG, RBAC, OTIF) on non-login public routes.
+- The last vendor mobile SKU placeholder and audit actor label have been localized.
+- Latest run [40188023664](https://github.com/rrasi90/POL-2.3/actions/runs/40188023664) failed before any runner step; screenshots have not been regenerated. See TODO-182 and the CI blocker in TODO-175.

@@ -2604,3 +2604,26 @@
 - Latest push run: [40187839429](https://github.com/rrasi90/POL-2.3/actions/runs/40187839429), HEAD `545cb6aeb2c67cc6b73b6e57e2b755faa300714c`, failed at `2026-10-25T11:11:45Z`.
 - Both jobs report `completed/failure`, `steps=null`, no log URL; no test step is evidenced as having started.
 - This remains a CI execution/runner blocker, not a source assertion failure. Current screenshots remain historical captures and have not been regenerated after the source changes.
+
+
+### TODO-182 — Final public-copy cleanup and mobile audit labels
+
+- **Status:** OPEN — browser verification pending.
+- **Changes pushed:** replaced the remaining visible PRECISION COMMERCE brand token in public landing pages with Persian پل messaging; removed the remaining visible B2B / FMCG abbreviations from public copy; changed the vendor mobile empty SKU fallback to «کد فروشنده ثبت نشده»; labelled the operations audit actor ID as «شناسه کاربر ثبت‌کننده».
+- **Visual regression gate:** the public-route capture test now asserts that visible corporate copy does not contain PRECISION COMMERCE, MVP Constraints, known D-### decision IDs, B2B, FMCG, RBAC or OTIF, while also requiring mobile public navigation on content routes.
+- **Verification:** current-SHA browser capture and build are not executed; the latest run [40188023664](https://github.com/rrasi90/POL-2.3/actions/runs/40188023664) failed before any job step.
+- **Acceptance:** run the dedicated UI workflow with a functioning runner; inspect public pages at 390×844 and 1440×900; regenerate screenshots from the updated SHA. Keep the task open until this evidence exists.
+
+### [2026-10-25 15:15 +03:30] Agent: ChatGPT — FINAL PUBLIC COPY SWEEP
+
+- Removed remaining visible PRECISION COMMERCE labels from corporate pages and replaced the remaining public English acronyms with ordinary Persian phrasing.
+- Updated the capture suite to fail when those internal/English labels return to public content.
+- Localized the last known mobile vendor SKU fallback and clarified the audit actor identifier.
+- The latest CI run continues to terminate before any steps; this is not evidence of a copy assertion failure. Screenshot refresh remains pending.
+- Follow-up TODO: TODO-182.
+
+### [2026-10-25 15:16 +03:30] Agent: ChatGPT — LATEST CI CHECK
+
+- Latest run: [40188023664](https://github.com/rrasi90/POL-2.3/actions/runs/40188023664), HEAD 68d831644ee1565ddd0bb78665daaa8b65ea3af7, failed at 2026-10-25T11:14:27Z.
+- Both jobs return completed/failure, steps=null and no log URLs. No test commands are evidenced as having started.
+- Current-SHA verification remains blocked on runner availability; no new PASS claim is recorded.
