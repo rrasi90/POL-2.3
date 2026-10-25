@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
-import { loginAsRetailer, loginAsVendor, loginAsAdmin, loginAsField, resetTenant, retailerPhone, vendorPhone } from "./helpers";
+import { line, loginAsRetailer, loginAsVendor, loginAsAdmin, loginAsField, resetTenant, retailerPhone, vendorPhone } from "./helpers";
 
 const SCREENSHOT_DIR = path.resolve(__dirname, "../../../../.pol-design/evidence/screenshots");
 const pageErrors = new WeakMap<Page, string[]>();
@@ -98,6 +98,30 @@ async function captureAuthenticatedRoute(
     fullPage: false,
   });
 }
+
+async function captureCurrentRoute(page: Page, name: string): Promise<void> {
+  const route = new URL(page.url()).pathname;
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(300);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await assertResponsiveDocument(page, route);
+  await assertCanonicalUserFacingCopy(page, route);
+  await page.screenshot({
+    path: path.join(SCREENSHOT_DIR, `${name}-desktop.png`),
+    fullPage: true,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await assertResponsiveDocument(page, route);
+  await assertCanonicalUserFacingCopy(page, route);
+  await page.screenshot({
+    path: path.join(SCREENSHOT_DIR, `${name}-mobile.png`),
+    fullPage: false,
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+}
+
 
 test.describe("Visual Quality Assurance Suite", () => {
   test.beforeEach(async ({ page }) => {
@@ -482,4 +506,125 @@ test.describe("Visual Quality Assurance Suite", () => {
       fullPage: false,
     });
   });
+  test("capture seeded product, vendor, checkout, order and operations detail surfaces", async ({ page, browser }, testInfo) => {
+    test.setTimeout(240_000);
+    const retailer = retailerPhone(testInfo, 18);
+    const vendor = vendorPhone();
+    resetTenant(retailer);
+    resetTenant(vendor);
+
+    let vendorContext: Awaited<ReturnType<typeof browser.newContext>> | null = null;
+    let opsContext: Awaited<ReturnType<typeof browser.newContext>> | null = null;
+    const vendorPageErrors: string[] = [];
+    const opsPageErrors: string[] = [];
+
+    try {
+      // Product detail must be captured from a real seeded catalog search result,
+      // not a guessed UUID or a synthetic route.
+      await loginAsRetailer(page, retailer);
+      await page.goto("/retailer/catalog");
+      await page.waitForLoadState("networkidle");
+      await page.getByLabel("جستجوی کالا").fill("برنج دانا");
+      await page.locator('form[role="search"] button[type="submit"]').click();
+      const productLink = page.locator('a[href^="/retailer/catalog/"]').first();
+      await expect(productLink).toBeVisible();
+      const productHref = await productLink.getAttribute("href");
+      if (!productHref) throw new Error("catalog search returned no product detail href");
+      await captureAuthenticatedRoute(page, productHref, "retailer-catalog-detail");
+
+      // Storefront detail is selected from the actual active vendor list.
+      await page.goto("/retailer/vendors");
+      await page.waitForLoadState("networkidle");
+      const storefrontLink = page.locator('a[href^="/retailer/vendors/"]').first();
+      await expect(storefrontLink).toBeVisible();
+      const storefrontHref = await storefrontLink.getAttribute("href");
+      if (!storefrontHref) throw new Error("vendor list returned no storefront href");
+      await captureAuthenticatedRoute(page, storefrontHref, "retailer-vendor-detail");
+
+      // One-shot local fixture: unlike seedCart's general helper this does not
+      // re-seed stale local basket content during later full-page detail captures.
+      const basketLines = [line("POL-E2E-1001", 1)];
+      await page.addInitScript((payload) => {
+        const guardKey = "pol.visual.capture.order.seeded";
+        if (window.location.pathname !== "/retailer/basket" || window.sessionStorage.getItem(guardKey) === "1") return;
+        window.localStorage.setItem("pol.basket", JSON.stringify({ lines: payload.lines, serverBasketId: null }));
+        window.sessionStorage.setItem(guardKey, "1");
+      }, { lines: basketLines });
+      await page.goto("/retailer/basket");
+      await page.waitForLoadState("networkidle");
+      await expect(page.getByRole("heading", { name: "سبد خرید یکپارچه" })).toBeVisible();
+      await page.getByRole("button", { name: "بررسی تخصیص و ادامه تسویه" }).click();
+      await page.waitForURL("**/retailer/checkout");
+      await expect(page.getByRole("heading", { name: "بررسی تخصیص و تسویه حساب" })).toBeVisible();
+      await captureCurrentRoute(page, "retailer-checkout-review");
+
+      await page.getByLabel(/آدرس دقیق تحویل سفارش/).fill("اهواز، خیابان نادری، فروشگاه آزمایشی پل");
+      await page.getByRole("button", { name: "تأیید نهایی و ثبت قطعی سفارش" }).click();
+      await expect(page.getByRole("heading", { name: "سفارش شما با موفقیت ثبت شد" })).toBeVisible();
+      await captureCurrentRoute(page, "retailer-checkout-success");
+
+      const orderHrefs = await page.locator('a[href^="/retailer/orders/"]').evaluateAll((anchors) =>
+        anchors.map((anchor) => anchor.getAttribute("href") ?? ""),
+      );
+      const orderHref = orderHrefs.find((href) => /^\/retailer\/orders\/[0-9a-f-]{36}$/.test(href));
+      if (!orderHref) throw new Error("successful checkout response had no child-order detail link");
+      const orderId = orderHref.slice(orderHref.lastIndexOf("/") + 1);
+      await page.locator(`a[href="${orderHref}"]`).first().click();
+      await page.waitForURL(`**${orderHref}`);
+      await captureCurrentRoute(page, "retailer-order-detail");
+
+      const groupLink = page.locator('a[href^="/retailer/orders/group/"]').first();
+      await expect(groupLink).toBeVisible();
+      const groupHref = await groupLink.getAttribute("href");
+      if (!groupHref) throw new Error("order detail did not expose its order-group route");
+      await groupLink.click();
+      await page.waitForURL(`**${groupHref}`);
+      await captureCurrentRoute(page, "retailer-order-group-detail");
+
+      await captureAuthenticatedRoute(page, `${orderHref}/returns`, "retailer-order-returns");
+
+      // Vendor and operations details use separate authenticated contexts, so
+      // no persona can inherit another persona's local auth/session state.
+      vendorContext = await browser.newContext({
+        baseURL: "http://localhost:3000",
+        locale: "fa-IR",
+        timezoneId: "Asia/Tehran",
+      });
+      const vendorPage = await vendorContext.newPage();
+      vendorPage.on("pageerror", (error) => vendorPageErrors.push(error.message));
+      await loginAsVendor(vendorPage, vendor);
+      await vendorPage.goto("/vendor/orders");
+      await vendorPage.waitForLoadState("networkidle");
+      const vendorOrderLink = vendorPage.locator(`a[href="/vendor/orders/${orderId}"]`);
+      await expect(vendorOrderLink).toBeVisible();
+      await vendorOrderLink.click();
+      await vendorPage.waitForURL(`**/vendor/orders/${orderId}`);
+      await captureCurrentRoute(vendorPage, "vendor-order-detail");
+
+      await vendorPage.goto("/vendor/catalog");
+      await vendorPage.waitForLoadState("networkidle");
+      const priceLink = vendorPage.locator('a[href^="/vendor/catalog/"][href$="/prices"]').first();
+      await expect(priceLink).toBeVisible();
+      const priceHref = await priceLink.getAttribute("href");
+      if (!priceHref) throw new Error("vendor catalog did not expose a price-history route");
+      await captureAuthenticatedRoute(vendorPage, priceHref, "vendor-catalog-price-history");
+
+      opsContext = await browser.newContext({
+        baseURL: "http://localhost:3000",
+        locale: "fa-IR",
+        timezoneId: "Asia/Tehran",
+      });
+      const opsPage = await opsContext.newPage();
+      opsPage.on("pageerror", (error) => opsPageErrors.push(error.message));
+      await loginAsAdmin(opsPage);
+      await captureAuthenticatedRoute(opsPage, `/ops/orders/${orderId}`, "ops-order-detail");
+
+      expect(vendorPageErrors, "vendor detail pages should not throw browser errors").toEqual([]);
+      expect(opsPageErrors, "operations detail page should not throw browser errors").toEqual([]);
+    } finally {
+      if (vendorContext) await vendorContext.close();
+      if (opsContext) await opsContext.close();
+    }
+  });
+
 });
