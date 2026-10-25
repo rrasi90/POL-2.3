@@ -194,7 +194,7 @@ export default function RetailerCatalogPage() {
           کاتالوگ و جستجوی کالا
         </h1>
         <p className="mt-1 text-[13px] leading-[20px] text-[var(--pol-light-text-secondary)]">
-          جستجوی کالاهای FMCG، بررسی برندها، استعلام قیمت و مقایسه موجودی تأمین‌کنندگان
+          جستجوی کالاهای مصرفی روزمره، بررسی برندها، استعلام قیمت و مقایسه موجودی تأمین‌کنندگان
         </p>
       </header>
 
@@ -210,7 +210,7 @@ export default function RetailerCatalogPage() {
         >
           <SearchField
             label="جستجوی کالا"
-            placeholder="نام کالا، برند یا کد SKU (حداقل ۲ حرف)…"
+            placeholder="نام کالا، برند یا کد کالا (حداقل ۲ نویسه)…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="flex-1"
