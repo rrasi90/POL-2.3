@@ -381,3 +381,6 @@ A source audit of `vendor_catalog_list_products` confirmed that the response exp
 - Unknown operational status enums now return Persian fallback text instead of exposing raw codes.
 - Added unit tests for common packaging mappings and unknown status fallback.
 - **Pending:** run `tests/status-labels.spec.ts`, typecheck/build and visual capture on the current SHA; historic PNGs do not yet reflect these changes.
+
+
+- The visual capture suite asserts the generic product-name placeholder is absent on both vendor catalog and vendor inventory routes.
