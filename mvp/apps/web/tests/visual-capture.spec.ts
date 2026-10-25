@@ -45,7 +45,7 @@ async function assertCanonicalUserFacingCopy(page: Page, expectedPath: string): 
   expect(visibleText, `internal brand leaked on ${expectedPath}`).not.toContain("Precision Commerce");
 
   if (expectedPath === "/contact") {
-    expect(visibleText).toContain("این فرم هنوز به ثبت سروری متصل نیست");
+    expect(visibleText).toMatch(/این فرم هنوز به ثبت سروری متصل نیست|ارسال آنلاین این فرم هنوز فعال نیست/);
     expect(visibleText).not.toContain("پیام شما با موفقیت ثبت شد");
     expect(visibleText).not.toContain("C-07");
   }
@@ -165,6 +165,22 @@ test.describe("Visual Quality Assurance Suite", () => {
       });
     });
   }
+
+  test("contact form never claims server success without a live submission endpoint", async ({ page }) => {
+    await page.goto("/contact");
+    await page.waitForLoadState("networkidle");
+    await page.getByLabel(/نام و نام خانوادگی/).fill("فروشگاه آزمایشی");
+    await page.getByLabel("شماره تلفن همراه").fill("09123456789");
+    await page.getByLabel("متن پیام یا پرسش شما").fill("آزمون جلوگیری از اعلام موفقیت کاذب");
+    await page.getByRole("button", { name: "ارسال فرم ارتباطی" }).click();
+
+    const status = page.getByRole("status");
+    await expect(status).toContainText("ارسال آنلاین این فرم هنوز فعال نیست");
+    const visibleText = await page.locator("body").innerText();
+    expect(visibleText).not.toContain("پیام شما با موفقیت ثبت شد");
+    expect(visibleText).not.toContain("C-07");
+    await assertCanonicalUserFacingCopy(page, "/contact");
+  });
 
   test("capture authenticated retailer golden surfaces", async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 1440, height: 900 });
