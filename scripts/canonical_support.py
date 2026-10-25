@@ -137,10 +137,14 @@ class CanonicalSupportService:
         # valid user token read a conversation while acting in another tenant.
         if (
             not is_ops
-            and organization_id is not None
-            and str(case["organization_id"]) != str(organization_id)
+            and (
+                organization_id is None
+                or str(case["organization_id"]) != str(organization_id)
+            )
         ):
-            cls._audit(cur, case_id, actor_user_id, "READ_MESSAGES", False,
+            # Reuse the schema-approved READ action; the access-audit table
+            # constrains action values and deliberately has no READ_MESSAGES enum.
+            cls._audit(cur, case_id, actor_user_id, "READ", False,
                        "active tenant does not own this support case")
             raise SupportAccessError(
                 "Support messages are not available in the active organization."
