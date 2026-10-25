@@ -2409,7 +2409,7 @@
   - `mvp/apps/web/tests/visual-capture.spec.ts`: replaced the vacuous `expect(htmlDir === "rtl" || true).toBeTruthy()` assertion with strict assertions that `html dir="rtl"` and `html lang="fa"`.
   - `.pol-design/VISUAL_QA.md`: clarified that the 82 PNGs represent 41 web routes across desktop and mobile-sized browser viewports, not screenshots from native Android; retained OTP rows as REVERIFY REQUIRED and documented that the strengthened capture assertion needs a fresh run.
 - **Prior local evidence reported by the executor:** visual capture suite 13/13; core web Playwright suites 20/20; web build and typecheck reported PASS; mobile functional 28/28 and regression 23/23. These results predate the strict-assertion correction and were not independently re-executed by this follow-up.
-- **Current verification result:** not run in this follow-up. GitHub status endpoint returned no status checks for the original screenshot commit, and there was no PR for this branch at audit time.
+- **Current verification result:** the original visual capture commit had no status checks and no PR when first audited. PR #51 has since been created as a draft against `fix/otp-six-digit-standard-20261025`. The branch base targets the OTP PR branch rather than `main`; current-SHA validation remains pending, so no CI pass is claimed.
 - **Acceptance / next action:** from `mvp/apps/web`, run `npx playwright test tests/visual-capture.spec.ts`; run `npx playwright test tests/login.spec.ts tests/a11y.spec.ts tests/basket-sync.spec.ts tests/delivery-flow.spec.ts`; verify the updated tests pass on the resulting current SHA; inspect screenshot coverage and resolve differences between the 41-route visual capture list, 58-surface visual design matrix and 68-entry MVP screen matrix. Keep mobile OTP visual/runtime status pending unless verified on a current mobile runtime.
 - **Do not claim:** complete native mobile visual capture, full coverage of every canonical surface, or current-SHA success for the hardened assertions until evidence is attached.
 
@@ -2420,3 +2420,27 @@
 - Corrected a vacuous RTL assertion in the visual capture suite and updated the visual QA note so it no longer implies that native Android capture or OTP verification is covered by web screenshots alone.
 - Test status for these follow-up changes: pending re-execution; no pass claim made.
 - Follow-up TODO: TODO-172.
+
+
+### TODO-173 — Responsive document assertions and OTP numeral regression coverage
+
+- **Status:** OPEN — execution pending.
+- **Branch:** `ui/visual-qa-screen-completion-20261025`; PR #51 (draft).
+- **Implementation pushed:**
+  - `mvp/apps/web/tests/visual-capture.spec.ts`: added a shared assertion executed at every screenshot checkpoint (16 capture code sites; route loops expand to 41 routes × 2 viewport sizes). It verifies route identity, `lang="fa"`, `dir="rtl"`, a positive viewport width, and that document/body widths do not exceed the viewport.
+  - Removed one duplicate invocation accidentally introduced during assertion hardening.
+  - `mvp/apps/web/tests/login.spec.ts`: added a regression test for Persian/Arabic numeral conversion and preservation of leading zeroes (`۰۰۱۲۳۴` and `٠٠١٢٣٤` → `001234`).
+- **Verification:** these newest changes have not been run in a local workspace or CI in this execution. They must not be marked verified on source inspection alone.
+- **Next action:** run from `mvp/apps/web`:
+  - `npx playwright test tests/visual-capture.spec.ts`
+  - `npx playwright test tests/login.spec.ts tests/a11y.spec.ts tests/basket-sync.spec.ts tests/delivery-flow.spec.ts`
+  - `npm run typecheck`
+  - `npm run build`
+  Fix any route/viewport failures revealed by these checks and recapture screenshots on the resulting SHA. Keep OTP mobile/native runtime verification pending unless run with actual device/emulator evidence.
+
+### [2026-10-25 14:00 +03:30] Agent: ChatGPT — RESPONSIVE & OTP REGRESSION HARDENING
+
+- Added strict per-capture checks for Persian document language, RTL direction, route identity, and viewport overflow.
+- Added a web regression test covering both Persian and Arabic digits plus leading-zero preservation in the shared OTP digit normalizer.
+- All edits were committed through the GitHub contents API to the screen-completion branch and verified by reading back the branch. **No test execution result is claimed for these new changes.**
+- Follow-up TODO: TODO-173.
