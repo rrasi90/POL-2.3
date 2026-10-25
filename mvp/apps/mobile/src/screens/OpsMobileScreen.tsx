@@ -301,7 +301,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
                 <StatusChip label={formatCandidateStatus(c.status)} tone="warn" />
                 <Text style={styles.h2}>{c.proposed_title || "بدون عنوان"}</Text>
                 <Text style={styles.meta}>فروشنده: {c.vendor_name || "—"}</Text>
-                <Text style={styles.meta}>SKU: {c.vendor_sku || "—"} · بارکد: {c.barcode || "—"}</Text>
+                <Text style={styles.meta}>کد فروشنده: {c.vendor_sku || "—"} · بارکد: {c.barcode || "—"}</Text>
                 <Text style={styles.meta}>ایجاد: {c.created_at || "—"}</Text>
                 <Btn label="رد کاندید" tone="ghost" onPress={() => void reviewCandidate(c.candidate_id)} />
               </Card>
