@@ -1,6 +1,6 @@
 # POL Precision Commerce — Visual QA Matrix & Final Quality Gate
 
-> **OTP amendment note (2026-10-25):** This matrix contains historical QA snapshots. The OTP code has been changed to six digits, but prior PASS labels do not prove the six-digit implementation was re-tested. OTP-related rows below are marked **REVERIFY REQUIRED** pending fresh screenshots and current-SHA runtime checks.
+> **OTP / visual capture reconciliation (2026-10-25):** This matrix contains historical QA snapshots plus the web visual-capture evidence recorded in the screen-completion branch. The capture suite covers 41 web routes in desktop (1440×900) and mobile-sized browser (390×844) viewports, yielding 82 screenshot files; it is not a native Android screenshot sweep and does not, by itself, prove every interaction works. OTP-specific visual/runtime rows remain **REVERIFY REQUIRED** unless supported by current-SHA, flow-specific evidence. A previous RTL assertion in the capture test was ineffective (`... || true`); it has been replaced with strict `dir="rtl"` and `lang="fa"` assertions. Re-run the capture suite on the updated branch before treating those assertions as passed.
 
 ## Executive Verification Summary
 
@@ -305,3 +305,12 @@ pm run qa:functional -> 28/28 PASS.
 pm run qa:regression -> 23/23 PASS.
 - **Mobile Mock QA**: 
 pm run qa:mock -> PASS.
+
+
+## Screen-completion follow-up — 2026-10-25
+
+- GitHub branch comparison confirms the screen-completion branch contains 41 web-route captures across two browser viewport sizes (82 PNG assets) and the automated Playwright suite.
+- These PNGs are web browser captures at desktop and mobile-sized viewport dimensions. They are not evidence of screenshots from a native Android runtime.
+- The submitted local report records 13/13 visual capture tests and 20/20 core web regression tests before the assertion hardening described above. The strict RTL/language assertions have not yet been rerun on the updated commit in this workflow; retain the rerun as pending.
+- OTP login rows in this matrix remain `REVERIFY REQUIRED` until the current implementation, relevant flows, and corresponding viewport/device evidence have been verified on the applicable current SHA.
+- The route/screen count in this document should not be conflated with the separate 58-surface design audit or the 68-entry MVP screen matrix; those inventories have different scopes and need an explicit reconciliation before declaring all product surfaces complete.
