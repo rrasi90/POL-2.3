@@ -314,3 +314,11 @@ pm run qa:mock -> PASS.
 - The submitted local report records 13/13 visual capture tests and 20/20 core web regression tests before the assertion hardening described above. The strict RTL/language assertions have not yet been rerun on the updated commit in this workflow; retain the rerun as pending.
 - OTP login rows in this matrix remain `REVERIFY REQUIRED` until the current implementation, relevant flows, and corresponding viewport/device evidence have been verified on the applicable current SHA.
 - The route/screen count in this document should not be conflated with the separate 58-surface design audit or the 68-entry MVP screen matrix; those inventories have different scopes and need an explicit reconciliation before declaring all product surfaces complete.
+
+
+## Follow-up hardening — responsive and OTP digit assertions (2026-10-25)
+
+- The visual-capture suite now checks the requested path, Persian document language, RTL direction, and document/body horizontal overflow at each screenshot checkpoint.
+- The login test suite now covers Persian and Arabic OTP digit normalization and preservation of leading zeroes in the shared web normalizer.
+- These assertions and regression tests were added after the screenshot manifest was originally captured. **Their execution is pending** on the updated branch; the earlier test counts are not evidence that this latest change passes.
+- See `TODO-173` in `TODO_LIST.md` and [PR #51](https://github.com/rrasi90/POL-2.3/pull/51).
