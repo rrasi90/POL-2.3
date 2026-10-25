@@ -462,7 +462,26 @@ export function OrderDetailMobileScreen(props: {
             ) : null}
 
             <Text style={styles.subTitle}>ثبت مرجوعی</Text>
-            <Input label="دلیل مرجوعی" value={returnReason} onChangeText={setReturnReason} />
+            <Text style={styles.subTitle}>دلیل مرجوعی را انتخاب کنید</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.choiceRow}>
+              {[
+                ["DAMAGED", "کالای آسیب‌دیده"],
+                ["WRONG_ITEM", "کالای اشتباه"],
+                ["EXPIRED", "کالای تاریخ‌گذشته"],
+                ["MISSING_ITEM", "کسری کالا"],
+                ["QUALITY_ISSUE", "مشکل کیفیت"],
+                ["QUANTITY_MISMATCH", "مغایرت تعداد"],
+                ["OTHER", "سایر موارد"],
+              ].map(([code, label]) => (
+                <Btn
+                  key={code}
+                  compact
+                  label={label}
+                  tone={returnReason === code ? "primary" : "ghost"}
+                  onPress={() => setReturnReason(code)}
+                />
+              ))}
+            </ScrollView>
             {items.length > 0 ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.choiceRow}>{items.map((x) => <Btn key={x.id} compact label={(x.product_name_snapshot || x.id) + (returnItemId === x.id ? " ✓" : "")} tone={returnItemId === x.id ? "primary" : "ghost"} onPress={() => setReturnItemId(x.id)} />)}</ScrollView> : null}
             <Input label="تعداد مرجوعی" value={returnQuantity} onChangeText={setReturnQuantity} keyboardType="numeric" />
             <Input label="مبلغ بازپرداخت ادعایی (تومان)" value={returnClaimedRefund} onChangeText={setReturnClaimedRefund} keyboardType="numeric" />
