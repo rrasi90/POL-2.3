@@ -180,6 +180,8 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       if (item.route === "/vendor/inventory" || item.route === "/vendor/catalog") {
         await expect(page.getByText("کالای بدون نام", { exact: true })).toHaveCount(0);
+        await expect(page.getByText("CARTON", { exact: true })).toHaveCount(0);
+        await expect(page.getByText("PACK", { exact: true })).toHaveCount(0);
       }
 
       await page.setViewportSize({ width: 1440, height: 900 });
@@ -259,6 +261,10 @@ test.describe("Visual Quality Assurance Suite", () => {
       }
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(400);
+
+      if (item.route === "/ops") {
+        await expect(page.getByText("DELIVERED", { exact: true })).toHaveCount(0);
+      }
 
       await page.setViewportSize({ width: 1440, height: 900 });
       await assertResponsiveDocument(page, item.route);
