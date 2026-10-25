@@ -5,19 +5,16 @@ import { OfflineBanner } from "../components/OfflineBanner";
 import { Btn, Card, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import { spacing, useThemedStyles, type Palette } from "../theme";
 import type { FieldTask } from "../types";
+import { formatFieldTaskStatus, formatFieldTaskType } from "../utils/statusLabels";
+import { formatTehranDateTime } from "../i18n/fa";
 
-const statusLabel: Record<string, string> = {
-  PENDING: "در انتظار",
-  IN_PROGRESS: "در حال انجام",
-  ASSIGNED: "واگذارشده",
-  COMPLETED: "تکمیل‌شده",
-  CANCELLED: "لغوشده",
-  OPEN: "باز",
-  DONE: "انجام‌شده",
-  CLOSED: "بسته",
-};
-
-const statusOptions = ["", "PENDING", "IN_PROGRESS", "ASSIGNED", "COMPLETED", "CANCELLED"];
+const statusOptions: Array<[string, string]> = [
+  ["PENDING", "در انتظار"],
+  ["IN_PROGRESS", "در حال انجام"],
+  ["ASSIGNED", "واگذارشده"],
+  ["COMPLETED", "تکمیل‌شده"],
+  ["CANCELLED", "لغوشده"],
+];
 
 /** F-02 activation detail + F-04 follow-up notes/status PATCH. */
 export function FieldTaskDetailScreen(props: { taskId: string; onBack: () => void }): React.ReactNode {
@@ -77,35 +74,39 @@ export function FieldTaskDetailScreen(props: { taskId: string; onBack: () => voi
   return (
     <Screen>
       <OfflineBanner />
-      <Title badge="F-02 / F-04">جزئیات وظیفه</Title>
+      <Title badge="وظیفه میدانی">جزئیات وظیفه</Title>
       <Btn label="بازگشت به لیست" tone="ghost" onPress={props.onBack} disabled={saving || loading} />
       <ErrorBox message={error} />
       <ErrorBox message={saveError} />
       {saved ? <Text style={styles.saved}>تغییرات ذخیره شد.</Text> : null}
 
       <Card>
-        <StatusChip label={statusLabel[task?.status ?? ""] ?? task?.status ?? "—"} />
-        <Text style={styles.type}>{task?.task_type ?? "—"}</Text>
+        <StatusChip label={formatFieldTaskStatus(task?.status)} />
+        <Text style={styles.type}>{formatFieldTaskType(task?.task_type)}</Text>
         <Text style={styles.meta} numberOfLines={1}>
           {task?.id}
         </Text>
-        <Text style={styles.meta}>سازمان هدف: {task?.target_organization_id ?? "—"}</Text>
-        <Text style={styles.meta}>ایجاد: {task?.created_at ?? "—"}</Text>
-        <Text style={styles.meta}>مهلت: {task?.due_date ?? "—"}</Text>
-        <Text style={styles.meta}>تکمیل: {task?.completed_at ?? "—"}</Text>
+        <Text style={styles.meta}>شناسه سازمان هدف: {task?.target_organization_id ?? "—"}</Text>
+        <Text style={styles.meta}>ایجاد: {formatTehranDateTime(task?.created_at)}</Text>
+        <Text style={styles.meta}>مهلت: {formatTehranDateTime(task?.due_date)}</Text>
+        <Text style={styles.meta}>تکمیل: {formatTehranDateTime(task?.completed_at)}</Text>
       </Card>
 
       <Card>
-        <Text style={styles.h2}>به‌روزرسانی (F-04)</Text>
-        <Text style={styles.hint}>PATCH /field/tasks/{"{id}"} — status ≤20، notes ≤2000</Text>
-        <Input
-          label="وضعیت"
-          value={status}
-          onChangeText={setStatus}
-          maxLength={20}
-          hint={statusOptions.filter(Boolean).join(" · ")}
-          autoCapitalize="characters"
-        />
+        <Text style={styles.h2}>به‌روزرسانی وظیفه</Text>
+        <Text style={styles.hint}>وضعیت وظیفه را انتخاب کنید و در صورت نیاز یادداشت را تغییر دهید.</Text>
+        <Text style={styles.h2}>وضعیت</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingVertical: spacing.xs }}>
+          {statusOptions.map(([code, label]) => (
+            <Btn
+              key={code}
+              compact
+              label={label}
+              tone={status === code ? "primary" : "ghost"}
+              onPress={() => setStatus(code)}
+            />
+          ))}
+        </ScrollView>
         <Input
           label="یادداشت"
           value={notes}
