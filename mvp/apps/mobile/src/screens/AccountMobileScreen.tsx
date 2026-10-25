@@ -11,7 +11,8 @@ type Profile = {
   user_profile?: { user_id?: string; display_name?: string | null; email?: string | null; preferred_language?: string | null; timezone?: string | null; bio?: string | null; phone_number?: string | null };
   membership?: { organization_id?: string; organization_name?: string | null; role?: string | null } | null;
 };
-type Preferences = { push_enabled?: boolean; sms_enabled?: boolean; email_enabled?: boolean };
+type NotificationPreference = { category: string; push_enabled: boolean; sms_enabled: boolean };
+type Preferences = NotificationPreference[];
 type Notification = { id: string; event_name?: string | null; title?: string | null; body?: string | null; priority?: string | null; created_at?: string | null; read?: boolean; is_read?: boolean };
 
 function notificationsOf(data: unknown): Notification[] {
@@ -53,7 +54,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
 
   const loadPreferences = useCallback(async () => {
     setLoading(true); setError(null);
-    try { const d = await api.get<Preferences>("/api/v1/notifications/preferences"); setPreferences(d || {}); }
+    try { const d = await api.get<unknown>("/api/v1/notifications/preferences"); setPreferences(Array.isArray(d) ? d as NotificationPreference[] : []); }
     catch (e) { setError(e instanceof Error ? e.message : "دریافت تنظیمات اعلان ناموفق بود"); }
     finally { setLoading(false); }
   }, []);
@@ -71,8 +72,20 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
 
   async function savePreferences(): Promise<void> {
     setLoading(true); setError(null); setNotice(null);
-    try { await api.put("/api/v1/notifications/preferences", preferences); setNotice("تنظیمات اعلان ذخیره شد."); await loadPreferences(); }
-    catch (e) { setError(e instanceof Error ? e.message : "ذخیره تنظیمات اعلان ناموفق بود"); }
+    try {
+      for (const preference of preferences) {
+        await api.put("/api/v1/notifications/preferences", { event_name: preference.category, channel: "PUSH", is_enabled: Boolean(preference.push_enabled) });
+        await api.put("/api/v1/notifications/preferences", { event_name: preference.category, channel: "SMS", is_enabled: Boolean(preference.sms_enabled) });
+      }
+      setNotice("تنظیمات اعلان ذخیره شد.");
+      await loadPreferences();
+    } catch (e) {
+      try {
+        const latest = await api.get<unknown>("/api/v1/notifications/preferences");
+        setPreferences(Array.isArray(latest) ? latest as NotificationPreference[] : []);
+      } catch { /* Keep the current values visible if the recovery read also fails. */ }
+      setError(e instanceof Error ? e.message : "ذخیره تنظیمات اعلان ناموفق بود");
+    }
     finally { setLoading(false); }
   }
 
@@ -127,7 +140,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
             </Card>
 
             <SectionRow icon="🔔" title="اعلان‌ها" subtitle="سفارش‌ها، پرداخت‌ها و پیام‌های پل" onPress={() => setView("notifications")} />
-            <SectionRow icon="⚙️" title="تنظیمات اعلان" subtitle="اعلان برنامه، پیامک و ایمیل" onPress={() => setView("preferences")} />
+            <SectionRow icon="⚙️" title="تنظیمات اعلان" subtitle="اعلان برنامه و پیامک" onPress={() => setView("preferences")} />
             <Card style={styles.menuCard}>
               <View style={styles.menuHeader}>
                 <IconBadge symbol="◐" tone="brand" />
@@ -164,14 +177,28 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
         ) : (
           <>
             <BackToProfile onPress={() => setView("profile")} />
-            <Card>
-              <Text style={styles.menuTitle}>روش‌های دریافت اعلان</Text>
-              <Text style={styles.meta}>کانال‌های اعلان را انتخاب کنید و ذخیره کنید.</Text>
-              <ToggleRow label="اعلان برنامه" value={Boolean(preferences.push_enabled)} onPress={() => setPreferences((p) => ({ ...p, push_enabled: !p.push_enabled }))} />
-              <ToggleRow label="پیامک" value={Boolean(preferences.sms_enabled)} onPress={() => setPreferences((p) => ({ ...p, sms_enabled: !p.sms_enabled }))} />
-              <ToggleRow label="ایمیل" value={Boolean(preferences.email_enabled)} onPress={() => setPreferences((p) => ({ ...p, email_enabled: !p.email_enabled }))} />
-              <Btn label="ذخیره تنظیمات" onPress={() => void savePreferences()} loading={loading} disabled={loading} />
-            </Card>
+            <Text style={styles.menuTitle}>روش‌های دریافت اعلان</Text>
+            <Text style={styles.meta}>کانال‌های دریافت اعلان را برای هر دسته انتخاب کنید.</Text>
+            {preferences.length === 0 ? (
+              <Empty title="تنظیماتی ثبت نشده است" description="برای این حساب هنوز دسته‌ای از اعلان‌ها تعریف نشده است." />
+            ) : preferences.map((preference) => (
+              <Card key={preference.category} style={styles.notificationCard}>
+                <Text style={styles.menuTitle}>{formatNotificationCategory(preference.category)}</Text>
+                <ToggleRow
+                  label="اعلان برنامه"
+                  value={Boolean(preference.push_enabled)}
+                  disabled={loading}
+                  onPress={() => setPreferences((current) => current.map((item) => item.category === preference.category ? { ...item, push_enabled: !item.push_enabled } : item))}
+                />
+                <ToggleRow
+                  label="پیامک"
+                  value={Boolean(preference.sms_enabled)}
+                  disabled={loading}
+                  onPress={() => setPreferences((current) => current.map((item) => item.category === preference.category ? { ...item, sms_enabled: !item.sms_enabled } : item))}
+                />
+              </Card>
+            ))}
+            <Btn label="ذخیره تنظیمات" onPress={() => void savePreferences()} loading={loading} disabled={loading || preferences.length === 0} />
           </>
         )}
       </ScrollView>
@@ -195,10 +222,31 @@ function BackToProfile(props: { onPress: () => void }): React.ReactNode {
   return <Pressable onPress={props.onPress} style={styles.backLink}><Text style={styles.backLinkText}>›  بازگشت به پروفایل</Text></Pressable>;
 }
 
-function ToggleRow(props: { label: string; value: boolean; onPress: () => void }): React.ReactNode {
+const NOTIFICATION_CATEGORY_LABELS: Record<string, string> = {
+  ORDER_STATUS_CHANGED: "تغییر وضعیت سفارش",
+  DELIVERY_STATUS_CHANGED: "تغییر وضعیت تحویل",
+  RETURN_STATUS_CHANGED: "وضعیت مرجوعی",
+  PAYMENT_STATUS_CHANGED: "تغییر وضعیت پرداخت",
+  SETTLEMENT_UPDATED: "به‌روزرسانی تسویه",
+  SUPPORT_CASE_UPDATED: "به‌روزرسانی درخواست پشتیبانی",
+  LOW_STOCK_ALERT: "هشدار کاهش موجودی",
+  REFERRAL_REDEEMED: "استفاده از معرفی بنکدار",
+};
+
+function formatNotificationCategory(category: string): string {
+  return NOTIFICATION_CATEGORY_LABELS[category] ?? "سایر اعلان‌ها";
+}
+
+function ToggleRow(props: { label: string; value: boolean; disabled?: boolean; onPress: () => void }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
   return (
-    <Pressable onPress={props.onPress} style={styles.toggleRow}>
+    <Pressable
+      onPress={props.onPress}
+      disabled={props.disabled}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: props.value, disabled: Boolean(props.disabled) }}
+      style={[styles.toggleRow, props.disabled && { opacity: 0.5 }]}
+    >
       <View style={[styles.toggle, props.value && styles.toggleOn]}><View style={[styles.toggleKnob, props.value && styles.toggleKnobOn]} /></View>
       <Text style={styles.toggleLabel}>{props.label}</Text>
     </Pressable>
