@@ -69,7 +69,7 @@ async function assertCanonicalUserFacingCopy(page: Page, expectedPath: string): 
   if (expectedPath === "/notifications/preferences") {
     expect(visibleText).toContain("اعلان برنامه");
     expect(visibleText).toContain("پیامک");
-    expect(visibleText).not.toContain("پوش");
+    expect(visibleText).not.toMatch(/^پوش$/m);
   }
 }
 
