@@ -338,3 +338,13 @@ Direct review of committed screenshots identified several user-facing QA defects
 Source changes now remove the known placeholder labels from the catalog presentation, deduplicate visible category labels, clarify category-only search, localize order/delivery states, hide the Next.js development portal during capture, and capture mobile views as the actual 390×844 viewport. The visual test also asserts the absence of the three placeholder labels and duplicated category names.
 
 **Status: PENDING RE-VERIFICATION.** The existing PNGs are from the earlier capture and have not yet been regenerated. The current capture, web regression/typecheck/build and mobile QA suites must be executed on the latest SHA before these fixes or updated screenshots are marked verified. See TODO-174 in `TODO_LIST.md`.
+
+
+## CI execution gate — 2026-10-25
+
+A dedicated workflow was added at `.github/workflows/pol-ui-screen-visual-qa.yml` for web capture/regression/typecheck/lint/build and mobile typecheck/functional/regression/mock/export checks.
+
+- Push run [40184775977](https://github.com/rrasi90/POL-2.3/actions/runs/40184775977) and PR run [40184779625](https://github.com/rrasi90/POL-2.3/actions/runs/40184779625) both failed before any job step executed.
+- GitHub job metadata reports zero steps and `runner_id=0`; log downloads return `BlobNotFound`.
+- This is **not evidence of failing visual assertions** because the steps never ran. It is also not a passing verification. Current-SHA tests and screenshot recapture remain pending until an authorized runner executes the workflow.
+- Tracked in `TODO-175` in the canonical `TODO_LIST.md`.
