@@ -84,7 +84,7 @@ export function FieldTaskDetailScreen(props: { taskId: string; onBack: () => voi
         <StatusChip label={formatFieldTaskStatus(task?.status)} />
         <Text style={styles.type}>{formatFieldTaskType(task?.task_type)}</Text>
         <Text style={styles.meta} numberOfLines={1}>
-          {task?.id}
+          شناسه وظیفه: {task?.id}
         </Text>
         <Text style={styles.meta}>شناسه سازمان هدف: {task?.target_organization_id ?? "—"}</Text>
         <Text style={styles.meta}>ایجاد: {formatTehranDateTime(task?.created_at)}</Text>
@@ -114,7 +114,7 @@ export function FieldTaskDetailScreen(props: { taskId: string; onBack: () => voi
           maxLength={2000}
           multiline
           numberOfLines={4}
-          hint={`${notes.length}/2000`}
+          hint={`${notes.length.toLocaleString("fa-IR")}/۲۰۰۰`}
           style={styles.textarea}
         />
         <Btn label="ذخیره تغییرات" onPress={() => void save()} loading={saving} />
