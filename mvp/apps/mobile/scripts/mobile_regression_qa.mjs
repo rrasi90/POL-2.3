@@ -116,6 +116,25 @@ const checks = [
   }],
   ["Offline banner captures current connectivity after effect subscription", () => read("components/OfflineBanner.tsx").includes("setOnline(isOnline())")],
   ["Login auth uses E.164 normalization", () => read("screens/LoginScreen.tsx").includes("toE164")],
+  ["Retailer/vendor order status chips use canonical Persian labels", () => {
+    const labels = read("utils/statusLabels.ts");
+    const retailer = read("screens/RetailerMobileScreen.tsx");
+    const vendor = read("screens/VendorMobileScreen.tsx");
+    return labels.includes('DELIVERED: "تحویل‌شده"') &&
+      labels.includes('IN_TRANSIT: "در مسیر"') &&
+      retailer.includes("formatOrderStatus(o.order_status)") &&
+      vendor.includes("formatOrderStatus(status)");
+  }],
+  ["Delivery, return and timeline states use purpose-specific Persian labels", () => {
+    const labels = read("utils/statusLabels.ts");
+    const detail = read("screens/OrderDetailMobileScreen.tsx");
+    return labels.includes('ASSIGNED: "راننده تخصیص داده‌شده"') &&
+      labels.includes('REFUNDED: "بازپرداخت‌شده"') &&
+      labels.includes('DELIVERY_COMPLETED: "تحویل ثبت شد"') &&
+      detail.includes("formatDeliveryStatus(deliveryStatus)") &&
+      detail.includes("formatReturnStatus(x.status)") &&
+      detail.includes("formatTimelineEvent(x.event_type)");
+  }],
   ["No Driver App is introduced into Phase 3 mobile source", () => {
     const p = fs.readFileSync(path.resolve(process.cwd(), "src/__tests__/parity.md"), "utf8");
     return p.includes("No Driver App (D-023)");
