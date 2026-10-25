@@ -21,6 +21,19 @@ export default function AboutPage() {
         </div>
       </header>
 
+      <nav
+        aria-label="پیوندهای اصلی موبایل"
+        className="flex md:hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] px-4 py-3 text-[12px] font-medium text-[var(--pol-light-text-secondary)]"
+      >
+        <Link href="/" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">خانه</Link>
+        <Link href="/about" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">درباره ما</Link>
+        <Link href="/how" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">نحوه کار</Link>
+        <Link href="/retailers" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">خرده‌فروشان</Link>
+        <Link href="/vendors" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">بنکداران</Link>
+        <Link href="/pilot" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">پایلوت اهواز</Link>
+        <Link href="/contact" className="shrink-0 py-1 hover:text-[var(--pol-light-brand-primary)]">تماس</Link>
+      </nav>
+
       <main className="flex-1 py-12 md:py-16">
         <div className="mx-auto max-w-4xl px-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--pol-light-brand-primary)]/20 bg-[var(--pol-light-brand-primary)]/10 px-3 py-0.5 text-[11px] font-semibold text-[var(--pol-light-brand-primary)]">
@@ -57,7 +70,7 @@ export default function AboutPage() {
                 تحویل چابک بدون اپلیکیشن راننده
               </h2>
               <p className="mt-2 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
-                رانندگان و متصدیان حمل نیازی به نصب اپ مجزا ندارند؛ ثبت تحویل و بارگذاری عکس حواله با لینک رمزنگاری‌شده اختصاصی صورت می‌گیرد (D-023).
+                رانندگان و متصدیان حمل نیازی به نصب اپ مجزا ندارند؛ ثبت تحویل و بارگذاری عکس حواله با لینک رمزنگاری‌شده اختصاصی صورت می‌گیرد.
               </p>
             </div>
 
