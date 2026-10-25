@@ -69,7 +69,7 @@ export function AssistedOrderScreen(props: { onBack: () => void }): React.ReactN
   return (
     <Screen>
       <OfflineBanner />
-      <Title badge="F-03">سفارش کمکی (F-03)</Title>
+      <Title badge="سفارش کمکی">ثبت سفارش با کمک کارشناس</Title>
       <ErrorBox message={error} />
       <Btn label="بازگشت" tone="ghost" onPress={props.onBack} disabled={loading} />
       {!authed ? (
