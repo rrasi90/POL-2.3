@@ -1,0 +1,169 @@
+name: POL UI Screen Completion QA
+
+on:
+  push:
+    branches:
+      - ui/visual-qa-screen-completion-20261025
+    paths:
+      - "mvp/**"
+      - ".pol-design/**"
+      - "scripts/e2e_*.py"
+      - "scripts/api/**"
+      - "scripts/migration_runner.py"
+      - "migrations/**"
+      - "requirements*.txt"
+      - ".github/workflows/pol-ui-screen-visual-qa.yml"
+  pull_request:
+    branches:
+      - fix/otp-six-digit-standard-20261025
+    paths:
+      - "mvp/**"
+      - ".pol-design/**"
+      - "scripts/e2e_*.py"
+      - "scripts/api/**"
+      - "scripts/migration_runner.py"
+      - "migrations/**"
+      - "requirements*.txt"
+      - ".github/workflows/pol-ui-screen-visual-qa.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  web-visual-qa:
+    name: Web visual, responsive, accessibility and regression QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: pol_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGDATABASE: pol_test
+      POL_PG_PORT: "5432"
+      POL_API_DB_NAME: pol_test
+      POL_API_DB_HOST: 127.0.0.1
+      POL_API_DB_PORT: "5432"
+      ENVIRONMENT: test
+      POL_ENV: test
+      POL_JWT_SECRET: ci-ui-visual-qa-secret-not-for-production
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8001
+      POL_E2E_API_PORT: "8001"
+      POL_E2E_WEB_PORT: "3000"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+          cache-dependency-path: mvp/package-lock.json
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Install Node workspace dependencies
+        working-directory: mvp
+        run: npm ci
+
+      - name: Prepare isolated PostgreSQL E2E database and fixtures
+        run: python scripts/e2e_serve.py --prepare
+
+      - name: Install Playwright Chromium
+        working-directory: mvp/apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Run visual capture suite
+        working-directory: mvp/apps/web
+        run: npx playwright test tests/visual-capture.spec.ts
+
+      - name: Run core web login, accessibility, basket and delivery regressions
+        working-directory: mvp/apps/web
+        run: npx playwright test tests/login.spec.ts tests/a11y.spec.ts tests/basket-sync.spec.ts tests/delivery-flow.spec.ts
+
+      - name: Web typecheck
+        working-directory: mvp/apps/web
+        run: npm run typecheck
+
+      - name: Web lint
+        working-directory: mvp
+        run: npm run lint --workspace @pol/web
+
+      - name: Web production build
+        working-directory: mvp/apps/web
+        run: npm run build
+
+      - name: Upload visual QA evidence and Playwright reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pol-ui-visual-qa-${{ github.sha }}
+          path: |
+            .pol-design/evidence/screenshots/
+            mvp/apps/web/playwright-report/
+            mvp/apps/web/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  mobile-qa:
+    name: Mobile typecheck and functional regression QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+          cache-dependency-path: mvp/package-lock.json
+
+      - name: Install Node workspace dependencies
+        working-directory: mvp
+        run: npm ci
+
+      - name: Mobile typecheck
+        working-directory: mvp
+        run: npm run typecheck --workspace @pol/mobile
+
+      - name: Mobile functional QA
+        working-directory: mvp
+        run: npm run qa:functional --workspace @pol/mobile
+
+      - name: Mobile regression and cross-module QA
+        working-directory: mvp
+        run: npm run qa:regression --workspace @pol/mobile
+
+      - name: Mobile mock transport QA
+        working-directory: mvp
+        run: npm run qa:mock --workspace @pol/mobile
+
+      - name: Validate Expo Android export
+        working-directory: mvp
+        run: npm run build --workspace @pol/mobile
