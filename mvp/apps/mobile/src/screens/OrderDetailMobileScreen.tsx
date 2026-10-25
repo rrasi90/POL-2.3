@@ -4,7 +4,7 @@ import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import { toAsciiDigits } from "../utils/otp";
 import { spacing, useThemedStyles, type Palette } from "../theme";
-import { formatOrderStatus, formatDeliveryStatus, formatReturnStatus, formatTimelineEvent } from "../utils/statusLabels";
+import { formatOrderStatus, formatDeliveryStatus, formatReturnStatus, formatReturnIssue, formatTimelineEvent, formatOperationalStatus } from "../utils/statusLabels";
 import type { Role } from "../types";
 
 type Mode = "retailer" | "vendor";
@@ -477,7 +477,7 @@ export function OrderDetailMobileScreen(props: {
             {returns.length > 0 ? (
               <View style={styles.returnList}>
                 <Text style={styles.meta}>آخرین مرجوعی‌ها</Text>
-                {returns.map((x) => <View key={x.id} style={styles.returnRow}><StatusChip label={formatReturnStatus(x.status)} tone="info" /><Text style={styles.meta}>{x.issue_type || "—"}</Text><Text style={styles.meta}>{x.created_at || "—"}</Text></View>)}
+                {returns.map((x) => <View key={x.id} style={styles.returnRow}><StatusChip label={formatReturnStatus(x.status)} tone="info" /><Text style={styles.meta}>{formatReturnIssue(x.issue_type)}</Text><Text style={styles.meta}>{x.created_at || "—"}</Text></View>)}
               </View>
             ) : null}
           </Card>
@@ -490,7 +490,7 @@ export function OrderDetailMobileScreen(props: {
               <View style={styles.timelineRail}><View style={styles.timelineDot} />{index < timeline.length - 1 ? <View style={styles.timelineLine} /> : null}</View>
               <View style={styles.timelineBody}>
                 <Text style={styles.itemTitle}>{formatTimelineEvent(x.event_type)}</Text>
-                <Text style={styles.meta}>{(x.from_status || "∅") + " → " + (x.to_status || "∅")}</Text>
+                <Text style={styles.meta}>{x.from_status ? formatOperationalStatus(x.from_status) : "شروع"} ← {x.to_status ? formatOperationalStatus(x.to_status) : "وضعیت جدید"}</Text>
                 <Text style={styles.meta}>{x.created_at || "—"}</Text>
               </View>
             </View>
