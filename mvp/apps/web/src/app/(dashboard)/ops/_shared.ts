@@ -44,7 +44,12 @@ export const orderStatusLabel: Record<string, string> = {
   PREPARING: "در حال آماده‌سازی",
   READY: "آماده ارسال",
   DISPATCHED: "ارسال‌شده",
+  PICKED_UP: "جمع‌آوری‌شده",
+  IN_TRANSIT: "در مسیر",
+  ARRIVED: "رسیده به مقصد",
   DELIVERED: "تحویل‌شده",
+  FAILED: "تحویل ناموفق",
+  RETURNED: "مرجوع‌شده",
   CANCELLED: "لغوشده",
 };
 
