@@ -393,8 +393,10 @@ const PACKAGING_UNIT_LABELS: Readonly<Record<string, string>> = {
 };
 
 export function formatPackagingUnit(value: string | null | undefined): string {
-  if (!value) return "واحد نامشخص";
-  return PACKAGING_UNIT_LABELS[value.toLocaleUpperCase("en-US")] ?? "واحد دیگر";
+  const normalized = value?.trim();
+  if (!normalized) return "واحد نامشخص";
+  if (/[^\\x00-\\x7F]/.test(normalized)) return normalized;
+  return PACKAGING_UNIT_LABELS[normalized.toLocaleUpperCase("en-US")] ?? "واحد دیگر";
 }
 
 
