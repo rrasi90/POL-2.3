@@ -118,7 +118,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       if (item.route === "/retailer/catalog") {
         const categoryNames = (await page.locator('section[aria-label="دسته‌بندی‌ها"] button').allTextContents())
-          .map((name) => name.trim().replace(/\\s+/g, " ").toLocaleLowerCase("en-US"));
+          .map((name) => name.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US"));
         expect(new Set(categoryNames).size, "catalog category labels must be unique").toBe(categoryNames.length);
         expect(categoryNames).not.toContain("fulfillment category");
         expect(categoryNames).not.toContain("proof category");
