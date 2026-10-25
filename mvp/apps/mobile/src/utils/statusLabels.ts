@@ -9,6 +9,7 @@ const ORDER_STATUS_LABELS: Readonly<Record<string, string>> = {
   PREPARING: "در حال آماده‌سازی",
   READY: "آمادهٔ ارسال",
   DISPATCHED: "ارسال‌شده",
+  SHIPPED: "ارسال‌شده",
   PICKED_UP: "جمع‌آوری‌شده",
   IN_TRANSIT: "در مسیر",
   ARRIVED: "رسیده به مقصد",
@@ -301,4 +302,71 @@ export function formatOperationalStatus(value: string | null | undefined): strin
     ORGANIZATION_STATUS_LABELS[value] ??
     "وضعیت نامشخص"
   );
+}
+
+const REFERRAL_STATUS_LABELS: Readonly<Record<string, string>> = {
+  PENDING: "در انتظار",
+  INVITED: "دعوت‌شده",
+  ACTIVE: "فعال",
+  COMPLETED: "تکمیل‌شده",
+  QUALIFIED: "واجد شرایط",
+  REWARDED: "پاداش ثبت‌شده",
+  EXPIRED: "منقضی‌شده",
+  CANCELLED: "لغوشده",
+  REJECTED: "ردشده",
+};
+
+const AUDIT_ACTION_LABELS: Readonly<Record<string, string>> = {
+  CREATE: "ایجاد",
+  CREATED: "ایجاد",
+  UPDATE: "به‌روزرسانی",
+  UPDATED: "به‌روزرسانی",
+  DELETE: "حذف",
+  DELETED: "حذف",
+  LOGIN: "ورود",
+  LOGOUT: "خروج",
+  INVITE: "دعوت",
+  INVITED: "دعوت",
+  APPROVE: "تأیید",
+  APPROVED: "تأیید",
+  REJECT: "رد",
+  REJECTED: "رد",
+  STATUS_CHANGED: "تغییر وضعیت",
+  PERMISSION_GRANTED: "اعطای مجوز",
+  PERMISSION_REVOKED: "لغو مجوز",
+  ORDER_ACCEPTED: "پذیرش سفارش",
+  ORDER_DISPATCHED: "ارسال سفارش",
+  DELIVERY_COMPLETED: "ثبت تحویل",
+};
+
+const RESOURCE_TYPE_LABELS: Readonly<Record<string, string>> = {
+  user: "کاربر",
+  users: "کاربران",
+  organization: "سازمان",
+  organizations: "سازمان‌ها",
+  vendor: "بنکدار",
+  retailer: "خرده‌فروش",
+  order: "سفارش",
+  orders: "سفارش‌ها",
+  product: "کالا",
+  products: "کالاها",
+  inventory: "موجودی",
+  invoice: "فاکتور",
+  settlement: "تسویه",
+  permission: "مجوز",
+  support_case: "پرونده پشتیبانی",
+  delivery: "تحویل",
+};
+
+export function formatReferralStatus(value: string | null | undefined): string {
+  return mappedLabel(value, REFERRAL_STATUS_LABELS, "وضعیت ارجاع نامشخص");
+}
+
+export function formatAuditAction(value: string | null | undefined): string {
+  return mappedLabel(value, AUDIT_ACTION_LABELS, "رخداد ثبت‌شده");
+}
+
+export function formatResourceType(value: string | null | undefined): string {
+  if (!value) return "منبع نامشخص";
+  return RESOURCE_TYPE_LABELS[value.toLocaleLowerCase("en-US")] ?? "سایر منابع";
 }
