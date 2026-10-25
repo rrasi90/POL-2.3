@@ -2398,3 +2398,25 @@
   - **Mobile Regression QA:** `cd mvp/apps/mobile; npm run qa:regression` -> **23/23 checks passed** (Exit 0).
   - **Mobile Mock QA:** `cd mvp/apps/mobile; npm run qa:mock` -> **PASS** (Exit 0).
 - **Status of Tasks:** `TODO-165` through `TODO-171` are marked **DONE_VERIFIED**.
+
+
+### TODO-172 — Harden visual-capture assertions and reconcile evidence
+
+- **Status:** OPEN — verification pending. Do not mark DONE_VERIFIED until the updated test has actually run.
+- **Branch:** `ui/visual-qa-screen-completion-20261025`
+- **Starting HEAD before this follow-up:** `89d07617ff6191e4cd7aee9ca8e31fe35b1b0af7`
+- **Changes pushed during follow-up:**
+  - `mvp/apps/web/tests/visual-capture.spec.ts`: replaced the vacuous `expect(htmlDir === "rtl" || true).toBeTruthy()` assertion with strict assertions that `html dir="rtl"` and `html lang="fa"`.
+  - `.pol-design/VISUAL_QA.md`: clarified that the 82 PNGs represent 41 web routes across desktop and mobile-sized browser viewports, not screenshots from native Android; retained OTP rows as REVERIFY REQUIRED and documented that the strengthened capture assertion needs a fresh run.
+- **Prior local evidence reported by the executor:** visual capture suite 13/13; core web Playwright suites 20/20; web build and typecheck reported PASS; mobile functional 28/28 and regression 23/23. These results predate the strict-assertion correction and were not independently re-executed by this follow-up.
+- **Current verification result:** not run in this follow-up. GitHub status endpoint returned no status checks for the original screenshot commit, and there was no PR for this branch at audit time.
+- **Acceptance / next action:** from `mvp/apps/web`, run `npx playwright test tests/visual-capture.spec.ts`; run `npx playwright test tests/login.spec.ts tests/a11y.spec.ts tests/basket-sync.spec.ts tests/delivery-flow.spec.ts`; verify the updated tests pass on the resulting current SHA; inspect screenshot coverage and resolve differences between the 41-route visual capture list, 58-surface visual design matrix and 68-entry MVP screen matrix. Keep mobile OTP visual/runtime status pending unless verified on a current mobile runtime.
+- **Do not claim:** complete native mobile visual capture, full coverage of every canonical surface, or current-SHA success for the hardened assertions until evidence is attached.
+
+### [2026-10-25 13:45 +03:30] Agent: ChatGPT — VISUAL QA EVIDENCE RECONCILIATION
+
+- Independently confirmed the remote branch exists and originally pointed to `89d07617ff6191e4cd7aee9ca8e31fe35b1b0af7`; branch comparison showed it was 17 commits ahead of `main`, 0 behind, and exactly one commit ahead of `fix/otp-six-digit-standard-20261025` at audit time.
+- Confirmed 82 PNG screenshot files are present in the branch comparison (41 web route names × desktop/mobile-sized browser viewport).
+- Corrected a vacuous RTL assertion in the visual capture suite and updated the visual QA note so it no longer implies that native Android capture or OTP verification is covered by web screenshots alone.
+- Test status for these follow-up changes: pending re-execution; no pass claim made.
+- Follow-up TODO: TODO-172.
