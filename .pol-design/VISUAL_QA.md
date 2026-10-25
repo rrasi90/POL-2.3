@@ -318,6 +318,9 @@ pm run qa:mock -> PASS.
 
 ## Follow-up hardening — responsive and OTP digit assertions (2026-10-25)
 
+- The capture helper also rejects empty body content and uncaught browser `pageerror` exceptions. These checks are newly committed and have not yet been executed; the current matrix must not imply that these new assertions passed.
+
+
 - The visual-capture suite now checks the requested path, Persian document language, RTL direction, and document/body horizontal overflow at each screenshot checkpoint.
 - The login test suite now covers Persian and Arabic OTP digit normalization and preservation of leading zeroes in the shared web normalizer.
 - These assertions and regression tests were added after the screenshot manifest was originally captured. **Their execution is pending** on the updated branch; the earlier test counts are not evidence that this latest change passes.
