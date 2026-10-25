@@ -5,7 +5,7 @@ import { Btn, Card, Empty, ErrorBox, Screen, StatusChip, Title } from "../compon
 import type { Role } from "../types";
 import { spacing, useThemedStyles, type Palette } from "../theme";
 import { SupportMobileScreen } from "./SupportMobileScreen";
-import { formatAuditAction, formatCandidateStatus, formatNotificationPriority, formatOrderStatus, formatOrganizationStatus, formatOrganizationType, formatReconciliationStatus, formatResourceType, formatRole } from "../utils/statusLabels";
+import { formatAuditAction, formatCandidateStatus, formatKpiLabel, formatNotificationPriority, formatOrderStatus, formatOrganizationStatus, formatOrganizationType, formatReconciliationStatus, formatResourceType, formatRole } from "../utils/statusLabels";
 import { formatTehranDateTime } from "../i18n/fa";
 
 type Dash = {
@@ -66,11 +66,7 @@ function recentStart(days: number): string {
   d.setDate(d.getDate() - days);
   return dateKey(d);
 }
-function prettyKpi(key: string): string {
-  return key
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (x) => x.toUpperCase());
-}
+function prettyKpi(key: string): string {\n  return formatKpiLabel(key);\n}
 
 export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMIN_SUPER"> }): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
