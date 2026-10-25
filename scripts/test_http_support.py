@@ -336,6 +336,23 @@ class TestListSupportMessages:
         conn = _db()
         try:
             with conn.cursor() as cur:
+                # Stabilize chronology for the endpoint ordering assertion.
+                cur.execute(
+                    """
+                    UPDATE support_case_messages
+                    SET created_at = now() - interval '2 seconds'
+                    WHERE support_case_id = %s AND message_text = %s
+                    """,
+                    (case_id, "پیام خرده‌فروش"),
+                )
+                cur.execute(
+                    """
+                    UPDATE support_case_messages
+                    SET created_at = now() - interval '1 seconds'
+                    WHERE support_case_id = %s AND message_text = %s
+                    """,
+                    (case_id, "پاسخ پشتیبانی"),
+                )
                 cur.execute(
                     """
                     INSERT INTO support_case_messages
