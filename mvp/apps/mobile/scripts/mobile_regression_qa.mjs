@@ -190,6 +190,24 @@ const checks = [
       detail.includes("formatReturnIssue(x.issue_type)") &&
       detail.includes("formatTimelineEvent(x.event_type)");
   }],
+  ["Vendor scan and status fallbacks never expose raw enum names", () => {
+    const screen = read("screens/VendorMobileScreen.tsx");
+    const labels = read("utils/statusLabels.ts");
+    return screen.includes('"وضعیت تطبیق نامشخص"') &&
+      screen.includes("formatOperationalStatus(status)") &&
+      screen.includes("معادل فارسی: {formatPackagingUnit(scanPackaging)}") &&
+      screen.includes('label="کد فروشنده"') &&
+      labels.includes("export function formatPackagingUnit");
+  }],
+  ["Return issue selection and operations KPI names are presented in Persian", () => {
+    const detail = read("screens/OrderDetailMobileScreen.tsx");
+    const ops = read("screens/OpsMobileScreen.tsx");
+    const labels = read("utils/statusLabels.ts");
+    return detail.includes('["DAMAGED", "کالای آسیب‌دیده"]') &&
+      detail.includes('["QUANTITY_MISMATCH", "مغایرت تعداد"]') &&
+      ops.includes("return formatKpiLabel(key)") &&
+      labels.includes("export function formatKpiLabel");
+  }],
   ["No Driver App is introduced into Phase 3 mobile source", () => {
     const p = fs.readFileSync(path.resolve(process.cwd(), "src/__tests__/parity.md"), "utf8");
     return p.includes("No Driver App (D-023)");
