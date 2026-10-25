@@ -342,6 +342,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       await page.setViewportSize({ width: 1440, height: 900 });
       await assertResponsiveDocument(page, item.route);
+      await assertCanonicalUserFacingCopy(page, item.route);
 
       await page.screenshot({
         path: path.join(SCREENSHOT_DIR, `${item.name}-desktop.png`),
