@@ -5,6 +5,7 @@ import { Btn, Card, Empty, ErrorBox, IconBadge, Input, StatusChip, Screen } from
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { formatNotificationPriority } from "../utils/statusLabels";
+import { formatTehranDateTime } from "../i18n/fa";
 
 type Profile = {
   user_profile?: { user_id?: string; display_name?: string | null; email?: string | null; preferred_language?: string | null; timezone?: string | null; bio?: string | null; phone_number?: string | null };
@@ -126,7 +127,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
             </Card>
 
             <SectionRow icon="🔔" title="اعلان‌ها" subtitle="سفارش‌ها، پرداخت‌ها و پیام‌های پل" onPress={() => setView("notifications")} />
-            <SectionRow icon="⚙️" title="تنظیمات اعلان" subtitle="Push، پیامک و ایمیل" onPress={() => setView("preferences")} />
+            <SectionRow icon="⚙️" title="تنظیمات اعلان" subtitle="اعلان برنامه، پیامک و ایمیل" onPress={() => setView("preferences")} />
             <Card style={styles.menuCard}>
               <View style={styles.menuHeader}>
                 <IconBadge symbol="◐" tone="brand" />
@@ -155,7 +156,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
                   </View>
                   <Text style={styles.menuTitle}>{n.title || "اعلان"}</Text>
                   <Text style={styles.body}>{n.body || "—"}</Text>
-                  <Text style={styles.meta}>{n.created_at || "—"}</Text>
+                  <Text style={styles.meta}>{formatTehranDateTime(n.created_at)}</Text>
                 </Card>
               );
             })}
@@ -166,7 +167,7 @@ export function AccountMobileScreen(props: { role: Role; onBack?: () => void; on
             <Card>
               <Text style={styles.menuTitle}>روش‌های دریافت اعلان</Text>
               <Text style={styles.meta}>کانال‌های اعلان را انتخاب کنید و ذخیره کنید.</Text>
-              <ToggleRow label="Push" value={Boolean(preferences.push_enabled)} onPress={() => setPreferences((p) => ({ ...p, push_enabled: !p.push_enabled }))} />
+              <ToggleRow label="اعلان برنامه" value={Boolean(preferences.push_enabled)} onPress={() => setPreferences((p) => ({ ...p, push_enabled: !p.push_enabled }))} />
               <ToggleRow label="پیامک" value={Boolean(preferences.sms_enabled)} onPress={() => setPreferences((p) => ({ ...p, sms_enabled: !p.sms_enabled }))} />
               <ToggleRow label="ایمیل" value={Boolean(preferences.email_enabled)} onPress={() => setPreferences((p) => ({ ...p, email_enabled: !p.email_enabled }))} />
               <Btn label="ذخیره تنظیمات" onPress={() => void savePreferences()} loading={loading} disabled={loading} />
