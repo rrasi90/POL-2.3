@@ -4,7 +4,7 @@ import { api, ApiError } from "../api";
 import { Btn, Card, Empty, ErrorBox, IconBadge, Input, Screen, StatusChip } from "../components/ui";
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
-import { formatOrderStatus, formatInvoiceStatus } from "../utils/statusLabels";
+import { formatOrderStatus, formatInvoiceStatus, formatPackagingUnit } from "../utils/statusLabels";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 
 type Product = {
@@ -602,7 +602,7 @@ export function RetailerMobileScreen(props: {
               <View style={styles.productVisualSmall}><Text>📦</Text></View>
               <View style={styles.grow}>
                 <Text style={styles.productTitle}>{p.product_name || p.name || p.id}</Text>
-                <Text style={styles.meta}>{p.brand_name || ""} · {p.packaging_unit || ""}</Text>
+                <Text style={styles.meta}>{p.brand_name || ""} · {p.packaging_unit ? formatPackagingUnit(p.packaging_unit) : ""}</Text>
                 <Text style={styles.priceMedium}>{money(p.price_toman)}</Text>
                 <Text style={styles.meta}>موجودی: {String(p.stock_quantity ?? "—")}</Text>
               </View>
