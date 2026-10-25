@@ -2627,3 +2627,10 @@
 - Latest run: [40188023664](https://github.com/rrasi90/POL-2.3/actions/runs/40188023664), HEAD 68d831644ee1565ddd0bb78665daaa8b65ea3af7, failed at 2026-10-25T11:14:27Z.
 - Both jobs return completed/failure, steps=null and no log URLs. No test commands are evidenced as having started.
 - Current-SHA verification remains blocked on runner availability; no new PASS claim is recorded.
+
+
+### [2026-10-25 15:20 +03:30] Agent: ChatGPT — CI RERUN ATTEMPT 2
+
+- Reran the failed jobs for workflow run [40188108864](https://github.com/rrasi90/POL-2.3/actions/runs/40188108864) via the authorized GitHub Actions connection.
+- The run briefly queued, then completed as failure again. Both jobs report completed/failure, steps=null, no log URL.
+- No test commands are evidenced as having started, so this is still an execution/runner availability blocker, not a failing source assertion. TODO-175 remains BLOCKED.

@@ -408,3 +408,8 @@ A source audit of `vendor_catalog_list_products` confirmed that the response exp
 - The public visual-capture suite now rejects visible internal/product-development terms (PRECISION COMMERCE, MVP Constraints, known decision IDs, B2B, FMCG, RBAC, OTIF) on non-login public routes.
 - The last vendor mobile SKU placeholder and audit actor label have been localized.
 - Latest run [40188023664](https://github.com/rrasi90/POL-2.3/actions/runs/40188023664) failed before any runner step; screenshots have not been regenerated. See TODO-182 and the CI blocker in TODO-175.
+
+
+### CI retry observation — 2026-10-25
+
+Workflow run [40188108864](https://github.com/rrasi90/POL-2.3/actions/runs/40188108864) was retried (attempt 2) through GitHub Actions. It again ended before any step executed; both jobs report no steps and no log URL. The current code changes remain unverified until an executor can allocate a runner.
