@@ -84,6 +84,7 @@ test.describe("Visual Quality Assurance Suite", () => {
 
       await page.setViewportSize({ width: 390, height: 844 });
       await assertResponsiveDocument(page, item.route);
+      await expect(page.getByRole("navigation", { name: "پیوندهای اصلی موبایل" })).toBeVisible();
 
       if (item.route === "/") {
         await expect(page.getByRole("navigation", { name: "پیوندهای اصلی موبایل" })).toBeVisible();
