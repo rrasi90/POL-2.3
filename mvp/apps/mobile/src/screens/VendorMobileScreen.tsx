@@ -1343,7 +1343,7 @@ function InventoryCard(props: {
         <View style={styles.flexOne}>
           <Text style={styles.itemTitle}>{productName || (props.row.vendor_sku ? `کالای کد ${props.row.vendor_sku}` : props.row.id)}</Text>
           <Text style={styles.meta}>
-            {props.row.vendor_sku ? "کد فروشنده: " + props.row.vendor_sku : "SKU ثبت نشده"}
+            {props.row.vendor_sku ? "کد فروشنده: " + props.row.vendor_sku : "کد فروشنده ثبت نشده"}
             {props.row.packaging_unit ? " · " + formatPackagingUnit(props.row.packaging_unit) : ""}
             {props.row.pack_quantity ? " · " + numberFa(props.row.pack_quantity) : ""}
           </Text>

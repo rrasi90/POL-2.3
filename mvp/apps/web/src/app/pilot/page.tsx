@@ -38,7 +38,7 @@ export default function CorporatePilotPage() {
       <main className="flex-1 py-12 md:py-16">
         <div className="mx-auto max-w-4xl px-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--pol-light-brand-primary)]/20 bg-[var(--pol-light-brand-primary)]/10 px-3 py-0.5 text-[11px] font-semibold text-[var(--pol-light-brand-primary)]">
-            PRECISION COMMERCE · محدوده عملیاتی پایلوت
+            پل · محدوده عملیاتی پایلوت
           </div>
           <h1 className="mt-4 text-[30px] font-black leading-[40px] text-[var(--pol-light-text-primary)] md:text-[36px]">
             طرح پایلوت بنکداری و زنجیره تأمین اهواز
@@ -59,7 +59,7 @@ export default function CorporatePilotPage() {
 
             <div className="rounded-xl border border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] p-5 shadow-[var(--pol-shadow-card)]">
               <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)]">
-                دسته کالایی تندمصرف (FMCG)
+                دسته کالاهای تندمصرف
               </h2>
               <p className="mt-2 text-[13px] leading-[22px] text-[var(--pol-light-text-secondary)]">
                 تمرکز بر اقلام پرمصرف سوپرمارکتی، شوینده‌ها، لبنیات، خواربار و نوشیدنی‌ها با اعمال حداقل مقدار سفارش (MOQ) و بسته‌بندی کارتن/شرینک رسمی.
@@ -99,7 +99,7 @@ export default function CorporatePilotPage() {
       {/* Footer */}
       <footer className="border-t border-[var(--pol-light-border-subtle)] bg-[var(--pol-light-surface-default)] py-6">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-6 text-[12px] text-[var(--pol-light-text-muted)]">
-          <span>POL — پایلوت اهواز (B2B FMCG)</span>
+          <span>پل — پایلوت اهواز برای خرید عمده کالاهای تندمصرف</span>
           <nav aria-label="پیوندهای کمکی" className="flex gap-4">
             <Link href="/" className="hover:underline">خانه</Link>
             <Link href="/about" className="hover:underline">درباره</Link>

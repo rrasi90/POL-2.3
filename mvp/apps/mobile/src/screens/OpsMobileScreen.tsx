@@ -351,7 +351,7 @@ export function OpsMobileScreen(props: { role: Extract<Role, "OPS_AGENT" | "ADMI
               <Card key={a.id}>
                 <Text style={styles.h2}>{formatAuditAction(a.action)}</Text>
                 <Text style={styles.meta}>{formatResourceType(a.resource_type)}</Text>
-                <Text style={styles.meta}>{a.actor_user_id || "—"}</Text>
+                <Text style={styles.meta}>شناسه کاربر ثبت‌کننده: {a.actor_user_id || "—"}</Text>
                 <Text style={styles.meta}>{formatTehranDateTime(a.created_at)}</Text>
               </Card>
             ))

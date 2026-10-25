@@ -60,7 +60,7 @@ export default function HomePage() {
       <main className="flex-1">
         <section className="mx-auto max-w-5xl px-6 py-20 text-center md:py-28">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--pol-light-brand-primary)]/20 bg-[var(--pol-light-brand-primary)]/10 px-3.5 py-1 text-[12px] font-semibold text-[var(--pol-light-brand-primary)]">
-            <span>PRECISION COMMERCE</span>
+            <span>سامانه معاملات عمده پل</span>
             <span>·</span>
             <span>پایلوت فعال اهواز</span>
           </div>

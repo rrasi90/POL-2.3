@@ -38,7 +38,7 @@ export default function CorporateVendorsPage() {
       <main className="flex-1 py-12 md:py-16">
         <div className="mx-auto max-w-4xl px-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--pol-light-brand-primary)]/20 bg-[var(--pol-light-brand-primary)]/10 px-3 py-0.5 text-[11px] font-semibold text-[var(--pol-light-brand-primary)]">
-            PRECISION COMMERCE · ویژه بنکداران و شرکت‌های تأمین‌کننده
+            پل · ویژه بنکداران و شرکت‌های تأمین‌کننده
           </div>
           <h1 className="mt-4 text-[30px] font-black leading-[40px] text-[var(--pol-light-text-primary)] md:text-[36px]">
             مدیریت هوشمند فروش عمده، صف سفارشات و تسویه مستقیم

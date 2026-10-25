@@ -86,6 +86,20 @@ test.describe("Visual Quality Assurance Suite", () => {
       await assertResponsiveDocument(page, item.route);
       if (item.route !== "/auth/login") {
         await expect(page.getByRole("navigation", { name: "پیوندهای اصلی موبایل" })).toBeVisible();
+        const publicCopy = await page.locator("body").innerText();
+        for (const internalTerm of [
+          "PRECISION COMMERCE",
+          "MVP Constraints",
+          "D-001",
+          "D-014",
+          "D-018",
+          "B2B",
+          "FMCG",
+          "RBAC",
+          "OTIF",
+        ]) {
+          expect(publicCopy, `public page ${item.route} contains internal/English term: ${internalTerm}`).not.toContain(internalTerm);
+        }
       }
 
       if (item.route === "/") {
