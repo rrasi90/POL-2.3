@@ -178,7 +178,7 @@ export default function VendorCatalogPage() {
                       <>
                         <span>·</span>
                         <span dir="ltr" className="font-mono">
-                          SKU: {p.vendor_sku}
+                          کد فروشنده: {p.vendor_sku}
                         </span>
                       </>
                     )}
@@ -200,7 +200,7 @@ export default function VendorCatalogPage() {
                       </span>
                       <span className="text-[12px] font-medium text-[var(--pol-light-text-secondary)]">
                         {Number(p.stock_quantity ?? p.available_quantity ?? 0).toLocaleString("fa-IR")}{" "}
-                        {p.packaging_unit ?? "بسته"}
+                        {formatPackagingUnit(p.packaging_unit)}
                       </span>
                     </div>
                   </div>
