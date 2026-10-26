@@ -33,3 +33,9 @@ executive-summary.md, artifact-inventory.json, archive-and-split-inventory.csv, 
 
 ## Sync result
 Appended after push: commit SHA and remote read-back recorded in sync-manifest.json and LATEST.md.
+
+## Sync section (appended after push and remote read-back)
+- Run-files commit: 54b0605b5b0a4b97db5148fb5d8e47a80c866657 pushed (83f38efb..54b0605b).
+- Remote read-back: git fetch + ls-tree listed all 19 files; remote validation.json parses (PASS/16); remote matrix parses (33 rows x 10 cols).
+- Index update (LATEST.md + sync-manifest.json + this section) committed and pushed separately; re-verified remotely (SHA in sync-manifest.json).
+- Tool versions: REA agents 6.7.0 (MCP identify_flutter_build/inspect_dart_aot/inspect_analysis_view); JADX headless 0.7.1 (pinned); pyelftools 0.33 + Doldrums (trial, rejected); apktool decode (pre-existing); Android emulator API 35 x86_64 (install attempt); Python 3.14 (validation).

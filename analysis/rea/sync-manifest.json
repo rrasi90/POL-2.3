@@ -3,10 +3,10 @@
   "workspace": "analysis/rea",
   "repository": "rrasi90/POL-2.3",
   "bootstrap_branch": "ui/visual-qa-screen-completion-20261025",
-  "latest_run": "runs/2026-10-26-cartona-revision-2-import-02",
+  "latest_run": "runs/2026-10-26-cartona-comprehensive-extraction",
   "latest_run_status": "PASS_SYNCED",
   "latest_attempt_record_commit_sha": "ef6acd7dfb8aa1e2a542668e281b6a1027361c79",
-  "latest_commit_sha": "3dd55b4707546afb8105a01ffcd8a50e0869983c",
+  "latest_commit_sha": "54b0605b5b0a4b97db5148fb5d8e47a80c866657",
   "remote_readback_verified": true,
   "actual_revision_2_deliverables_imported": true,
   "attempt_record_readback_verified": false,
@@ -40,9 +40,9 @@
   "reconciliation": "git merge --ff-only origin/ui/visual-qa-screen-completion-20261025 (no force, no reset)",
   "validation": {
     "status": "PASS",
-    "checks_total": 18,
+    "checks_total": 16,
     "checks_failed": 0,
-    "file": "runs/2026-10-26-cartona-revision-2-import-02/validation.json"
+    "file": "runs/2026-10-26-cartona-comprehensive-extraction/validation.json"
   },
   "apk_sha256_verified_against_disk": "e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c",
   "tool_versions": {
@@ -51,5 +51,11 @@
     "node": "24.18.0",
     "jdk": "21.0.9",
     "git": "see run-log"
-  }
+  },
+  "deliverables_count": 19,
+  "blocked_items": [
+    "typed Dart recovery (no compatible parser for kind-3/2.14 snapshot)",
+    "runtime UI capture (INSTALL_FAILED_NO_MATCHING_ABIS; prerequisites documented)"
+  ],
+  "local_corpus": "C:/Star/pol-2.4-private-analysis/cartona/e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c/"
 }

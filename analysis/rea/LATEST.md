@@ -1,38 +1,26 @@
 # Latest REA Audit Status
 
 **Workspace:** `analysis/rea/`
-**Latest run:** `runs/2026-10-26-cartona-revision-2-import-02`
-**Current state:** `PASS / SYNCED` (commit `3dd55b4707546afb8105a01ffcd8a50e0869983c`, remote read-back verified)
+**Latest run:** `runs/2026-10-26-cartona-comprehensive-extraction`
+**Current state:** `PASS / SYNCED` (commit `54b0605b5b0a4b97db5148fb5d8e47a80c866657`, remote read-back verified)
 
-## Latest synchronized run — Cartona APK v8.4.6, Revision 2
+## Latest run — Comprehensive Cartona Extraction
 
-The actual Revision 2 report set (eight deliverables) was imported from the local directory
-`C:/Star/pol-2.4/analysis-v2/` into `runs/2026-10-26-cartona-revision-2-import-02/`, validated
-(18/18 checks PASS, see `validation.json`), committed and pushed to
-`ui/visual-qa-screen-completion-20261025`, and read back from the remote at commit
-`3dd55b4707546afb8105a01ffcd8a50e0869983c`.
+Extends (does not replace) `runs/2026-10-26-cartona-revision-2-import-02/`. 19 deliverables synced and remotely verified. Highlights:
 
-- [Run log](runs/2026-10-26-cartona-revision-2-import-02/run-log.md)
-- [Validation results](runs/2026-10-26-cartona-revision-2-import-02/validation.json)
-- [Executive summary](runs/2026-10-26-cartona-revision-2-import-02/executive-summary.md)
-- [Gap matrix](runs/2026-10-26-cartona-revision-2-import-02/pol-feature-gap-matrix.csv)
+- **1,494 Arabic UI strings recovered** from the Dart snapshot (UTF-16LE) — corrects the revision-2 limitation; localization is Flutter gen-l10n.
+- **Cleartext correction:** network-security-config restricts cleartext to the emulator loopback only; production is HTTPS-enforced.
+- **Product-state model:** ~30 flags incl. anti-fraud (mock-GPS, app-cloner, developer mode), credit/installment states, supplier badges, GMV-target state, multi-step signup fields.
+- **Typed Dart recovery BLOCKED** with exact error (Doldrums rejects snapshot hash 97ff04a7...; blutter = future option).
+- **Runtime UI capture BLOCKED** with exact error (INSTALL_FAILED_NO_MATCHING_ABIS; armeabi-v7a-only libs on x86_64 Google APIs image); capture prerequisites documented.
+- **Security finding (sanitized):** an embedded Google API key (AIzaSy... pattern) exists in the snapshot; value withheld from Git.
+- **POL gap matrix v2:** 32 capability rows (24 prior + 8 new), all evidence-backed with exact POL paths.
 
-Headline: Cartona v8.4.6 is a Flutter application (Dart AOT snapshot in the ABI split,
-snapshot hash `97ff04a7…`, engine build-id `deaf7120…`); minSdk 24 / targetSdk 36 (correcting v1's
-26/33); 43 REST endpoint strings and 24 named routes recovered from the Dart snapshot, including
-OTP auth with guest mode, cart validate/sync, reorder, cashback campaigns, order support tickets,
-multi-branch management, and a Cartona Credit (BNPL) web-app module. POL side audited at
-`mvp/apps/mobile` (Expo SDK 57 / RN 0.86.3, dual variant, 9 screens). Full detail in the run.
+- [Run log](runs/2026-10-26-cartona-comprehensive-extraction/run-log.md) · [Validation](runs/2026-10-26-cartona-comprehensive-extraction/validation.json) (16/16 PASS) · [Gap matrix](runs/2026-10-26-cartona-comprehensive-extraction/pol-feature-gap-matrix.csv)
 
-## Superseded records (preserved, do not delete)
+## Preserved history
+- `runs/2026-10-26-cartona-revision-2-import-02/` — Revision 2 import (PASS/SYNCED at 3dd55b47).
+- `runs/2026-10-26-cartona-revision-2-import-attempt-01/` — blocked attempt record (kept for audit history).
 
-- `runs/2026-10-26-cartona-revision-2-import-attempt-01/` — blocked import attempt
-  (`BLOCKED_SOURCE_FILES_UNAVAILABLE`); source files were unreachable from that environment.
-  This run unblocked and completed the import from the local machine.
-
-## Git state after this run
-
-- Repository: `rrasi90/POL-2.3`
-- Branch: `ui/visual-qa-screen-completion-20261025`
-- Local HEAD = remote HEAD = `3dd55b4707546afb8105a01ffcd8a50e0869983c`
-- Reconciliation performed: fast-forward from `89d07617` to `ec0fd662` (no force, no reset)
+## Git state
+Repository rrasi90/POL-2.3, branch ui/visual-qa-screen-completion-20261025. Fast-forward reconciliations only (89d07617 -> ec0fd662; c6ee417a -> 83f38efb). Latest verified commit: 54b0605b5b0a4b97db5148fb5d8e47a80c866657.
