@@ -1,0 +1,54 @@
+{
+  "run_id": "2026-10-27-cartona-remediation-deep-extraction",
+  "generated_at": "2026-10-27",
+  "denominators_and_counts": {
+    "input_artifacts": {"identified": 7, "hashed": 7, "retailer_apk": 1, "supplier_apk": 0, "driver_apk": 0},
+    "dex_files": {"counted": 6, "decompiled_fresh_this_run": 0, "reused_decoded_tree": true, "provenance": "Oct-5 tree cross-checked vs unchanged base hash"},
+    "native_libraries": {"counted": 6, "elf_metadata_extracted": 2, "disassembled": 0},
+    "flutter_assets": {"archive_entries": 113, "manifest_keys": 106, "reconciled": true, "reconciliation_file": "asset-count-reconciliation.json"},
+    "snapshot": {"dart_version_verified": "3.9.2 (r2flutter exact-hash)", "ascii_strings": 15407, "utf16le_runs": 1966, "arabic_ui_strings": 1494, "classes_recovered": 312, "app_level_classes": 0, "function_addresses": 6426, "function_semantic_names": 0},
+    "endpoints_observed_cartona": 70, "endpoints_cataloged_with_context": 70,
+    "routes_observed_cartona": 24,
+    "screens_cataloged": 21, "screens_runtime_observed": 0, "screens_static_inferred": 21,
+    "pol_endpoints_inventoried": 45, "pol_endpoints_total_estimated": 120, "pol_endpoints_sample": "all domains covered",
+    "capabilities_assessed": 46, "capabilities_present": 24, "partial": 3, "missing": 15, "listing_only": 4,
+    "workflow_transitions": 22, "adaptation_decisions": 25, "risks_registered": 15, "backlog_items": 14
+  },
+  "coverage_by_source_type": {
+    "ARTIFACT_VERIFIED": "retailer APK fully (identity/manifest/assets/strings/Dart metadata)",
+    "STATIC_INFERRED": "21 retailer screens; vendor daily-inventory parity",
+    "PUBLICLY_DOCUMENTED": "supplier app features; driver app features (Play listings)",
+    "MARKETING_CLAIM": "separated and labeled throughout public-product-research.md",
+    "POL_CANONICAL": "partial acceptance, workflow matrix, dispute/return/settlement lifecycle",
+    "RUNTIME_OBSERVED": 0,
+    "BLOCKED": ["typed Dart app-class recovery (ARMv7)", "runtime UI capture (ABI mismatch)", "supplier/driver APK analysis (no artifacts)"]
+  },
+  "phases": {
+    "phase0_sync": "PASS", "phase1_preflight": "PASS", "phase2_run_creation": "PASS",
+    "phaseA_remediation": "PASS (7/7 defects fixed, validator self-tested 16/16 + 6/6 negative)",
+    "phaseB_dex": "PASS (counts+signing verified; fresh decompile skipped with provenance)",
+    "phaseC_snapshot": "PARTIAL (header/metadata VERIFIED Dart 3.9.2; app-class recovery blocked on ARMv7)",
+    "phaseD_assets": "PASS (113 entries hashed; 113/106 reconciled)",
+    "phaseE_api": "PASS (70 endpoints with per-endpoint provenance)",
+    "phaseF_security": "PASS (apksigner verified; config re-verified; key presence sanitized)",
+    "phaseG_runtime": "BLOCKED (ABI mismatch; prerequisites documented)",
+    "phaseH_pol_audit": "PASS (via dedicated audit agent, file-path grounded)",
+    "three_product_research": "PASS (public sources; artifacts unavailable for 2/3 products)",
+    "workflow_modeling": "PASS (22 transitions incl. driver gap WF-21)",
+    "fastpath_decisions": "PASS (25 rows, single primary path each)",
+    "golden_e2e": "PASS as design (G6 documented failing-gap)",
+    "handoff": "PASS (implementation-handoff.md self-contained)",
+    "validation": "PASS (semantic validator + negative fixtures)"
+  },
+  "gates": {
+    "EXTRACTION_COMPLETE": "PASS (all accessible sources examined per coverage above; not a claim of full source recovery)",
+    "BUILD_HANDOFF_READY": "PASS (conditional: driver app items B-09..B-12 gated on documented product decision D-01; runtime parity excluded by definition)",
+    "RUNTIME_PARITY_VERIFIED": "NOT CLAIMED (no runtime observation this run)"
+  },
+  "known_unresolved": [
+    "D-01 org-model product decision for driver app",
+    "Cartona SERVER_BASE_URL value; payment provider names",
+    "Iran-market validation for wallet/BNPL/promotions (RK-15)",
+    "ARMv7 device/image for UI capture"
+  ]
+}

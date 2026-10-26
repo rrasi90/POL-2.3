@@ -1,0 +1,27 @@
+symbol,kind,meaning,evidence
+ABANDONED_CART_TIMEOUT_DURATION_HOURS,config-constant,abandoned-cart TTL hours; env-configurable,ev_a4d04d70d6e64aefc3dd7b1d9ddac2815739cfc8ba98b5342a46e001277ae799
+APPS_FLYER_APP_ID,config-constant,AppsFlyer app id identifier (value present in snapshot; NOT reproduced here),ev_a4d04d70d6e64aefc3dd7b1d9ddac2815739cfc8ba98b5342a46e001277ae799
+APPS_FLYER_DEV_KEY,config-constant,AppsFlyer dev key identifier (value present; NOT reproduced),ev_a4d04d70d6e64aefc3dd7b1d9ddac2815739cfc8ba98b5342a46e001277ae799
+ACTION_LOCALE_CHANGED_BY_WEBVIEW,event/action,webview-to-app locale change bridge,ev_a4d04d70d6e64aefc3dd7b1d9ddac2815739cfc8ba98b5342a46e001277ae799
+cartona:credit:pay:success,webview-event,BNPL payment success postMessage,revision-2 audit-evidence.json
+CARTONA_FINANCE_WEB_APP_BASE_URL,config-constant,embedded finance web app base,revision-2 audit-evidence.json
+SERVER_BASE_URL,config-constant,API base URL holder; value not resolved statically,revision-2 audit-evidence.json
+is_mocked,state-flag,mock-location detection flag,string sweep (libapp.so)
+is_any_fake_gps_app_installed,state-flag,fake-GPS app detection,string sweep
+is_any_app_cloner_installed,state-flag,app-cloner detection,string sweep
+is_credit_exhausted,state-flag,credit line exhausted,string sweep
+is_legacy_installment_activated,state-flag,legacy installment active,string sweep
+is_legacy_installment_suspended,state-flag,legacy installment suspended,string sweep
+is_new_app_experience_enabled,state-flag,feature-flag for new UX,string sweep
+is_new_joiner,state-flag,new-retailer onboarding state,string sweep
+has_active_gmv_target,state-flag,GMV target program state,string sweep
+has_active_orders,state-flag,open orders indicator,string sweep
+has_fast_delivery,state-flag,supplier fast-delivery badge,string sweep
+has_free_delivery_offer,state-flag,free-delivery offer badge,string sweep
+has_integration,state-flag,supplier integration indicator,string sweep
+has_multiple_addresses,state-flag,multi-address account,string sweep
+is_business_name_filled,form-state,registration form field state,string sweep
+is_business_type_selected,form-state,registration form field state,string sweep
+is_full_name_filled,form-state,registration form field state,string sweep
+is_landmark_filled,form-state,registration form field state,string sweep
+is_address_filled,form-state,registration form field state,string sweep

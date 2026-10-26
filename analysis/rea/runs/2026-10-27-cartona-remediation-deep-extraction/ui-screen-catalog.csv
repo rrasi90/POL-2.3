@@ -1,0 +1,22 @@
+screen_id,route_or_entry,evidence_source,strings_evidence,rtl,screenshots,observation_status,capture_blocker
+launch,com.cartona.MainActivity (Flutter launcher),decoded manifest + revision-2,"app label ""كرتونة""",RTL-capable (layoutDirection configChanges),NONE,STATIC_INFERRED,INSTALL_FAILED_NO_MATCHING_ABIS
+login_otp,/v3/auth/otp/request/sms + /verify,endpoint strings + 11 Arabic OTP strings,OTP copy recovered,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+landing,/landing,route string + service-area endpoint,area-gate copy,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+categories,/categories,route + category icons (bakery/cafe/bazzar) in flutter_assets,-,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+search,/search,route + 39 Arabic search strings,search copy,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+suppliers,/suppliers,route + filter endpoints + badges (has_fast_delivery etc.),supplier copy,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+favorites,/v3/retail/favorite/suppliers/,endpoint strings,-,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+cart,/v3/retail/cart/validate + local carts table,endpoint + sqlite schema,الكمية: (quantity) label,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+checkout_orders,/orders + 236 Arabic order strings,route + corpus,order lifecycle copy,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+order_reorder,/order-reorder + sqlite reorder columns,route + schema,reorder copy,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+order_tracking,/order-tracking + flutter_osm_plugin,route + plugin assets,تابع وصول طلبك معه,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+wallet,/wallet + 32 Arabic wallet strings,route + corpus,رصيد فوري / استخدم رصيدك في المحفظة,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+credit_bnpl,/v3/partner/cartona-finance/* + consent,endpoints + postMessage events,credit plan copy,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+branches,/branch-management + /v3/retail/branches,route + endpoints + 28 strings,-,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+user_management,/user-management,route string,-,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+notifications,/notifications + /v3/retail/notifications,route + endpoints + 10 strings,-,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+support,Freshchat activities + /v3/retail/order-support-tickets,manifest + endpoints,support copy,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+signup_celebration,/signup-celebration + account_created.png,route + asset,account-approved + phone-call copy,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+ramadan_campaign,/ramadan-products + /ramadan-quiz + eid cashback,route + endpoints + campaign strings,مفاجأة العيد,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+blocked_state,/block /unblock + is_blocked,route + flag,blocked copy,RTL expected,NONE,STATIC_INFERRED,ABI mismatch
+image_error_state,حدث خطأ اثناء تحميل الصورة، برجاء المحاولة مره اخري.,string,explicit image-load error + retry copy,RTL expected,NONE,STATIC_INFERRED,ABI mismatch

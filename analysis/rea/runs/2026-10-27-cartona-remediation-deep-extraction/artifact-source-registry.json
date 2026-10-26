@@ -1,0 +1,49 @@
+{
+  "run_id": "2026-10-27-cartona-remediation-deep-extraction",
+  "generated_at": "2026-10-27",
+  "products": [
+    {
+      "record_id": "RETAILER_APP",
+      "package": "com.cartona",
+      "role": "Retailer marketplace app (خرده‌فروش)",
+      "artifacts": [
+        {"path": "C:/Star/pol/2.4/cartona app/cartona.apk", "type": "XAPK base APK", "sha256": "e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c", "bytes": 41963460, "version": "8.4.6 (70000083)", "obtained": true},
+        {"path": "C:/Star/pol/2.4/cartona app/xapk_extracted/config.armeabi_v7a.apk", "sha256": "d232c761a42e71c47b6495ec7c9b85a343e94722e58edb669e1fa6a00f3fb1c8", "obtained": true},
+        {"path": "C:/Star/pol/2.4/cartona app/xapk_extracted/config.en.apk", "sha256": "da962ee2b0b0d99b07a42a3970496a4ab95ccd08ea91e3bacdffa9e746749c34", "obtained": true},
+        {"path": "C:/Star/pol/2.4/cartona app/xapk_extracted/config.mdpi.apk", "sha256": "5c76dd240306f335801f5649cd35c05812bdeb292ead957b2fd5b7c684300670", "obtained": true}
+      ],
+      "signing": {"schemes": ["v2", "v3", "SourceStamp"], "signer": "CN=Android, O=Google Inc. (Play App Signing)", "cert_sha256": "83891e0a1243f16db19d3fd0b9e836148ce455f943d2a2808632565aa4d653ee"},
+      "install_runtime_tested": false, "install_blocker": "INSTALL_FAILED_NO_MATCHING_ABIS on x86_64 Google APIs image (armeabi-v7a-only libs)",
+      "static_analysis": {"dex_files": 6, "dex_bytes": 27409664, "classes_base": 12338, "dart_version": "3.9.2 (exact-hash, r2flutter)", "arabic_ui_strings": 1494, "endpoints_observed": 70, "routes_observed": 24},
+      "public_evidence": {"play_installs": "500K+", "play_updated": "2026-10-18", "ios_version": "8.4.29 (2026-10-19)", "listing": "https://play.google.com/store/apps/details?id=com.cartona"}
+    },
+    {
+      "record_id": "SUPPLIER_VENDOR_APP",
+      "package": "com.cartona.suppliers",
+      "role": "Supplier/vendor console (بنکدار)",
+      "artifacts": [],
+      "apk_obtained": false,
+      "public_evidence": {"play_installs": "10K+", "play_updated": "2026-07-14", "features_claimed": ["order management", "product coding/catalog", "price+inventory editing", "special offers", "reports+financial account"], "listing": "https://play.google.com/store/apps/details?id=com.cartona.suppliers"},
+      "evidence_level": "PUBLICLY_DOCUMENTED only",
+      "cross_app_linkage": "retailer base APK manifest <queries> includes com.cartona.suppliers; snapshot flag is_cartona_suppliers_app_installed"
+    },
+    {
+      "record_id": "DRIVER_APP",
+      "package": "com.cartona.delivery_driver_app",
+      "role": "Cartona Express driver (راننده)",
+      "artifacts": [],
+      "apk_obtained": false,
+      "public_evidence": {"play_installs": "500+", "play_updated": "2026-07-22", "features_claimed": ["daily order list", "optimal routes", "secure delivery-confirmation system (POD mechanics undisclosed)", "profit tracking", "dedicated support"], "data_safety": "location collection; data cannot be deleted", "listing": "https://play.google.com/store/apps/details?id=com.cartona.delivery_driver_app"},
+      "evidence_level": "PUBLICLY_DOCUMENTED only",
+      "cross_app_linkage": "retailer base APK manifest <queries> includes com.cartona.delivery_driver_app and com.cartona.mandoob; snapshot flags is_cartona_delivery_driver_app_installed / is_cartona_mandoob_app_installed"
+    }
+  ],
+  "derived_artifacts_this_run": [
+    {"path": "analysis/rea/runs/2026-10-27-cartona-remediation-deep-extraction/flutter-assets-inventory.csv", "rows": 113, "source": "ZIP entry bytes of base APK"},
+    {"path": "analysis/rea/runs/2026-10-27-cartona-remediation-deep-extraction/archive-and-split-inventory.csv", "rows": 20, "source": "4 artifacts"},
+    {"path": "analysis/rea/runs/2026-10-27-cartona-remediation-deep-extraction/api-endpoint-catalog.csv", "rows": 70, "source": "libapp.so string pool (sha256 e150ce50...)"},
+    {"path": "analysis/rea/runs/2026-10-27-cartona-remediation-deep-extraction/asset-count-reconciliation.json", "reconciles": "113 archive vs 106 manifest"}
+  ],
+  "private_corpus": "C:/Star/pol-2.4-private-analysis/cartona/e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c/",
+  "constraints_honored": ["originals read-only", "no APK/binaries committed", "no production probing", "no bypass attempts"]
+}

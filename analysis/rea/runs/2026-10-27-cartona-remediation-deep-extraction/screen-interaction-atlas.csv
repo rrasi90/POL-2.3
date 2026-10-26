@@ -1,0 +1,22 @@
+app_id,screen_id,route_or_entry,role,evidence_type,visible_controls,api_calls,states_covered,rtl,screenshot_refs,observation_status,pol_screen_mapping,coverage_status
+retailer,launch,MainActivity,RETAILER,manifest + revision-2,Flutter launcher (Cartona),-,launch only,RTL-capable,NONE,STATIC_INFERRED,AppShell.tsx,route-level only
+retailer,login_otp,auth endpoints,RETAILER,endpoint strings,OTP entry/verify,otp request/verify,loading/error,RTL expected,NONE,STATIC_INFERRED,LoginScreen.tsx,route-level only
+retailer,landing,/landing,RETAILER,route string,home grid,-,service-area gate,RTL expected,NONE,STATIC_INFERRED,RetailerMobileScreen.tsx,route-level only
+retailer,categories,/categories,RETAILER,route + icons,browse,-,empty,RTL expected,NONE,STATIC_INFERRED,RetailerMobileScreen.tsx,route-level only
+retailer,search,/search,RETAILER,route + 39 strings,search + filters,search v2,empty/error,RTL expected,NONE,STATIC_INFERRED,RetailerMobileScreen.tsx,route-level only
+retailer,suppliers,/suppliers,RETAILER,route + badges,supplier cards,suppliers/*,loading/empty,RTL expected,NONE,STATIC_INFERRED,RetailerMobileScreen.tsx,route-level only
+retailer,cart,/cart validate,RETAILER,endpoint + sqlite,qty steppers,cart validate,quantity label recovered,RTL expected,NONE,STATIC_INFERRED,RetailerMobileScreen.tsx,route-level only
+retailer,orders,/orders,RETAILER,route + 236 strings,order list/orders,orders,8 lifecycle states,RTL expected,NONE,STATIC_INFERRED,OrderDetailMobileScreen.tsx,route-level only
+retailer,tracking,/order-tracking,RETAILER,route + OSM plugin,map + timeline,delivery,stage states,RTL expected,NONE,STATIC_INFERRED,OrderDetailMobileScreen.tsx (partial),route-level only
+retailer,wallet,/wallet,RETAILER,route + 32 strings,balance + spend,wallet,balance zero,RTL expected,NONE,STATIC_INFERRED,NO POL MAPPING,route-level only
+retailer,credit,finance endpoints,RETAILER,endpoints + postMessage,plans + consent,finance,plan states,RTL expected,NONE,STATIC_INFERRED,NO POL MAPPING,route-level only
+retailer,branches,/branch-management,RETAILER,route + 28 strings,branch switcher,branches,switch confirm,RTL expected,NONE,STATIC_INFERRED,NO POL MAPPING (org model verify),route-level only
+retailer,notifications,/notifications,RETAILER,route + 10 strings,list + mark-read,notifications,unread,RTL expected,NONE,STATIC_INFERRED,AccountMobileScreen.tsx (partial),route-level only
+retailer,blocked,/block,RETAILER,route + flag,blocked state,-,blocked,RTL expected,NONE,STATIC_INFERRED,NO POL MAPPING,route-level only
+vendor,console,suppliers app listing,VENDOR_OWNER,Play listing bullets,orders/catalog/offers/reports,vendor APIs,claimed,unknown,NONE,PUBLICLY_DOCUMENTED_ONLY,VendorMobileScreen.tsx,listing-level only
+vendor,daily_inventory,suppliers app,VENDOR_OWNER,POL parity inference,stock confirm,daily inventory,-,unknown,NONE,STATIC_INFERRED,VendorMobileScreen.tsx,inferred
+driver,missions,driver app listing,DRIVER,Play listing bullets,daily orders list,unknown,waiting state,unknown,NONE,PUBLICLY_DOCUMENTED_ONLY,NO POL MAPPING,listing-level only
+driver,pod_confirm,driver app listing,DRIVER,Play listing bullets,secure confirm system,unknown,confirm flow,unknown,NONE,PUBLICLY_DOCUMENTED_ONLY,orders.py deliver (endpoint exists),listing-level only
+driver,earnings,driver app listing,DRIVER,Play listing bullets,profit tracking,unknown,earnings view,unknown,NONE,PUBLICLY_DOCUMENTED_ONLY,NO POL MAPPING,listing-level only
+shared,support,Freshchat activities,ANY,manifest + revision-2,chat/FAQ,,-,RTL expected,NONE,STATIC_INFERRED,SupportMobileScreen.tsx,route-level only
+shared,image_error,any,ANY,snapshot string,image load error + retry copy,-,error/retry,RTL expected,NONE,STATIC_INFERRED,any screen,route-level only

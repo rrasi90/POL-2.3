@@ -1,0 +1,47 @@
+capability_id,role,app,capability,cartona_evidence,evidence_level,pol_status,pol_evidence_path
+R-01,RETAILER,retailer,OTP phone auth + 6-digit verify,"/v3/auth/otp/request/sms /verify + 11 Arabic strings; POL 6-digit contract",ARTIFACT_VERIFIED,POL_EXISTING,scripts/api/routes/auth.py; mvp/apps/mobile/src/screens/LoginScreen.tsx
+R-02,RETAILER,retailer,Guest/skip browsing,/v3/auth/register/skip/,ARTIFACT_VERIFIED,POL_MISSING,mvp/apps/mobile/src — no guest mode
+R-03,RETAILER,retailer,Service-area gate,/v3/public/available-area?lat_lng= + geolocator,ARTIFACT_VERIFIED,POL_MISSING,not found in mvp/apps/mobile
+R-04,RETAILER,retailer,Category browse + icons,/categories /category-products + icon assets,ARTIFACT_VERIFIED,POL_EXISTING,scripts/api/routes/categories.py; RetailerMobileScreen.tsx
+R-05,RETAILER,retailer,Product/supplier search + discount filters,/search/v2/* 18 endpoints,ARTIFACT_VERIFIED,POL_EXISTING (partial),scripts/api/routes/catalog_search.py catalog.py; filters MOV/MOP not in POL
+R-06,RETAILER,retailer,Supplier favorites,/search/v2/suppliers/fav /v3/retail/favorite/suppliers/,ARTIFACT_VERIFIED,POL_MISSING,not found
+R-07,RETAILER,retailer,Cart persistence + server sync,sqlite carts + /v3/retail/data/storage/carts,ARTIFACT_VERIFIED,POL_EXISTING,scripts/api/routes/baskets.py; migrations/001 (baskets)
+R-08,RETAILER,retailer,Cart validation before checkout,/v3/retail/cart/validate,ARTIFACT_VERIFIED,POL_EXISTING,allocation-preview in baskets.py:42
+R-09,RETAILER,retailer,Abandoned-cart tracking,marked_as_abandoned_at + TTL constant,ARTIFACT_VERIFIED,POL_MISSING,not found
+R-10,RETAILER,retailer,One-tap reorder,/order-reorder + origin_order_id column,ARTIFACT_VERIFIED,POL_MISSING,not found in POL schema/screens
+R-11,RETAILER,retailer,Order lifecycle (8 states),pending..returned tokens,ARTIFACT_VERIFIED,POL_EXISTING,migrations/001:396-401 (10 states incl PARTIALLY_ACCEPTED)
+R-12,RETAILER,retailer,Live order tracking with map,/order-tracking + flutter_osm_plugin,ARTIFACT_VERIFIED,POL_EXISTING (partial),delivery stages in orders.py:288-318; no map UI in mobile
+R-13,RETAILER,retailer,Order support tickets,/v3/retail/order-support-tickets,ARTIFACT_VERIFIED,POL_EXISTING,scripts/api/routes/support.py
+R-14,RETAILER,retailer,Multi-branch accounts,/v3/retail/branches + branch-management,ARTIFACT_VERIFIED,POL_EXISTING (backend),organizations/branch in POL schema; no branch UI in mobile
+R-15,RETAILER,retailer,Sub-user management,/user-management route,ARTIFACT_VERIFIED (route only),POL_EXISTING (backend),management.py staff invite/permissions
+R-16,RETAILER,retailer,Wallet balance UI,/wallet + 32 Arabic strings,ARTIFACT_VERIFIED,POL_MISSING,not found
+R-17,RETAILER,retailer,BNPL credit (Cartona Credit),finance endpoints + postMessage events,ARTIFACT_VERIFIED,POL_MISSING,not found; POL payment is NON_CUSTODIAL_DIRECT
+R-18,RETAILER,retailer,Push notifications (FCM),/v3/fcm/token + FCM service,ARTIFACT_VERIFIED,POL_EXISTING (partial),notifications.py inbox; no FCM device token registration
+R-19,RETAILER,retailer,In-app notification center,/v3/retail/notifications,ARTIFACT_VERIFIED,POL_EXISTING,notifications.py + inbox
+R-20,RETAILER,retailer,Cashback campaigns (Eid),eid redeem endpoints + Arabic copy,ARTIFACT_VERIFIED,POL_MISSING,not found
+R-21,RETAILER,retailer,GMV targets / incentives,/v3/retail/gmv-targets + has_active_gmv_target,ARTIFACT_VERIFIED,POL_MISSING,not found
+R-22,RETAILER,retailer,Deep links (App Links + deferred),cartona.com + onelink.me,ARTIFACT_VERIFIED,POL_MISSING,app.json has no intentFilters
+R-23,RETAILER,retailer,Integrity/anti-fraud signals,PairIP + fake-GPS queries + is_mocked etc,ARTIFACT_VERIFIED,POL_MISSING,no integrity module in POL
+R-24,RETAILER,retailer,Persian/Arabic RTL localization,gen-l10n + 1494 strings + RTL fonts,ARTIFACT_VERIFIED,POL_EXISTING,fa.ts formatters + Vazirmatn + RTL AppShell
+V-01,VENDOR_OWNER,supplier,Order management inbox,Play listing bullet,PUBLICLY_DOCUMENTED,POL_EXISTING,VendorMobileScreen 1536 lines; orders API
+V-02,VENDOR_OWNER,supplier,Product coding/catalog,Play listing bullet,PUBLICLY_DOCUMENTED,POL_EXISTING,vendor_catalog.py products CRUD
+V-03,VENDOR_OWNER,supplier,Price+inventory editing,Play listing bullet,PUBLICLY_DOCUMENTED,POL_EXISTING,vendor_catalog.py prices/inventory PATCH
+V-04,VENDOR_OWNER,supplier,Special offers self-serve,Play listing bullet,PUBLICLY_DOCUMENTED,POL_MISSING,no offers/promotions API in POL routes
+V-05,VENDOR_OWNER,supplier,Reports + receivables,Play listing bullet,PUBLICLY_DOCUMENTED,POL_EXISTING,finance.py invoices/settlements
+V-06,VENDOR_OWNER,supplier,Daily inventory confirm/scan,Play listing (reports) + POL daily_inventory,STATIC_INFERRED (Cartona) ,POL_EXISTING,daily_inventory.py + vendor_inventory.py continuous-scan
+V-07,VENDOR_OWNER,supplier,Partial acceptance proposals,Cartona: NOT evidenced; POL has two-party protocol,POL_CANONICAL,POL_EXISTING,orders.py:96-153 partial-acceptance-proposals
+V-08,VENDOR_OWNER,supplier,Dispatch to driver with metadata,Cartona: driver app exists; POL collects driver_name/phone/plate,STATIC_INFERRED,POL_EXISTING,fulfillment_service.py:192-239 dispatch
+V-09,VENDOR_OWNER,supplier,Staff permissions + deny-lists,Cartona: user-management route,STATIC_INFERRED,POL_EXISTING (stronger),permissions.py 17 keys + delegation ceiling + deny-lists
+V-10,VENDOR_OWNER,supplier,ERP/real-time stock sync,cartona.com wholesaler claim,MARKETING_CLAIM,POL_MISSING,not found
+D-01,DRIVER,driver,Daily order assignments,Play listing daily orders,MARKETING_CLAIM,POL_MISSING,no DRIVER role anywhere (permissions.py; migrations/001:19-22; types.ts)
+D-02,DRIVER,driver,Optimized routing,Play listing optimal routes,MARKETING_CLAIM,POL_MISSING,not found
+D-03,DRIVER,driver,Delivery confirmation (POD),Play listing secure confirm system,MARKETING_CLAIM,POL_EXISTING (partial),delivery OTP + POD in orders.py:330-373; migrations 030/071/077
+D-04,DRIVER,driver,Delivery stage transitions,Cartona: unknown; POL: picked-up/in-transit/arrived/failed,POL_CANONICAL,POL_EXISTING,orders.py:288-318
+D-05,DRIVER,driver,Earnings/profit tracking,Play listing track profits,MARKETING_CLAIM,POL_MISSING,not found
+D-06,DRIVER,driver,Delivery exceptions/failed flows,Cartona: unknown; POL: exceptions API,POL_CANONICAL,POL_EXISTING,orders.py:385-445 delivery-exceptions
+D-07,DRIVER,driver,Offline sync/idempotent delivery,Cartona: unknown; POL: idempotency at checkout only,STATIC_INFERRED,POL_MISSING (driver-side),no offline queue; no driver mutation semantics
+D-08,DRIVER,driver,Location collection policy,Play data-safety: location; cannot delete,PUBLIC_STORE_SCREENSHOT,POL_MISSING,no location tracking in POL
+O-01,OPS_SUPPORT,shared,Support case workflow,Cartona: Freshchat SDK,STATIC_INFERRED,POL_EXISTING,support.py + web dashboard
+O-02,OPS_SUPPORT,shared,Admin broadcasts/audit,Cartona: not evidenced,POL_CANONICAL,POL_EXISTING,admin.py + management.py (shadowing defect noted)
+O-03,SHARED_PLATFORM,shared,Refunds + reconciliation,Cartona: not evidenced,POL_CANONICAL,POL_EXISTING,finance.py refunds; reconciliation.py
+O-04,SHARED_PLATFORM,shared,Returns/disputes lifecycle,Cartona: order-support-tickets only,STATIC_INFERRED,POL_EXISTING,returns.py disputes.py full lifecycle

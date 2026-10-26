@@ -1,0 +1,16 @@
+risk_id,area,description,impact,likelihood,evidence_missing,next_action,owner_type
+RK-01,driver,No driver role/substrate in POL (verified absence),High for driver app timeline,Certain (verified),POL code confirms absence,P0 backlog B-09/B-10/B-12 conditional on product decision,product
+RK-02,domain,Cartona supplier/driver APKs unavailable — behavior inferred from public listings only,Medium (model risk),Certain,artifact bytes,Mark all supplier/driver capabilities PUBLICLY_DOCUMENTED/MARKETING_CLAIM — never artifact-verified,research
+RK-03,mobile,Retailer app unbuildable in mock mode (vendor-only mock),High for demos/QA,Certain (mockTransport.ts:1,"284-293),none",Backlog B-03,mobile
+RK-04,backend,Admin route shadowing (admin.py vs management.py),Medium (routing hazard),Certain (both register same paths),none,Backlog B-01,backend
+RK-05,docs,Docs drift misleads implementers (privacy/export; dispute vocab; BullMQ diagram),Medium,Certain,none,Backlog B-05/O-05,docs
+RK-06,security,Embedded Google API key in Cartona snapshot (value withheld),Info (competitor's risk),Certain (AIzaSy pattern found),value withheld from all artifacts,None for POL — lesson: never embed live keys,research
+RK-07,security,Route-level guards absent on several routes (management/support/field/reconciliation) — boundary-internal only,Medium,Verified,tests exist but indirect,Standardize require_* at route layer for new surfaces,backend
+RK-08,mobile,No automated mobile tests (only source-grep QA),High for regression safety,Certain,none,Adopt test runner in implementation run,mobile
+RK-09,product,Weak-network offline cart semantics absent (Cartona has local-first carts),Medium-High for Iranian market,Certain (POL server-only baskets),Cartona sync protocol unknown,Decide local-first cart in implementation run,product
+RK-10,product,Payment rails (wallet/BNPL) undecided — Cartona Credit has no POL analogue,High for feature parity,Certain,none,Backlog B-13 decision record,product
+RK-11,analysis,Typed Dart recovery incomplete on ARMv7 (r2flutter AArch64-only analysis; 6426 unnamed functions),Info,Certain,ARM64 artifact unavailable,If ARM64 split ever obtained — rerun r2flutter full analysis,research
+RK-12,analysis,Runtime UI capture blocked (ABI mismatch) — all screens STATIC_INFERRED,Medium (UI claims limited),Certain,device/image,ARMv7 device or ARM-translating image needed,research
+RK-13,product,Chinese-wall risk: copying Cartona UX instead of independent design,Legal/brand,Low if governed,none,Handoff requires independent requirement statements — enforced in handoff doc,product
+RK-14,backend,Docs claim /privacy/export but route unregistered,Low-Medium (privacy promise),Certain,none,Backlog B-02,backend
+RK-15,market,Egypt-model behaviors (BNPL via fintech partner; asset-light gig delivery) may not transfer to Iran,Medium,Hypothesis,market interviews,Validate via benkdar/retailer interviews before building R-16/R-17/D-*,research

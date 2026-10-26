@@ -1,0 +1,46 @@
+domain,method,path,auth_guard,enforcement_layer,tests,source_ref,-
+auth,POST,/api/v1/auth/request-otp,none (rate-limited),boundary OTP service,test_auth_contract.py,-,scripts/api/routes/auth.py:38
+auth,POST,/api/v1/auth/verify-otp,none,boundary session create,test_auth_contract.py,-,scripts/api/routes/auth.py:56
+auth,POST,/api/v1/auth/refresh,refresh token,boundary rotate,test_auth_contract.py,-,scripts/api/routes/auth.py:71
+auth,POST,/api/v1/auth/switch-organization,session,org membership check,-,-,scripts/api/routes/auth.py:86
+catalog,GET,/api/v1/catalog/search,require_roles,boundary,test_http_catalog*.py,-,scripts/api/routes/catalog.py:14
+catalog,GET,/api/v1/search,session,boundary,test_http_catalog_search.py,-,scripts/api/routes/catalog_search.py:13
+catalog,POST,/api/v1/products/match-barcode,session,boundary,test_http_catalog_matching.py,-,scripts/api/routes/catalog_matching.py:30
+vendor-catalog,POST,/api/v1/catalog/vendors/products,require_roles(VENDOR_*),boundary,test_http_vendor_catalog.py,-,scripts/api/routes/vendor_catalog.py:27
+vendor-catalog,PATCH,/api/v1/catalog/vendors/products/{id},require_roles(VENDOR_*),boundary,test_http_vendor_catalog.py,-,scripts/api/routes/vendor_catalog.py:47
+vendor-catalog,POST,/api/v1/catalog/vendors/products/{id}/prices,require_roles(VENDOR_*),boundary,test_http_pricing.py,-,scripts/api/routes/vendor_catalog.py:82
+vendor-inventory,PATCH,/api/v1/catalog/vendors/products/{id}/inventory,require_roles(VENDOR_*),boundary,test_http_inventory.py,-,scripts/api/routes/vendor_catalog.py:105
+vendor-inventory,POST,/api/v1/vendors/inventory/continuous-scan,require_roles(VENDOR_*),boundary,test_http_vendor_catalog.py,-,scripts/api/routes/vendor_inventory.py:19
+daily-inventory,POST,/api/v1/inventory/daily/{date}/confirm,require_roles(VENDOR_*),boundary,test_http_daily_inventory.py,-,scripts/api/routes/daily_inventory.py:25
+baskets,POST,/api/v1/baskets,require_roles(RETAILER_*),boundary,test_http_baskets.py,-,scripts/api/routes/baskets.py:16
+baskets,POST,/api/v1/baskets/{id}/items,require_roles(RETAILER_*),boundary,test_http_baskets.py,-,scripts/api/routes/baskets.py:25
+baskets,POST,/api/v1/baskets/{id}/allocation-preview,require_roles(RETAILER_*),boundary,test_http_baskets.py,-,scripts/api/routes/baskets.py:42
+orders,POST,/api/v1/orders,require_roles(RETAILER_*) + Idempotency-Key,boundary checkout,test_http_checkout.py,-,scripts/api/routes/orders.py:41-44
+orders,POST,/api/v1/orders/{id}/accept,require_permission(order.accept),boundary+deny-list,test_vendor_order_acceptance.py,-,scripts/api/routes/orders.py:69
+orders,POST,/api/v1/orders/{id}/reject,require_permission(order.accept),boundary,test_vendor_order_rejection.py,-,scripts/api/routes/orders.py:80
+orders,POST,/api/v1/orders/{id}/partial-acceptance-proposals,require_permission(order.accept),boundary two-party,test_partial_acceptance.py,-,scripts/api/routes/orders.py:114
+orders,POST,/api/v1/orders/{id}/preparing|ready,require_permission,boundary,test_http_fulfillment.py,-,scripts/api/routes/orders.py:238-249
+orders,POST,/api/v1/orders/{id}/dispatch,require_roles(VENDOR_*),boundary fulfillment,dispatch collects driver metadata,-,scripts/api/routes/orders.py:260
+orders,POST,/api/v1/orders/{id}/delivery/picked-up|in-transit|arrived|failed,session,boundary stages,test_http_delivery_tracking.py,-,scripts/api/routes/orders.py:288-318
+orders,POST,/api/v1/orders/{id}/deliver,session,boundary OTP verify,test_http_delivery_pod_g440_451.py,-,scripts/api/routes/orders.py:330
+orders,POST,/api/v1/orders/{id}/delivery-exceptions,session,boundary,test_http_delivery_exceptions.py,-,scripts/api/routes/orders.py:385
+orders,POST,/api/v1/orders/{id}/payments/evidence,session,tenant-gated read,boundary,test_http_payment_evidence.py,scripts/api/routes/orders.py:463-502
+orders,POST,/api/v1/orders/{id}/payments/verify,require_roles(OPS_*/ADMIN_*),boundary,test_http_payment_evidence.py,-,scripts/api/routes/orders.py:512-527
+returns,POST,/api/v1/orders/{id}/returns,require_roles,boundary state integrity (019),test_http_returns_disputes.py,-,scripts/api/routes/returns.py:28
+disputes,POST,/api/v1/orders/{id}/disputes,require_roles,boundary,dispute tests,-,scripts/api/routes/disputes.py
+finance,GET,/api/v1/invoices,session,tenant-scoped,-,-,scripts/api/routes/finance.py:20
+finance,POST,/api/v1/finance/refunds/issue,require_roles(OPS_*/ADMIN_*),boundary,019 invariants,-,scripts/api/routes/finance.py:76
+finance,POST,/api/v1/finance/refunds/{id}/approve|complete,require_roles(OPS_*/ADMIN_*),boundary,dedicated HTTP spec MISSING,-,scripts/api/routes/finance.py:113-123
+finance,GET,/api/v1/vendors/settlements,require_roles(VENDOR_*),boundary,-,-,scripts/api/routes/finance.py:51
+reconciliation,GET,/api/v1/finance/reconciliation,boundary-internal (_require not at route),boundary,test_http_reconciliation.py,-,scripts/api/routes/reconciliation.py:17
+support,POST,/api/v1/support/cases,session,boundary-internal,test_http_support.py,-,scripts/api/routes/support.py:22
+notifications,GET,/api/v1/inbox/items,session,boundary,test_http_notifications.py,-,scripts/api/routes/notifications.py:51
+notifications,GET/PUT,/api/v1/notifications/preferences,session,boundary,web preferences page exists,-,scripts/api/routes/notifications.py
+admin,GET,/api/v1/admin/audit-logs,boundary _require_admin_management,boundary,test_admin_authorization.py,-,scripts/api/routes/admin.py:17
+admin,POST,/api/v1/admin/broadcasts,boundary _require_admin_management,boundary,SHADOWED by admin.py mount order,-,scripts/api/routes/admin.py:39 vs management.py:163
+management,POST,/api/v1/vendors/staff/invite,boundary-internal,boundary,delegated permissions tests,-,scripts/api/routes/management.py:52
+management,POST,/api/v1/vendors/staff/{id}/permissions,boundary-internal + membership.manage,privilege ceiling+deny-list,test_delegated_permissions.py,-,scripts/api/routes/management.py:75
+field,GET/POST,/api/v1/field/tasks,boundary-internal,boundary,test_http_field_tasks.py,-,scripts/api/routes/field.py
+media,POST,/api/v1/media/presigned-url,session,boundary,test_media_service.py,-,scripts/api/routes/media.py:19
+privacy,POST,/api/v1/privacy/deletion,session,boundary,test privacy lifecycle (052),-,scripts/api/routes/privacy.py:25
+privacy,POST,/api/v1/privacy/export,DOCUMENTED_NOT_REGISTERED,-,-,-,mvp/MVP_API_MAP.md:77 vs privacy.py (27 lines)

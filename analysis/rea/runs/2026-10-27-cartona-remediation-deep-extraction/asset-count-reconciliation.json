@@ -1,0 +1,21 @@
+{
+  "archive_file_entries": 113,
+  "manifest_keys": 106,
+  "only_in_archive": [
+    "AssetManifest.bin",
+    "AssetManifest.json",
+    "FontManifest.json",
+    "NOTICES.Z",
+    "NativeAssetsManifest.json",
+    "fonts/MaterialIcons-Regular.otf",
+    "packages/font_awesome_flutter/lib/fonts/Font%20Awesome%207%20Brands-Regular-400.otf",
+    "packages/font_awesome_flutter/lib/fonts/Font%20Awesome%207%20Free-Regular-400.otf",
+    "packages/font_awesome_flutter/lib/fonts/Font%20Awesome%207%20Free-Solid-900.otf",
+    "shaders/ink_sparkle.frag"
+  ],
+  "only_in_manifest": [
+    "packages/font_awesome_flutter/lib/fonts/Font Awesome 7 Brands-Regular-400.otf",
+    "packages/font_awesome_flutter/lib/fonts/Font Awesome 7 Free-Regular-400.otf",
+    "packages/font_awesome_flutter/lib/fonts/Font Awesome 7 Free-Solid-900.otf"
+  ]
+}
