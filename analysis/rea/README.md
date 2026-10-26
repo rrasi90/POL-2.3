@@ -1,10 +1,10 @@
 # REA Audit Workspace
 
-This directory is the canonical, version-controlled home for sanitized REA (Reverse Engineer Anything) analysis outputs used to understand authorized app artifacts and compare observed product behavior with POL.
+This directory is the canonical, version-controlled home for sanitized REA (Reverse Engineer Anything) findings used to analyze authorized application artifacts and compare evidence with POL.
 
 ## Operating principle
 
-**No REA task is complete until its useful evidence and deliverables have been synchronized here, validated, committed, pushed, and read back from GitHub.** A local-only report is not a synchronized deliverable.
+**A REA task is synchronized only after its reports are validated, committed, pushed, and read back from GitHub.** A successful local command or local-only report is not a synchronized deliverable.
 
 ## Layout
 
@@ -13,48 +13,58 @@ analysis/rea/
   README.md
   SYNC_PROTOCOL.md
   AGENT_PROMPT.md
+  COMPREHENSIVE_CARTONA_EXTRACTION_PROMPT.md
   LATEST.md
   sync-manifest.json
   runs/
     YYYY-MM-DD-<run-id>/
-      executive-summary.md
-      apk-identity-and-integrity.json
-      audit-evidence.json
-      static-analysis-findings.md
-      user-journey-inventory.md
-      pol-feature-gap-matrix.csv
-      implementation-priorities.md
-      limitations-and-unknowns.md
+      reports and validated evidence artifacts
       validation.json
       run-log.md
 ```
 
-Each analysis run gets a new immutable directory. Do not overwrite a previous run's evidence. Update `LATEST.md` and `sync-manifest.json` to point to the latest complete run.
+Each run uses a new immutable directory. Preserve previous findings; update `LATEST.md` and `sync-manifest.json` to point to the latest run and exact commit.
 
-## Initial state
+## Current synchronized audit
 
-The Cartona APK v8.4.6 Revision 2 audit was reported as generated locally at `C:\\Star\\pol-2.4\\analysis-v2\\` on 2026-10-26. Its eight files have **not yet been imported into this directory**. The initial synchronization task must import and validate those eight files before claiming that Revision 2 is synchronized.
+The Cartona APK v8.4.6 Revision 2 report set is synchronized under:
 
-The reported APK SHA-256 is `e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c`. Always verify it against the original APK when the APK is available; do not treat a report's hash as proof that the current local file is identical.
+`runs/2026-10-26-cartona-revision-2-import-02/`
+
+- [Latest run status](LATEST.md)
+- [Revision 2 executive summary](runs/2026-10-26-cartona-revision-2-import-02/executive-summary.md)
+- [Validation results](runs/2026-10-26-cartona-revision-2-import-02/validation.json)
+- [Full synchronization protocol](SYNC_PROTOCOL.md)
+
+The reported APK SHA-256 is `e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c`. This value was recorded in the synchronized audit; re-hash the original artifact whenever it is available for a new analysis.
+
+## How to use this workspace
+
+- For routine REA investigation and synchronization, follow [the reusable agent prompt](AGENT_PROMPT.md).
+- For a maximal Cartona APK/XAPK research pass, use [the comprehensive extraction prompt](COMPREHENSIVE_CARTONA_EXTRACTION_PROMPT.md).
+- Apply the requirements in [the synchronization protocol](SYNC_PROTOCOL.md).
+- Read the current status from [LATEST.md](LATEST.md) and [sync-manifest.json](sync-manifest.json).
 
 ## What belongs here
 
-- Sanitized Markdown reports, CSV gap matrices, and valid JSON metadata/evidence bundles.
-- Artifact identity and hashes, tool versions, coverage, limitations, confidence, test results, and stable references to evidence.
-- A clear distinction between verified findings, hypotheses, and unknowns.
-- POL-relative file paths and implementation acceptance criteria when supported by source inspection.
+- Sanitized Markdown reports, evidence metadata, CSV inventories and gap matrices.
+- Artifact hashes, tool versions, exact coverage, limitations, confidence, test outcomes, stable evidence IDs, and relevant excerpts.
+- UI/UX screen catalogs, selected representative evidence images when justified, route/feature maps, and independent product requirements.
+- POL-relative file paths and implementation acceptance criteria verified against source.
 
 ## What must not be committed
 
-- The original Cartona APK/XAPK, extracted DEX files, full Dart AOT snapshot, `.so` libraries, reconstructed database files, or bulk proprietary decompilation output.
-- Credentials, authorization tokens, API keys, cookies, private customer/business records, live secrets, `.env` files, MCP configuration files, or personal data.
+Do not commit:
+- Original Cartona APK/XAPK/split packages, extracted DEX files, complete Dart AOT snapshot, `.so` libraries, or other raw executable binaries.
+- Bulk proprietary decompilation/recovered source/pseudocode, complete proprietary asset dumps, or full raw strings/snapshot dumps.
+- Raw database contents, customer/business records, session tokens, credentials, API secrets, cookies, private keys, `.env` files, MCP config files, or personal data.
 - Unredacted logs or evidence payloads containing sensitive information.
 
-Only inspect authorized artifacts. Use reverse-engineering results to document behavior and write independent POL implementations; do not copy proprietary code into POL. Keep evidence excerpts proportionate to the finding.
+Keep full raw extraction artifacts in a local-only directory outside the Git working tree. Track their hashes, paths, parent artifacts, extraction method, and coverage in a private local manifest. Commit curated, proportionate evidence and analysis. Use findings to implement independent POL behavior; do not copy Cartona's proprietary code into POL.
 
-## Quick links
+## Audit history and accuracy
 
-- [Sync protocol](SYNC_PROTOCOL.md)
-- [Reusable agent prompt](AGENT_PROMPT.md)
-- [Latest run status](LATEST.md)
-- [Machine-readable sync manifest](sync-manifest.json)
+- Keep the initial blocked import attempt at `runs/2026-10-26-cartona-revision-2-import-attempt-01/` for audit history.
+- Keep the validated Revision 2 import at `runs/2026-10-26-cartona-revision-2-import-02/`.
+- A static string does not prove runtime execution. Clearly distinguish verified artifact facts, runtime observations, hypotheses, and unknowns.
+- Never claim that all original source code was recovered from a compiled APK.
