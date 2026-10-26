@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "workspace": "analysis/rea",
+  "repository": "rrasi90/POL-2.3",
+  "bootstrap_branch": "ui/visual-qa-screen-completion-20261025",
+  "latest_run": null,
+  "latest_run_status": "PENDING_INITIAL_IMPORT",
+  "latest_commit_sha": null,
+  "remote_readback_verified": false,
+  "pending_initial_import": {
+    "reported_local_directory": "C:/Star/pol-2.4/analysis-v2",
+    "analysis_date": "2026-10-26",
+    "expected_files": [
+      "executive-summary.md",
+      "apk-identity-and-integrity.json",
+      "audit-evidence.json",
+      "static-analysis-findings.md",
+      "user-journey-inventory.md",
+      "pol-feature-gap-matrix.csv",
+      "implementation-priorities.md",
+      "limitations-and-unknowns.md"
+    ],
+    "reported_apk": {
+      "package": "com/cartona",
+      "version": "8.4.6",
+      "sha256": "e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c"
+    },
+    "source_claims_independently_verified": false
+  }
+}
