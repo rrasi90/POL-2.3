@@ -44,7 +44,7 @@ The reported APK SHA-256 is `e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc2089
 
 - For routine REA investigation and synchronization, follow [the reusable agent prompt](AGENT_PROMPT.md).
 - For a maximal Cartona APK/XAPK research pass, use [the comprehensive extraction prompt](COMPREHENSIVE_CARTONA_EXTRACTION_PROMPT.md).
-- For remediation of the previous run and the next tool-assisted deep extraction, follow the [Cartona deep extraction remediation plan](CARTONA_DEEP_EXTRACTION_REMEDIATION_PLAN.md).
+- For remediation of the previous run, Agent failure recovery, toolchain decisions and deeper extraction, follow the [hardened Cartona deep-extraction execution plan (v2)](CARTONA_DEEP_EXTRACTION_REMEDIATION_PLAN.md).
 - Apply the requirements in [the synchronization protocol](SYNC_PROTOCOL.md).
 - Read the current status from [LATEST.md](LATEST.md) and [sync-manifest.json](sync-manifest.json).
 
