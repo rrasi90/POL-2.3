@@ -2,9 +2,11 @@
 
 **Workspace:** `analysis/rea/`
 **Latest run:** `runs/2026-10-26-cartona-comprehensive-extraction`
-**Current state:** `PASS / SYNCED` (commit `54b0605b5b0a4b97db5148fb5d8e47a80c866657`, remote read-back verified)
+**Current state:** `HISTORICAL RUN SYNCED — SEMANTIC REMEDIATION REQUIRED` (historical run commit `54b0605b5b0a4b97db5148fb5d8e47a80c866657`; remote read-back of files was previously verified)
 
-## Latest run — Comprehensive Cartona Extraction
+## Latest historical run — Comprehensive Cartona Extraction
+
+**Important correction:** the prior validator reported 16/16 PASS, but independent review found that several PASS checks were structural only and missed semantic defects. In particular, the archive inventory file appears JSON-shaped despite a CSV suffix, the asset inventory's size field was populated with path-like values rather than verified numeric sizes, the API catalog did not establish per-endpoint caller/context and every method remained UNKNOWN, and the screen catalog contained no runtime screenshots. Therefore the old PASS label is not accepted as semantic validation. Preserve this run unchanged and remediate only in a new immutable run under the v3 plan.
 
 Extends (does not replace) `runs/2026-10-26-cartona-revision-2-import-02/`. 19 deliverables synced and remotely verified. Highlights:
 
@@ -22,5 +24,5 @@ Extends (does not replace) `runs/2026-10-26-cartona-revision-2-import-02/`. 19 d
 - `runs/2026-10-26-cartona-revision-2-import-02/` — Revision 2 import (PASS/SYNCED at 3dd55b47).
 - `runs/2026-10-26-cartona-revision-2-import-attempt-01/` — blocked attempt record (kept for audit history).
 
-## Git state
-Repository rrasi90/POL-2.3, branch ui/visual-qa-screen-completion-20261025. Fast-forward reconciliations only (89d07617 -> ec0fd662; c6ee417a -> 83f38efb). Latest verified commit: 54b0605b5b0a4b97db5148fb5d8e47a80c866657.
+## Git / plan state
+Repository rrasi90/POL-2.3, branch ui/visual-qa-screen-completion-20261025. The historical evidence run commit is 54b0605b5b0a4b97db5148fb5d8e47a80c866657. The execution plan was expanded to v3 in commit e9ea4e0cd7f08000729bbfb47c7073e76143a76d; this is a documentation update, not evidence that the new extraction or tool installations were executed. Re-read the branch tip before any new work.
