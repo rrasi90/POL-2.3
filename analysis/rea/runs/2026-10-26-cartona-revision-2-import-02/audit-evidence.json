@@ -1,0 +1,222 @@
+{
+  "revision": 2,
+  "generated_at": "2026-10-26",
+  "analysis_env": {
+    "rea_agents_version": "6.7.0",
+    "node_version": "24.18.0",
+    "jdk_home": "C:/Program Files/Android/Android Studio/jbr",
+    "java_version": "21.0.9",
+    "jadx_jar_sha256": "6e5eacf500b64292bfb73c49797c1958f6ee44646e43e868039ae7feb573ff75",
+    "re_jadx_mcp_jar": "C:/Users/rrasi_oorj8fq/.local/share/rea/android/jadx-headless-mcp-0.7.1-all.jar"
+  },
+  "operations": [
+    {
+      "id": "sha256_base",
+      "tool": "bash sha256sum",
+      "target": "C:/Star/pol-2.4/cartona.apk",
+      "result": "e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c",
+      "exit": 0
+    },
+    {
+      "id": "archive_listing",
+      "tool": "bash unzip -l",
+      "target": "C:/Star/pol-2.4/cartona.apk",
+      "result": "1445 files, 43834631 bytes; no lib/ in base; 119 assets incl. flutter_assets",
+      "exit": 0
+    },
+    {
+      "id": "flutter_base",
+      "operation": "identify_flutter_build",
+      "provider": "rea/flutter",
+      "target": "C:/Star/pol-2.4/cartona.apk",
+      "evidence_id": "ev_8bdc2bfe7fcc6da66c354eee370a1e579bfe8478fe210a0a6b990c93f9a015c7",
+      "result": "flutter_detected=false for base alone: no libapp.so in base; native libs in ABI split. Coverage complete."
+    },
+    {
+      "id": "flutter_split",
+      "operation": "identify_flutter_build",
+      "provider": "rea/flutter",
+      "target": "C:/Star/pol/2.4/cartona app/xapk_extracted/config.armeabi_v7a.apk",
+      "evidence_id": "ev_a197cc6a7d91dbecd7c124f64a215c79e3bdd5a2a10ba7ce6f5ba62dc8517104",
+      "result": "flutter_detected=true; abis=[armeabi-v7a]; libapp.so bytes=10945116 sha256=e150ce501b87d3c0ff8b45548b05be151733e839ea00a0b3947620cd0f8f3df2 snapshot_hash=97ff04a728735e6b6b098bdf983faaba (kind 3); libflutter.so bytes=7926736 sha256=ba17ad84a58d7f60063d665131ee7362735272f2536ac64108a795668204a8fa build_id=deaf7120f4bf65f07ea2c5505bcf74436d4efd1e; dart_version absent (release build). Coverage complete."
+    },
+    {
+      "id": "dart_aot_summary",
+      "operation": "inspect_dart_aot (summary)",
+      "provider": "rea",
+      "target": "C:/Star/pol/2.4/cartona app/xapk_extracted/config.armeabi_v7a.apk",
+      "evidence_id": "ev_fff3465f59bd500aa66195829282fffebf3a9f9b469d84c5c34d151e92a87b16",
+      "parent_evidence_id": "ev_0f1c4ec39c47259e74d512e63292ecb452ddecf5908b1cebd23108eb0a97d72b",
+      "result": "snapshot kind 3 (Dart 2.14 FullAOT); string-pool lower bounds: 6 package URIs, 4000+ class tokens, 17001 printable runs; coverage partial."
+    },
+    {
+      "id": "strings_mining",
+      "tool": "python regex over libapp.so",
+      "result": "15407 ASCII runs >=6 chars; Arabic runs: 0 in snapshot",
+      "artifacts": [
+        "analysis-v2/extracted/libapp_strings.txt",
+        "analysis-v2/extracted/api_paths.txt"
+      ]
+    },
+    {
+      "id": "manifest_decode",
+      "tool": "apktool decode (Oct 5) + python extraction",
+      "target": "C:/Star/pol/2.4/cartona app/decompiled/resources/AndroidManifest.xml",
+      "result": "minSdk 24, targetSdk 36, compileSdk 36; application class com.pairip.application.Application; usesCleartextTraffic=true; 24 activities, 14 services, 9 receivers, 9 providers; App Links cartona.com; fake-GPS package queries",
+      "limitations": "decoded XML from earlier apktool run of same base APK; cross-checked against XAPK manifest.json"
+    },
+    {
+      "id": "v1_rea_cli_calls",
+      "provider": "jadx headless 0.7.1",
+      "status": "preserved from v1",
+      "evidence_ids": [
+        "ev_213a5ca07c83389447137d1a0fcba3cb2a4ad1eaf2f8104e616e7b083f5cf5ee",
+        "ev_70e380e108cdc8ca39516d0f16d5affac9a1e3a32a774e5589e2af6136e12f80",
+        "ev_dbdd37251508d017ce5255dab8ce5ac3d6ddf6a2a0386437e04a4c8f9b25aa5c"
+      ],
+      "correction": "v1 minSDK 26/target 33 claim superseded by decoded manifest (24/36)."
+    },
+    {
+      "id": "pol_repo_audit",
+      "tool": "git + file inspection",
+      "result": "branch ui/visual-qa-screen-completion-20261025; commit 89d07617; POL mobile = mvp/apps/mobile (Expo ~57.0.24, react-native 0.86.3, react 19.2.3, expo-secure-store); variants ir.pol.market / ir.pol.vendor; Persian i18n fa.ts; 9 screens in src/screens/"
+    }
+  ],
+  "api_surface_observed": {
+    "note": "Literal path strings from Dart snapshot; base URL behind SERVER_BASE_URL constant (value not resolved statically). No API calls were made.",
+    "auth": [
+      "/v3/auth/access-token",
+      "/v3/auth/otp/request/sms",
+      "/v3/auth/otp/verify",
+      "/v3/auth/register",
+      "/v3/auth/register/skip/"
+    ],
+    "search": [
+      "/search/v2/ads/all",
+      "/search/v2/places",
+      "/search/v2/products/all",
+      "/search/v2/products/bids",
+      "/search/v2/products/ramadan",
+      "/search/v2/products/supplier2",
+      "/search/v2/suppliers/all",
+      "/search/v2/suppliers/cashback",
+      "/search/v2/suppliers/discount/max",
+      "/search/v2/suppliers/discount/mov",
+      "/search/v2/suppliers/discount/price",
+      "/search/v2/suppliers/fast",
+      "/search/v2/suppliers/fav",
+      "/search/v2/suppliers/mop/max2",
+      "/search/v2/suppliers/new",
+      "/search/v2/suppliers/sponsored",
+      "/search/v2/suppliers/top/relevant",
+      "/search/v3/products/discount2"
+    ],
+    "retail": [
+      "/v3/retail/me",
+      "/v3/retail/branches",
+      "/v3/retail/branches/change",
+      "/v3/retail/cart/validate",
+      "/v3/retail/cashback/eid_al_adha/redeem",
+      "/v3/retail/cashback/eid_al_fetr/redeem",
+      "/v3/retail/data/storage",
+      "/v3/retail/data/storage/carts",
+      "/v3/retail/favorite/suppliers/",
+      "/v3/retail/gmv-targets",
+      "/v3/retail/legacy/installment/plans",
+      "/v3/retail/notifications",
+      "/v3/retail/notifications/read",
+      "/v3/retail/offers/search",
+      "/v3/retail/order-support-ticket-types",
+      "/v3/retail/order-support-tickets",
+      "/v3/retail/analytics/products/top-searched",
+      "/v3/retail/app-version/switch"
+    ],
+    "other": [
+      "/v3/campaigns/communications/in-app-stories",
+      "/v3/campaigns/communications/threads/",
+      "/v3/fcm/token",
+      "/v3/partner/cartona-finance/acquire/session/auth",
+      "/v3/partner/cartona-finance/acquire/session/plan-listing",
+      "/v3/public/available-area?lat_lng=",
+      "/cartona-finance/consent",
+      "/cartona_v0016.sqlite"
+    ]
+  },
+  "named_routes_observed": [
+    "/landing",
+    "/categories",
+    "/category-products",
+    "/search",
+    "/suppliers",
+    "/orders",
+    "/order-reorder",
+    "/order-tracking",
+    "/wallet",
+    "/profile",
+    "/settings",
+    "/user-management",
+    "/branch-management",
+    "/notifications",
+    "/block",
+    "/unblock",
+    "/upload-images",
+    "/privacy-policy",
+    "/terms-conditions",
+    "/ramadan-products",
+    "/ramadan-quiz",
+    "/communication_campaign",
+    "/signup-celebration",
+    "/analytics-flutter-"
+  ],
+  "sqlite_schema_observed": {
+    "db": "cartona_v0016.sqlite",
+    "tables": [
+      "carts (cartona_user_storage_key UNIQUE, cartona_user_storage_id, local_key, reorder_products_count, cart_value_before_reorder, marked_as_abandoned_at, origin_order_id, created_via_reorder)",
+      "search_summarized_product_history_v001"
+    ]
+  },
+  "order_status_tokens_observed": [
+    "pending",
+    "confirmed",
+    "processing",
+    "shipped",
+    "delivered",
+    "cancelled",
+    "rejected",
+    "returned",
+    "refunded"
+  ],
+  "finance_events_observed": [
+    "cartona:credit:plans:ready",
+    "cartona:credit:plans:resize",
+    "cartona:credit:plans:selected",
+    "cartona:credit:plans:unavailable",
+    "cartona:credit:pay:success",
+    "CARTONA_FINANCE_WEB_APP_BASE_URL",
+    "Cartona Credit"
+  ],
+  "manifest_permissions": [
+    "ACCESS_FINE_LOCATION",
+    "ACCESS_COARSE_LOCATION",
+    "INTERNET",
+    "POST_NOTIFICATIONS",
+    "ACCESS_NETWORK_STATE",
+    "CAMERA",
+    "RECORD_AUDIO",
+    "WRITE_EXTERNAL_STORAGE",
+    "READ_EXTERNAL_STORAGE",
+    "WAKE_LOCK",
+    "VIBRATE",
+    "com.google.android.gms.permission.AD_ID",
+    "com.google.android.c2dm.permission.RECEIVE",
+    "com.android.vending.CHECK_LICENSE"
+  ],
+  "anti_fraud_queries": [
+    "com.cartona.suppliers",
+    "com.cartona.delivery_driver_app",
+    "com.cartona.mandoob",
+    "com.maxab.maxab",
+    "com.fawry.fawryb2b",
+    "fake-GPS app packages (com.lexa.fakegps, com.fakegps.mock and others)"
+  ]
+}

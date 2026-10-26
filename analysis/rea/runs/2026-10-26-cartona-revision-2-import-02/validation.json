@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-10-26-cartona-revision-2-import-02",
+  "validated_at": "2026-10-26",
+  "source_directory": "C:/Star/pol-2.4/analysis-v2",
+  "checks": [
+    {
+      "name": "file_present:executive-summary.md",
+      "result": "PASS",
+      "detail": "copied from C:/Star/pol-2.4/analysis-v2/"
+    },
+    {
+      "name": "file_present:apk-identity-and-integrity.json",
+      "result": "PASS",
+      "detail": "copied from C:/Star/pol-2.4/analysis-v2/"
+    },
+    {
+      "name": "file_present:audit-evidence.json",
+      "result": "PASS",
+      "detail": "copied from C:/Star/pol-2.4/analysis-v2/"
+    },
+    {
+      "name": "file_present:static-analysis-findings.md",
+      "result": "PASS",
+      "detail": "copied from C:/Star/pol-2.4/analysis-v2/"
+    },
+    {
+      "name": "file_present:user-journey-inventory.md",
+      "result": "PASS",
+      "detail": "copied from C:/Star/pol-2.4/analysis-v2/"
+    },
+    {
+      "name": "file_present:pol-feature-gap-matrix.csv",
+      "result": "PASS",
+      "detail": "copied from C:/Star/pol-2.4/analysis-v2/"
+    },
+    {
+      "name": "file_present:implementation-priorities.md",
+      "result": "PASS",
+      "detail": "copied from C:/Star/pol-2.4/analysis-v2/"
+    },
+    {
+      "name": "file_present:limitations-and-unknowns.md",
+      "result": "PASS",
+      "detail": "copied from C:/Star/pol-2.4/analysis-v2/"
+    },
+    {
+      "name": "json_parse:apk-identity-and-integrity",
+      "result": "PASS",
+      "detail": "json.load OK, keys=5"
+    },
+    {
+      "name": "json_parse:audit-evidence",
+      "result": "PASS",
+      "detail": "json.load OK, keys=11, operations=9"
+    },
+    {
+      "name": "csv_parse:pol-feature-gap-matrix",
+      "result": "PASS",
+      "detail": "25 rows, widths=[10]"
+    },
+    {
+      "name": "apk_sha256_report_vs_disk",
+      "result": "PASS",
+      "detail": "identity=e4a0f4d1a3a607ad.. evidence-op=e4a0f4d1a3a607ad.. disk=e4a0f4d1a3a607ad.."
+    },
+    {
+      "name": "apk_sha256_consistent_in_md",
+      "result": "PASS",
+      "detail": "MD reports cite same SHA"
+    },
+    {
+      "name": "evidence_ids_cross_referenced",
+      "result": "PASS",
+      "detail": "7 IDs in evidence JSON; MDs cite subset; invented=[]; bundle-only=['ev_0f1c4ec39c472', 'ev_213a5ca07c833', 'ev_70e380e108cdc', 'ev_8bdc2bfe7fcc6', 'ev_a197cc6a7d91d', 'ev_dbdd37251508d', 'ev_fff3465f59bd5']"
+    },
+    {
+      "name": "gap_status_vocabulary",
+      "result": "PASS",
+      "detail": "statuses=['MISSING', 'PARTIAL', 'PRESENT', 'UNVERIFIED']"
+    },
+    {
+      "name": "pol_paths_resolve",
+      "result": "PASS",
+      "detail": "all mvp/ paths exist at HEAD ec0fd66209dd; unresolved=[]"
+    },
+    {
+      "name": "split_apk_sha256_vs_disk",
+      "result": "PASS",
+      "detail": "disk=d232c761a42e71c47b6495ec7c9b85a343e94722e58edb669e1fa6a00f3fb1c8 vs identity-record=d232c761a42e71c47b6495ec7c9b85a343e94722e58edb669e1fa6a00f3fb1c8 (config.armeabi_v7a.apk)"
+    },
+    {
+      "name": "no_bulky_artifacts",
+      "result": "PASS",
+      "detail": "unexpected: []"
+    }
+  ],
+  "missing_files": [],
+  "warnings": [
+    "Markdown reports cite some evidence IDs in truncated form (16-hex prefix). Full 64-char IDs are authoritative in audit-evidence.json; imported MD files kept byte-identical to source."
+  ],
+  "repairs": [
+    "audit-evidence.json was missing the flutter_split operation (lost in an earlier authoring truncation). Restored with the real operation record and evidence ID ev_a197cc6a...7104 in BOTH the run copy and the source copy C:/Star/pol-2.4/analysis-v2/. Source executive/other MD files untouched."
+  ],
+  "status": "PASS"
+}

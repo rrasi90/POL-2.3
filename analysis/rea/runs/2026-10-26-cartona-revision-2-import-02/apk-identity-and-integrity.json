@@ -1,0 +1,78 @@
+{
+  "revision": 2,
+  "generated_at": "2026-10-26",
+  "apk_identity": {
+    "file": "C:/Star/pol-2.4/cartona.apk",
+    "sha256": "e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c",
+    "bytes": 41963460,
+    "format": "XAPK base APK (Android App Bundle base split)",
+    "package": "com.cartona",
+    "app_label": "كرتونة",
+    "version_name": "8.4.6",
+    "version_code": 70000083,
+    "compile_sdk": 36,
+    "min_sdk": 24,
+    "target_sdk": 36,
+    "sibling_split_apks": {
+      "config.armeabi_v7a.apk": {
+        "sha256": "d232c761a42e71c47b6495ec7c9b85a343e94722e58edb669e1fa6a00f3fb1c8",
+        "bytes": 18993995,
+        "libapp_so": {
+          "bytes": 10945116,
+          "sha256": "e150ce501b87d3c0ff8b45548b05be151733e839ea00a0b3947620cd0f8f3df2"
+        },
+        "libflutter_so": {
+          "bytes": 7926736,
+          "sha256": "ba17ad84a58d7f60063d665131ee7362735272f2536ac64108a795668204a8fa",
+          "build_id": "deaf7120f4bf65f07ea2c5505bcf74436d4efd1e"
+        },
+        "other_libs": [
+          "libdatastore_shared_counter.so",
+          "libimage_processing_util_jni.so",
+          "libsurface_util_jni.so",
+          "libtoolChecker.so"
+        ]
+      },
+      "config.en.apk": "language split (en)",
+      "config.mdpi.apk": "density split (mdpi)"
+    },
+    "class_count_base": 12338,
+    "resource_count_base": 1445,
+    "launcher_activity": "com.cartona.MainActivity (FlutterActivity subclass, singleTop, autoVerify App Links)",
+    "application_class": "com.pairip.application.Application",
+    "app_links": [
+      "https://cartona.com",
+      "https://cartona.onelink.me/8xkB"
+    ]
+  },
+  "architecture": {
+    "framework": "Flutter (AOT release)",
+    "dart_snapshot": {
+      "kind": 3,
+      "layout": "Dart 2.14 FullAOT",
+      "snapshot_hash": "97ff04a728735e6b6b098bdf983faaba",
+      "dart_version_string": null,
+      "engine_toolchain": "Android clang 18.0.1 (r522817)"
+    },
+    "arabic_ui_strings_in_snapshot": false,
+    "flutter_assets": 106,
+    "bundled_asset_packages": [
+      "cupertino_icons",
+      "flutter_inappwebview",
+      "flutter_inappwebview_web",
+      "flutter_osm_plugin",
+      "flutter_osm_web"
+    ],
+    "backend_fragments": [
+      "https://cartona-69c1a.firebaseio.com",
+      "https://us.i.posthog.com",
+      "https://appgallery.cloud.huawei.com/ag/n/app/C107487341"
+    ]
+  },
+  "corrections_vs_v1": [
+    "min_sdk corrected 26 to 24 (decoded AndroidManifest.xml)",
+    "target_sdk corrected 33 to 36 (decoded AndroidManifest.xml)",
+    "v1 'MainActivity has only <init>' reinterpreted: normal Flutter launcher stub; real app is Dart AOT in split APK libapp.so",
+    "v1 four-row gap matrix replaced by evidence-backed matrix"
+  ]
+}
