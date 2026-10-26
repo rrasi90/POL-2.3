@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-10-26-cartona-revision-2-import-attempt-01",
+  "task": "Import the existing Cartona APK Revision 2 audit into the canonical REA workspace",
+  "status": "BLOCKED",
+  "synchronization_status": "PARTIAL",
+  "target_repository": "rrasi90/POL-2.3",
+  "intended_branch": "ui/visual-qa-screen-completion-20261025",
+  "source_directory": "C:/Star/pol-2.4/analysis-v2",
+  "source_directory_accessible_from_current_runtime": false,
+  "source_access_note": "The target is a local Windows path. The current execution environment has no filesystem access to that Windows directory. Only the files mounted under /mnt/data are accessible.",
+  "expected_revision_2_files": [
+    "executive-summary.md",
+    "apk-identity-and-integrity.json",
+    "audit-evidence.json",
+    "static-analysis-findings.md",
+    "user-journey-inventory.md",
+    "pol-feature-gap-matrix.csv",
+    "implementation-priorities.md",
+    "limitations-and-unknowns.md"
+  ],
+  "expected_revision_2_files_found_at_the_target_source": null,
+  "exact_revision_2_files_available_in_current_runtime": [],
+  "attached_legacy_candidate_files": [
+    {
+      "name": "apk-identity-and-integrity.json",
+      "sha256": "96a0ba5f541f41e35ddb8551c70ad26109609b558022441d4a8c4bef7c5c215a",
+      "bytes": 1301,
+      "json_parse": "FAIL",
+      "parse_error": "Invalid escape at line 18, column 20",
+      "classification": "legacy_v1_not_revision_2",
+      "reason": "Claims minSdk 26, targetSdk 33, and MainActivity with only <init>; these conflict with the supplied Revision 2 summary."
+    },
+    {
+      "name": "audit-evidence.json",
+      "sha256": "fca40969e106e7699d057a17b5f27164b25a73d3035eb71cc9953a0f3f195337",
+      "bytes": 7866,
+      "json_parse": "FAIL",
+      "parse_error": "Invalid escape at line 9, column 24",
+      "classification": "legacy_v1_not_revision_2"
+    },
+    {
+      "name": "static-analysis-findings.md",
+      "sha256": "f5b677195551bdb28adca0a3008eee31c84620813e2bd4fc2abdba248baf3e8d",
+      "bytes": 3561,
+      "classification": "legacy_v1_not_revision_2",
+      "reason": "Reports only limited MainActivity decompilation and lacks the Revision 2 Flutter/Dart findings."
+    },
+    {
+      "name": "user-journey-inventory.md",
+      "sha256": "10e7ea21a9ba6e30bec98cda664019339058eb555008abb19898abb07938cb24",
+      "bytes": 2928,
+      "classification": "legacy_v1_not_revision_2"
+    },
+    {
+      "name": "pol-feature-gap-matrix.csv",
+      "sha256": "b2deeeeae74816833e44b6f8eccdf29fcdc2f7987de9a04d22d3154f4f88ebbc",
+      "bytes": 701,
+      "csv_parse": "PARSED_WITH_INCONSISTENT_ROW_WIDTHS",
+      "row_count_including_header": 5,
+      "expected_revision_2_shape_from_user_summary": "24 data rows x 10 columns",
+      "actual_attached_shape": "4 data rows; row widths are 6,6,6,7,6 including header",
+      "classification": "legacy_v1_not_revision_2"
+    },
+    {
+      "name": "implementation-priorities.md",
+      "sha256": "9cfa8d5273883458bd01b0ae29234f4e8a7f9cabde7948d5c13cb2a7b1a07fbf",
+      "bytes": 2354,
+      "classification": "legacy_v1_not_revision_2",
+      "reason": "Recommends adding a MainActivity based on the v1 native-launcher interpretation."
+    },
+    {
+      "name": "limitations-and-unknowns.md",
+      "sha256": "7bad80417181fbf48eee026f31e75c0bf7115dfee65eb747e9e5679cdd7760b5",
+      "bytes": 4200,
+      "classification": "legacy_v1_not_revision_2"
+    }
+  ],
+  "missing_expected_file": "executive-summary.md",
+  "source_revision_2_contents_imported": false,
+  "revision_2_summary_claims": {
+    "architecture": "Flutter",
+    "min_sdk": 24,
+    "target_sdk": 36,
+    "rest_endpoints": 43,
+    "named_routes": 24,
+    "pol_gap_matrix": "24 rows x 10 columns"
+  },
+  "revision_2_summary_claims_independently_verified": false,
+  "apk_file_available_for_sha256_reverification": false,
+  "report_file_hashes_verified_against_v2_source": false,
+  "json_validation": {
+    "apk-identity-and-integrity.json": "FAIL — candidate is the prior v1 attachment, malformed Windows path escapes",
+    "audit-evidence.json": "FAIL — candidate is the prior v1 attachment, malformed Windows path escapes"
+  },
+  "csv_validation": {
+    "pol-feature-gap-matrix.csv": "FAIL — parseable but non-uniform row width; candidate is v1, not the claimed 24x10 revision 2 matrix"
+  },
+  "local_git_state": {
+    "repository_root": "UNAVAILABLE",
+    "local_branch": "UNAVAILABLE",
+    "local_head": "UNAVAILABLE",
+    "working_tree_status": "UNAVAILABLE",
+    "remote_config": "UNAVAILABLE",
+    "note": "No shell/filesystem connector to the user's Windows project is available in this execution context."
+  },
+  "remote_git_state_before_attempt": {
+    "repository": "rrasi90/POL-2.3",
+    "branch": "ui/visual-qa-screen-completion-20261025",
+    "head_sha": "0e54dd0a15cbbf15fd3c1bf6867ac8278fc7fe17",
+    "source": "GitHub branch API read"
+  },
+  "safety_decision": "Do not copy the accessible v1 files into a Revision 2 directory. That would contaminate the v2 evidence set and conceal the unresolved source mismatch.",
+  "checks_run": [
+    "Read current analysis/rea instructions and status files from the target GitHub branch",
+    "Enumerated current /mnt/data files",
+    "Attempted standard JSON parsing on available JSON candidates",
+    "Parsed available CSV and inspected all row widths",
+    "Computed SHA-256 hashes for available report attachments",
+    "Compared available attachments with Revision 2 claims supplied in the conversation"
+  ],
+  "checks_not_run": [
+    "Local Windows path existence check",
+    "Local git status/branch/HEAD/remote/commit graph",
+    "Actual Revision 2 JSON/CSV parsing",
+    "Actual APK SHA-256 recomputation",
+    "Git reconciliation or push of local commit 89d07617"
+  ],
+  "created_at_date": "2026-10-26"
+}
