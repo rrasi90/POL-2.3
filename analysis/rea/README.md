@@ -14,6 +14,7 @@ analysis/rea/
   SYNC_PROTOCOL.md
   AGENT_PROMPT.md
   COMPREHENSIVE_CARTONA_EXTRACTION_PROMPT.md
+  CARTONA_DEEP_EXTRACTION_REMEDIATION_PLAN.md
   LATEST.md
   sync-manifest.json
   runs/
@@ -27,21 +28,23 @@ Each run uses a new immutable directory. Preserve previous findings; update `LAT
 
 ## Current synchronized audit
 
-The Cartona APK v8.4.6 Revision 2 report set is synchronized under:
+The latest synchronized Cartona evidence run is the comprehensive extraction report under:
 
-`runs/2026-10-26-cartona-revision-2-import-02/`
+`runs/2026-10-26-cartona-comprehensive-extraction/`
 
 - [Latest run status](LATEST.md)
-- [Revision 2 executive summary](runs/2026-10-26-cartona-revision-2-import-02/executive-summary.md)
-- [Validation results](runs/2026-10-26-cartona-revision-2-import-02/validation.json)
-- [Full synchronization protocol](SYNC_PROTOCOL.md)
+- [Comprehensive executive summary](runs/2026-10-26-cartona-comprehensive-extraction/executive-summary.md)
+- [Comprehensive validation](runs/2026-10-26-cartona-comprehensive-extraction/validation.json)
+- [POL capability gap matrix](runs/2026-10-26-cartona-comprehensive-extraction/pol-feature-gap-matrix.csv)
+- [Previous Revision 2 import](runs/2026-10-26-cartona-revision-2-import-02/executive-summary.md) — retained as historical evidence.
 
-The reported APK SHA-256 is `e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c`. This value was recorded in the synchronized audit; re-hash the original artifact whenever it is available for a new analysis.
+The reported APK SHA-256 is `e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c`. Re-hash the original artifact when it is available for a new analysis.
 
 ## How to use this workspace
 
 - For routine REA investigation and synchronization, follow [the reusable agent prompt](AGENT_PROMPT.md).
 - For a maximal Cartona APK/XAPK research pass, use [the comprehensive extraction prompt](COMPREHENSIVE_CARTONA_EXTRACTION_PROMPT.md).
+- For remediation of the previous run and the next tool-assisted deep extraction, follow the [Cartona deep extraction remediation plan](CARTONA_DEEP_EXTRACTION_REMEDIATION_PLAN.md).
 - Apply the requirements in [the synchronization protocol](SYNC_PROTOCOL.md).
 - Read the current status from [LATEST.md](LATEST.md) and [sync-manifest.json](sync-manifest.json).
 
