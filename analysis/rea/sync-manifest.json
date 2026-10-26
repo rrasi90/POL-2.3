@@ -3,10 +3,13 @@
   "workspace": "analysis/rea",
   "repository": "rrasi90/POL-2.3",
   "bootstrap_branch": "ui/visual-qa-screen-completion-20261025",
-  "latest_run": null,
-  "latest_run_status": "PENDING_INITIAL_IMPORT",
+  "latest_run": "runs/2026-10-26-cartona-revision-2-import-attempt-01",
+  "latest_run_status": "BLOCKED_SOURCE_FILES_UNAVAILABLE",
+  "latest_attempt_record_commit_sha": "ef6acd7dfb8aa1e2a542668e281b6a1027361c79",
   "latest_commit_sha": null,
   "remote_readback_verified": false,
+  "actual_revision_2_deliverables_imported": false,
+  "attempt_record_readback_verified": false,
   "pending_initial_import": {
     "reported_local_directory": "C:/Star/pol-2.4/analysis-v2",
     "analysis_date": "2026-10-26",
@@ -20,11 +23,37 @@
       "implementation-priorities.md",
       "limitations-and-unknowns.md"
     ],
-    "reported_apk": {
-      "package": "com/cartona",
-      "version": "8.4.6",
-      "sha256": "e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c"
-    },
+    "actual_revision_2_files_available_in_current_runtime": [],
+    "legacy_v1_candidates_available": [
+      "apk-identity-and-integrity.json",
+      "audit-evidence.json",
+      "static-analysis-findings.md",
+      "user-journey-inventory.md",
+      "pol-feature-gap-matrix.csv",
+      "implementation-priorities.md",
+      "limitations-and-unknowns.md"
+    ],
+    "legacy_v1_candidate_files_imported_as_revision_2": false,
+    "missing_expected_file_in_available_attachments": "executive-summary.md",
+    "source_directory_accessible_from_current_runtime": false,
     "source_claims_independently_verified": false
-  }
+  },
+  "candidate_validation": {
+    "apk_identity_json": "FAIL — invalid JSON escape at line 18, column 20; v1 candidate",
+    "audit_evidence_json": "FAIL — invalid JSON escape at line 9, column 24; v1 candidate",
+    "gap_matrix_csv": "FAIL — parsed with inconsistent widths (6/7 columns), four data rows; v1 candidate",
+    "apk_sha256_recomputed_from_original_apk": false
+  },
+  "local_git_state": {
+    "repository_root": "UNAVAILABLE",
+    "branch": "UNAVAILABLE",
+    "head": "UNAVAILABLE",
+    "working_tree_status": "UNAVAILABLE",
+    "remote_reconciliation": "NOT_PERFORMED"
+  },
+  "remote_git_state_before_attempt": {
+    "branch": "ui/visual-qa-screen-completion-20261025",
+    "head_sha": "0e54dd0a15cbbf15fd3c1bf6867ac8278fc7fe17"
+  },
+  "unblock_condition": "Make the exact Revision 2 directory accessible in a connected environment or upload its actual eight deliverables, then create a separate immutable successful import run."
 }
