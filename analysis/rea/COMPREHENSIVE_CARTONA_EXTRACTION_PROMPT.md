@@ -1,6 +1,17 @@
-# Comprehensive Cartona APK Extraction & Evidence Program
+# Comprehensive Cartona APK Extraction & POL Three-Product Build-Readiness Program
 
 Use this prompt for the next major REA investigation. The objective is to extract and document **as much technically recoverable information as possible** from the authorized Cartona APK/XAPK and its splits, then compare evidence with POL. This is a research and product-analysis task, not a POL code-change task.
+
+
+## Mandatory current execution plan — supersedes older narrow scope
+
+Before executing this prompt, read and follow the complete plan at:
+
+- analysis/rea/CARTONA_DEEP_EXTRACTION_REMEDIATION_PLAN.md
+
+The v3 plan extends this baseline with required research across the **retailer, supplier/vendor and driver** products; a reality audit of POL routes, schemas, migrations, mobile screens, mocks and tests; an end-to-end workflow/state matrix; a capability-to-POL traceability map; a per-feature least-change decision (reuse/config/localization/adapter/UI/API/database/integration); Iran-specific localization/operations review; driver-role and Android-variant readiness; synthetic cross-role E2E scenarios; and a development handoff with acceptance criteria.
+
+The previous run chiefly analyzed the retailer APK. Do **not** infer supplier or driver app behavior from that artifact. Re-check the public official listings and acquire separate authorized artifacts where possible. If unavailable, record the public-only evidence and blocker. Do not claim **BUILD_HANDOFF_READY** until the v3 acceptance gate passes. This remains a research/specification run: do not modify POL application code, API behavior, schema, migrations or production configuration.
 
 ## Critical expectation management
 
