@@ -1,4 +1,4 @@
-# پلن اجرایی مرحلهٔ بعد: اصلاح شواهد و استخراج عمیق‌تر Cartona
+# پلن اجرایی سخت‌گیرانه v2: اصلاح شواهد، رفع بن‌بست‌ها و استخراج عمیق‌تر Cartona
 
 > **نوع سند:** دستور اجرایی برای Agent، نه صرفاً طرح پیشنهادی  
 > **تاریخ تدوین:** 2026-10-27  
@@ -649,3 +649,323 @@ analysis/rea/runs/2026-10-27-cartona-remediation-deep-extraction/
 هرگز نگو «همهٔ کدها استخراج شدند» مگر معیار فنی دفاع‌پذیر و شواهد کامل وجود داشته باشد. کد بازیابی‌شده، خروجی decompiler، metadata، string، فرضیه و runtime evidence باید روشن و جدا بمانند.
 
 **اکنون شروع کن:** ابتدا وضعیت Git و فایل‌های مرجع را بخوان، سپس Phase A را واقعاً انجام بده و بعد Phase B تا H را طبق محیط واقعی اجرا کن. صرفاً برنامه را خلاصه نکن و پس از نوشتن TODO متوقف نشو. هر مرحلهٔ قابل اجرا را انجام بده؛ blocker واقعی و گام بعدی را ثبت کن. در این مأموریت کد اپلیکیشن POL را تغییر نده.
+
+
+---
+
+# افزودهٔ سخت‌گیرانه v2 — پروتکل اجرای Agent و مدیریت شکست
+
+این بخش مکمل مراحل قبلی است و هرجا جزئیات تازه‌تری دربارهٔ نسخهٔ ابزار، سازگاری معماری، نصب یا شواهد می‌دهد، بر توضیح عمومی‌تر مقدم است. هدف این است که Agent در مسیرهای رایج شکست، به‌جای تکرار فرمان یا ساختن نتیجه، مسیر تشخیص و جایگزین معتبر داشته باشد.
+
+## 13. کشف واقعیت محیط قبل از شروع
+
+### 13.1 GitHub، working tree و corpus خصوصی سه محیط جدا هستند
+
+داشتن دسترسی به GitHub به معنی دسترسی به درایو C یا فایل APK نیست. قبل از استفاده از هر مسیر:
+- repo root را با git rev-parse بررسی کن؛
+- وجود فایل و قابلیت خواندنش را واقعاً تست کن؛
+- OS، shell و مسیر واقعی ابزار را ثبت کن؛
+- hash را فقط اگر فایل اصلی واقعاً قابل خواندن است دوباره محاسبه کن.
+
+اگر corpus خصوصی در محیط جاری mount نشده است:
+1. مسیرهای ثبت‌شده را محدود و هدفمند بررسی کن؛ کل درایو را بی‌قیدوشرط جست‌وجو نکن.
+2. مقدار قدیمی در JSON را به عنوان hash تازه جا نزن.
+3. بر اساس گزارش‌های synced، کارهایی را که به بایت‌های خام نیاز ندارند ادامه بده.
+4. blocker با شناسهٔ PRIVATE_CORPUS_NOT_MOUNTED، فایل لازم و اثر آن بر فازها ثبت کن.
+5. هیچ ادعایی دربارهٔ اجرای ابزار روی APK نداشته باش.
+
+### 13.2 ترتیب اعتبار شواهد
+
+اگر گزارش‌ها با هم تناقض دارند، این ترتیب را رعایت کن:
+1. bytes ورودی اصلی که در محیط فعلی قابل هش‌کردن است؛
+2. stdout/stderr و exit code ابزار همراه نسخه و hash همان ورودی؛
+3. خروجی تولیدشده از همان اجرا همراه hash؛
+4. گزارش synced قبلی و evidence ID؛
+5. خلاصهٔ مکالمه یا ادعای غیرقابل بازتولید.
+
+اختلاف را صریح ثبت کن؛ منبع متناقض را خاموش حذف نکن. گزارش متنی جای verification بایت‌به‌بایت را نمی‌گیرد.
+
+### 13.3 پیش‌پرواز قابل بازبینی
+
+پیش از نصب یا decode، یک فایل environment-preflight.json بساز و فقط داده‌های واقعی را ثبت کن:
+- OS، shell، Agent client، repo root، branch، HEAD، وضعیت working tree؛
+- دسترسی APK و corpus، hash تأییدشده، تعداد splitهای تأییدشده؛
+- نسخه/مسیر ابزارها و دسترسی به Android SDK؛
+- ABI دستگاه‌ها/AVDهای موجود؛
+- فضای آزاد دیسک، وضعیت شبکه و امکان نصب، اگر قابل تشخیص است.
+
+مقدار UNKNOWN مجاز است؛ مقدار حدسی ممنوع است. Secretها و مسیرهای حساس غیرضروری را sanitize کن.
+
+## 14. ماتریس مشکلات محتمل و راه‌حل الزامی
+
+| مشکل محتمل | تشخیص | راه‌حل | نقطهٔ توقف |
+|---|---|---|---|
+| APK یا corpus در محیط نیست | مسیر غایب یا permission denied | مسیرهای ثبت‌شده را محدود بررسی؛ کار مبتنی بر گزارش‌های موجود را ادامه بده | INPUT_UNAVAILABLE؛ اجرای تازه ادعا نشود |
+| hash ورودی فرق دارد | SHA واقعی با manifest تفاوت دارد | فایل read-only بماند؛ منبع/نسخه جدا inventory شود | ARTIFACT_IDENTITY_MISMATCH |
+| working tree یا branch جلو/عقب است | dirty status یا ahead/behind | diff و log بخوان؛ fast-forward فقط اگر امن؛ در divergence branch امن بساز | reset/force ممنوع |
+| Windows path در WSL/Linux نیست | path resolve نمی‌شود | فقط mount واقعی را بررسی و با proof ترجمه کن | PATH_UNAVAILABLE؛ path را حدس نزن |
+| دانلود/registry بسته است | timeout، TLS یا DNS error | خطا را تشخیص بده؛ release رسمی و checksum یا cache معتبر را بررسی کن | پس از دو تلاش متفاوت، offline blocker؛ mirror ناشناس ممنوع |
+| فضای دیسک کم است | فضای آزاد برای download+unpack+working copy کافی نیست | اندازه را برآورد؛ با ابزار سبک‌تر شروع کن؛ image/VM/MobSF/Ghidra حجیم را defer کن | LOW_DISK_SPACE |
+| نصب به Admin نیاز دارد | UAC یا permission failure | portable/user-local install یا محیط جدا را بررسی کن | system-wide install بدون مجوز متوقف |
+| JADX نمی‌تواند کد را کامل بسازد | warnings/unresolved/decompilation errors | محدودیت و آمار را ثبت؛ یک بار نسخه/حالت مناسب‌تر را امتحان؛ موارد منتخب را با Smali بررسی کن | هرگز «سورس کامل» ادعا نکن |
+| Apktool در resources یا framework شکست می‌خورد | decode error | نسخه/CLI و dependency را بررسی؛ APK پایه و split را جدا decode کن | فقط بخش‌های واقعاً سالم گزارش شوند |
+| r2flutter profile را تشخیص نمی‌دهد | خطای -H/-HH یا fallback | hash را دوباره چک؛ version و radare2 را تأیید؛ diagnostics را طبق docs اجرا؛ sample سازگار را کنترل کن | بعد از دو تلاش مبتنی بر علت، BLOCKED؛ header را patch نکن |
+| r2flutter metadata می‌دهد ولی ARMv7 ورودی است | profile parse می‌شود اما instruction/register map مشکوک است | header/cluster/object-pool/text را جدا اعتبارسنجی؛ AArch64 instruction analysis را به ARMv7 تعمیم نده | STATIC_METADATA_PARTIAL |
+| نام تابع heuristic است | fallback مثل -n یا name pool | با class records، strings و xrefs بررسی و heuristic tag ثبت کن | نام plausible به‌تنهایی evidence نیست |
+| r2flutter build به r2 قدیمی گیر می‌دهد | header/API compile error | نیاز نسخهٔ جاری را از README بخوان؛ r2 user-local/WSL را بررسی؛ نصب سیستمی را بی‌دلیل جایگزین نکن | version mismatch مستند شود |
+| Blutter با ABI نمی‌خواند | ورودی ARMv7 و پشتیبانی ابزار ARM64-only است | Blutter را تکرار نکن؛ ابزار متناسب با معماری یا فقط metadata استفاده شود | NOT_COMPATIBLE |
+| Emulator به ABI گیر می‌کند | INSTALL_FAILED_NO_MATCHING_ABIS | ro.product.cpu.abilist و native libs را تطبیق؛ device واقعی سازگار و split کامل استفاده کن | بدون device سازگار، runtime UI BLOCKED |
+| Emulator boot نمی‌شود | virtualization، image، RAM، SDK license یا disk | علت دقیق را از log تشخیص بده؛ AVD موجود یا دستگاه مجاز را بررسی | چند image حجیم را آزمون‌وخطا دانلود نکن |
+| اپ crash یا license screen نشان می‌دهد | logcat/crash/license/GMS | split، GMS و ABI را بررسی؛ فقط flow عادی | licensing/anti-fraud را دور نزن |
+| OTP یا service area در دسترس نیست | اپ شماره/منطقهٔ تأییدشده می‌خواهد | فقط test account/sandbox یا مجوز مالک | fake GPS، OTP bypass و fake account ممنوع |
+| Screenshot خراب یا سیاه است | PNG صفر/نامعتبر، CRLF، display off یا FLAG_SECURE | capture رسمی/adb exec-out؛ PNG decode و ابعاد را بررسی | screenshot نامعتبر evidence نیست |
+| UI tree ناقص است | Flutter semantics محدود یا element خارج viewport | screenshot منبع بصری، scroll/interaction ثبت، UI tree شاهد کمکی | ندیدن element در tree، عدم وجود در UI را ثابت نمی‌کند |
+| شمارش 113 و 106 متفاوت است | archive entries با AssetManifest فرق دارد | set difference را با pathها توضیح بده و دامنهٔ هر مجموعه را تعریف کن | تا reconcile نشده PASS نشود |
+| string sweep نویز دارد | UTF-16LE/ASCII fragment و false positives | encoding/alignment، minimum length، duplicates و context را بررسی | count خام مساوی UI string count نیست |
+| endpoint فقط string است | caller/model/method پیدا نشده | STRING_ONLY بماند؛ ارتباط‌یابی را بعداً انجام بده | متد HTTP یا اجرا حدس زده نشود |
+| secret در خروجی دیده می‌شود | الگوی token/API key | مقدار را چاپ/commit نکن؛ presence را sanitize؛ اگر افشا شده، incident و توصیه به مالک برای rotate/restrict | ادامهٔ انتشار فایل حساس ممنوع |
+| فایل تولیدشده ناپدید می‌شود | فایل بعد از write نیست | parent/disk/cleanup/race را بررسی؛ به temp بنویس، close/flush، atomic replace و بلافاصله exists/hash/parse | بعد از دو بازتولید در مسیر سالم، filesystem blocker |
+| validator دادهٔ غلط را PASS می‌کند | فقط parse/count تست شده | semantic schema، negative fixtures و source reconciliation اضافه کن | شکست semantic = validation FAIL/PARTIAL |
+| GitHub content قدیمی/Conflict است | blob SHA/branch head تغییر کرده | دوباره fetch کن؛ SHA روز را بگیر؛ writeهای یک path را sequential اجرا کن | force update ممنوع |
+| push یا branch policy مانع است | permission/protection/fast-forward error | وضعیت remote و policy را بخوان؛ branch یا PR امن استفاده کن | local-only را synced ننام |
+| فایل خام stage شده است | staged diff یا file type مشکوک | قبل از commit unstaged کن، stage را محدود کن، secret/file scan تکرار شود | باینری/full dump هرگز commit نشود |
+| LATEST زود update شده | index به Run ناتمام اشاره دارد | اول deliverables را validate/push/readback؛ سپس index را در commit جدا update کن | index Run ناتمام را PASS ننامد |
+
+### سیاست تلاش مجدد
+
+- هر failure باید command، version، exit status، input hash، output/error path و علت احتمالی داشته باشد.
+- همان فرمان را با همان ورودی و همان نسخه بیش از دو بار بدون فرضیهٔ اصلاحی اجرا نکن.
+- پس از شکست دوم، یک مسیر جایگزین مرتبط انتخاب کن یا BLOCKED ثبت کن.
+- در هر نوبت حداکثر یک یا دو ابزار تازه نصب کن تا علت regression قابل تشخیص بماند.
+- برای ابزار سنگین ابتدا یک sample کوچک یا یک مرحلهٔ تشخیصی اجرا کن.
+
+## 15. اصلاح و تعمیق مسیر r2flutter
+
+منابع جاری را در زمان اجرا دوباره بخوان:
+- https://github.com/radareorg/r2flutter
+- https://github.com/radareorg/r2flutter/blob/main/doc/support.md
+- README ابزار در حال حاضر clone example را به https://github.com/trufae/r2flutter ارجاع می‌دهد؛ URL نهایی و upstream را هنگام اجرا تأیید و commit SHA را pin کن.
+
+نکات مهم در مستندات بررسی‌شده:
+- parser profiles از Dart 2.10 تا 3.14 ذکر شده‌اند؛
+- hash ثبت‌شدهٔ این پرونده در جدول به پروفایل Dart 3.9.2 اشاره می‌کند؛
+- برای hash ناشناخته structural probe موجود است؛
+- معماری اصلی تحلیل instruction در ابزار AArch64 است؛
+- r2flutter ابزار metadata/analysis است، نه Dart source decompiler.
+
+در نتیجه، profile match یک شاهد برای layout است، نه اثبات اینکه کد ماشین ARMv7 را با register convention صحیح disassemble کرده است.
+
+### توالی آزمون پیشنهادی
+
+ابتدا README و help همان checkout را بخوان. سپس، اگر نسخهٔ جاری این گزینه‌ها را پشتیبانی می‌کند، هر فرمان را با stdout/stderr و exit code جدا اجرا کن:
+
+~~~bash
+bin/r2flutter -H /path/to/libapp.so
+bin/r2flutter -HH /path/to/libapp.so
+bin/r2flutter -HHH -l 10 /path/to/libapp.so
+bin/r2flutter -c /path/to/libapp.so
+bin/r2flutter -jc /path/to/libapp.so
+bin/r2flutter -f /path/to/libapp.so
+bin/r2flutter -jH /path/to/libapp.so
+bin/r2flutter -i -l 20 /path/to/libapp.so
+bin/r2flutter -x /path/to/libapp.so
+bin/r2flutter -z /path/to/libapp.so
+~~~
+
+قواعد:
+1. اگر CLI نسخهٔ فعلی فرق دارد، مستندات checkout را ملاک قرار بده؛ فرمان را کورکورانه اجرا نکن.
+2. اگر یک action fail شد، بقیه فقط وقتی اجرا شوند که اطلاعات مستقل مفید می‌دهند.
+3. سپس در صورت نیاز -zz، -S و -T را بررسی کن؛ fuzzy strings و SBOM بازیابی‌شده best-effort هستند.
+4. heuristic -n فقط آخرین راه است؛ نام‌های آن ممکن است غلط باشند.
+5. metadata و object-pool را از instruction analysis و pseudocode جدا گزارش کن.
+6. offset، entrypoint، xref یا register mapping را به ARMv7 منتقل نکن مگر پشتیبانی صریح و تست‌شده وجود داشته باشد.
+7. اگر header و pool ساختاری معتبرند ولی تحلیل دستورها ناسازگار است، نتیجه STATIC_METADATA_PARTIAL است.
+8. هر ارتباط بین endpoint و تابع باید caller evidence داشته باشد؛ نزدیک بودن دو رشته در binary کافی نیست.
+
+پیش از نتیجه‌گیری روی Cartona، اگر sample عمومی و قانونی با profile مشابه در دسترس است، آن را برای اطمینان از نصب ابزار تست کن. موفقیت sample، سازگاری ARMv7 یا صحت Cartona را ثابت نمی‌کند.
+
+## 16. نصب Skill/MCP با حداقل دسترسی و بدون نصب بی‌دلیل
+
+### 16.1 adb-mcp
+
+منابع:
+- https://github.com/iksnerd/adb-mcp
+- https://github.com/iksnerd/adb-mcp/blob/main/docs/TOOLS.md
+- https://github.com/iksnerd/adb-mcp/blob/main/docs/PRIVACY.md
+
+در مستندات جاری بررسی‌شده:
+- باینری‌های release آماده به همراه checksums ارائه می‌شوند؛
+- Go 1.26+ برای build از source مطرح است، ولی برای release binary لزوماً نیاز نیست؛
+- screenshot، UI hierarchy و logcat ممکن است در transcript مدل ظاهر شوند.
+
+روش:
+1. اگر binary حاضر است، doctor و adb devices -l را بررسی کن.
+2. اگر موجود نیست، release رسمی متناسب سیستم را بگیر و checksum را با checksums.txt همان release تطبیق بده.
+3. در صورت استفاده از installer، ابتدا محتوایش را review کن؛ curl | sh بدون بررسی اجرا نشود.
+4. ابتدا ADB و یک screenshot بی‌خطر را تست کن؛ نصب MCP مشکل ABI یا نبود device را حل نمی‌کند.
+5. فقط capability لازم مثل list_devices، screenshot، describe_ui و logcat محدود را استفاده کن. تعامل UI فقط در جریان عادی مجاز باشد.
+6. از send_sms برای عبور از OTP، device lock/keystore manipulation، اتصال به دستگاه ناشناس یا استخراج فایل‌های دستگاه واقعی استفاده نکن.
+7. logcat و UI output را از token، شماره تلفن، account ID و دادهٔ تجاری sanitize کن.
+8. پیکربندی MCP و secrets داخل Git قرار نگیرند.
+9. اگر client واقعی MCP را پشتیبانی نمی‌کند، روش نصب را حدس نزن؛ از ADB CLI استفاده کن.
+
+### 16.2 reverse-skill
+
+منبع: https://github.com/zhaoxuya520/reverse-skill
+
+این router می‌تواند skillها و workflowهای خارج از محدودهٔ اپ تجاری داشته باشد. آن را سراسری یا یک‌جا نصب نکن:
+1. README_AI.md، RULES.md، مسیر routing مرتبط با APK و license را بخوان.
+2. commit SHA دقیق را pin کن.
+3. فقط ماژول Android static analysis را کاندید کن.
+4. scripts، hooks، network behavior و تغییرات احتمالی تنظیمات Agent را inspect کن.
+5. با نمونهٔ بی‌خطر تست کن.
+6. اگر license، scope یا امنیت مبهم است، به‌عنوان reference نگه دار و NOT INSTALLED ثبت کن.
+
+## 17. validator باید خودش تست شود
+
+یک fixture directory خصوصی با نمونه‌های مصنوعی بساز:
+- JSON سالم و malformed؛
+- CSV سالم و CSV با ستون کم/اضافه یا quoting خراب؛
+- size_bytes معتبر و رشته‌ای؛
+- SHA درست و ناقص؛
+- evidence ID resolveشده و گم‌شده؛
+- route/endpoint تکراری؛
+- screenshot واقعی و path غایب؛
+- متن شبیه secret که باید scanner آن را رد کند.
+
+آزمون‌ها باید انتظار را مستقل assert کنند؛ برای مثال درست بودن تعداد 106 ردیف، درست بودن sizeها را ثابت نمی‌کند.
+
+برای هر نقص قبلی این رکورد را بساز:
+- issue_id
+- before_evidence
+- root_cause
+- generator_or_validator_change
+- negative_test_added
+- positive_test_result
+- source_reconciliation
+- remote_readback
+- residual_risk
+
+اگر علت ریشه‌ای پیدا نشد ولی خروجی بازتولید و معتبر شد، symptom fixed را از root cause unresolved جدا کن.
+
+## 18. مدیریت اجرای طولانی و checkpointها
+
+- وضعیت هر فاز: PLANNED، RUNNING، PASS، PARTIAL، BLOCKED یا FAIL.
+- پس از هر milestone، run log را به‌روز کن؛ تا آخر همه‌چیز را در حافظه نگه ندار.
+- خروجی ابزار فوراً به log خصوصی منتقل، hash و parse شود.
+- generatorها deterministic باشند و hash ورودی، نسخه، arguments و environment ثبت شوند.
+- عملیات‌هایی را که یک AVD، output path یا config مشترک را تغییر می‌دهند parallel نکن.
+- خواندن مستقل منابع می‌تواند parallel باشد؛ write روی یک مسیر GitHub باید sequential باشد و blob SHA تازه بگیرد.
+- اگر context یا budget محدود شد، checkpoint را بخوان و ادامه بده؛ مرحلهٔ انجام‌نشده completed نشود.
+- ابزارهای پرحجم را فقط پس از یک آزمون کوچک و بررسی فضای دیسک نصب کن.
+
+## 19. دروازه‌های تصمیم‌گیری
+
+### Gate A — صحت ورودی و validator
+عبور: identity/hash معتبر، فرمت فایل درست، semantic tests مثبت و منفی موفق، reconciliation تعداد assetها.
+در غیر این صورت خروجی downstream کامل اعلام نشود.
+
+### Gate B — Android static analysis
+عبور: DEX واقعاً بررسی شده، findings با class/method/path evidence ثبت و خطاهای decode صریح‌اند.
+صرف شمارش شش DEX معادل تحلیل کد نیست.
+
+### Gate C — Dart Snapshot
+عبور محدود: profile و metadata ساختاری با خروجی و شواهد تأیید شده‌اند.
+Typed recovery فقط وقتی ثبت شود که class/function output واقعی و قابل اعتبارسنجی وجود داشته باشد؛ string-only معادل typed recovery نیست.
+
+### Gate D — UI runtime
+عبور اولیه: نصب درست، screenshot معتبر launcher و حداقل یک flow واقعی با metadata/hash.
+پوشش همهٔ صفحه‌ها معیار مستقلی است. اگر اجرا ممکن نیست، runtime capture BLOCKED بماند.
+
+### Gate E — تصمیم محصولی
+هر feature باید شواهد Cartona و POL، confidence، اثر، effort، dependency و acceptance criterion داشته باشد. وجود feature در Cartona به‌تنهایی دلیل ورود به roadmap نیست.
+
+### Gate F — sync
+عبور: validation، staged diff review، commit/push، read-back فایل‌ها و index نهایی.
+local PASS و remote sync دو مفهوم جدا هستند.
+
+## 20. تحلیل محصولی: از فهرست قابلیت به تصمیم مستقل POL
+
+برای هر قابلیت این عوامل را ارزیابی کن و امتیازها را به‌عنوان ابزار مقایسه، نه حقیقت قطعی، تلقی کن:
+- شدت مشکل مشتری؛
+- اطمینان شواهد Cartona؛
+- سازگاری با شروع POL از سمت عمده‌فروش؛
+- ظرفیت درآمد/ماندگاری؛
+- بار عملیاتی؛
+- پیچیدگی مهندسی؛
+- ریسک امنیتی/حقوقی؛
+- آماده‌بودن dependencyها.
+
+هر پیشنهاد باید problem statement، evidence confidence، acceptance test، dependencyهای API/backend/data، owner عملیاتی، ساده‌ترین نسخهٔ MVP و هزینهٔ تعویق را داشته باشد. نیاز را با مصاحبه‌های عمده‌فروشان/LOIها تطبیق بده و روشن کن کدام فرضیه هنوز به تحقیق بازار نیاز دارد. UI، نام، asset، کد یا منطق اختصاصی Cartona را عیناً در POL کپی نکن؛ یافته را به requirement مستقل تبدیل کن.
+
+## 21. ضدالگوهای ممنوع
+
+- نوشتن برنامه یا TODO و توقف بدون اجرای کار قابل انجام؛
+- ادعای اجرای ابزار بدون log و output قابل بازبینی؛
+- اعتماد به PASS قبلی بدون آزمون معنایی؛
+- نصب انبوه ابزارهای نامرتبط برای یک خطای parser؛
+- commit کردن raw dump یا assetهای اختصاصی انبوه؛
+- ارسال APK به سرویس عمومی/cloud بدون مجوز صریح؛
+- فرض اینکه هر Agent از MCP پشتیبانی می‌کند؛
+- استفاده از latest mutable بدون ثبت release/hash؛
+- معرفی output heuristic/fuzzy به‌عنوان حقیقت؛
+- دور زدن OTP، licensing، anti-fraud، pinning یا دسترسی؛
+- نتیجه‌گیری متد HTTP یا اجرای API از روی یک string؛
+- update موازی یک path در GitHub یا استفاده از blob SHA قدیمی؛
+- ساخت فایل خالی برای تکمیل تعداد deliverables؛
+- مخفی کردن blocker واقعی پشت یک label موفق.
+
+## 22. فیلدهای الزامی run log
+
+برای هر عملیات ثبت کن:
+- operation_id و phase؛
+- هدف و input artifact/hash؛
+- tool/version/source URL/release-or-commit؛
+- command بدون secret؛
+- timestamp و timezone؛
+- exit code/status؛
+- stdout/stderr/output path و hash؛
+- assertions، evidence IDs، result_status و محدودیت‌ها؛
+- next_action.
+
+شکست نصب/decode نیز یک عملیات ثبت‌شدنی است.
+
+## 23. ترتیب اجرای Agent پس از خواندن پلن
+
+1. Preflight واقعی: Git/branch/head، APK/corpus access، OS/shell، disk و tool versions.
+2. خواندن فایل‌های مرجع و ثبت conflictها.
+3. ساخت Run جدید بدون تغییر زودهنگام LATEST/sync-manifest.
+4. تکمیل Phase A و آزمون‌های منفی validator.
+5. اجرای JADX/Apktool/apksigner با حداقل نصب لازم.
+6. اجرای r2flutter با docs و version جاری؛ تفکیک metadata از تحلیل AArch64.
+7. بازتولید asset inventory و ساخت contact sheet خصوصی.
+8. در صورت وجود device سازگار و دسترسی مجاز، runtime capture؛ وگرنه blocker دقیق.
+9. توسعهٔ API/domain/route evidence و re-audit POL.
+10. validation، secret scan، git diff --check و staged diff review.
+11. commit/push/read-back فایل‌های run.
+12. update جداگانهٔ LATEST/sync-manifest، سپس push/read-back مجدد.
+13. گزارش نهایی وضعیت هر فاز، commandهای اجراشده، شکست‌ها، workaroundها و blockers را اعلام کند.
+
+## 24. منابعی که باید در زمان اجرا دوباره بررسی شوند
+
+- r2flutter: https://github.com/radareorg/r2flutter
+- r2flutter support: https://github.com/radareorg/r2flutter/blob/main/doc/support.md
+- upstream clone example: https://github.com/trufae/r2flutter
+- Blutter: https://github.com/worawit/blutter
+- JADX: https://github.com/skylot/jadx
+- Apktool: https://apktool.org/docs/2.x/install/
+- Android ADB: https://developer.android.com/tools/adb
+- Android apksigner: https://developer.android.com/tools/apksigner
+- Android Emulator: https://developer.android.com/studio/run/emulator-commandline
+- MobSF: https://github.com/MobSF/Mobile-Security-Framework-MobSF
+- adb-mcp: https://github.com/iksnerd/adb-mcp
+- adb-mcp tool reference: https://github.com/iksnerd/adb-mcp/blob/main/docs/TOOLS.md
+- adb-mcp privacy: https://github.com/iksnerd/adb-mcp/blob/main/docs/PRIVACY.md
+- reverse-skill: https://github.com/zhaoxuya520/reverse-skill
+- Ghidra: https://github.com/NationalSecurityAgency/ghidra
+
+مستندات در طول زمان تغییر می‌کنند؛ URL فقط نقطهٔ شروع است. زمان اجرا version، license، command و پشتیبانی معماری ثبت شود.
+
+## 25. فرمان نهایی
+
+اکنون اجرا کن. ابتدا Preflight و Phase A را کامل کن، سپس هر فاز را تنها پس از عبور از gate مربوطه ادامه بده. اگر ابزار وجود دارد استفاده کن؛ اگر نیست نصب امن و نسخه‌محور را بررسی کن؛ اگر نصب/اجرا ممکن نیست، جایگزین سبک‌تر یا blocker مستدل ثبت کن. هیچ فازی برای زیباتر شدن گزارش PASS نشود. کد اپلیکیشن POL دست‌نخورده بماند.
