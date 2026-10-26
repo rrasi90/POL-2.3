@@ -1,0 +1,114 @@
+{
+  "base": {
+    "path": "cartona.apk",
+    "categories": {
+      "assets-other": {
+        "files": 6,
+        "bytes": 36309
+      },
+      "build-meta": {
+        "files": 26,
+        "bytes": 2158
+      },
+      "dex": {
+        "files": 6,
+        "bytes": 27409664
+      },
+      "flutter-assets": {
+        "files": 113,
+        "bytes": 14460681
+      },
+      "kotlin-meta": {
+        "files": 8,
+        "bytes": 32063
+      },
+      "manifest": {
+        "files": 1,
+        "bytes": 45288
+      },
+      "meta-inf": {
+        "files": 82,
+        "bytes": 11201
+      },
+      "other": {
+        "files": 8,
+        "bytes": 50250
+      },
+      "res": {
+        "files": 1194,
+        "bytes": 1028493
+      },
+      "resources-arsc": {
+        "files": 1,
+        "bytes": 758524
+      }
+    }
+  },
+  "split-abi": {
+    "path": "xapk_extracted/config.armeabi_v7a.apk",
+    "categories": {
+      "manifest": {
+        "files": 1,
+        "bytes": 1024
+      },
+      "meta-inf": {
+        "files": 3,
+        "bytes": 3686
+      },
+      "native-lib": {
+        "files": 6,
+        "bytes": 18908120
+      },
+      "other": {
+        "files": 1,
+        "bytes": 32
+      }
+    }
+  },
+  "split-lang-en": {
+    "path": "xapk_extracted/config.en.apk",
+    "categories": {
+      "manifest": {
+        "files": 1,
+        "bytes": 988
+      },
+      "meta-inf": {
+        "files": 3,
+        "bytes": 2748
+      },
+      "other": {
+        "files": 1,
+        "bytes": 32
+      },
+      "resources-arsc": {
+        "files": 1,
+        "bytes": 42240
+      }
+    }
+  },
+  "split-density-mdpi": {
+    "path": "xapk_extracted/config.mdpi.apk",
+    "categories": {
+      "manifest": {
+        "files": 1,
+        "bytes": 1016
+      },
+      "meta-inf": {
+        "files": 3,
+        "bytes": 19874
+      },
+      "other": {
+        "files": 1,
+        "bytes": 32
+      },
+      "res": {
+        "files": 80,
+        "bytes": 88376
+      },
+      "resources-arsc": {
+        "files": 1,
+        "bytes": 27516
+      }
+    }
+  }
+}

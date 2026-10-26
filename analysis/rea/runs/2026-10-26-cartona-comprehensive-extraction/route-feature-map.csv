@@ -1,0 +1,25 @@
+route,inferred_feature,evidence_confidence,source
+/landing,Post-login home; service-area gate; category grid,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/categories,Main category browsing,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/category-products,Product list for one category,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/search,Global product/supplier search,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/suppliers,Supplier listing (new/fast/sponsored filters),VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/orders,Order history list,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/order-reorder,Rebuild cart from past order,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/order-tracking,Live order progress (+OSM map plugin),VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/wallet,Wallet balance and credit use,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/profile,Account profile,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/settings,App settings,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/user-management,Business sub-users/roles,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/branch-management,Multi-branch retailer accounts,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/notifications,In-app notification center,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/block,Account blocked state,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/unblock,Blocked-account recovery,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/upload-images,Image upload (KYC/branch photos),VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/privacy-policy,Legal,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/terms-conditions,Legal,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/ramadan-products,Seasonal campaign products,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/ramadan-quiz,Ramadan engagement quiz,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/communication_campaign,In-app campaign/stories viewer,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/signup-celebration,Post-signup success screen,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool
+/analytics-flutter-,Analytics instrumentation prefix,VERIFIED_STRING (route); HYPOTHESIS (feature),Dart snapshot string pool

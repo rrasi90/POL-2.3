@@ -1,0 +1,94 @@
+{
+  "run_id": "2026-10-26-cartona-comprehensive-extraction",
+  "validated_at": "2026-10-26",
+  "checks": [
+    {
+      "name": "json_parse:artifact-inventory.json",
+      "result": "PASS",
+      "detail": "json.load OK"
+    },
+    {
+      "name": "json_parse:validation.json",
+      "result": "PASS",
+      "detail": "json.load OK"
+    },
+    {
+      "name": "csv_parse:api-endpoint-catalog",
+      "result": "PASS",
+      "detail": "71 rows x ['path', 'domain', 'evidence_confidence', 'source', 'evidence_id', 'http_method'] cols"
+    },
+    {
+      "name": "csv_parse:route-feature-map",
+      "result": "PASS",
+      "detail": "25 rows x ['route', 'inferred_feature', 'evidence_confidence', 'source'] cols"
+    },
+    {
+      "name": "csv_parse:manifest-components",
+      "result": "PASS",
+      "detail": "57 rows x ['component_type', 'class', 'exported', 'origin'] cols"
+    },
+    {
+      "name": "csv_parse:flutter-assets-inventory",
+      "result": "PASS",
+      "detail": "107 rows x ['asset_key', 'size_bytes', 'kind', 'group', 'evidence_confidence'] cols"
+    },
+    {
+      "name": "csv_parse:symbol-and-class-index",
+      "result": "PASS",
+      "detail": "27 rows x ['symbol', 'kind', 'meaning', 'evidence'] cols"
+    },
+    {
+      "name": "csv_parse:pol-feature-gap-matrix",
+      "result": "PASS",
+      "detail": "33 rows x ['id', 'Product capability', 'Cartona evidence', 'Confidence', 'POL file paths', 'POL status', 'User/business impact', 'Acceptance criteria', 'Dependencies', 'Implementation approach'] cols"
+    },
+    {
+      "name": "csv_parse:ui-screen-catalog",
+      "result": "PASS",
+      "detail": "22 rows x ['screen_id', 'route_or_entry', 'evidence_source', 'strings_evidence', 'rtl', 'states_observed', 'screenshots', 'runtime_status', 'capture_blocker'] cols"
+    },
+    {
+      "name": "csv_parse:archive-and-split-inventory",
+      "result": "PASS",
+      "detail": "114 rows (category summary)"
+    },
+    {
+      "name": "apk_sha256_vs_disk",
+      "result": "PASS",
+      "detail": "e4a0f4d1a3a607ad.. == disk e4a0f4d1a3a607ad.."
+    },
+    {
+      "name": "evidence_ids_format",
+      "result": "PASS",
+      "detail": "6 IDs well-formed"
+    },
+    {
+      "name": "no_live_api_key_committed",
+      "result": "PASS",
+      "detail": "AIzaSy value absent from all run files"
+    },
+    {
+      "name": "no_apk_or_binaries_committed",
+      "result": "PASS",
+      "detail": "18 files, all text"
+    },
+    {
+      "name": "gap_status_vocabulary",
+      "result": "PASS",
+      "detail": "['MISSING', 'PARTIAL', 'PRESENT', 'UNVERIFIED']"
+    },
+    {
+      "name": "pol_paths_resolve",
+      "result": "PASS",
+      "detail": "all mvp/ paths exist"
+    }
+  ],
+  "missing_files": [],
+  "warnings": [
+    "A Google API key (AIzaSy... pattern) is present in the Dart snapshot; value withheld from all committed artifacts by policy.",
+    "Runtime UI capture BLOCKED: INSTALL_FAILED_NO_MATCHING_ABIS on API 35 x86_64 Google APIs emulator (armeabi-v7a-only libs, no ARM translation). Prerequisites documented.",
+    "Typed Dart recovery BLOCKED: Doldrums rejects snapshot hash 97ff04a7... (exact error recorded).",
+    "A transient filesystem anomaly caused the first batch of run files to vanish; all files were regenerated and verified by hash before commit. Generator scripts preserved in the private corpus."
+  ],
+  "status": "PASS"
+}
