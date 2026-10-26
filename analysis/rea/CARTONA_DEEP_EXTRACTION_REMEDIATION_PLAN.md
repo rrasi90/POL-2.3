@@ -1,7 +1,8 @@
-# پلن اجرایی سخت‌گیرانه v2: اصلاح شواهد، رفع بن‌بست‌ها و استخراج عمیق‌تر Cartona
+# پلن اجرایی سخت‌گیرانه v3: استخراج عمیق Cartona و آماده‌سازی ساخت سه محصول POL
 
 > **نوع سند:** دستور اجرایی برای Agent، نه صرفاً طرح پیشنهادی  
-> **تاریخ تدوین:** 2026-10-27  
+> **تاریخ تدوین/ارتقا:** 2026-10-27
+> **نسخهٔ اجرایی:** v3 — شامل Remediation، تحقیق سه‌محصولی و Build Handoff  
 > **مخزن:** rrasi90/POL-2.3  
 > **شاخهٔ هدف:** ui/visual-qa-screen-completion-20261025  
 > **Run قبلی:** analysis/rea/runs/2026-10-26-cartona-comprehensive-extraction/  
@@ -969,3 +970,550 @@ local PASS و remote sync دو مفهوم جدا هستند.
 ## 25. فرمان نهایی
 
 اکنون اجرا کن. ابتدا Preflight و Phase A را کامل کن، سپس هر فاز را تنها پس از عبور از gate مربوطه ادامه بده. اگر ابزار وجود دارد استفاده کن؛ اگر نیست نصب امن و نسخه‌محور را بررسی کن؛ اگر نصب/اجرا ممکن نیست، جایگزین سبک‌تر یا blocker مستدل ثبت کن. هیچ فازی برای زیباتر شدن گزارش PASS نشود. کد اپلیکیشن POL دست‌نخورده بماند.
+
+
+---
+
+# الحزمةٔ توسعه v3 — تبدیل استخراج Cartona به نقشهٔ آماده‌سازی ساخت سه محصول POL
+
+> **این بخش به پلن قبلی افزوده شده و برای هدف کاربر، بخش محصولی و مهندسی تعیین‌کننده است.** خروجی مأموریت نباید فقط «داده‌های استخراج‌شده از یک APK» باشد؛ باید معلوم کند برای شروع توسعهٔ مستقل و قابل‌تستِ «پل بنکدار»، «پل خرده‌فروش» و «پل راننده» چه چیزی را می‌توان با پیکربندی، ترجمه و تطبیق API سریع راه انداخت، چه چیزی واقعاً نیاز به توسعهٔ جدید دارد، و چه چیزی هنوز اثبات نشده است.
+
+## 26. بازتعریف هدف و ممیزی خلأهای پلن قبلی
+
+پلن و Run قبلی برای صحت‌سنجی ابزارها و استخراج ایستا جزئیات خوبی دارد، اما برای رساندن POL به مرحلهٔ شروع ساخت سریع، به‌تنهایی کافی نیست. این خلأها باید صریحاً بسته شوند:
+
+1. **خلأ پوشش محصول:** Run قبلی عمدتاً بر اپ خرده‌فروش Cartona متکی است. این شاهد، رفتار داخلی اپ بنکدار و راننده را اثبات نمی‌کند. برای این دو نقش باید artifact جداگانه، مستند عمومی، شواهد تصویری یا مصاحبهٔ تأییدشده جمع‌آوری شود.
+2. **خلأ انتهابه‌انتها:** فهرست route، رشته یا endpoint به‌خودی‌خود گردش کار کامل را نمی‌سازد؛ باید محرک، نقش مجاز، پیش‌شرط، تغییر وضعیت، side effect، پیام خطا، timeout، رخداد و مسیر بازیابی هر جریان مشخص شود.
+3. **خلأ تطبیق با POL:** ماتریس قابلیت قبلی به‌اندازهٔ کافی نشان نمی‌دهد هر رفتار با کدام endpoint واقعی، router، schema، migration، صفحه، component، mock، آزمون و permission در POL منطبق است.
+4. **خلأ تصمیم سریع:** برای هر قابلیت باید انتخاب استاندارد و صریحی وجود داشته باشد: «بدون تغییر بک‌اند»، «فقط تغییر متن/ترجمه»، «تنظیمات»، «adapter بین فرانت و API»، «تغییر کوچک UI»، «endpoint جدید»، «تغییر دیتابیس» یا «وابستگی خارجی».
+5. **خلأ محصول راننده:** کارشناس میدانی معادل راننده نیست. وجود صفحهٔ وظیفهٔ میدانی در اپ موبایل ثابت نمی‌کند اپ مستقل راننده و مجوزهای آن آماده‌اند.
+6. **خلأ قرارداد عملیاتی:** نقش‌ها، مرز سازمان/شعبه، چند بنکدار برای یک سبد، تقسیم سفارش، کسری کالا، تحویل ناقص، اثبات تحویل، برگشت، اختلاف، تسویه و آفلاین بودن باید با مدل و چرخهٔ وضعیت موجود POL تطبیق داده شوند؛ نام مشابه یک فیلد کافی نیست.
+7. **خلأ شواهد UI:** فهرست ایستای 21 صفحهٔ قبلی با screenshot خالی، شناسنامهٔ بصری/تعاملی نیست. اطلس صفحه باید تفاوت حالت‌ها و رفتار کنترل‌ها را نیز ثبت کند.
+8. **خلأ تحقیق بازار و بومی‌سازی:** رفتار Cartona در بازار مصر، حتی اگر درست فهمیده شود، الزاماً برای ایران/اهواز بهترین تصمیم نیست. باید الگو را از نیاز قطعی POL، محدودیت بازار و فرضیهٔ نیازمند مصاحبه جدا کرد.
+9. **خلأ قابلیت شروع ساخت:** گزارش نهایی باید یک بستهٔ handoff به توسعه تولید کند: نقشهٔ API، مدل داده، فهرست صفحات، شکاف‌ها، اولویت MVP، معیار پذیرش، دادهٔ mock، تست‌های سرتاسری و حداقل تغییرات پیشنهادی با مسیر دقیق فایل‌ها.
+10. **خلأ معیار توقف:** پلن باید تا اشباع تحقیق ادامه یابد، اما کار تکراری و نصب بی‌دلیل ابزار را به‌عنوان تلاش عمیق جا نزند. هر دور باید پوشش جدید، شواهد تازه یا حل یک ابهام قابل‌اندازه‌گیری ایجاد کند.
+
+### قاعدهٔ مرجعیت
+
+برای فهم **کد و قرارداد POL**، مخزن و آزمون‌های موجود منبع مرجع‌اند؛ برای فهم **رفتار مشاهده‌شدهٔ Cartona**، artifact مجاز و جریان runtime عادی مرجع‌اند؛ برای کشف قابلیت‌های عمومی، صفحات رسمی فروشگاه و وب‌سایت منبع مکمل‌اند؛ برای نیاز بازار ایران، اسناد و مصاحبه‌های معتبر POL منبع‌اند. اگر منابع اختلاف دارند، اختلاف را ثبت کن و خودسرانه یکی را جایگزین دیگری نکن.
+
+**حدّ مجاز این Run:** تحلیل، تحقیق، تولید گزارش و طراحی backlog؛ کد اجرایی POL، API، migration، secrets، تنظیمات تولید و رفتار احراز هویت را تغییر نده. مأموریت باید به حدی دقیق باشد که Run پیاده‌سازی بعدی بتواند با مجوز جداگانه از روی آن شروع کند.
+
+## 27. پوشش جداگانهٔ سه اپ و اعتبار منبع
+
+منابع عمومی اولیه برای بررسی، نه حقیقتی که بدون بازخوانی پذیرفته شود:
+
+- خرده‌فروش Cartona: https://play.google.com/store/apps/details?id=com.cartona
+- بنکدار/تأمین‌کننده Cartona: https://play.google.com/store/apps/details?id=com.cartona.suppliers
+- رانندهٔ Cartona Express: https://play.google.com/store/apps/details?id=com.cartona.delivery_driver_app
+- وب‌سایت عمومی Cartona: https://cartona.com/
+- صفحهٔ عمومی Cartona Enterprise: https://enterprise.cartona.com/en
+
+در زمان اجرا همهٔ این منابع را دوباره باز کن و ثبت کن: تاریخ و ساعت دسترسی، نام ناشر، شناسهٔ بسته، نسخه/تاریخ به‌روزرسانی در صورت نمایش، تعداد و نوع تصاویر/ویدئوهای عمومی، توضیح رسمی، لینک‌های رسمی و هرگونه تفاوت منطقه‌ای. اطلاعات فروشگاه ممکن است عوض شود؛ متن یا تعداد دانلود قبلی را ثابت فرض نکن.
+
+### 27.1 فهرست منبع مستقل برای هر محصول
+
+در artifact registry سه رکورد مستقل بساز:
+- RETAILER_APP
+- SUPPLIER_VENDOR_APP
+- DRIVER_APP
+
+برای هر رکورد مشخص کن:
+- آیا APK/XAPK اصلی یا splitهای واقعی مجاز به‌دست آمده است؟
+- hash، package، نسخه و امضای artifact چیست؟
+- آیا install/runtime با دستگاه/ABI مجاز آزمایش شده؟
+- چه تعداد screen/flow از artifact مشاهده شده؟
+- چه مواردی فقط از metadata یا تصاویر فروشگاه فهمیده شده؟
+- چه مواردی از مصاحبه/منبع ثالث آمده؟
+- چه چیزهایی هنوز UNRESOLVED هستند؟
+
+**هرگز** قابلیت اپ بنکدار یا راننده را صرفاً از اپ خرده‌فروش حدس نزن. اگر APK آن دو در دسترس نیست، از منابع رسمی عمومی، تصاویر صفحهٔ فروشگاه، ویدئوی تبلیغاتی رسمی، مستندات عمومی و مصاحبهٔ مجاز استفاده کن؛ همه را با confidence پایین‌تر یا نوع شواهد متناسب مشخص کن. نصب APK از منبع ناشناس، شکستن محدودیت دسترسی، دورزدن ورود یا درخواست دسترسی به سرویس تولیدی ممنوع است.
+
+### 27.2 تفکیک پوشش نقش‌ها
+
+هر قابلیت را در یکی از scopeهای زیر قرار بده:
+RETAILER، VENDOR_OWNER، VENDOR_STAFF، DRIVER، FIELD_ACTIVATOR، OPS_SUPPORT، ADMIN، SHARED_PLATFORM.
+
+نقش‌های مشابه را ادغام نکن. DRIVER، FIELD_ACTIVATOR، VENDOR_STAFF و OPS_AGENT باید جدا بمانند، مگر policy و شواهد خود POL صریحاً مدل دیگری را تعیین کنند.
+
+## 28. اجرای تحقیق عمیق و چندمرحله‌ای؛ نه توقف پس از گزارش اول
+
+اگر محیط عامل از sub-agent یا parallel research پشتیبانی می‌کند، کار را به جریان‌های مستقل تقسیم کن؛ اگر پشتیبانی نمی‌کند، همین جریان‌ها را پشت سر هم اجرا کن. هر جریان باید evidence ledger و خروجی خودش را داشته باشد. نوشتن هم‌زمان روی یک فایل یا یک branch مجاز نیست؛ تحلیل مستقل را parallel و ادغام/نوشتن را sequential انجام بده.
+
+### جریان‌های کاری اجباری
+
+**Workstream A — Artifact & Android forensics**
+- صحت ورودی‌های سه اپ، splitها، manifest، DEX، native libraries، منابع، تصاویر، رشته‌ها، deep links، permissions، SDKها و امضای هر artifact.
+- ابزارها، نسخه‌ها، معماری پشتیبانی‌شده، خروجی واقعی و محدودیت‌های parser.
+- تولید inventory قابل‌تکرار و validator مستقل.
+
+**Workstream B — Public-product research**
+- صفحات رسمی هر سه اپ و وب‌سایت Cartona.
+- بررسی قابلیت‌های آشکار، تصاویر، ویدئوها، onboarding، وعده‌های عملیاتی، مدل توزیع و پشتیبانی.
+- جست‌وجوی منابع عمومی تازه و منبع اولیه برای ابهامات مشخص؛ منبع و تاریخ و نقل‌مضمون دقیق را ثبت کن.
+- حداقل دو نمونهٔ مقایسه‌ای دیگر از marketplaceهای عمده‌فروشی/توزیع و یک منبع تخصصی مناسب برای delivery/driver workflow بررسی کن؛ از تقلید یا فرض یکی بودن مدل کسب‌وکار پرهیز کن.
+
+**Workstream C — POL repository reality audit**
+- کد routerها و route registration واقعی backend را پیدا کن؛ فقط به API_Contracts.md تکیه نکن.
+- schema واقعی، migrationهای موجود، state machineها، service/repositoryها، permission guardها، background jobs، notificationها، storage، mock transport و تست‌ها را بررسی کن.
+- صفحات وب، AppRetailer.tsx، AppVendor.tsx، AppShell.tsx، src/api.ts، src/types.ts، screenها و build scripts را از نظر پوشش واقعی بررسی کن.
+- تفاوت «سند نوشته شده»، «کد پیاده شده»، «تست‌شده» و «در staging/production تأییدشده» را جدا نگه دار.
+
+**Workstream D — End-to-end domain/workflow**
+- چرخه‌های فروش، موجودی، سفارش، تحویل، پرداخت، تسویه، برگشت، مغایرت، پشتیبانی و مدیریت حساب را به شکل event/state matrix مدل کن.
+- هر عمل را به actor، precondition، authorization، side effect، emitted event، timeout، compensation/retry، audit trail و failure state وصل کن.
+- وضعیت‌های مستقل مانند order_status، delivery_status، payment_status و dispute_status را در یک status enum تخت ادغام نکن.
+
+**Workstream E — UI, interaction & localization**
+- اطلس صفحات هر سه اپ، variantهای صفحه، empty/loading/error/offline/permission-denied/success states، فرم‌ها، ورودی‌ها، اعتبارسنجی، navigation و منوی نقش‌ها.
+- strings را به screen/control/state وصل کن؛ رشته‌های مشابه، placeholder، pluralization و پیام‌های خطا را جدا تحلیل کن.
+- برای POL، فارسی استاندارد ایران، RTL، رقم و تاریخ، واحد پول، شمارهٔ موبایل، آدرس و نقشه، اتصال ضعیف و اندازه‌های واقعی صفحه را بررسی کن.
+
+**Workstream F — API/data adapter & build-fast path**
+- هر قابلیت Cartona را به قرارداد/route/model واقعاً موجود در POL نگاشت کن.
+- مسیر کم‌تغییر را بر اساس شاهد انتخاب کن: reuse، config، translation، client adapter، UI delta، backend endpoint، schema migration یا external integration.
+- ریسک backward compatibility، security، role/tenant scoping و idempotency را برای هر تغییر مشخص کن.
+
+**Workstream G — QA, security and launch readiness**
+- تست‌های unit/integration/contract/E2E موجود را پیدا کن؛ تست‌های خالی یا mock-only را از live contract proof جدا کن.
+- سه محصول را در یک جریان end-to-end با دادهٔ مصنوعی و نقش‌های مجزا آزمایش طراحی کن.
+- نشت secret/PII، کنترل دسترسی، مالکیت tenant، replay/idempotency، race condition و خطای شبکه را بررسی کن.
+- خروجی نهایی را از نظر traceability، semantic validation و آماده‌بودن handoff ارزیابی کن.
+
+### دورهای تحقیق اجباری
+
+حداقل چهار دور متمایز انجام بده و هر دور را در لاگ ثبت کن:
+1. **Discovery:** منابع، artifactها، نقشهٔ مخزن و inventory اولیه.
+2. **Deepening:** جست‌وجوی caller/usage/context، گردش‌کارها و حالت‌های مرزی؛ نه فقط رشته‌ها و اسم route.
+3. **Cross-check:** تطبیق مستقل شواهد با مستندات POL، public sources و آزمون‌ها؛ تضادها را آشکار کن.
+4. **Saturation & blind-spot review:** از دید توسعه‌دهندهٔ بک‌اند، توسعه‌دهندهٔ هر اپ، عملیات بنکداری، راننده، خرده‌فروش، پشتیبانی و QA دوباره بپرس «چه چیزی لازم است تا این جریان واقعاً کار کند و هنوز سند نداریم؟»
+
+اگر محدودیت محیطی مانع دوری شد، BLOCKED را ثبت کن و وانمود نکن دور اجرا شده است. زمان و توکن را به تکرار بی‌فایده نسوزان؛ وقتی یک اقدام دیگر هیچ پوشش یا شواهد تازه‌ای تولید نمی‌کند، آن را متوقف و دلیل توقف را بنویس. محدودیت زمانی کوچک را به‌صورت پیش‌فرض فرض نکن: اگر میزبان امکان ادامهٔ طولانی و sub-agent دارد، از آن برای بستن ابهام‌های واقعی استفاده کن و بین دورها checkpoint پایدار ثبت کن.
+
+## 29. مدل قابلیت‌ها: برای هر سه نقش فهرست جامع بساز
+
+این موارد **چک‌لیست کشف** هستند، نه ادعای اینکه Cartona تمام آن‌ها را دارد. برای هر قابلیت وضعیت OBSERVED، PUBLICLY_DOCUMENTED، STATIC_INFERRED، POL_EXISTING، POL_PARTIAL، POL_MISSING، NOT_IN_MVP یا UNRESOLVED بگذار.
+
+### 29.1 خرده‌فروش (Retailer)
+
+- ثبت‌نام/تأیید شماره، انتخاب سازمان و شعبه، نقش مالک/کارمند و مدیریت دسترسی.
+- کشف تأمین‌کننده، دسته‌بندی، جست‌وجو، barcode/product identity، فیلتر، مقایسهٔ قیمت، نشان‌ها، تبلیغات و علاقه‌مندی.
+- قیمت خریدار، قیمت بسته/واحد، بسته‌بندی، MOQ/MOV، حداقل سفارش، تخفیف پله‌ای، تاریخ اعتبار قیمت، موجودی/قابل‌فروش بودن و زمان تحویل.
+- سبد پایدار، چند بنکدار در یک سبد، allocation/تقسیم سفارش، preview هزینه و ارسال، اعتبارسنجی موجودی و قیمت مجدد قبل از checkout.
+- روش پرداخت مجاز، پرداخت نقدی/مدت‌دار در صورت پشتیبانی واقعی، کیف پول/اعتبار در صورت وجود، صورتحساب، سابقه و reorder.
+- تأیید/رد پیشنهاد کسری، لغو، زمان‌بندی تحویل، رهگیری، تأیید دریافت، شکایت، مرجوعی، مغایرت و پشتیبانی.
+- آدرس و چند شعبه، ساعات پذیرش، اطلاعات فروشگاه، اعضای مجاز، اعلان‌ها، دسترس‌پذیری و رفتار قطع اینترنت.
+- حالت‌های خطای موجودی، محدودیت خدمت‌رسانی، اعتبار، سفارش منقضی، اختلاف قیمت، پرداخت ناموفق یا مغایرت تحویل.
+
+### 29.2 بنکدار/تأمین‌کننده (Vendor/Supplier)
+
+- ثبت‌نام کسب‌وکار، احراز هویت/تأیید، پروفایل سازمان و شعبه، مدیر/کارمند، permissionهای جداگانه و audit.
+- کاتالوگ اختصاصی، نگاشت SKU بنکدار به کالای canonical، بارکد، چند واحد بسته‌بندی، تصویر، برند و دسته.
+- قیمت‌گذاری، پلهٔ تخفیف، promotion، تاریخ اعتبار قیمت، مشتری/منطقهٔ واجد شرایط، visibility و شرایط فروش.
+- موجودی فیزیکی/رزروشده/قابل‌فروش، ورود سریع/اسکن، اصلاح موجودی، شمارش روزانه، هشدار اتمام و audit trail.
+- صف سفارش با اولویت/SLA، مشاهدهٔ اقلام و موجودی، پذیرش کامل، پیشنهاد کسری، رد با علت، قبول/رد خریدار، شروع جمع‌آوری، بسته‌بندی، آمادگی تحویل و handoff به راننده.
+- بارنامه/فاکتور، مشخصات بسته‌ها، ثبت کسری/آسیب، برگشت، اختلاف، درخواست پشتیبانی، ارتباط با مشتری و tracking.
+- گزارش فروش، سفارش‌ها، مشتریان، کارکرد پرسنل، تبلیغات، performance، دریافتی/بدهی و تسویه؛ هر گزارش باید تعریف metric و منبع داده داشته باشد.
+- یکپارچگی ERP/POS/import CSV در صورت شواهد یا نیاز مصاحبه‌ای، نه صرفاً به دلیل وجود آن در رقبا.
+- حالت‌های خطا: موجودی race، قیمت منقضی، سفارش هم‌زمان، نقش نامجاز، کارمند غیرفعال، branch mismatch، قطع شبکه و تکرار درخواست.
+
+### 29.3 راننده (Driver/Carrier)
+
+راننده را جریان محصولی مستقل ارزیابی کن؛ آن را به صفحهٔ وظیفهٔ کارشناسی میدانی محدود نکن.
+
+- ورود/فعال‌سازی، هویت و خودرو در صورت نیاز؛ وضعیت availability و شیفت.
+- فهرست مأموریت/تور، assignment، اولویت، ترتیب توقف‌ها، آدرس، بازهٔ تحویل، تماس مجاز و محدودیت دادهٔ حساس.
+- دریافت/پذیرش یا رد مأموریت با علت، زمان و سیاست reassignment.
+- رسیدن به مبدا، تأیید تحویل گرفتن کالا، تعداد بسته/اقلام، مغایرت pickup، عکس/امضای مجاز.
+- حرکت بین توقف‌ها، navigation به کمک provider مجاز، به‌روزرسانی ETA در صورت پشتیبانی، مکان‌یابی در محدوده و با رضایت/سیاست مشخص.
+- تحویل به گیرندهٔ مجاز، OTP یا روش معتبر دیگر، امضا/عکس/POD، زمان واقعی، تعداد تحویل‌شده، کسری/آسیب و رسید.
+- حالات شکست: گیرنده حاضر نیست، فروشگاه بسته است، آدرس غلط، تماس ناموفق، وسیله خراب، حادثه، سفارش لغو شده، تحویل ناقص، اختلاف شمارش، عدم تطابق OTP و برگشت کالا.
+- تحویل چندتوقفی، split shipment، cash collection/reconciliation فقط اگر مدل عملیاتی POL یا شواهد تأیید کنند.
+- آفلاین‌بودن با queue محدود، idempotent sync، جلوگیری از تکرار تحویل، conflict resolution، retry و audit.
+- درآمد/تسویهٔ راننده و گزارش عملکرد فقط اگر scope محصول تصمیم گرفته باشد.
+- privacy و battery: کمینه‌سازی location collection، روشن بودن tracking فقط در وضعیت مجاز، نگهداری محدود و نمایش واضح سطح دسترسی.
+
+### 29.4 عملیات و نقش‌های مدیریتی پیرامون سه اپ
+
+حتی اگر اپ مستقل چهارمی ساخته نمی‌شود، نیاز عملیاتی را بررسی کن:
+- تخصیص/لغو مأموریت راننده، مدیریت مناطق و ظرفیت، بازتخصیص هنگام شکست.
+- کنترل کالا/کاتالوگ، بررسی candidate، شکایت و اختلاف، برگشت، اصلاح مالی و audit.
+- پشتیبانی، گزارش حادثه، SLAهای معوق، اعلان‌های قابل‌ارسال مجدد، مشاهدهٔ timeline واحد.
+- onboarding و تأیید بنکدار/خرده‌فروش، دعوت کارمند، غیرفعال‌سازی دسترسی و جلوگیری از دسترسی cross-tenant.
+
+## 30. مدل دامنه و گردش‌کارها را به‌صورت event/state matrix استخراج کن
+
+برای هر سناریو جدول یا دادهٔ ماشینی بساز که دست‌کم این ستون‌ها را داشته باشد:
+
+workflow_id، product_role، entry_condition، actor، authorization_scope، preconditions، command/action، current_state، next_state، rejected_transitions، data_written، inventory_effect، financial_effect، notification/event، idempotency/retry، timeout/SLA، compensation، audit_evidence، source_confidence، POL_mapping، test_case_id.
+
+سناریوهای حداقلی:
+1. ثبت/ورود و بازیابی نشست؛ تغییر نقش یا سازمان فعال.
+2. ایجاد/به‌روزرسانی کالا، قیمت و موجودی بنکدار.
+3. جست‌وجو و مقایسهٔ محصول برای خرده‌فروش.
+4. سبد تک‌بنکدار و چندبنکدار؛ allocation preview و checkout.
+5. race condition روی موجودی/قیمت/رزرو و تلاش مجدد checkout.
+6. سفارش ثبت‌شده → پذیرش/رد/پیشنهاد کسری؛ پذیرش یا رد پیشنهاد از سمت خرده‌فروش.
+7. آماده‌سازی، فاکتور، بسته‌بندی، آمادگی تحویل و تخصیص مأموریت راننده.
+8. تحویل به راننده، pickup proof، چند توقف، POD و شکست تحویل.
+9. ثبت دریافت و تطبیق تعداد تحویل‌شده با مقدار پذیرفته‌شده.
+10. مرجوعی/مغایرت مستقل از وضعیت لجستیک و فرایند settlement/refund.
+11. اعلان و deep link، پشتیبانی، retry پس از قطع اینترنت و audit.
+12. وضعیت‌های غیرفعال، blocked، cancelled، expired، duplicate submission و permission denied.
+
+### اصل کلیدی ماشین وضعیت
+
+Order، order group، shipment/delivery، inventory reservation، payment/settlement و dispute را به‌عنوان aggregate/state machineهای بالقوهٔ مستقل بررسی کن. برای هر مورد وجود یا عدم وجودش در Cartona را شواهدی ثبت کن؛ در POL، به مدل canonical موجود وفادار بمان و فقط برای شبیه شدن به UI خارجی state machine موجود را ساده یا تخت نکن.
+
+برای هر transition تفاوت این چهار مورد را بنویس:
+- **Observed in Cartona:** واقعاً مشاهده شده.
+- **Publicly claimed:** در متن رسمی معرفی شده.
+- **POL canonical behavior:** در کد/قرارداد/تست POL.
+- **Recommended POL behavior:** پیشنهاد مستقل، نیازمند تصمیم.
+
+## 31. ممیزی واقعیت POL و نقشهٔ traceability
+
+از این منابع شناخته‌شده شروع کن، ولی فقط به این مسیرها محدود نشو:
+- 06_PRODUCT/API_Contracts.md
+- 06_PRODUCT/Order_Lifecycle.md
+- 06_PRODUCT/SCHEMA_API_VERIFICATION.md
+- 06_PRODUCT/Technical_Architecture_Spec.md
+- 08_DATA/DOMAIN_MODEL.md
+- 08_DATA/MULTI_VENDOR_ORDERING_MODEL.md
+- 08_DATA/INVENTORY_MODEL.md
+- POL_00_PROJECT_CONTROL/WORKER_ARCHITECTURE.md
+- mvp/MVP_API_MAP.md
+- mvp/apps/mobile/src/api.ts
+- mvp/apps/mobile/src/types.ts
+- mvp/apps/mobile/AppShell.tsx
+- mvp/apps/mobile/AppRetailer.tsx
+- mvp/apps/mobile/AppVendor.tsx
+- mvp/apps/mobile/src/screens/
+- mvp/apps/mobile/src/mock/mockTransport.ts
+- routerهای واقعی backend، مدل‌ها، service/repositoryها، permissionها، تست‌ها و تمام migrationهای موجود.
+- mvp/apps/mobile/scripts/build_android_variant.mjs و app.config.js.
+
+همهٔ این فایل‌ها را از branch/HEAD جاری بخوان. شماره/نام migration یا نام route را از حافظه حدس نزن. در خروجی با repo_ref و مسیر دقیق و در صورت امکان line/identifier قابل جست‌وجو ثبت کن.
+
+### 31.1 Capability-to-code/API mapping
+
+برای هر قابلیت در ماتریس سه اپ، این نگاشت را کامل کن:
+
+capability_id → Cartona evidence IDs → POL route/screen → POL endpoint + method → request/response DTO → backend router/controller → service/repository → database tables/columns → migration → auth/role guard → event/notification → tests → gap_status.
+
+هر اتصال باید واقعاً resolve شود. اگر route فقط در سند است ولی در router نیست، DOCUMENTED_NOT_FOUND_IN_RUNTIME بزن؛ اگر route در code است ولی contract ندارد، CODED_NOT_IN_CONTRACT؛ اگر mock از live shape جدا شده، MOCK_LIVE_CONTRACT_DRIFT ثبت کن. «همهٔ مسیرهای mvp/ وجود دارند» آزمون کافی نیست.
+
+### 31.2 API evidence و API POL را از هم جدا کن
+
+دو کاتالوگ مستقل نگه دار:
+- **Cartona API evidence catalog:** string، source، caller/xref، observed request/response، runtime status، confidence و ممنوعیت استفاده از credential.
+- **POL API implementation catalog:** API واقعاً موجود، متد، schema، status/errors، auth، tenant/role rules، idempotency، pagination، retry، test evidence و source path.
+
+سپس mapping را بساز؛ هیچ‌وقت مسیر API احتمالی Cartona را مستقیماً endpoint POL فرض نکن. برای API Cartona، هیچ live probe یا credential replay انجام نده.
+
+### 31.3 نقشهٔ مدل داده و مالکیت منبع حقیقت
+
+برای هر domain entity مشخص کن:
+- canonical owner/service؛
+- primary keys و foreign keys لازم؛
+- tenant/org/branch boundary؛
+- state/status و transition owner؛
+- واحد، قیمت/ارز، rounding و snapshot semantics؛
+- concurrency/locking/reservation semantics؛
+- append-only/audit fields؛
+- رسانه‌ها و storage permissions؛
+- event/outbox/notifications؛
+- retention/privacy؛
+- tests enforcing invariants.
+
+از تولید schema جدید صرفاً به دلیل نام خارجی مشابه پرهیز کن. هر خلأ واقعی را با حداقل تغییر لازم و تصمیم قابل بررسی مستند کن.
+
+## 32. «مسیر ساخت سریع» برای هر قابلیت را تصمیم‌گیری کن
+
+این بخش مهم‌ترین خروجی برای شروع توسعه است. در pol-api-adaptation-matrix.csv هر قابلیت را دقیقاً به یک مسیر پیش‌فرض دسته‌بندی کن؛ چند مسیر ممکن را می‌توان به‌عنوان گزینه ثبت کرد، اما یک پیشنهاد اصلی لازم است.
+
+### مسیرهای تصمیم
+
+- **REUSE_AS_IS:** endpoint، مدل، مجوز، UI و آزمون‌های لازم موجود و تأییدشده‌اند.
+- **CONFIG_ONLY:** تفاوت با config/feature flag/branding/role route حل می‌شود.
+- **LOCALIZATION_ONLY:** منطق آماده است و فقط resource/label/message/format تغییر می‌کند.
+- **API_BASE_OR_ENV_ONLY:** فقط آدرس محیط و تنظیمات امن لازم است؛ پیش از پیشنهاد، live preflight و HTTPS بررسی شود.
+- **CLIENT_ADAPTER:** contract POL را حفظ کن و نگاشت response/error/request را در یک لایهٔ adapter مرزبندی‌شده انجام بده.
+- **SMALL_UI_DELTA:** تغییر محدود UI بر داده و business rule موجود.
+- **SHARED_COMPONENT_NEW:** component مشترک تازه بساز، بدون branchهای نقش‌آلود و تکراری در کل کد.
+- **API_ENDPOINT_CHANGE:** تغییر قرارداد/route لازم است؛ backward compatibility و نسخه‌گذاری را مشخص کن.
+- **BACKEND_DOMAIN_CHANGE:** تغییر service/state machine/business rule لازم است.
+- **DB_MIGRATION_REQUIRED:** دیتابیس تغییر می‌خواهد؛ migration، backfill، rollback، integrity guard و تست هم‌زمانی را مشخص کن.
+- **EXTERNAL_INTEGRATION:** SMS، map، push، storage، payment، ERP یا سرویس دیگر نیازمند provider/config/test doubles است.
+- **NOT_MVP:** فعلاً لازم نیست؛ علت و شرط بازگشت را بنویس.
+- **BLOCKED/UNRESOLVED:** شواهد کافی برای تصمیم نیست.
+
+برای هر ردیف این ستون‌ها الزامی است:
+capability_id، role/app، user_problem، recommended_path، current_POL_evidence، exact_files_to_change_later، API_contract_change، schema_change، security/permission_impact، migration/rollback_risk، mock_change، test_change، estimate_tshirt_size، confidence، dependency، acceptance_criteria، fallback، owner_type، priority.
+
+تخمین XS/S/M/L/XL صرفاً حدود نسبی است؛ مبنای تخمین و ناشناخته‌ها را ثبت کن. ساعت را با قطعیت جعلی اعلام نکن.
+
+### قانون کمینه‌تغییر
+
+اگر تفاوت یک رفتار فقط با تغییر ترجمه، تنظیمات، base URL یا یک adapter امن پوشش داده می‌شود، پیچیدگی جدید در backend نساز. برعکس، اگر تفاوت به authorization، tenant isolation، موجودی، قیمت، مالی، وضعیت سفارش، delivery proof، idempotency یا audit مربوط است، آن را با ترجمه یا دستکاری frontend پنهان نکن.
+
+هر تغییری که پیشنهاد می‌شود باید از API canonical POL و schema موجود شروع کند. adapter نباید business rule جدید و مخفی ایجاد کند. **عدم تغییر API** فقط در صورتی پیشنهاد شود که evidence نشان دهد contract و semantics فعلی واقعاً مناسب‌اند، نه چون سریع‌تر به نظر می‌رسد.
+
+## 33. طرح تصمیم برای اپ راننده و ساخت variantهای Android
+
+وضع موجود مخزن را از نو بررسی کن؛ به فرض قبلی دربارهٔ build scripts یا شناسهٔ بسته تکیه نکن.
+
+1. آیا AppRetailer.tsx و AppVendor.tsx از یک shell/component/API core مشترک استفاده می‌کنند؟ مرزهای واقعی را مستند کن.
+2. آیا build script واقعاً variant بنکدار و خرده‌فروش می‌سازد؟ خروجی package/application ID، icon، label، role allowlist، API env و signing configuration هرکدام چیست؟
+3. آیا variant مستقلی برای Driver وجود دارد یا فقط workflow کارشناس میدانی است؟
+4. آیا role راننده در backend role enum، RBAC، token claims، organization membership، route guards، delivery assignment و tests موجود است؟ هر مورد را از کد و تست اثبات کن.
+5. بین «سه اپ جدا با کد مشترک»، «اپ نقش‌محور واحد» و «اپ رانندهٔ جدا + دو اپ فعلی» مقایسهٔ مستند انجام بده. معیارها: سادگی نصب/آموزش، تجربهٔ کاربر، blast radius، امنیت نقش، release cadence، حجم APK، push/deep links، پشتیبانی چند حساب و پیچیدگی QA.
+6. اگر سه APK جدا پیشنهاد می‌شود، برای هر کدام package ID، app name فارسی، icon، entrypoint، role allowlist، environment key، build/test command، signing boundary و release artifact را مشخص کن؛ شناسهٔ نهایی را تا بررسی uniqueness در پروژه قطعی نکن.
+7. مشخص کن Driver باید principal/role مستقل باشد یا از مدل courier/carrier فعلی استفاده کند؛ تصمیم فقط بعد از بررسی authorization و data model صادر شود.
+8. هیچ نقش راننده‌ای را با اضافه‌کردن آن به allowlist فرانت امن نکن؛ backend authorization و مالکیت delivery assignment باید در هر درخواست enforce و آزمون شود.
+9. آفلاین بودن فقط برای view cache کافی نیست؛ mutation تحویل، OTP/POD و تغییر وضعیت باید semantics امن retry، idempotency و conflict resolution داشته باشند.
+10. تا تکمیل این Run، صرفاً design decision و backlog بساز؛ build pipeline یا APK فعلی را تغییر نده.
+
+## 34. بومی‌سازی ایران و آمادگی اجرای واقعی
+
+متن‌های Cartona را به‌عنوان منبع معنایی تحلیل کن، نه متن قابل کپی. برای POL یک localization/data-format audit مستقل بساز:
+
+- فارسی قابل‌فهم برای فروشنده‌ها و خرده‌فروش‌های ایرانی، RTL و فونت/line-height واقعی؛ متن placeholder یا اصطلاح انگلیسی نمایشی که به کاربر عادی نشت می‌کند.
+- ارقام فارسی/لاتین در نمایش و ورودی، normalize کردن حروف عربی/فارسی در جست‌وجو، barcode و فیلدهایی که باید byte-exact باشند.
+- مبلغ تومان/ریال، واحدهای بسته، گردکردن مبلغ، تخفیف، مالیات/هزینهٔ ارسال و محاسبهٔ مجموع؛ واحد ذخیره‌سازی و نمایش را از کد/قرارداد اثبات کن.
+- تاریخ و ساعت: timezone تهران، تاریخ شمسی در UI، timestamp استاندارد UTC/API و تبدیل بی‌ابهام.
+- شمارهٔ موبایل و کد OTP، فاصله/نیم‌فاصله، clipboard/paste، keyboard، countdown/resend/rate limit و پیام خطا؛ قرارداد شش‌رقمی فعلی POL را بدون دلیل تضعیف نکن.
+- شهر، محدودهٔ پوشش، آدرس، پلاک/واحد، توضیح نقطهٔ تحویل، geocoding/maps provider و fallback بدون نقشه.
+- SMS provider، push، object storage، رسانهٔ POD/فاکتور، upload retry و محدودیت حجم/نوع فایل؛ کلید provider و credential را هرگز در bundle یا Git ثبت نکن.
+- اینترنت ناپایدار، airplane mode، timeout، retry، session expiry، request duplication و دادهٔ stale.
+- قیمت‌گذاری بازار عمده، بستهٔ مادر/زیرواحد، تاریخ انقضای قیمت، MOQ/MOV، کسری و پذیرش ناقص، مرجوعی و تسویهٔ متناسب با رویهٔ مصوب POL.
+- حریم خصوصی مشتری و راننده: عکس/امضا/مکان فقط به اندازهٔ لازم، مجوز و retention روشن، و دسترسی مبتنی بر سازمان.
+
+هر مورد را به actual source path، test یا unresolved assumption وصل کن. این بخش «پیشنهاد کلی UX» نباشد؛ باید ماتریس متن/فرمت/validation و معیار پذیرش قابل آزمون تحویل دهد.
+
+## 35. اطلس صفحه و تعامل با پوشش حالت‌ها
+
+ui-screen-catalog.csv ایستا را به مدل کامل‌تر ارتقا بده. برای هر سه اپ، حداقل این schema را در قالب CSV/JSON معتبر یا ترکیبی تعریف کن:
+
+app_id، screen_id، route/deep_link، role، source_version، evidence_type، entry_trigger، primary_goal، visible_controls، input_fields، validation_rules، loading_state، empty_state، success_state، error_states، offline_state، permission_denied_state، back/navigation، next_screens، API calls، models، screenshot_refs، screenshot_hashes، RTL، responsive_constraints، confidence، POL_screen_mapping، coverage_status.
+
+- Screenshot هر حالت را از runtime مجاز ثبت کن؛ hash، دستگاه/رزولوشن، density، OS/ABI، orientation، timestamp و app version را نگه دار.
+- Screenshot از فروشگاه برنامه را PUBLIC_STORE_SCREENSHOT مشخص کن؛ هرگز آن را RUNTIME_OBSERVED ننویس.
+- برای هر صفحه، خلاصهٔ تعامل از control → action → precondition → API/state change → feedback بساز.
+- برای نمودارها و contact sheet، منبع، crop/transform و hash ثبت شود. خروجی انبوه و asset اختصاصی Cartona به GitHub منتقل نشود.
+- برای RTL، screenshot واقعی فارسی POL لازم است؛ screenshot عربی Cartona اثبات فارسی/RTL درست POL نیست.
+- تعداد صفحه‌ها را به‌تنهایی coverage حساب نکن: حالت‌های مهم و transitionها نیز coverage دارند.
+- blocked بودن یک صفحه، باقی جریان استاتیک را بی‌اعتبار نمی‌کند، اما اطلس runtime را هم PASS نمی‌کند.
+
+## 36. تست‌های contract، integration و end-to-end برای شروع ساخت
+
+بدون اجرای live mutation روی production Cartona، مسیر تست POL را آماده کن. دادهٔ mock باید مصنوعی، ثابت، قابل‌تکرار و فاقد اطلاعات واقعی باشد.
+
+### 36.1 قرارداد هر endpoint POL
+
+برای هر قابلیت P0:
+- method/path و schema واقعی با router ثبت‌شده مقایسه شود.
+- request validation و response schema و error codes.
+- auth/role/tenant/branch enforcement.
+- pagination/sort/filter.
+- idempotency/race/unique constraints در mutationها.
+- mock transport و fixture با همان semantics contract.
+- trace ارتباط endpoint → DB effect → event/notification.
+- آزمون منفی برای unauthorized، forbidden، cross-tenant، bad state، duplicate request و stale version.
+- نتایج UNIT، INTEGRATION، CONTRACT، E2E_MOCK و E2E_STAGING را مجزا گزارش کن. Mock PASS هرگز معادل staging PASS نیست.
+
+### 36.2 جریان سرتاسری سه‌نقشی
+
+حداقل یک سناریوی golden را برای طراحی آزمون بساز:
+1. بنکدار صاحب سازمان با نقش مجاز وارد می‌شود و کالا، قیمت و مقدار موجودی را منتشر می‌کند.
+2. خرده‌فروش متعلق به سازمان مستقل، کاتالوگ مجاز را می‌بیند و سفارش معتبر ثبت می‌کند.
+3. backend موجودی/رزرو و اثرات مالی را طبق قواعد POL اعمال و رویداد/اعلان را تولید می‌کند.
+4. بنکدار سفارش را پردازش، به‌صورت معتبر آماده و به راننده/حمل‌ونقل تخصیص می‌دهد.
+5. راننده فقط delivery assignment خودش را مشاهده می‌کند، pickup و توقف‌ها را طبق اجازه ثبت می‌کند و تحویل را با روش معتبر POL ثابت می‌کند.
+6. خرده‌فروش وضعیت و دریافت را می‌بیند؛ اختلاف تحویل، اگر رخ دهد، بدون جعل/تغییر وضعیت مستقل سفارش ثبت می‌شود.
+7. تأیید کن هر نقش نتواند داده یا اقدام نقش دیگر/سازمان دیگر را دستکاری کند.
+8. disconnect/retry/duplicate delivery attempt و یک exception عملیاتی را هم طراحی کن.
+
+اگر مدل واقعی POL هنوز یکی از مراحل را پشتیبانی نمی‌کند، تست را به‌عنوان failing gap ثبت کن؛ برای سبز کردن تست، منطق را در mock جعل نکن.
+
+### 36.3 Fixture و seed data
+
+یک spec برای dataset مصنوعی بساز، نه دادهٔ واقعی:
+- دو بنکدار، دو شعبه، چند پرسنل با نقش‌های متفاوت.
+- چند خرده‌فروش مستقل و کارکنان.
+- راننده با یک یا چند delivery assignment و رانندهٔ دیگر برای تست isolation.
+- کالاهای چندبرندی با بارکد/واحد و بسته‌بندی متفاوت، قیمت و موجودی محدود.
+- سفارش کامل، سفارش چندبنکداری، پیشنهاد کسری، سفارش لغوشده، تحویل کامل و تحویل مشکل‌دار.
+- dispute/return و payment/settlement نمونه.
+- دادهٔ stale، request تکراری، role نامعتبر و cross-tenant attempt.
+تمام دادهٔ seed باید قابل reset و غیرشخصی باشد و از bootstrap/migration قراردادی پروژه عبور کند.
+
+## 37. تحقیق رقابتی و اعتبارسنجی بازار
+
+برای جلوگیری از کپی بی‌زمینه:
+1. Cartona را به‌عنوان یک نمونه از B2B wholesale marketplace بررسی کن، نه الگوی حاکم بر کل بازار.
+2. منابع رسمی فعلی را برای اپ خرده‌فروش، تأمین‌کننده و راننده بررسی کن.
+3. حداقل دو پلتفرم B2B/توزیع دیگر را با منابع رسمی/کیفی معتبر مقایسه کن؛ Gumla می‌تواند یکی از گزینه‌های اولیهٔ جست‌وجو باشد، اما نمونهٔ نهایی را با قابلیت دسترسی و اعتبار منبع انتخاب کن.
+4. ویژگی‌ها را به سه دسته تقسیم کن: CATEGORY_EXPECTATION، CARTONA_SPECIFIC_EVIDENCE، POL_MARKET_HYPOTHESIS.
+5. تفاوت مصر و ایران را از نظر پول/اعتبار، توزیع، نقش عمده‌فروش، واحد کالا، delivery ownership، اتصال نرم‌افزارهای فروشگاهی و رفتار خریدار بنویس؛ ادعای فرهنگی یا اقتصادی بدون منبع نده.
+6. در اسناد POL و مصاحبه‌های موجود با عمده‌فروشان و LOIها دنبال تأیید یا رد فرضیه‌ها بگرد. مشخص کن هر قابلیت برای pilot اهواز ضروری است، مزیت رقابتی است، یا فقط توسعهٔ آینده.
+7. پیشنهادات را از نظر ارزش عملیاتی، ریسک تقلب/زیان، پیچیدگی، هزینهٔ پشتیبانی و سرعت جذب تاجر رتبه‌بندی کن.
+8. برای هر منبع خارجی URL، عنوان، ناشر، تاریخ انتشار/دسترسی، ادعای پشتیبانی‌شده و سطح اعتماد ثبت شود. صفحات تبلیغاتی صرفاً وعدهٔ عمومی را اثبات می‌کنند، نه رفتار واقعی داخلی اپ.
+
+## 38. اولویت‌بندی MVP و handoff واقعاً قابل‌ساخت
+
+یک backlog اولویت‌دار با این گروه‌ها بساز:
+- P0_PILOT_BLOCKER: بدون آن معاملهٔ واقعی امن و کامل نمی‌شود.
+- P1_PILOT_IMPORTANT: رشد adoption/عملیات را بهبود می‌دهد اما workaround امن و ثبت‌شده دارد.
+- P2_POST_PILOT: برای شروع محدود ضروری نیست.
+- RESEARCH_REQUIRED: تصمیم بدون مصاحبه یا دادهٔ بیشتر ممکن نیست.
+- OUT_OF_SCOPE: علت صریح و شرط بازنگری دارد.
+
+برای هر کار یک user story مستقل، role، source evidence، وضعیت فعلی POL، مسیر کم‌تغییر، file paths، endpoint/schema، dependencies، non-functional requirements، acceptance criteria، negative tests، QA fixture، estimate band، risk و شرط Done بنویس.
+
+### مسیر عمودی اولیه (vertical slice) را از روی واقعیت انتخاب کن
+
+حداقل این مسیر را ارزیابی و یک مسیر پیشنهادی انتخاب کن:
+- بنکدار: ورود → انتخاب سازمان → ثبت/به‌روزرسانی محصول/قیمت/موجودی → مشاهده و پردازش سفارش → آماده‌کردن تحویل.
+- خرده‌فروش: ورود → انتخاب شعبه → کشف کاتالوگ → سبد → checkout → وضعیت سفارش → سفارش مجدد/مغایرت.
+- راننده: ورود → مأموریت‌های assign‌شده → جزئیات توقف/pickup → تحویل و ثبت POD/exception → همگام‌سازی و timeline.
+
+این پیشنهاد جریان به معنی موجود بودن همهٔ endpointها نیست؛ قبل از معرفی به‌عنوان build-ready، تمام dependencyها را با source و test بررسی کن. اگر جریان چندبنکداری MVP را پیچیده می‌کند، گزینهٔ محدودتر را با دلیل تجاری/مهندسی مقایسه کن؛ منطق allocation موجود را بدون تحلیل حذف یا تضعیف نکن.
+
+## 39. خروجی‌های الزامی Run جدید
+
+در پوشهٔ جدید و immutable مربوط به Run بعدی، فایل‌های زیر را تولید کن. نام‌ها قابل تطبیق‌اند، اما معادل هر خروجی باید وجود داشته باشد و در manifest ثبت شود:
+
+1. artifact-source-registry.json — منبع، package/version/hash/ABI/signature و وضعیت دریافت سه اپ.
+2. public-product-research.md — بررسی منابع عمومی و competitor research با citation/link/date.
+3. role-capability-matrix.csv — تمام قابلیت‌های سه اپ + ops/shared و confidence.
+4. screen-interaction-atlas.csv — صفحه/حالت/تعامل/API/شواهد برای سه اپ.
+5. workflow-state-transition-matrix.csv — actor، precondition، transition، side effect، timeout، exception و evidence.
+6. cartona-api-evidence-catalog.csv — فقط شواهد API خارجی، بدون secret یا probe غیرمجاز.
+7. pol-api-implementation-catalog.csv — آنچه واقعاً در POL پیاده/ثبت/تست شده است.
+8. capability-to-pol-traceability.csv — نگاشت end-to-end قابلیت → UI → API → service → DB → migration → permission → test.
+9. pol-api-adaptation-matrix.csv — مسیر کم‌تغییر پیشنهادی، فایل‌های هدف و تخمین نسبی.
+10. pol-data-model-crosswalk.md — نگاشت entity، source of truth و ناسازگاری‌ها.
+11. driver-app-readiness.md — نقش/داده/API/RBAC/variant/build/QA برای راننده.
+12. iran-localization-and-operations-audit.csv — متن، RTL، رقم، تاریخ، پول، SMS، نقشه، رسانه و شبکه.
+13. mvp-priority-backlog.csv — P0/P1/P2/Research/Out-of-scope و criteria.
+14. golden-e2e-scenarios.md — تست سه‌نقشی و سناریوهای خطا.
+15. synthetic-fixture-spec.md — data fixture و reset/seed strategy.
+16. risk-and-unknowns-register.csv — فرضیه، impact، likelihood، evidence missing و next action.
+17. implementation-handoff.md — تصمیم پیشنهادی، ترتیب اجرا، فایل‌های دقیق و gateهای توسعه.
+18. coverage-report.json — denominators، تعداد observed/inferred/blocked/unresolved، source coverage و عدم پوشش.
+19. run-log.md — اجرای واقعی، خطاها، تکرارها، تصمیم‌های ابزار، checkpoint و blockers.
+20. validation.json — semantic validator به همراه آزمون مثبت/منفی و نتایج واقعی.
+
+خروجی‌های اضافی ارزشمند را اضافه کن، اما برای پر کردن شمار فایل‌ها خروجی مصنوعی یا خالی نساز. corpus خام/دیکامپایل/assetهای اختصاصی و هرگونه داده حساس همچنان فقط local/private باقی می‌ماند.
+
+## 40. معیارهای پذیرش «آماده برای شروع ساخت»
+
+مأموریت صرفاً وقتی از منظر محصول/مهندسی BUILD_HANDOFF_READY است که:
+
+- هر سه نقش Retailer، Vendor و Driver صریحاً تحلیل شده باشند؛ اگر artifact یک محصول موجود نیست، آن بخش با coverage پایین‌تر و BLOCKED/PUBLIC_EVIDENCE_ONLY مشخص شود.
+- تمام capabilityهای آشکارا شناسایی‌شده در یک ماتریس با confidence و منبع باشند؛ «تمام قابلیت‌های محصول» بدون تعریف denominator ادعا نشود.
+- هر قابلیت P0 به مسیر واقعی POL و acceptance criteria قابل آزمون وصل باشد.
+- وضعیت هر endpoint POL از روی router/code/tests تعیین شده باشد، نه صرفاً سند.
+- نقش/tenant/branch ownership برای اعمال حساس روشن باشد و شکاف امنیتی به عنوان blocker ثبت شود.
+- مدل سفارش، موجودی، پرداخت، تحویل و اختلاف تناقض حل‌نشده نداشته باشد؛ تناقض موجود باید تصمیم/owner و risk داشته باشد.
+- راه شروع سریع هر P0 یک تصمیم واحد و مبنای evidence داشته باشد: reuse/config/translation/adapter/UI/API/DB/integration.
+- mock و live contract تفاوت روشن داشته باشند و golden scenario دادهٔ مصنوعی داشته باشد.
+- طرح ساخت Android هر اپ، package ID، entrypoint و test/release commandها را مشخص کند؛ نام یا شناسهٔ جدید بدون بررسی repository قطعی نشود.
+- localization/RTL/OTP/زمان/پول/آدرس/شبکه معیار پذیرش مشخص داشته باشند.
+- validator خطاهای ساختاری و معنایی را با fixtureهای منفی واقعاً رد کند.
+- LATEST.md فقط پس از اینکه Run جدید واقعاً کامل و synced شد، به آن اشاره کند؛ Run قبلی immutable بماند.
+- هر مانع، محدودیت artifact و یافتهٔ بدون اثبات شفاف باشد.
+
+### تعریف سه وضعیت مجزا
+
+- EXTRACTION_COMPLETE: تمام منابع قابل‌دسترسی طبق coverage report بررسی شده‌اند؛ لزوماً تمام قابلیت‌های داخلی اپ قابل بازیابی نیست.
+- BUILD_HANDOFF_READY: requirements، API/data crosswalk، backlog، معیارهای پذیرش و test plan برای شروع امن توسعه آماده‌اند.
+- RUNTIME_PARITY_VERIFIED: فقط اگر runtime هر محصول/جریان واقعاً اجرا و آزمون شده؛ صرف داشتن APK یا اسکرین‌شات عمومی هرگز کافی نیست.
+
+این وضعیت‌ها را یکی نکن. ممکن است handoff آماده باشد در حالی که runtime اپ راننده به دلیل نبود artifact مسدود است؛ در این حالت محدودیت را دقیق گزارش کن.
+
+## 41. بازبینی کور نهایی: چیزهایی که ممکن است هنوز فراموش شده باشند
+
+پیش از بستن Run، برای هر پرسش پاسخ مستند بنویس؛ اگر نامشخص است unresolved ثبت کن:
+
+### داده و قوانین تجاری
+- منبع حقیقت قیمت و موجودی کدام است و هنگام تغییر هم‌زمان چه رخ می‌دهد؟
+- واحد canonical و snapshot قیمت/بسته در سفارش کجا تثبیت می‌شود؟
+- سفارش چندفروشنده‌ای چگونه به shipment/delivery jobها تقسیم می‌شود؟
+- لغو، کسری، پذیرش ناقص، مرجوعی، refund و dispute در چه ترتیب و با چه اثر مالی رخ می‌دهند؟
+- آیا کارمزد، هزینهٔ ارسال، مالیات، تخفیف و اعتبار قابل بازسازی و audit هستند؟
+- چه چیزی immutable و چه چیزی قابل edit است؟
+- reconciliation بین فاکتور/دریافت/تسویه چطور انجام می‌شود؟
+
+### کاربران، امنیت و حریم خصوصی
+- چه کسی می‌تواند قیمت/موجودی را تغییر دهد، سفارش را قبول کند، delivery را ببیند یا POD را دانلود کند؟
+- access token و role/org context چگونه revoke/refresh/rotate می‌شود؟
+- آیا endpointی صرفاً به id تکیه می‌کند و ownership را چک نمی‌کند؟
+- چه داده‌ای از مکان راننده، شمارهٔ مشتری یا عکس تحویل ذخیره می‌شود، چه مدت و با چه permission؟
+- audit trail، retention و درخواست حذف داده چه وضعیتی دارند؟
+
+### عملیات و شکست‌های واقعی
+- اعلان از دست‌رفته یا تکراری چگونه بازیابی می‌شود؟
+- وقتی راننده اینترنت ندارد یا دوبار روی «تحویل شد» می‌زند، invariant چیست؟
+- وقتی فروشگاه بسته، راننده دیر، کالا کم یا بسته آسیب‌دیده است، جریان exception چه کسی را مطلع می‌کند؟
+- وقتی دو دستگاه یک حساب، یک سفارش یا یک موجودی را هم‌زمان تغییر می‌دهند، نتیجه چیست؟
+- پشتیبانی چگونه با یک timeline و شناسهٔ ثابت، از سه محصول سفارش را بررسی می‌کند؟
+
+### توسعه و استقرار
+- کدام componentها قابل استفادهٔ مشترک‌اند و کدام workflow باید جدا باشد؟
+- آیا dev/staging/prod data modeها صریح و fail-closed هستند؟
+- آیا build variantها config، bundle ID، signing و API origin صحیح دارند؟
+- کدام routeها در frontend وجود دارند ولی backend ندارد، یا بالعکس؟
+- کدام تست فقط mock است؟ چه آزمون‌های contract ضروری هنوز وجود ندارند؟
+- آیا log، crash report، screenshot یا telemetry ممکن است PII/token منتشر کند؟
+- چه migrationها یا API changes با نسخهٔ قدیمی اپ ناسازگار می‌شوند؟
+- چه راهی برای rollback امن و انتشار مرحله‌ای وجود دارد؟
+
+### استفاده‌پذیری و بازار
+- برای کاربری که با گوشی ساده، اینترنت ضعیف یا دانش فنی پایین کار می‌کند، مسیر اصلی چند گام دارد؟
+- آیا جریان بدون permission دوربین/مکان، با fallback امن قابل استفاده است؟
+- آیا مشتری برای خطا راهنمای اقدام بعدی می‌بیند یا فقط پیام مبهم؟
+- کدام رفتار Cartona در مصاحبه با بنکداران اهواز تأیید نشده است؟
+- آیا یک تغییر به‌ظاهر کوچک در قیمت، واحد یا موجودی می‌تواند خسارت تجاری واقعی ایجاد کند؟
+
+برای هر پاسخ حداقل یک source/evidence ID یا UNRESOLVED + next_action وجود داشته باشد. این بخش باید در انتهای هر دور از زاویه‌ای مستقل بازبینی شود.
+
+## 42. ترتیب اجرای به‌روزشدهٔ Agent
+
+این توالی، اجرای بخش‌های قبلی را تکمیل می‌کند؛ به جای آن‌ها محدود نمی‌شود:
+
+1. Git/repo/corpus/environment preflight و checkpoint اولیه.
+2. خواندن تمام اسناد مبنا و ثبت اختلاف بین LATEST، validation، کد و اسناد.
+3. اجرای semantic validator و اصلاح defects قبلی در Run جدید.
+4. registry سه محصول Cartona و تحقیق منابع عمومی تازه؛ تلاش برای تهیهٔ artifact هر اپ فقط از مسیر مجاز.
+5. تکمیل تحلیل ایستای هر artifact و نگهداری corpus خام خارج از Git.
+6. ابزارهای UI/runtime و capture مجاز، به تفکیک package/ABI؛ ثبت blockerهای واقعی.
+7. تشکیل screen/interaction atlas و role capability matrix.
+8. تحلیل مستقل مخزن واقعی POL: frontend، backend، API، data، migrations، RBAC، tests، mocks، build scripts.
+9. مدل workflow/state/events/exception end-to-end.
+10. API & data crosswalk و تصمیم path برای هر قابلیت.
+11. تحقیق رقابتی و localization/operations audit متناسب بازار ایران.
+12. golden E2E، seed fixtures، backlog و handoff.
+13. دورهای Cross-check و blind-spot/saturation؛ رفع تناقض‌های اولویت‌دار.
+14. semantic validation با fixture مثبت و منفی؛ review امنیت/حریم خصوصی و secret scan.
+15. بررسی staged diff و اطمینان از اینکه فقط اسناد و شواهد مجاز اضافه شده‌اند.
+16. commit/push و read-back تمام فایل‌های run؛ سپس sync-manifest و LATEST را به‌صورت جداگانه به‌روز کن.
+17. گزارش نهایی شامل: آنچه واقعاً اجرا شد، آنچه از هر سه محصول کشف شد، تصمیمات fast-path، blockerهای P0، فایل‌های مرجع برای توسعه، پوشش شواهد، منابع، commandها و SHA نهایی.
+
+## 43. منابع عمومی اولیهٔ تحقیق محصول
+
+این منابع نقطهٔ شروع‌اند و باید در زمان اجرا مجدداً بررسی و citation شوند:
+- Cartona retailer listing: https://play.google.com/store/apps/details?id=com.cartona
+- Cartona supplier listing: https://play.google.com/store/apps/details?id=com.cartona.suppliers
+- Cartona Express driver listing: https://play.google.com/store/apps/details?id=com.cartona.delivery_driver_app
+- Cartona official site: https://cartona.com/
+- Cartona Enterprise: https://enterprise.cartona.com/en
+- Gumla official site (candidate comparator): https://www.gumla.com/en
+- Gumla official site alternative domain: https://gumla.com/en
+
+صفحات عمومی ممکن است چند دامنه/نسخه یا آمار ناسازگار داشته باشند. منبع اصلی، تاریخ، ادعای دقیق و limitation را ثبت کن. ادعای تبلیغاتی هیچ‌وقت به‌عنوان شاهد اجرای runtime یا data model داخلی استفاده نشود.
+
+## 44. فرمان نهایی v3
+
+از این پس این پلن را با بخش‌های 0 تا 25 به‌صورت یک مأموریت واحد اجرا کن. فقط استخراج ایستای یک APK را موفقیت ندان. سه محصول POL را هدف handoff قرار بده، تمام شواهد موجود و مجاز را بررسی کن، هر قابلیت را به کد/قرارداد/داده/آزمون POL متصل کن و برای هر P0 کوتاه‌ترین مسیر پیاده‌سازی امن را مشخص کن. از انجام تغییر کد POL در این Run خودداری کن. تا زمانی که پوشش سه محصول، crosswalk واقعی POL، تصمیم‌های build-fast، معیارهای پذیرش و unresolvedها ثبت نشده‌اند، BUILD_HANDOFF_READY اعلام نکن.
