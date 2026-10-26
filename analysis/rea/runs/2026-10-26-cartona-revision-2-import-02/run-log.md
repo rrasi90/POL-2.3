@@ -54,3 +54,10 @@ All eight from `C:/Star/pol-2.4/analysis-v2/` into this run directory:
 
 ## Sync result
 Recorded after push and remote read-back — see the Sync section appended below and `sync-manifest.json`.
+
+## Sync section (appended after push and remote read-back)
+
+- Run-files commit: `3dd55b4707546afb8105a01ffcd8a50e0869983c` pushed to `origin/ui/visual-qa-screen-completion-20261025` (push output: `ec0fd662..3dd55b47`).
+- Remote read-back: `git fetch` + `git ls-tree origin/…:analysis/rea/runs/2026-10-26-cartona-revision-2-import-02/` listed all 10 files; `git show origin/…:validation.json` parsed with status PASS (18 checks). Remote HEAD confirmed `3dd55b47…`.
+- Index update (this file's Sync section + `LATEST.md` + `sync-manifest.json`): committed and pushed separately; final verification recorded in sync-manifest.json and LATEST.md.
+- Tool versions actually in use: REA agents 6.7.0; JADX headless 0.7.1 (pinned JAR `6e5eacf5…`); Node 24.18.0; JDK 21.0.9 (Android Studio JBR); Python 3.14 for validation scripting.
