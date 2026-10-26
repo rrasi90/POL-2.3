@@ -28,7 +28,7 @@ Each run uses a new immutable directory. Preserve previous findings; update `LAT
 
 ## Current synchronized audit
 
-The latest committed historical Cartona evidence run is the comprehensive extraction report under. Its original validator reported PASS, but later semantic review found defects; treat it as historical evidence and do not rely on its PASS label until the v3 remediation run verifies the data.
+The latest committed historical Cartona evidence run is the comprehensive extraction report under `runs/2026-10-26-cartona-comprehensive-extraction/`. Its original validator reported PASS, but later semantic review found defects; treat it as historical evidence and do not rely on its PASS label until the v3 remediation run verifies the data.
 
 `runs/2026-10-26-cartona-comprehensive-extraction/`
 
