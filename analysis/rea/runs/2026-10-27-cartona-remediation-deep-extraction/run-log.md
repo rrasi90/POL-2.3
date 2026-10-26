@@ -57,3 +57,8 @@ artifact-source-registry.json; role-capability-matrix.csv (46); workflow-state-t
 ## Sync section (appended post-push)
 - Deliverables commit: recorded in sync-manifest.json after push
 - Index commit: separate; both remote-read-back verified
+
+## Sync section (appended after push and remote read-back)
+- Deliverables commit: 729cd08a9cdb17de3227e9c4d1f8a7bc0d896c08 (e68d2e45..729cd08a, 34 files)
+- Remote read-back: ls-tree listed 34/34 files; remote validation.json parses (PASS, 19/19 semantic, 6/6 negative fixtures rejected); implementation-handoff.md content verified on remote
+- Index update (LATEST.md + sync-manifest.json + this section) committed separately; second read-back recorded in sync-manifest.json

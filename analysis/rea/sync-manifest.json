@@ -3,10 +3,10 @@
   "workspace": "analysis/rea",
   "repository": "rrasi90/POL-2.3",
   "bootstrap_branch": "ui/visual-qa-screen-completion-20261025",
-  "latest_run": "runs/2026-10-26-cartona-comprehensive-extraction",
+  "latest_run": "runs/2026-10-27-cartona-remediation-deep-extraction",
   "latest_run_status": "PASS_SYNCED",
   "latest_attempt_record_commit_sha": "ef6acd7dfb8aa1e2a542668e281b6a1027361c79",
-  "latest_commit_sha": "54b0605b5b0a4b97db5148fb5d8e47a80c866657",
+  "latest_commit_sha": "729cd08a9cdb17de3227e9c4d1f8a7bc0d896c08",
   "remote_readback_verified": true,
   "actual_revision_2_deliverables_imported": true,
   "attempt_record_readback_verified": false,
@@ -40,9 +40,10 @@
   "reconciliation": "git merge --ff-only origin/ui/visual-qa-screen-completion-20261025 (no force, no reset)",
   "validation": {
     "status": "PASS",
-    "checks_total": 16,
-    "checks_failed": 0,
-    "file": "runs/2026-10-26-cartona-comprehensive-extraction/validation.json"
+    "semantic_checks_passed": 19,
+    "semantic_checks_total": 19,
+    "negative_fixtures_rejected": "6/6",
+    "file": "runs/2026-10-27-cartona-remediation-deep-extraction/validation.json"
   },
   "apk_sha256_verified_against_disk": "e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c",
   "tool_versions": {
@@ -52,10 +53,17 @@
     "jdk": "21.0.9",
     "git": "see run-log"
   },
-  "deliverables_count": 19,
+  "deliverables_count": 34,
   "blocked_items": [
-    "typed Dart recovery (no compatible parser for kind-3/2.14 snapshot)",
-    "runtime UI capture (INSTALL_FAILED_NO_MATCHING_ABIS; prerequisites documented)"
+    "runtime UI capture (ABI mismatch; ARMv7 device/image prerequisite)",
+    "typed Dart app-class recovery (r2flutter AArch64-only; needs ARM64 artifact)",
+    "supplier/driver APK analysis (no artifacts; public research substitutes)"
   ],
-  "local_corpus": "C:/Star/pol-2.4-private-analysis/cartona/e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c/"
+  "local_corpus": "C:/Star/pol-2.4-private-analysis/cartona/e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c/",
+  "plan_version": "v3 (CARTONA_DEEP_EXTRACTION_REMEDIATION_PLAN.md, sections 0-44, fully read)",
+  "gates": {
+    "EXTRACTION_COMPLETE": "PASS",
+    "BUILD_HANDOFF_READY": "PASS (driver items conditional on D-01 decision)",
+    "RUNTIME_PARITY_VERIFIED": "NOT CLAIMED"
+  }
 }
