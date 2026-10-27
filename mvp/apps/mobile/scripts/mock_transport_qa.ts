@@ -302,10 +302,10 @@ const retailItems = await req<{ items: Array<{ ordered_quantity: number }> }>(
   "GET", "/api/v1/orders/" + latestRetailOrderId + "/items", undefined, retailerHeaders,
 );
 assert.equal(retailItems.items.length, 2);
-const retailTimeline = await req<{ events: Array<{ event_type: string }> }>(
+const retailTimeline = await req<Array<{ event_type: string }>>(
   "GET", "/api/v1/orders/" + latestRetailOrderId + "/timeline", undefined, retailerHeaders,
 );
-assert.equal(retailTimeline.events[0].event_type, "ORDER_SUBMITTED");
+assert.equal(retailTimeline[0].event_type, "ORDER_SUBMITTED");
 
 const retailers = await req<{ items: Array<{ id: string }> }>(
   "GET", "/api/v1/storefront/vendors", undefined, retailerHeaders,
