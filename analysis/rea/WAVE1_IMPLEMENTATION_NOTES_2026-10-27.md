@@ -87,6 +87,65 @@ Also run the full documented backend verification suite if the local PostgreSQL 
 - At review time, GitHub returned no commit status entries and no PR-triggered workflow runs for the reviewed PR head. Treat CI and local Wave 1 verification as **UNVERIFIED** until the correct branch is checked out and exact results are recorded.
 - Do not merge or mark PASS solely based on the appended Cartona extraction summary.
 
+## Local Verification Results — 2026-10-27
+
+### Environment
+
+- OS: Windows 10.0.26200 x64, Git Bash shell
+- Python: 3.11.15, pytest 9.1.1
+- Node.js: v24.18.0, npm 12.0.1
+- TypeScript: 5.9.3
+- Repository root: `C:\Star\pol\2.4`
+- Branch: `fix/pol-wave1-qa-mock-route-docs-20261027`
+- HEAD after sync: `370df4c0` (pulled from origin, merge conflict in `scripts/test_api_boundary_route_inventory.py` resolved)
+- JWT secret: `static-gate-secret-not-for-production` (test-only, non-production)
+
+### Backend tests
+
+| # | Command | Exit Code | Result | Detail |
+|---|---|---|---|---|
+| 1 | `python -m compileall -q scripts` | 0 | PASS | No compilation errors in 88 Python files |
+| 2 | `python scripts/test_admin_route_registration_uniqueness.py` | 0 | PASS | `[ADMIN ROUTE UNIQUENESS PASS] Shared admin routes have one guarded registration.` |
+| 3 | `python -m pytest scripts/test_admin_route_registration_uniqueness.py scripts/test_api_boundary_route_inventory.py -q` | 0 | **2 PASS** | Initially 2 failed (route inventory drift); fixed by adding `GET /support/cases/{case_id}/messages` to expected routes and restoring `POST /privacy/export` (was incorrectly listed as unimplemented) |
+| 4 | `python -m pytest scripts/test_admin_route_registration_uniqueness.py scripts/test_api_boundary_route_inventory.py scripts/test_api_route_hygiene.py scripts/ui_audit_regression_guards.py -q` | 0 | **5 PASS** | Final run: all 5 tests passed in 0.87s |
+
+### Mobile tests (from `mvp/`)
+
+| # | Command | Exit Code | Result | Detail |
+|---|---|---|---|---|
+| 5 | `npm run typecheck --workspace @pol/mobile` | 0 | PASS | `tsc --noEmit` completed with no errors |
+| 6 | `npm run qa:mock --workspace @pol/mobile` | 0 | **2 PASS** | Vendor + Retailer mock transports exercised across auth, RBAC, orders, inventory, finance, storefront, barcode, scan/publish, support and profile |
+| 7 | `npm run qa:functional --workspace @pol/mobile` | 0 | **28/28 PASS** | All functional/state-transition checks passed |
+| 8 | `npm run qa:regression --workspace @pol/mobile` | 0 | **38/38 PASS** | All regression/cross-module checks passed |
+
+### Fixes applied during verification
+
+| Issue | Root Cause | Fix | File(s) |
+|---|---|---|---|
+| Route inventory test failure: 2 extra routes (`POST /privacy/export`, `GET /support/cases/{case_id}/messages`) and 1 stale gap assertion | B-02 correction was incomplete — privacy/export was implemented but test expected it as unimplemented gap | Restored `POST /privacy/export` to `EXPECTED_BUSINESS_ROUTES`; added `GET /support/cases/{case_id}/messages` to expected routes; emptied `DOCUMENTED_BUT_UNIMPLEMENTED_ROUTES` to `set()` | `scripts/test_api_boundary_route_inventory.py` |
+| Merge conflict in route inventory test | Local edit conflicted with remote fix | Resolved by keeping upstream `DOCUMENTED_BUT_UNIMPLEMENTED_ROUTES = set()` with the gap assertion test | `scripts/test_api_boundary_route_inventory.py` |
+| TypeScript error `TS2345`: `Argument of type '{}' is not assignable to parameter of type 'Preferences'` | `AccountMobileScreen.tsx` line 32 used `useState<Preferences>({})` but `Preferences` is `NotificationPreference[]` | Changed `useState<Preferences>({})` to `useState<Preferences>([])` | `apps/mobile/src/screens/AccountMobileScreen.tsx` |
+| TypeScript error `TS2552`: `Cannot find name 'numberFa'` | `RetailerMobileScreen.tsx` lines 468 and 607 referenced `numberFa` which was not imported or defined | Added `export const numberFa = formatFaNumber;` alias in `fa.ts` and `import { formatFaNumber as numberFa } from "../i18n/fa";` in `RetailerMobileScreen.tsx` | `apps/mobile/src/i18n/fa.ts`, `apps/mobile/src/screens/RetailerMobileScreen.tsx` |
+| Mock QA `ERR_MODULE_NOT_FOUND`: Cannot find `./retailerMockTransport` | Node.js ESM (`--experimental-strip-types`) requires explicit `.ts` extension for relative imports | Changed import from `"./retailerMockTransport"` to `"./retailerMockTransport.ts"` | `apps/mobile/src/mock/mockTransport.ts` |
+| TypeScript error `TS5097`: An import path can only end with a `.ts` extension when `allowImportingTsExtensions` is enabled | `tsconfig.json` did not have `allowImportingTsExtensions` set | Added `"allowImportingTsExtensions": true` to `compilerOptions` | `apps/mobile/tsconfig.json` |
+| Mock QA `SyntaxError: Identifier 'storefront' has already been declared` | `const storefront` was declared at line 106 (vendor section) and again at line 328 (retailer section) | Renamed the retailer-scope variable to `retailerStorefront` and its assertion from `storefront.items.length` to `retailerStorefront.items.length` | `apps/mobile/scripts/mock_transport_qa.ts` |
+
+### CI status
+
+- No `.github/workflows/` POL-specific workflow files were found in the repository working tree at audit time.
+- GitHub Actions status could not be verified from this environment (repository is private, `gh` CLI is unauthenticated, unauthenticated API returns 404).
+- CI status is recorded as **NOT RUN / NOT VERIFIABLE** from this environment.
+
+### Test evidence files
+
+- Route uniqueness: `scripts/test_admin_route_registration_uniqueness.py` (45 lines, added by Wave 1)
+- Route inventory: `scripts/test_api_boundary_route_inventory.py` (206 lines, updated by Wave 1)
+- Route hygiene: `scripts/test_api_route_hygiene.py` (pre-existing)
+- UI audit guards: `scripts/ui_audit_regression_guards.py` (pre-existing)
+- Mock QA: `apps/mobile/scripts/mock_transport_qa.ts` (373 lines, expanded by Wave 1)
+- Functional QA: `apps/mobile/scripts/mobile_functional_qa.mjs` (pre-existing)
+- Regression QA: `apps/mobile/scripts/mobile_regression_qa.mjs` (pre-existing)
+
 ## Verification status
 
-**IMPLEMENTED_PENDING_LOCAL_VERIFICATION.** Remote file read-back and PR diff were verified. Automated commands have not been executed in this environment; the local agent must run the commands above, fix failures and add exact results before merge.
+**IMPLEMENTED — LOCAL VERIFICATION PASSED.** All 8 test commands (4 backend, 4 mobile) were executed with exit code 0 in the local Windows environment on 2026-10-27. Route inventory, admin route uniqueness, route hygiene, UI audit guards, TypeScript typecheck, mock transport QA (Vendor + Retailer), functional QA (28/28) and regression QA (38/38) all passed. CI status remains NOT VERIFIABLE from this environment.
