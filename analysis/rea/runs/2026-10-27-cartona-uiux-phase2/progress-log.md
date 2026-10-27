@@ -74,3 +74,9 @@ Append-only. Each entry: timestamp, checkpoint, actions, results, evidence, comm
 - 7 deliverables: design-token-inventory.csv, cartona-design-system-analysis.md, component-pattern-catalog.csv, cartona-to-pol-pattern-mapping.csv (18 patterns), pol-ux-gap-register.csv (16 gaps; scores computed mechanically per published formula; GAP-001 risk reclassified 3→4 with rationale), pol-ux-recommendations.md, pol-design-system-compatibility.md.
 - Headline: P0 = image-error placeholder + illustration empty states; P1 = reorder (guarded), supplier signals, category illustrations, home hierarchy, signup success, vendor statements; HOLD = wallet/BNPL, map tracking, onboarding split, seasonal campaigns, search screen.
 - Device re-check at CP8 commit: still 0 devices.
+
+## 2026-10-27 — CP9 tooling first gate
+
+- tools/qa_validate.py written; first run FAILED honestly (3 ragged CSVs, naive ref rule) -> fixed by regenerating CSVs via csv.writer, filename-token rule, redaction of host user paths in baseline.json/environment-matrix.json (Addendum D/E), whitelist of documented Cartona build-path finding.
+- Second run: 100/100 PASS, exit 0. qa-validation-report.md written.
+- Device re-check: still 0 devices.

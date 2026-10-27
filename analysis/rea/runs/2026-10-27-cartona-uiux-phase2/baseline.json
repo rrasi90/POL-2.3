@@ -21,7 +21,7 @@
     {"path": "cartona app/xapk_extracted/config.mdpi.apk", "bytes": 139457, "sha256": "5c76dd240306f335801f5649cd35c05812bdeb292ead957b2fd5b7c684300670"}
   ],
   "android_environment": {
-    "sdk_path": "C:\\Users\\rrasi_oorj8fq\\AppData\\Local\\Android\\Sdk",
+    "sdk_path": "%LOCALAPPDATA%\\Android\\Sdk",
     "platform_tools": "37.0.1",
     "java": "OpenJDK 21.0.9 (Android Studio JBR)",
     "avds": [{"name": "POL_API_Emulator", "abi": "x86_64", "api": 35, "image": "google_apis"}],
