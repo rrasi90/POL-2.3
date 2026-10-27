@@ -74,7 +74,7 @@ HTTP may also set `X-Correlation-ID`.
 
 | Method | Path | Notes |
 |--------|------|-------|
-| POST | `/privacy/export` | Authenticated user-owned data snapshot; SHA-256 persisted with request metadata; export payload is not persisted as a duplicate PII artifact |
+| POST | `/privacy/export` | **DOCUMENTED GAP — not registered in the current FastAPI router; do not call.** Product/privacy owner must choose implementation or explicit descoping; update the route inventory and contract tests when resolved. |
 | POST | `/privacy/deletion` | Authenticated account de-identification: revoke sessions/devices/consents and clear direct profile PII while preserving business/audit history |
 
 ### 3.3 Baskets — `baskets.py` (`/baskets`)
