@@ -184,3 +184,20 @@ def test_fastapi_runtime_route_inventory_is_explicit():
     }
 
     assert actual == EXPECTED_BUSINESS_ROUTES | EXPECTED_OPERATIONAL_ROUTES
+# All routes in EXPECTED_BUSINESS_ROUTES are now implemented.
+# This set is empty and kept for structural compatibility.
+DOCUMENTED_BUT_UNIMPLEMENTED_ROUTES = set()
+
+
+def test_documented_but_unimplemented_routes_remain_explicit_gaps():
+    from scripts.api.main import app
+
+    actual = {
+        (method.upper(), path)
+        for path, operations in app.openapi()["paths"].items()
+        for method in operations
+        if method.lower() in {"get", "post", "put", "patch", "delete", "options", "head"}
+    }
+    # If this assertion changes, the route-gap ledger and documentation must be
+    # reconciled in the same change; do not silently promote a doc-only route.
+    assert DOCUMENTED_BUT_UNIMPLEMENTED_ROUTES.isdisjoint(actual)

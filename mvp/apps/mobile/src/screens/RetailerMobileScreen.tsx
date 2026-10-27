@@ -5,6 +5,7 @@ import { Btn, Card, Empty, ErrorBox, IconBadge, Input, Screen, StatusChip } from
 import type { Role } from "../types";
 import { spacing, useTheme, useThemedStyles, type Palette } from "../theme";
 import { formatOrderStatus, formatInvoiceStatus, formatPackagingUnit } from "../utils/statusLabels";
+import { formatFaNumber as numberFa } from "../i18n/fa";
 import { SupportMobileScreen } from "./SupportMobileScreen";
 
 type Product = {

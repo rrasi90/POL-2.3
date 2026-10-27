@@ -325,10 +325,10 @@ const retailers = await req<{ items: Array<{ id: string }> }>(
   "GET", "/api/v1/storefront/vendors", undefined, retailerHeaders,
 );
 assert.equal(retailers.items.length, 1);
-const storefront = await req<{ items: Array<{ product_id: string }> }>(
+const retailerStorefront = await req<{ items: Array<{ product_id: string }> }>(
   "GET", "/api/v1/storefront/vendors/mock-vendor/products?limit=50&offset=0", undefined, retailerHeaders,
 );
-assert.equal(storefront.items.length, 4);
+assert.equal(retailerStorefront.items.length, 4);
 
 const retailInvoices = await req<{ invoices: Array<{ id: string }> }>(
   "GET", "/api/v1/invoices?limit=50&offset=0", undefined, retailerHeaders,

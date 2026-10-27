@@ -1,4 +1,4 @@
-import { mockRetailerRequest, resetRetailerMockState } from "./retailerMockTransport";
+import { mockRetailerRequest, resetRetailerMockState } from "./retailerMockTransport.ts";
 
 type MockRole = "VENDOR_OWNER" | "VENDOR_STAFF" | "RETAILER_OWNER" | "RETAILER_STAFF";
 

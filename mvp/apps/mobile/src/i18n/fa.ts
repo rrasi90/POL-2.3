@@ -34,6 +34,9 @@ export function formatFaNumber(
   }
 }
 
+// Alias for legacy usage
+export const numberFa = formatFaNumber;
+
 export function formatToman(value: number | string | null | undefined): string {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return "—";
