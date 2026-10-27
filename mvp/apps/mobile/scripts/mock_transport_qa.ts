@@ -200,6 +200,10 @@ const supportHistory = await req<{ messages: Array<{ message_text: string }> }>(
 );
 assert.equal(supportHistory.messages.length, 1);
 assert.equal(supportHistory.messages[0].message_text, "پیام تستی");
+await rejects(
+  () => req("POST", "/api/v1/support/cases/" + support.id + "/messages", { message_text: "" }, staff),
+  "Vendor mock rejects an empty support message",
+);
 
 const profile = await req<{ membership: { role: string }; user_profile: { timezone: string } }>("GET", "/api/v1/profile", undefined, staff);
 assert.equal(profile.membership.role, "VENDOR_STAFF");
@@ -344,6 +348,15 @@ const retailSupportMessage = await req<{ id: string; message_text: string }>(
 );
 assert.ok(retailSupportMessage.id);
 assert.equal(retailSupportMessage.message_text, "پیام آزمایشی");
+const retailSupportHistory = await req<{ messages: Array<{ message_text: string }> }>(
+  "GET", "/api/v1/support/cases/" + retailSupport.id + "/messages", undefined, retailerHeaders,
+);
+assert.equal(retailSupportHistory.messages.length, 1);
+assert.equal(retailSupportHistory.messages[0].message_text, "پیام آزمایشی");
+await rejects(
+  () => req("POST", "/api/v1/support/cases/" + retailSupport.id + "/messages", { message_text: "" }, retailerHeaders),
+  "Retailer mock rejects an empty support message",
+);
 
 const retailerStaffLogin = await req<{ role: string; access_token: string }>(
   "POST", "/api/v1/auth/verify-otp",
