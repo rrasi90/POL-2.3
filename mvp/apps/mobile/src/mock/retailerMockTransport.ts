@@ -404,7 +404,7 @@ export async function mockRetailerRequest<T>(
   if (method === "GET" && orderItems) return envelope({ items: state.orderItems[orderItems[1]] || [] }) as T;
 
   const timeline = pathname.match(/^\/api\/v1\/orders\/([^/]+)\/timeline$/);
-  if (method === "GET" && timeline) return envelope({ timeline: state.timelines[timeline[1]] || [] }) as T;
+  if (method === "GET" && timeline) return envelope({ events: state.timelines[timeline[1]] || [] }) as T;
 
   const orderDelivery = pathname.match(/^\/api\/v1\/orders\/([^/]+)\/delivery$/);
   if (method === "GET" && orderDelivery) return envelope(state.deliveries[orderDelivery[1]] || { delivery_status: "PENDING" }) as T;
@@ -498,7 +498,7 @@ export async function mockRetailerRequest<T>(
   if (method === "POST" && supportMessages) {
     const row = state.supportCases.find((x) => x.id === supportMessages[1]);
     if (!row) return bad("Mock retailer support case not found.");
-    const message = { id: "mock-retailer-message-" + (row.messages as unknown[]).length + 1, body: String(payload.body || payload.message || ""), sender_role: headers?.Authorization?.includes("mock-retailer-staff") ? "RETAILER_STAFF" : "RETAILER_OWNER", created_at: new Date().toISOString() };
+    const message = { id: "mock-retailer-message-" + ((row.messages as unknown[]).length + 1), message_text: String(payload.message_text || payload.body || payload.message || ""), sender_type: "USER", sender_role: headers?.Authorization?.includes("mock-retailer-staff") ? "RETAILER_STAFF" : "RETAILER_OWNER", created_at: new Date().toISOString() };
     (row.messages as Array<Record<string, unknown>>).push(message);
     return envelope(message) as T;
   }
