@@ -35,3 +35,21 @@ Append-only. Each entry: timestamp, checkpoint, actions, results, evidence, comm
 - libapp.so re-hashed from split: 10,945,116 B, SHA-256 e150ce501b87d3c0… (matches prior run's recorded payload identity).
 - Output: previous-research-audit.md (claim verdicts + metric normalization table + gaps list).
 - CP1 verdict: prior research substantially sound; corrections adopted for this run's vocabulary.
+
+## 2026-10-27 — CP2 complete (pushed aca31ac1, remote verified)
+
+- apk-inventory.csv (8 rows) + raw JSON; integrity report: single Cartona version set (all files versionCode 70000083, same signer cert 83891e0a… + SourceStamp); base APK has zero lib/ entries (base-only install non-functional); POL test APKs are universal-ABI local builds.
+- Environment matrix: only installed system image = android-35/google_apis/x86_64 (no Play variant, no ARM translation). Emulator fallback policy documented per Addendum B.
+- Tooling research: ARTEMIS researched (Apache-2.0, Windows OK) but NOT activated — requires LLM provider API key + sends screenshots to external model (Addendum C §3-4). Primary path = local ADB + uiautomator + screencap. Source register written (S1-S7).
+
+## 2026-10-27 — CP3 status update
+
+- `adb devices` → 0 devices. Physical device not yet connected by user. Task-301/302 remain NOT_STARTED (blocked on device); recorded as WAITING, not BLOCKED_TECHNICAL. Independent phases continue.
+
+## 2026-10-27 — CP5 complete
+
+- tools/build_asset_inventory.py rebuilt inventory from APK bytes: 113 rows / 103 declared / 106 manifest keys — reproduces prior reconciliation exactly (CONFIRMED).
+- Dimensions parsed for all 62 PNGs; fonts recovered: SomarSans (4 weights), Cairo (variable), Rubik (2), + icon fonts (MaterialIcons, Cupertino, Ionicons, lucide, FA7 ×3).
+- asset-color-analysis.csv: 64 bitmaps, dominant #ffffff / #455a73 (blue-grey) / #d1d5dc; accents #ff951b, #1d2d92, #f2d585. Labeled asset-derived, not runtime tokens.
+- Publication: metadata-only (no binaries); Addendum D applied.
+- adb devices re-check at commit time: still 0 devices.

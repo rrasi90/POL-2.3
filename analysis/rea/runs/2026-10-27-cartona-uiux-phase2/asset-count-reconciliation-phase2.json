@@ -1,0 +1,30 @@
+{
+  "rule": "one row per ZIP file entry under assets/flutter_assets/",
+  "total_rows": 113,
+  "declared": 103,
+  "undeclared": 10,
+  "kind_distribution": {
+    "bin": 1,
+    "json": 7,
+    "z": 1,
+    "ttf": 10,
+    "png": 62,
+    "svg": 17,
+    "jpg": 2,
+    "otf": 4,
+    "css": 1,
+    "html": 2,
+    "js": 4,
+    "yaml": 1,
+    "frag": 1
+  },
+  "role_distribution": {
+    "misc": 12,
+    "data": 7,
+    "fonts": 14,
+    "images": 66,
+    "icons": 14
+  },
+  "color_analyzed": 64,
+  "manifest_keys": 106
+}

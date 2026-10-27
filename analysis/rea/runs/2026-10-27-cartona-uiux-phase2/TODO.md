@@ -1,8 +1,8 @@
 # TODO — 2026-10-27-cartona-uiux-phase2
 
-> آخرین وضعیت / Latest state: CP0 + CP1 DONE. Prior research audited claim-by-claim; 3 framing corrections adopted (endpoint literals, asset-entry scope, 3 distinct string corpora). Remote branch verified at 83a0a860.
-> کار بعدی / Next: CP2 — APK inventory + integrity, environment matrix, split-compat metadata, tooling research.
-> مانع اصلی / Main blocker: none. gh CLI unauthenticated (PR step deferred to CP9 per user decision).
+> آخرین وضعیت / Latest state: CP0/1/2/5 DONE (CP2 pushed aca31ac1; CP5 asset inventory rebuilt from APK bytes — 113 rows, 103 declared, colors + fonts extracted). CP3 WAITING: physical device not yet connected (adb devices empty as of last check). CP6 static re-verification next; device re-check continues.
+> کار بعدی / Next: CP6 static analysis reconciliation; retry device connection for CP3; then CP7/CP8.
+> مانع اصلی / Main blocker: physical device not yet connected (user confirmed it will be). gh CLI unauthenticated (deferred to CP9).
 
 Statuses: `NOT_STARTED | IN_PROGRESS | BLOCKED | PARTIAL | DONE | WONT_DO_WITH_REASON`
 
