@@ -66,7 +66,7 @@ type RetailerMockState = {
   returns: Array<Record<string, unknown>>;
   disputes: Array<Record<string, unknown>>;
   invoices: Array<Record<string, unknown>>;
-  idempotency: Record<string, Record<string, unknown>>;
+  idempotency: Record<string, { request_fingerprint: string; response: Record<string, unknown> }>;
   supportCases: Array<Record<string, unknown>>;
   profile: Record<string, unknown>;
 };
@@ -191,6 +191,17 @@ export function resetRetailerMockState(): void {
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
+}
+
+// Mock-only canonical serializer: object property order does not change the fingerprint,
+// but reusing a checkout key for different request semantics must fail.
+function stableSerialize(value: unknown): string {
+  if (Array.isArray(value)) return "[" + value.map(stableSerialize).join(",") + "]";
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return "{" + Object.keys(record).sort().map((key) => JSON.stringify(key) + ":" + stableSerialize(record[key])).join(",") + "}";
+  }
+  return JSON.stringify(value) ?? "undefined";
 }
 
 function envelope<T>(value: T): T {
@@ -336,8 +347,14 @@ export async function mockRetailerRequest<T>(
   if (method === "POST" && pathname === "/api/v1/orders") {
     const key = headers?.["Idempotency-Key"] || headers?.["idempotency-key"];
     if (!key) return bad("Mock checkout requires Idempotency-Key.");
+    const requestFingerprint = stableSerialize(payload);
     const prior = state.idempotency[key];
-    if (prior) return envelope({ ...prior, idempotent_replay: true }) as T;
+    if (prior) {
+      if (prior.request_fingerprint !== requestFingerprint) {
+        return bad("Mock idempotency key was reused with a different checkout payload.");
+      }
+      return envelope({ ...prior.response, idempotent_replay: true }) as T;
+    }
     const allocationId = String(payload.allocation_plan_id || "");
     if (!state.allocation || allocationId !== state.allocation.id || !state.basket || state.basket.status !== "OPEN") {
       return bad("Mock allocation is missing or stale.");
@@ -373,7 +390,7 @@ export async function mockRetailerRequest<T>(
     state.deliveries[orderId] = { delivery_status: "PENDING" };
     state.basket.status = "CHECKED_OUT";
     const result = { order_group_id: "mock-retailer-order-group-" + orderId, group_status: "SUBMITTED", total_amount_toman: order.total_amount_toman, idempotent_replay: false };
-    state.idempotency[key] = result;
+    state.idempotency[key] = { request_fingerprint: requestFingerprint, response: result };
     return envelope(result) as T;
   }
 
