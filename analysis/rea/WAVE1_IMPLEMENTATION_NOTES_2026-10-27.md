@@ -23,7 +23,7 @@
    - Added retailer assertions to `mvp/apps/mobile/scripts/mock_transport_qa.ts` for search, basket stale-version rejection, allocation totals, checkout replay, order details, storefront, invoice, support, and owner/staff profiles.
 
 4. **B-08 — Persian UI text cleanup (static-only partial)**
-   - Replaced visible “Master Product” with “کالای اصلی” in the retailer basket error, translated the visible “SKU” search placeholders to “شناسهٔ کالا”, and translated the vendor SKU label to “شناسهٔ کالای بنکداری”.
+   - Replaced visible “Master Product” with “کالای اصلی” in the retailer basket error, translated visible “SKU” search placeholders to “شناسهٔ کالا”, translated the vendor SKU label to “شناسهٔ کالای بنکداری”, and replaced the Latin x-mask in the login validation hint with a Persian-digit example.
    - This is not a full RTL/visual QA pass. Device screenshots and a full visible-string audit still require the local environment.
 
 6. **B-06 — order stepper was present but its status mapping was incomplete**
