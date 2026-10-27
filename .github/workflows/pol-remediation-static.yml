@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - remediation/full-closure-2026-09-25
+      - 'fix/**'
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     branches:
@@ -34,6 +35,12 @@ jobs:
           PYTHONPATH: .
           POL_JWT_SECRET: static-gate-secret-not-for-production
         run: python scripts/test_api_route_hygiene.py
+
+      - name: Shared admin router registration uniqueness
+        env:
+          PYTHONPATH: .
+          POL_JWT_SECRET: static-gate-secret-not-for-production
+        run: python scripts/test_admin_route_registration_uniqueness.py
 
       - name: UI audit regression guards (basket synchronization and delivery transitions)
         env:
