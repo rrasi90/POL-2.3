@@ -11,11 +11,11 @@
    - Canonical handlers remain in `scripts/api/routes/admin.py`, where the mutation routes have explicit `require_roles(...)` dependencies.
    - Added `scripts/test_admin_route_registration_uniqueness.py` and wired it into the existing static verification workflow. The check inspects router declarations directly because a normalized OpenAPI path set can hide duplicate registrations.
 
-2. **B-02 — privacy export contract/runtime drift**
-   - `POST /api/v1/privacy/export` was listed as implemented in docs/tests but is not registered by the current runtime router.
-   - Updated `mvp/MVP_API_MAP.md` and `06_PRODUCT/API_Contracts.md` to label it a documented/proposed contract that is **not implemented**.
-   - Removed it from the canonical runtime route set and added an explicit known-gap assertion in `scripts/test_api_boundary_route_inventory.py`.
-   - This does **not** decide that data export should be removed from the product. Product/privacy ownership must decide whether to implement and test the endpoint or explicitly descope it. Until then, client code must not call it.
+2. **B-02 — runtime route inventory drift (corrected during verification)**
+   - Source read-back established that `scripts/api/main.py` includes `privacy_router` under `/api/v1`, and `scripts/api/routes/privacy.py` registers `POST /export` and delegates to `boundary.privacy_export()`.
+   - The support router also registers `GET /support/cases/{case_id}/messages`; both routes must remain in the canonical runtime inventory.
+   - An earlier edit that described `/privacy/export` as unimplemented was incorrect. This follow-up restores the route to `EXPECTED_BUSINESS_ROUTES`, removes the false known-gap assertion and corrects the API map/contract language.
+   - Route registration alone does not prove privacy correctness. Own-user scoping, data minimization, output schema, audit behavior and functional coverage still require explicit behavior/security tests.
 
 3. **B-03 — retailer mock transport**
    - Added `mvp/apps/mobile/src/mock/retailerMockTransport.ts` with synthetic retailer fixtures and isolated mock behavior for role context, catalog search, basket versioning, allocation preview, checkout, idempotency, orders/items/timeline/delivery, returns/disputes, vendor storefront, invoices, support, profile and notifications.
@@ -72,7 +72,7 @@ Also run the full documented backend verification suite if the local PostgreSQL 
 
 - Router overlap between the canonical guarded admin router and management admin router is empty.
 - The four shared admin routes have exactly one declaration, in `admin.py`.
-- Runtime route inventory does not falsely treat `/privacy/export` as implemented; the gap remains explicit.
+- Runtime route inventory includes registered `POST /privacy/export` and `GET /support/cases/{case_id}/messages`; registration is distinguished from full privacy-behavior verification.
 - Retailer mock can complete search → create basket → add items → allocation preview → idempotent checkout → read order details.
 - Timeline and support-message mock response shapes match the client contract.
 - Existing vendor mock QA remains green.
