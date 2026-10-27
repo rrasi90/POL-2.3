@@ -2,23 +2,69 @@
   "captured": "2026-10-27",
   "sdk_root": "%LOCALAPPDATA%\\Android\\Sdk",
   "tools": {
-    "adb": {"present": true, "version": "1.0.41 (37.0.1-15733141)"},
-    "build_tools": ["36.0.0", "35.0.0"],
+    "adb": {
+      "present": true,
+      "version": "1.0.41 (37.0.1-15733141)"
+    },
+    "build_tools": [
+      "36.0.0",
+      "35.0.0"
+    ],
     "cmdline_tools": true,
     "emulator": true,
     "java": "OpenJDK 21.0.9 (Android Studio JBR)",
-    "python": ["3.11.15", "3.14.2"],
+    "python": [
+      "3.11.15",
+      "3.14.2"
+    ],
     "unzip": "Info-ZIP 6.00",
-    "missing": ["frida", "jadx", "apktool", "scrcpy", "7z"]
+    "missing": [
+      "frida",
+      "jadx",
+      "apktool",
+      "scrcpy",
+      "7z"
+    ]
   },
   "system_images": [
-    {"api": 35, "variant": "google_apis", "abi": "x86_64", "only_image": true, "playstore": false}
+    {
+      "api": 35,
+      "variant": "google_apis",
+      "abi": "x86_64",
+      "playstore": false,
+      "native_bridge": "none (verified by install attempt)"
+    },
+    {
+      "api": 34,
+      "variant": "google_apis_playstore",
+      "abi": "x86_64",
+      "playstore": true,
+      "native_bridge": "libndk_translation.so (arm64-v8a only; abilist32 empty; verified by install attempt)"
+    },
+    {
+      "api": 25,
+      "variant": "google_apis",
+      "abi": "x86",
+      "playstore": false,
+      "native_bridge": "none shipped (houdini hypothesis disproven by build.prop + binary grep)"
+    }
   ],
   "avds": [
-    {"name": "POL_API_Emulator", "device": "pixel_6", "api": 35, "abi": "x86_64", "image": "google_apis", "playstore_enabled": false}
+    {
+      "name": "POL_API_Emulator",
+      "device": "pixel_6",
+      "api": 35,
+      "abi": "x86_64",
+      "image": "google_apis",
+      "playstore_enabled": false
+    }
   ],
   "devices_connected": 0,
   "physical_device_expected": true,
   "emulator_fallback_policy": "only if physical device unavailable; official google_apis_playstore x86_64 image (Android 11+ ARM translation, per-binary limitations documented by Google) would need download via official SDK manager; viability must be proven by actual install attempt, never assumed",
-  "addendum_references": ["A split-compatibility validation before install", "B evidence-based emulator selection"]
+  "addendum_references": [
+    "A split-compatibility validation before install",
+    "B evidence-based emulator selection"
+  ],
+  "runtime_verdict": "BLOCKED_TECHNICAL: no armeabi-v7a-capable environment available; physical device never connected during run window"
 }

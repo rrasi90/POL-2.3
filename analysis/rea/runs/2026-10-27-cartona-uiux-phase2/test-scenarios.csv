@@ -1,1 +1,2 @@
 scenario_id,session_id,flow,steps,expected,evidence_status,evidence_reference,result,notes
+scenario_runtime,cp3-att2/cp3-att3,any Cartona runtime flow,not executed — install failed on every available environment,app installed and launchable,BLOCKED_TECHNICAL,android-installation-results.md; runtime-sessions.csv,NOT_RUN,no ARMv7-capable runtime available; physical device never connected during run window

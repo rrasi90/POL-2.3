@@ -91,3 +91,19 @@ Append-only. Each entry: timestamp, checkpoint, actions, results, evidence, comm
 - Fallback: official system-images;android-34;google_apis_playstore;x86_64 download started via sdkmanager. Attempt 1 aborted at 22% (connection reset — logged); retry in progress.
 - tools/capture_screen.py prepared for CP4 (manifest-integrated screencap with sha256/dims/metadata).
 - runtime-sessions.csv + test-scenarios.csv scaffolds created (headers only — no fabricated rows).
+
+## 2026-10-27 — CP3 continuation: all emulator paths exhausted (BLOCKED_TECHNICAL with evidence)
+
+- Attempt 3 (official Play image API 34 + libndk): sdkmanager failed twice mid-transfer (connection resets, logged); recovered via resumable curl from official URL — size 1,510,752,654 == Content-Length, unzip -t OK. AVD CP4_Play34 created (printf escape corruption + disk-space limits documented and fixed). Boot OK. getprop: abilist x86_64,arm64-v8a (NO armeabi-v7a), native bridge libndk_translation.so, abilist32 EMPTY. Install of all 4 splits: FAILED INSTALL_FAILED_NO_MATCHING_ABIS — libndk is arm64-only.
+- Attempt 4 (houdini hypothesis on API 25 x86): sdkmanager failed at 15% (log retained); resumable curl from official URL x86-25_r18.zip — size 1,013,657,090 == Content-Length, unzip -t OK, extracted. build.prop abilist=x86 only; binary grep houdini=0. Hypothesis disproven; boot not attempted (no translator to test).
+- Physical device: adb devices empty at every check during the run window.
+- runtime-sessions.csv: 4 honest rows (3 failed installs, 1 disproven hypothesis). Reconciliation: 21 rows -> runtime_observation=BLOCKED, reconciliation_status=BLOCKED_RUNTIME with evidence reference.
+- Conclusion: no ARMv7-capable Android environment available; runtime UI observation BLOCKED_TECHNICAL. AVDs CP4_Play34 / CP4_API25 remain for future retry.
+
+## 2026-10-27 — CP9 final
+
+- QA final gate: 110/110 PASS exit 0 (after honest fixes: quoting fix in runtime-sessions.csv; BLOCKED_TECHNICAL row added to test-scenarios.csv).
+- Product-freeze proof recorded in qa-validation-report.md: 42 changed files, all in run dir; 0 product files; git diff --check clean.
+- final-report.md written: PARTIAL — BLOCKED WITH EVIDENCE.
+- runtime-vs-static-reconciliation.csv: 21 rows BLOCKED_RUNTIME with evidence reference.
+- environment-matrix.md/json updated with 3 images + runtime verdict.

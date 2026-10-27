@@ -1,22 +1,22 @@
 screen_id,route_or_entry,static_status_prior,static_reverified_20261027,verbatim_evidence,runtime_observation,runtime_evidence,reconciliation_status
-launch,com.cartona.MainActivity (Flutter launcher),STATIC_INFERRED,CONFIRMED,decoded manifest + revision-2,NOT_RUN,,PENDING_RUNTIME
-login_otp,/v3/auth/otp/request/sms + /verify,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/v3/auth/otp/request/sms,NOT_RUN,,PENDING_RUNTIME
-landing,/landing,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/landing,NOT_RUN,,PENDING_RUNTIME
-categories,/categories,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/categories,NOT_RUN,,PENDING_RUNTIME
-search,/search,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/search,NOT_RUN,,PENDING_RUNTIME
-suppliers,/suppliers,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/suppliers,NOT_RUN,,PENDING_RUNTIME
-favorites,/v3/retail/favorite/suppliers/,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/v3/retail/favorite/suppliers/,NOT_RUN,,PENDING_RUNTIME
-cart,/v3/retail/cart/validate + local carts table,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/v3/retail/cart/validate,NOT_RUN,,PENDING_RUNTIME
-checkout_orders,/orders + 236 Arabic order strings,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/orders,NOT_RUN,,PENDING_RUNTIME
-order_reorder,/order-reorder + sqlite reorder columns,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/order-reorder,NOT_RUN,,PENDING_RUNTIME
-order_tracking,/order-tracking + flutter_osm_plugin,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/order-tracking,NOT_RUN,,PENDING_RUNTIME
-wallet,/wallet + 32 Arabic wallet strings,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/wallet,NOT_RUN,,PENDING_RUNTIME
-credit_bnpl,/v3/partner/cartona-finance/* + consent,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/v3/partner/cartona-finance/*,NOT_RUN,,PENDING_RUNTIME
-branches,/branch-management + /v3/retail/branches,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/branch-management,NOT_RUN,,PENDING_RUNTIME
-user_management,/user-management,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/user-management,NOT_RUN,,PENDING_RUNTIME
-notifications,/notifications + /v3/retail/notifications,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/notifications,NOT_RUN,,PENDING_RUNTIME
-support,Freshchat activities + /v3/retail/order-support-tickets,STATIC_INFERRED,CONFIRMED,manifest + endpoints,NOT_RUN,,PENDING_RUNTIME
-signup_celebration,/signup-celebration + account_created.png,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/signup-celebration,NOT_RUN,,PENDING_RUNTIME
-ramadan_campaign,/ramadan-products + /ramadan-quiz + eid cashback,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/ramadan-products,NOT_RUN,,PENDING_RUNTIME
-blocked_state,/block /unblock + is_blocked,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/block,NOT_RUN,,PENDING_RUNTIME
-image_error_state,حدث خطأ اثناء تحميل الصورة، برجاء المحاولة مره اخري.,STATIC_INFERRED,CONFIRMED,utf16le_fragment=yes,NOT_RUN,,PENDING_RUNTIME
+launch,com.cartona.MainActivity (Flutter launcher),STATIC_INFERRED,CONFIRMED,decoded manifest + revision-2,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+login_otp,/v3/auth/otp/request/sms + /verify,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/v3/auth/otp/request/sms,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+landing,/landing,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/landing,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+categories,/categories,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/categories,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+search,/search,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/search,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+suppliers,/suppliers,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/suppliers,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+favorites,/v3/retail/favorite/suppliers/,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/v3/retail/favorite/suppliers/,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+cart,/v3/retail/cart/validate + local carts table,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/v3/retail/cart/validate,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+checkout_orders,/orders + 236 Arabic order strings,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/orders,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+order_reorder,/order-reorder + sqlite reorder columns,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/order-reorder,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+order_tracking,/order-tracking + flutter_osm_plugin,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/order-tracking,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+wallet,/wallet + 32 Arabic wallet strings,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/wallet,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+credit_bnpl,/v3/partner/cartona-finance/* + consent,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/v3/partner/cartona-finance/*,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+branches,/branch-management + /v3/retail/branches,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/branch-management,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+user_management,/user-management,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/user-management,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+notifications,/notifications + /v3/retail/notifications,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/notifications,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+support,Freshchat activities + /v3/retail/order-support-tickets,STATIC_INFERRED,CONFIRMED,manifest + endpoints,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+signup_celebration,/signup-celebration + account_created.png,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/signup-celebration,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+ramadan_campaign,/ramadan-products + /ramadan-quiz + eid cashback,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/ramadan-products,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+blocked_state,/block /unblock + is_blocked,STATIC_INFERRED,CONFIRMED,route_literal_verbatim=/block,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME
+image_error_state,حدث خطأ اثناء تحميل الصورة، برجاء المحاولة مره اخري.,STATIC_INFERRED,CONFIRMED,utf16le_fragment=yes,BLOCKED,android-installation-results.md sections 4-8 (INSTALL_FAILED_NO_MATCHING_ABIS on all available environments; no ARMv7-capable runtime),BLOCKED_RUNTIME

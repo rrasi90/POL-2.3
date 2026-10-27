@@ -1,1 +1,5 @@
-session_id,app_version,device,android_version,abi,method,install_result,launch_result,screenshot_count,log_path,limitations
+session_id,app_version,device,android_version,abi,method,install_result,launch_result,screenshot_count,log_path,limitations,
+cp3-att1,8.4.6,POL_API_Emulator (google_apis x86_64),15,x86_64,arm64-v8a,adb install-multiple (base+abi+en),FAILED INSTALL_FAILED_MISSING_SPLIT (density split mandatory),not launched,0,session log (in progress-log),density split required for this bundle
+cp3-att2,8.4.6,POL_API_Emulator (google_apis x86_64),15,x86_64,arm64-v8a,adb install-multiple (all 4 splits),FAILED INSTALL_FAILED_NO_MATCHING_ABIS res=-113,not launched,0,session log (in progress-log),no native bridge on google_apis image
+cp3-att3,8.4.6,CP4_Play34 (google_apis_playstore x86_64 libndk),14,x86_64,arm64-v8a,adb install-multiple (all 4 splits),FAILED INSTALL_FAILED_NO_MATCHING_ABIS res=-113,not launched,0,session log (in progress-log),libndk translates arm64 only; app is armeabi-v7a-only
+cp3-att4,8.4.6,CP4_API25 (google_apis x86),7.1.1,x86,none,hypothesis test (image inspection),N/A — image contains no houdini translator (build.prop + binary grep),not attempted,0,session log (in progress-log),hypothetical path disproven before install

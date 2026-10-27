@@ -21,8 +21,9 @@
 | `baseline.json` / `environment-matrix.json` contained host user path `C:\Users\…` | redacted to `%LOCALAPPDATA%\Android\Sdk`; JSONs re-validated |
 | First validator run caught `pol_current_file` prose treated as path | filename-token rule applied |
 
-## Not yet gated (pending CP3/CP4)
+## Final gate runs (continuation, 2026-10-27)
 
-- screenshot-manifest cross-checks (no runtime screenshots exist yet — manifest will be validated when populated)
-- final product-freeze diff review (performed at mission end)
-- final report consistency counts (performed at mission end)
+- Run 2 (after CP3/CP4 artifacts): **108/110 PASS** — caught `runtime-sessions.csv` ragged row (unquoted `x86_64,arm64-v8a`) and header-only `test-scenarios.csv`. Both fixed honestly (quoting round-trip; one BLOCKED_TECHNICAL row documenting the unexecuted runtime instead of fabricated scenarios).
+- Run 3 (final): **110/110 PASS, exit code 0**.
+- Product-freeze proof (Addendum E/G): `git diff --name-only fix/pol-wave1-qa-mock-route-docs-20261027..HEAD` = 42 files, **all** under `analysis/rea/runs/2026-10-27-cartona-uiux-phase2/`; product paths (mvp/, migrations/, scripts/, requirements.txt, deploy) = **0 files**; `git diff --check` clean.
+- Screenshot manifest checks: NOT_APPLICABLE (zero real screenshots — no runtime session was possible; honestly recorded in runtime-sessions.csv and final-report.md).

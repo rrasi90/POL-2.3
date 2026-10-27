@@ -26,7 +26,9 @@
 
 | API | Variant | ABI | Notes |
 |---|---|---|---|
-| 35 | google_apis | x86_64 | **the only installed image**; PlayStore.enabled = no on the AVD using it |
+| 35 | google_apis | x86_64 | PlayStore disabled; **no native bridge** (install attempt evidence) |
+| 34 | google_apis_playstore | x86_64 | **added during CP3** (official zip, resumable download after 2 sdkmanager resets); libndk ARM translation = **arm64-v8a only** (abilist32 empty) |
+| 25 | google_apis | x86 | **added during CP3** (houdini hypothesis); **no translator in image** (build.prop + binary grep) |
 
 No Play Store (google_apis_playstore) image, no API 30 image, and no ARM-translation-capable image is installed locally. If an emulator fallback becomes necessary, an official `google_apis_playstore` x86_64 image (Android 11+ carries ARM-to-x86 translation via libndk/native-bridge; per official Android Emulator documentation, ARM app support exists on Android 11+ x86_64 images with known per-binary limitations) would need to be downloaded via the official SDK manager — free, official channel; decision deferred to CP3 and only if the physical device is unavailable. **Emulator viability must be validated by an actual install attempt, never assumed.**
 

@@ -1,8 +1,8 @@
 # TODO — 2026-10-27-cartona-uiux-phase2
 
-> آخرین وضعیت / Latest state: CP0/1/2/5 DONE (CP2 pushed aca31ac1; CP5 asset inventory rebuilt from APK bytes — 113 rows, 103 declared, colors + fonts extracted). CP3 WAITING: physical device not yet connected (adb devices empty as of last check). CP6 static re-verification next; device re-check continues.
-> کار بعدی / Next: CP9 QA scripts + final report; retry device for CP3/CP4.
-> مانع اصلی / Main blocker: physical device not yet connected (user confirmed it will be). gh CLI unauthenticated (deferred to CP9).
+> آخرین وضعیت / Latest state: runtime exhausted with evidence — 4 install attempts across 3 environments all BLOCKED (no ARMv7-capable runtime: physical device never connected; google_apis 35 no bridge; Play 34 libndk = arm64-only; API 25 x86 ships no houdini). Static phases CP1/2/5/6/7/8 complete. Closing PARTIAL — BLOCKED WITH EVIDENCE.
+> کار بعدی / Next: final QA + report + push verification + PR attempt (gh auth).
+> مانع اصلی / Main blocker: no armeabi-v7a-capable Android environment connected/available. gh CLI unauthenticated (PR step).
 
 Statuses: `NOT_STARTED | IN_PROGRESS | BLOCKED | PARTIAL | DONE | WONT_DO_WITH_REASON`
 
@@ -85,12 +85,12 @@ Statuses: `NOT_STARTED | IN_PROGRESS | BLOCKED | PARTIAL | DONE | WONT_DO_WITH_R
 
 ### task-302: Physical device install via adb install-multiple
 - Description: validated install with full command/exit/stdout/stderr/device-state logging; launch; logcat; first screenshot.
-- Status: NOT_STARTED | Priority: high | Dependencies: task-301
+- Status: BLOCKED (device never connected during run window; 3 adb checks empty) | Priority: high | Dependencies: task-301
 - Result: — | Evidence: — | Commit: — | Blockers: — | Next: —
 
 ### task-303: Emulator fallback paths (only if device unavailable at runtime moment)
 - Description: per Addendum B — select image by verified ABI compatibility (Android 11 x86/x86_64 ARM translation caveats), never by API number; historical x86_64 failure reproduced only as supplementary test.
-- Status: NOT_STARTED | Priority: medium | Dependencies: task-302 blocked
+- Status: DONE (all paths exhausted with evidence: google_apis 35 INSTALL_FAILED_NO_MATCHING_ABIS; Play 34 libndk arm64-only INSTALL_FAILED_NO_MATCHING_ABIS; API 25 x86 houdini hypothesis disproven by image inspection) | Priority: medium | Dependencies: task-302 blocked
 - Result: — | Evidence: — | Commit: — | Blockers: — | Next: —
 
 ## CP4 — Runtime observation

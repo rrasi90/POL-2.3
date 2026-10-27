@@ -52,9 +52,43 @@ adb install-multiple -r com.cartona.apk config.armeabi_v7a.apk config.en.apk con
 ## 5. Package state after attempts
 
 `com.cartona` NOT installed (both sessions failed before commit). Verified via install failure output; no partial install state.
+## 6. Attempt 3 — official Google Play image (API 34, libndk ARM translation)
 
-## 6. Status
+Preparation (all verified):
+- `sdkmanager` downloads failed twice mid-transfer (`Connection reset` / `connection aborted` at 22% and 17% — session logs retained).
+- Recovered via resumable `curl -C -` of the **official** zip `https://dl.google.com/android/repository/sys-img/google_apis_playstore/x86_64-34_r14.zip`; final size **1,510,752,654 B == server Content-Length**; `unzip -t` -> `No errors detected`.
+- Extracted to `system-images/android-34/google_apis_playstore/x86_64/` (source.properties: x86_64 with Google Play, API 34).
+- AVD `CP4_Play34` created (manual `config.ini` with `image.sysdir.1`; an initial `printf` escape corruption of the path was caught by an emulator FATAL and fixed; `disk.dataPartition.size` reduced 8G->4G for host disk limits — both documented).
+- Boot: `sys.boot_completed=1`.
 
-- Physical device: **BLOCKED (not connected)** — will be retried; user indicated availability.
-- Emulator (google_apis API 35): **BLOCKED_TECHNICAL** — `INSTALL_FAILED_NO_MATCHING_ABIS`, evidence above.
-- Emulator (google_apis_playstore API 34): **IN PROGRESS** — image downloading via official sdkmanager; AVD creation + validated install attempt to follow.
+Device facts (getprop):
+| Property | Value |
+|---|---|
+| Android | 14 (API 34) |
+| `ro.product.cpu.abilist` | `x86_64,arm64-v8a` — **no `armeabi-v7a`** |
+| `ro.dalvik.vm.native.bridge` | `libndk_translation.so` (enabled) — **arm64 translation only; `ro.product.cpu.abilist32` empty** |
+
+Install attempt (all 4 splits — attempt-1 lesson applied):
+```
+adb install-multiple -r com.cartona.apk config.armeabi_v7a.apk config.en.apk config.mdpi.apk
+```
+- exit code: 1 — `Failure [INSTALL_FAILED_NO_MATCHING_ABIS ... res=-113]`
+- **Root cause: libndk translates arm64-v8a only; Cartona ships armeabi-v7a-only native code.**
+
+## 7. Attempt 4 — legacy x86 + houdini hypothesis (API 25)
+
+Hypothesis: pre-API-26 x86 google_apis images shipped houdini ARMv7 translation (historically documented).
+- Highest image compatible with minSdk 24: `system-images;android-25;google_apis;x86` (rev 18).
+- sdkmanager download failed again (connection aborted at 15%); recovered via resumable curl from the official URL `sys-img/google_apis/x86-25_r18.zip` — size 1,013,657,090 B == Content-Length; `unzip -t` OK; extracted.
+- **Hypothesis DISPROVEN by image inspection:** `build.prop` `ro.product.cpu.abilist=x86` (no ARM); binary grep of `system.img`/`ramdisk.img` -> **houdini: 0 occurrences**. AVD `CP4_API25` created but boot not attempted — the image contains no ARM translator, so an install could only repeat attempts 1-3 identically.
+
+## 8. Conclusion — runtime paths exhausted with evidence
+
+| Path | Result | Evidence |
+|---|---|---|
+| Physical ARM device | **NOT CONNECTED** (user-indicated availability never materialized during this run window) | `adb devices -l` empty at every check |
+| google_apis API 35 x86_64 | `INSTALL_FAILED_NO_MATCHING_ABIS` (no native bridge) | attempt 2 log |
+| google_apis_playstore API 34 x86_64 (libndk) | `INSTALL_FAILED_NO_MATCHING_ABIS` (arm64-only translation) | attempt 3 log |
+| google_apis API 25 x86 (houdini hypothesis) | **no translator in image** (build.prop + binary grep) | attempt 4 inspection |
+
+**Runtime UI observation is `BLOCKED_TECHNICAL` for this run** on all available environments. The one viable untried path remains a physical `armeabi-v7a` device (or an arm64 build of the app from the vendor — out of scope). The AVDs `CP4_Play34` and `CP4_API25` remain installed for future retry. `com.cartona` was never installed on any environment; no partial install state exists.
