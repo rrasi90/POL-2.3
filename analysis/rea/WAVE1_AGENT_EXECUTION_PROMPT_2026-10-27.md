@@ -32,7 +32,7 @@ git log -8 --oneline --decorate
 
 1. حذف ثبت تکراری چهار مسیر مدیریتی از `scripts/api/routes/management.py`؛ canonical handlerها در `scripts/api/routes/admin.py` با `require_roles` باقی مانده‌اند.
 2. آزمون جدید `scripts/test_admin_route_registration_uniqueness.py` برای جلوگیری از بازگشت duplicate routes.
-3. اصلاح ادعای نادرست اجرای `POST /api/v1/privacy/export`: در router فعلی وجود ندارد؛ قرارداد باید آن را gap/proposed نشان بدهد تا زمانی که endpoint واقعاً پیاده و آزمون شود.
+3. اصلاح drift در route inventory: `scripts/api/main.py`، `privacy_router` را با پیشوند `/api/v1` mount می‌کند و `scripts/api/routes/privacy.py` مسیر `POST /export` را ثبت می‌کند؛ همچنین support router مسیر `GET /support/cases/{case_id}/messages` را دارد. هر دو باید در inventory کانونیکال ثبت باشند. ثبت route را با اثبات کامل بودن رفتار امنیت/حریم خصوصی یکی ندان.
 4. mock خرده‌فروش در `mvp/apps/mobile/src/mock/retailerMockTransport.ts` و dispatch بر اساس نقش در `mockTransport.ts`.
 5. تست‌های خرده‌فروش در `mvp/apps/mobile/scripts/mock_transport_qa.ts`.
 6. مستند اجرا در `analysis/rea/WAVE1_IMPLEMENTATION_NOTES_2026-10-27.md`.
@@ -69,10 +69,12 @@ python -m pytest -q
 
 ### بررسی خاص B-02
 
-- `scripts/api/routes/privacy.py` و خروجی واقعی `app.openapi()["paths"]` را بخوان.
-- تأیید کن `POST /api/v1/privacy/export` در runtime ثبت نیست.
-- تأیید کن این gap در test inventory صریح است و مستندات آن را endpoint آمادهٔ فراخوانی معرفی نمی‌کنند.
-- **endpoint را فقط برای سبزکردن آزمون از expected route set حذف نکن.** اگر product/privacy owner تصمیم به پیاده‌سازی داد، یک کار جداگانه شامل schema، auth/ownership, data minimization, audit, contract tests و API docs طراحی و اجرا کن. این PR به‌تنهایی مجوز حذف نیازمندی privacy نیست.
+- `scripts/api/main.py` را بخوان و تأیید کن `privacy_router` با پیشوند `/api/v1` وارد برنامه شده است.
+- `scripts/api/routes/privacy.py` را بخوان: `POST /api/v1/privacy/export` ثبت شده و handler آن `boundary.privacy_export()` را فراخوانی می‌کند؛ بنابراین نباید آن را صرفاً به‌دلیل اختلاف مستندات، gap اعلام کرد.
+- `GET /api/v1/support/cases/{case_id}/messages` نیز در `scripts/api/routes/support.py` ثبت شده و باید در `EXPECTED_BUSINESS_ROUTES` باشد.
+- route inventory باید هر دو مسیر را با method/path دقیق در مجموعهٔ runtime مورد انتظار داشته باشد و نباید assert کند که privacy export در runtime وجود ندارد.
+- ثبت route به‌تنهایی اثبات کامل بودن قابلیت نیست. بررسی کن که رفتار `privacy_export()` به داده‌های همان کاربر محدود است، schema/محتوا طبق قرارداد است، داده‌های غیرضروری افشا نمی‌شوند، audit قابل اتکاست و آزمون‌های مثبت/منفی وجود دارند.
+- اگر رفتار موردنیاز قرارداد پوشش داده نشده، gap رفتاری مشخص بنویس و تست هدفمند اضافه کن؛ endpoint یا نیازمندی حریم خصوصی را فقط برای سبز کردن آزمون حذف/تضعیف نکن.
 
 ## 4. آزمون‌های Mobile و mock خرده‌فروش
 
@@ -156,7 +158,7 @@ git diff -- 06_PRODUCT/API_Contracts.md mvp/MVP_API_MAP.md
 - همهٔ regressionها رفع یا به‌عنوان blocker مستند شده باشند؛
 - retailer mock و vendor mock هر دو coverage واقعی داشته باشند؛
 - route duplicate regression به‌صورت خودکار در workflow موجود اجرا شود؛
-- `privacy/export` دقیقاً به‌عنوان gap یا endpoint پیاده‌شده و آزمون‌شده وضعیت داشته باشد؛
+- `/privacy/export` و `GET /support/cases/{case_id}/messages` در runtime route inventory درست ثبت شده باشند؛ رفتار کامل privacy export باید جداگانه با شواهد تست شود؛
 - PR diff بررسی شده، branch همگام است، و شواهد نتایج در گیت‌هاب قابل مشاهده‌اند.
 
 تا آن زمان، وضعیت `IMPLEMENTED_PENDING_LOCAL_VERIFICATION` است؛ آن را PASS اعلام نکن.
