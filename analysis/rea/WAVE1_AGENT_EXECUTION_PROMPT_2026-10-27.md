@@ -45,6 +45,7 @@ git log -8 --oneline --decorate
 
 ```powershell
 $env:PYTHONPATH = "."
+$env:POL_JWT_SECRET = "static-gate-secret-not-for-production"
 python scripts/test_admin_route_registration_uniqueness.py
 python -m pytest scripts/test_admin_route_registration_uniqueness.py scripts/test_api_boundary_route_inventory.py -q
 python scripts/test_api_route_hygiene.py
