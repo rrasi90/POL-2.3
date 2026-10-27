@@ -74,7 +74,7 @@ HTTP may also set `X-Correlation-ID`.
 
 | Method | Path | Notes |
 |--------|------|-------|
-| POST | `/privacy/export` | **DOCUMENTED GAP — not registered in the current FastAPI router; do not call.** Product/privacy owner must choose implementation or explicit descoping; update the route inventory and contract tests when resolved. |
+| POST | `/privacy/export` | **REAL — registered** in `scripts/api/routes/privacy.py`, mounted by `scripts/api/main.py`; delegates to `boundary.privacy_export()`. Verify own-user scoping, output contract and audit behavior before treating privacy semantics as fully validated. |
 | POST | `/privacy/deletion` | Authenticated account de-identification: revoke sessions/devices/consents and clear direct profile PII while preserving business/audit history |
 
 ### 3.3 Baskets — `baskets.py` (`/baskets`)
