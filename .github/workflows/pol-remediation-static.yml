@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - remediation/full-closure-2026-09-25
-      - 'fix/**'
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     branches:
