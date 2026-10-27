@@ -1,7 +1,7 @@
 # TODO — 2026-10-27-cartona-uiux-phase2
 
 > آخرین وضعیت / Latest state: CP0/1/2/5 DONE (CP2 pushed aca31ac1; CP5 asset inventory rebuilt from APK bytes — 113 rows, 103 declared, colors + fonts extracted). CP3 WAITING: physical device not yet connected (adb devices empty as of last check). CP6 static re-verification next; device re-check continues.
-> کار بعدی / Next: CP8 mapping + design tokens; retry device for CP3.
+> کار بعدی / Next: CP9 QA scripts + final report; retry device for CP3/CP4.
 > مانع اصلی / Main blocker: physical device not yet connected (user confirmed it will be). gh CLI unauthenticated (deferred to CP9).
 
 Statuses: `NOT_STARTED | IN_PROGRESS | BLOCKED | PARTIAL | DONE | WONT_DO_WITH_REASON`
@@ -127,9 +127,11 @@ Statuses: `NOT_STARTED | IN_PROGRESS | BLOCKED | PARTIAL | DONE | WONT_DO_WITH_R
 ## CP8 — Design system + POL mapping
 
 ### task-801: Design token inventory + design system analysis + component catalog
-- Status: NOT_STARTED | Priority: high | Dependencies: CP4/CP5/CP6
+- Status: DONE (static-phase version; runtime tokens pending CP4) | Priority: high | Dependencies: CP4/CP5/CP6
+- Result: design-token-inventory.csv (asset-derived colors STATIC_VERIFIED, fonts, RTL, geometry=UNKNOWN pending runtime); cartona-design-system-analysis.md; component-pattern-catalog.csv (16 components).
 ### task-802: Cartona→POL pattern mapping + gap register + recommendations + priority scoring + DS compatibility
-- Status: NOT_STARTED | Priority: high | Dependencies: task-801
+- Status: DONE | Priority: high | Dependencies: task-801
+- Result: cartona-to-pol-pattern-mapping.csv (18 patterns, ADOPT/ADAPT/KEEP/DO_NOT_COPY/NEEDS_EVIDENCE/REQUIRES_PRODUCT_DECISION); pol-ux-gap-register.csv (16 gaps, mechanically scored); pol-ux-recommendations.md (8 ranked recommendations with Persian copy + regression guards); priority-scoring-method.md; pol-design-system-compatibility.md.
 
 ## CP9 — QA, final gate, publish
 

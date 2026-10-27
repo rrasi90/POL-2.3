@@ -1,0 +1,17 @@
+component,cartona_evidence_status,evidence_reference,inferred_behavior,pol_counterpart_file,pol_component,comparison_note
+category-tile,STATIC_INFERRED,categories screen + 1024x1024 category pngs (asset-gallery-index.md),image-tile category grid with icon art,RetailerMobileScreen.tsx (~418),emoji tile list,illustration vs emoji presentation gap
+product-card,STATIC_INFERRED,/v3/retail/products endpoints + product images in assets,product row/card with image + price + supplier context,RetailerMobileScreen.tsx products tab,product list items,runtime layout UNKNOWN; pattern-level comparison only
+supplier-card,STATIC_INFERRED,/suppliers + supplier-level terms endpoints,supplier card w/ terms signals,RetailerMobileScreen.tsx (~619),vendor card,signals not surfaced in POL
+search-entry,STATIC_INFERRED,/search route + /search/v2/* endpoints,dedicated search screen,none (inline filter),inline filter,nav addition needs product OK
+otp-input,STATIC_INFERRED,/v3/auth/otp/* + 11 Arabic OTP strings,OTP boxes with countdown/retry,LoginScreen.tsx,OTP paste-distribute rows,both two-step; runtime compare pending
+cart-summary,STATIC_INFERRED,/v3/retail/cart/validate + sqlite carts,cart validation + persistence,basket section RetailerMobileScreen.tsx (~483),basket summary,logic parity; visual grouping candidate
+order-success,STATIC_INFERRED,/order/success,explicit success screen,checkout success (~528),success screen,both exist; compare at runtime
+order-timeline,STATIC_INFERRED,/order-tracking + 236 order strings,status vocabulary / tracking,OrderDetailMobileScreen.tsx,status timeline,tracking map = HOLD (GAP-011)
+bottom-sheet,UNKNOWN,runtime needed,UNKNOWN,none used in mobile,bottom sheets not present,NEEDS_EVIDENCE
+dialog-confirm,STATIC_INFERRED (string evidence),cancel/confirm strings in snapshot,confirmation dialogs,inline Alert usage,alert dialogs,likely parity
+loading-state,UNKNOWN,runtime needed,UNKNOWN,ActivityIndicator in Btn,inline spinner,skeleton pattern unevaluated
+empty-state,STATIC_INFERRED,empty/error illustrations in assets,illustration-backed empty,components/ui.tsx Empty,text-only card,adoption candidate GAP-002
+error-state,STATIC_VERIFIED,image_error_state string verbatim,inline image error w/ retry message,ErrorBox,inline error box,adoption candidate GAP-003
+badge-chip,STATIC_INFERRED,status/status-chip strings,toned status chips,components/ui.tsx StatusChip,StatusChip,parity likely
+quantity-stepper,STATIC_INFERRED,qty strings + cart flow,quantity adjust in cart/order,OrderDetailMobileScreen.tsx (~540) inline stepper,inline stepper,MOQ/multiple display = product-ruled
+wallet-surface,STATIC_INFERRED,/wallet + 32 wallet strings + /installment2,dedicated wallet/BNPL surfaces,none,none,REQUIRES_PRODUCT_DECISION GAP-012

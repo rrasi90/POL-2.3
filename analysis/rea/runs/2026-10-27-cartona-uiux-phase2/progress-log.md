@@ -67,3 +67,10 @@ Append-only. Each entry: timestamp, checkpoint, actions, results, evidence, comm
 - complementary-apps-research.md + app-role-capability-matrix.csv (16 rows). Access verdicts: suppliers/driver UNAVAILABLE (business-gated; no legal sideload).
 - Wallet/BNPL listing claim corroborated by CP6 snapshot literals. Driver capability adopt-decisions remain gated on prior handoff D-01 (unchanged).
 - Device re-check at CP7 commit: still 0 devices.
+
+## 2026-10-27 — CP8 complete (static-phase version)
+
+- Read POL theme.ts + ui.tsx in full; mapping anchored to real files (RetailerMobileScreen.tsx tabs/line refs, VendorMobileScreen.tsx, LoginScreen.tsx, OrderDetailMobileScreen.tsx).
+- 7 deliverables: design-token-inventory.csv, cartona-design-system-analysis.md, component-pattern-catalog.csv, cartona-to-pol-pattern-mapping.csv (18 patterns), pol-ux-gap-register.csv (16 gaps; scores computed mechanically per published formula; GAP-001 risk reclassified 3→4 with rationale), pol-ux-recommendations.md, pol-design-system-compatibility.md.
+- Headline: P0 = image-error placeholder + illustration empty states; P1 = reorder (guarded), supplier signals, category illustrations, home hierarchy, signup success, vendor statements; HOLD = wallet/BNPL, map tracking, onboarding split, seasonal campaigns, search screen.
+- Device re-check at CP8 commit: still 0 devices.
