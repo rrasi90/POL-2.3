@@ -53,3 +53,10 @@ Append-only. Each entry: timestamp, checkpoint, actions, results, evidence, comm
 - asset-color-analysis.csv: 64 bitmaps, dominant #ffffff / #455a73 (blue-grey) / #d1d5dc; accents #ff951b, #1d2d92, #f2d585. Labeled asset-derived, not runtime tokens.
 - Publication: metadata-only (no binaries); Addendum D applied.
 - adb devices re-check at commit time: still 0 devices.
+
+## 2026-10-27 — CP6 complete
+
+- tools/dart_static_sweep.py (fixed two bugs during development: bytes/str set comparison, UTF-16 low-byte range): independent sweep of libapp.so — 70/70 endpoint literals and 24/24 routes verbatim; 15,290 ASCII runs ≥6; 2,176 UTF-16 runs (1,642 Arabic) under this run's documented thresholds.
+- NEW: 34 path literals absent from prior catalogs (wallet/BNPL surface /legacy/wallet/top-up, /installment2, /pay/authorize/, /tabs/payment-gateways; onboarding new/returning split; /cart/checkout; /order/success; /cartona_v0016.sqlite). Hygiene: leaked dev path in snapshot (no credentials).
+- runtime-vs-static-reconciliation.csv: 21/21 static-CONFIRMED (incl. image_error_state via full Arabic string verbatim); runtime NOT_RUN pending CP4.
+- Device re-check: still 0 devices.

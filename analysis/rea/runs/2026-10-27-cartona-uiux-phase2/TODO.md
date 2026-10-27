@@ -1,7 +1,7 @@
 # TODO — 2026-10-27-cartona-uiux-phase2
 
 > آخرین وضعیت / Latest state: CP0/1/2/5 DONE (CP2 pushed aca31ac1; CP5 asset inventory rebuilt from APK bytes — 113 rows, 103 declared, colors + fonts extracted). CP3 WAITING: physical device not yet connected (adb devices empty as of last check). CP6 static re-verification next; device re-check continues.
-> کار بعدی / Next: CP6 static analysis reconciliation; retry device connection for CP3; then CP7/CP8.
+> کار بعدی / Next: CP7 complementary-apps research; retry device for CP3; then CP8 mapping.
 > مانع اصلی / Main blocker: physical device not yet connected (user confirmed it will be). gh CLI unauthenticated (deferred to CP9).
 
 Statuses: `NOT_STARTED | IN_PROGRESS | BLOCKED | PARTIAL | DONE | WONT_DO_WITH_REASON`
@@ -112,9 +112,11 @@ Statuses: `NOT_STARTED | IN_PROGRESS | BLOCKED | PARTIAL | DONE | WONT_DO_WITH_R
 ## CP6 — Flutter/Dart static analysis
 
 ### task-601: Re-verify snapshot facts + strings + endpoint catalog
-- Status: NOT_STARTED | Priority: medium | Dependencies: CP1
+- Status: DONE | Priority: medium | Dependencies: CP1
+- Result: independent sweep of libapp.so — 70/70 endpoint literals + 24/24 routes verbatim; 15,290 ASCII runs; 2,176 UTF-16 runs (1,642 Arabic); 34 new path literals incl. wallet/BNPL surface; dev-path hygiene finding. dart-static-sweep.json.
 ### task-602: runtime-vs-static reconciliation
-- Status: NOT_STARTED | Priority: medium | Dependencies: task-601 (+ task-402)
+- Status: DONE (static side) | Priority: medium | Dependencies: task-601
+- Result: 21/21 screens static-CONFIRMED from raw bytes; runtime_observation=NOT_RUN pending CP4. runtime-vs-static-reconciliation.csv
 
 ## CP7 — Complementary apps
 
