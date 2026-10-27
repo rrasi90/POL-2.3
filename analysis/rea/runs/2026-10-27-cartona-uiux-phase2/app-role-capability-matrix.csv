@@ -1,0 +1,17 @@
+app,capability,evidence_status,evidence_reference,cartona_confidence,pol_counterpart,pol_state,gap_note
+retail,supplier marketplace browsing + price comparison,LISTING_CLAIM,research-source-register.csv:S6 (listing 2026-10-27),high (listing) / unknown (runtime),RetailerMobileScreen vendors tab,mvp/apps/mobile/src/screens/RetailerMobileScreen.tsx:619,vendor list exists; supplier comparison UX depth unknown at runtime
+retail,credit/BNPL installment plans,LISTING_CLAIM + STATIC_VERIFIED,complementary-apps-research.md; dart-static-sweep.json (/installment2, /pay/authorize/, /tabs/payment-gateways),high,RetailerMobileScreen finance tab = invoices only,no wallet/credit screen in ir.pol.market,REQUIRES_PRODUCT_DECISION if adopted
+retail,group ordering bypass of minimums,LISTING_CLAIM,research-source-register.csv:S6,low-medium,not present,no equivalent,BUSINESS_LOGIC_RISK (order rules)
+retail,offers/discounts/cashback,LISTING_CLAIM + STATIC_VERIFIED,dart-static-sweep.json (/products/flash-offers; /v3/retail/cashback endpoints),high,special offers section home,mvp/apps/mobile/src/screens/RetailerMobileScreen.tsx:~399,cashback surfaces differ; pattern-level comparison in CP8
+retail,onboarding new vs returning user split,STATIC_VERIFIED,dart-static-sweep.json (/onboarding/new_user2, /onboarding/returning_user),high,LoginScreen two-step phone+OTP,mvp/apps/mobile/src/screens/LoginScreen.tsx,different flow shapes; pattern candidate
+retail,explicit order success state,STATIC_VERIFIED,dart-static-sweep.json (/order/success),high,checkout success screen,mvp/apps/mobile/src/screens/RetailerMobileScreen.tsx:~528,both exist; compare treatments in CP8
+retail,delivery tracking,LISTING_CLAIM (gap admitted in reviews),complementary-apps-research.md,medium,OrderDetailMobileScreen status timeline,mvp/apps/mobile/src/screens/OrderDetailMobileScreen.tsx,POL has timeline UI already
+suppliers,order management,LISTING_CLAIM,research-source-register.csv:S7 (listing 2026-10-27),high,VendorMobileScreen orders tab,mvp/apps/mobile/src/screens/VendorMobileScreen.tsx,covers same domain
+suppliers,catalog creation/coding,LISTING_CLAIM,research-source-register.csv:S7,high,VendorMobileScreen inventory + barcode flows,mvp/apps/mobile/src/screens/VendorMobileScreen.tsx,POL has barcode scan/candidate flows
+suppliers,price and inventory editing,LISTING_CLAIM,research-source-register.csv:S7,high,VendorMobileScreen inventory sub-tabs,mvp/apps/mobile/src/screens/VendorMobileScreen.tsx,covers same domain
+suppliers,special-offer creation in app,LISTING_CLAIM,research-source-register.csv:S7,high,not present in vendor app,no equivalent,PATTERN_CANDIDATE (needs product decision)
+suppliers,receivables/account-statement reports,LISTING_CLAIM,research-source-register.csv:S7,high,VendorMobileScreen finance (invoices/settlements),mvp/apps/mobile/src/screens/VendorMobileScreen.tsx,statement-style reporting is a gap
+driver,shipment assignment list,LISTING_CLAIM,research-source-register.csv:S8 (listing 2026-10-27),medium,no driver app in POL,no DRIVER role,REQUIRES_PRODUCT_DECISION (prior D-01 gate)
+driver,optimal-route ordering,LISTING_CLAIM,research-source-register.csv:S8,medium,none,none,REQUIRES_PRODUCT_DECISION
+driver,proof of delivery,LISTING_CLAIM (mechanics undisclosed),complementary-apps-research.md,medium,none,none,REQUIRES_PRODUCT_DECISION
+driver,earnings tracking,LISTING_CLAIM,research-source-register.csv:S8,medium,none,none,REQUIRES_PRODUCT_DECISION

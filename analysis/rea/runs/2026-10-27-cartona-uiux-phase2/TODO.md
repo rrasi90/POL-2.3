@@ -1,7 +1,7 @@
 # TODO — 2026-10-27-cartona-uiux-phase2
 
 > آخرین وضعیت / Latest state: CP0/1/2/5 DONE (CP2 pushed aca31ac1; CP5 asset inventory rebuilt from APK bytes — 113 rows, 103 declared, colors + fonts extracted). CP3 WAITING: physical device not yet connected (adb devices empty as of last check). CP6 static re-verification next; device re-check continues.
-> کار بعدی / Next: CP7 complementary-apps research; retry device for CP3; then CP8 mapping.
+> کار بعدی / Next: CP8 mapping + design tokens; retry device for CP3.
 > مانع اصلی / Main blocker: physical device not yet connected (user confirmed it will be). gh CLI unauthenticated (deferred to CP9).
 
 Statuses: `NOT_STARTED | IN_PROGRESS | BLOCKED | PARTIAL | DONE | WONT_DO_WITH_REASON`
@@ -121,7 +121,8 @@ Statuses: `NOT_STARTED | IN_PROGRESS | BLOCKED | PARTIAL | DONE | WONT_DO_WITH_R
 ## CP7 — Complementary apps
 
 ### task-701: Supplier/driver app research from official sources + capability matrix
-- Status: NOT_STARTED | Priority: medium | Dependencies: CP0
+- Status: DONE | Priority: medium | Dependencies: CP0
+- Result: all 3 listings fetched fresh 2026-10-27 (retail 500K+, suppliers 10K+, Xpress driver 500+). APK access: retail AVAILABLE (local), suppliers/driver UNAVAILABLE (gated). Capability matrix 16 rows with per-finding confidence. Key CP8 inputs: wallet/BNPL headline; group-order mechanic; supplier offer-creation + statements as vendor-side gaps.
 
 ## CP8 — Design system + POL mapping
 

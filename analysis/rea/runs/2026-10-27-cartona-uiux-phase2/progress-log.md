@@ -60,3 +60,10 @@ Append-only. Each entry: timestamp, checkpoint, actions, results, evidence, comm
 - NEW: 34 path literals absent from prior catalogs (wallet/BNPL surface /legacy/wallet/top-up, /installment2, /pay/authorize/, /tabs/payment-gateways; onboarding new/returning split; /cart/checkout; /order/success; /cartona_v0016.sqlite). Hygiene: leaked dev path in snapshot (no credentials).
 - runtime-vs-static-reconciliation.csv: 21/21 static-CONFIRMED (incl. image_error_state via full Arabic string verbatim); runtime NOT_RUN pending CP4.
 - Device re-check: still 0 devices.
+
+## 2026-10-27 — CP7 complete
+
+- Play Store listings fetched fresh: retail (500K+, upd 2026-10-18), suppliers (10K+, upd 2026-07-14), Xpress driver (500+, upd 2026-07-22). S8 added to register.
+- complementary-apps-research.md + app-role-capability-matrix.csv (16 rows). Access verdicts: suppliers/driver UNAVAILABLE (business-gated; no legal sideload).
+- Wallet/BNPL listing claim corroborated by CP6 snapshot literals. Driver capability adopt-decisions remain gated on prior handoff D-01 (unchanged).
+- Device re-check at CP7 commit: still 0 devices.
