@@ -302,10 +302,10 @@ const retailItems = await req<{ items: Array<{ ordered_quantity: number }> }>(
   "GET", "/api/v1/orders/" + latestRetailOrderId + "/items", undefined, retailerHeaders,
 );
 assert.equal(retailItems.items.length, 2);
-const retailTimeline = await req<{ timeline: Array<{ event_type: string }> }>(
+const retailTimeline = await req<{ events: Array<{ event_type: string }> }>(
   "GET", "/api/v1/orders/" + latestRetailOrderId + "/timeline", undefined, retailerHeaders,
 );
-assert.equal(retailTimeline.timeline[0].event_type, "ORDER_SUBMITTED");
+assert.equal(retailTimeline.events[0].event_type, "ORDER_SUBMITTED");
 
 const retailers = await req<{ items: Array<{ id: string }> }>(
   "GET", "/api/v1/storefront/vendors", undefined, retailerHeaders,
@@ -327,12 +327,13 @@ const retailSupport = await req<{ id: string }>(
   retailerHeaders,
 );
 assert.ok(retailSupport.id);
-const retailSupportMessage = await req<{ id: string }>(
+const retailSupportMessage = await req<{ id: string; message_text: string }>(
   "POST", "/api/v1/support/cases/" + retailSupport.id + "/messages",
-  { body: "پیام آزمایشی" },
+  { message_text: "پیام آزمایشی" },
   retailerHeaders,
 );
 assert.ok(retailSupportMessage.id);
+assert.equal(retailSupportMessage.message_text, "پیام آزمایشی");
 
 const retailerStaffLogin = await req<{ role: string; access_token: string }>(
   "POST", "/api/v1/auth/verify-otp",
