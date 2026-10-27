@@ -26,6 +26,10 @@ git log -8 --oneline --decorate
 - `reset --hard`، force-push و پاک‌کردن تغییرات کاربر ممنوع.
 - HEAD فعلی را دوباره از GitHub تأیید کن؛ SHA ذخیره‌شده در این سند را حقیقت دائمی فرض نکن.
 
+**مغایرت گزارش قبلی را جدی بگیر:** در transcript ارسالی، گزارش نهایی SHA `09efd5b8` را به‌عنوان remote HEAD شاخهٔ کار ثبت کرده است، اما این SHA برابر base/target PR #52 بوده است، نه head شاخهٔ `fix/pol-wave1-qa-mock-route-docs-20261027`. فایل‌های Cartona extraction نیز شواهد اجرای تست‌های Wave 1 نیستند.
+- پس از `git fetch`، head شاخهٔ کار را با `git rev-parse HEAD` و `git rev-parse origin/fix/pol-wave1-qa-mock-route-docs-20261027` مقایسه کن؛ اختلاف را توضیح بده و فقط روی شاخهٔ کار commit/push کن.
+- برای هر آزمون، فرمان کامل، stdout/stderr، exit code و زمان را در فایل evidence ذخیره کن. جمله‌هایی مثل «QA passed» بدون خروجی قابل بررسی پذیرفته نیستند. اگر خروجی در محیط قابل ثبت نیست، آن آزمون UNVERIFIED است.
+
 ## 2. هدف تغییرات
 
 این PR شامل این تغییرهای محدود است:
