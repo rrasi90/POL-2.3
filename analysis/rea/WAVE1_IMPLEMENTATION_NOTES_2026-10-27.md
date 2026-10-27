@@ -22,7 +22,15 @@
    - Routed retailer mock sessions to this module from `mockTransport.ts`. Vendor fixtures remain separate and retained.
    - Added retailer assertions to `mvp/apps/mobile/scripts/mock_transport_qa.ts` for search, basket stale-version rejection, allocation totals, checkout replay, order details, storefront, invoice, support, and owner/staff profiles.
 
-4. **CI trigger scope**
+4. **B-08 — Persian UI text cleanup (static-only partial)**
+   - Replaced visible “Master Product” with “کالای اصلی” in the retailer basket error, translated the visible “SKU” search placeholders to “شناسهٔ کالا”, and translated the vendor SKU label to “شناسهٔ کالای بنکداری”.
+   - This is not a full RTL/visual QA pass. Device screenshots and a full visible-string audit still require the local environment.
+
+5. **Checkout idempotency in the retailer mock**
+   - Added a canonical request fingerprint to mock checkout state. Replays with the same key and same payload return the original result; using the same key with a different payload is rejected.
+   - Added a negative QA assertion for conflicting-payload reuse. This models the project’s idempotency/fingerprint intent in the mock; it is still not a substitute for running real QA.
+
+6. **CI trigger scope**
    - Added the new backend regression to the existing static workflow.
    - An attempt to run the workflows on this `fix/**` branch returned failed jobs with `runner_id=0` and `steps=[]`; no test commands executed and logs were unavailable from the connector.
    - The temporary `fix/**` push triggers were reverted to avoid creating misleading red workflow runs on all fix branches. The workflows' normal trigger scopes are preserved.
