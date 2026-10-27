@@ -498,7 +498,9 @@ export async function mockRetailerRequest<T>(
   if (method === "POST" && supportMessages) {
     const row = state.supportCases.find((x) => x.id === supportMessages[1]);
     if (!row) return bad("Mock retailer support case not found.");
-    const message = { id: "mock-retailer-message-" + ((row.messages as unknown[]).length + 1), message_text: String(payload.message_text || payload.body || payload.message || ""), sender_type: "USER", sender_role: headers?.Authorization?.includes("mock-retailer-staff") ? "RETAILER_STAFF" : "RETAILER_OWNER", created_at: new Date().toISOString() };
+    const messageText = String(payload.message_text || payload.body || payload.message || "").trim();
+    if (!messageText) return bad("Mock support message cannot be empty.");
+    const message = { id: "mock-retailer-message-" + ((row.messages as unknown[]).length + 1), message_text: messageText, sender_type: "USER", sender_role: headers?.Authorization?.includes("mock-retailer-staff") ? "RETAILER_STAFF" : "RETAILER_OWNER", created_at: new Date().toISOString() };
     (row.messages as Array<Record<string, unknown>>).push(message);
     return envelope(message) as T;
   }
