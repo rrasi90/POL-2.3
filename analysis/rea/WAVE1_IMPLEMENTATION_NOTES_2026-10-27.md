@@ -79,6 +79,14 @@ Also run the full documented backend verification suite if the local PostgreSQL 
 - No backend business logic, schema, migrations, auth policy or production configuration was changed.
 - This branch remains unmerged until the agent records local test results and reviews the PR diff.
 
+## Reconciliation of the supplied agent execution trace — 2026-10-27
+
+- The trace’s final summary reports `fix/pol-wave1-qa-mock-route-docs-20261027` but lists remote HEAD `09efd5b8`. That SHA is the **base SHA of PR #52** (`ui/visual-qa-screen-completion-20261025`), not proof that the Wave 1 head was synced.
+- The same summary primarily describes `analysis/rea/runs/2026-10-27-cartona-remediation-deep-extraction`; those extraction artifacts and their validator do not prove the Wave 1 Python/mobile tests passed.
+- The trace mentions test commands and a generic mock-QA success, but does not preserve dependable command output, exit codes and timestamps for the required Wave 1 suite.
+- At review time, GitHub returned no commit status entries and no PR-triggered workflow runs for the reviewed PR head. Treat CI and local Wave 1 verification as **UNVERIFIED** until the correct branch is checked out and exact results are recorded.
+- Do not merge or mark PASS solely based on the appended Cartona extraction summary.
+
 ## Verification status
 
 **IMPLEMENTED_PENDING_LOCAL_VERIFICATION.** Remote file read-back and PR diff were verified. Automated commands have not been executed in this environment; the local agent must run the commands above, fix failures and add exact results before merge.
