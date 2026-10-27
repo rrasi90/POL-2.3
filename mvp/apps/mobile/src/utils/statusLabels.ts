@@ -19,6 +19,28 @@ const ORDER_STATUS_LABELS: Readonly<Record<string, string>> = {
   CANCELLED: "لغوشده",
 };
 
+/**
+ * Maps the canonical order lifecycle to the four broad progress steps shown in
+ * OrderDetail. Delivery-specific values (for example ARRIVED) belong to the
+ * delivery state machine, not order_status.
+ */
+export function orderProgressStage(status: string | null | undefined): 1 | 2 | 3 | 4 {
+  switch (status) {
+    case "ACCEPTED":
+    case "PARTIALLY_ACCEPTED":
+    case "PREPARING":
+      return 2;
+    case "READY":
+    case "DISPATCHED":
+    case "SHIPPED":
+      return 3;
+    case "DELIVERED":
+      return 4;
+    default:
+      return 1;
+  }
+}
+
 export function formatOrderStatus(status: string | null | undefined): string {
   if (!status) return "نامشخص";
   return ORDER_STATUS_LABELS[status] ?? "وضعیت نامشخص";
