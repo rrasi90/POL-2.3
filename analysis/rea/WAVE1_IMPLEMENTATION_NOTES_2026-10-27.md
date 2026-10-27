@@ -31,6 +31,10 @@
    - The old mapping marked `READY` as step 2 instead of step 3 and treated `ARRIVED` as though it were an order status. The progress mapping now lives in `orderProgressStage()` in `src/utils/statusLabels.ts`: accepted/preparing → step 2, ready/dispatched → step 3, delivered → step 4.
    - Added status mapping assertions to the mobile mock QA script. This is a logic/static fix; it still needs actual local execution and device review.
    
+5. **Mock contract fidelity — timeline and support messages**
+   - The order detail screen reads the live order-timeline endpoint as an array; the retailer mock now returns the same array shape instead of a `timeline` wrapper that the screen would silently ignore.
+   - The support screen posts `message_text` and renders `message_text`; both retailer and vendor mocks now honor that contract, return `sender_type: USER`, and expose GET case messages. Vendor QA asserts read-after-write.
+   
 5. **Checkout idempotency in the retailer mock**
    - Added a canonical request fingerprint to mock checkout state. Replays with the same key and same payload return the original result; using the same key with a different payload is rejected.
    - Added a negative QA assertion for conflicting-payload reuse. This models the project’s idempotency/fingerprint intent in the mock; it is still not a substitute for running real QA.
