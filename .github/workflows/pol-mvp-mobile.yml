@@ -2,7 +2,7 @@ name: POL MVP Mobile Verification
 
 on:
   push:
-    branches: [main, 'fix/**']
+    branches: [main]
     paths:
       - "mvp/**"
       - ".github/workflows/pol-mvp-mobile.yml"
