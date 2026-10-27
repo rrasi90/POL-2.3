@@ -1,4 +1,6 @@
-type MockRole = "VENDOR_OWNER" | "VENDOR_STAFF";
+import { mockRetailerRequest, resetRetailerMockState } from "./retailerMockTransport";
+
+type MockRole = "VENDOR_OWNER" | "VENDOR_STAFF" | "RETAILER_OWNER" | "RETAILER_STAFF";
 
 type MockOrder = {
   id: string;
@@ -246,10 +248,13 @@ let state = makeState();
 
 export function resetMockState(): void {
   state = makeState();
+  resetRetailerMockState();
 }
 
 function roleFromHeaders(headers?: Record<string, string>): MockRole {
   const token = headers?.Authorization || "";
+  if (token.includes("mock-retailer-staff")) return "RETAILER_STAFF";
+  if (token.includes("mock-retailer-owner")) return "RETAILER_OWNER";
   return token.includes("mock-vendor-staff") ? "VENDOR_STAFF" : "VENDOR_OWNER";
 }
 
@@ -277,6 +282,12 @@ export async function mockRequest<T>(
   const pathname = url.pathname;
   const role = roleFromHeaders(headers);
 
+  // Keep role-specific mock domains isolated so retailer flows do not accidentally
+  // exercise vendor fixtures or permission assumptions.
+  if (role === "RETAILER_OWNER" || role === "RETAILER_STAFF") {
+    return mockRetailerRequest<T>(method, path, body, headers);
+  }
+
   if (method === "POST" && pathname === "/api/v1/auth/request-otp") {
     return envelope({ otp_request_id: "mock-otp-request", expires_in_seconds: 120, resend_interval_seconds: 60 });
   }
@@ -287,9 +298,22 @@ export async function mockRequest<T>(
     if (!/^\+?[1-9]\d{7,14}$/.test(phone) || !/^\d{6}$/.test(otp)) {
       throw new Error("Mock OTP must contain an E.164 phone and 6 digits.");
     }
-    const mockRole: MockRole = phone.endsWith("0002") ? "VENDOR_STAFF" : "VENDOR_OWNER";
-    const token = mockRole === "VENDOR_STAFF" ? "mock-vendor-staff-token" : "mock-vendor-owner-token";
-    return envelope({ access_token: token, refresh_token: token + "-refresh", role: mockRole, current_organization: { id: "mock-vendor-org", role: mockRole } });
+    const mockRole: MockRole = phone.endsWith("0004")
+      ? "RETAILER_STAFF"
+      : phone.endsWith("0003")
+        ? "RETAILER_OWNER"
+        : phone.endsWith("0002")
+          ? "VENDOR_STAFF"
+          : "VENDOR_OWNER";
+    const token = mockRole === "RETAILER_STAFF"
+      ? "mock-retailer-staff-token"
+      : mockRole === "RETAILER_OWNER"
+        ? "mock-retailer-owner-token"
+        : mockRole === "VENDOR_STAFF"
+          ? "mock-vendor-staff-token"
+          : "mock-vendor-owner-token";
+    const organizationId = mockRole.startsWith("RETAILER") ? "mock-retailer-org" : "mock-vendor-org";
+    return envelope({ access_token: token, refresh_token: token + "-refresh", role: mockRole, current_organization: { id: organizationId, role: mockRole } });
   }
 
   if (method === "GET" && pathname === "/api/v1/orders") return envelope({ orders: state.orders, limit: 50, offset: 0 });
