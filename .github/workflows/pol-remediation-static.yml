@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - ui/visual-qa-screen-completion-20261025
       - remediation/full-closure-2026-09-25
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
