@@ -101,6 +101,8 @@ npm run qa:regression --workspace @pol/mobile
 7. درخواست checkout تکراری با همان key باید همان group/order را برگرداند و duplicate order نسازد.
 8. سفارش جدید باید در list و detail دیده شود؛ items، timeline، delivery، invoices و support shapeها با مصرف‌کنندگان UI هماهنگ باشند.
 9. `resetMockState()` باید state هر دو نقش را reset کند؛ ترتیب اجرا نباید نتایج testهای قبلی را آلوده کند.
+10. نگاشت progress stepper در `orderProgressStage()` را بررسی کن: `SUBMITTED → 1`، `ACCEPTED/PARTIALLY_ACCEPTED/PREPARING → 2`، `READY/DISPATCHED → 3` و فقط `DELIVERED → 4`. `ARRIVED` متعلق به `delivery_status` است و نباید به‌عنوان `order_status` به مرحلهٔ نهایی تبدیل شود.
+11. اصلاح‌های واژه‌گزینی فارسی را در `RetailerMobileScreen.tsx`، `VendorMobileScreen.tsx` و `LoginScreen.tsx` تأیید کن؛ این بررسی ایستا جای screenshot یا تست واقعی RTL را نمی‌گیرد.
 10. vendor mock فعلی همچنان green بماند؛ testهای vendor را حذف یا ضعیف نکن.
 
 Mock یک test double است، نه اثبات صحت backend. اگر shape یا semantics با router واقعی فرق دارد، تغییر mock را به قرارداد واقعی نزدیک کن یا drift را مستند کن. منطق تجاری جدید و خارج از قرارداد نساز.
