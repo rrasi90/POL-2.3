@@ -72,6 +72,7 @@ EXPECTED_BUSINESS_ROUTES = {
     ("GET", "/api/v1/storefront/vendors/{vendor_id}/products"),
     ("GET", "/api/v1/support/cases"),
     ("GET", "/api/v1/support/cases/{case_id}"),
+    ("GET", "/api/v1/support/cases/{case_id}/messages"),
     ("GET", "/api/v1/vendors/customers"),
     ("GET", "/api/v1/vendors/settlements"),
     ("GET", "/api/v1/vendors/staff"),
@@ -142,6 +143,7 @@ EXPECTED_BUSINESS_ROUTES = {
     ("POST", "/api/v1/orders/{order_id}/reject"),
     ("POST", "/api/v1/orders/{order_id}/returns"),
     ("POST", "/api/v1/privacy/deletion"),
+    ("POST", "/api/v1/privacy/export"),
     ("POST", "/api/v1/product-candidates"),
     ("POST", "/api/v1/products/match-barcode"),
     ("POST", "/api/v1/referrals"),
@@ -182,25 +184,3 @@ def test_fastapi_runtime_route_inventory_is_explicit():
     }
 
     assert actual == EXPECTED_BUSINESS_ROUTES | EXPECTED_OPERATIONAL_ROUTES
-
-
-
-# This is deliberately tracked as a known contract gap, not as a canonical route.
-# The route is documented elsewhere but is not registered in scripts/api/routes/privacy.py.
-DOCUMENTED_BUT_UNIMPLEMENTED_ROUTES = {
-    ("POST", "/api/v1/privacy/export"),
-}
-
-
-def test_documented_but_unimplemented_routes_remain_explicit_gaps():
-    from scripts.api.main import app
-
-    actual = {
-        (method.upper(), path)
-        for path, operations in app.openapi()["paths"].items()
-        for method in operations
-        if method.lower() in {"get", "post", "put", "patch", "delete", "options", "head"}
-    }
-    # If this assertion changes, the route-gap ledger and documentation must be
-    # reconciled in the same change; do not silently promote a doc-only route.
-    assert DOCUMENTED_BUT_UNIMPLEMENTED_ROUTES.isdisjoint(actual)
