@@ -183,13 +183,23 @@ const support = await req<{ id: string }>(
 );
 assert.ok(support.id);
 
-const message = await req<{ id: string }>(
+const message = await req<{ id: string; message_text: string; sender_type: string }>(
   "POST",
   "/api/v1/support/cases/" + support.id + "/messages",
-  { body: "پیام تستی" },
+  { message_text: "پیام تستی" },
   staff,
 );
 assert.ok(message.id);
+assert.equal(message.message_text, "پیام تستی");
+assert.equal(message.sender_type, "USER");
+const supportHistory = await req<{ messages: Array<{ message_text: string }> }>(
+  "GET",
+  "/api/v1/support/cases/" + support.id + "/messages",
+  undefined,
+  staff,
+);
+assert.equal(supportHistory.messages.length, 1);
+assert.equal(supportHistory.messages[0].message_text, "پیام تستی");
 
 const profile = await req<{ membership: { role: string }; user_profile: { timezone: string } }>("GET", "/api/v1/profile", undefined, staff);
 assert.equal(profile.membership.role, "VENDOR_STAFF");
