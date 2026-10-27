@@ -296,7 +296,7 @@ export function RetailerMobileScreen(props: {
 
   function addVendorProduct(item: VendorProduct): void {
     if (!item.product_id) {
-      setError("شناسه Master Product از ویترین دریافت نشد؛ کالا به سبد اضافه نشد.");
+      setError("شناسهٔ کالای اصلی از ویترین دریافت نشد؛ کالا به سبد اضافه نشد.");
       return;
     }
     add({
@@ -359,7 +359,7 @@ export function RetailerMobileScreen(props: {
             label=""
             value={q}
             onChangeText={setQ}
-            placeholder="جستجوی کالا، برند یا SKU…"
+            placeholder="جست‌وجوی کالا، برند یا شناسهٔ کالا…"
             onSubmitEditing={() => void search()}
             returnKeyType="search"
             style={styles.searchInput}
@@ -433,7 +433,7 @@ export function RetailerMobileScreen(props: {
     return (
       <>
         <PageHeader title="لیست محصولات" onBack={() => setTab("home")} />
-        <Input label="جستجوی کالا" value={q} onChangeText={setQ} placeholder="نام کالا یا SKU…" onSubmitEditing={() => void search()} />
+        <Input label="جستجوی کالا" value={q} onChangeText={setQ} placeholder="نام یا شناسهٔ کالا…" onSubmitEditing={() => void search()} />
         <Btn label="جستجو" onPress={() => void search()} loading={loading} disabled={!q.trim()} />
         <View style={styles.resultHeader}>
           <Text style={styles.meta}>{products.length.toLocaleString("fa-IR")} کالا</Text>
