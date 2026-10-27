@@ -420,16 +420,16 @@ export async function mockRetailerRequest<T>(
     return envelope(row) as T;
   }
 
+  const cancelOrder = pathname.match(/^\/api\/v1\/orders\/([^/]+)\/cancel$/);
+  if (method === "POST" && cancelOrder) {
+    const order = findOrder(cancelOrder[1]);
+    order.order_status = "CANCELLED";
+    (state.timelines[order.id] ||= []).push({ id: "mock-event-cancel-" + Date.now(), event_type: "ORDER_CANCELLED", from_status: null, to_status: "CANCELLED", created_at: new Date().toISOString() });
+    return envelope(order) as T;
+  }
+
   const orderById = pathname.match(/^\/api\/v1\/orders\/([^/]+)$/);
   if (method === "GET" && orderById) return envelope(findOrder(orderById[1])) as T;
-  if (method === "POST" && orderById) {
-    const order = findOrder(orderById[1]);
-    if (pathname.endsWith("/cancel")) {
-      order.order_status = "CANCELLED";
-      (state.timelines[order.id] ||= []).push({ id: "mock-event-cancel-" + Date.now(), event_type: "ORDER_CANCELLED", from_status: null, to_status: "CANCELLED", created_at: new Date().toISOString() });
-      return envelope(order) as T;
-    }
-  }
 
   if (method === "GET" && pathname === "/api/v1/invoices") {
     return envelope({ invoices: state.invoices, limit: 50, offset: 0 }) as T;
