@@ -486,7 +486,14 @@ export async function mockRetailerRequest<T>(
     return envelope(message) as T;
   }
 
-  if (method === "GET" && pathname === "/api/v1/profile") return envelope(state.profile) as T;
+  if (method === "GET" && pathname === "/api/v1/profile") {
+    const role: RetailerRole = headers?.Authorization?.includes("mock-retailer-staff") ? "RETAILER_STAFF" : "RETAILER_OWNER";
+    const profile = clone(state.profile);
+    const membership = profile.membership as Record<string, unknown>;
+    membership.role = role;
+    membership.id = role === "RETAILER_STAFF" ? "mock-retailer-member-staff" : "mock-retailer-member-owner";
+    return envelope(profile) as T;
+  }
   if (method === "PUT" && pathname === "/api/v1/profile") {
     const oldUser = (state.profile.user_profile || {}) as Record<string, unknown>;
     state.profile.user_profile = { ...oldUser, ...payload };
