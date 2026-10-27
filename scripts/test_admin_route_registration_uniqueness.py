@@ -38,3 +38,8 @@ def test_shared_admin_routes_have_one_canonical_registration():
         "Admin routers have duplicate method/path registrations; "
         "a later route may be shadowed by registration order."
     )
+
+
+if __name__ == "__main__":
+    test_shared_admin_routes_have_one_canonical_registration()
+    print("[ADMIN ROUTE UNIQUENESS PASS] Shared admin routes have one guarded registration.")
