@@ -270,6 +270,11 @@ const retailCheckoutReplay = await req<{ order_group_id: string; idempotent_repl
 );
 assert.equal(retailCheckoutReplay.order_group_id, retailCheckout.order_group_id);
 assert.equal(retailCheckoutReplay.idempotent_replay, true);
+await rejects(
+  () => req("POST", "/api/v1/orders", { ...retailCheckoutBody, delivery_address: "اهواز، نشانی متفاوت، پلاک ۹۹" },
+    { ...retailerHeaders, "Idempotency-Key": retailCheckoutKey }),
+  "Retailer checkout rejects reuse of a key with a different payload",
+);
 
 const retailOrders = await req<{ orders: Array<{ id: string; order_status: string }> }>(
   "GET", "/api/v1/orders?limit=50&offset=0", undefined, retailerHeaders,
