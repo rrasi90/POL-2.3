@@ -80,3 +80,14 @@ Append-only. Each entry: timestamp, checkpoint, actions, results, evidence, comm
 - tools/qa_validate.py written; first run FAILED honestly (3 ragged CSVs, naive ref rule) -> fixed by regenerating CSVs via csv.writer, filename-token rule, redaction of host user paths in baseline.json/environment-matrix.json (Addendum D/E), whitelist of documented Cartona build-path finding.
 - Second run: 100/100 PASS, exit 0. qa-validation-report.md written.
 - Device re-check: still 0 devices.
+
+## 2026-10-27 — CP3 continuation: device absent, emulator fallback in progress
+
+- CP0 re-validated read-only: local HEAD == remote == faea41e6, clean tree, on research branch. APK hashes re-verified identical to apk-inventory.csv.
+- adb devices -l: NO physical device (recorded, not assumed).
+- Existing AVD (google_apis API 35, x86_64): online at emulator-5554 — Android 15, abilist `x86_64,arm64-v8a` (no armeabi-v7a), 1080x2400 @ 420dpi.
+- Install attempt 1 (base+abi+en, Addendum A density-correct selection): FAILED exit 1 — INSTALL_FAILED_MISSING_SPLIT (density split is mandatory in this bundle).
+- Install attempt 2 (all 4 splits): FAILED exit 1 — INSTALL_FAILED_NO_MATCHING_ABIS (res=-113). Historical failure reproduced exactly; root cause: no ARMv7 native bridge on google_apis image. Supplementary evidence only (mission §5) — runtime work continues.
+- Fallback: official system-images;android-34;google_apis_playstore;x86_64 download started via sdkmanager. Attempt 1 aborted at 22% (connection reset — logged); retry in progress.
+- tools/capture_screen.py prepared for CP4 (manifest-integrated screencap with sha256/dims/metadata).
+- runtime-sessions.csv + test-scenarios.csv scaffolds created (headers only — no fabricated rows).
