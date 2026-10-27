@@ -404,7 +404,7 @@ export async function mockRetailerRequest<T>(
   if (method === "GET" && orderItems) return envelope({ items: state.orderItems[orderItems[1]] || [] }) as T;
 
   const timeline = pathname.match(/^\/api\/v1\/orders\/([^/]+)\/timeline$/);
-  if (method === "GET" && timeline) return envelope({ events: state.timelines[timeline[1]] || [] }) as T;
+  if (method === "GET" && timeline) return envelope(state.timelines[timeline[1]] || []) as T;
 
   const orderDelivery = pathname.match(/^\/api\/v1\/orders\/([^/]+)\/delivery$/);
   if (method === "GET" && orderDelivery) return envelope(state.deliveries[orderDelivery[1]] || { delivery_status: "PENDING" }) as T;
