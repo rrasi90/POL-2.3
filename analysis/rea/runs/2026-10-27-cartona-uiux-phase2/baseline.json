@@ -1,0 +1,47 @@
+{
+  "run_id": "2026-10-27-cartona-uiux-phase2",
+  "started_at": "2026-10-27",
+  "mission_doc": "CARTONA_UIUX_DEEP_EXTRACTION_PHASE2_COMPLETE.md",
+  "repository": {
+    "local_path": "C:\\Star\\pol\\2.4",
+    "remote_origin": "https://github.com/rrasi90/POL-2.3.git",
+    "base_branch": "fix/pol-wave1-qa-mock-route-docs-20261027",
+    "base_head": "74e7ded6d695fb52c34414412bda56e634e0515b",
+    "research_branch": "research/cartona-uiux-extraction-phase2-20261027",
+    "research_branch_created_from": "74e7ded6d695fb52c34414412bda56e634e0515b",
+    "working_tree": "clean",
+    "pr_strategy": "draft PR base = fix/pol-wave1-qa-mock-route-docs-20261027 until PR #52 resolved; never merge before PR #52 resolution",
+    "gh_cli": {"version": "2.102.0", "authenticated": false}
+  },
+  "apk_inventory_known": [
+    {"path": "cartona app/cartona.apk", "bytes": 41963460, "sha256": "e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c"},
+    {"path": "cartona app/xapk_extracted/com.cartona.apk", "bytes": 41963460, "sha256": "e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c", "note": "byte-identical to cartona.apk"},
+    {"path": "cartona app/xapk_extracted/config.armeabi_v7a.apk", "bytes": 18993995, "sha256": "d232c761a42e71c47b6495ec7c9b85a343e94722e58edb669e1fa6a00f3fb1c8"},
+    {"path": "cartona app/xapk_extracted/config.en.apk", "bytes": 61849, "sha256": "da962ee2b0b0d99b07a42a3970496a4ab95ccd08ea91e3bacdffa9e746749c34"},
+    {"path": "cartona app/xapk_extracted/config.mdpi.apk", "bytes": 139457, "sha256": "5c76dd240306f335801f5649cd35c05812bdeb292ead957b2fd5b7c684300670"}
+  ],
+  "android_environment": {
+    "sdk_path": "C:\\Users\\rrasi_oorj8fq\\AppData\\Local\\Android\\Sdk",
+    "platform_tools": "37.0.1",
+    "java": "OpenJDK 21.0.9 (Android Studio JBR)",
+    "avds": [{"name": "POL_API_Emulator", "abi": "x86_64", "api": 35, "image": "google_apis"}],
+    "devices_connected_at_start": 0,
+    "missing_tools": ["frida", "jadx (binary; prior output exists)", "apktool", "scrcpy", "7z"]
+  },
+  "user_inputs": {
+    "physical_device": "available for runtime phase (device-first)",
+    "gh_auth": "user will authenticate at PR step"
+  },
+  "constraints": [
+    "absolute POL product freeze; outputs only in analysis/rea/runs/2026-10-27-cartona-uiux-phase2/",
+    "no APK modification or security bypass",
+    "no credentials/OTP/PII publication",
+    "no paid services",
+    "evidence vocabulary: OBSERVED/STATIC_VERIFIED/INFERRED/UNKNOWN/BLOCKED_TECHNICAL/BLOCKED_AUTH/NOT_APPLICABLE"
+  ],
+  "publication_rules": {
+    "publish": ["run-dir reports (md/csv/json)", "inventories with hashes", "scripts", "permitted measurements"],
+    "hold_locally_unless_justified": ["apk binaries", "decompiled dumps", "raw proprietary assets", "screenshots and contact sheets", "logs with PII"],
+    "remote_claim_rule": "nothing described as on GitHub unless remote branch verified to contain it"
+  }
+}
