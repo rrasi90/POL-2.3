@@ -5,7 +5,7 @@ import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "..
 import { toAsciiDigits } from "../utils/otp";
 import { formatTehranDateTime } from "../i18n/fa";
 import { spacing, useThemedStyles, type Palette } from "../theme";
-import { formatOrderStatus, formatDeliveryStatus, formatReturnStatus, formatReturnIssue, formatTimelineEvent, formatOperationalStatus, formatPackagingUnit } from "../utils/statusLabels";
+import { formatOrderStatus, formatDeliveryStatus, formatReturnStatus, formatReturnIssue, formatTimelineEvent, formatOperationalStatus, formatPackagingUnit, orderProgressStage } from "../utils/statusLabels";
 import type { Role } from "../types";
 
 type Mode = "retailer" | "vendor";
@@ -355,7 +355,7 @@ export function OrderDetailMobileScreen(props: {
   const status = order.order_status || "";
   const vendorMode = props.mode === "vendor";
   const vendorOwner = vendorMode && props.role === "VENDOR_OWNER";
-  const stage = status === "DELIVERED" ? 4 : status === "ARRIVED" ? 4 : status === "IN_TRANSIT" || status === "DISPATCHED" ? 3 : status === "READY" ? 2 : status === "PREPARING" ? 2 : status === "ACCEPTED" || status === "PARTIALLY_ACCEPTED" ? 2 : 1;
+  const stage = orderProgressStage(status);
 
   return (
     <Screen>
