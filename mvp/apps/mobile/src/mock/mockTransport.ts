@@ -204,7 +204,7 @@ function makeState(): MockState {
       { id: "mock-vs-4", product_id: "mock-product-4", product_name: "آب معدنی ۱.۵ لیتری", name: "آب معدنی ۱.۵ لیتری", brand_name: "آبگون", price_toman: 198000, stock_quantity: 60, packaging_unit: "PACK", is_available: true },
     ],
     supportCases: [
-      { id: "mock-case-1", subject: "کسری کالای سفارش POL-AHV-1001", case_type: "ORDER", priority: "HIGH", status: "OPEN", related_order_id: "mock-order-1", created_at: iso(-2), messages: [{ id: "mock-msg-1", body: "دو کارتن چیپس در موجودی تحویل اختلاف دارد.", sender_role: "VENDOR_OWNER", created_at: iso(-1.5) }] },
+      { id: "mock-case-1", subject: "کسری کالای سفارش POL-AHV-1001", case_type: "ORDER", priority: "HIGH", status: "OPEN", related_order_id: "mock-order-1", created_at: iso(-2), messages: [{ id: "mock-msg-1", message_text: "دو کارتن چیپس در موجودی تحویل اختلاف دارد.", sender_type: "USER", sender_role: "VENDOR_OWNER", created_at: iso(-1.5) }] },
     ],
     barcodeMap: {
       "6260123456789": {
@@ -659,12 +659,21 @@ export async function mockRequest<T>(
     return envelope(item);
   }
 
+  if (method === "GET" && /^\/api\/v1\/support\/cases\/[^/]+\/messages$/.test(pathname)) {
+    const id = pathname.split("/")[5];
+    const item = state.supportCases.find((x) => x.id === id);
+    if (!item) throw new Error("Mock support case not found");
+    return envelope({ messages: (item.messages as Array<Record<string, unknown>>) || [] });
+  }
+
   if (method === "POST" && /^\/api\/v1\/support\/cases\/[^/]+\/messages$/.test(pathname)) {
     const id = pathname.split("/")[5];
     const item = state.supportCases.find((x) => x.id === id);
     if (!item) throw new Error("Mock support case not found");
     const payload = (body || {}) as Record<string, unknown>;
-    const message = { id: "mock-message-" + Date.now(), body: payload.body || payload.message || "", sender_role: role, created_at: new Date().toISOString() };
+    const messageText = String(payload.message_text || payload.body || payload.message || "").trim();
+    if (!messageText) throw new Error("Mock support message cannot be empty");
+    const message = { id: "mock-message-" + Date.now(), message_text: messageText, sender_type: "USER", sender_role: role, created_at: new Date().toISOString() };
     ((item.messages as Array<Record<string, unknown>>) ||= []).push(message);
     return envelope(message);
   }
