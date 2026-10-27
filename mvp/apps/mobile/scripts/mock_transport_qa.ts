@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 const { mockRequest, resetMockState } = await import("../src/mock/mockTransport.ts");
 const { toAsciiDigits, formatFaNumber, formatTehranDateTime } = await import("../src/i18n/fa.ts");
+const { orderProgressStage } = await import("../src/utils/statusLabels.ts");
 
 const owner = { Authorization: "Bearer mock-vendor-owner-token" };
 const staff = { Authorization: "Bearer mock-vendor-staff-token" };
@@ -21,6 +22,16 @@ assert.ok(formatFaNumber(1234567).includes("۱٬۲۳۴٬۵۶۷"));
 const localizedDate = formatTehranDateTime("2026-09-29T12:00:00Z");
 assert.ok(localizedDate.includes("۱۴۰۵"));
 assert.ok(localizedDate.includes("مهر"));
+
+// Order progress maps canonical order_status to the four visible macro-steps.
+assert.equal(orderProgressStage("SUBMITTED"), 1);
+assert.equal(orderProgressStage("ACCEPTED"), 2);
+assert.equal(orderProgressStage("PARTIALLY_ACCEPTED"), 2);
+assert.equal(orderProgressStage("PREPARING"), 2);
+assert.equal(orderProgressStage("READY"), 3);
+assert.equal(orderProgressStage("DISPATCHED"), 3);
+assert.equal(orderProgressStage("DELIVERED"), 4);
+assert.equal(orderProgressStage(null), 1);
 
 const orders = await req<{ orders: Array<{ id: string; order_status: string }> }>("GET", "/api/v1/orders");
 assert.equal(orders.orders.length, 5);
