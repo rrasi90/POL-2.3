@@ -1,0 +1,485 @@
+{
+  "generated_by": "recount_prior_metrics.py",
+  "rules_documented_in_docstring": true,
+  "base_apk": {
+    "zip_entries": 1445,
+    "asset_entries": 119,
+    "lib_entries": 0,
+    "lib_abis": []
+  },
+  "armeabi_split": {
+    "zip_entries": 11,
+    "asset_entries": 0,
+    "lib_entries": 6,
+    "lib_abis": [
+      "armeabi-v7a"
+    ]
+  },
+  "en_split": {
+    "zip_entries": 6,
+    "asset_entries": 0,
+    "lib_entries": 0,
+    "lib_abis": []
+  },
+  "mdpi_split": {
+    "zip_entries": 86,
+    "asset_entries": 0,
+    "lib_entries": 0,
+    "lib_abis": []
+  },
+  "assets_inventory": {
+    "rule": "csv_data_rows",
+    "data_rows": 113,
+    "declared_yes": 103,
+    "declared_no": 10,
+    "sha256_distinct": 113
+  },
+  "arabic_ui_strings_58spec": {
+    "rule": "strings_lines / strings_unique",
+    "lines_incl_empty": 1653,
+    "nonempty_lines": 1653,
+    "unique_records": 1615,
+    "duplicate_occurrences": 38
+  },
+  "android_values_strings_xml": {
+    "rule": "count of <string name=...> elements",
+    "string_elements": 490
+  },
+  "endpoint_catalog": {
+    "rule": "endpoint_class (see docstring)",
+    "data_rows": 70,
+    "classification": {
+      "API_PATH_LITERAL_STRING_ONLY": 70
+    },
+    "per_row": [
+      {
+        "path": "/cartona-finance/consent",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 2013"
+      },
+      {
+        "path": "/search/v2/ads/all",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 2698"
+      },
+      {
+        "path": "/search/v2/places",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 3153"
+      },
+      {
+        "path": "/search/v2/products/all",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 6184"
+      },
+      {
+        "path": "/search/v2/products/bids",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 8236"
+      },
+      {
+        "path": "/search/v2/products/ramadan",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 12744"
+      },
+      {
+        "path": "/search/v2/products/supplier2",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 7958"
+      },
+      {
+        "path": "/search/v2/suppliers/all",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 9212"
+      },
+      {
+        "path": "/search/v2/suppliers/cashback",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 6015"
+      },
+      {
+        "path": "/search/v2/suppliers/discount/max",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 2440"
+      },
+      {
+        "path": "/search/v2/suppliers/discount/mov",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 11496"
+      },
+      {
+        "path": "/search/v2/suppliers/discount/price",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 10099"
+      },
+      {
+        "path": "/search/v2/suppliers/fast",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 1956"
+      },
+      {
+        "path": "/search/v2/suppliers/fav",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 13553"
+      },
+      {
+        "path": "/search/v2/suppliers/mop/max2",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 5604"
+      },
+      {
+        "path": "/search/v2/suppliers/new",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 13349"
+      },
+      {
+        "path": "/search/v2/suppliers/sponsored",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 9312"
+      },
+      {
+        "path": "/search/v2/suppliers/top/relevant",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 10117"
+      },
+      {
+        "path": "/search/v3/products/discount2",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14783"
+      },
+      {
+        "path": "/v3/auth/access-token",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 12536"
+      },
+      {
+        "path": "/v3/auth/otp/request/sms",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 9428"
+      },
+      {
+        "path": "/v3/auth/otp/verify",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 7021"
+      },
+      {
+        "path": "/v3/auth/register",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 13071"
+      },
+      {
+        "path": "/v3/auth/register/skip/",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 3998"
+      },
+      {
+        "path": "/v3/campaigns/communications/in-app-stories",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 6732"
+      },
+      {
+        "path": "/v3/campaigns/communications/threads/",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14097"
+      },
+      {
+        "path": "/v3/fcm/token",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 9225"
+      },
+      {
+        "path": "/v3/partner/cartona-finance/acquire/session/auth",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14467"
+      },
+      {
+        "path": "/v3/partner/cartona-finance/acquire/session/plan-listing",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 7584"
+      },
+      {
+        "path": "/v3/public/available-area?lat_lng=",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 10251"
+      },
+      {
+        "path": "/v3/retail/analytics/products/top-searched",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 5253"
+      },
+      {
+        "path": "/v3/retail/app-version/switch",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 9444"
+      },
+      {
+        "path": "/v3/retail/branches",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 6917"
+      },
+      {
+        "path": "/v3/retail/branches/2",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14737"
+      },
+      {
+        "path": "/v3/retail/branches/change",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 6926"
+      },
+      {
+        "path": "/v3/retail/cart/validate",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 6031"
+      },
+      {
+        "path": "/v3/retail/cashback/eid_al_adha/redeem",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 6796"
+      },
+      {
+        "path": "/v3/retail/cashback/eid_al_fetr/redeem",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 6779"
+      },
+      {
+        "path": "/v3/retail/data/storage",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14581"
+      },
+      {
+        "path": "/v3/retail/data/storage/carts",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 4997"
+      },
+      {
+        "path": "/v3/retail/favorite/suppliers/",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 10476"
+      },
+      {
+        "path": "/v3/retail/gmv-targets",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 11780"
+      },
+      {
+        "path": "/v3/retail/legacy/installment/plans",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 4683"
+      },
+      {
+        "path": "/v3/retail/me",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 5842"
+      },
+      {
+        "path": "/v3/retail/notifications",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14064"
+      },
+      {
+        "path": "/v3/retail/notifications/read",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14139"
+      },
+      {
+        "path": "/v3/retail/offers/search",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 4388"
+      },
+      {
+        "path": "/v3/retail/order-support-ticket-types",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 7244"
+      },
+      {
+        "path": "/v3/retail/order-support-tickets",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 5330"
+      },
+      {
+        "path": "/v3/retail/orders",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 4003"
+      },
+      {
+        "path": "/v3/retail/orders/",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 3575"
+      },
+      {
+        "path": "/v3/retail/orders/cancel",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 5401"
+      },
+      {
+        "path": "/v3/retail/orders/cancellation-reasons",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 8708"
+      },
+      {
+        "path": "/v3/retail/orders/count/gmv-target",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 9132"
+      },
+      {
+        "path": "/v3/retail/orders/home",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 12360"
+      },
+      {
+        "path": "/v3/retail/orders/intent",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 13599"
+      },
+      {
+        "path": "/v3/retail/orders/place-v2",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14479"
+      },
+      {
+        "path": "/v3/retail/orders/preferred-delivery-date",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14391"
+      },
+      {
+        "path": "/v3/retail/products/categories",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 4330"
+      },
+      {
+        "path": "/v3/retail/products/top-selling",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 3046"
+      },
+      {
+        "path": "/v3/retail/ramadan-quiz",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 5775"
+      },
+      {
+        "path": "/v3/retail/ramadan-quiz/answer",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14269"
+      },
+      {
+        "path": "/v3/retail/requests/installment/activate",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14554"
+      },
+      {
+        "path": "/v3/retail/retailer-asks",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 8818"
+      },
+      {
+        "path": "/v3/retail/state/dismissed_installment_announcement_popover",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14758"
+      },
+      {
+        "path": "/v3/retail/transactions",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 5075"
+      },
+      {
+        "path": "/v3/retail/types",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 4116"
+      },
+      {
+        "path": "/v3/retail/users",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 8730"
+      },
+      {
+        "path": "/v3/retail/users/",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 4607"
+      },
+      {
+        "path": "/v3/retail/users/grouped-by-branch",
+        "http_method": "UNKNOWN",
+        "class": "API_PATH_LITERAL_STRING_ONLY",
+        "source_location": "libapp.so ASCII string pool line 14311"
+      }
+    ]
+  },
+  "screen_catalog": {
+    "rule": "csv_data_rows + observation_status distribution",
+    "data_rows": 21,
+    "status_distribution": {
+      "STATIC_INFERRED": 21
+    },
+    "screens_with_screenshot_field_nonempty": 0
+  }
+}

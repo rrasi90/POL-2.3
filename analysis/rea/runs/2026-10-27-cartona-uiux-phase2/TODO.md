@@ -1,7 +1,7 @@
 # TODO — 2026-10-27-cartona-uiux-phase2
 
-> آخرین وضعیت / Latest state: CP0 in progress — research branch created, baseline written, initial commit pending.
-> کار بعدی / Next: commit + push CP0, then start CP1 (prior-research audit).
+> آخرین وضعیت / Latest state: CP0 + CP1 DONE. Prior research audited claim-by-claim; 3 framing corrections adopted (endpoint literals, asset-entry scope, 3 distinct string corpora). Remote branch verified at 83a0a860.
+> کار بعدی / Next: CP2 — APK inventory + integrity, environment matrix, split-compat metadata, tooling research.
 > مانع اصلی / Main blocker: none. gh CLI unauthenticated (PR step deferred to CP9 per user decision).
 
 Statuses: `NOT_STARTED | IN_PROGRESS | BLOCKED | PARTIAL | DONE | WONT_DO_WITH_REASON`
@@ -44,15 +44,15 @@ Statuses: `NOT_STARTED | IN_PROGRESS | BLOCKED | PARTIAL | DONE | WONT_DO_WITH_R
 - Description: re-verify each claim of the 2026-10-27 remediation run (version, package, Flutter, 113 entries / 103 assets, ~1,494 strings vs 1,652-line corpus — recount with documented rules, 70 endpoints classified individually, 21 screens STATIC_INFERRED, ABI failure, 6,426 fns / 312 VM classes / 0 app classes, complementary APKs UNAVAILABLE).
 - Rationale: mission §9–10 + Addendum F.
 - Expected output: previous-research-audit.md with per-claim verdicts + method.
-- Status: NOT_STARTED
+- Status: DONE
 - Priority: high
 - Dependencies: CP0
-- Method: read raw artifacts; recount with scripts in tools/; classify endpoint refs individually.
-- Result: —
-- Evidence: —
-- Commit: —
-- Blockers: —
-- Next: —
+- Method: tools/recount_prior_metrics.py (documented rules) + aapt badging + apksigner verify + direct ZIP enumeration/hashing.
+- Result: claims 1-10 audited — 6 CONFIRMED, 1 CONFIRMED with scope correction, 1 REVISED framing (endpoints = 70 string-pool literals, 0 functional), 1 CONFIRMED_BY_PROVENANCE (snapshot recovery counts), 1 CONFIRMED (complementary APKs unavailable). Three string corpora disentangled: 1,494 snapshot runs vs 1,615 unique lines in curated file vs 490 Android resources.
+- Evidence: previous-research-audit.md; tools/recount-results.json
+- Commit: (CP1 commit)
+- Blockers: none
+- Next: CP2
 
 ## CP2 — APK inventory, environment, tooling
 

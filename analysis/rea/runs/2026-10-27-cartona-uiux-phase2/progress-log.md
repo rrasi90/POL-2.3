@@ -16,3 +16,22 @@ Append-only. Each entry: timestamp, checkpoint, actions, results, evidence, comm
 
 - Git guard before commit: `git status --short` → only run-dir files; `git diff --check` → clean; staged paths all within `analysis/rea/runs/2026-10-27-cartona-uiux-phase2/`; no secrets/binary artifacts.
 - Commit + push result and remote-SHA verification recorded in the next entry (self-referential; cannot be inside the same commit).
+
+## 2026-10-27 — CP0 commit & push verification (actual result)
+
+- Commit: `83a0a860` "research(cartona): record phase 2 baseline and execution plan" (5 files, +320).
+- Push: `git push -u origin research/cartona-uiux-extraction-phase2-20261027` → new branch created on remote.
+- Remote verification command: `git ls-remote origin research/cartona-uiux-extraction-phase2-20261027` → `83a0a860275d00ee9ca92835b97980255986a961`; local `git rev-parse HEAD` → `83a0a860275d00ee9ca92835b97980255986a961`. **VERIFIED MATCH.**
+
+## 2026-10-27 — CP1 start
+
+- Reading prior-run artifacts for claim-by-claim audit (executive-summary.md, validation.json, run-log, CSVs) and preparing recount scripts under tools/.
+
+## 2026-10-27 — CP1 complete
+
+- Ran tools/recount_prior_metrics.py (rules in docstring): assets 113 rows (103 declared + 10 infra/twins) vs 119 raw ZIP `assets/` entries (6 = AppsFlyer + dexopt infra) vs 1,445 total ZIP entries; arabic_ui_strings.txt = 1,653 lines / 1,615 unique / 38 duplicate occurrences; Android strings.xml = 490 elements; screen catalog = 21 rows all STATIC_INFERRED, 0 screenshots; endpoint catalog = 70 rows all API_PATH_LITERAL_STRING_ONLY, 0 confirmed functional.
+- aapt badging: com.cartona 8.4.6 / 70000083, minSdk 24, targetSdk 36, native-code armeabi-v7a (split only; base APK has no lib/).
+- apksigner: Play App Signing, signer cert SHA-256 83891e0a1243…d653ee + SourceStamp present (matches prior claim).
+- libapp.so re-hashed from split: 10,945,116 B, SHA-256 e150ce501b87d3c0… (matches prior run's recorded payload identity).
+- Output: previous-research-audit.md (claim verdicts + metric normalization table + gaps list).
+- CP1 verdict: prior research substantially sound; corrections adopted for this run's vocabulary.
