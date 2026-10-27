@@ -41,8 +41,9 @@
 
 8. **CI trigger scope**
    - Added the admin-route regression to the existing static workflow.
-   - An attempt to run the workflows on this `fix/**` branch returned failed jobs with `runner_id=0` and `steps=[]`; no test commands executed and logs were unavailable from the connector.
-   - The temporary `fix/**` push triggers were reverted to avoid misleading failed workflow runs on every fix branch. Normal workflow trigger scopes are preserved.
+   - Expanded the `pull_request.branches` filters in both static and mobile workflows to include `ui/visual-qa-screen-completion-20261025`, so later PRs targeting this development branch can receive those checks once the workflow change is present in the base branch.
+   - An attempt to run workflows from this branch returned failed jobs with `runner_id=0` and `steps=[]`; no test commands executed and logs were unavailable from the connector. Since the trigger change is part of this PR, it does not itself prove that this PR's tests ran.
+   - Temporary `fix/**` push triggers were reverted to avoid triggering all fix branches.
 
 ## Required local verification before merge
 
