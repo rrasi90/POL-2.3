@@ -26,6 +26,11 @@
    - Replaced visible “Master Product” with “کالای اصلی” in the retailer basket error, translated the visible “SKU” search placeholders to “شناسهٔ کالا”, and translated the vendor SKU label to “شناسهٔ کالای بنکداری”.
    - This is not a full RTL/visual QA pass. Device screenshots and a full visible-string audit still require the local environment.
 
+6. **B-06 — order stepper was present but its status mapping was incomplete**
+   - The handoff described the stepper as missing; static code inspection found a four-step order progress card already present in `OrderDetailMobileScreen.tsx`.
+   - The old mapping marked `READY` as step 2 instead of step 3 and treated `ARRIVED` as though it were an order status. The progress mapping now lives in `orderProgressStage()` in `src/utils/statusLabels.ts`: accepted/preparing → step 2, ready/dispatched → step 3, delivered → step 4.
+   - Added status mapping assertions to the mobile mock QA script. This is a logic/static fix; it still needs actual local execution and device review.
+   
 5. **Checkout idempotency in the retailer mock**
    - Added a canonical request fingerprint to mock checkout state. Replays with the same key and same payload return the original result; using the same key with a different payload is rejected.
    - Added a negative QA assertion for conflicting-payload reuse. This models the project’s idempotency/fingerprint intent in the mock; it is still not a substitute for running real QA.
