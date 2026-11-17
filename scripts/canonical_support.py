@@ -128,6 +128,41 @@ class CanonicalSupportService:
         return case
 
     @classmethod
+    def list_messages(cls, cur, actor_user_id: str, case_id: str,
+                     organization_id: str | None = None):
+        # Reuse the case authorization and audit trail before reading any messages.
+        case = cls.get_case(cur, actor_user_id, case_id)
+        is_ops = cls._is_ops_actor(cur, actor_user_id)
+        # A user can belong to several organizations. Do not let an otherwise
+        # valid user token read a conversation while acting in another tenant.
+        if (
+            not is_ops
+            and (
+                organization_id is None
+                or str(case["organization_id"]) != str(organization_id)
+            )
+        ):
+            # Reuse the schema-approved READ action; the access-audit table
+            # constrains action values and deliberately has no READ_MESSAGES enum.
+            cls._audit(cur, case_id, actor_user_id, "READ", False,
+                       "active tenant does not own this support case")
+            raise SupportAccessError(
+                "Support messages are not available in the active organization."
+            )
+        # Return only the minimum public message fields; never expose internal notes
+        # or sender user IDs through the customer-facing history endpoint.
+        cur.execute(
+            """
+            SELECT id, sender_type, message_text, created_at
+            FROM support_case_messages
+            WHERE support_case_id = %s AND is_internal = FALSE
+            ORDER BY created_at ASC, id ASC;
+            """,
+            (case_id,),
+        )
+        return cur.fetchall()
+
+    @classmethod
     def add_message(cls, cur, actor_user_id: str, case_id: str, message_text: str,
                     internal: bool = False, sender_type: str | None = None):
         if not message_text.strip():
