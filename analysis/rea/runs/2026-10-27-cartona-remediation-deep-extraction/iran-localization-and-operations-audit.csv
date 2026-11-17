@@ -1,0 +1,16 @@
+item_id,area,requirement,current_pol_evidence,gap_or_ok,acceptance_criterion,source_ref
+IR-01,Persian text,Standard Persian chars (ی/ک) not Arabic placeholders,fa.ts formatters + inline Persian strings,GAP-CHECK,Zero Arabic ی/ک mixed into Persian strings — lint or grep rule,mvp/apps/mobile/src/i18n/fa.ts
+IR-02,RTL,Full RTL layout with Vazirmatn line-height,AppShell.tsx:112 RTL + fonts loaded,PARTIAL,Screenshot contract for RTL on 3 core screens,mvp/apps/mobile/AppShell.tsx
+IR-03,Digits,Persian digit display + Latin input normalization,fa.ts toAsciiDigits/formatFaNumber,OK,Input accepts both digit sets; display consistent,i18n/fa.ts
+IR-04,Search normalize,Arabic/Persian char normalization in search,backend search (catalog_search.py),GAP,ي→ی ک→ک normalize before query — backend test needed,scripts/api/routes/catalog_search.py
+IR-05,Barcode,Byte-exact barcode matching,products/match-barcode exists,OK,Barcode match bypasses normalization (exact),scripts/api/routes/catalog_matching.py:30
+IR-06,Currency,تومان/ریال display + rounding rule,not evidenced in POL code,GAP,Single display unit decided; rounding documented; no float money,docs + types.ts
+IR-07,Dates,Tehran timezone + Jalali in UI,fa.ts formatTehranDateTime/todayTehranIso,OK,UI dates Jalali; API timestamps ISO-UTC,i18n/fa.ts
+IR-08,OTP,Six-digit OTP + Persian SMS copy,auth contract 6-digit enforced (migrations 077),OK,Resend rate-limit + countdown present,scripts/api/routes/auth.py
+IR-09,Phone input,E.164 + 98 prefix handling,login normalization exists (login.spec 6 tests),OK,Accepts 09…/98…/+98…; single canonical form,mvp/apps/web/tests/login.spec.ts
+IR-10,Address,Province/city + postal constraints for Iran,not evidenced,GAP,Address model needs Iran-specific fields — schema decision,docs
+IR-11,Maps,Provider for Iran (Neshan/Balad vs OSM),not evidenced,GAP,Map POI renders in Iran; offline fallback list,driver-app-readiness
+IR-12,Network,Weak-network retry/idempotency,Idempotency-Key at checkout only (061),GAP,All mutations idempotent or safely retried — extend scope,scripts/api/routes/orders.py:31-44
+IR-13,Media upload,POD/invoice images + resumable upload,media.py resumable endpoints exist,PARTIAL,Upload retry over flaky network tested,scripts/api/routes/media.py:42-80
+IR-14,Low-end devices,Perf on cheap Androids,pol withAndroidSizeOptimization plugin exists,PARTIQA,APK size + cold-start budget defined,app.config.js plugins
+IR-15,Privacy,Location/POD retention policy,privacy lifecycle migration 052 exists,PARTIAL,Retention documented for driver location + POD photos,migrations/052
