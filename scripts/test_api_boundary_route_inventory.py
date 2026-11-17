@@ -72,6 +72,7 @@ EXPECTED_BUSINESS_ROUTES = {
     ("GET", "/api/v1/storefront/vendors/{vendor_id}/products"),
     ("GET", "/api/v1/support/cases"),
     ("GET", "/api/v1/support/cases/{case_id}"),
+    ("GET", "/api/v1/support/cases/{case_id}/messages"),
     ("GET", "/api/v1/vendors/customers"),
     ("GET", "/api/v1/vendors/settlements"),
     ("GET", "/api/v1/vendors/staff"),
