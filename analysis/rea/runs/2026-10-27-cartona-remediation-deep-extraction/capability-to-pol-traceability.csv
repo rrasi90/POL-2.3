@@ -1,0 +1,37 @@
+capability_id,cartona_evidence,pol_screen,pol_endpoint,pol_backend,pol_db,pol_permission,pol_test,gap_status
+R-01,ev_otp_strings + POL contract tests,LoginScreen.tsx,POST auth/request-otp + verify-otp,auth_boundary.py,otp_challenges+user_sessions,none (rate-limited),test_auth_contract.py,PRESENT
+R-04,categories route + icons,RetailerMobileScreen.tsx,GET /categories; /catalog/search,catalog_service,catalog tables,session,test_http_catalog*.py,PRESENT
+R-05,search v2 endpoints,RetailerMobileScreen.tsx,GET /search + /catalog/search,catalog_search.py,products,MOV/MOP filters missing,test_http_catalog_search.py,PARTIAL
+R-07,carts sqlite + sync endpoints,RetailerMobileScreen.tsx,POST /baskets; items,boundary,baskets+basket_items,RETAILER_*,test_http_baskets.py,PRESENT
+R-08,cart validate,allocation-preview UI,POST /baskets/{id}/allocation-preview,boundary,allocation_plan_items,RETAILER_*,test_http_baskets.py,PRESENT
+R-11,8 lifecycle tokens,OrderDetailMobileScreen.tsx,orders CRUD + transitions,application_boundary,orders CHECK 10 states,role-per-transition,many order tests,PRESENT
+R-13,order-support-tickets,SupportMobileScreen.tsx,POST/GET support/cases,support_service,support_cases,session,test_http_support.py,PRESENT
+R-19,notifications endpoints,AccountMobileScreen.tsx,inbox + preferences,notifications,inbox_items,session,test_http_notifications.py,PRESENT
+R-24,gen-l10n Arabic corpus,fa.ts + Vazirmatn,-,-,-,-,login.spec/visual-capture.spec,PRESENT (verify via B-08)
+R-02,register/skip endpoint,-,-,-,-,-,-,MISSING
+R-03,available-area endpoint,-,-,-,-,-,-,MISSING
+R-06,favorites endpoints,-,-,-,-,-,-,MISSING
+R-09,TTL + abandoned_at,-,-,-,-,-,-,MISSING
+R-10,reorder route + origin_order_id,OrderDetail (no action),-,-,-,-,-,MISSING
+R-16,/wallet + 32 strings,-,-,-,-,-,-,MISSING
+R-17,Cartona Credit events,-,-,-,-,-,-,MISSING
+R-18,FCM token endpoint,AccountMobile (partial),/v3/fcm/token pattern,-,-,-,-,PARTIAL (inbox only)
+R-20,eid cashback,-,-,-,-,-,-,MISSING
+R-21,gmv-targets,-,-,-,-,-,-,MISSING
+R-22,App Links + onelink,-,no intentFilters,-,-,-,-,MISSING
+R-23,PairIP + fake-GPS flags,-,-,-,-,-,-,MISSING
+V-01..V-03,suppliers app bullets (PUBLIC),VendorMobileScreen.tsx,vendor_catalog.py CRUD,vendor services,vendor_products/prices/inventory,VENDOR_* + delegation,test_http_vendor_catalog.py,PRESENT
+V-04,offers bullet (PUBLIC),-,no offers API,-,-,-,-,MISSING
+V-05,reports bullet (PUBLIC),VendorMobileScreen finance tab,invoices/settlements,finance_service,invoices+settlements,VENDOR_*,test_http_finance.py,PRESENT
+V-06,daily inventory inferred,VendorMobileScreen daily tab,daily_inventory + continuous-scan,vendor inventory,inventory_audit_log,VENDOR_*,test_http_daily_inventory.py,PRESENT
+V-07,not evidenced (POL ahead),VendorMobileScreen partial flow,partial-acceptance-proposals,canonical_partial_acceptance,partial_acceptance_proposals,order.accept + two-party,test_partial_acceptance.py,PRESENT (POL ahead)
+V-08,driver app exists (PUBLIC),VendorMobileScreen dispatch form,POST dispatch,fulfillment_service,deliveries+driver fields,order lifecycle,fulfillment tests,PRESENT
+V-09,user-management route,VendorMobileScreen more tab,staff invite/permissions,permissions engine,delegated_permission_grants,membership.manage + ceiling,test_delegated_permissions.py,PRESENT
+V-10,ERP claim (MARKETING),-,no ERP integration,-,-,-,-,MISSING
+D-01..D-02,driver app bullets (PUBLIC),-,-,-,-,-,-,MISSING (no driver substrate)
+D-03,POD claimed (PUBLIC),OTP confirm exists in OrderDetail,POST /orders/{id}/deliver,delivery_service,delivery OTP+POD,stage-guarded,test_http_delivery_pod*,PRESENT (endpoint; actor gap D-01)
+D-04,stages unknown for Cartona,-,delivery stage routes,boundary,delivery_status,-,test_http_delivery_tracking.py,PRESENT (actor gap)
+D-05,earnings bullet (PUBLIC),-,-,-,-,-,-,MISSING
+D-06,unknown,SupportMobile (partial),delivery-exceptions routes,exceptions service,delivery_exceptions,session,test_http_delivery_exceptions.py,PRESENT (endpoint)
+D-07,unknown,-,-,no offline queue,-,-,-,MISSING
+O-01..O-04,not evidenced/POL canonical,web dashboards,admin/support/finance routes,boundary,audit+support+finance tables,ADMIN/OPS roles,admin+reconciliation tests,PRESENT
