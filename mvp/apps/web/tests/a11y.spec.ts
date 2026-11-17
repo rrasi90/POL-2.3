@@ -26,7 +26,7 @@ test.describe("Accessibility snapshot guards", () => {
   });
 
   test("vendor dashboard has basic a11y structure", async ({ page }, testInfo) => {
-    const phone = vendorPhone(testInfo, 99);
+    const phone = vendorPhone();
     resetTenant(phone);
     await loginAsVendor(page, phone);
     await page.goto("/vendor");
