@@ -1,9 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
-import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
+import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip } from "../components/ui";
+import { DeliveryProgress } from "../motion/DeliveryProgress";
+import { FadeIn } from "../motion/FadeIn";
+import { OrderProgress } from "../motion/OrderProgress";
+import { Pulse } from "../motion/Pulse";
+import { staggerDelay } from "../motion/motionTokens";
+import { SuccessCheck } from "../motion/SuccessCheck";
 import { spacing, useThemedStyles, type Palette } from "../theme";
-import { orderProgressStage } from "../utils/statusLabels";
 import type { Role } from "../types";
 
 type Mode = "retailer" | "vendor";
@@ -329,7 +334,9 @@ export function OrderDetailMobileScreen(props: {
     return (
       <Screen>
         <View style={styles.centerState}>
-          <View style={styles.loadingDot}><Text style={styles.loadingMark}>…</Text></View>
+          <Pulse active size={62} style={styles.loadingDot}>
+            <Text style={styles.loadingMark}>…</Text>
+          </Pulse>
           <Text style={styles.title}>در حال بارگذاری سفارش</Text>
           <Text style={styles.meta}>در حال دریافت اطلاعات…</Text>
         </View>
@@ -353,7 +360,7 @@ export function OrderDetailMobileScreen(props: {
   const status = order.order_status || "";
   const vendorMode = props.mode === "vendor";
   const vendorOwner = vendorMode && props.role === "VENDOR_OWNER";
-  const stage = orderProgressStage(status);
+  const deliveryAxisVisible = status === "DISPATCHED" || (status === "DELIVERED" && deliveryStatus !== null) || Boolean(deliveryStatus);
 
   return (
     <Screen>
@@ -377,19 +384,23 @@ export function OrderDetailMobileScreen(props: {
 
         <Card style={styles.stepperCard}>
           <Text style={styles.sectionTitle}>وضعیت سفارش</Text>
-          <View style={styles.stepper}>
-            {["ثبت سفارش", "تایید و آماده‌سازی", "آماده ارسال", "تحویل"].map((label, index) => {
-              const done = index + 1 <= stage;
-              return (
-                <View key={label} style={styles.step}>
-                  <View style={[styles.stepDot, done && styles.stepDotDone]}><Text style={[styles.stepDotText, done && styles.stepDotTextDone]}>{done ? "✓" : String(index + 1)}</Text></View>
-                  <Text style={[styles.stepText, done && styles.stepTextDone]}>{label}</Text>
-                  {index < 3 ? <View style={[styles.stepLine, index + 1 < stage && styles.stepLineDone]} /> : null}
-                </View>
-              );
-            })}
-          </View>
+          <OrderProgress status={status} />
         </Card>
+
+        {deliveryAxisVisible ? (
+          <Card style={styles.stepperCard}>
+            <Text style={styles.sectionTitle}>مسیر تحویل</Text>
+            <DeliveryProgress deliveryStatus={deliveryStatus} orderStatus={status} />
+            {status === "DELIVERED" ? (
+              <FadeIn>
+                <View style={styles.deliveredStrip}>
+                  <SuccessCheck size={40} />
+                  <Text style={styles.deliveredText}>تحویل با موفقیت ثبت شد</Text>
+                </View>
+              </FadeIn>
+            ) : null}
+          </Card>
+        ) : null}
 
         {vendorMode ? (
           <Card style={styles.actionCard}>
@@ -431,19 +442,21 @@ export function OrderDetailMobileScreen(props: {
             <Text style={styles.sectionTitle}>اقلام سفارش</Text>
             <Text style={styles.meta}>{items.length.toLocaleString("fa-IR")} قلم</Text>
           </View>
-          {items.length === 0 ? <Empty title="قلمی ثبت نشده" /> : items.map((x) => (
-            <View key={x.id} style={styles.item}>
-              <View style={styles.itemVisual}><Text style={styles.itemEmoji}>📦</Text></View>
-              <View style={styles.itemMain}>
-                <Text style={styles.itemTitle}>{x.product_name_snapshot || x.id}</Text>
-                <Text style={styles.meta}>{x.brand_name_snapshot || ""} · {x.packaging_unit_snapshot || ""}</Text>
-                <Text style={styles.meta}>درخواست: {String(x.ordered_quantity ?? 0)} · پذیرفته: {String(x.accepted_quantity ?? "—")}</Text>
-                {vendorMode && ["SUBMITTED", "CREATED"].includes(status) ? (
-                  <Input label="تعداد پیشنهادی" value={partial[x.id] || ""} onChangeText={(v) => setPartial((p) => ({ ...p, [x.id]: v }))} keyboardType="numeric" />
-                ) : null}
+          {items.length === 0 ? <Empty title="قلمی ثبت نشده" /> : items.map((x, index) => (
+            <FadeIn key={x.id} delay={staggerDelay(index)}>
+              <View style={styles.item}>
+                <View style={styles.itemVisual}><Text style={styles.itemEmoji}>📦</Text></View>
+                <View style={styles.itemMain}>
+                  <Text style={styles.itemTitle}>{x.product_name_snapshot || x.id}</Text>
+                  <Text style={styles.meta}>{x.brand_name_snapshot || ""} · {x.packaging_unit_snapshot || ""}</Text>
+                  <Text style={styles.meta}>درخواست: {String(x.ordered_quantity ?? 0)} · پذیرفته: {String(x.accepted_quantity ?? "—")}</Text>
+                  {vendorMode && ["SUBMITTED", "CREATED"].includes(status) ? (
+                    <Input label="تعداد پیشنهادی" value={partial[x.id] || ""} onChangeText={(v) => setPartial((p) => ({ ...p, [x.id]: v }))} keyboardType="numeric" />
+                  ) : null}
+                </View>
+                <Text style={styles.linePrice}>{money(x.total_line_amount_toman)}</Text>
               </View>
-              <Text style={styles.linePrice}>{money(x.total_line_amount_toman)}</Text>
-            </View>
+            </FadeIn>
           ))}
         </Card>
 
@@ -485,14 +498,16 @@ export function OrderDetailMobileScreen(props: {
         <Card style={styles.timelineCard}>
           <Text style={styles.sectionTitle}>خط زمانی سفارش</Text>
           {timeline.length === 0 ? <Empty title="رویدادی ثبت نشده" /> : timeline.map((x, index) => (
-            <View key={x.id} style={styles.timelineRow}>
-              <View style={styles.timelineRail}><View style={styles.timelineDot} />{index < timeline.length - 1 ? <View style={styles.timelineLine} /> : null}</View>
-              <View style={styles.timelineBody}>
-                <Text style={styles.itemTitle}>{x.event_type || "رویداد"}</Text>
-                <Text style={styles.meta}>{(x.from_status || "∅") + " → " + (x.to_status || "∅")}</Text>
-                <Text style={styles.meta}>{x.created_at || "—"}</Text>
+            <FadeIn key={x.id} delay={staggerDelay(index)}>
+              <View style={styles.timelineRow}>
+                <View style={styles.timelineRail}><View style={styles.timelineDot} />{index < timeline.length - 1 ? <View style={styles.timelineLine} /> : null}</View>
+                <View style={styles.timelineBody}>
+                  <Text style={styles.itemTitle}>{x.event_type || "رویداد"}</Text>
+                  <Text style={styles.meta}>{(x.from_status || "∅") + " → " + (x.to_status || "∅")}</Text>
+                  <Text style={styles.meta}>{x.created_at || "—"}</Text>
+                </View>
               </View>
-            </View>
+            </FadeIn>
           ))}
         </Card>
       </ScrollView>
@@ -514,18 +529,10 @@ function makeStyles(colors: Palette) {
     metric: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "right", marginTop: spacing.sm },
     address: { color: colors.textSecondary, fontSize: 12, lineHeight: 19, textAlign: "right", marginTop: spacing.sm },
     stepperCard: { paddingVertical: spacing.lg },
+    deliveredStrip: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md, marginTop: spacing.sm },
+    deliveredText: { color: colors.success, fontSize: 13, fontWeight: "800", textAlign: "right" },
     sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.sm },
     sectionTitle: { color: colors.text, fontSize: 15, fontWeight: "900", textAlign: "right", marginBottom: spacing.sm },
-    stepper: { flexDirection: "row", alignItems: "flex-start", direction: "ltr" },
-    step: { flex: 1, alignItems: "center", position: "relative" },
-    stepDot: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.neutralBg, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
-    stepDotDone: { backgroundColor: colors.brand, borderColor: colors.brand },
-    stepDotText: { color: colors.textMuted, fontSize: 10, fontWeight: "900" },
-    stepDotTextDone: { color: "#fff" },
-    stepText: { color: colors.textMuted, fontSize: 9, textAlign: "center", marginTop: 5 },
-    stepTextDone: { color: colors.text, fontWeight: "800" },
-    stepLine: { position: "absolute", top: 14, left: "50%", right: "-50%", height: 2, backgroundColor: colors.border, zIndex: -1 },
-    stepLineDone: { backgroundColor: colors.brand },
     actionCard: { borderColor: colors.brand + "44" },
     actionRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
     itemsCard: { paddingBottom: spacing.sm },
