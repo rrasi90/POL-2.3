@@ -35,6 +35,12 @@ jobs:
           POL_JWT_SECRET: static-gate-secret-not-for-production
         run: python scripts/test_api_route_hygiene.py
 
+      - name: Shared admin router registration uniqueness
+        env:
+          PYTHONPATH: .
+          POL_JWT_SECRET: static-gate-secret-not-for-production
+        run: python scripts/test_admin_route_registration_uniqueness.py
+
       - name: UI audit regression guards (basket synchronization and delivery transitions)
         env:
           PYTHONPATH: .
