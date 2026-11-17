@@ -415,7 +415,7 @@ class TestListSupportMessages:
                     (other_org,),
                 )
                 cur.execute(
-                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status) VALUES (%s, %s, %s, 'RETAILER_OWNER', 'ACTIVE')",
+                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status, is_primary) VALUES (%s, %s, %s, 'RETAILER_OWNER', 'ACTIVE', FALSE)",
                     (str(uuid4()), other_org, owner["ru"]),
                 )
                 other_session = _create_session(cur, owner["ru"], other_org)
