@@ -15,6 +15,11 @@ export const metadata: Metadata = {
   description: "پلتفرم B2B FMCG — MVP",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
