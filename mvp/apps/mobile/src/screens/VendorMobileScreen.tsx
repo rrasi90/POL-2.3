@@ -923,7 +923,7 @@ export function VendorMobileScreen(props: {
                   <Text style={styles.meta}>بارکد ناشناخته به Master Product تبدیل نمی‌شود؛ فقط می‌توان کاندیدای بررسی ثبت کرد.</Text>
                   <Input label="عنوان پیشنهادی" value={candidateTitle} onChangeText={setCandidateTitle} />
                   <Input label="برند پیشنهادی" value={candidateBrand} onChangeText={setCandidateBrand} />
-                  <Input label="SKU بنکداری (اختیاری)" value={candidateSku} onChangeText={setCandidateSku} direction="ltr" />
+                  <Input label="شناسهٔ کالای بنکداری (اختیاری)" value={candidateSku} onChangeText={setCandidateSku} direction="ltr" />
                   <Btn label="ثبت کاندیدای کالا" onPress={() => void createBarcodeCandidate()} loading={loading} disabled={loading || !candidateTitle.trim()} />
                   {candidateCreatedId ? <Text style={styles.successNote}>کاندید ثبت شد: {candidateCreatedId}</Text> : null}
                 </View>
