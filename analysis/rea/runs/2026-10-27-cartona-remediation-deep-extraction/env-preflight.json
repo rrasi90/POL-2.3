@@ -1,0 +1,30 @@
+{
+  "run_id": "2026-10-27-cartona-remediation-deep-extraction",
+  "preflight_at": "2026-10-27",
+  "os": "Windows 10.0.26200 x64, Git Bash shell",
+  "agent_client": "ZCode (REA MCP v6.7.0 tools available incl. identify_flutter_build/inspect_dart_aot; android-emulator plugin; WebFetch/WebSearch)",
+  "subagents": "supported (2 background research agents launched)",
+  "repo": {"root": "C:/Star/pol/2.4", "branch": "ui/visual-qa-screen-completion-20261025",
+           "head_after_sync": "e68d2e4521b73bc4ba593969380f4197df6aae8a", "working_tree": "clean",
+           "sync": "ff-only pull 413ccd4a->e68d2e45 (11 commits)"},
+  "inputs": {
+    "base_apk": "C:/Star/pol/2.4/cartona app/cartona.apk (read-only, sha256 e4a0f4d1a3a607ad4e06e73fee70bf296c14205696b1cdc20892b5e893df808c)",
+    "splits": "xapk_extracted/{com.cartona.apk (=base), config.armeabi_v7a.apk, config.en.apk, config.mdpi.apk, manifest.json, icon.png}",
+    "private_corpus": "C:/Star/pol-2.4-private-analysis/cartona/e4a0f4d1.../ (mounted and readable)",
+    "supplier_driver_apks": "NOT_AVAILABLE (only referenced in manifest queries; no artifacts)"
+  },
+  "tools_verified": [
+    {"tool": "python", "version": "3.11.15 (PATH resolution in this shell)", "source": "system"},
+    {"tool": "git", "version": "git-bash bundled", "source": "system"},
+    {"tool": "java", "version": "OpenJDK 21.0.9", "source": "C:/Program Files/Android/Android Studio/jbr"},
+    {"tool": "adb", "version": "1.0.41", "source": "C:/Users/rrasi_oorj8fq/AppData/Local/Android/Sdk/platform-tools/adb.exe"},
+    {"tool": "jadx-headless", "version": "0.7.1", "source": "C:/Users/rrasi_oorj8fq/.local/share/rea/android/jadx-headless-mcp-0.7.1-all.jar (pinned, sha256 6e5eacf5...)"},
+    {"tool": "build-tools", "version": "35.0.0, 36.0.0 (apksigner available)", "source": "Android SDK"},
+    {"tool": "docker", "version": "28.5.2", "source": "system"},
+    {"tool": "r2/r2flutter", "version": "NOT_INSTALLED", "note": "candidate for Phase C"},
+    {"tool": "apktool", "version": "NOT_ON_PATH", "note": "Oct-5 decoded tree exists; apktool CLI itself absent"}
+  ],
+  "disk": {"free_gb": 15, "note": "97% used; heavy installs (MobSF image ~2GB, new emulator images) require justification; defer unless clearly needed"},
+  "avds": [{"name": "POL_API_Emulator", "image": "android-35 google_apis x86_64", "arm_translation": false, "known_issue": "INSTALL_FAILED_NO_MATCHING_ABIS for armeabi-v7a-only app"}],
+  "constraints": ["no POL code changes", "no production probing", "no bypass of OTP/licensing/anti-fraud", "no bulk proprietary artifacts in Git", "previous run immutable"]
+}
