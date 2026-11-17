@@ -36,7 +36,7 @@ export function LoginScreen(props: { onAuthed: (role: Role) => void; allowedRole
     setError(null);
     const mobileNumber = toE164(phone);
     if (!mobileNumber) {
-      setError("شماره موبایل را با فرمت ۰۹۱۶xxxxxxxx وارد کنید.");
+      setError("شمارهٔ موبایل را با قالب ۰۹۱۶ ۱۲۳ ۴۵۶۷ وارد کنید.");
       return;
     }
     setPhone(mobileNumber);
