@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "../api";
 import { Btn, Card, Empty, ErrorBox, Input, Screen, StatusChip, Title } from "../components/ui";
 import { spacing, useThemedStyles, type Palette } from "../theme";
+import { orderProgressStage } from "../utils/statusLabels";
 import type { Role } from "../types";
 
 type Mode = "retailer" | "vendor";
@@ -352,7 +353,7 @@ export function OrderDetailMobileScreen(props: {
   const status = order.order_status || "";
   const vendorMode = props.mode === "vendor";
   const vendorOwner = vendorMode && props.role === "VENDOR_OWNER";
-  const stage = status === "DELIVERED" ? 4 : status === "ARRIVED" ? 4 : status === "IN_TRANSIT" || status === "DISPATCHED" ? 3 : status === "READY" ? 2 : status === "PREPARING" ? 2 : status === "ACCEPTED" || status === "PARTIALLY_ACCEPTED" ? 2 : 1;
+  const stage = orderProgressStage(status);
 
   return (
     <Screen>
