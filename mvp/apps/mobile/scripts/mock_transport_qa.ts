@@ -31,6 +31,9 @@ assert.equal(orderProgressStage("PREPARING"), 2);
 assert.equal(orderProgressStage("READY"), 3);
 assert.equal(orderProgressStage("DISPATCHED"), 3);
 assert.equal(orderProgressStage("DELIVERED"), 4);
+// Delivery lifecycle states must not advance the order lifecycle progress.
+assert.equal(orderProgressStage("ARRIVED"), 1);
+assert.equal(orderProgressStage("IN_TRANSIT"), 1);
 assert.equal(orderProgressStage(null), 1);
 
 const orders = await req<{ orders: Array<{ id: string; order_status: string }> }>("GET", "/api/v1/orders");
