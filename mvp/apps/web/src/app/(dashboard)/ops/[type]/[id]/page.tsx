@@ -18,6 +18,10 @@ import {
   disputeStatusLabel,
   disputeStatusTone,
   formatDateTime,
+  formatOperationalStatus,
+  formatTimelineEventLabel,
+  reconStatusLabel,
+  returnStatusLabel,
   formatToman,
   idOf,
   itemsOf,
@@ -359,10 +363,14 @@ export default function OpsObjectDetailPage() {
               }
             >
               {type === "orders"
-                ? orderStatusLabel[status] ?? status
+                ? orderStatusLabel[status] ?? formatOperationalStatus(status)
                 : type === "support"
-                  ? supportStatusLabel[status] ?? status
-                  : status}
+                  ? supportStatusLabel[status] ?? formatOperationalStatus(status)
+                  : type === "reconciliation"
+                    ? reconStatusLabel[status] ?? formatOperationalStatus(status)
+                    : type === "returns"
+                      ? returnStatusLabel[status] ?? formatOperationalStatus(status)
+                      : formatOperationalStatus(status)}
             </StatusChip>
           ) : (
             <StatusChip tone="neutral">{TYPE_LABEL[type]}</StatusChip>
@@ -372,8 +380,7 @@ export default function OpsObjectDetailPage() {
             <StatusChip
               tone={disputeStatusTone[String(record.dispute_status)] ?? "neutral"}
             >
-              {disputeStatusLabel[String(record.dispute_status)] ??
-                String(record.dispute_status)}
+              {disputeStatusLabel[String(record.dispute_status)] ?? "وضعیت نامشخص"}
             </StatusChip>
           ) : null}
 
@@ -576,11 +583,11 @@ export default function OpsObjectDetailPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-[13px] font-semibold text-[var(--pol-light-text-primary)]">
-                      {ev.event_type ?? "رویداد"}
+                      {formatTimelineEventLabel(ev.event_type)}
                     </span>
                     {ev.from_status || ev.to_status ? (
                       <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 font-mono text-[11px] text-[var(--pol-light-text-secondary)]" dir="ltr">
-                        {ev.from_status ?? "∅"} → {ev.to_status ?? "∅"}
+                        {formatOperationalStatus(ev.from_status, "∅")} → {formatOperationalStatus(ev.to_status, "∅")}
                       </span>
                     ) : null}
                   </div>
