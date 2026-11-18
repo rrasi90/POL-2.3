@@ -32,6 +32,9 @@ JWT_AUDIENCE = "pol-api"
 JWT_ACCESS_TTL_SECONDS = 900      # 15 minutes — D-018: access token lifetime
 REFRESH_TOKEN_BYTES = 32          # 256-bit opaque refresh token
 
+# Technical abuse limits (not commercial or pricing policy)
+MAX_BULK_ITEMS = 500
+
 # Finance & Settlement (Pilot Phase Ahvaz)
 PILOT_COMMISSION_RATE = 0.000
 PAYMENT_CUSTODY_MODEL = "NON_CUSTODIAL_DIRECT"
