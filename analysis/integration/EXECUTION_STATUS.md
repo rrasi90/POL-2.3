@@ -3,7 +3,8 @@
 **Date:** 2026-11-18  
 **Baseline main:** `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`  
 **Working branch:** `integration/pol-2.3-mainline-consolidation-2026-11`  
-**Verified branch head:** `4ddaccddc0e25722fac3a835243038a75aacd6d7`  
+**Last CI-verified code head:** `4ddaccddc0e25722fac3a835243038a75aacd6d7`  
+**Current branch head after follow-up code commits:** `0ed3589c2e20023ae7c1b33842fa7f770f9930a5`  
 **State:** `IN PROGRESS — NOT MERGE READY`
 
 ## Current integration contents
@@ -18,7 +19,7 @@ The integration branch is 88 commits ahead of main and 0 behind. This is a conso
 - Archived the selected historical evidence from #47 with explicit historical/non-certification labelling.
 
 ### Application changes selectively ported
-- Mobile motion modules and screen integrations based on #40, retaining #43's stronger current-main TODO-084 fail-closed gate.
+- Mobile motion modules and screen integrations based on #40, retaining #43's stronger current-main TODO-084 fail-closed gate. After exact comparison with #29, also ported #40's unique OfflineBanner SlideIn integration and the x86 QA builder's call to the existing pre-APK QA gate; #29's latest ErrorShake interruption fix is already present, while its older OrderProgress mapping was superseded by the shared lifecycle helper.
 - Retailer mock transport, status/progress helpers, notification preference model and selected UI fixes from #52.
 - Admin route de-duplication and route-registration uniqueness test from #52.
 - Support case message-history endpoint with tenant-bound service path and tests from #51.
@@ -47,7 +48,7 @@ The two failed workflow conclusions are artifact-upload failures after their sub
 
 ## Remaining acceptance gates
 
-1. Complete #29/#40 unique-diff reconciliation and inspect all imported motion behavior for reduced-motion, cleanup, interruption, RTL and runtime correctness.
+1. Finish the remaining #29/#40 diff reconciliation (including older non-overlapping history) and inspect all imported motion behavior for reduced-motion, cleanup, interruption, RTL and runtime correctness. The latest #29-only ErrorShake fix is already present; the #29 OrderProgress implementation was not copied because its direct ARRIVED-to-delivered mapping conflicts with the newer shared lifecycle mapping.
 2. Complete #47 file-level salvage and refresh all source-backed security/traceability claims.
 3. Resolve or formally defer #49/#50 policy/security work; keep migration 077 excluded until challenge lifecycle, recipient-only dispatch, backfill/rollback and PostgreSQL 18 compatibility are demonstrated.
 4. Finish #51 Cartona artifact inventory, provenance/rights review and remaining source-backed extraction review. Never upgrade STATIC_INFERRED to RUNTIME_OBSERVED without real captures.
@@ -55,6 +56,6 @@ The two failed workflow conclusions are artifact-upload failures after their sub
 6. Re-run required workflows after any further commit and obtain successful artifact uploads or document the infrastructure limitation separately.
 7. Review current PR body/audit documents for consistency and only then consider Ready-for-review.
 
-## Merge policy
+## Latest unverified changes after the CI checkpoint\n\nTwo additional commits were added after the CI checkpoint: `OfflineBanner.tsx` now uses the shared `SlideIn` primitive, and `build_qa_x86.mjs` now validates the retailer/vendor argument and invokes `pre_apk_qa.mjs` with QA-only environment flags before building. These changes have **not** yet been tested on the new branch head. The prior CI table applies only to `4ddaccddc0e25722fac3a835243038a75aacd6d7`.\n\n## Merge policy
 
 PR #53 remains Draft. Do not merge to main while any acceptance gate above is open. Do not describe the integration as complete or certified. All test claims must remain attached to the exact SHA and workflow run that produced them.
