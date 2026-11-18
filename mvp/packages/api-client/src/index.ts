@@ -60,19 +60,20 @@ export function createApiClient(opts: ApiClientOptions) {
       if (refreshed) return request<T>(method, path, body, init, true);
     }
 
-    lastCorrelationId = res.headers.get("X-Correlation-ID");
+    const correlationId = res.headers.get("X-Correlation-ID");
+    lastCorrelationId = correlationId;
 
     let payload: ApiResponse<T>;
     try {
       payload = (await res.json()) as ApiResponse<T>;
     } catch {
-      throw new ApiError("PARSE_ERROR", "Invalid JSON response", {}, res.status);
+      throw new ApiError("PARSE_ERROR", "Invalid JSON response", {}, res.status, correlationId);
     }
 
     if (payload.success === false) {
       const err = payload.error;
       if (res.status === 401) opts.onUnauthorized?.();
-      throw new ApiError(err.code, err.message, err.details, res.status);
+      throw new ApiError(err.code, err.message, err.details, res.status, correlationId);
     }
     if (payload.success !== true) {
       throw new ApiError(
@@ -80,11 +81,12 @@ export function createApiClient(opts: ApiClientOptions) {
         "Response envelope is missing the success flag",
         {},
         res.status,
+        correlationId,
       );
     }
     if (res.status === 401) {
       opts.onUnauthorized?.();
-      throw new ApiError("UNAUTHORIZED", "Unauthorized", {}, res.status);
+      throw new ApiError("UNAUTHORIZED", "Unauthorized", {}, res.status, correlationId);
     }
     return payload.data;
   }
