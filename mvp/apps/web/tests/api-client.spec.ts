@@ -127,6 +127,60 @@ test.describe("api client edge cases", () => {
     }
   });
 
+
+  test("concurrent requests keep correlation IDs attached to their own errors", async () => {
+    let releaseSlow!: () => void;
+    let markSlowJsonStarted!: () => void;
+    const slowJsonGate = new Promise<void>((resolve) => {
+      releaseSlow = resolve;
+    });
+    const slowJsonStarted = new Promise<void>((resolve) => {
+      markSlowJsonStarted = resolve;
+    });
+    const stub = stubFetch(async (call) => {
+      if (call.url.endsWith("/slow")) {
+        const response = new Response(
+          JSON.stringify({
+            success: false,
+            error: { code: "SLOW_FAILURE", message: "slow failure", details: {} },
+          }),
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+              "X-Correlation-ID": "corr-slow",
+            },
+          },
+        );
+        const originalJson = response.json.bind(response);
+        response.json = async () => {
+          markSlowJsonStarted();
+          await slowJsonGate;
+          return originalJson();
+        };
+        return response;
+      }
+      return envelope({ ok: true }, { "X-Correlation-ID": "corr-fast" });
+    });
+    try {
+      const client = createApiClient({ baseUrl: "http://stub" });
+      const slowErrorPromise = client.get("/slow").then(
+        () => null,
+        (error: unknown) => error,
+      );
+      await slowJsonStarted;
+      await client.get("/fast");
+      releaseSlow();
+      const slowError = await slowErrorPromise;
+      expect(slowError).toBeInstanceOf(ApiError);
+      expect((slowError as ApiError).correlationId).toBe("corr-slow");
+      expect(getLastCorrelationId()).toBe("corr-fast");
+    } finally {
+      releaseSlow();
+      stub.restore();
+    }
+  });
+
   test("correlation id from the response is exposed to error surfaces", async () => {
     const stub = stubFetch(async () =>
       envelope({ ok: true }, { "X-Correlation-ID": "corr-edge-1" }),
