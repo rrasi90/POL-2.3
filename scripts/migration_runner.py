@@ -56,6 +56,13 @@ def reset_schema(conn, dbname_expected="pol_test"):
     """
     dsn = conn.get_dsn_parameters()
     actual_db = dsn.get("dbname", "")
+    from scripts.db_safety import assert_isolated_test_target
+
+    assert_isolated_test_target(
+        dbname=actual_db,
+        host=dsn.get("host", ""),
+        operation="schema reset",
+    )
     if actual_db != dbname_expected:
         raise RuntimeError(
             f"DESTRUCTIVE RESET BLOCKED: Current database is '{actual_db}', expected '{dbname_expected}'!"
