@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPackagingUnit } from "@/lib/format-labels";
+
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -28,6 +30,10 @@ import {
   groupStatusTone,
   orderStatusTone,
   orderStatusLabel,
+  formatOperationalStatus,
+  formatDeliveryStatus,
+  formatFulfillmentStatus,
+  formatTimelineEventLabel,
 } from "../../shared";
 
 interface DeliveryRecord {
@@ -427,11 +433,11 @@ export default function RetailerOrderDetailPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <StatusChip tone={orderStatusTone[order.order_status ?? ""] ?? "neutral"}>
-              {orderStatusLabel[order.order_status ?? ""] ?? order.order_status ?? "—"}
+              {orderStatusLabel[order.order_status ?? ""] ?? "وضعیت نامشخص"}
             </StatusChip>
             {order.group_status ? (
               <StatusChip tone={groupStatusTone[order.group_status] ?? "neutral"}>
-                گروه: {groupStatusLabel[order.group_status] ?? order.group_status}
+                گروه: {groupStatusLabel[order.group_status ?? ""] ?? "وضعیت نامشخص"}
               </StatusChip>
             ) : null}
             <StatusChip tone={disputeTone[order.dispute_status ?? "NONE"] ?? "neutral"}>
@@ -521,7 +527,7 @@ export default function RetailerOrderDetailPage() {
                         </span>
                       ) : null}
                       {it.fulfillment_status ? (
-                        <StatusChip tone="info">{it.fulfillment_status}</StatusChip>
+                        <StatusChip tone="info">{formatFulfillmentStatus(it.fulfillment_status)}</StatusChip>
                       ) : null}
                     </div>
                   </TableCell>
@@ -539,7 +545,7 @@ export default function RetailerOrderDetailPage() {
                       : "—"}
                   </TableCell>
                   <TableCell className="text-[var(--pol-light-text-secondary)]">
-                    {it.packaging_unit_snapshot ?? "—"}
+                    {formatPackagingUnit(it.packaging_unit_snapshot)}
                     {it.pack_quantity_snapshot
                       ? ` ×${it.pack_quantity_snapshot.toLocaleString("fa-IR")}`
                       : ""}
@@ -840,7 +846,7 @@ export default function RetailerOrderDetailPage() {
                   role="status"
                   className="mt-1 text-[12px] font-medium text-[var(--pol-light-semantic-warning)]"
                 >
-                  تا رسیدن بار به مقصد (وضعیت ارسال: {deliveryStatus ?? "نامشخص"}) تأیید تحویل
+                  تا رسیدن بار به مقصد (وضعیت ارسال: {formatDeliveryStatus(deliveryStatus)}) تأیید تحویل
                   فعال نمی‌شود.
                 </p>
               ) : null}
@@ -920,11 +926,11 @@ export default function RetailerOrderDetailPage() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-[13px] font-bold text-[var(--pol-light-text-primary)]">
-                        {ev.event_type ?? "رویداد"}
+                        {formatTimelineEventLabel(ev.event_type)}
                       </span>
                       {ev.from_status || ev.to_status ? (
                         <span className="rounded-md bg-[var(--pol-light-surface-subtle)] px-2 py-0.5 text-[11px] font-mono text-[var(--pol-light-text-secondary)] border border-[var(--pol-light-border-subtle)]" dir="ltr">
-                          {ev.from_status ?? "∅"} → {ev.to_status ?? "∅"}
+                          {formatOperationalStatus(ev.from_status, "∅")} → {formatOperationalStatus(ev.to_status, "∅")}
                         </span>
                       ) : null}
                     </div>
