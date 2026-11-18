@@ -20,17 +20,18 @@ class UnsafeDatabaseTarget(RuntimeError):
 
 
 def resolve_target(dbname: str | None = None, host: str | None = None) -> tuple[str, str]:
+    # An explicitly supplied empty target is a fail-closed signal, not a request
+    # to fall back to environment defaults: `or`-chaining would silently
+    # substitute a loopback env host and bypass the guard.
     resolved_db = (
         dbname
-        or os.environ.get("POL_API_DB_NAME")
-        or os.environ.get("PGDATABASE")
-        or ""
+        if dbname is not None
+        else (os.environ.get("POL_API_DB_NAME") or os.environ.get("PGDATABASE") or "")
     ).strip()
     resolved_host = (
         host
-        or os.environ.get("POL_API_DB_HOST")
-        or os.environ.get("PGHOST")
-        or ""
+        if host is not None
+        else (os.environ.get("POL_API_DB_HOST") or os.environ.get("PGHOST") or "")
     ).strip().lower()
     return resolved_db, resolved_host
 
