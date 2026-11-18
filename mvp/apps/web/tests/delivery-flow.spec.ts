@@ -77,7 +77,8 @@ async function vendorAdvanceToArrived(page: Page): Promise<void> {
   await page.getByRole("button", { name: "در مسیر" }).click();
   await expect(page.getByRole("button", { name: "رسید", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "رسید", exact: true }).click();
-  await expect(page.getByText(/وضعیت تحویل: ARRIVED/)).toBeVisible();
+  // Delivery states are localized (DELIVERY_STATUS_LABELS): ARRIVED -> "رسیده به مقصد".
+  await expect(page.getByText(/وضعیت تحویل: رسیده به مقصد/)).toBeVisible();
 }
 
 test("cross-persona delivery flow: checkout, vendor fulfillment, arrival, OTP confirmation", async ({
