@@ -21,7 +21,7 @@ class RequestOTPRequest(APIBaseModel):
 
 
 class VerifyOTPRequest(APIBaseModel):
-    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9]\d{7,14}$")
+    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9][0-9]{7,14}$")
     otp_code: str = Field(pattern=r"^[0-9]{4}$")
     device_info: dict[str, Any] | None = None
     client_platform: Literal["web", "mobile"] | None = None
@@ -153,7 +153,7 @@ class DeliveredItemRequest(APIBaseModel):
 
 class DeliveryConfirmRequest(APIBaseModel):
     recipient_name: str | None = Field(default=None, max_length=200)
-    otp_code: str | None = Field(default=None, pattern=r"^\d{4}$")
+    otp_code: str | None = Field(default=None, pattern=r"^[0-9]{4}$")
     proof_type: Literal["OTP_CODE", "PHYSICAL_SIGNATURE", "STORE_STAMP", "PHOTO_PROOF"] = "OTP_CODE"
     proof_media_id: str | None = Field(default=None, max_length=64)
     issue_reported: str | None = Field(default=None, max_length=500)
@@ -348,7 +348,7 @@ class VendorStaffInviteRequest(APIBaseModel):
     phone_number: str = Field(
         min_length=8,
         max_length=16,
-        pattern=r"^\+[1-9]\d{7,14}$",
+        pattern=r"^\+[1-9][0-9]{7,14}$",
     )
     full_name: str = Field(min_length=1, max_length=100)
 
