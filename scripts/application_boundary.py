@@ -584,7 +584,7 @@ class POLApplicationBoundary:
         )
         order = self.cur.fetchone()
         if not order:
-            raise ValueError("Order not found.")
+            raise KeyError("Order not found.")
         order = dict(order)
         if actor_role == "RETAILER":
             self.cur.execute(
