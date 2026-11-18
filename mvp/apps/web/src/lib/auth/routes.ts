@@ -42,7 +42,7 @@ export const routeAccess: Record<string, RouteAccess> = {
 export function postLoginDestination(role: Role, next: string | null | undefined): string {
   const fallback = roleHome[role] ?? "/";
   if (!next) return fallback;
-  if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\\\")) return fallback;
+  if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return fallback;
   try {
     const url = new URL(next, "http://pol.local");
     if (url.origin !== "http://pol.local") return fallback;
