@@ -966,7 +966,7 @@ class POLApplicationBoundary:
             exception_id=exception_id,
         )
         if not result:
-            raise ValueError("Delivery exception not found.")
+            raise KeyError("Delivery exception not found.")
         return result
 
     def feedback_list(self):
