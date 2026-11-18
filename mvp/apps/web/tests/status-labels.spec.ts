@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { formatPackagingUnit } from "../src/lib/format-labels";
+import { formatPackagingUnit, formatFreshnessStatus } from "../src/lib/format-labels";
+import { vendorProductDisplayName } from "../src/app/(dashboard)/vendor/_shared";
 import {
   formatDeliveryStatus as formatOpsDeliveryStatus,
   formatFulfillmentStatus as formatOpsFulfillmentStatus,
@@ -54,5 +55,17 @@ test.describe("Persian packaging and enum fallbacks", () => {
   test("unknown internal status enums do not leak raw identifiers", () => {
     expect(formatOpsStatus("UNKNOWN_INTERNAL_STATUS")).toBe("وضعیت نامشخص");
     expect(formatRetailStatus("UNKNOWN_INTERNAL_STATUS")).toBe("وضعیت نامشخص");
+  });
+
+  test("freshness values use stable Persian labels", () => {
+    expect(formatFreshnessStatus("FRESH")).toBe("تازه");
+    expect(formatFreshnessStatus("STALE")).toBe("نیازمند بررسی");
+    expect(formatFreshnessStatus("EXPIRED")).toBe("منقضی‌شده");
+    expect(formatFreshnessStatus(null)).toBe("نامشخص");
+  });
+
+  test("vendor product display prefers canonical names and rejects placeholders", () => {
+    expect(vendorProductDisplayName("کالای بدون نام", "نام محصول اصلی", "fallback")).toBe("نام محصول اصلی");
+    expect(vendorProductDisplayName("unknown product", "  ", null)).toBeNull();
   });
 });
