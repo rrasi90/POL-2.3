@@ -225,15 +225,7 @@ export function formatToman(value: unknown): string {
   return `${n.toLocaleString("fa-IR")} تومان`;
 }
 
-export function isOpenOrderStatus(status: unknown): boolean {
-  return typeof status === "string" && OPEN_ORDER_STATUSES.has(status);
-}
 
-export function formatToman(value: unknown): string {
-  const n = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return `${n.toLocaleString("fa-IR")} تومان`;
-}
 
 export function formatDateTime(iso: unknown): string {
   if (typeof iso !== "string" || !iso) return "—";
