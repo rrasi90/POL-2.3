@@ -14,13 +14,13 @@ class APIBaseModel(BaseModel):
 
 
 class RequestOTPRequest(APIBaseModel):
-    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9]\d{7,14}$")
+    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9][0-9]{7,14}$")
     client_fingerprint: str | None = Field(default=None, max_length=128)
 
 
 class VerifyOTPRequest(APIBaseModel):
     mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9]\d{7,14}$")
-    otp_code: str = Field(pattern=r"^\d{4}$")
+    otp_code: str = Field(pattern=r"^[0-9]{4}$")
     device_info: dict[str, Any] | None = None
     client_platform: Literal["web", "mobile"] | None = None
 
