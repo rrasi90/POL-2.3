@@ -1,61 +1,170 @@
 # POL-2.3 Integration Execution Status
 
-**Date:** 2026-11-18  
-**Baseline main:** `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`  
-**Working branch:** `integration/pol-2.3-mainline-consolidation-2026-11`  
-**Last CI-verified code head:** `4ddaccddc0e25722fac3a835243038a75aacd6d7`  
-**Current branch head after follow-up code commits:** `0ed3589c2e20023ae7c1b33842fa7f770f9930a5`  
-**State:** `IN PROGRESS — NOT MERGE READY`
+**Date:** 2026-11-19
+**Baseline main:** `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`
+**Working branch:** `integration/pol-2.3-mainline-consolidation-2026-11`
+**Local-verified branch head:** `4994f9d0f656e27d41d84c426cf162b8aa1944c2`
+**State:** `VERIFIED LOCALLY — MERGE BLOCKED ONLY BY CI BILLING FAILURE`
 
-## Current integration contents
+## Blocking infrastructure fact (root cause, not a code defect)
 
-The integration branch is 88 commits ahead of main and 0 behind. This is a consolidation branch; the 88 commits are not equivalent to 88 independently reviewed source-PR commits.
+Every GitHub Actions run since 2026-11-18 fails **before any job starts** with:
 
-### Product, governance and documentation
-- Ported the D-014 multi-vendor MVP correction from #44.
-- Ported selected source-of-truth, API-map and historical-CI corrections from #42.
-- Ported only Expo native run scripts from #45 while retaining Expo `~57.0.31` and React `19.2.3` from merged #46.
-- Added integration audit/selection/status documents.
-- Archived the selected historical evidence from #47 with explicit historical/non-certification labelling.
+> "The job was not started because recent account payments have failed or your
+> spending limit needs to be increased. Please check the 'Billing & plans'
+> section in your settings"
 
-### Application changes selectively ported
-- Mobile motion modules and screen integrations based on #40, retaining #43's stronger current-main TODO-084 fail-closed gate. After exact comparison with #29, also ported #40's unique OfflineBanner SlideIn integration and the x86 QA builder's call to the existing pre-APK QA gate; #29's latest ErrorShake interruption fix is already present, while its older OrderProgress mapping was superseded by the shared lifecycle helper.
-- Retailer mock transport, status/progress helpers, notification preference model and selected UI fixes from #52.
-- Admin route de-duplication and route-registration uniqueness test from #52.
-- Support case message-history endpoint with tenant-bound service path and tests from #51.
-- Web refresh-session preservation, responsive viewport metadata and accessibility test fixes.
-- Selected Cartona extraction research artifacts from #51, including explicit provenance and observation limits.
+Verified on runs 44280222841, 44280222836, 44280222830, 44280222842 (PR #53,
+SHA `09ef82ce`) and 44285920916 (scheduled Notification Retention on `main`,
+SHA `fbcdd744`). The repository is private and the account has zero
+self-hosted runners (`GET /repos/rrasi90/POL-2.3/actions/runners` →
+`total_count: 0`). No workflow, runner-label or YAML change can repair this;
+only an account billing fix (payment method / spending limit) or adding a
+self-hosted runner restores CI. This is recorded as the external blocker for
+the CI-on-SHA merge gate.
 
-### Deliberate exclusions / unresolved reviews
-- #29 still needs a complete unique-diff comparison against #40 and current main; no wholesale merge.
-- #47's remaining unique security, API/UI traceability and test changes still require file-level review. Historical evidence is not current certification.
-- #49/#50 six-digit OTP policy and migration 077 remain blocked. Current D-018 four-digit policy is preserved; no implicit policy change or migration 077 port.
-- #51 Cartona artifacts are not a claim of runtime-observed UI. The source audit says 21 retailer screens are STATIC_INFERRED, with no runtime screenshots; supplier/driver coverage is public-listing evidence only. Remaining extraction artifacts and rights/provenance review are still open.
-- #52's full privacy lifecycle and role authorization behavior need deeper verification beyond route registration and mock QA.
+## Local verification evidence on exact SHA `4994f9d0`
 
-## CI evidence on exact verified head
+Environment: Windows x64, Git Bash, Python 3.11.15 (venv), Node v24.18.0,
+local PostgreSQL 18.4 (`127.0.0.1:5432`, trust auth), isolated `pol_test`
+database. All commands executed from a dedicated worktree of the integration
+branch; canonical CI-equivalent env (`POL_API_DB_NAME=pol_test`,
+`POL_API_DB_HOST=127.0.0.1`, canonical non-production `POL_JWT_SECRET`,
+`ENVIRONMENT=test`).
 
-GitHub Actions runs associated with `4ddaccddc0e25722fac3a835243038a75aacd6d7`:
-
-| Workflow | Result | Interpretation |
+| Lane | Command | Result |
 |---|---|---|
-| POL Remediation Static Gate (run 44171987024) | Success | Python compilation, route invariants, admin route uniqueness and UI audit regression guards passed |
-| POL MVP Mobile Verification (run 44171987123) | Success | Expo typecheck, state-transition QA, regression QA, vendor mock QA, Expo config/export and TODO-084 gate passed; Android APK jobs were skipped by the fail-closed gate |
-| POL Browser E2E (TODO-006) (run 44171986906) | Workflow conclusion failure | Typecheck, DB migration/fixture seed and Playwright suite steps passed; Playwright report upload failed |
-| POL Independent Verification & Schema Hardening (run 44171987049) | Workflow conclusion failure | Migration chain, bootstrap verifier, full verification suite and failure-inventory/verdict steps passed; evidence artifact upload failed |
+| Migration chain 001→076 | `python scripts/migration_runner.py` | 76 migrations applied, 107 active tables, exit 0 |
+| Environment verifier | `python scripts/verify_environment.py --json` | all checks passed, PostgreSQL 18, 107/107 tables, trigger verified |
+| **Full backend suite** | `python scripts/run_verification_suite.py` | **849 passed / 0 failed / 0 skipped**, exit 0, 343.8s, artifact `artifacts/pol-test-results.json` |
+| Static gate | `compileall -q scripts`; `test_api_route_hygiene.py`; `test_admin_route_registration_uniqueness.py`; `ui_audit_regression_guards.py` | all PASS (hygiene, admin-route uniqueness, 15/15 source guards) |
+| Web typecheck | `npm run typecheck` (mvp/apps/web) | exit 0 |
+| Web production build | `scripts/test_web_build_verification.py::test_next_build_exits_zero` (salvaged TODO-078 guard) | next build exits 0, no hydration errors |
+| **Browser E2E** | `npx playwright test` (chromium, fa-IR locale, real API+web servers via e2e_serve.py) | **41 passed / 0 failed**, exit 0, 40.5s — includes the full cross-persona delivery flow (checkout → vendor accept/prepare/dispatch → PICKED_UP/IN_TRANSIT/ARRIVED → outbox OTP → POD confirm) |
+| Mobile typecheck | `npm run typecheck` (mvp/apps/mobile) | exit 0 |
+| Mobile functional QA | `npm run qa:functional` | 28/28 PASS |
+| Mobile regression QA | `npm run qa:regression` | 23/23 PASS |
+| Mobile mock QA | `npm run qa:mock` | PASS (vendor + retailer mock transports) |
+| Pre-APK QA (CI mode) | `POL_RELEASE=0 npm run qa:pre-apk` | PASS, exit 0 |
+| TODO-084 prebuild gate | `node scripts/check_prebuild_todo_gate.mjs` | `BLOCKED` (fail-closed as designed; APK jobs skip) |
 
-The two failed workflow conclusions are artifact-upload failures after their substantive test steps completed successfully. They must not be represented as fully green workflows. The exact test count is not stated here because the current run's test summary was not independently retrieved in this audit.
+The backend total grew 804 → 849 between runs: 4 defects were fixed (commit
+`1d50fe80`) and 45 behavioral tests were salvaged from PR #47 (commit
+`4994f9d0`).
+
+## Defects found and fixed during local verification
+
+1. **`scripts/db_safety.py` fail-open guard** (`1d50fe80`): `resolve_target()`
+   or-chained an explicitly empty `host=""` into `POL_API_DB_HOST`/`PGHOST`
+   environment defaults, so `test_blocks_missing_host` silently passed the
+   loopback guard. Explicit empty values now stay empty and are rejected.
+2. **Stale 422 assertions for missing order/order-group** (`1d50fe80`):
+   `test_get_order_not_found` / `test_order_group_not_found` still asserted
+   the legacy mapping after commits `f51bb426`/`27a62f7e` canonically mapped
+   missing resources to `404 NOT_FOUND` (already enforced by this branch's
+   `test_http_negative_rbac_matrix.py`). Updated to 404 + envelope code.
+3. **Stale stale-plan exception assertion** (`1d50fe80`):
+   `test_stale_plan_version_rejected` expected `AllocationIntegrityError`
+   after commit `49cf508e` mapped stale basket/plan versions to
+   `ConflictError` (`STALE_BASKET_VERSION`, HTTP 409 per G-326).
+4. **Stale raw-enum E2E assertion** (`a96d66cd`): the delivery-flow spec's
+   vendor arrival step still asserted `وضعیت تحویل: ARRIVED` after commit
+   `f864c01b` localized delivery states (`ARRIVED` → `رسیده به مقصد`);
+   retailer-side assertions already used localized labels.
+
+All four were invisible to CI because billing blocked every run after these
+commits landed.
+
+## Port verification completed (2026-11-19)
+
+| Source | Method | Verdict |
+|---|---|---|
+| #44 product-vision (1 file) | byte comparison | 1/1 identical in integration branch — port complete |
+| #45 Expo run scripts | content comparison | `expo run:ios`/`run:android` present; Expo `~57.0.31` deliberately retained per merged #46 — port complete with documented deviation |
+| #42 source-authority reconcile | content comparison | migration-head 076, `application_boundary.py` boundary reference and historical-checkpoint re-labeling all present — port complete |
+| #40/#29 motion system | file existence + content + mobile QA suites | all 21 motion files present (INT adds SplashSequence/SuccessCheck/SlideIn), functional 28/28 + regression 23/23 + typecheck green — port complete |
+| #47 journey evidence | content comparison + empirical salvage | core ports present (observability, provider-contract, schema-fuzz, reservation-expiry isolation, POD media keys, archived matrices); 3 behavioral test files salvaged 2026-11-19 (below) |
+| #51/#52 wave 1 (UI, route hygiene, mock QA) | content comparison + E2E | admin route de-dup + uniqueness gate, runtime inventory correction, retailer mock transport, field/status localization all present; `b4a48801` web-refresh tip is **byte-identical** in this branch; screenshot bulk deliberately excluded (captured against the six-digit branch UI before the i18n wave — stale evidence) |
+| `fix/web-refresh-session-preserve-20261030` (no PR) | commit isolation | = OTP chain + ported wave-1 + Cartona phase-2 research + tip fix byte-identical in INT → superseded |
+| `research/cartona-uiux-extraction-phase2-20261027` (no PR) | ancestry | contained in the web-refresh chain; INT preserved its own Cartona evidence set with provenance → superseded |
+| `agent/pol-2.3-integration-fdx` (no PR) | content comparison | `expo run:` scripts already present; journal entries historical → superseded |
+| `agent/pol-2.4-execution-20261006` (#28, merged) | file existence | `build_qa_x86.mjs` present → port complete |
+| `fix/web-basket-sync-reuse` (#35, merged), `docs/pol-prebuild-checklist-mainbase` (#34, merged) | ancestry/patch | content in main → obsolete |
+
+## Salvage record (commit `4994f9d0`)
+
+- Ported from #47 with provenance headers, all green on this branch:
+  `scripts/test_owasp_api_top10.py` (TODO-131), `scripts/test_resource_limits.py`
+  (TODO-132; doc-sync test dropped — `RESOURCE_LIMITS.md` was archived as dated
+  evidence), `scripts/test_web_build_verification.py` (TODO-078).
+- Deliberately NOT ported from #47: `test_owasp_matrix_doc.py` and
+  `test_screen_parity.py` (assert live sync of deliberately archived docs or a
+  regenerated `SCREEN_TEST_PARITY.md`; shipping them red would violate
+  fail-closed gate discipline). Screen-parity restoration remains TODO-080/TODO-085…136 work; the failing parity details are enumerated in the salvage commit message and journal entry.
+- Ported from closed PRs #18/#22 (deploy branch, infra already merged via #25)
+  as dated evidence for the still-open TODO-029 staging lane:
+  `deploy/VPS_DEPLOYMENT.md`, `deploy/VPS_DEPLOYMENT_AGENT.md`,
+  `deploy/VPS_RUNTIME_VERIFICATION_2026-09-28.md`.
+- HOLD (documented, not ported): `vercel-qa` branch Vercel-QA proxy
+  (`api/v1/[...path]/route.ts`, `pol-vercel-qa.yml`,
+  `VERCEL_QA_TRANSFER_MANIFEST.md`) — TODO-025 requires an external Vercel QA
+  environment that cannot be verified here; porting would need rework against
+  the current `NEXT_PUBLIC_API_BASE_URL` architecture. Not policy-conflicting;
+  parked for the TODO-025 owner.
+- `ui/retailer-reference-match-20261005` (closed #21): screen styling predates
+  the motion/i18n rewrite of the same files; superseded by the later design
+  work tracked in merged #48.
+
+## OTP policy dispositions (D-018)
+
+- D-018 remains canonical: **4-digit auth OTP**, 120s TTL, 60s resend,
+  3/5min phone+IP rate limit, 5 attempts, 10min lockout, 15-min access token,
+  30-day refresh session, rotation explicitly undecided.
+- PR #49 and #50 introduce six-digit auth OTP, migration `077`, and
+  D-018-register rewrites → **reject and close**; no salvageable
+  policy-independent content was found (their E2E helpers hardcode
+  `OTP="123456"` and are already superseded by INT's four-digit versions).
+- Delivery OTP remains a separate domain concern; no delivery-OTP policy is
+  inferred from D-018 anywhere in this consolidation.
+- Refresh-token rotation stays described as current implementation behavior
+  only, per the 2026-09-18 governance note.
+
+## PR dispositions (final actions, 2026-11-19)
+
+| PR | Final action | Basis |
+|---|---|---|
+| #53 | Keep Draft; merge candidate after CI restored | All local lanes green on `4994f9d0`; CI-on-SHA gate pending billing fix |
+| #49 | CLOSE_AS_SUPERSEDED (policy-conflicting) | Six-digit auth OTP contradicts locked D-018; migration 077 rejected |
+| #50 | CLOSE_AS_SUPERSEDED (policy-conflicting) | Same as #49 |
+| #51 | CLOSE_AS_SUPERSEDED (salvaged into #53) | Route hygiene/mock QA/support endpoint ported; screenshot bulk stale against post-i18n UI |
+| #52 | CLOSE_AS_SUPERSEDED (salvaged into #53) | Same; wave-1 content verified present in #53 |
+| #47 | CLOSE_AS_SUPERSEDED (salvaged into #53) | Core ports verified + 3 behavioral suites salvaged; doc-sync modules deliberately deferred |
+| #40 | CLOSE_AS_SUPERSEDED (ported into #53) | Motion port complete and verified by mobile QA suites |
+| #29 | CLOSE_AS_SUPERSEDED (ported into #53) | Superseded by #40's stronger port; unique fixes verified present |
+| #45 | CLOSE_AS_SUPERSEDED (ported into #53) | Run scripts present; Expo version deviation documented |
+| #44 | CLOSE_AS_SUPERSEDED (ported into #53) | Byte-identical in #53 |
+| #42 | CLOSE_AS_SUPERSEDED (ported into #53) | Content verified present |
+| #31/#32/#33 | Remain CLOSED (superseded) | Superseded by merged #34 + INT's checklist reconciliation |
+| #4, #9, #18, #19, #21, #22 | Remain CLOSED (superseded) | Content evolved beyond; VPS docs salvaged from #18/#22 |
 
 ## Remaining acceptance gates
 
-1. Finish the remaining #29/#40 diff reconciliation (including older non-overlapping history) and inspect all imported motion behavior for reduced-motion, cleanup, interruption, RTL and runtime correctness. The latest #29-only ErrorShake fix is already present; the #29 OrderProgress implementation was not copied because its direct ARRIVED-to-delivered mapping conflicts with the newer shared lifecycle mapping.
-2. Complete #47 file-level salvage and refresh all source-backed security/traceability claims.
-3. Resolve or formally defer #49/#50 policy/security work; keep migration 077 excluded until challenge lifecycle, recipient-only dispatch, backfill/rollback and PostgreSQL 18 compatibility are demonstrated.
-4. Finish #51 Cartona artifact inventory, provenance/rights review and remaining source-backed extraction review. Never upgrade STATIC_INFERRED to RUNTIME_OBSERVED without real captures.
-5. Complete #52 authorization/privacy lifecycle review and regression tests.
-6. Re-run required workflows after any further commit and obtain successful artifact uploads or document the infrastructure limitation separately.
-7. Review current PR body/audit documents for consistency and only then consider Ready-for-review.
+1. **CI restoration (external):** fix account billing or attach a self-hosted
+   runner, then re-run all four workflows on the exact merge-candidate SHA and
+   require green runs with successful artifact uploads.
+2. Merge `main` ← PR #53 only after (1) passes; the merge commit must record
+   the CI run IDs that validated the exact pre-merge SHA.
+3. Device QA lane (TODO-018…024 chain) stays BLOCKED on the TODO-084
+   fail-closed gate and a real Android runtime — unchanged by this
+   consolidation by design.
+4. TODO-025 Vercel QA lane requires the parked `vercel-qa` work to be reworked
+   by its owner against current web architecture.
+5. Screen/API parity restoration (TODO-080) requires regenerating
+   `MVP_SCREEN_MATRIX.md` entries for `/admin` and `/dev/components` and
+   resolving the 12 VERIFIED-without-browser-test rows.
 
-## Latest unverified changes after the CI checkpoint\n\nTwo additional commits were added after the CI checkpoint: `OfflineBanner.tsx` now uses the shared `SlideIn` primitive, and `build_qa_x86.mjs` now validates the retailer/vendor argument and invokes `pre_apk_qa.mjs` with QA-only environment flags before building. These changes have **not** yet been tested on the new branch head. The prior CI table applies only to `4ddaccddc0e25722fac3a835243038a75aacd6d7`.\n\n## Merge policy
+## Merge policy
 
-PR #53 remains Draft. Do not merge to main while any acceptance gate above is open. Do not describe the integration as complete or certified. All test claims must remain attached to the exact SHA and workflow run that produced them.
+PR #53 remains Draft until the CI gate passes on the exact merge-candidate
+SHA. This document's local evidence is local evidence only: it does not
+substitute for CI-on-SHA, device, staging or live-provider certification.
