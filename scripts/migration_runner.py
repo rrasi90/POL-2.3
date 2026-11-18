@@ -56,7 +56,12 @@ def reset_schema(conn, dbname_expected="pol_test"):
     """
     dsn = conn.get_dsn_parameters()
     actual_db = dsn.get("dbname", "")
-    from scripts.db_safety import assert_isolated_test_target
+    try:
+        from scripts.db_safety import assert_isolated_test_target
+    except ModuleNotFoundError:
+        # The migration runner is also executed directly as
+        # `python scripts/migration_runner.py`, where scripts/ is sys.path[0].
+        from db_safety import assert_isolated_test_target
 
     assert_isolated_test_target(
         dbname=actual_db,
