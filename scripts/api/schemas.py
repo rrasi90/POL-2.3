@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from scripts.operational_config import MAX_BULK_ITEMS
+
 
 class APIBaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -63,7 +65,7 @@ class VendorPartialAcceptanceItemRequest(APIBaseModel):
 
 
 class VendorPartialAcceptanceProposalRequest(APIBaseModel):
-    items: list[VendorPartialAcceptanceItemRequest] = Field(min_length=1)
+    items: list[VendorPartialAcceptanceItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
 
 
 class RetailerPartialAcceptanceDeclineRequest(APIBaseModel):
@@ -129,7 +131,7 @@ class DailyInventoryChangeItemRequest(APIBaseModel):
 
 class DailyInventoryConfirmWithChangesRequest(APIBaseModel):
     confirmation_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
-    changes: list[DailyInventoryChangeItemRequest] = Field(min_length=1)
+    changes: list[DailyInventoryChangeItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
 
 
 class OrderQueryParams(APIBaseModel):
@@ -257,7 +259,7 @@ class ReturnItemRequest(APIBaseModel):
 
 
 class ReturnRequestRequest(APIBaseModel):
-    items: list[ReturnItemRequest] = Field(min_length=1)
+    items: list[ReturnItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
     reason: str = Field(min_length=1, max_length=1000)
     idempotency_key: str = Field(min_length=1, max_length=128)
     claimed_refund_amount_toman: int = Field(ge=0)
@@ -280,7 +282,7 @@ class DisputeOpenRequest(APIBaseModel):
     claimed_amount_toman: int = Field(gt=0)
     description: str = Field(min_length=1, max_length=2000)
     evidence_media_id: UUID
-    items: list[DisputeItemRequest] = Field(min_length=1)
+    items: list[DisputeItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
 
 
 class PaymentEvidenceRequest(APIBaseModel):
