@@ -28,6 +28,7 @@ from scripts.api.schemas import (
     ReturnRequestRequest,
     VendorPartialAcceptanceProposalRequest,
     VendorPriceSetRequest,
+    INT8_MAX,
     VerifyOTPRequest,
     RequestOTPRequest,
 )
@@ -111,10 +112,18 @@ class TestNumericBoundaries:
         with pytest.raises(ValidationError):
             BasketItemRequest(**_basket(requested_quantity=5.5))
 
-    @pytest.mark.parametrize("price", [0, -1, 2_147_483_648])
-    def test_price_boundaries_are_rejected(self, price):
+    @pytest.mark.parametrize("price", [0, -1])
+    def test_non_positive_price_is_rejected(self, price):
         with pytest.raises(ValidationError):
             VendorPriceSetRequest(price_toman=price)
+
+    def test_bigint_price_above_int4_range_is_accepted(self):
+        value = 2_147_483_648
+        assert VendorPriceSetRequest(price_toman=value).price_toman == value
+
+    def test_bigint_price_overflow_is_rejected(self):
+        with pytest.raises(ValidationError):
+            VendorPriceSetRequest(price_toman=INT8_MAX + 1)
 
     def test_one_toman_price_is_accepted(self):
         assert VendorPriceSetRequest(price_toman=1).price_toman == 1
