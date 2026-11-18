@@ -2,17 +2,55 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Literal
+import re
+from datetime import date, datetime
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
 from scripts.operational_config import MAX_BULK_ITEMS
+
+INT4_MAX = 2_147_483_647
+CONTROL_CHARACTERS = re.compile(r"[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]")
+
+
+def _uuid_string(value: str) -> str:
+    """Validate a UUID-shaped reference while keeping the transport type a string."""
+    try:
+        return str(UUID(str(value)))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("must be a valid UUID") from exc
+
+
+UuidString = Annotated[str, AfterValidator(_uuid_string)]
 
 
 class APIBaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _reject_boolean_and_overflowing_integers(cls, value, info):
+        if isinstance(value, bool):
+            annotation = cls.model_fields[info.field_name].annotation
+            if "bool" not in str(annotation):
+                raise ValueError(f"{info.field_name} must be an integer, not a boolean")
+            return value
+        if isinstance(value, int) and not isinstance(value, bool):
+            annotation = str(cls.model_fields[info.field_name].annotation)
+            if "str" not in annotation and abs(value) > INT4_MAX:
+                raise ValueError(
+                    f"{info.field_name} exceeds the supported 32-bit integer range"
+                )
+        return value
+
+    @field_validator("*", mode="after")
+    @classmethod
+    def _reject_control_characters(cls, value):
+        if isinstance(value, str) and CONTROL_CHARACTERS.search(value):
+            raise ValueError("control characters are not allowed in text fields")
+        return value
 
 
 class RequestOTPRequest(APIBaseModel):
@@ -81,7 +119,7 @@ class ProfileUpdateRequest(APIBaseModel):
     preferred_language: str | None = None
     timezone: str | None = None
     bio: str | None = None
-    avatar_media_asset_id: str | None = Field(default=None, max_length=64)
+    avatar_media_asset_id: UuidString | None = Field(default=None, max_length=64)
 
 
 class MembershipProfileUpdateRequest(APIBaseModel):
@@ -155,7 +193,7 @@ class DeliveryConfirmRequest(APIBaseModel):
     recipient_name: str | None = Field(default=None, max_length=200)
     otp_code: str | None = Field(default=None, pattern=r"^[0-9]{4}$")
     proof_type: Literal["OTP_CODE", "PHYSICAL_SIGNATURE", "STORE_STAMP", "PHOTO_PROOF"] = "OTP_CODE"
-    proof_media_id: str | None = Field(default=None, max_length=64)
+    proof_media_id: UuidString | None = Field(default=None, max_length=64)
     issue_reported: str | None = Field(default=None, max_length=500)
     delivered_items: list[DeliveredItemRequest] | None = Field(default=None, max_length=500)
 
@@ -194,8 +232,8 @@ class DeliveryStageRequest(APIBaseModel):
 
 
 class DeliveryExceptionReportRequest(APIBaseModel):
-    delivery_id: str = Field(min_length=1, max_length=64)
-    order_id: str = Field(min_length=1, max_length=64)
+    delivery_id: UuidString = Field(min_length=1, max_length=64)
+    order_id: UuidString = Field(min_length=1, max_length=64)
     exception_type: str = Field(min_length=1, max_length=30)
     description: str | None = Field(default=None, max_length=2000)
 
@@ -240,9 +278,9 @@ class NotificationPreferenceUpdateRequest(APIBaseModel):
 
 class FieldTaskCreateRequest(APIBaseModel):
     task_type: str = Field(min_length=1, max_length=30)
-    assigned_to_user_id: str = Field(min_length=1, max_length=64)
-    retailer_id: str | None = Field(default=None, max_length=64)
-    vendor_id: str | None = Field(default=None, max_length=64)
+    assigned_to_user_id: UuidString = Field(min_length=1, max_length=64)
+    retailer_id: UuidString | None = Field(default=None, max_length=64)
+    vendor_id: UuidString | None = Field(default=None, max_length=64)
     notes: str | None = Field(default=None, max_length=2000)
 
 
@@ -308,7 +346,7 @@ class ReconciliationCaseResolveRequest(APIBaseModel):
 class SupportCaseCreateRequest(APIBaseModel):
     case_type: str = Field(min_length=1, max_length=50)
     subject: str = Field(min_length=1, max_length=500)
-    related_order_id: str | None = Field(default=None, max_length=64)
+    related_order_id: UuidString | None = Field(default=None, max_length=64)
     priority: str = Field(default="NORMAL", max_length=20)
 
 
