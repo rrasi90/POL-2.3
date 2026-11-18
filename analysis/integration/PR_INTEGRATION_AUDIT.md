@@ -54,3 +54,14 @@ A direct `git clone` attempt failed because this execution environment could not
 ## PR disposition principle
 
 PR numbers and dates are not quality signals. Preserve the strongest implementation and every valuable unique fix, but do not accept code with unresolved security, data-integrity, compatibility or test-evidence blockers.
+---
+
+## 2026-11-19 Update — dispositions executed and verified
+
+The 2026-11-17 audit above was a metadata-only pass with no test execution ("no claim of local Python/Node/PostgreSQL test execution is made" — correct at that date). That limitation is now closed: on 2026-11-19 the integration branch was fully verified locally on exact SHA `bfb28cef` (backend 849/849, static gate, browser E2E 41/41, mobile suites — see `TEST_EVIDENCE_INDEX.md`), and every disposition in the tables below was executed:
+
+- **Closed with evidence comments (2026-11-19):** #29, #40, #42, #44, #45, #47, #49, #50, #51, #52. Each closure names its verified salvage destination (PR #53 head) or its D-018 policy conflict.
+- **Salvage landed:** commit `1d50fe80` (4 contract defects), `a96d66cd` (E2E localization), `4994f9d0` (3 behavioral suites + 3 VPS docs), `bfb28cef` (consolidation records).
+- **Machine-readable inventories:** `BRANCH_INVENTORY.csv` (58 branches) and `PR_INVENTORY.csv` (49 PRs) — zero NEEDS_REVIEW rows.
+- The earlier "could not resolve github.com" limitation no longer applies: this session used a local clone/worktree plus authenticated `gh` for every operation.
+- CI remains pre-start blocked by account billing (runner_id=0, steps=0 on all runs since 2026-11-18); recorded in `TEST_EVIDENCE_INDEX.md` and `RELEASE_READINESS.md` as the merge gate owner action.
