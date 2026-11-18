@@ -14,6 +14,10 @@ from uuid import uuid4
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+from scripts.api.errors import error_payload
+from scripts.operational_config import MAX_JSON_BODY_BYTES
 
 from scripts.api.errors import (
     auth_error_handler,
@@ -115,6 +119,37 @@ def create_app() -> FastAPI:
         allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Correlation-ID"],
         expose_headers=["X-Correlation-ID"],
     )
+    @app.middleware("http")
+    async def body_size_middleware(request: Request, call_next):
+        """Reject oversized JSON and multipart bodies before route handling.
+
+        Binary uploads use presigned object-storage URLs; multipart uploads are
+        therefore not accepted by this API transport.
+        """
+        content_type = (request.headers.get("content-type") or "").lower()
+        declared = (request.headers.get("content-length") or "").strip()
+        if content_type.startswith("multipart/") or (
+            declared.isdigit() and int(declared) > MAX_JSON_BODY_BYTES
+        ):
+            return JSONResponse(
+                status_code=413,
+                content=error_payload(
+                    "PAYLOAD_TOO_LARGE",
+                    f"Request body exceeds the {MAX_JSON_BODY_BYTES} byte limit.",
+                ),
+            )
+        if request.method in {"POST", "PUT", "PATCH"}:
+            body = await request.body()
+            if len(body) > MAX_JSON_BODY_BYTES:
+                return JSONResponse(
+                    status_code=413,
+                    content=error_payload(
+                        "PAYLOAD_TOO_LARGE",
+                        f"Request body exceeds the {MAX_JSON_BODY_BYTES} byte limit.",
+                    ),
+                )
+        return await call_next(request)
+
     @app.middleware("http")
     async def correlation_middleware(request: Request, call_next):
         supplied = request.headers.get("X-Correlation-ID", "").strip()
