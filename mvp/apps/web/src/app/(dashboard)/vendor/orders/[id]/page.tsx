@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPackagingUnit } from "@/lib/format-labels";
+
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -19,6 +21,7 @@ import {
   TableRow,
 } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
+import { formatOperationalStatus, formatDeliveryStatus, formatTimelineEventLabel } from "../../../ops/_shared";
 import {
   disputeStatusLabel,
   formatDateTime,
@@ -303,11 +306,11 @@ export default function VendorOrderDetailPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2.5">
             <StatusChip tone={orderStatusTone[status] ?? "neutral"}>
-              {orderStatusLabel[status] ?? status ?? "—"}
+              {orderStatusLabel[status] ?? "وضعیت نامشخص"}
             </StatusChip>
             {order.dispute_status && order.dispute_status !== "NONE" && (
               <StatusChip tone="danger">
-                {disputeStatusLabel[order.dispute_status] ?? order.dispute_status}
+                {disputeStatusLabel[order.dispute_status ?? ""] ?? "وضعیت نامشخص"}
               </StatusChip>
             )}
             {order.delivery_address && (
@@ -451,7 +454,7 @@ export default function VendorOrderDetailPage() {
               {status === "DISPATCHED" ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusChip tone="info">
-                    وضعیت تحویل: {deliveryStatus ?? "نامشخص"}
+                    وضعیت تحویل: {formatDeliveryStatus(deliveryStatus)}
                   </StatusChip>
                   {deliveryStatus === "ASSIGNED" ? (
                     <Button
@@ -557,7 +560,7 @@ export default function VendorOrderDetailPage() {
                     </span>
                     <span className="block text-[12px] text-[var(--pol-light-text-muted)]">
                       سفارش اولیه: {Number(item?.ordered_quantity ?? 0).toLocaleString("fa-IR")}{" "}
-                      {item?.packaging_unit_snapshot ?? "بسته"}
+                      {formatPackagingUnit(item?.packaging_unit_snapshot)}
                     </span>
                   </div>
 
@@ -643,7 +646,7 @@ export default function VendorOrderDetailPage() {
                       : "—"}
                   </TableCell>
                   <TableCell className="text-[var(--pol-light-text-secondary)]">
-                    {it.packaging_unit_snapshot ?? "—"}
+                    {formatPackagingUnit(it.packaging_unit_snapshot)}
                     {it.pack_quantity_snapshot ? ` ×${it.pack_quantity_snapshot.toLocaleString("fa-IR")}` : ""}
                   </TableCell>
                   <TableCell className="font-bold text-[var(--pol-light-text-primary)]">
@@ -675,7 +678,7 @@ export default function VendorOrderDetailPage() {
                   />
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[13px] font-bold text-[var(--pol-light-text-primary)]">
-                      {ev.event_type ?? "رویداد سیستمی"}
+                      {formatTimelineEventLabel(ev.event_type)}
                     </span>
                     <span className="text-[11px] text-[var(--pol-light-text-muted)]">
                       {formatDateTime(ev.created_at)}
@@ -683,7 +686,7 @@ export default function VendorOrderDetailPage() {
                   </div>
                   {ev.from_status || ev.to_status ? (
                     <div className="mt-1 text-[12px] font-mono text-[var(--pol-light-text-secondary)]" dir="ltr">
-                      {ev.from_status ?? "START"} → {ev.to_status ?? "END"}
+                      {formatOperationalStatus(ev.from_status, "شروع")} → {formatOperationalStatus(ev.to_status, "پایان")}
                     </div>
                   ) : null}
                 </li>
@@ -703,7 +706,7 @@ export default function VendorOrderDetailPage() {
             {proposals.map((p) => (
               <Card key={String(p.id)} className="p-4">
                 <div className="flex items-center justify-between">
-                  <StatusChip tone="info">{p.status ?? "—"}</StatusChip>
+                  <StatusChip tone="info">{formatOperationalStatus(p.status)}</StatusChip>
                   <span className="text-[12px] text-[var(--pol-light-text-muted)]">
                     {formatDateTime(p.created_at)}
                   </span>
