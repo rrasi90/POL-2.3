@@ -5,6 +5,7 @@ import { AccessibilityInfo } from "react-native";
 // instead of attaching its own listener per instance.
 let currentValue = false;
 let started = false;
+let changeVersion = 0;
 const listeners = new Set<(value: boolean) => void>();
 
 function publish(value: boolean): void {
@@ -15,10 +16,22 @@ function publish(value: boolean): void {
 function start(): void {
   if (started) return;
   started = true;
+
+  // The initial native query is asynchronous. Ignore its result if a newer
+  // reduceMotionChanged event arrived while the query was in flight.
+  const queryVersion = changeVersion;
   AccessibilityInfo.isReduceMotionEnabled()
-    .then((value) => publish(value === true))
-    .catch(() => publish(false));
-  AccessibilityInfo.addEventListener("reduceMotionChanged", publish);
+    .then((value) => {
+      if (queryVersion === changeVersion) publish(value === true);
+    })
+    .catch(() => {
+      if (queryVersion === changeVersion) publish(false);
+    });
+
+  AccessibilityInfo.addEventListener("reduceMotionChanged", (value) => {
+    changeVersion += 1;
+    publish(value === true);
+  });
 }
 
 export function useReducedMotion(): boolean {
