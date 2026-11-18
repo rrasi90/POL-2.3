@@ -12,7 +12,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validat
 from scripts.operational_config import MAX_BULK_ITEMS
 
 INT4_MAX = 2_147_483_647
-CONTROL_CHARACTERS = re.compile(r"[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]")
+CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 
 def _uuid_string(value: str) -> str:
@@ -159,7 +159,13 @@ class VendorInventoryAdjustRequest(APIBaseModel):
 
 
 class DailyInventoryConfirmRequest(APIBaseModel):
-    confirmation_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    confirmation_date: str = Field(pattern=r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+
+    @field_validator("confirmation_date")
+    @classmethod
+    def _calendar_valid_date(cls, value: str) -> str:
+        date.fromisoformat(value)
+        return value
 
 
 class DailyInventoryChangeItemRequest(APIBaseModel):
@@ -168,8 +174,14 @@ class DailyInventoryChangeItemRequest(APIBaseModel):
 
 
 class DailyInventoryConfirmWithChangesRequest(APIBaseModel):
-    confirmation_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    confirmation_date: str = Field(pattern=r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
     changes: list[DailyInventoryChangeItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
+
+    @field_validator("confirmation_date")
+    @classmethod
+    def _calendar_valid_date(cls, value: str) -> str:
+        date.fromisoformat(value)
+        return value
 
 
 class OrderQueryParams(APIBaseModel):
