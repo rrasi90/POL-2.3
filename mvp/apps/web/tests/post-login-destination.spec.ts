@@ -13,6 +13,17 @@ test.describe("post-login destination validation", () => {
     expect(postLoginDestination("VENDOR_OWNER", "/ops/analytics")).toBe("/vendor");
   });
 
+  test("rejects normalized path traversal into another role's route", () => {
+    expect(postLoginDestination("RETAILER_OWNER", "/retailer/../admin/users")).toBe("/retailer");
+    expect(postLoginDestination("VENDOR_OWNER", "/vendor/../../ops")).toBe("/vendor");
+  });
+
+  test("preserves safe query and fragment components", () => {
+    expect(postLoginDestination("RETAILER_OWNER", "/retailer/orders?tab=open#latest")).toBe(
+      "/retailer/orders?tab=open#latest",
+    );
+  });
+
   test("rejects protocol-relative and external destinations", () => {
     expect(postLoginDestination("RETAILER_OWNER", "//evil.example")).toBe("/retailer");
     expect(postLoginDestination("RETAILER_OWNER", "https://evil.example")).toBe("/retailer");
