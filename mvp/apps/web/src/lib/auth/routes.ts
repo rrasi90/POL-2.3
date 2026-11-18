@@ -46,11 +46,13 @@ export function postLoginDestination(role: Role, next: string | null | undefined
   try {
     const url = new URL(next, "http://pol.local");
     if (url.origin !== "http://pol.local") return fallback;
+    // Validate the normalized path, not the raw string: URL parsing resolves
+    // dot segments such as /retailer/../admin before navigation.
+    if (!pathAllowed(url.pathname, role)) return fallback;
+    return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return fallback;
   }
-  if (!pathAllowed(next, role)) return fallback;
-  return next;
 }
 
 export function pathAllowed(path: string, role: Role | null): boolean {
