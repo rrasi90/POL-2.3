@@ -76,14 +76,15 @@ _CORRELATION_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 
 def create_app() -> FastAPI:
+    environment = os.getenv("ENVIRONMENT", "").lower()
+    is_production = environment in {"prod", "production"}
     app = FastAPI(
         title="POL API",
         version="1.0.0",
-        docs_url="/docs",
-        redoc_url="/redoc",
+        docs_url=None if is_production else "/docs",
+        redoc_url=None if is_production else "/redoc",
+        openapi_url=None if is_production else "/openapi.json",
     )
-
-    environment = os.getenv("ENVIRONMENT", "").lower()
     configured_origins = [
         origin.strip()
         for origin in os.getenv("POL_CORS_ORIGINS", "").split(",")
