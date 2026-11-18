@@ -648,7 +648,7 @@ class POLApplicationBoundary:
         )
         group = self.cur.fetchone()
         if not group:
-            raise ValueError("Order group not found.")
+            raise KeyError("Order group not found.")
         group = dict(group)
         if actor_role == "RETAILER":
             self.cur.execute(
