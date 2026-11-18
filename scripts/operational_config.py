@@ -34,6 +34,7 @@ REFRESH_TOKEN_BYTES = 32          # 256-bit opaque refresh token
 
 # Technical abuse limits (not commercial or pricing policy)
 MAX_BULK_ITEMS = 500
+MAX_JSON_BODY_BYTES = 1_048_576
 
 # Finance & Settlement (Pilot Phase Ahvaz)
 PILOT_COMMISSION_RATE = 0.000
