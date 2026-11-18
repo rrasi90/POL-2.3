@@ -72,11 +72,23 @@ class BaseHttpProviderAdapter:
         provider_message_id = response.headers.get("X-Message-Id")
         provider_code = str(response.status_code)
         if 200 <= response.status_code < 300:
+            body: dict = {}
+            body_was_invalid = False
             try:
-                body = response.json()
+                parsed = response.json()
             except ValueError:
-                body = {}
+                parsed = None
+                body_was_invalid = True
+            if isinstance(parsed, dict):
+                body = parsed
+            elif parsed is not None:
+                body_was_invalid = True
             provider_message_id = provider_message_id or body.get("message_id") or body.get("id")
+            if not provider_message_id:
+                detail = "an invalid body" if body_was_invalid else "no message id"
+                raise ProviderTransientError(
+                    f"{self.provider_name} returned HTTP {response.status_code} with {detail}"
+                )
             return ProviderResult(
                 provider=self.provider_name,
                 provider_message_id=str(provider_message_id) if provider_message_id else None,
