@@ -12,6 +12,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validat
 from scripts.operational_config import MAX_BULK_ITEMS
 
 INT4_MAX = 2_147_483_647
+INT8_MAX = 9_223_372_036_854_775_807
 CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 
@@ -39,10 +40,15 @@ class APIBaseModel(BaseModel):
             return value
         if isinstance(value, int) and not isinstance(value, bool):
             annotation = str(cls.model_fields[info.field_name].annotation)
-            if "str" not in annotation and abs(value) > INT4_MAX:
-                raise ValueError(
-                    f"{info.field_name} exceeds the supported 32-bit integer range"
-                )
+            if "str" not in annotation:
+                # Monetary columns are BIGINT in the canonical schema; quantity,
+                # version, pagination and other transport counters are INTEGER.
+                limit = INT8_MAX if info.field_name.endswith("_toman") else INT4_MAX
+                if abs(value) > limit:
+                    bits = 64 if limit == INT8_MAX else 32
+                    raise ValueError(
+                        f"{info.field_name} exceeds the supported {bits}-bit integer range"
+                    )
         return value
 
     @field_validator("*", mode="after")
