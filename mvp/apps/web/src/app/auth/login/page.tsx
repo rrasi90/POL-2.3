@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button, ErrorState, Field } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
 import { toE164 } from "@/lib/auth/phone";
+import { postLoginDestination } from "@/lib/auth/routes";
 import { useAuthStore } from "@/lib/auth/store";
 import type { Role } from "@pol/types";
 
@@ -115,15 +116,11 @@ export default function LoginPage() {
         },
         role,
       });
-      const home =
-        role === "VENDOR_OWNER" || role === "VENDOR_STAFF"
-          ? "/vendor"
-          : role === "OPS_AGENT" || role === "ADMIN_SUPER"
-            ? "/ops"
-            : role === "FIELD_ACTIVATOR"
-              ? "/field"
-              : "/retailer";
-      router.replace(home);
+      const next =
+        typeof window === "undefined"
+          ? null
+          : new URLSearchParams(window.location.search).get("next");
+      router.replace(role ? postLoginDestination(role, next) : "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "کد تأیید نادرست یا منقضی شده است");
     } finally {
