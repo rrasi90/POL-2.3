@@ -37,7 +37,7 @@ def configure_logging() -> logging.Logger:
             handler = logging.StreamHandler()
             handler.setFormatter(KeyValueFormatter())
             logger.addHandler(handler)
-            logger.propagate = False
+            logger.propagate = True
         else:
             logger.propagate = True
         _CONFIGURED = True
