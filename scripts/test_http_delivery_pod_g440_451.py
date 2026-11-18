@@ -371,8 +371,8 @@ class TestG445G446ProofValidation:
             with conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO media_assets (id, storage_key, file_size_bytes, uploaded_by_user_id, status, provenance, checksum_sha256, upload_target_type, upload_target_id, created_at) "
-                    "VALUES (%s,'x',1024,%s,'READY','POL_OWNED',%s,'ORDER',%s, now())",
-                    (unbound, data["ru"], "b" * 64, data["oi"]),
+                    "VALUES (%s,%s,1024,%s,'READY','POL_OWNED',%s,'ORDER',%s, now())",
+                    (unbound, f"proof-{unbound}", data["ru"], "b" * 64, data["oi"]),
                 )
             conn.commit()
         finally:
