@@ -3,8 +3,18 @@
 **Date:** 2026-11-19
 **Baseline main:** `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`
 **Working branch:** `integration/pol-2.3-mainline-consolidation-2026-11`
-**Local-verified branch head:** `4994f9d0f656e27d41d84c426cf162b8aa1944c2`
-**State:** `VERIFIED LOCALLY — MERGE BLOCKED ONLY BY CI BILLING FAILURE`
+**Historical first verification SHA:** `4994f9d0f656e27d41d84c426cf162b8aa1944c2`
+**Current state:** `LOCAL SOURCE VERIFICATION RECORDED ON bfb28cef — MERGE BLOCKED BY CI BILLING / REQUIRED-CHECK / REVIEW GATES; QA APK, STAGING AND RELEASE ALSO BLOCKED SEPARATELY`
+
+## Current remote state refresh — 2026-11-19
+
+- Main baseline remains `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`.
+- At the start of this documentation reconciliation, PR #53 / Integration was `b8c80bcec8d76d23a37321ffff7f1a68f0663c49`; the complete local suite evidence is on source SHA `bfb28cefdb2bb13319d8508c8481911cb373fced`.
+- GitHub compare confirmed `b8c80bce` is one commit after `bfb28cef` and changes only nine documentation/inventory/control files plus the tracked test-result artifact; no application/runtime source changed. L1–L16 therefore apply to the unchanged application source, but were not rerun on the documentation descendant.
+- The remote branch `fix/web-refresh-session-preserve-20261030` advanced from `b4a48801` to `d5ab26bb`. The earlier auth-refresh fix is byte-identical in Integration. The new checkpoint adds six dated REA run-evidence files absent from Integration; Expo `ios`/ `android` script values match Integration. The branch is retained as ARCHIVE_ONLY; these historical reports are not merged or treated as current runtime certification.
+- PR #53 remains OPEN/DRAFT/UNMERGED. No merge or force-push was performed.
+- The last recorded main protection observation was `main.protected=false` with required checks disabled; branch-protection API access returned 403. Owner/admin action is required to re-check and enable required checks if available.
+- The four local verification lanes remain LOCAL evidence only. CI is still blocked before runner allocation by account billing; no APK/device, staging or release certification is inferred.
 
 ## Blocking infrastructure fact (root cause, not a code defect)
 
@@ -133,7 +143,7 @@ commits landed.
 
 | PR | Final action | Basis |
 |---|---|---|
-| #53 | Keep Draft; merge candidate after CI restored | All local lanes green on `4994f9d0`; CI-on-SHA gate pending billing fix |
+| #53 | Keep Draft; merge candidate after CI restored | L1–L16 locally PASS on source SHA `bfb28cef`; reviewed descendant `b8c80bce` is docs/artifact-only; CI-on-latest-PR-head still unverified and billing-blocked |
 | #49 | CLOSE_AS_SUPERSEDED (policy-conflicting) | Six-digit auth OTP contradicts locked D-018; migration 077 rejected |
 | #50 | CLOSE_AS_SUPERSEDED (policy-conflicting) | Same as #49 |
 | #51 | CLOSE_AS_SUPERSEDED (salvaged into #53) | Route hygiene/mock QA/support endpoint ported; screenshot bulk stale against post-i18n UI |
