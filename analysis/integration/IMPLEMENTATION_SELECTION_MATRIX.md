@@ -1,7 +1,7 @@
 # POL-2.3 Implementation Selection Matrix
 
 **Baseline:** `main` @ `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`
-**Date:** 2026-11-17 — **Status column resolved 2026-11-19** with exact-SHA verification evidence (`analysis/integration/EXECUTION_STATUS.md`, `TEST_EVIDENCE_INDEX.md`).
+**Date:** 2026-11-19 — **Status column resolved** against `TEST_EVIDENCE_INDEX.md`; checkpoint branch refresh reconciled 2026-11-19.
 
 | Capability | Candidate(s) | Selected direction | Rejected / deferred behavior | Required acceptance evidence | Status (2026-11-19) |
 |---|---|---|---|---|---|
@@ -14,7 +14,7 @@
 | Test/security matrices | #47 | Preserve unique tests; never import stale results as certification | No brittle duplicate tests | Backend/web suites | **RESOLVED** — 3 behavioral suites salvaged (`4994f9d0`, provenance headers); doc-sync modules deferred; 849/849 green |
 | Visual QA and Cartona | #51 | Preserve research artifacts with provenance; static inference ≠ runtime observation | No stale/placeholder screenshots; no six-digit-baseline captures | Asset/provenance audit; runtime captures post-merge | **PARTIALLY RESOLVED** — Cartona evidence preserved with limits in INT; screenshot bulk excluded as stale pre-i18n; regeneration tracked post-merge |
 | Admin routes and retailer mocks | #52 | Port route uniqueness + retailer mock fixes after contract comparison | No privacy claim from route registration alone | Full suite + privacy lifecycle + mock isolation | **RESOLVED** — route uniqueness gate + mock transport verified in INT; E2E 41/41 incl. tenant isolation |
-| Web refresh/session | `fix/web-refresh-session-preserve-20261030` (no PR) | Preserve rehydrated profile across token refresh | — | Byte-identity + regression tests | **RESOLVED** — tip `b4a48801` byte-identical in INT; auth/refresh tests green |
+| Web refresh/session | `fix/web-refresh-session-preserve-20261030` (no PR) | Preserve rehydrated profile across token refresh; retain its later checkpoint as historical evidence | — | Byte-identity + regression tests; archive provenance review | **CODE RESOLVED / BRANCH ARCHIVE_ONLY** — fix commit `b4a48801` is byte-identical in INT; remote tip is now `d5ab26bb`. Its checkpoint adds six dated REA run-evidence files absent from INT; Expo `ios`/`android` script values match INT. Keep the branch as archive evidence; do not merge the historical run files wholesale. |
 | Vercel QA environment | `vercel-qa` branch | HOLD for TODO-025 owner; isolated mock QA rework only | Never deploy near production data/secrets | Isolated environment + smoke evidence | **HOLD** — documented owner lane |
 | VPS deployment docs | closed #18/#22 | Salvage as dated evidence for TODO-029 | Do not treat as current deploy recipe | Doc review + fresh staging run when access returns | **RESOLVED (salvaged)** — 3 docs ported in `4994f9d0` |
 
