@@ -1229,3 +1229,18 @@
 - Next TODO-ID / next agent: (1) owner restores billing → agent re-runs the 4 workflows on PR #53 exact head and verifies steps+artifacts; (2) then review/approval and merge of #53; (3) then TODO-011 secrets, TODO-025 rework, TODO-029 staging revalidation, TODO-084 ledger path (advisory remediation first), device QA chain.
 - Working tree: source tree identical to `bfb28cef`; changes staged in the commit accompanying this entry = 4 new inventory files, 3 refreshed audit/status docs, this journal entry, regenerated tracked artifact.
 - Handoff accepted by: PENDING
+
+
+### [2026-11-19 19:12 +03:30] Agent: GitHub documentation reconciliation — checkpoint sync and exact-SHA alignment
+
+- State: DOCUMENTATION_RECONCILED_VERIFIED | PR #53 remains OPEN/DRAFT/UNMERGED | CI BLOCKED_EXTERNAL.
+- Baseline inspected: main `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`; Integration/PR #53 `b8c80bcec8d76d23a37321ffff7f1a68f0663c49`; locally tested source SHA `bfb28cefdb2bb13319d8508c8481911cb373fced`.
+- Exact compare: `bfb28cef` → `b8c80bce` = 1 commit ahead, 0 behind, 10 changed paths (nine docs/inventory/control files + tracked test artifact), no application/runtime source changes. The L1–L16 local results remain source-code evidence for this docs-only descendant; they are not represented as a rerun on b8.
+- Checkpoint branch verified: `fix/web-refresh-session-preserve-20261030` points to `d5ab26bb5d3ca40e7553f0143ac33014df7496c9`; `b4a48801` auth/session fix is byte-identical in Integration. The d5 commit adds six dated REA run-evidence files absent from Integration; mobile `ios`/ `android` script values match Integration. Branch classified ARCHIVE_ONLY; retained, not merged or deleted.
+- Updated: `BRANCH_INVENTORY.csv/.md` (58 refs; refreshed integration-relative counts and checkpoint row), `IMPLEMENTATION_SELECTION_MATRIX.md`, `TEST_EVIDENCE_INDEX.md`, `RELEASE_READINESS.md`, `EXECUTION_STATUS.md`, `PR_INTEGRATION_AUDIT.md`, and this append-only journal.
+- Current inventory disposition counts: 31 ALREADY_INTEGRATED / 17 SUPERSEDED / 4 ARCHIVE_ONLY / 2 BLOCKED_POLICY / 1 HOLD / 1 SALVAGE_COMPLETED / 1 MERGE_CANDIDATE / 1 BASE = 58.
+- CI remains blocked before job start by account billing/spending limit; the owner must restore billing or provide a properly secured self-hosted runner. Last recorded main protection state was unprotected / required checks disabled; connected API returned 403, so admin action remains.
+- No code, schema, migration, workflow, branch deletion, force-push or merge performed. No APK, staging or release certification claimed.
+- Next action: owner resolves Actions billing/runner and branch-protection access; then rerun all four workflows on the exact current PR #53 head, review, and only then consider merge.
+- Working tree: remote documentation changes committed directly to the Integration branch; each file change is docs/inventory/evidence-only.
+- Handoff accepted by: repository owner pending.
