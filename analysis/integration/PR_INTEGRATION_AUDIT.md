@@ -65,3 +65,15 @@ The 2026-11-17 audit above was a metadata-only pass with no test execution ("no 
 - **Machine-readable inventories:** `BRANCH_INVENTORY.csv` (58 branches) and `PR_INVENTORY.csv` (49 PRs) — zero NEEDS_REVIEW rows.
 - The earlier "could not resolve github.com" limitation no longer applies: this session used a local clone/worktree plus authenticated `gh` for every operation.
 - CI remains pre-start blocked by account billing (runner_id=0, steps=0 on all runs since 2026-11-18); recorded in `TEST_EVIDENCE_INDEX.md` and `RELEASE_READINESS.md` as the merge gate owner action.
+
+
+---
+
+## 2026-11-19 Sync checkpoint reconciliation — post-inventory correction
+
+- PR #53 remains OPEN / DRAFT / UNMERGED. At the start of this correction its head was `b8c80bcec8d76d23a37321ffff7f1a68f0663c49`; current head is always authoritative in GitHub PR metadata.
+- `b8c80bce` is one commit after the locally tested source SHA `bfb28cef`. The compare contains 10 paths (nine documentation/inventory/control files and the tracked `artifacts/pol-test-results.json`); no application/runtime source file changed. The L1–L16 local evidence supports the unchanged application source but is not a fresh execution on the PR head.
+- The checkpoint branch `fix/web-refresh-session-preserve-20261030` is now at `d5ab26bb5d3ca40e7553f0143ac33014df7496c9`. `b4a48801` (the auth/session fix) is byte-identical in Integration. The d5 checkpoint adds six dated REA run-evidence files that are not present in Integration; the `expo run:ios/android` script values match Integration. The branch is retained as `ARCHIVE_ONLY`; historical tunnel/device reports must not be treated as current staging or release proof.
+- The branch inventory has been refreshed to the current reference baseline: Integration `b8c80bce` is 175 commits ahead of main and 0 behind; main is 175 behind Integration; the checkpoint branch is 7 behind / 262 ahead of main and 182 behind / 262 ahead of Integration.
+- The last recorded branch-protection state was `main.protected=false` with required checks disabled. The connected branch-protection endpoint returned 403; no protection setting was changed. The repository owner/admin must re-check the setting.
+- CI billing remains an external owner action. The inspected jobs had `runner_id=0` and `steps=0`; no workflow changes can correct account billing. No merge, APK build, staging deploy or production action was performed by this reconciliation.
