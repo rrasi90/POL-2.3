@@ -2,7 +2,7 @@
 
 **Generated:** 2026-11-19 (UTC times as recorded)
 **Exact tested source SHA:** `bfb28cefdb2bb13319d8508c8481911cb373fced` (local execution of L1–L16, 2026-11-19)
-**PR #53 descendant reviewed:** `b8c80bcec8d76d23a37321ffff7f1a68f0663c49` (one docs/artifact-only commit after the tested source SHA; no application/runtime source files changed)
+**PR #53 head with latest workflow attempt:** `e772950d8da1b47561d8554cbbeb5fcf0adbd7db` (nine commits after tested source SHA; documentation/control + tracked artifact changes only; no application/runtime source files changed)
 **Rule:** every claim below names its exact SHA, environment, command and result. Historical results attached to other SHAs are listed as leads only, never as current certification.
 
 ## Evidence classes used in this repository
@@ -17,7 +17,7 @@
 
 ## LOCAL evidence — exact source SHA `bfb28cef` (2026-11-19)
 
-The PR head `b8c80bce` is a direct child of this tested SHA. The commit comparison contains nine documentation/inventory/control files plus the tracked test-result artifact; it contains no application/runtime source changes. The results below therefore support the unchanged application source in that descendant, but must not be described as a fresh test run on `b8c80bce`.
+The PR head `e772950d` is nine commits after this tested SHA. The commit comparison contains 11 changed paths, all documentation/inventory/control records or the tracked test-result artifact; it contains no application/runtime source changes. The results below therefore support the unchanged application source in that descendant, but must not be described as a fresh test run on `e772950d`.
 
 Environment: Windows 10.0.26200 x64, Git Bash; Python 3.11.15 (venv); Node v24.18.0; npm clean installs under `mvp/` workspaces; PostgreSQL **18.4** local (`127.0.0.1:5432`, trust auth) — *not* the CI's 18.6; isolated database `pol_test`; `ENVIRONMENT=test`; non-production `POL_JWT_SECRET`; `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001` for E2E. Source tree identical to `bfb28cef` except the regenerated evidence artifact and new docs-only inventory files (recorded by the artifact metadata as `is_dirty: true` with those paths).
 
@@ -56,9 +56,26 @@ Job metadata (GitHub API `actions/runs/{id}/jobs`): **every job has `runner_id=0
 
 > "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
 
-Additional context: repository is private; `GET /actions/runners` → `total_count: 0` (no self-hosted runners). The last recorded repository state showed `main.protected=false` and required status checks disabled; the branch-protection API returned 403 through the connected access, so no protection change was made. The commit-status query for the subsequently reviewed PR head `b8c80bce` returned no successful statuses; do not infer CI success from the local matrix. Also observed on scheduled run 44285920916 (main) and the 2026-11-18 PR #53 runs 44280222841/22836/22830/22842.
+Additional context: repository is private; `GET /actions/runners` → `total_count: 0` (no self-hosted runners). The last recorded repository state showed `main.protected=false` and required status checks disabled; the branch-protection API returned 403 through the connected access, so no protection change was made. The latest PR-head attempt is detailed below; do not infer CI success from the local matrix. Also observed on scheduled run 44285920916 (main) and the 2026-11-18 PR #53 runs 44280222841/22836/22830/22842.
 
 **Conclusion:** pre-start account/infrastructure blocker, not a test failure. Owner actions: restore Actions billing/spending allowance, or attach a properly secured self-hosted runner. No workflow change can resolve it and none was made.
+
+
+
+## Latest PR-head CI attempt — pre-runner failure on `e772950d`
+
+The current PR-head attempt observed on 2026-11-19 was tied to exact SHA `e772950d8da1b47561d8554cbbeb5fcf0adbd7db`:
+
+| Workflow | Run ID | Job(s) | Raw job evidence |
+|---|---:|---|---|
+| Independent Verification | 44558971678 | 135682681553 | `runner_id=0`, empty runner name, `steps=[]`; completed in ~2s |
+| Mobile Verification | 44558971582 | 135682680626, 135682681390 | both `runner_id=0`, `steps=[]`; Android matrix job 135682706494 skipped |
+| Static Gate | 44558971752 | 135682681375 | `runner_id=0`, empty runner name, `steps=[]`; completed in ~2s |
+| Browser E2E | 44558971716 | 135682681428 | `runner_id=0`, empty runner name, `steps=[]`; completed in ~1s |
+
+All four runs concluded `failure`, but no test command ran. The job-log endpoint returned no log blob; this is not evidence of a test assertion failure. Earlier runs on `bfb28cef` carried the explicit account-billing/spending-limit annotation (run IDs 44396293442 / 44396293373 / 44396293335 / 44396293121). The latest no-runner/no-step pattern is consistent with that same account-level blocker.
+
+Live branch metadata on 2026-11-19 confirmed `main.protected=false`, `protection.enabled=false`, and required-status-check enforcement `off`. Branch-protection mutation/access is not available through this connected operation; owner/admin action remains required. No branch protection was changed.
 
 ## Artifact provenance note (`artifacts/pol-test-results.json`)
 

@@ -71,9 +71,16 @@ The 2026-11-17 audit above was a metadata-only pass with no test execution ("no 
 
 ## 2026-11-19 Sync checkpoint reconciliation — post-inventory correction
 
-- PR #53 remains OPEN / DRAFT / UNMERGED. At the start of this correction its head was `b8c80bcec8d76d23a37321ffff7f1a68f0663c49`; current head is always authoritative in GitHub PR metadata.
-- `b8c80bce` is one commit after the locally tested source SHA `bfb28cef`. The compare contains 10 paths (nine documentation/inventory/control files and the tracked `artifacts/pol-test-results.json`); no application/runtime source file changed. The L1–L16 local evidence supports the unchanged application source but is not a fresh execution on the PR head.
+- PR #53 remains OPEN / DRAFT / UNMERGED. At the start of the latest CI recheck its head was `e772950d8da1b47561d8554cbbeb5fcf0adbd7db`; the subsequent documentation-only refresh is another child commit. Current head is always authoritative in GitHub PR metadata.
+- `e772950d` is nine commits after the locally tested source SHA `bfb28cef`. The compare contains 11 paths, all documentation/inventory/control records or the tracked `artifacts/pol-test-results.json`; no application/runtime source file changed. The L1–L16 local evidence supports the unchanged application source but is not a fresh execution on the PR head.
 - The checkpoint branch `fix/web-refresh-session-preserve-20261030` is now at `d5ab26bb5d3ca40e7553f0143ac33014df7496c9`. `b4a48801` (the auth/session fix) is byte-identical in Integration. The d5 checkpoint adds six dated REA run-evidence files that are not present in Integration; the `expo run:ios/android` script values match Integration. The branch is retained as `ARCHIVE_ONLY`; historical tunnel/device reports must not be treated as current staging or release proof.
-- The branch inventory has been refreshed to the current reference baseline: Integration `b8c80bce` is 175 commits ahead of main and 0 behind; main is 175 behind Integration; the checkpoint branch is 7 behind / 262 ahead of main and 182 behind / 262 ahead of Integration.
+- The branch inventory comparison baseline is Integration `e772950d`: 183 commits ahead of main and 0 behind; main is 183 behind Integration; checkpoint branch `d5ab26bb` is 7 behind / 262 ahead of main and 190 behind / 262 ahead of Integration. The final inventory commit is a docs-only child and is explicitly excluded from the snapshot.
 - The last recorded branch-protection state was `main.protected=false` with required checks disabled. The connected branch-protection endpoint returned 403; no protection setting was changed. The repository owner/admin must re-check the setting.
 - CI billing remains an external owner action. The inspected jobs had `runner_id=0` and `steps=0`; no workflow changes can correct account billing. No merge, APK build, staging deploy or production action was performed by this reconciliation.
+
+
+### Latest Actions evidence on PR-head SHA `e772950d`
+
+- Runs 44558971678 / 44558971582 / 44558971752 / 44558971716 are the latest four PR-triggered workflows returned for the inspected SHA.
+- Raw jobs metadata confirms `runner_id=0`, `runner_name=""`, and `steps=[]` for every non-skipped job; Android QA matrix job 135682706494 skipped. Completion was within 1–2 seconds and no job log blob existed. These are pre-runner failures, not executed test failures.
+- A live read of `/branches/main` confirmed `protected=false`, `protection.enabled=false`, and required-status-check enforcement `off`. No protection change was made.

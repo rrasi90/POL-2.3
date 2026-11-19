@@ -1244,3 +1244,17 @@
 - Next action: owner resolves Actions billing/runner and branch-protection access; then rerun all four workflows on the exact current PR #53 head, review, and only then consider merge.
 - Working tree: remote documentation changes committed directly to the Integration branch; each file change is docs/inventory/evidence-only.
 - Handoff accepted by: repository owner pending.
+
+
+### [2026-11-19 19:20 +03:30] Agent: GitHub CI and branch-protection verification — latest PR-head attempt
+
+- State: PRE-RUNNER CI BLOCKER VERIFIED | BRANCH PROTECTION OWNER ACTION REQUIRED | PR #53 NOT MERGED.
+- PR #53 / Integration head at inspection: `e772950d8da1b47561d8554cbbeb5fcf0adbd7db`; main: `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`.
+- Exact compare: Integration snapshot `e772950d` = 183 commits ahead / 0 behind main; checkpoint branch `d5ab26bb` = 7 behind / 262 ahead of main and 190 behind / 262 ahead of Integration.
+- Latest CI runs on `e772950d`: Independent Verification 44558971678; Mobile 44558971582; Static 44558971752; Browser E2E 44558971716. Raw jobs endpoint shows `runner_id=0`, empty runner name and `steps=[]` for all non-skipped jobs; Android matrix job skipped; jobs completed in 1–2 seconds. No test steps ran. The earlier billing annotation remains the best direct root-cause text.
+- Live branch resource for `main`: `protected=false`, `protection.enabled=false`, required-status-check enforcement `off`. Branch-protection API write/read endpoint unavailable through connected access (403). Owner/admin must act in repository settings.
+- Current application-code test evidence remains the local L1–L16 matrix on `bfb28cef`. GitHub compare from `bfb28cef` to `e772950d` found 11 paths, all docs/control/inventory or tracked test artifact; no application/runtime source changes. No tests are claimed as freshly executed on e772.
+- The final documentation refresh commit is built as a non-force, expected-head fast-forward child of e772; Inventory explicitly records its comparison baseline as e772, avoiding self-referential ahead/behind numbers.
+- No merge, force-push, branch deletion, workflow weakening, APK build, staging deploy or release certification performed.
+- Owner action: fix Actions billing or provide a secured self-hosted runner; configure branch protection / required checks; then trigger all four workflows on the exact newest PR head and obtain review approval.
+- Handoff accepted by: repository owner pending.

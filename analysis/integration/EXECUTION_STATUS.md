@@ -9,12 +9,18 @@
 ## Current remote state refresh — 2026-11-19
 
 - Main baseline remains `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`.
-- At the start of this documentation reconciliation, PR #53 / Integration was `b8c80bcec8d76d23a37321ffff7f1a68f0663c49`; the complete local suite evidence is on source SHA `bfb28cefdb2bb13319d8508c8481911cb373fced`.
-- GitHub compare confirmed `b8c80bce` is one commit after `bfb28cef` and changes only nine documentation/inventory/control files plus the tracked test-result artifact; no application/runtime source changed. L1–L16 therefore apply to the unchanged application source, but were not rerun on the documentation descendant.
+- At the start of this final CI recheck, PR #53 / Integration was `e772950d8da1b47561d8554cbbeb5fcf0adbd7db`; the complete local suite evidence is on source SHA `bfb28cefdb2bb13319d8508c8481911cb373fced`.
+- GitHub compare confirmed `e772950d` is nine commits after `bfb28cef` and changes 11 documentation/inventory/control or tracked-artifact paths; no application/runtime source changed. L1–L16 therefore support the unchanged application source, but were not rerun on the documentation descendant.
 - The remote branch `fix/web-refresh-session-preserve-20261030` advanced from `b4a48801` to `d5ab26bb`. The earlier auth-refresh fix is byte-identical in Integration. The new checkpoint adds six dated REA run-evidence files absent from Integration; Expo `ios`/ `android` script values match Integration. The branch is retained as ARCHIVE_ONLY; these historical reports are not merged or treated as current runtime certification.
 - PR #53 remains OPEN/DRAFT/UNMERGED. No merge or force-push was performed.
-- The last recorded main protection observation was `main.protected=false` with required checks disabled; branch-protection API access returned 403. Owner/admin action is required to re-check and enable required checks if available.
+- A live branch metadata read on 2026-11-19 confirmed `main.protected=false`, `protection.enabled=false`, and required-check enforcement `off`; the branch-protection endpoint itself returned 403 through connected access. Owner/admin action is required to configure it.
 - The four local verification lanes remain LOCAL evidence only. CI is still blocked before runner allocation by account billing; no APK/device, staging or release certification is inferred.
+
+### Latest four workflow runs on `e772950d`
+
+- 44558971678 (Independent Verification), 44558971582 (Mobile), 44558971752 (Static), 44558971716 (Browser E2E) all concluded `failure`.
+- Raw Jobs API for every non-skipped job reported `runner_id=0`, empty runner name, and `steps=[]`; they completed within approximately 1–2 seconds. The Android matrix job 135682706494 was `skipped`.
+- No runner executed a test. Earlier runs on `bfb28cef` carry the explicit account billing/spending-limit annotation. The latest failures are consistent with the same infrastructure blocker, not code-test failures.
 
 ## Blocking infrastructure fact (root cause, not a code defect)
 

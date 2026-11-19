@@ -2,12 +2,12 @@
 
 **Date:** 2026-11-19 (documentation reconciliation)
 **Latest locally tested source SHA:** `bfb28cefdb2bb13319d8508c8481911cb373fced`
-**PR #53 head reviewed before this reconciliation:** `b8c80bcec8d76d23a37321ffff7f1a68f0663c49`
+**PR #53 head at latest Actions inspection:** `e772950d8da1b47561d8554cbbeb5fcf0adbd7db` (the documentation-only refresh in this file is a child commit)
 **main:** `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`
 
 ## Evidence scope and SHA relationship
 
-The complete LOCAL verification matrix L1–L16 was executed on source SHA `bfb28cef` (2026-11-19); see `TEST_EVIDENCE_INDEX.md`. The reviewed PR head `b8c80bce` is its direct child (1 commit ahead, 0 behind). The compare shows 10 changed paths: nine documentation/inventory/control files and the tracked test-result artifact. No application/runtime source file changed. Therefore the bfb28cef test results apply to the unchanged application source represented by b8c80bce, but they are **not a fresh test execution on b8c80bce**. This document update is itself documentation-only and does not claim new test execution.
+The complete LOCAL verification matrix L1–L16 was executed on source SHA `bfb28cef` (2026-11-19); see `TEST_EVIDENCE_INDEX.md`. The PR head inspected at `e772950d` is 9 commits ahead of `bfb28cef` and 0 behind. The compare shows 11 changed paths: documentation/inventory/control files and the tracked test-result artifact. No application/runtime source file changed. Therefore the bfb28cef test results support the unchanged application source represented by e772950d, but they are **not a fresh test execution on e772950d**. The documentation refresh commit that carries this readiness correction is another docs-only child and does not claim new test execution.
 
 The four decisions below remain deliberately separate.
 
@@ -23,8 +23,8 @@ The four decisions below remain deliberately separate.
 
 ### Outstanding merge gates
 
-1. **GitHub Actions with real runner steps on the exact latest PR head.** The four inspected runs on tested source SHA `bfb28cef` were pre-start blocked: every job had `runner_id=0` and `steps=0`, with the account-billing/spending-limit annotation. A commit-status query for the subsequently reviewed `b8c80bce` returned no successful statuses. The next successful CI run must target the then-current PR head after billing is restored.
-2. **Branch protection / required checks.** The last recorded repository observation showed `main.protected=false` and required status checks disabled. The branch-protection API returned 403 through the connected GitHub access, so this assistant could not enable it. Repository owner/admin must re-check Settings → Branches / Rulesets and enable required checks if available; otherwise document the authorized exception and its compensating controls. Do not describe branch protection as enabled.
+1. **GitHub Actions with real runner steps on the exact latest PR head.** The four inspected runs on tested source SHA `bfb28cef` were pre-start blocked: every job had `runner_id=0` and `steps=0`, with the account-billing/spending-limit annotation. A fresh set of four workflows on PR head `e772950d` (IDs 44558971678 / 44558971582 / 44558971752 / 44558971716) repeated the same no-runner/no-step pattern. A commit-status query for `e772950d` returned no successful status contexts. Four PR-triggered workflow runs were created on that exact SHA (44558971678, 44558971582, 44558971752, 44558971716); every non-skipped job had `runner_id=0` and `steps=0`, finishing in about 1–2 seconds. The Android matrix job was skipped. These runs did not execute tests; the next CI run must target the then-current PR head after billing is restored.
+2. **Branch protection / required checks.** A live branch metadata read on 2026-11-19 confirmed `main.protected=false`, `protection.enabled=false`, and required-status-check enforcement `off`. The branch-protection endpoint itself returned 403 through connected access, so no setting was changed. Repository owner/admin must enable protection and required checks through repository Settings / Rulesets if available; otherwise document the authorized exception and compensating controls. Do not describe branch protection as enabled.
 3. **Review approval** under repository policy.
 
 **Decision: do not merge PR #53 while CI is pre-start blocked or required review is missing.** Keep it Draft. Re-run all four workflows on the exact current PR head once billing/runner access is restored; require actual job steps, successful tests, and artifact uploads. A skipped Android QA matrix is not APK evidence.
