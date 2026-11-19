@@ -1,7 +1,8 @@
 # POL-2.3 Test Evidence Index
 
 **Generated:** 2026-11-19 (UTC times as recorded)
-**Exact tested SHA:** `bfb28cefdb2bb13319d8508c8481911cb373fced` (integration branch head, PR #53)
+**Exact tested source SHA:** `bfb28cefdb2bb13319d8508c8481911cb373fced` (local execution of L1–L16, 2026-11-19)
+**PR #53 descendant reviewed:** `b8c80bcec8d76d23a37321ffff7f1a68f0663c49` (one docs/artifact-only commit after the tested source SHA; no application/runtime source files changed)
 **Rule:** every claim below names its exact SHA, environment, command and result. Historical results attached to other SHAs are listed as leads only, never as current certification.
 
 ## Evidence classes used in this repository
@@ -14,7 +15,9 @@
 | STAGING | Restricted VPS/staging smoke on exact SHA | Not executed this session |
 | LIVE-PROVIDER | Real SMS.ir / object storage / public domain TLS | Not attempted (requires owner credentials) |
 
-## LOCAL evidence — exact SHA `bfb28cef` (2026-11-19)
+## LOCAL evidence — exact source SHA `bfb28cef` (2026-11-19)
+
+The PR head `b8c80bce` is a direct child of this tested SHA. The commit comparison contains nine documentation/inventory/control files plus the tracked test-result artifact; it contains no application/runtime source changes. The results below therefore support the unchanged application source in that descendant, but must not be described as a fresh test run on `b8c80bce`.
 
 Environment: Windows 10.0.26200 x64, Git Bash; Python 3.11.15 (venv); Node v24.18.0; npm clean installs under `mvp/` workspaces; PostgreSQL **18.4** local (`127.0.0.1:5432`, trust auth) — *not* the CI's 18.6; isolated database `pol_test`; `ENVIRONMENT=test`; non-production `POL_JWT_SECRET`; `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001` for E2E. Source tree identical to `bfb28cef` except the regenerated evidence artifact and new docs-only inventory files (recorded by the artifact metadata as `is_dirty: true` with those paths).
 
@@ -53,7 +56,7 @@ Job metadata (GitHub API `actions/runs/{id}/jobs`): **every job has `runner_id=0
 
 > "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
 
-Additional context: repository is private; `GET /actions/runners` → `total_count: 0` (no self-hosted runners); branch protection API returns 403 (paid feature). Also observed on scheduled run 44285920916 (main) and the 2026-11-18 PR #53 runs 44280222841/22836/22830/22842.
+Additional context: repository is private; `GET /actions/runners` → `total_count: 0` (no self-hosted runners). The last recorded repository state showed `main.protected=false` and required status checks disabled; the branch-protection API returned 403 through the connected access, so no protection change was made. The commit-status query for the subsequently reviewed PR head `b8c80bce` returned no successful statuses; do not infer CI success from the local matrix. Also observed on scheduled run 44285920916 (main) and the 2026-11-18 PR #53 runs 44280222841/22836/22830/22842.
 
 **Conclusion:** pre-start account/infrastructure blocker, not a test failure. Owner actions: restore Actions billing/spending allowance, or attach a properly secured self-hosted runner. No workflow change can resolve it and none was made.
 
@@ -66,7 +69,7 @@ Additional context: repository is private; `GET /actions/runners` → `total_cou
 
 ## What is NOT evidenced
 
-- No CI-step execution on any 2026-11-19 SHA (billing blocker).
+- No successful CI-step execution on the reviewed 2026-11-19 PR candidate; the inspected pre-start-blocked runs were on source SHA `bfb28cef`. The later `b8c80bce` docs/artifact descendant had no successful status reported by the connected status query.
 - No QA APK build/install/device verification (TODO-084 fail-closed).
 - No staging/VPS smoke, no live SMS.ir, no object storage, no public TLS, no release build.
 - No refresh-token-rotation policy approval (D-018 remains explicitly undecided).
