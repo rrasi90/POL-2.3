@@ -1,0 +1,15 @@
+=== PID 31316 (port 3001) identity ===
+node.exe :: "C:\Program Files\nodejs\node.exe" C:\Star\pol\2.4\mvp\node_modules\next\dist\server\lib\start-server.js
+=== PID 7104 (API 8001) identity ===
+python.exe :: "C:\Users\rrasi_oorj8fq\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\python.exe"  scripts/e2e_serve.py
+=== GIT STATE ===
+research/cartona-uiux-extraction-phase2-20261027
+HEAD: a219a2bf84312620afb965e443c398be57e6ee93 research(cartona): close runtime phase as blocked with evidence, add final report and QA gate
+ M mvp/apps/mobile/package.json
+ M mvp/apps/web/src/lib/auth/api.ts
+?? analysis/rea/runs/2026-10-29-mission2-internet-access/
+?? analysis/rea/runs/2026-10-30-mission3-stabilization/
+=== REMOTE ===
+origin	https://github.com/rrasi90/POL-2.3.git (fetch)
+origin	https://github.com/rrasi90/POL-2.3.git (push)
+a219a2bf84312620afb965e443c398be57e6ee93

@@ -50,11 +50,11 @@ Disposition counts (58 refs): 31 ALREADY_INTEGRATED · 17 SUPERSEDED · 4 ARCHIV
 | `fix/pol-wave1-qa-mock-route-docs-20261027` | `74e7ded6` | 2026-10-27 | 7/250 | 190/250 | **SUPERSEDED** | #52 closed | Wave-1 content verified in INT; screenshot bulk excluded (stale pre-i18n). |
 | `fix/remaining-canonical-contradictions-2026-09-28` | `3b6524b3` | 2026-09-28 | 296/0 | 479/0 | **ALREADY_INTEGRATED** | #15/#16 merged | ahead=0. |
 | `fix/web-basket-sync-reuse-20261012` | `b04aabd3` | 2026-10-12 | 84/8 | 267/8 | **ALREADY_INTEGRATED** | #35 merged | Squash-duplicates. |
-| `fix/web-refresh-session-preserve-20261030` | `d5ab26bb` | 2026-11-16 | 7/262 | 190/262 | **ARCHIVE_ONLY** | - | `b4a48801` source fix is byte-identical in INT. Checkpoint `d5ab26bb` adds six dated REA run-evidence files absent from INT; mobile `ios`/`android` script values match INT. Preserve as historical archive; do not merge run artifacts wholesale. |
+| `fix/web-refresh-session-preserve-20261030` | `d5ab26bb` | 2026-11-16 | 7/262 | 190/262 | **ARCHIVE_ONLY** | - | `b4a48801` source fix is byte-identical in main via PR #53. The six dated REA run-evidence files (`2026-10-29-mission2-internet-access`, `2026-10-30-mission3-stabilization`) were salvaged to main by the 2026-11-21 reconciliation PR. Branch retained as historical archive; do not merge run artifacts wholesale. |
 | `hotfix/mobile-env-inline-babel` | `c5d2add1` | 2026-10-06 | 87/0 | 270/0 | **ALREADY_INTEGRATED** | - | ahead=0. |
 | `hotfix/mobile-functional-defects` | `dd3477e1` | 2026-10-06 | 88/0 | 271/0 | **ALREADY_INTEGRATED** | - | ahead=0. |
 | `integrate/vps-infra-20261005` | `2dbd270a` | 2026-10-05 | 94/0 | 277/0 | **ALREADY_INTEGRATED** | #25 merged | ahead=0. |
-| `integration/pol-2.3-mainline-consolidation-2026-11` | `e772950d` | 2026-11-19 | 0/183 | 0/0 | **MERGE_CANDIDATE** | #53 | PR #53 was OPEN/DRAFT at this snapshot; 183 commits ahead / 0 behind. Latest local source tests are on `bfb28cef`; Actions on this head failed before runner allocation. The docs-only inventory refresh commit is a child of this snapshot. |
+| `integration/pol-2.3-mainline-consolidation-2026-11` | `e772950d` | 2026-11-19 | 0/183 | 0/0 | **ALREADY_INTEGRATED** | #53 merged (0e2bf4c9) | PR #53 merged into main as `0e2bf4c9` on 2026-11-21; branch deleted post-merge. Local source tests on `bfb28cef` (backend 849/849, static gate, browser E2E 41/41). |
 | `main` | `fbcdd744` | 2026-11-17 | 0/0 | 183/0 | **BASE** | - | Default branch; consolidation target. |
 | `penpot-work-2026-09-16` | `541b3a1e` | 2026-09-16 | 1338/197 | 1521/197 | **ARCHIVE_ONLY** | - | Historical design/research skills docs; superseded by later design system. |
 | `product-architecture-evolution-2026-09-20` | `bf7f25e9` | 2026-10-05 | 1338/584 | 1521/584 | **ALREADY_INTEGRATED** | #6 merged (via #12) | Old September wave merged; residual = generic skills/research docs. |
@@ -69,3 +69,14 @@ Disposition counts (58 refs): 31 ALREADY_INTEGRATED · 17 SUPERSEDED · 4 ARCHIV
 | `unified/pol-platform-20261005` | `13b9eace` | 2026-10-05 | 106/0 | 289/0 | **ALREADY_INTEGRATED** | #24 merged | ahead=0. |
 | `vercel-qa` | `8d3ad01f` | 2026-09-28 | 1325/11 | 1508/11 | **HOLD** | no PR | Vercel-QA proxy/workflow/manifest unique; TODO-025 requires isolated mock QA env rework; never deploy near production. |
 | `visual-capture/baseline-2026-09-28` | `e4696089` | 2026-09-28 | 289/0 | 472/0 | **ALREADY_INTEGRATED** | #23 merged | ahead=0. |
+
+---
+
+## 2026-11-21 Update — post-merge reconciliation and branch cleanup
+
+- **PR #53 merged into main as `0e2bf4c9`** (2026-11-21). Local main fast-forwarded 185 commits to `0e2bf4c9`. The integration-branch row above moves MERGE_CANDIDATE → ALREADY_INTEGRATED.
+- **`fix/web-refresh-session-preserve-20261030` (PR #54):** the six dated REA run-evidence files (`2026-10-29-mission2-internet-access`, `2026-10-30-mission3-stabilization`) were salvaged to main by the 2026-11-21 reconciliation PR; the source fix `b4a48801` remains byte-identical in main via PR #53. Branch retained as ARCHIVE_ONLY.
+- **Branch cleanup (2026-11-21):** remote branches with ALREADY_INTEGRATED / SUPERSEDED / SALVAGE_COMPLETED dispositions — including the merged integration branch and the two fully-integrated `hotfix/*` branches — were deleted locally and on origin. Every deleted head SHA remains recorded in `BRANCH_INVENTORY.csv` for recovery.
+- **Retained refs:** `fix/otp-six-digit-contract-20261025` + `fix/otp-six-digit-standard-20261025` (BLOCKED_POLICY — locked D-018 four-digit OTP still governs; the six-digit port needs its own lifecycle/security workstream per PR_INTEGRATION_AUDIT), `vercel-qa` (HOLD, TODO-025), `penpot-work-2026-09-16` and `feat/mobile-motion-layer` + `backup/feat-mobile-motion-layer-20261022` (ARCHIVE_ONLY), `fix/web-refresh-session-preserve-20261030` (ARCHIVE_ONLY).
+- **Local-only backups retained:** `backup/local-main-ed815b2` and `backup/pre-exec-20261022`. `backup/local-main-ed815b2` carries six Sept-2026 gap-closure commits (G-003/G-004/G-011/G-012/G-023..G-026) whose patch-ids are absent from main; feature-level verification against current main is pending before any deletion, so the backup is kept.
+- **Stashes `stash@{0..2}` retained** on 2026-10-era bases; content assessed obsolete (Cartona registry restructure, expo autolinking pin, PHASE-5 delivery checkpoint) but not dropped without owner confirmation.
