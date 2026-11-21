@@ -52,6 +52,15 @@ def get_support_case(
     )
 
 
+@router.get("/{case_id}/messages")
+def list_support_messages(
+    case_id: UUID,
+    boundary=Depends(get_application_boundary),
+):
+    return success_payload(
+        boundary.support_messages_list(case_id=str(case_id))
+    )
+
 @router.post("/{case_id}/messages", status_code=status.HTTP_201_CREATED)
 def add_support_message(
     case_id: UUID,

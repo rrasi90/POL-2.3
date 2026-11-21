@@ -2,25 +2,71 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Literal
+import re
+from datetime import date, datetime
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
+
+from scripts.operational_config import MAX_BULK_ITEMS
+
+INT4_MAX = 2_147_483_647
+INT8_MAX = 9_223_372_036_854_775_807
+CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def _uuid_string(value: str) -> str:
+    """Validate a UUID-shaped reference while keeping the transport type a string."""
+    try:
+        return str(UUID(str(value)))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("must be a valid UUID") from exc
+
+
+UuidString = Annotated[str, AfterValidator(_uuid_string)]
 
 
 class APIBaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    @field_validator("*", mode="before")
+    @classmethod
+    def _reject_boolean_and_overflowing_integers(cls, value, info):
+        if isinstance(value, bool):
+            annotation = cls.model_fields[info.field_name].annotation
+            if "bool" not in str(annotation):
+                raise ValueError(f"{info.field_name} must be an integer, not a boolean")
+            return value
+        if isinstance(value, int) and not isinstance(value, bool):
+            annotation = str(cls.model_fields[info.field_name].annotation)
+            if "str" not in annotation:
+                # Monetary columns are BIGINT in the canonical schema; quantity,
+                # version, pagination and other transport counters are INTEGER.
+                limit = INT8_MAX if info.field_name.endswith("_toman") else INT4_MAX
+                if abs(value) > limit:
+                    bits = 64 if limit == INT8_MAX else 32
+                    raise ValueError(
+                        f"{info.field_name} exceeds the supported {bits}-bit integer range"
+                    )
+        return value
+
+    @field_validator("*", mode="after")
+    @classmethod
+    def _reject_control_characters(cls, value):
+        if isinstance(value, str) and CONTROL_CHARACTERS.search(value):
+            raise ValueError("control characters are not allowed in text fields")
+        return value
+
 
 class RequestOTPRequest(APIBaseModel):
-    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9]\d{7,14}$")
+    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9][0-9]{7,14}$")
     client_fingerprint: str | None = Field(default=None, max_length=128)
 
 
 class VerifyOTPRequest(APIBaseModel):
-    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9]\d{7,14}$")
-    otp_code: str = Field(pattern=r"^\d{4}$")
+    mobile_number: str = Field(min_length=8, max_length=16, pattern=r"^\+[1-9][0-9]{7,14}$")
+    otp_code: str = Field(pattern=r"^[0-9]{4}$")
     device_info: dict[str, Any] | None = None
     client_platform: Literal["web", "mobile"] | None = None
 
@@ -63,7 +109,7 @@ class VendorPartialAcceptanceItemRequest(APIBaseModel):
 
 
 class VendorPartialAcceptanceProposalRequest(APIBaseModel):
-    items: list[VendorPartialAcceptanceItemRequest] = Field(min_length=1)
+    items: list[VendorPartialAcceptanceItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
 
 
 class RetailerPartialAcceptanceDeclineRequest(APIBaseModel):
@@ -79,7 +125,7 @@ class ProfileUpdateRequest(APIBaseModel):
     preferred_language: str | None = None
     timezone: str | None = None
     bio: str | None = None
-    avatar_media_asset_id: str | None = Field(default=None, max_length=64)
+    avatar_media_asset_id: UuidString | None = Field(default=None, max_length=64)
 
 
 class MembershipProfileUpdateRequest(APIBaseModel):
@@ -119,7 +165,13 @@ class VendorInventoryAdjustRequest(APIBaseModel):
 
 
 class DailyInventoryConfirmRequest(APIBaseModel):
-    confirmation_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    confirmation_date: str = Field(pattern=r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+
+    @field_validator("confirmation_date")
+    @classmethod
+    def _calendar_valid_date(cls, value: str) -> str:
+        date.fromisoformat(value)
+        return value
 
 
 class DailyInventoryChangeItemRequest(APIBaseModel):
@@ -128,8 +180,14 @@ class DailyInventoryChangeItemRequest(APIBaseModel):
 
 
 class DailyInventoryConfirmWithChangesRequest(APIBaseModel):
-    confirmation_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
-    changes: list[DailyInventoryChangeItemRequest] = Field(min_length=1)
+    confirmation_date: str = Field(pattern=r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+    changes: list[DailyInventoryChangeItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
+
+    @field_validator("confirmation_date")
+    @classmethod
+    def _calendar_valid_date(cls, value: str) -> str:
+        date.fromisoformat(value)
+        return value
 
 
 class OrderQueryParams(APIBaseModel):
@@ -151,9 +209,9 @@ class DeliveredItemRequest(APIBaseModel):
 
 class DeliveryConfirmRequest(APIBaseModel):
     recipient_name: str | None = Field(default=None, max_length=200)
-    otp_code: str | None = Field(default=None, pattern=r"^\d{4}$")
+    otp_code: str | None = Field(default=None, pattern=r"^[0-9]{4}$")
     proof_type: Literal["OTP_CODE", "PHYSICAL_SIGNATURE", "STORE_STAMP", "PHOTO_PROOF"] = "OTP_CODE"
-    proof_media_id: str | None = Field(default=None, max_length=64)
+    proof_media_id: UuidString | None = Field(default=None, max_length=64)
     issue_reported: str | None = Field(default=None, max_length=500)
     delivered_items: list[DeliveredItemRequest] | None = Field(default=None, max_length=500)
 
@@ -192,8 +250,8 @@ class DeliveryStageRequest(APIBaseModel):
 
 
 class DeliveryExceptionReportRequest(APIBaseModel):
-    delivery_id: str = Field(min_length=1, max_length=64)
-    order_id: str = Field(min_length=1, max_length=64)
+    delivery_id: UuidString = Field(min_length=1, max_length=64)
+    order_id: UuidString = Field(min_length=1, max_length=64)
     exception_type: str = Field(min_length=1, max_length=30)
     description: str | None = Field(default=None, max_length=2000)
 
@@ -238,9 +296,9 @@ class NotificationPreferenceUpdateRequest(APIBaseModel):
 
 class FieldTaskCreateRequest(APIBaseModel):
     task_type: str = Field(min_length=1, max_length=30)
-    assigned_to_user_id: str = Field(min_length=1, max_length=64)
-    retailer_id: str | None = Field(default=None, max_length=64)
-    vendor_id: str | None = Field(default=None, max_length=64)
+    assigned_to_user_id: UuidString = Field(min_length=1, max_length=64)
+    retailer_id: UuidString | None = Field(default=None, max_length=64)
+    vendor_id: UuidString | None = Field(default=None, max_length=64)
     notes: str | None = Field(default=None, max_length=2000)
 
 
@@ -257,7 +315,7 @@ class ReturnItemRequest(APIBaseModel):
 
 
 class ReturnRequestRequest(APIBaseModel):
-    items: list[ReturnItemRequest] = Field(min_length=1)
+    items: list[ReturnItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
     reason: str = Field(min_length=1, max_length=1000)
     idempotency_key: str = Field(min_length=1, max_length=128)
     claimed_refund_amount_toman: int = Field(ge=0)
@@ -280,7 +338,7 @@ class DisputeOpenRequest(APIBaseModel):
     claimed_amount_toman: int = Field(gt=0)
     description: str = Field(min_length=1, max_length=2000)
     evidence_media_id: UUID
-    items: list[DisputeItemRequest] = Field(min_length=1)
+    items: list[DisputeItemRequest] = Field(min_length=1, max_length=MAX_BULK_ITEMS)
 
 
 class PaymentEvidenceRequest(APIBaseModel):
@@ -306,7 +364,7 @@ class ReconciliationCaseResolveRequest(APIBaseModel):
 class SupportCaseCreateRequest(APIBaseModel):
     case_type: str = Field(min_length=1, max_length=50)
     subject: str = Field(min_length=1, max_length=500)
-    related_order_id: str | None = Field(default=None, max_length=64)
+    related_order_id: UuidString | None = Field(default=None, max_length=64)
     priority: str = Field(default="NORMAL", max_length=20)
 
 
@@ -346,7 +404,7 @@ class VendorStaffInviteRequest(APIBaseModel):
     phone_number: str = Field(
         min_length=8,
         max_length=16,
-        pattern=r"^\+[1-9]\d{7,14}$",
+        pattern=r"^\+[1-9][0-9]{7,14}$",
     )
     full_name: str = Field(min_length=1, max_length=100)
 

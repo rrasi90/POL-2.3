@@ -9,11 +9,18 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from psycopg2 import errors as pg_errors
+
+from scripts.api.errors import error_payload, data_integrity_handler
+from scripts.operational_config import MAX_JSON_BODY_BYTES
+from scripts.api.logging_config import get_access_logger
 
 from scripts.api.errors import (
     auth_error_handler,
@@ -76,14 +83,15 @@ _CORRELATION_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 
 def create_app() -> FastAPI:
+    environment = os.getenv("ENVIRONMENT", "").lower()
+    is_production = environment in {"prod", "production"}
     app = FastAPI(
         title="POL API",
         version="1.0.0",
-        docs_url="/docs",
-        redoc_url="/redoc",
+        docs_url=None if is_production else "/docs",
+        redoc_url=None if is_production else "/redoc",
+        openapi_url=None if is_production else "/openapi.json",
     )
-
-    environment = os.getenv("ENVIRONMENT", "").lower()
     configured_origins = [
         origin.strip()
         for origin in os.getenv("POL_CORS_ORIGINS", "").split(",")
@@ -115,11 +123,72 @@ def create_app() -> FastAPI:
         expose_headers=["X-Correlation-ID"],
     )
     @app.middleware("http")
+    async def body_size_middleware(request: Request, call_next):
+        """Reject oversized JSON and multipart bodies before route handling.
+
+        Binary uploads use presigned object-storage URLs; multipart uploads are
+        therefore not accepted by this API transport.
+        """
+        content_type = (request.headers.get("content-type") or "").lower()
+        declared = (request.headers.get("content-length") or "").strip()
+        if content_type.startswith("multipart/") or (
+            declared.isdigit() and int(declared) > MAX_JSON_BODY_BYTES
+        ):
+            return JSONResponse(
+                status_code=413,
+                content=error_payload(
+                    "PAYLOAD_TOO_LARGE",
+                    f"Request body exceeds the {MAX_JSON_BODY_BYTES} byte limit.",
+                ),
+            )
+        if request.method in {"POST", "PUT", "PATCH"}:
+            body = await request.body()
+            if len(body) > MAX_JSON_BODY_BYTES:
+                return JSONResponse(
+                    status_code=413,
+                    content=error_payload(
+                        "PAYLOAD_TOO_LARGE",
+                        f"Request body exceeds the {MAX_JSON_BODY_BYTES} byte limit.",
+                    ),
+                )
+        return await call_next(request)
+
+    @app.middleware("http")
     async def correlation_middleware(request: Request, call_next):
         supplied = request.headers.get("X-Correlation-ID", "").strip()
         correlation_id = supplied if _CORRELATION_ID_RE.fullmatch(supplied) else str(uuid4())
         request.state.correlation_id = correlation_id
-        response = await call_next(request)
+        access_log = get_access_logger()
+        started = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception as exc:
+            access_log.error(
+                "request.failed",
+                extra={
+                    "fields": {
+                        "correlation_id": correlation_id,
+                        "method": request.method,
+                        "path": request.url.path,
+                        "status": 500,
+                        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                        "error_type": type(exc).__name__,
+                    }
+                },
+            )
+            raise
+        access_log.info(
+            "request.completed",
+            extra={
+                "fields": {
+                    "correlation_id": correlation_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status": response.status_code,
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                }
+            },
+        )
         response.headers["X-Correlation-ID"] = correlation_id
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
@@ -195,6 +264,8 @@ def create_app() -> FastAPI:
     app.add_exception_handler(PermissionError, permission_handler)
     app.add_exception_handler(ValueError, value_error_handler)
     app.add_exception_handler(KeyError, key_error_handler)
+    app.add_exception_handler(pg_errors.ForeignKeyViolation, data_integrity_handler)
+    app.add_exception_handler(pg_errors.CheckViolation, data_integrity_handler)
     app.add_exception_handler(Exception, generic_error_handler)
 
     return app

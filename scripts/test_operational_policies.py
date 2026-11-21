@@ -12,6 +12,7 @@ from uuid import uuid4
 import pytest
 from psycopg2.extras import RealDictCursor
 
+from scripts.api.errors import ConflictError
 from scripts.migration_runner import get_connection
 from scripts.operational_policies import (
     AllocationIntegrityError,
@@ -184,7 +185,10 @@ def test_stale_plan_version_rejected():
             data = _seed_basket_and_plan(cur, uuid4().hex[:8], version=2, plan_version=1)
         conn.commit()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            with pytest.raises(AllocationIntegrityError, match="stale"):
+            # G-326: stale basket/plan versions surface as 409 CONFLICT at the
+            # HTTP transport, so the guard raises ConflictError, not
+            # AllocationIntegrityError.
+            with pytest.raises(ConflictError, match="STALE_BASKET_VERSION"):
                 validate_allocation_against_basket(
                     cur, data["basket_id"], data["plan_id"], data["retailer_id"],
                     data["vendor_allocations"],

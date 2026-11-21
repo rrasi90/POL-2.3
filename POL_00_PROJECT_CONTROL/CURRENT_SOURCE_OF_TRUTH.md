@@ -5,6 +5,7 @@
 **Status:** `LOCKED / OFFICIAL GOVERNANCE CHARTER`  
 **Effective Milestone:** Sprint 0 & MVP v1.0  
 **Last Audit:** 2026-09-28  
+**Targeted source-path audit:** 2026-11-17 against `main` @ `fbcdd7448d809a3281cc1ea8c43218d42e8762ca` (targeted documentation/source-path and migration-inventory review only; not a full runtime or release audit).  
 
 ---
 
@@ -46,8 +47,8 @@ Canonical design/build authority:
 | **Identity & Access Management** | `06_PRODUCT/Roles_and_Permissions.md`, `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md`, Master Tree VD-15 | Identity, tenant membership, role authorization, delegated permissions, persona context and UX preferences. | `organization_memberships.role` is the base authorization SSoT; effective access is `base role permissions + active delegated grants`, always scoped to an active user, active organization and active membership. `users.role` is legacy/deprecated. |
 | **Order Lifecycle & State Transitions** | `06_PRODUCT/Order_Lifecycle.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | OrderGroup, child Orders, Delivery and exception state machines. | Governs backend workflows and UI state mapping. |
 | **Domain Entities & Business Invariants** | `08_DATA/DOMAIN_MODEL.md` | Ubiquitous language, aggregates and invariants. | Governs domain service behavior. |
-| **Database Schema & Migrations** | `migrations/001_*.sql` through the current forward-only migration head (`048` on the remediation branch), `08_DATA/Data_Schema.md`, and `POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST.md` | PostgreSQL 18 DDL, constraints, indexes, triggers and foreign keys. | The complete numbered forward-only migration chain is the physical schema authority; later migrations supersede earlier physical state without rewriting historical migrations. |
-| **API Contracts & DTOs** | `06_PRODUCT/API_Contracts.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX_CORRECTIONS_2026-09-16.md`, `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md` | REST/JSON contracts and application-boundary commands. | Correction overlay supersedes conflicting legacy terminology. |
+| **Database Schema & Migrations** | `migrations/001_*.sql` through the current `main` migration head (`076` as verified by the contiguous numbered migration files and `POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST.md` at the audit SHA), `08_DATA/Data_Schema.md`, and `POL_00_PROJECT_CONTROL/DATABASE_SCHEMA_MANIFEST.md` | PostgreSQL 18 DDL, constraints, indexes, triggers and foreign keys. | The complete numbered forward-only migration chain is the physical schema authority; later migrations supersede earlier physical state without rewriting historical migrations. |
+| **API Contracts & DTOs** | `06_PRODUCT/API_Contracts.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX_CORRECTIONS_2026-09-16.md`, and the implementation boundary in `scripts/application_boundary.py` | REST/JSON contracts and application-boundary commands. | Correction overlay supersedes conflicting legacy terminology. |
 | **Allocation Engine Algorithm** | `07_ALGORITHMS/MVP_MULTI_VENDOR_ALLOCATION.md` | Deterministic multi-vendor allocation, MOV/MOQ and ranking. | Governs allocation implementation. |
 | **Brand & Design System** | `POL_00_PROJECT_CONTROL/BRAND_ARCHITECTURE.md`, `13_PRODUCT_DESIGN/56_POL_PRECISION_COMMERCE_VISUAL_DESIGN_SYSTEM_2026-09-21.md`, `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md` | Brand hierarchy, Precision Commerce visual direction, design tokens, interaction patterns, Light/Night visual language and design QA. | Design may not override product/engineering decisions. |
 | **Operations, Fulfillment & Logistics** | `09_OPERATIONS/Fulfillment.md`, `09_OPERATIONS/Payments_and_Settlement.md`, `09_OPERATIONS/Support_and_Disputes.md` | Field SOPs, logistics, direct settlement and support/dispute operations. | Governs operational workflows. |
@@ -182,9 +183,9 @@ This upgrade does not create new product capabilities. It strengthens canonicali
 
 Repeated screen IDs in derived sections are projections, not independent sources of truth.
 
-## 7.1 Current Remediation Checkpoint — 2026-09-25
+## 7.1 Historical Remediation Checkpoint — 2026-09-25 (superseded by live GitHub state)
 
-This paragraph is a historical checkpoint from 2026-09-25. The remediation branch described here has since been integrated into main; current authority is the main branch HEAD. Source remediation has added forward-only integrity migrations, canonical HTTP contracts, tenant/actor boundaries, idempotency safeguards, notification routing/template hardening, and live UI surfaces. Historical CI/local records remain evidence only; fresh CI on the remediation branch is currently failing before useful step execution, so no fresh green certification is asserted.
+This is a historical checkpoint from 2026-09-25, retained for traceability. It recorded that the remediation branch described at that time had been integrated into main. The remaining statements in this checkpoint about current CI failures and closure classes are date-bounded; they are not present-day CI claims. Use live branch refs and workflow runs for the exact SHA under review. Source presence alone is not runtime or release certification.
 
 Current unresolved closure classes are:
 - explicit product/security decisions: D-018 policy wording, invoice timing, D-024 storefront write scope;
@@ -211,7 +212,7 @@ Execution safety and verification are governed by `.agents/rules/00-pol-canonica
 
 The active human-readable design authority is `13_PRODUCT_DESIGN/50_POL_MASTER_PRODUCT_EXPERIENCE_DELIVERY_CONTROL_TREE_SPEC_2026-09-21.md`; closure/validation evidence is maintained in `mvp/MVP_KNOWN_GAPS.md`, `mvp/MVP_SCREEN_MATRIX.md`, and `mvp/MVP_API_MAP.md`.
 
-## Remediation Re-Audit Checkpoint — 2026-09-26
+## Historical Remediation Re-Audit Checkpoint — 2026-09-26 (superseded)
 
 - Main remains authoritative at the main branch; remediation changes remain isolated on `remediation/full-closure-2026-09-25`.
 - Current remediation head at this checkpoint: `c380e7c1a0d9c3d993d45629707ab411829b1dd5`.
@@ -228,7 +229,7 @@ The active human-readable design authority is `13_PRODUCT_DESIGN/50_POL_MASTER_P
 - Remaining unresolved closure classes are still the explicit governance/product decisions, deployment/provider/browser/device evidence, and the external OpenPencil/runtime dependencies identified in the audit register.
 \n
 
-## Post-Reaudit Remediation Checkpoint — 2026-09-26
+## Historical Post-Reaudit Remediation Checkpoint — 2026-09-26 (superseded)
 - Remediation branch: `remediation/full-closure-2026-09-25`
 - Latest remediation head at checkpoint: `5c40c14a619e0c530ae795638b556d79d7f86705`
 - Additional source-level findings closed after the prior checkpoint: G-052 delegated-permission ceiling enforcement at evaluation time; G-053 product-media tenant/provenance authorization; G-054 fail-closed handling and database invariant for legacy unbound in-flight uploads.

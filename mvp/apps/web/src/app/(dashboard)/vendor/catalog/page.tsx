@@ -12,9 +12,11 @@ import {
   StatusChip,
 } from "@pol/ui";
 import { getApi } from "@/lib/auth/api";
+import { formatPackagingUnit } from "@/lib/format-labels";
 import {
   formatToman,
   itemsOf,
+  vendorProductDisplayName,
   str,
   type LoadState,
 } from "../_shared";
@@ -24,12 +26,16 @@ interface VendorProduct {
   vendor_product_id?: string | null;
   product_id?: string | null;
   product_name?: string | null;
+  canonical_name_fa?: string | null;
+  master_sku?: string | null;
+  candidate_id?: string | null;
   name?: string | null;
   brand_name?: string | null;
   vendor_sku?: string | null;
   packaging_unit?: string | null;
   price_toman?: number | null;
   stock_quantity?: number | null;
+  available_quantity?: number | null;
   is_active?: boolean | null;
 }
 
@@ -64,7 +70,7 @@ export default function VendorCatalogPage() {
     if (!query.trim()) return true;
     const q = query.trim().toLowerCase();
     return (
-      str(p.product_name ?? p.name, "").toLowerCase().includes(q) ||
+      str(vendorProductDisplayName(p.canonical_name_fa, p.product_name, p.name), "").toLowerCase().includes(q) ||
       str(p.vendor_sku, "").toLowerCase().includes(q) ||
       str(p.brand_name, "").toLowerCase().includes(q)
     );
@@ -123,7 +129,7 @@ export default function VendorCatalogPage() {
         <div className="w-full max-w-md">
           <SearchField
             label="جستجوی کالا"
-            placeholder="نام کالا، برند یا کد SKU..."
+            placeholder="نام کالا، برند یا کد فروشنده..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -143,7 +149,10 @@ export default function VendorCatalogPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => {
             const vpId = str(p.vendor_product_id ?? p.id, "");
-            const productName = p.product_name ?? p.name ?? "کالای بدون نام";
+            const canonicalName = vendorProductDisplayName(p.canonical_name_fa, p.product_name, p.name);
+            const hasCanonicalName = Boolean(canonicalName);
+            const productName = canonicalName || (p.vendor_sku ? `کالای کد ${p.vendor_sku}` : "کالای ثبت‌نشده");
+            const needsCatalogMatch = !p.product_id || !hasCanonicalName;
 
             return (
               <Card
@@ -155,7 +164,9 @@ export default function VendorCatalogPage() {
                     <h2 className="text-[15px] font-bold text-[var(--pol-light-text-primary)] line-clamp-2">
                       {productName}
                     </h2>
-                    {p.is_active === false ? (
+                    {needsCatalogMatch ? (
+                      <StatusChip tone="warning">نیازمند تطبیق کاتالوگ</StatusChip>
+                    ) : p.is_active === false ? (
                       <StatusChip tone="neutral">غیرفعال</StatusChip>
                     ) : (
                       <StatusChip tone="success">فعال</StatusChip>
@@ -168,7 +179,7 @@ export default function VendorCatalogPage() {
                       <>
                         <span>·</span>
                         <span dir="ltr" className="font-mono">
-                          SKU: {p.vendor_sku}
+                          کد فروشنده: {p.vendor_sku}
                         </span>
                       </>
                     )}

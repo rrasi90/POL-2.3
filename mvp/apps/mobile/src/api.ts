@@ -38,6 +38,8 @@ export function isMockMode(): boolean { return MOCK_MODE; }
 export function getApiBaseUrl(): string { return BASE; }
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://10.0.2.2:8000";
+const REQUEST_TIMEOUT_MS = 20000;
+const HEALTH_TIMEOUT_MS = 5000;
 const ACCESS_KEY = "pol.access_token";
 const REFRESH_KEY = "pol.refresh_token";
 const ROLE_KEY = "pol.session_role";
@@ -159,11 +161,19 @@ async function request<T>(
       }
     }
 
-    const res = await fetch(BASE + path, {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(BASE + path, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
     setOnline(true);
 
     let payload: ApiEnvelope<T>;
@@ -188,11 +198,13 @@ async function request<T>(
   } catch (err) {
     if (err instanceof ApiError) throw err;
     setOnline(false);
-    throw new ApiError(
-      "NETWORK",
-      err instanceof Error ? err.message : "Network error",
-      0,
-    );
+    const message =
+      err instanceof Error && err.name === "AbortError"
+        ? "درخواست بیش از حد طول کشید و لغو شد."
+        : err instanceof Error
+          ? err.message
+          : "Network error";
+    throw new ApiError("NETWORK", message, 0);
   }
 }
 
@@ -216,9 +228,15 @@ export async function healthz(): Promise<boolean> {
       setOnline(true);
       return true;
     }
-    const res = await fetch(BASE + "/healthz", { method: "GET" });
-    setOnline(res.ok);
-    return res.ok;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
+    try {
+      const res = await fetch(BASE + "/healthz", { method: "GET", signal: controller.signal });
+      setOnline(res.ok);
+      return res.ok;
+    } finally {
+      clearTimeout(timer);
+    }
   } catch {
     setOnline(false);
     return false;

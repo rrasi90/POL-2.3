@@ -22,7 +22,7 @@ def _pages():
 
 
 def _css():
-    p = WEB_DIR / "src" / "globals.css"
+    p = WEB_DIR / "src" / "app" / "globals.css"
     if p.exists():
         return io.open(p, encoding="utf-8").read()
     return ""
@@ -50,7 +50,7 @@ def test_focus_visible_in_css():
     """focus-visible utility should be present in the global stylesheet."""
     css = _css()
     assert "focus-visible" in css, (
-        "focus-visible not found in src/globals.css; "
+        "focus-visible not found in src/app/globals.css; "
         "add a :focus-visible { ... } rule or import from the design system"
     )
     print("PASS: focus-visible utility in globals.css")
@@ -92,18 +92,15 @@ def test_no_alt_less_images():
 
 
 def test_viewport_meta():
-    """Viewport meta should be declared (Next.js default or explicit)."""
-    # Check the page's HTML template; Next auto-inserts it but we verify presence.
-    # Search across all page files for <meta name="viewport">
-    found = False
-    for pg in _pages():
-        txt = io.open(pg, encoding="utf-8", errors="ignore").read()
-        if "name=\"viewport\"" in txt:
-            found = True
-            break
-    if not found:
-        raise AssertionError("viewport meta not found in any page; Next.js adds it by default")
-    print("PASS: viewport meta present")
+    """The App Router root layout must declare an explicit responsive viewport."""
+    layout = Path(WEB_DIR / "src" / "app" / "layout.tsx")
+    if not layout.exists():
+        raise FileNotFoundError("layout.tsx not found")
+    txt = io.open(layout, encoding="utf-8").read()
+    has_viewport_export = "export const viewport" in txt or "generateViewport" in txt
+    assert has_viewport_export, "Root layout must export viewport metadata for a responsive viewport"
+    assert "device-width" in txt and "initialScale: 1" in txt, "Viewport must use device-width and initialScale 1"
+    print("PASS: explicit responsive viewport metadata in root layout")
 
 
 # ── runner ─────────────────────────────────────────────────────────────────

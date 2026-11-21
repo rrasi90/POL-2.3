@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 const { mockRequest, resetMockState } = await import("../src/mock/mockTransport.ts");
 const { toAsciiDigits, formatFaNumber, formatTehranDateTime } = await import("../src/i18n/fa.ts");
+const { orderProgressStage } = await import("../src/utils/statusLabels.ts");
 
 const owner = { Authorization: "Bearer mock-vendor-owner-token" };
 const staff = { Authorization: "Bearer mock-vendor-staff-token" };
@@ -21,6 +22,19 @@ assert.ok(formatFaNumber(1234567).includes("۱٬۲۳۴٬۵۶۷"));
 const localizedDate = formatTehranDateTime("2026-09-29T12:00:00Z");
 assert.ok(localizedDate.includes("۱۴۰۵"));
 assert.ok(localizedDate.includes("مهر"));
+
+// Order progress maps canonical order_status to the four visible macro-steps.
+assert.equal(orderProgressStage("SUBMITTED"), 1);
+assert.equal(orderProgressStage("ACCEPTED"), 2);
+assert.equal(orderProgressStage("PARTIALLY_ACCEPTED"), 2);
+assert.equal(orderProgressStage("PREPARING"), 2);
+assert.equal(orderProgressStage("READY"), 3);
+assert.equal(orderProgressStage("DISPATCHED"), 3);
+assert.equal(orderProgressStage("DELIVERED"), 4);
+// Delivery lifecycle states must not advance the order lifecycle progress.
+assert.equal(orderProgressStage("ARRIVED"), 1);
+assert.equal(orderProgressStage("IN_TRANSIT"), 1);
+assert.equal(orderProgressStage(null), 1);
 
 const orders = await req<{ orders: Array<{ id: string; order_status: string }> }>("GET", "/api/v1/orders");
 assert.equal(orders.orders.length, 5);
@@ -172,13 +186,27 @@ const support = await req<{ id: string }>(
 );
 assert.ok(support.id);
 
-const message = await req<{ id: string }>(
+const message = await req<{ id: string; message_text: string; sender_type: string }>(
   "POST",
   "/api/v1/support/cases/" + support.id + "/messages",
-  { body: "پیام تستی" },
+  { message_text: "پیام تستی" },
   staff,
 );
 assert.ok(message.id);
+assert.equal(message.message_text, "پیام تستی");
+assert.equal(message.sender_type, "USER");
+const supportHistory = await req<{ messages: Array<{ message_text: string }> }>(
+  "GET",
+  "/api/v1/support/cases/" + support.id + "/messages",
+  undefined,
+  staff,
+);
+assert.equal(supportHistory.messages.length, 1);
+assert.equal(supportHistory.messages[0].message_text, "پیام تستی");
+await rejects(
+  () => req("POST", "/api/v1/support/cases/" + support.id + "/messages", { message_text: "" }, staff),
+  "Vendor mock rejects an empty support message",
+);
 
 const profile = await req<{ membership: { role: string }; user_profile: { timezone: string } }>("GET", "/api/v1/profile", undefined, staff);
 assert.equal(profile.membership.role, "VENDOR_STAFF");
@@ -195,3 +223,154 @@ console.log("[MOCK-QA PASS] Vendor mock transport exercised successfully across 
 
 const logout = await req<{ success: boolean }>("DELETE", "/api/v1/auth/sessions/current", undefined, staff);
 assert.equal(logout.success, true);
+
+
+// Retailer mock coverage — keep this separate from vendor fixtures so role-specific
+// behavior and the retail basket/checkout contract are actually exercised.
+resetMockState();
+const retailerHeaders = { Authorization: "Bearer mock-retailer-owner-token" };
+const retailerStaffHeaders = { Authorization: "Bearer mock-retailer-staff-token" };
+
+const retailerLogin = await req<{ role: string; access_token: string }>(
+  "POST",
+  "/api/v1/auth/verify-otp",
+  { mobile_number: "+989161110003", otp_code: "1234" },
+  {},
+);
+assert.equal(retailerLogin.role, "RETAILER_OWNER");
+assert.equal(retailerLogin.access_token, "mock-retailer-owner-token");
+
+const retailerContext = await req<{ organization_type: string; role: string }>(
+  "GET", "/api/v1/profile/context", undefined, retailerHeaders,
+);
+assert.equal(retailerContext.organization_type, "RETAILER");
+assert.equal(retailerContext.role, "RETAILER_OWNER");
+
+const retailerSearch = await req<{ items: Array<{ id: string; canonical_name_fa: string }> }>(
+  "GET", "/api/v1/catalog/search?q=" + encodeURIComponent("نوشابه") + "&limit=40", undefined, retailerHeaders,
+);
+assert.equal(retailerSearch.items.length, 1);
+assert.equal(retailerSearch.items[0].id, "mock-product-1");
+
+const retailBasket = await req<{ basket_id: string; version: number }>(
+  "POST", "/api/v1/baskets", {}, retailerHeaders,
+);
+assert.equal(retailBasket.version, 1);
+const retailBasketItem1 = await req<{ basket_id: string; version: number }>(
+  "POST", "/api/v1/baskets/" + retailBasket.basket_id + "/items",
+  { product_id: "mock-product-1", requested_quantity: 1, pack_quantity: 6, expected_version: retailBasket.version },
+  retailerHeaders,
+);
+assert.equal(retailBasketItem1.version, 2);
+const retailBasketItem2 = await req<{ basket_id: string; version: number }>(
+  "POST", "/api/v1/baskets/" + retailBasket.basket_id + "/items",
+  { product_id: "mock-product-2", requested_quantity: 1, pack_quantity: 12, expected_version: retailBasketItem1.version },
+  retailerHeaders,
+);
+assert.equal(retailBasketItem2.version, 3);
+await rejects(
+  () => req("POST", "/api/v1/baskets/" + retailBasket.basket_id + "/items",
+    { product_id: "mock-product-3", requested_quantity: 1, pack_quantity: 24, expected_version: 1 }, retailerHeaders),
+  "Retailer basket rejects a stale version",
+);
+
+const retailAllocation = await req<{ allocation_plan_id: string; summary: { total_amount_toman: number; total_items_allocated: number } }>(
+  "POST", "/api/v1/baskets/" + retailBasket.basket_id + "/allocation-preview", {}, retailerHeaders,
+);
+assert.equal(retailAllocation.summary.total_amount_toman, 850000);
+assert.equal(retailAllocation.summary.total_items_allocated, 2);
+
+const retailCheckoutKey = "af0f08f9-69d1-4f45-8a0b-047c2dc2b6b1";
+const retailCheckoutBody = {
+  allocation_plan_id: retailAllocation.allocation_plan_id,
+  delivery_address: "اهواز، کیانپارس، خیابان نمونه، پلاک ۱۲",
+  preferred_payment_method: "CASH_ON_DELIVERY",
+};
+const retailCheckout = await req<{ order_group_id: string; total_amount_toman: number; idempotent_replay: boolean }>(
+  "POST", "/api/v1/orders", retailCheckoutBody,
+  { ...retailerHeaders, "Idempotency-Key": retailCheckoutKey },
+);
+assert.equal(retailCheckout.total_amount_toman, 850000);
+assert.equal(retailCheckout.idempotent_replay, false);
+const retailCheckoutReplay = await req<{ order_group_id: string; idempotent_replay: boolean }>(
+  "POST", "/api/v1/orders", retailCheckoutBody,
+  { ...retailerHeaders, "Idempotency-Key": retailCheckoutKey },
+);
+assert.equal(retailCheckoutReplay.order_group_id, retailCheckout.order_group_id);
+assert.equal(retailCheckoutReplay.idempotent_replay, true);
+await rejects(
+  () => req("POST", "/api/v1/orders", { ...retailCheckoutBody, delivery_address: "اهواز، نشانی متفاوت، پلاک ۹۹" },
+    { ...retailerHeaders, "Idempotency-Key": retailCheckoutKey }),
+  "Retailer checkout rejects reuse of a key with a different payload",
+);
+
+const retailOrders = await req<{ orders: Array<{ id: string; order_status: string }> }>(
+  "GET", "/api/v1/orders?limit=50&offset=0", undefined, retailerHeaders,
+);
+assert.ok(retailOrders.orders.length >= 3);
+assert.equal(retailOrders.orders[0].order_status, "SUBMITTED");
+const latestRetailOrderId = retailOrders.orders[0].id;
+const retailOrder = await req<{ id: string; delivery_address: string }>(
+  "GET", "/api/v1/orders/" + latestRetailOrderId, undefined, retailerHeaders,
+);
+assert.equal(retailOrder.id, latestRetailOrderId);
+assert.ok(retailOrder.delivery_address.includes("اهواز"));
+const retailItems = await req<{ items: Array<{ ordered_quantity: number }> }>(
+  "GET", "/api/v1/orders/" + latestRetailOrderId + "/items", undefined, retailerHeaders,
+);
+assert.equal(retailItems.items.length, 2);
+const retailTimeline = await req<Array<{ event_type: string }>>(
+  "GET", "/api/v1/orders/" + latestRetailOrderId + "/timeline", undefined, retailerHeaders,
+);
+assert.equal(retailTimeline[0].event_type, "ORDER_SUBMITTED");
+
+const retailers = await req<{ items: Array<{ id: string }> }>(
+  "GET", "/api/v1/storefront/vendors", undefined, retailerHeaders,
+);
+assert.equal(retailers.items.length, 1);
+const retailerStorefront = await req<{ items: Array<{ product_id: string }> }>(
+  "GET", "/api/v1/storefront/vendors/mock-vendor/products?limit=50&offset=0", undefined, retailerHeaders,
+);
+assert.equal(retailerStorefront.items.length, 4);
+
+const retailInvoices = await req<{ invoices: Array<{ id: string }> }>(
+  "GET", "/api/v1/invoices?limit=50&offset=0", undefined, retailerHeaders,
+);
+assert.equal(retailInvoices.invoices.length, 1);
+
+const retailSupport = await req<{ id: string }>(
+  "POST", "/api/v1/support/cases",
+  { subject: "آزمون پشتیبانی خرده‌فروش", case_type: "GENERAL", priority: "NORMAL" },
+  retailerHeaders,
+);
+assert.ok(retailSupport.id);
+const retailSupportMessage = await req<{ id: string; message_text: string }>(
+  "POST", "/api/v1/support/cases/" + retailSupport.id + "/messages",
+  { message_text: "پیام آزمایشی" },
+  retailerHeaders,
+);
+assert.ok(retailSupportMessage.id);
+assert.equal(retailSupportMessage.message_text, "پیام آزمایشی");
+const retailSupportHistory = await req<{ messages: Array<{ message_text: string }> }>(
+  "GET", "/api/v1/support/cases/" + retailSupport.id + "/messages", undefined, retailerHeaders,
+);
+assert.equal(retailSupportHistory.messages.length, 1);
+assert.equal(retailSupportHistory.messages[0].message_text, "پیام آزمایشی");
+await rejects(
+  () => req("POST", "/api/v1/support/cases/" + retailSupport.id + "/messages", { message_text: "" }, retailerHeaders),
+  "Retailer mock rejects an empty support message",
+);
+
+const retailerStaffLogin = await req<{ role: string; access_token: string }>(
+  "POST", "/api/v1/auth/verify-otp",
+  { mobile_number: "+989161110004", otp_code: "1234" },
+  {},
+);
+assert.equal(retailerStaffLogin.role, "RETAILER_STAFF");
+assert.equal(retailerStaffLogin.access_token, "mock-retailer-staff-token");
+const retailerStaffProfile = await req<{ membership: { role: string } }>(
+  "GET", "/api/v1/profile", undefined, retailerStaffHeaders,
+);
+assert.equal(retailerStaffProfile.membership.role, "RETAILER_STAFF");
+
+console.log("[MOCK-QA PASS] Retailer mock transport exercised across auth, catalog search, basket versioning, allocation, idempotent checkout, order detail/timeline, supplier storefront, invoices, support, and owner/staff role context.");

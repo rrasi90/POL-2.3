@@ -1,0 +1,201 @@
+{
+  "run_id": "2026-10-27-cartona-remediation-deep-extraction",
+  "validated_at": "2026-10-27",
+  "semantic_checks": [
+    {
+      "name": "json_parse:env-preflight.json",
+      "status": "PASS",
+      "detail": "parsed",
+      "path": ""
+    },
+    {
+      "name": "json_parse:asset-count-reconciliation.json",
+      "status": "PASS",
+      "detail": "parsed",
+      "path": ""
+    },
+    {
+      "name": "csv_uniform_width:api-endpoint-catalog",
+      "status": "PASS",
+      "detail": "71 rows INCL header, widths=[9], header=['path', 'domain', 'http_method', 'relation_status', 'source_location', 'input_sha256', 'evidence_id', 'adjacent_context', 'raw_variants']",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\api-endpoint-catalog.csv"
+    },
+    {
+      "name": "csv_uniform_width:route-feature-map",
+      "status": "PASS",
+      "detail": "25 rows INCL header, widths=[4], header=['route', 'inferred_feature', 'evidence_confidence', 'source']",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\route-feature-map.csv"
+    },
+    {
+      "name": "csv_uniform_width:manifest-components",
+      "status": "PASS",
+      "detail": "57 rows INCL header, widths=[4], header=['component_type', 'class', 'exported', 'origin']",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\manifest-components.csv"
+    },
+    {
+      "name": "csv_uniform_width:flutter-assets-inventory",
+      "status": "PASS",
+      "detail": "114 rows INCL header, widths=[6], header=['archive_path', 'size_bytes', 'sha256', 'kind', 'group', 'declared_in_assetmanifest']",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\flutter-assets-inventory.csv"
+    },
+    {
+      "name": "csv_uniform_width:symbol-and-class-index",
+      "status": "PASS",
+      "detail": "27 rows INCL header, widths=[4], header=['symbol', 'kind', 'meaning', 'evidence']",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\symbol-and-class-index.csv"
+    },
+    {
+      "name": "csv_uniform_width:ui-screen-catalog",
+      "status": "PASS",
+      "detail": "22 rows INCL header, widths=[8], header=['screen_id', 'route_or_entry', 'evidence_source', 'strings_evidence', 'rtl', 'screenshots', 'observation_status', 'capture_blocker']",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\ui-screen-catalog.csv"
+    },
+    {
+      "name": "csv_uniform_width:archive-and-split-inventory",
+      "status": "PASS",
+      "detail": "22 rows INCL header, widths=[5], header=['artifact_label', 'file', 'category', 'entry_count', 'total_uncompressed_bytes']",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\archive-and-split-inventory.csv"
+    },
+    {
+      "name": "assets_size_bytes_semantic",
+      "status": "PASS",
+      "detail": "113 data rows; non-integer size: []",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\flutter-assets-inventory.csv"
+    },
+    {
+      "name": "assets_sha256_format",
+      "status": "PASS",
+      "detail": "invalid sha count: 0",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\flutter-assets-inventory.csv"
+    },
+    {
+      "name": "assets_paths_unique",
+      "status": "PASS",
+      "detail": "duplicate paths: 0",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\flutter-assets-inventory.csv"
+    },
+    {
+      "name": "assets_manifest_declared_count",
+      "status": "PASS",
+      "detail": "declared=yes rows: 103 (expected 103 per reconciliation)",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\flutter-assets-inventory.csv"
+    },
+    {
+      "name": "asset_count_113_106_reconciled",
+      "status": "PASS",
+      "detail": "{\"archive_file_entries\": 113, \"manifest_keys\": 106, \"only_in_archive\": 10, \"only_in_manifest\": 3}",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\asset-count-reconciliation.json"
+    },
+    {
+      "name": "api_evidence_depth",
+      "status": "PASS",
+      "detail": "70 endpoints; violations: []",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\api-endpoint-catalog.csv"
+    },
+    {
+      "name": "api_evidence_sha_refs",
+      "status": "PASS",
+      "detail": "input sha256 refs valid",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\api-endpoint-catalog.csv"
+    },
+    {
+      "name": "ui_status_vocabulary",
+      "status": "PASS",
+      "detail": "21 screens; violations: []",
+      "path": "C:\\Star\\pol\\2.4\\analysis\\rea\\runs\\2026-10-27-cartona-remediation-deep-extraction\\ui-screen-catalog.csv"
+    },
+    {
+      "name": "no_secrets_committed",
+      "status": "PASS",
+      "detail": "leaks: []",
+      "path": ""
+    },
+    {
+      "name": "no_binaries_committed",
+      "status": "PASS",
+      "detail": "unexpected: []",
+      "path": ""
+    }
+  ],
+  "semantic_summary": {
+    "total": 19,
+    "passed": 19
+  },
+  "negative_fixture_tests": [
+    {
+      "fixture": "json-as-csv.csv",
+      "rejected": true,
+      "expected": true,
+      "reason": "no header/ragged",
+      "assertion": "CSV parse of JSON content must fail or yield non-uniform/no-header"
+    },
+    {
+      "fixture": "string-size.csv",
+      "rejected": true,
+      "expected": true,
+      "reason": "semantic check failed as expected",
+      "assertion": "size_bytes not integer"
+    },
+    {
+      "fixture": "short-sha.csv",
+      "rejected": true,
+      "expected": true,
+      "reason": "semantic check failed as expected",
+      "assertion": "sha256 not 64-hex"
+    },
+    {
+      "fixture": "secret-like.txt",
+      "rejected": true,
+      "expected": true,
+      "reason": "secret pattern detected",
+      "assertion": "secret-like string detected"
+    },
+    {
+      "fixture": "uneven.csv",
+      "rejected": true,
+      "expected": true,
+      "reason": "ragged detected",
+      "assertion": "ragged rows"
+    },
+    {
+      "fixture": "p0-no-criteria.csv",
+      "rejected": true,
+      "expected": true,
+      "reason": "P0 without criteria detected",
+      "assertion": "P0 without acceptance criteria"
+    }
+  ],
+  "negative_fixtures_all_rejected": true,
+  "phases": {
+    "phase0_sync": "PASS",
+    "phase1_preflight": "PASS",
+    "phase2_run_creation": "PASS",
+    "phaseA_remediation": "PASS (7/7 defects fixed, validator self-tested 16/16 + 6/6 negative)",
+    "phaseB_dex": "PASS (counts+signing verified; fresh decompile skipped with provenance)",
+    "phaseC_snapshot": "PARTIAL (header/metadata VERIFIED Dart 3.9.2; app-class recovery blocked on ARMv7)",
+    "phaseD_assets": "PASS (113 entries hashed; 113/106 reconciled)",
+    "phaseE_api": "PASS (70 endpoints with per-endpoint provenance)",
+    "phaseF_security": "PASS (apksigner verified; config re-verified; key presence sanitized)",
+    "phaseG_runtime": "BLOCKED (ABI mismatch; prerequisites documented)",
+    "phaseH_pol_audit": "PASS (via dedicated audit agent, file-path grounded)",
+    "three_product_research": "PASS (public sources; artifacts unavailable for 2/3 products)",
+    "workflow_modeling": "PASS (22 transitions incl. driver gap WF-21)",
+    "fastpath_decisions": "PASS (25 rows, single primary path each)",
+    "golden_e2e": "PASS as design (G6 documented failing-gap)",
+    "handoff": "PASS (implementation-handoff.md self-contained)",
+    "validation": "PASS (semantic validator + negative fixtures)"
+  },
+  "gates": {
+    "EXTRACTION_COMPLETE": "PASS (all accessible sources examined per coverage above; not a claim of full source recovery)",
+    "BUILD_HANDOFF_READY": "PASS (conditional: driver app items B-09..B-12 gated on documented product decision D-01; runtime parity excluded by definition)",
+    "RUNTIME_PARITY_VERIFIED": "NOT CLAIMED (no runtime observation this run)"
+  },
+  "warnings": [
+    "Runtime UI capture BLOCKED (ABI mismatch) — prerequisites documented",
+    "Typed Dart app-class recovery BLOCKED on ARMv7 — r2flutter AArch64-only analysis",
+    "Supplier/driver products: no artifacts — PUBLICLY_DOCUMENTED/MARKETING_CLAIM evidence only",
+    "Embedded Google API key pattern in Cartona snapshot — value withheld from all committed files",
+    "Fresh JADX decompile skipped — Oct-5 decoded tree reused with provenance cross-check"
+  ],
+  "status": "PASS"
+}

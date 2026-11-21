@@ -247,11 +247,11 @@ function OrdersTab({ rows }: { rows: OrderRow[] }) {
           <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
-                {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
+                {orderStatusLabel[o.order_status ?? ""] ?? "وضعیت نامشخص"}
               </StatusChip>
               {o.dispute_status && o.dispute_status !== "NONE" && (
                 <StatusChip tone={disputeStatusTone[o.dispute_status] ?? "danger"}>
-                  {disputeStatusLabel[o.dispute_status] ?? o.dispute_status}
+                  {disputeStatusLabel[o.dispute_status ?? ""] ?? "وضعیت نامشخص"}
                 </StatusChip>
               )}
               <span className="font-mono text-[13px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
@@ -314,7 +314,7 @@ function SupportTab({ rows }: { rows: SupportRow[] }) {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusChip tone={supportStatusTone[s.status ?? ""] ?? "neutral"}>
-                  {supportStatusLabel[s.status ?? ""] ?? s.status ?? "—"}
+                  {supportStatusLabel[s.status ?? ""] ?? "وضعیت نامشخص"}
                 </StatusChip>
                 <StatusChip tone={supportPriorityTone[s.priority ?? ""] ?? "neutral"}>
                   {supportPriorityLabel[s.priority ?? ""] ?? s.priority ?? "—"}
@@ -386,7 +386,7 @@ function ReconTab({ rows }: { rows: ReconRow[] }) {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2.5">
                 <StatusChip tone={reconStatusTone[r.status ?? ""] ?? "neutral"}>
-                  {reconStatusLabel[r.status ?? ""] ?? r.status ?? "—"}
+                  {reconStatusLabel[r.status ?? ""] ?? "وضعیت نامشخص"}
                 </StatusChip>
                 <span className="text-[12px] text-[var(--pol-light-text-secondary)]">
                   انتظار: <strong>{formatToman(r.expected_amount_toman)}</strong> · مشاهده:{" "}
@@ -450,10 +450,10 @@ function RmaTab({ rows }: { rows: RmaOrderRow[] }) {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusChip tone={orderStatusTone[o.order_status ?? ""] ?? "neutral"}>
-                  {orderStatusLabel[o.order_status ?? ""] ?? o.order_status ?? "—"}
+                  {orderStatusLabel[o.order_status ?? ""] ?? "وضعیت نامشخص"}
                 </StatusChip>
                 <StatusChip tone={disputeStatusTone[o.dispute_status ?? ""] ?? "neutral"}>
-                  {disputeStatusLabel[o.dispute_status ?? ""] ?? o.dispute_status ?? "—"}
+                  {disputeStatusLabel[o.dispute_status ?? ""] ?? "وضعیت نامشخص"}
                 </StatusChip>
                 <span className="font-mono text-[13px] font-bold text-[var(--pol-light-text-primary)]" dir="ltr">
                   {o.order_number ?? str(o.id)}

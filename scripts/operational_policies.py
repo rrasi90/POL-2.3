@@ -3,6 +3,8 @@
 from datetime import datetime, timezone, time, timedelta
 from zoneinfo import ZoneInfo
 
+from scripts.api.errors import ConflictError
+
 
 class AllocationIntegrityError(ValueError):
     pass
@@ -212,7 +214,7 @@ def validate_allocation_against_basket(cur, basket_id: str, plan_id: str, retail
     if plan["plan_status"] != "CONFIRMED":
         raise AllocationIntegrityError("Allocation plan is not confirmed.")
     if plan["version"] != plan["basket_version"]:
-        raise AllocationIntegrityError("Allocation plan is stale for the current basket version.")
+        raise ConflictError("STALE_BASKET_VERSION: Allocation plan is stale for the current basket version.")
     if plan["expires_at"] < datetime.now(timezone.utc):
         raise AllocationIntegrityError("Allocation plan has expired.")
 

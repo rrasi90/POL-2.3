@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { healthz, isOnline, subscribeOnline } from "../api";
 import { spacing, useThemedStyles, type Palette } from "../theme";
+import { SlideIn } from "../motion/SlideIn";
 
 export function OfflineBanner(): React.ReactNode {
   const styles = useThemedStyles(makeStyles);
@@ -17,15 +18,17 @@ export function OfflineBanner(): React.ReactNode {
   if (online) return null;
 
   return (
-    <View style={styles.banner} accessibilityRole="alert">
-      <Text style={styles.title}>اتصال شبکه در دسترس نیست</Text>
-      <Text style={styles.body}>
-        درخواست ناموفق بوده است. اتصال را بررسی کنید و دوباره تلاش کنید.
-      </Text>
-      <Pressable accessibilityRole="button" onPress={() => void healthz()} style={styles.retry}>
-        <Text style={styles.retryText}>تلاش مجدد</Text>
-      </Pressable>
-    </View>
+    <SlideIn direction="down">
+      <View style={styles.banner} accessibilityRole="alert">
+        <Text style={styles.title}>اتصال شبکه در دسترس نیست</Text>
+        <Text style={styles.body}>
+          درخواست ناموفق بوده است. اتصال را بررسی کنید و دوباره تلاش کنید.
+        </Text>
+        <Pressable accessibilityRole="button" onPress={() => void healthz()} style={styles.retry}>
+          <Text style={styles.retryText}>تلاش مجدد</Text>
+        </Pressable>
+      </View>
+    </SlideIn>
   );
 }
 

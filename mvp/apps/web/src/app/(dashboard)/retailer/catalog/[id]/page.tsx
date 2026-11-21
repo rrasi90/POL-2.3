@@ -20,6 +20,7 @@ import {
 import { getApi } from "@/lib/auth/api";
 import { useBasketStore } from "@/lib/basket";
 import { formatToman } from "../../shared";
+import { formatPackagingUnit, formatFreshnessStatus } from "@/lib/format-labels";
 
 interface ProductDetail {
   id: string;
@@ -204,7 +205,7 @@ export default function RetailerProductPage() {
               </span>
             ) : null}
             <span className="font-mono text-[11px] text-[var(--pol-light-text-muted)]" dir="ltr">
-              SKU: {product.master_sku ?? "—"}
+              کد کالا: {product.master_sku ?? "—"}
             </span>
           </div>
         </div>
@@ -226,7 +227,7 @@ export default function RetailerProductPage() {
               واحد پایه
             </dt>
             <dd className="mt-1 text-[14px] font-bold text-[var(--pol-light-text-primary)]">
-              {product.base_unit ?? "—"}
+              {product.base_unit ? formatPackagingUnit(product.base_unit) : "—"}
             </dd>
           </div>
           <div className="rounded-[8px] bg-[var(--pol-light-surface-subtle)] p-3 border border-[var(--pol-light-border-subtle)]">
@@ -235,7 +236,7 @@ export default function RetailerProductPage() {
             </dt>
             <dd className="mt-1 text-[14px] font-bold text-[var(--pol-light-text-primary)]">
               {product.default_pack_quantity
-                ? `${product.default_pack_quantity.toLocaleString("fa-IR")} ${product.default_pack_unit ?? ""}`
+                ? `${product.default_pack_quantity.toLocaleString("fa-IR")} ${product.default_pack_unit ? formatPackagingUnit(product.default_pack_unit) : ""}`
                 : "—"}
             </dd>
           </div>
@@ -389,11 +390,11 @@ export default function RetailerProductPage() {
                   </TableCell>
                   <TableCell className="text-[var(--pol-light-text-secondary)]">
                     {o.pack_quantity != null
-                      ? `${o.pack_quantity.toLocaleString("fa-IR")} ${o.packaging_unit ?? ""}`
+                      ? `${o.pack_quantity.toLocaleString("fa-IR")} ${o.packaging_unit ? formatPackagingUnit(o.packaging_unit) : ""}`
                       : "—"}
                   </TableCell>
                   <TableCell className="text-[var(--pol-light-text-secondary)]">
-                    {o.freshness_status ?? "عادی"}
+                    {formatFreshnessStatus(o.freshness_status)}
                   </TableCell>
                 </TableRow>
               ))}

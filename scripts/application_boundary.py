@@ -584,7 +584,7 @@ class POLApplicationBoundary:
         )
         order = self.cur.fetchone()
         if not order:
-            raise ValueError("Order not found.")
+            raise KeyError("Order not found.")
         order = dict(order)
         if actor_role == "RETAILER":
             self.cur.execute(
@@ -648,7 +648,7 @@ class POLApplicationBoundary:
         )
         group = self.cur.fetchone()
         if not group:
-            raise ValueError("Order group not found.")
+            raise KeyError("Order group not found.")
         group = dict(group)
         if actor_role == "RETAILER":
             self.cur.execute(
@@ -966,7 +966,7 @@ class POLApplicationBoundary:
             exception_id=exception_id,
         )
         if not result:
-            raise ValueError("Delivery exception not found.")
+            raise KeyError("Delivery exception not found.")
         return result
 
     def feedback_list(self):
@@ -1001,6 +1001,12 @@ class POLApplicationBoundary:
 
     def support_get(self, *, case_id):
         return CanonicalSupportService.get_case(self.cur, self.context.user_id, case_id)
+
+    def support_messages_list(self, *, case_id):
+        return CanonicalSupportService.list_messages(
+            self.cur, self.context.user_id, case_id,
+            organization_id=self.context.organization_id,
+        )
 
     def support_message(self, *, case_id, message_text, internal=False):
         return CanonicalSupportService.add_message(

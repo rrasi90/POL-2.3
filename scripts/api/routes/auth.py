@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from scripts.api.db import get_db_cursor
 from scripts.api.dependencies import get_bearer_token, get_current_auth
 from scripts.api.errors import success_payload
-from scripts.auth_boundary import InvalidRefreshTokenError
+from scripts.auth_boundary import InvalidOTPError, InvalidRefreshTokenError, OTPLockoutError
 from scripts.api.schemas import (
     RefreshTokenRequest,
     RequestOTPRequest,
@@ -55,11 +55,17 @@ def request_otp(payload: RequestOTPRequest, request: Request, cur=Depends(get_db
 
 @router.post("/verify-otp")
 def verify_otp(payload: VerifyOTPRequest, response: Response, cur=Depends(get_db_cursor)):
-    result = AuthApplicationService.verify_otp(
-        cur,
-        payload.mobile_number,
-        payload.otp_code,
-    )
+    try:
+        result = AuthApplicationService.verify_otp(
+            cur,
+            payload.mobile_number,
+            payload.otp_code,
+        )
+    except (InvalidOTPError, OTPLockoutError):
+        # Failed-attempt accounting must survive the request-level rollback that
+        # the error handler triggers; otherwise brute-force lockout never engages.
+        cur.connection.commit()
+        raise
     refresh_token = result.get("refresh_token")
     if refresh_token and payload.client_platform == "web":
         _set_refresh_cookie(response, refresh_token)

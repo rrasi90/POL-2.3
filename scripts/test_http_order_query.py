@@ -250,7 +250,8 @@ class TestOrderGet:
     def test_get_order_not_found(self, client):
         data = _seed_order(uuid4().hex[:8])
         resp = client.get(f"/api/v1/orders/{uuid4()}", headers={"Authorization": f"Bearer {data['r_token']}"})
-        assert resp.status_code == 422
+        assert resp.status_code == 404
+        assert resp.json()["error"]["code"] == "NOT_FOUND"
 
     def test_get_order_requires_auth(self, client):
         resp = client.get(f"/api/v1/orders/{uuid4()}")
@@ -315,4 +316,5 @@ class TestOrderGroup:
     def test_order_group_not_found(self, client):
         data = _seed_order(uuid4().hex[:8])
         resp = client.get(f"/api/v1/orders/group/{uuid4()}", headers={"Authorization": f"Bearer {data['r_token']}"})
-        assert resp.status_code == 422
+        assert resp.status_code == 404
+        assert resp.json()["error"]["code"] == "NOT_FOUND"

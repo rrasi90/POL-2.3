@@ -308,6 +308,137 @@ class TestAddMessage:
         assert resp.json()["data"]["sender_type"] == "USER"
 
 
+class TestListSupportMessages:
+    def test_list_messages_excludes_internal_notes_and_returns_public_thread(self, client):
+        data = _seed_support(uuid4().hex[:8], include_ops=True)
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "History test"},
+        )
+        assert create_resp.status_code == 201
+        case_id = create_resp.json()["data"]["id"]
+
+        first = client.post(
+            f"/api/v1/support/cases/{case_id}/messages",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"message_text": "پیام خرده‌فروش"},
+        )
+        assert first.status_code == 201
+
+        reply = client.post(
+            f"/api/v1/support/cases/{case_id}/messages",
+            headers={"Authorization": f"Bearer {data['o_token']}"},
+            json={"message_text": "پاسخ پشتیبانی"},
+        )
+        assert reply.status_code == 201
+
+        conn = _db()
+        try:
+            with conn.cursor() as cur:
+                # Stabilize chronology for the endpoint ordering assertion.
+                cur.execute(
+                    """
+                    UPDATE support_case_messages
+                    SET created_at = now() - interval '2 seconds'
+                    WHERE support_case_id = %s AND message_text = %s
+                    """,
+                    (case_id, "پیام خرده‌فروش"),
+                )
+                cur.execute(
+                    """
+                    UPDATE support_case_messages
+                    SET created_at = now() - interval '1 seconds'
+                    WHERE support_case_id = %s AND message_text = %s
+                    """,
+                    (case_id, "پاسخ پشتیبانی"),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO support_case_messages
+                        (id, support_case_id, sender_user_id, sender_type, message_text, is_internal)
+                    VALUES (%s, %s, %s, 'AGENT', %s, TRUE)
+                    """,
+                    (str(uuid4()), case_id, data["ou"], "یادداشت داخلی تیم پشتیبانی"),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+
+        resp = client.get(
+            f"/api/v1/support/cases/{case_id}/messages",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["success"] is True
+        messages = body["data"]
+        assert [m["message_text"] for m in messages] == ["پیام خرده‌فروش", "پاسخ پشتیبانی"]
+        assert "یادداشت داخلی تیم پشتیبانی" not in [m["message_text"] for m in messages]
+        timestamps = [m["created_at"] for m in messages]
+        assert timestamps == sorted(timestamps)
+
+    def test_list_messages_rejects_another_tenant(self, client):
+        owner = _seed_support(uuid4().hex[:8])
+        other = _seed_support(uuid4().hex[:8])
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {owner['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Private history"},
+        )
+        case_id = create_resp.json()["data"]["id"]
+        resp = client.get(
+            f"/api/v1/support/cases/{case_id}/messages",
+            headers={"Authorization": f"Bearer {other['r_token']}"},
+        )
+        assert resp.status_code == 403
+        assert resp.json()["success"] is False
+
+
+    def test_list_messages_rejects_same_user_in_wrong_active_organization(self, client):
+        owner = _seed_support(uuid4().hex[:8])
+        create_resp = client.post(
+            "/api/v1/support/cases",
+            headers={"Authorization": f"Bearer {owner['r_token']}"},
+            json={"case_type": "GENERAL", "subject": "Tenant-bound history"},
+        )
+        assert create_resp.status_code == 201
+        case_id = create_resp.json()["data"]["id"]
+
+        other_org = str(uuid4())
+        other_session = None
+        conn = _db()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "INSERT INTO organizations (id, name, org_type, status) VALUES (%s, 'Other active org', 'RETAILER', 'ACTIVE')",
+                    (other_org,),
+                )
+                cur.execute(
+                    "INSERT INTO organization_memberships (id, organization_id, user_id, role, status, is_primary) VALUES (%s, %s, %s, 'RETAILER_OWNER', 'ACTIVE', FALSE)",
+                    (str(uuid4()), other_org, owner["ru"]),
+                )
+                other_session = _create_session(cur, owner["ru"], other_org)
+            conn.commit()
+            other_token = encode_access_token(
+                owner["ru"], other_session, other_org, "RETAILER_OWNER"
+            )
+            resp = client.get(
+                f"/api/v1/support/cases/{case_id}/messages",
+                headers={"Authorization": f"Bearer {other_token}"},
+            )
+            assert resp.status_code == 403
+            assert resp.json()["success"] is False
+        finally:
+            with conn.cursor() as cur:
+                if other_session:
+                    cur.execute("DELETE FROM user_sessions WHERE id = %s", (other_session,))
+                cur.execute("DELETE FROM organization_memberships WHERE organization_id = %s", (other_org,))
+                cur.execute("DELETE FROM organizations WHERE id = %s", (other_org,))
+            conn.commit()
+            conn.close()
+
+
 class TestSupportAssignment:
     def test_assign_case_uses_canonical_route(self, client):
         data = _seed_support(uuid4().hex[:8], include_ops=True)

@@ -400,7 +400,7 @@ export default function OpsSupportPage() {
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusChip tone={supportStatusTone[c.status ?? ""] ?? "neutral"}>
-                        {supportStatusLabel[c.status ?? ""] ?? c.status ?? "—"}
+                        {supportStatusLabel[c.status ?? ""] ?? "وضعیت نامشخص"}
                       </StatusChip>
                       <StatusChip tone={supportPriorityTone[c.priority ?? ""] ?? "neutral"}>
                         {supportPriorityLabel[c.priority ?? ""] ?? c.priority ?? "—"}
@@ -456,7 +456,7 @@ export default function OpsSupportPage() {
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--pol-light-border-subtle)] pb-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusChip tone={supportStatusTone[detail.status ?? ""] ?? "neutral"}>
-                    {supportStatusLabel[detail.status ?? ""] ?? detail.status ?? "—"}
+                    {supportStatusLabel[detail.status ?? ""] ?? "وضعیت نامشخص"}
                   </StatusChip>
                   <StatusChip tone={supportPriorityTone[detail.priority ?? ""] ?? "neutral"}>
                     {supportPriorityLabel[detail.priority ?? ""] ?? detail.priority ?? "—"}
@@ -501,7 +501,7 @@ export default function OpsSupportPage() {
                       <option value="">انتخاب وضعیت جدید...</option>
                       {allowedTransitions.map((t) => (
                         <option key={t} value={t}>
-                          {supportStatusLabel[t] ?? t}
+                          {supportStatusLabel[t] ?? "وضعیت نامشخص"}
                         </option>
                       ))}
                     </select>

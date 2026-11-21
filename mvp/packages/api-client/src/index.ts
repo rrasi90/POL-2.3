@@ -6,17 +6,30 @@ export interface ApiClientOptions {
   onUnauthorized?: () => void;
   /** SH-AUTH-03: invoked once on 401; return true to retry with the refreshed token. */
   onRefresh?: () => Promise<boolean>;
+  /** Fetch credentials mode. Defaults to include so httpOnly refresh cookies are sent. */
+  credentials?: RequestCredentials;
+}
+
+let lastCorrelationId: string | null = null;
+
+/** Correlation id of the most recent response, for error surfaces. */
+export function getLastCorrelationId(): string | null {
+  return lastCorrelationId;
 }
 
 export class ApiError extends Error {
+  public readonly correlationId: string | null;
+
   constructor(
     public readonly code: string,
     message: string,
     public readonly details: Record<string, unknown>,
     public readonly status: number,
+    correlationId: string | null = lastCorrelationId,
   ) {
     super(message);
     this.name = "ApiError";
+    this.correlationId = correlationId;
   }
 }
 
@@ -35,6 +48,7 @@ export function createApiClient(opts: ApiClientOptions) {
     if (token) headers.set("Authorization", `Bearer ${token}`);
 
     const res = await fetch(`${opts.baseUrl}${path}`, {
+      credentials: opts.credentials ?? "include",
       ...init,
       method,
       headers,
@@ -46,21 +60,33 @@ export function createApiClient(opts: ApiClientOptions) {
       if (refreshed) return request<T>(method, path, body, init, true);
     }
 
+    const correlationId = res.headers.get("X-Correlation-ID");
+    lastCorrelationId = correlationId;
+
     let payload: ApiResponse<T>;
     try {
       payload = (await res.json()) as ApiResponse<T>;
     } catch {
-      throw new ApiError("PARSE_ERROR", "Invalid JSON response", {}, res.status);
+      throw new ApiError("PARSE_ERROR", "Invalid JSON response", {}, res.status, correlationId);
     }
 
     if (payload.success === false) {
       const err = payload.error;
       if (res.status === 401) opts.onUnauthorized?.();
-      throw new ApiError(err.code, err.message, err.details, res.status);
+      throw new ApiError(err.code, err.message, err.details, res.status, correlationId);
+    }
+    if (payload.success !== true) {
+      throw new ApiError(
+        "PARSE_ERROR",
+        "Response envelope is missing the success flag",
+        {},
+        res.status,
+        correlationId,
+      );
     }
     if (res.status === 401) {
       opts.onUnauthorized?.();
-      throw new ApiError("UNAUTHORIZED", "Unauthorized", {}, res.status);
+      throw new ApiError("UNAUTHORIZED", "Unauthorized", {}, res.status, correlationId);
     }
     return payload.data;
   }

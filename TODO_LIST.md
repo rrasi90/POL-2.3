@@ -1,13 +1,12 @@
 # TODO LIST — POL-2.3
 
-**آخرین بازبینی زندهٔ GitHub:** 2026-10-22 (اجرای محلی + read-back)  
-**مبنای `main`:** `a7c99a9926c52021baf29887f274ddbf5f23c5a9` (PR #43 merge، 2026-10-22)
+**آخرین بازبینی زندهٔ GitHub:** 2026-11-19 (اجرای محلی + read-back)  
+**مبنای `main`:** `fbcdd7448d809a3281cc1ea8c43218d42e8762ca` (PR #46 merge، 2026-11-16)
 **مخزن هدف:** `rrasi90/POL-2.3`  
-**شاخهٔ ویرایش این فهرست:** `agent/todo-061-source-baseline-20261022` — [PR #41](https://github.com/rrasi90/POL-2.3/pull/41)، Draft و ادغام‌نشده  
-**شاخهٔ تغییرات Motion/CI:** `agent/mobile-motion-port-20261022` — [PR #40](https://github.com/rrasi90/POL-2.3/pull/40)، Draft و ادغام‌نشده  
-**SHA آخرین CI کامل PR #40:** `1c793b5363efda1fd6db0c32bf098472a6e9a6f9`  
-**وضعیت شواهد روی همان SHA:** Static PASS؛ Browser E2E `17/17`؛ Mobile functional `28/28` و regression `38/38`؛ backend/schema `663/663`. این نتیجه فقط به همان SHA مربوط است و به معنی merge، تست دستگاه، live SMS، domain/TLS یا آمادگی release نیست.  
-**وضعیت QA APK:** گیت `TODO-084` پس از ادغام PR #43 در `main`=`a7c99a99` روی لجر واقعی `BLOCKED — 80 of 88` گزارش می‌کند (TODO-061…068 اکنون تأییدشده‌اند)؛ jobهای ساخت APK عمداً Skip می‌شوند. هیچ APK جدیدی ساخته یا ادعا نشده است.
+**شاخهٔ کاندید ادغام:** `integration/pol-2.3-mainline-consolidation-2026-11` — [PR #53](https://github.com/rrasi90/POL-2.3/pull/53)، Draft؛ آخرین SHA تأییدشدهٔ محلی `4994f9d0f656e27d41d84c426cf162b8aa1944c2`  
+**وضعیت شواهد روی SHA محلی `4994f9d0` (PostgreSQL 18.4 ایزوله):** backend `849/849` PASS؛ Static Gate PASS (compileall + route hygiene + admin-route uniqueness + UI guards 15/15)؛ Browser E2E `41/41` PASS؛ Mobile typecheck PASS و functional `28/28` و regression `23/23` و mock PASS؛ pre-APK QA در حالت CI PASS؛ TODO-084 طبق طراحی fail-closed روی `BLOCKED` است. این شواهد فقط محلی‌اند و جایگزین CI-on-SHA، دستگاه، staging یا live-provider نمی‌شوند.  
+**مانع CI (externally blocked):** همهٔ workflowهای GitHub Actions از 2026-11-18 با خطای پرداخت حساب fail می‌شوند («recent account payments have failed or your spending limit needs to be increased») — runs 44280222841/44280222836/44280222830/44280222842 روی PR #53 و 44285920916 روی `main`. مخزن private است و self-hosted runner وجود ندارد؛ هیچ تغییر workflow این را رفع نمی‌کند. تا رفع صورتحساب/سقف خرج یا افزودن runner، ادغام PR #53 به `main` ممنوع می‌ماند.  
+**وضعیت QA APK:** گیت `TODO-084` طبق طراحی fail-closed می‌ماند (`BLOCKED`) و jobهای ساخت APK عمداً Skip می‌شوند. هیچ APK جدیدی ساخته یا ادعا نشده است.
 
 ## قواعد استفاده از این فهرست
 
@@ -1170,3 +1169,92 @@
 - **Consequence:** PR #46 must not be merged without green checks (standing rule). Its local verification is complete and recorded in the PR description; merge stays blocked until the owner fixes GitHub Actions billing / spending limit.
 - **Owner actions:** (1) restore GitHub Actions billing or raise the spending limit; (2) rotate/revoke the GitHub PAT that was previously stored in this clone's `origin` URL (removed locally, still needs revocation on GitHub).
 
+
+### [2026-11-19 02:35 +03:30] Agent: ZCode (ZCode CLI, GLM) — CONSOLIDATION VERIFICATION, DEFECT FIXES, PR DISPOSITIONS, CI BILLING BLOCKER RECURRENT
+
+- State: DONE_VERIFIED (branch-side work) | MERGE BLOCKED EXTERNAL (CI billing)
+- Incoming handoff: PR #53 integration branch head `09ef82ce` (170 commits, 0 behind main `fbcdd744`); `analysis/integration/EXECUTION_STATUS.md` listed open gates #29/#47/#49–#52; prior journal entry (2026-10-22, opencode) recorded the first CI billing failure on PR #46.
+- Repository / branch / worktree: `rrasi90/POL-2.3`, branch `integration/pol-2.3-mainline-consolidation-2026-11`, isolated worktree `C:\Star\pol\pol-int`.
+- Start SHA -> End SHA: `09ef82ce` -> `4994f9d0f656e27d41d84c426cf162b8aa1944c2` (plus docs commit after this entry).
+- Files and symbols changed:
+  - `scripts/db_safety.py` — `resolve_target()`: explicit-empty host/dbname no longer falls through `or`-chains to env defaults (closed a fail-open bypass of the loopback guard).
+  - `scripts/test_http_order_query.py` — `test_get_order_not_found`, `test_order_group_not_found`: 422 -> 404 + `NOT_FOUND` envelope (aligns with `f51bb426`/`27a62f7e` mapping and `test_http_negative_rbac_matrix.py`).
+  - `scripts/test_operational_policies.py` — `test_stale_plan_version_rejected`: `AllocationIntegrityError` -> `ConflictError`/`STALE_BASKET_VERSION` (aligns with `49cf508e`, G-326 409).
+  - `mvp/apps/web/tests/delivery-flow.spec.ts` — vendor arrival assertion localized (`ARRIVED` -> `رسیده به مقصد`) per `f864c01b`.
+  - Salvage commit `4994f9d0`: `scripts/test_owasp_api_top10.py` (TODO-131), `scripts/test_resource_limits.py` (TODO-132, doc-sync test dropped — doc archived to `analysis/integration/historical-evidence/2026-10-23/`), `scripts/test_web_build_verification.py` (TODO-078) — all ported from verified PR #47 branch with provenance headers; `deploy/VPS_DEPLOYMENT.md`, `deploy/VPS_DEPLOYMENT_AGENT.md`, `deploy/VPS_RUNTIME_VERIFICATION_2026-09-28.md` salvaged from closed PRs #18/#22 as dated TODO-029 evidence.
+  - `analysis/integration/EXECUTION_STATUS.md` — rewritten with 2026-11-19 verification evidence, port-verification table, salvage record, PR dispositions, CI billing blocker.
+- Work completed in this session:
+  1. Live-state validation: `main`=`fbcdd744`, integration=`09ef82ce` (unchanged from audit snapshot); clean tree; D-018 four-digit OTP confirmed canonical in `DECISION_REGISTER.md`.
+  2. **Root-caused the GitHub Actions failure**: every run since 2026-11-18 dies before job start with the account billing annotation (runs 44280222841/44280222836/44280222830/44280222842 on PR #53, 44285920916 on main). Repo is private with 0 self-hosted runners → no repo-side fix exists; recorded as external blocker.
+  3. Local verification on PostgreSQL 18.4 (isolated `pol_test`, canonical CI env): migration chain 001→076 (76 migrations, 107 tables), environment verifier PASS, **full backend suite 849/849 PASS** (after fixes+salvage; first run was 800/804 with 4 defects), static gate 4/4 PASS (compileall, route hygiene, admin-route uniqueness, UI guards 15/15), web typecheck PASS, web `next build` PASS (salvaged TODO-078 guard), **browser E2E 41/41 PASS** (includes full cross-persona delivery flow with outbox OTP), mobile typecheck PASS, mobile functional 28/28, regression 23/23, mock QA PASS, pre-APK QA PASS in CI mode (`POL_RELEASE=0`), TODO-084 gate fail-closed BLOCKED as designed.
+  4. Found and fixed 4 real defects that CI could not catch (billing): db_safety fail-open empty-host bypass (1 code bug), 2 stale 422 order/order-group assertions, 1 stale stale-plan exception assertion, 1 stale raw-enum E2E assertion. Commits `1d50fe80`, `a96d66cd`.
+  5. Port verification completed against source branches: #44 byte-identical; #45 scripts present (Expo 57.0.31 retained deliberately); #42 content present; #40/#29 motion complete (21 files + QA suites green); #51/#52 wave-1 present and `fix/web-refresh-session-preserve-20261030` tip `b4a48801` is byte-identical in the branch; `agent/pol-2.4-execution` script present; screenshot bulk deliberately excluded (stale, pre-i18n UI).
+  6. Salvage of 3 behavioral test suites + 3 VPS deployment docs (commit `4994f9d0`). Deliberate non-ports documented (doc-sync modules; screen parity deferred to TODO-080 with enumerated failing rows: `/admin`, `/dev/components` undocumented; 12 VERIFIED screens without browser tests).
+  7. PR dispositions recorded in `analysis/integration/EXECUTION_STATUS.md`: #49/#50 CLOSE_AS_SUPERSEDED (six-digit OTP contradicts locked D-018; migration 077 rejected; their E2E helpers hardcode `OTP="123456"`), #51/#52/#47/#40/#29/#45/#44/#42 CLOSE_AS_SUPERSEDED after verified porting, `vercel-qa` HOLD for TODO-025 owner, remaining closed PRs unchanged.
+- Work inherited from previous agent and verified: integration branch ports (see `analysis/integration/PR_INTEGRATION_AUDIT.md` + EXECUTION_STATUS); TODO-084 fail-closed gate retained from merged #43; Expo 57.0.31/React 19.2.3 retained from merged #46; TODO-061…068/018/019 evidence re-read from journal and not duplicated.
+- Commands/tests/environment: Windows x64, Git Bash, Python 3.11.15 (venv), Node v24.18.0, npm ci clean (web + mobile workspace), PostgreSQL 18.4 local `127.0.0.1:5432` trust-auth, isolated `pol_test` DB (never production), canonical non-production JWT secret, `ENVIRONMENT=test`. Full commands per lane are in `analysis/integration/EXECUTION_STATUS.md`.
+- Results: backend 849/849 exit 0 (343.8s) → artifact `artifacts/pol-test-results.json` at `4994f9d0`; E2E 41/41 exit 0 (40.5s); static gate PASS; mobile suites PASS; TODO-084 BLOCKED (expected). CI: **ALL GitHub Actions runs blocked by account billing** — zero workflow steps executed repo-wide since 2026-11-18.
+- Not done / known risks: CI-on-SHA gate for merge is UNSATISFIED (billing); no APK built or claimed (TODO-084 BLOCKED by design; known `next@15.5.25`/`shell-quote` advisories still gate TODO-084); screen parity (TODO-080) and doc-sync restoration deferred with enumerated reasons; `vercel-qa` parked; TODO-011 notification-retention still needs `DATABASE_URL`/`POL_PG_DSN` secrets once billing is fixed; D-018 rotation, D-037…D-039, live SMS.ir, object storage, DNS/TLS remain external/open decisions.
+- Blocker and responsible owner: **GitHub Actions billing / spending limit (account owner)** — or attach a self-hosted runner. Until then no merge to `main` from PR #53 (repo rule: merge requires green CI on the exact pre-merge SHA).
+- Next TODO-ID / next agent: (1) owner fixes billing → re-run the 4 workflows on the merge-candidate SHA of PR #53; (2) then close #49/#50/#51/#52/#47/#40/#29/#45/#44/#42 with the disposition comments; (3) then merge PR #53 recording run IDs; (4) then TODO-025 owner reworks parked Vercel-QA work; (5) TODO-080 parity restoration.
+- Working tree: after docs commit, clean except regenerated `artifacts/pol-test-results.json` (tracked artifact refreshed by the suite run, as documented by the prior agent).
+- Handoff accepted by: PENDING
+
+### [2026-11-19 01:50 +03:30] Agent: ZCode (ZCode CLI, GLM) — CONTINUATION: EXACT-SHA RE-VERIFICATION, INVENTORY DELIVERABLES, ARTIFACT-TRACKING CORRECTION, CI STEP-LEVEL EVIDENCE
+
+- State: DONE_VERIFIED (branch-side) | MERGE BLOCKED EXTERNAL (CI billing, step-level evidence captured)
+- Incoming handoff: Previous entry 2026-11-19 02:35 (consolidation verification + dispositions). Owner continuation prompt requested: artifact-tracking discrepancy resolution, exact-SHA re-verification on `bfb28cef`, machine-readable inventories, CI job-step diagnosis, release-readiness decisions.
+- Repository / branch / worktree: `rrasi90/POL-2.3`, branch `integration/pol-2.3-mainline-consolidation-2026-11`, isolated worktree `C:\Star\pol\pol-int`; sibling clone `C:\Star\pol\POL-2.3` checked (stale `agent/pol-2.3-integration-fdx` @ `70e001f4`, clean — no concurrent editing).
+- Start SHA -> End SHA: `bfb28cefdb2bb13319d8508c8481911cb373fced` -> `bfb28cef` + docs/artifact commits after this entry.
+- Files and symbols changed (this session):
+  - NEW `analysis/integration/BRANCH_INVENTORY.md` + `.csv` — all 58 remote branches: head SHA, dates, merge-bases, ahead/behind vs main AND integration, disposition (ALREADY_INTEGRATED 31 / SUPERSEDED 18 / ARCHIVE_ONLY 3 / BLOCKED_POLICY 2 / HOLD 1 / SALVAGE_COMPLETED 1 / MERGE_CANDIDATE 1 / BASE 1), zero NEEDS_REVIEW.
+  - NEW `analysis/integration/PR_INVENTORY.md` + `.csv` — all 49 PRs live-verified (ALREADY_MERGED 29 / CLOSE_AS_SUPERSEDED 18 / MERGE_CANDIDATE 1 / SALVAGE 1).
+  - NEW `analysis/integration/TEST_EVIDENCE_INDEX.md` — evidence-class table, LOCAL L1–L16 command matrix on exact `bfb28cef`, SHA-scoped historical leads, CI step-level blocker record, artifact provenance, explicit "what is NOT evidenced" list.
+  - NEW `analysis/integration/RELEASE_READINESS.md` — four separate decisions (MERGE BLOCKED / QA APK BLOCKED / STAGING BLOCKED / RELEASE NOT READY) with per-decision evidence and unblocking paths.
+  - `analysis/integration/IMPLEMENTATION_SELECTION_MATRIX.md` — every row now carries a resolved 2026-11-19 status.
+  - `analysis/integration/PR_INTEGRATION_AUDIT.md` — 2026-11-19 update section appended (supersedes the "no test execution" limitation of 2026-11-17 without deleting history).
+  - `artifacts/pol-test-results.json` — regenerated by the L3 suite run; metadata now records `commit=bfb28cef`.
+- Work completed in this session:
+  1. **Artifact discrepancy resolved (Section 5 of owner prompt):** `artifacts/pol-test-results.json` is TRACKED (in `git ls-files`; first tracked `9d3345b5`, refreshed `32690b8`; tracked files override `.gitignore:30`). Therefore `bfb28cef` legitimately modified it, and the prior commit message's "gitignored/local-only" wording was **factually wrong — corrected here** (append-only; no history rewrite). Content audited: no credentials/PII/IPs (all sensitive-word matches are test node IDs); metadata schema `{metadata, summary, tests}`.
+  2. **Artifact provenance imprecision identified:** the 4994f9d0-era artifact recorded `commit=a96d66cd, is_dirty=true` (salvage uncommitted at run time). Superseded by a clean-tree re-run: suite run on tree identical to `bfb28cef` (dirty flags = regenerated artifact + docs-only inventory files, zero source delta); new artifact metadata records `commit=bfb28cef`, summary 849/849 PASSED exit 0, 388.0s.
+  3. **Full exact-SHA re-verification on `bfb28cef` (owner prompt §13.7):** backend 849/849 PASS; static gate 4/4 PASS (compileall, route hygiene, admin-route uniqueness, UI guards 15/15); web typecheck 0 errors + `next build` PASS + browser E2E **41/41 PASS** (46.3s, incl. cross-persona delivery/POD with outbox OTP); mobile typecheck + functional 28/28 + regression 23/23 + mock PASS + pre-APK QA PASS (`POL_RELEASE=0`); TODO-084 fail-closed BLOCKED. PostgreSQL 18.4 local (CI reference remains 18.6 — not conflated).
+  4. **CI diagnosis hardened with step-level evidence:** GitHub API `actions/runs/{id}/jobs` for all four runs on `bfb28cef` (44396293442/9373/9335/9121) shows every job `runner_id=0`, `runner_name=""`, `steps=0` — no runner allocated, no step executed; plus the account-billing annotation text. Corroborating: repo private, `/actions/runners` total_count=0, branch-protection API 403 (paid feature). Root cause remains account billing/spending limit; owner action required; no workflow weakening performed.
+  5. **Inventories persisted** as durable deliverables (machine-readable + human tables) with per-row evidence.
+  6. Branch protection on `main`: verified UNAVAILABLE (403 paid feature) — recorded; merge gate cannot rely on required checks until the plan/billing situation changes; RELEASE_READINESS.md documents the owner-authorized equivalent requirement.
+- Work inherited from previous agent and verified/rejected: previous session's verification claims re-executed on the new exact head instead of being copied (owner requirement); the "gitignored artifact" claim from the previous commit message REJECTED and corrected; all salvage/port claims from the prior session spot-re-verified via the inventory generation (ahead/behind + content comparisons) with no contradiction found.
+- Commands/tests/environment: same environment as prior entry (Windows x64, Python 3.11.15, Node v24.18.0, PG 18.4 isolated `pol_test`, non-production JWT secret, `ENVIRONMENT=test`); plus `gh api repos/rrasi90/POL-2.3/actions/runs/{id}/jobs` for step-level CI evidence; `git ls-files`/`git log --follow` for artifact tracking provenance.
+- Results: LOCAL evidence matrix complete on `bfb28cef` — see `TEST_EVIDENCE_INDEX.md` L1–L16 (all PASS). CI evidence: pre-start blocker only (no steps). No APK built/claimed; no staging/live-provider work executed.
+- Not done / known risks: CI-on-SHA gate unsatisfied (billing); device QA closed behind TODO-084; `next@15.5.25`/`shell-quote` advisories still gate TODO-084; staging/live-provider/decision gates unchanged; TODO-025 vercel-qa rework parked for owner; screen parity (TODO-080) restoration still open with enumerated gaps.
+- Blocker and owner: **GitHub Actions billing / spending limit** (account owner) or attach a secured self-hosted runner; secondarily branch-protection enablement is a plan/billing decision (403 today).
+- Next TODO-ID / next agent: (1) owner restores billing → agent re-runs the 4 workflows on PR #53 exact head and verifies steps+artifacts; (2) then review/approval and merge of #53; (3) then TODO-011 secrets, TODO-025 rework, TODO-029 staging revalidation, TODO-084 ledger path (advisory remediation first), device QA chain.
+- Working tree: source tree identical to `bfb28cef`; changes staged in the commit accompanying this entry = 4 new inventory files, 3 refreshed audit/status docs, this journal entry, regenerated tracked artifact.
+- Handoff accepted by: PENDING
+
+
+### [2026-11-19 19:12 +03:30] Agent: GitHub documentation reconciliation — checkpoint sync and exact-SHA alignment
+
+- State: DOCUMENTATION_RECONCILED_VERIFIED | PR #53 remains OPEN/DRAFT/UNMERGED | CI BLOCKED_EXTERNAL.
+- Baseline inspected: main `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`; Integration/PR #53 `b8c80bcec8d76d23a37321ffff7f1a68f0663c49`; locally tested source SHA `bfb28cefdb2bb13319d8508c8481911cb373fced`.
+- Exact compare: `bfb28cef` → `b8c80bce` = 1 commit ahead, 0 behind, 10 changed paths (nine docs/inventory/control files + tracked test artifact), no application/runtime source changes. The L1–L16 local results remain source-code evidence for this docs-only descendant; they are not represented as a rerun on b8.
+- Checkpoint branch verified: `fix/web-refresh-session-preserve-20261030` points to `d5ab26bb5d3ca40e7553f0143ac33014df7496c9`; `b4a48801` auth/session fix is byte-identical in Integration. The d5 commit adds six dated REA run-evidence files absent from Integration; mobile `ios`/ `android` script values match Integration. Branch classified ARCHIVE_ONLY; retained, not merged or deleted.
+- Updated: `BRANCH_INVENTORY.csv/.md` (58 refs; refreshed integration-relative counts and checkpoint row), `IMPLEMENTATION_SELECTION_MATRIX.md`, `TEST_EVIDENCE_INDEX.md`, `RELEASE_READINESS.md`, `EXECUTION_STATUS.md`, `PR_INTEGRATION_AUDIT.md`, and this append-only journal.
+- Current inventory disposition counts: 31 ALREADY_INTEGRATED / 17 SUPERSEDED / 4 ARCHIVE_ONLY / 2 BLOCKED_POLICY / 1 HOLD / 1 SALVAGE_COMPLETED / 1 MERGE_CANDIDATE / 1 BASE = 58.
+- CI remains blocked before job start by account billing/spending limit; the owner must restore billing or provide a properly secured self-hosted runner. Last recorded main protection state was unprotected / required checks disabled; connected API returned 403, so admin action remains.
+- No code, schema, migration, workflow, branch deletion, force-push or merge performed. No APK, staging or release certification claimed.
+- Next action: owner resolves Actions billing/runner and branch-protection access; then rerun all four workflows on the exact current PR #53 head, review, and only then consider merge.
+- Working tree: remote documentation changes committed directly to the Integration branch; each file change is docs/inventory/evidence-only.
+- Handoff accepted by: repository owner pending.
+
+
+### [2026-11-19 19:20 +03:30] Agent: GitHub CI and branch-protection verification — latest PR-head attempt
+
+- State: PRE-RUNNER CI BLOCKER VERIFIED | BRANCH PROTECTION OWNER ACTION REQUIRED | PR #53 NOT MERGED.
+- PR #53 / Integration head at inspection: `e772950d8da1b47561d8554cbbeb5fcf0adbd7db`; main: `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`.
+- Exact compare: Integration snapshot `e772950d` = 183 commits ahead / 0 behind main; checkpoint branch `d5ab26bb` = 7 behind / 262 ahead of main and 190 behind / 262 ahead of Integration.
+- Latest CI runs on `e772950d`: Independent Verification 44558971678; Mobile 44558971582; Static 44558971752; Browser E2E 44558971716. Raw jobs endpoint shows `runner_id=0`, empty runner name and `steps=[]` for all non-skipped jobs; Android matrix job skipped; jobs completed in 1–2 seconds. No test steps ran. The earlier billing annotation remains the best direct root-cause text.
+- Live branch resource for `main`: `protected=false`, `protection.enabled=false`, required-status-check enforcement `off`. Branch-protection API write/read endpoint unavailable through connected access (403). Owner/admin must act in repository settings.
+- Current application-code test evidence remains the local L1–L16 matrix on `bfb28cef`. GitHub compare from `bfb28cef` to `e772950d` found 11 paths, all docs/control/inventory or tracked test artifact; no application/runtime source changes. No tests are claimed as freshly executed on e772.
+- The final documentation refresh commit is built as a non-force, expected-head fast-forward child of e772; Inventory explicitly records its comparison baseline as e772, avoiding self-referential ahead/behind numbers.
+- No merge, force-push, branch deletion, workflow weakening, APK build, staging deploy or release certification performed.
+- Owner action: fix Actions billing or provide a secured self-hosted runner; configure branch protection / required checks; then trigger all four workflows on the exact newest PR head and obtain review approval.
+- Handoff accepted by: repository owner pending.

@@ -34,6 +34,27 @@ export const routeAccess: Record<string, RouteAccess> = {
   "/notifications": "auth",
 };
 
+/**
+ * Post-login destination: honour a safe role-authorized `?next=` deep link,
+ * otherwise fall back to the role home. Single-slash paths only prevent
+ * protocol-relative and external open redirects.
+ */
+export function postLoginDestination(role: Role, next: string | null | undefined): string {
+  const fallback = roleHome[role] ?? "/";
+  if (!next) return fallback;
+  if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return fallback;
+  try {
+    const url = new URL(next, "http://pol.local");
+    if (url.origin !== "http://pol.local") return fallback;
+    // Validate the normalized path, not the raw string: URL parsing resolves
+    // dot segments such as /retailer/../admin before navigation.
+    if (!pathAllowed(url.pathname, role)) return fallback;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return fallback;
+  }
+}
+
 export function pathAllowed(path: string, role: Role | null): boolean {
   const hit = Object.entries(routeAccess)
     .sort(([a], [b]) => b.length - a.length)

@@ -1,6 +1,6 @@
 # POL MVP — API MAP
 
-**Authority:** `POL_00_PROJECT_CONTROL/API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md` (50-endpoint contract) + **actual** FastAPI routes on `origin/research-hardening-2026-09-14` `scripts/api/**` + `API_APPLICATION_BOUNDARY.md`.  
+**Current source references (targeted audit 2026-11-17):** `06_PRODUCT/API_Contracts.md`, `POL_00_PROJECT_CONTROL/CANONICAL_CONTRACT_MATRIX.md`, `scripts/application_boundary.py`, and the source tree under `scripts/api/routes/*.py` on `main` @ `fbcdd7448d809a3281cc1ea8c43218d42e8762ca`. The formerly cited paths `POL_00_PROJECT_CONTROL/API_BOUNDARY_ROUTE_INVENTORY_2026-09-18.md` and `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md` are absent at those exact paths on this tree. This validates source-path presence only; it does not certify route registration or live HTTP behavior. Route-by-route reconciliation and contract tests remain required under TODO-069 and TODO-135.  
 **Rule:** No endpoint outside this map without adding a sourced row first (CONTRACT_ONLY or REAL). Never invent fields.
 
 ---
@@ -38,7 +38,7 @@ HTTP may also set `X-Correlation-ID`.
 
 | Tag | Meaning |
 |-----|---------|
-| `REAL` | Implemented FastAPI route (verified in `scripts/api/routes/*` on research-hardening) |
+| `REAL` | Route reported as implemented; verify registration and HTTP contract tests against current `main` before treating it as runtime-certified |
 | `CONTRACT` | In 50-endpoint inventory but not HTTP-implemented → **mock allowed** (same contract) |
 | `BOUNDARY` | Python boundary method, no HTTP → mock or GAP per screen need |
 | `GAP` | Needed by screen but no contract/behavior definable from canon |
@@ -255,7 +255,7 @@ HTTP may also set `X-Correlation-ID`.
 
 ## 4. Contract reconciliation
 
-The historical contract-only entries from the original 50-endpoint inventory have been promoted to canonical HTTP implementations on the remediation branch:
+The following table preserves historical claims that selected contract-only areas were promoted. Current `main` contains route source files with the listed module names, but source-file presence alone does not prove route registration or contract conformance. Treat these rows as candidates for current-main verification under TODO-069/TODO-135, not as standalone runtime certification:
 
 | Former contract-only area | Current canonical HTTP | Source |
 |---|---|---|

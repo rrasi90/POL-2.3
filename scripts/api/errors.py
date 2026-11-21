@@ -136,3 +136,13 @@ async def generic_error_handler(request: Request, exc: Exception):
         "An unexpected server error occurred.",
         500,
     )
+
+
+async def data_integrity_handler(request: Request, exc: Exception):
+    """Hide database constraint details behind a stable client error envelope."""
+    return _response(
+        request,
+        "INVALID_REQUEST",
+        "The request references data that does not exist or is not allowed.",
+        422,
+    )

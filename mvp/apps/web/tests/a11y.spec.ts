@@ -9,41 +9,42 @@ test.describe("Accessibility snapshot guards", () => {
     await page.goto("/retailer");
     await page.waitForLoadState("networkidle");
 
-    const snapshot = await page.accessibility.snapshot();
-    const tree = snapshot.tree.join("\n");
+    const mainLandmark = page.getByRole("main");
+    await expect(mainLandmark.first()).toBeVisible();
 
-    // At least one main landmark
-    expect(tree).toContain('role="main"');
+    const heading = page.getByRole("heading");
+    await expect(heading.first()).toBeVisible();
 
-    // At least one heading (h1-h6)
-    expect(tree).toMatch(/<h[1-6]/);
-
-    // No button without accessible name
-    const buttons = tree.match(/<button[^>]*>/g) || [];
+    const buttons = await page.getByRole("button").all();
     for (const btn of buttons) {
-      // a button must have aria-label, title, or inner text that is not whitespace-only
-      const hasName = /aria-label|title|>[^<]*<!--.*--<!-->|>[^<>\s]/.test(btn);
-      expect(hasName).toBeTruthy(`button missing accessible name: ${btn}`);
+      const name = await btn.innerText().catch(() => "");
+      const ariaLabel = await btn.getAttribute("aria-label");
+      const title = await btn.getAttribute("title");
+      const hasName = Boolean((name && name.trim().length > 0) || ariaLabel || title);
+      expect(hasName).toBeTruthy();
     }
   });
 
   test("vendor dashboard has basic a11y structure", async ({ page }, testInfo) => {
-    const phone = vendorPhone(testInfo, 99);
+    const phone = vendorPhone();
     resetTenant(phone);
     await loginAsVendor(page, phone);
     await page.goto("/vendor");
     await page.waitForLoadState("networkidle");
 
-    const snapshot = await page.accessibility.snapshot();
-    const tree = snapshot.tree.join("\n");
+    const mainLandmark = page.getByRole("main");
+    await expect(mainLandmark.first()).toBeVisible();
 
-    expect(tree).toContain('role="main"');
-    expect(tree).toMatch(/<h[1-6]/);
+    const heading = page.getByRole("heading");
+    await expect(heading.first()).toBeVisible();
 
-    const buttons = tree.match(/<button[^>]*>/g) || [];
+    const buttons = await page.getByRole("button").all();
     for (const btn of buttons) {
-      const hasName = /aria-label|title|>[^<]*<!--.*--<!-->|>[^<>\s]/.test(btn);
-      expect(hasName).toBeTruthy(`button missing accessible name: ${btn}`);
+      const name = await btn.innerText().catch(() => "");
+      const ariaLabel = await btn.getAttribute("aria-label");
+      const title = await btn.getAttribute("title");
+      const hasName = Boolean((name && name.trim().length > 0) || ariaLabel || title);
+      expect(hasName).toBeTruthy();
     }
   });
 });

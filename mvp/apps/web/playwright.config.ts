@@ -21,7 +21,7 @@ export default defineConfig({
     ["json", { outputFile: "test-results/results.json" }],
   ],
   use: {
-    baseURL: `http://localhost:${WEB_PORT}`,
+    baseURL: `http://127.0.0.1:${WEB_PORT}`,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -43,7 +43,7 @@ export default defineConfig({
     {
       command: "npm run dev",
       cwd: __dirname,
-      url: `http://localhost:${WEB_PORT}`,
+      url: `http://127.0.0.1:${WEB_PORT}`,
       reuseExistingServer: !process.env.CI,
       timeout: 240_000,
       stdout: "pipe",
