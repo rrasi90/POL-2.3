@@ -1,0 +1,5 @@
+users = 25
+organizations = 25
+otp_challenges = 22
+latest otp: ('+989123457000', 'VERIFIED', datetime.datetime(2026, 10, 30, 0, 48, 17, 630611, tzinfo=datetime.timezone(datetime.timedelta(seconds=12600))))
+latest otp: ('+989123457000', 'PENDING', datetime.datetime(2026, 10, 30, 0, 43, 30, 464552, tzinfo=datetime.timezone(datetime.timedelta(seconds=12600))))

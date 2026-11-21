@@ -1,0 +1,22 @@
+=== SERVICES (listeners) ===
+  TCP    0.0.0.0:3000           0.0.0.0:0              LISTENING       3824
+  TCP    0.0.0.0:3001           0.0.0.0:0              LISTENING       31316
+  TCP    0.0.0.0:5432           0.0.0.0:0              LISTENING       8936
+  TCP    127.0.0.1:8001         0.0.0.0:0              LISTENING       7104
+  TCP    127.0.0.1:8080         0.0.0.0:0              LISTENING       27816
+  TCP    [::]:3000              [::]:0                 LISTENING       3824
+  TCP    [::]:3001              [::]:0                 LISTENING       31316
+  TCP    [::]:5432              [::]:0                 LISTENING       8936
+=== LOCAL HEALTH ===
+{"status":"ok"}
+web3000:200
+{"status":"ok"}
+=== TUNNEL PROCESSES ===
+25788  C:\Users\rrasi_oorj8fq\cloudflared.exe tunnel --url http://localhost:8001 --protocol http2
+29208  C:\Users\rrasi_oorj8fq\cloudflared.exe tunnel --url http://localhost:8080 --protocol http2
+=== PUBLIC TUNNELS ===
+web-tunnel:200
+{"status":"ok"}
+=== ADB ===
+List of devices attached
+
