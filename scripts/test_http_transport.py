@@ -176,7 +176,7 @@ def test_production_refresh_cookie_is_secure(monkeypatch):
                         id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at
                     ) VALUES (%s,%s,%s,'LOGIN','127.0.0.1',0,5,'PENDING',now() + interval '5 minutes')
                     """,
-                    (str(uuid.uuid4()), phone, store_otp_hash("1234")),
+                    (str(uuid.uuid4()), phone, store_otp_hash("123456")),
                 )
             conn.commit()
         finally:
@@ -184,7 +184,7 @@ def test_production_refresh_cookie_is_secure(monkeypatch):
 
         response = production_client.post(
             "/api/v1/auth/verify-otp",
-            json={"mobile_number": phone, "otp_code": "1234", "client_platform": "web"},
+            json={"mobile_number": phone, "otp_code": "123456", "client_platform": "web"},
         )
         assert response.status_code == 200
         cookie = response.headers.get("set-cookie", "")
@@ -221,7 +221,7 @@ def test_auth_profile_switch_and_revocation_flow(client):
 
         response = client.post(
             "/api/v1/auth/verify-otp",
-            json={"mobile_number": phone, "otp_code": "1234", "client_platform": "web"},
+            json={"mobile_number": phone, "otp_code": "123456", "client_platform": "web"},
         )
         assert response.status_code == 200
         body = response.json()
@@ -334,9 +334,28 @@ def test_verify_otp_rejects_non_e164_mobile_number():
     from scripts.api.schemas import VerifyOTPRequest
 
     with pytest.raises(ValidationError):
-        VerifyOTPRequest(mobile_number="09121234567", otp_code="1234")
+        VerifyOTPRequest(mobile_number="09121234567", otp_code="123456")
     with pytest.raises(ValidationError):
-        VerifyOTPRequest(mobile_number="989121234567", otp_code="1234")
+        VerifyOTPRequest(mobile_number="989121234567", otp_code="123456")
 
-    request = VerifyOTPRequest(mobile_number="+989121234567", otp_code="1234")
+    request = VerifyOTPRequest(mobile_number="+989121234567", otp_code="123456")
     assert request.mobile_number == "+989121234567"
+
+
+
+def test_auth_otp_contract_is_six_ascii_digits_and_delivery_legacy_is_compatible():
+    from pydantic import ValidationError
+    from scripts.api.schemas import VerifyOTPRequest, DeliveryConfirmRequest
+
+    VerifyOTPRequest(mobile_number="+989121234567", otp_code="123456")
+    with pytest.raises(ValidationError):
+        VerifyOTPRequest(mobile_number="+989121234567", otp_code="1234")
+    with pytest.raises(ValidationError):
+        VerifyOTPRequest(mobile_number="+989121234567", otp_code="１２３４５６")
+
+    # Only delivery accepts a legacy four-digit code while old active shipments
+    # are being drained; new delivery codes are always issued as six digits.
+    DeliveryConfirmRequest(otp_code="123456")
+    DeliveryConfirmRequest(otp_code="1234")
+    with pytest.raises(ValidationError):
+        DeliveryConfirmRequest(otp_code="12345")

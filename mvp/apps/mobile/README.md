@@ -6,7 +6,7 @@ source of business rules and keeps the mobile API client local to the app.
 ## Current implementation
 
 - Backend-derived role routing for all seven canonical roles.
-- 4-digit OTP auth (D-018).
+- 6-digit OTP authentication (D-018); new delivery OTPs are six digits (D-029).
 - Field-first F-01…F-05 with request-failure offline state + healthz retry.
 - Retailer foundation: catalog search, basket, allocation preview, checkout with Idempotency-Key, orders and order detail.
 - Vendor foundation: order queue/actions, partial-acceptance proposal, inventory, daily confirmation, settlements and order detail.

@@ -57,8 +57,9 @@ async function vendorFulfillToDispatch(page: Page, orderId: string): Promise<voi
   await expect(page.getByRole("button", { name: "علامت‌گذاری آماده" })).toBeVisible();
   await page.getByRole("button", { name: "علامت‌گذاری آماده" }).click();
 
-  // Driver details are mandatory before the dispatch request is sent.
-  await expect(page.getByLabel("نام راننده")).toBeVisible();
+  // A cold CI runner may still be compiling this route on first navigation.
+  // Keep the same assertion, with enough time for the initial route build.
+  await expect(page.getByLabel("نام راننده")).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "ثبت ارسال", exact: true }).click();
   await expect(appAlert(page)).toContainText("نام راننده، پلاک و تلفن راننده الزامی است.");
   await page.getByLabel("نام راننده").fill("علی رضایی");
@@ -127,7 +128,7 @@ test("cross-persona delivery flow: checkout, vendor fulfillment, arrival, OTP co
     await expect(rp.getByText(/تا رسیدن بار به مقصد/)).toHaveCount(0);
 
     await rp.getByLabel("نام شخص تحویل‌گیرنده").fill("مریم احمدی");
-    await rp.getByLabel("کد ۴ رقمی OTP").fill(deliveryOtp(orderId));
+    await rp.getByLabel("کد تحویل").fill(deliveryOtp(orderId));
     await expect(confirm).toBeEnabled();
     await confirm.click();
 

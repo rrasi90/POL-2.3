@@ -77,7 +77,7 @@ flowchart TD
 [ کاربر شماره موبایل وارد می‌کند ]
                │
                ▼
-[ ایجاد چالش OTP چهاررقمی در PostgreSQL (otp_challenges) با انقضای ۱۲۰ ثانیه ]
+[ ایجاد چالش OTP شش‌رقمی در PostgreSQL (otp_challenges) با انقضای ۱۲۰ ثانیه ]
                │
                ▼
 [ ارسال پیامک از طریق خط خدماتی (بدون مسدودی بلک‌لیست تبلیغاتی) ]
@@ -91,7 +91,7 @@ flowchart TD
   ۲. Refresh Token (عمر ۳۰ روز - HttpOnly Secure Cookie یا حافظه امن گوشی)
 ```
 
-**矿别 توکن‌ها (D-018 تفسیر رسمی):**
+**تفکیک توکن‌ها (D-018 — کد ورود شش‌رقمی؛ تفکیک عمر توکن‌ها):**
 - **Access Token:** JWT stateless با `exp` claim ۱۵ دقیقه‌ای. کتابخانه JWT در هر درخواست اعتبارسنجی می‌کند. عمر آن در `user_sessions.expires_at` ذخیره نمی‌شود.
 - **Refresh Session:** سشن سرور-ردیابی‌شده در `user_sessions`. فیلد `expires_at` برابر با **۳۰ روز** (عمر refresh token) است. `refresh_token_hash` متعلق به این سشن است.
 - **Refresh Token Rotation:** هنوز تصمیم‌گیری نشده (D-018).

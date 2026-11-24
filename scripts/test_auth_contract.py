@@ -153,7 +153,7 @@ def _auth_tx_recovery(auth_env):
 # T-SEC-OTP-01: Deterministic OTP is test-environment only
 # =========================================================
 def test_static_otp_is_strictly_test_only(auth_env, monkeypatch):
-    """Prevent a non-test deployment from silently falling back to 1234."""
+    """Prevent a non-test deployment from silently falling back to a predictable OTP."""
     from scripts import domain_services
     from scripts.domain_services import AuthService
 
@@ -169,14 +169,14 @@ def test_static_otp_is_strictly_test_only(auth_env, monkeypatch):
     cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
     auth_env["conn"].commit()
     first = AuthService.request_otp(cur, phone, ip, "LOGIN")
-    assert first["test_code"] == "1234"
+    assert first["test_code"] == "123456"
     cur.execute(
         "SELECT code_hash FROM otp_challenges WHERE id=%s",
         (first["id"],),
     )
-    assert verify_otp_hash("1234", cur.fetchone()["code_hash"])
+    assert verify_otp_hash("123456", cur.fetchone()["code_hash"])
 
-    # Development/unknown/unset environments must never use or expose 1234.
+    # Development/unknown/unset environments must never use or expose 123456.
     monkeypatch.setattr(domain_services.secrets, "randbelow", lambda upper: 5678)
     for env in ("development", "unknown", ""):
         if env:
@@ -192,8 +192,8 @@ def test_static_otp_is_strictly_test_only(auth_env, monkeypatch):
             (result["id"],),
         )
         stored_hash = cur.fetchone()["code_hash"]
-        assert verify_otp_hash("5678", stored_hash)
-        assert not verify_otp_hash("1234", stored_hash)
+        assert verify_otp_hash("005678", stored_hash)
+        assert not verify_otp_hash("123456", stored_hash)
 
     cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s", (phone,))
     auth_env["conn"].commit()
@@ -238,12 +238,12 @@ def test_ac3_session_ttl_is_720_hours():
 # T-AC11: OTP PBKDF2 hash + timing-safe verify
 # =========================================================
 def test_ac11_otp_pbkdf2_hash_and_timing_safe_verify():
-    stored = store_otp_hash("1234")
+    stored = store_otp_hash("123456")
     parts = stored.split("$")
     assert len(parts) == 3
     assert int(parts[0]) == 100_000
-    assert verify_otp_hash("1234", stored) is True
-    assert verify_otp_hash("9999", stored) is False
+    assert verify_otp_hash("123456", stored) is True
+    assert verify_otp_hash("999999", stored) is False
 
 
 # =========================================================
@@ -456,15 +456,15 @@ def test_ac20_otp_challenge_is_consumed_exactly_once(auth_env):
         cur.execute("""
             INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
             VALUES (%s, %s, %s, 'LOGIN', '10.0.0.30', 0, 5, 'PENDING', now() + interval '2 minutes');
-        """, (otp_id, phone, store_otp_hash("1234")))
+        """, (otp_id, phone, store_otp_hash("123456")))
         conn.commit()
         from scripts.domain_services import AuthService
-        first = AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+        first = AuthService.verify_otp(cur, phone, "123456", user_id, org_a)
         assert first["access_token"]
         cur.execute("SELECT status FROM otp_challenges WHERE id = %s;", (otp_id,))
         assert cur.fetchone()["status"] == "VERIFIED"
         try:
-            AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+            AuthService.verify_otp(cur, phone, "123456", user_id, org_a)
             raise AssertionError("OTP was accepted more than once")
         except ValueError as e:
             assert "No pending OTP challenge" in str(e)
@@ -678,7 +678,7 @@ def test_lo1_5th_wrong_otp_blocked_with_blocked_at(auth_env):
     cur.execute("""
         INSERT INTO otp_challenges (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
         VALUES (%s, %s, %s, 'LOGIN', '10.0.0.1', 0, 5, 'PENDING', now() + interval '2 minutes');
-    """, (otp_id, phone, store_otp_hash("5678")))
+    """, (otp_id, phone, store_otp_hash("005678")))
     conn.commit()
     for attempt in range(1, 6):
         cur.execute("""
@@ -1019,13 +1019,13 @@ def test_p0_verify_otp_rejects_user_mismatch_for_same_phone(auth_env):
             (id, phone_number, code_hash, purpose, ip_address, attempts_count, max_attempts, status, expires_at)
         VALUES (%s, %s, %s, 'LOGIN', '10.0.0.99', 0, 5, 'PENDING', now() + interval '2 minutes')
         """,
-        (otp_id, phone, store_otp_hash("1234")),
+        (otp_id, phone, store_otp_hash("123456")),
     )
     conn.commit()
 
     try:
         with pytest.raises(PermissionError, match="identity"):
-            AuthService.verify_otp(cur, phone, "1234", attacker_user, org_a)
+            AuthService.verify_otp(cur, phone, "123456", attacker_user, org_a)
     finally:
         cur.execute("DELETE FROM otp_challenges WHERE id = %s", (otp_id,))
         conn.rollback()
@@ -1207,7 +1207,7 @@ def test_verify_otp_rejects_suspended_organization(auth_env):
     conn.commit()
     try:
         with pytest.raises(PermissionError, match="active membership"):
-            AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+            AuthService.verify_otp(cur, phone, "123456", user_id, org_a)
     finally:
         cur.execute("UPDATE organizations SET status='ACTIVE' WHERE id=%s;", (org_a,))
         cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s;", (phone,))
@@ -1225,6 +1225,11 @@ def test_verify_otp_cannot_consume_non_authentication_challenge(auth_env):
     cur.execute("SELECT phone_number FROM users WHERE id=%s;", (user_id,))
     phone = cur.fetchone()["phone_number"]
 
+    # The fixture shares one user across tests; remove any earlier pending login
+    # challenge so this assertion isolates the non-authentication purpose only.
+    cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s;", (phone,))
+    conn.commit()
+
     cur.execute(
         """
         INSERT INTO otp_challenges
@@ -1232,13 +1237,13 @@ def test_verify_otp_cannot_consume_non_authentication_challenge(auth_env):
              max_attempts, status, expires_at)
         VALUES (%s,%s,%s,'ORDER_CONFIRMATION','127.0.0.78',0,5,'PENDING',now()+interval '2 minutes')
         """,
-        (str(uuid.uuid4()), phone, store_otp_hash("1234")),
+        (str(uuid.uuid4()), phone, store_otp_hash("123456")),
     )
     conn.commit()
 
     try:
         with pytest.raises(ValueError, match="No pending OTP challenge"):
-            AuthService.verify_otp(cur, phone, "1234", user_id, org_a)
+            AuthService.verify_otp(cur, phone, "123456", user_id, org_a)
     finally:
         cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s;", (phone,))
         conn.commit()

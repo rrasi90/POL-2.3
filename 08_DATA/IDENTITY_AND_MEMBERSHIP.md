@@ -88,7 +88,7 @@ Registers physical hardware devices for push notifications and anti-fraud finger
 Tracks SMS one-time password lifecycles and brute-force defenses.
 - `id` (UUID, PK).
 - `phone_number` (VARCHAR 32).
-- `code_hash` (VARCHAR 128): Salted SHA-256 hash of the 4-digit verification code.
+- `code_hash` (VARCHAR 128): Salted SHA-256 hash of the six-digit verification code.
 - `purpose` (VARCHAR 32): `LOGIN`, `REGISTER`, `ORDER_CONFIRMATION`, `DELIVERY_CONFIRM`.
 - `attempts_count` (INT DEFAULT 0).
 - `max_attempts` (INT DEFAULT 5).

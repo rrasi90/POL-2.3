@@ -36,4 +36,7 @@
   - Stale warning indicator (> 24 hours unconfirmed)
   - Fast-confirm action button
 - **Delivery Handoff Card**:
-  - Delivery OTP 4-digit code entry, recipient signature/photo proof confirmation
+  - Delivery OTP six-digit code entry, recipient signature/photo proof confirmation
+
+
+**OTP amendment (2026-11-24):** Authentication OTP uses six ASCII digits under D-018. New delivery/POD OTPs use six digits under D-029. Only pre-migration in-flight delivery records may accept their already-issued four-digit code until terminal completion; no new four-digit OTP is issued.

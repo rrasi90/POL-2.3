@@ -234,7 +234,7 @@ const retailerStaffHeaders = { Authorization: "Bearer mock-retailer-staff-token"
 const retailerLogin = await req<{ role: string; access_token: string }>(
   "POST",
   "/api/v1/auth/verify-otp",
-  { mobile_number: "+989161110003", otp_code: "1234" },
+  { mobile_number: "+989161110003", otp_code: "123456" },
   {},
 );
 assert.equal(retailerLogin.role, "RETAILER_OWNER");
@@ -363,7 +363,7 @@ await rejects(
 
 const retailerStaffLogin = await req<{ role: string; access_token: string }>(
   "POST", "/api/v1/auth/verify-otp",
-  { mobile_number: "+989161110004", otp_code: "1234" },
+  { mobile_number: "+989161110004", otp_code: "123456" },
   {},
 );
 assert.equal(retailerStaffLogin.role, "RETAILER_STAFF");

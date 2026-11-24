@@ -7,7 +7,7 @@
 Ahead/behind vs main and vs Integration; dispositions per live content comparison
 (merge-base, file-level diffs, byte-identity checks, suite evidence on INT).
 Machine-readable data: `BRANCH_INVENTORY.csv`.  
-Disposition counts (58 refs): 31 ALREADY_INTEGRATED · 17 SUPERSEDED · 4 ARCHIVE_ONLY · 2 BLOCKED_POLICY · 1 HOLD · 1 SALVAGE_COMPLETED · 1 MERGE_CANDIDATE · 1 BASE.
+Disposition counts at the initial 2026-11-21 audit snapshot (58 refs): 31 ALREADY_INTEGRATED · 17 SUPERSEDED · 4 ARCHIVE_ONLY · 2 BLOCKED_POLICY · 1 HOLD · 1 SALVAGE_COMPLETED · 1 MERGE_CANDIDATE · 1 BASE. The two OTP branches' policy-blocked label was superseded on 2026-11-24; see the current disposition below.
 
 | Branch | Head | Date | vs main (behind/ahead) | vs INT (behind/ahead) | Disposition | PR | Evidence |
 |---|---|---|---|---|---|---|---|
@@ -45,8 +45,8 @@ Disposition counts (58 refs): 31 ALREADY_INTEGRATED · 17 SUPERSEDED · 4 ARCHIV
 | `fix/current-main-governance-wording-2026-09-28` | `cef1606e` | 2026-09-28 | 300/2 | 483/2 | **ALREADY_INTEGRATED** | #14 merged | Squash-duplicates. |
 | `fix/mobile-dependency-alignment-20261022` | `2a912bbc` | 2026-10-23 | 27/0 | 210/0 | **ALREADY_INTEGRATED** | #46 merged | ahead=0. |
 | `fix/mobile-motion-audit-20261011` | `f4fcf5a9` | 2026-10-11 | 86/9 | 269/9 | **SUPERSEDED** | #29 closed | Unique fixes verified in INT (b85201ba review); superseded by stronger port. |
-| `fix/otp-six-digit-contract-20261025` | `ddeec06b` | 2026-10-25 | 7/5 | 190/5 | **BLOCKED_POLICY** | #49 closed | Six-digit OTP contradicts locked D-018; migration 077 rejected; E2E helpers hardcode OTP=123456. |
-| `fix/otp-six-digit-standard-20261025` | `d49ad86b` | 2026-10-25 | 7/16 | 190/16 | **BLOCKED_POLICY** | #50 closed | Same; delivery-OTP storage/rotation concerns recorded in PR_INTEGRATION_AUDIT. |
+| `fix/otp-six-digit-contract-20261025` | `ddeec06b` | 2026-10-25 | 7/5 | 190/5 | **CLOSED — HISTORICAL / DO NOT MERGE WHOLE** | #49 closed | Historical 2026-11-19 policy assessment: the branch conflicted with the then-current four-digit D-018. That policy objection was superseded by the founder's 2026-11-24 six-digit amendment; the stale branch tip remains unsuitable for wholesale merge. |
+| `fix/otp-six-digit-standard-20261025` | `d49ad86b` | 2026-10-25 | 7/16 | 190/16 | **CLOSED — HISTORICAL / DO NOT MERGE WHOLE** | #50 closed | Historical policy objection superseded by the founder's 2026-11-24 amendment. The branch remains stale; its broad application/migration implementation and legacy-delivery lifecycle handling must not be imported wholesale. |
 | `fix/pol-wave1-qa-mock-route-docs-20261027` | `74e7ded6` | 2026-10-27 | 7/250 | 190/250 | **SUPERSEDED** | #52 closed | Wave-1 content verified in INT; screenshot bulk excluded (stale pre-i18n). |
 | `fix/remaining-canonical-contradictions-2026-09-28` | `3b6524b3` | 2026-09-28 | 296/0 | 479/0 | **ALREADY_INTEGRATED** | #15/#16 merged | ahead=0. |
 | `fix/web-basket-sync-reuse-20261012` | `b04aabd3` | 2026-10-12 | 84/8 | 267/8 | **ALREADY_INTEGRATED** | #35 merged | Squash-duplicates. |
@@ -77,7 +77,7 @@ Disposition counts (58 refs): 31 ALREADY_INTEGRATED · 17 SUPERSEDED · 4 ARCHIV
 - **PR #53 merged into main as `0e2bf4c9`** (2026-11-21). Local main fast-forwarded 185 commits to `0e2bf4c9`. The integration-branch row above moves MERGE_CANDIDATE → ALREADY_INTEGRATED.
 - **`fix/web-refresh-session-preserve-20261030` (PR #54):** the six dated REA run-evidence files (`2026-10-29-mission2-internet-access`, `2026-10-30-mission3-stabilization`) were salvaged to main by the 2026-11-21 reconciliation PR; the source fix `b4a48801` remains byte-identical in main via PR #53. Branch retained as ARCHIVE_ONLY.
 - **Branch cleanup (2026-11-21):** remote branches with ALREADY_INTEGRATED / SUPERSEDED / SALVAGE_COMPLETED dispositions — including the merged integration branch and the two fully-integrated `hotfix/*` branches — were deleted locally and on origin. Every deleted head SHA remains recorded in `BRANCH_INVENTORY.csv` for recovery.
-- **Retained refs:** `fix/otp-six-digit-contract-20261025` + `fix/otp-six-digit-standard-20261025` (BLOCKED_POLICY — locked D-018 four-digit OTP still governs; the six-digit port needs its own lifecycle/security workstream per PR_INTEGRATION_AUDIT), `vercel-qa` (HOLD, TODO-025), `penpot-work-2026-09-16` and `feat/mobile-motion-layer` + `backup/feat-mobile-motion-layer-20261022` (ARCHIVE_ONLY), `fix/web-refresh-session-preserve-20261030` (ARCHIVE_ONLY).
+- **Retained refs:** `fix/otp-six-digit-contract-20261025` + `fix/otp-six-digit-standard-20261025` (CLOSED / HISTORICAL — the former four-digit D-018 policy objection was superseded on 2026-11-24; neither stale branch is to be merged wholesale; use PR #59's selective current-main implementation), `vercel-qa` (HOLD, TODO-025), `penpot-work-2026-09-16` and `feat/mobile-motion-layer` + `backup/feat-mobile-motion-layer-20261022` (ARCHIVE_ONLY), `fix/web-refresh-session-preserve-20261030` (ARCHIVE_ONLY).
 - **Local-only backups retained:** `backup/local-main-ed815b2` and `backup/pre-exec-20261022`. `backup/local-main-ed815b2` carries six Sept-2026 gap-closure commits (G-003/G-004/G-011/G-012/G-023..G-026); a 2026-11-21 feature-level verification confirmed every closure is re-implemented in main under the consolidated route architecture — G-004 inbox (`scripts/api/routes/notifications.py` inbox_router: GET /inbox/items, PATCH /items/{id}/read, PATCH /items/read-all), G-011 SLA override (`scripts/api/routes/management.py` POST /admin/sla-overrides + route-inventory entry), G-011 category admin (`scripts/api/routes/admin.py` POST /categories, PATCH /categories/{id} — create_category), G-003/G-012 parity (products/search in `products.py`/`catalog.py`, baskets/current in `baskets.py`), and G-023..G-026 governance docs evolved (`CANONICAL_CONTRACT_MATRIX.md`, `PLATFORM_COMPLETION_GAP_REGISTER.md`). Disposition: SUPERSEDED; retained as backup per convention.
 - **Stashes `stash@{0..2}` retained** on 2026-10-era bases; all three assessed obsolete on 2026-11-21 — `stash@{1}`/`stash@{2}` pin Expo `~57.0.24` which would regress the deliberate `~57.0.31` alignment from merged PR #46, and `stash@{0}` is an alternative Cartona registry restructure superseded by main's ported evidence set. Dropped only on owner confirmation.
 
@@ -100,3 +100,11 @@ The current remote refs were re-read from GitHub after PR #58 merged. Two short-
 The other retained refs keep their prior dispositions: both mobile-motion refs and web-refresh are archive-only, both six-digit OTP branches are policy-blocked by D-018, `vercel-qa` is HOLD under TODO-025, and `penpot-work-2026-09-16` is archive-only after the bounded skill salvage. No archive/backup branch was deleted.
 
 The mainline verification workflow triggered by merge commit `e2524df8` was still running at the time of this refresh. The Remediation Static Gate completed successfully; no full-suite or release certification is claimed yet.
+
+
+## 2026-11-24 Live Refresh — OTP policy supersession
+
+The initial historical branch table above reflects the previous D-018 four-digit decision. On 2026-11-24, the founder superseded that rule with six-digit login/registration OTP and approved D-029 for new six-digit delivery/POD OTP. Consequently, the previous OTP BLOCKED_POLICY label is no longer the current policy disposition. The two old branch tips remain stale and must not be merged wholesale; a clean selective implementation is being re-authored from current main on feat/six-digit-otp-and-social-impact-readme-20261124. Migration 077 preserves existing in-flight delivery codes while ensuring new delivery codes are six digits. The feature is not considered verified until exact-SHA CI and security review complete.
+
+
+**Current OTP branch disposition (2026-11-25):** `fix/otp-six-digit-contract-20261025` and `fix/otp-six-digit-standard-20261025` are both closed historical branches. Their original D-018 policy objection is superseded by the six-digit amendment, but their old heads remain unsuitable for wholesale merge. The reviewed selective implementation is PR #59.

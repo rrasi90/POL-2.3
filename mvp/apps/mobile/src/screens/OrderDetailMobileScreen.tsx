@@ -47,6 +47,12 @@ type ReturnRow = {
   created_at?: string | null;
 };
 
+function toAsciiDigits(value: string): string {
+  return value
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+}
+
 function rows<T>(data: unknown, keys: string[]): T[] {
   if (Array.isArray(data)) return data as T[];
   if (!data || typeof data !== "object") return [];
@@ -223,8 +229,8 @@ export function OrderDetailMobileScreen(props: {
       setActionError("نام تحویل‌گیرنده الزامی است.");
       return;
     }
-    if (!/^\d{4}$/.test(deliveryOtp.trim())) {
-      setActionError("کد تحویل باید ۴ رقم باشد.");
+    if (!/^(?:\d{4}|\d{6})$/.test(deliveryOtp.trim())) {
+      setActionError("کد تحویل دریافتی معتبر نیست.");
       return;
     }
     setActing("deliver");
@@ -467,8 +473,8 @@ export function OrderDetailMobileScreen(props: {
               <>
                 <StatusChip label={"تحویل: " + (deliveryStatus || "نامشخص")} tone="info" />
                 <Input label="نام تحویل‌گیرنده" value={deliveryRecipient} onChangeText={setDeliveryRecipient} maxLength={200} />
-                <Input label="کد تحویل ۴ رقمی" value={deliveryOtp} onChangeText={setDeliveryOtp} keyboardType="numeric" maxLength={4} />
-                <Btn label="ثبت تحویل" onPress={() => void submitDelivery()} loading={acting === "deliver"} disabled={acting !== null || deliveryStatus !== "ARRIVED" || !deliveryRecipient.trim() || !deliveryOtp.trim()} />
+                <Input label="کد تحویل" value={deliveryOtp} onChangeText={(value) => setDeliveryOtp(toAsciiDigits(value).replace(/\D/g, "").slice(0, 6))} keyboardType="numeric" maxLength={6} />
+                <Btn label="ثبت تحویل" onPress={() => void submitDelivery()} loading={acting === "deliver"} disabled={acting !== null || deliveryStatus !== "ARRIVED" || !deliveryRecipient.trim() || !deliveryOtp.trim() || !/^(?:\d{4}|\d{6})$/.test(deliveryOtp.trim())} />
               </>
             ) : null}
 

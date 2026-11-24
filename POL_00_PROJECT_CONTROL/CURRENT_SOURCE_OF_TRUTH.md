@@ -42,8 +42,8 @@ Canonical design/build authority:
 
 | Domain | Authoritative Canonical File(s) | Scope & Responsibility | Precedence Rule |
 |:---|:---|:---|:---|
-| **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-028; later amendments supersede earlier decisions explicitly. | Absolute precedence. |
-| **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md` | Feature matrix, core flows, boundaries and MVP inclusions/exclusions. | Must conform to the currently effective Decision Register, D-001–D-028; later explicit amendments supersede earlier decisions. |
+| **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-029; later amendments supersede earlier decisions explicitly. | Absolute precedence. |
+| **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md` | Feature matrix, core flows, boundaries and MVP inclusions/exclusions. | Must conform to the currently effective Decision Register, D-001–D-029; later explicit amendments supersede earlier decisions. |
 | **Identity & Access Management** | `06_PRODUCT/Roles_and_Permissions.md`, `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md`, Master Tree VD-15 | Identity, tenant membership, role authorization, delegated permissions, persona context and UX preferences. | `organization_memberships.role` is the base authorization SSoT; effective access is `base role permissions + active delegated grants`, always scoped to an active user, active organization and active membership. `users.role` is legacy/deprecated. |
 | **Order Lifecycle & State Transitions** | `06_PRODUCT/Order_Lifecycle.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | OrderGroup, child Orders, Delivery and exception state machines. | Governs backend workflows and UI state mapping. |
 | **Domain Entities & Business Invariants** | `08_DATA/DOMAIN_MODEL.md` | Ubiquitous language, aggregates and invariants. | Governs domain service behavior. |
@@ -71,7 +71,7 @@ All active documents MUST represent the current architecture:
 - Vendor Referral is active MVP (`D-016`) without rewards/wallet/credit incentives.
 - Universal User Profile + Membership Persona Context is active MVP (`D-017`).
 - PostgreSQL 18 is the sole canonical runtime database.
-- Authentication OTP policy: 4-digit, 120s TTL, 3/5min rate limit per phone+IP, 15-min access token, 30-day refresh (`D-018`).
+- Authentication OTP policy: six-digit, 120s TTL, 3/5min rate limit per phone+IP, 15-min access token, 30-day refresh (`D-018`).
 - Production backend runtime: Python; canonical domain/application implementation (`D-019`).
 - Production HTTP framework: FastAPI as thin transport adapter behind `POLApplicationBoundary` (`D-020`).
 
@@ -108,7 +108,7 @@ No visual artifact becomes canonical until the corresponding written requirement
 ## 6. Change Management
 
 1. No competing decision registers or shadow PRDs.
-2. Changes to D-001–D-028 require explicit superseding decisions.
+2. Changes to D-001–D-029 require explicit superseding decisions.
 3. Code, migrations, tests and design artifacts must be traceable to current canonical documents.
 4. Generated local artifacts must not be committed to the repository.
 5. Production-readiness claims must distinguish domain verification from HTTP/auth/provider/UI/observability/deployment/recovery implementation.
@@ -131,7 +131,7 @@ This document records the adopted product-architecture direction for:
 - Barcode scanning as a first-class operational capability
 - Master SKU and product-media provenance
 
-These directions refine presentation, UX and implementation sequencing without overriding the currently effective D-001 through D-028 decisions or the canonical PostgreSQL/Python/FastAPI architecture. The Decision Register amendments D-021 through D-028 are the governing product decisions for this wave.
+These directions refine presentation, UX and implementation sequencing without overriding the currently effective D-001 through D-029 decisions or the canonical PostgreSQL/Python/FastAPI architecture. The Decision Register amendments D-021 through D-029, including the 2026-11-24 OTP update, are the governing product decisions for this wave.
 
 
 ---
@@ -188,7 +188,7 @@ Repeated screen IDs in derived sections are projections, not independent sources
 This is a historical checkpoint from 2026-09-25, retained for traceability. It recorded that the remediation branch described at that time had been integrated into main. The remaining statements in this checkpoint about current CI failures and closure classes are date-bounded; they are not present-day CI claims. Use live branch refs and workflow runs for the exact SHA under review. Source presence alone is not runtime or release certification.
 
 Current unresolved closure classes are:
-- explicit product/security decisions: D-018 policy wording, invoice timing, D-024 storefront write scope;
+- explicit product/security decisions: D-018 refresh-token rotation, invoice timing, D-024 storefront write scope;
 - deployment/provider/observability evidence;
 - selected deep mobile management UI parity;
 - fresh CI certification after the current GitHub Actions execution blocker is resolved.

@@ -164,3 +164,8 @@ No current test/build result is claimed from this audit because the available Gi
 - Media: migration 048 binds presigned uploads to their authorized target and rejects confirmation retargeting.
 - Verification: migration-head and schema discovery are now dynamic; hard-coded current table-count certification was removed.
 - Current CI evidence remains pending because remediation Actions fail before useful step execution.
+
+
+## Policy Amendment — 2026-11-24 (Historical Report Preserved)
+
+This report records the original 2026-09-23 four-digit OTP implementation as historical evidence. The current policy is superseding: login/registration OTP is six digits under D-018, and newly issued delivery OTPs are six digits under D-029. Migration 077 backfills stored delivery-code lengths and preserves already-issued four-digit in-flight codes until those deliveries reach a terminal state. Do not treat the old test evidence in this report as verification of the amended six-digit implementation.

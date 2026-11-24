@@ -17,8 +17,8 @@
 
 | ID | Title | Route (canonical/prop) | Role/context | Primary APIs (API_MAP) | Source | Status |
 |----|-------|------------------------|--------------|------------------------|--------|--------|
-| SH-AUTH-01 | Login phone + OTP request | `/auth/login` | PUBLIC_ANON → all | POST `/auth/request-otp` | route map §1; D-018; doc 22 §3.1 | VERIFIED |
-| SH-AUTH-02 | Verify OTP (4-digit) | `/auth/login` (step) | PUBLIC_ANON → all | POST `/auth/verify-otp` | D-018; route map (OTP digits → 4) | VERIFIED |
+| SH-AUTH-01 | Login phone + OTP request | `/auth/login` | PUBLIC_ANON → all | POST `/auth/request-otp` | route map §1; amended D-018 | IMPLEMENTED — REVERIFY REQUIRED |
+| SH-AUTH-02 | Verify OTP (6-digit) | `/auth/login` (step) | PUBLIC_ANON → all | POST `/auth/verify-otp` | D-018; route map (OTP digits → 6) | IMPLEMENTED — REVERIFY REQUIRED |
 | SH-AUTH-03 | Refresh (implicit) | (client) | all | POST `/auth/refresh` | route map §1 | VERIFIED |
 | SH-PROFILE-01 | Account / profile | `/profile` | authenticated | GET/PUT `/profile`, GET `/profile/context` | route map; R-13; V-12 | VERIFIED |
 | SH-NOTIF-01 | Notifications inbox | `/notifications` | authenticated | GET `/notifications` | route map + durable inbox projection | VERIFIED |
@@ -28,7 +28,7 @@
 
 | ID | Implementation | Verification |
 |----|----------------|--------------|
-| SH-AUTH-01/02 | `apps/web/src/app/auth/login/page.tsx` (4-digit OTP) | `cd mvp && npm run typecheck` → exit 0; `cd mvp && npm run build` → exit 0 |
+| SH-AUTH-01/02 | `apps/web/src/app/auth/login/page.tsx` (6-digit OTP) | `cd mvp && npm run typecheck` → exit 0; `cd mvp && npm run build` → exit 0 |
 | SH-AUTH-03 | `packages/api-client/src/index.ts` (onRefresh on 401 → single retry); `apps/web/src/lib/auth/api.ts` | typecheck/build exit 0 |
 | SH-PROFILE-01 | `apps/web/src/app/(dashboard)/profile/page.tsx` | typecheck/build exit 0 |
 | SH-NOTIF-01 | `apps/web/src/app/(dashboard)/notifications/page.tsx` | typecheck/build exit 0 |
@@ -73,7 +73,7 @@
 | R-09B | `retailer/orders/[id]/page.tsx` | typecheck/build exit 0 |
 | R-09C | `retailer/orders/[id]/page.tsx` partial-acceptance panel (approve/decline; proposal_id from timeline event_data) | typecheck/build exit 0 |
 | R-09D | same file delivery panel (GET `/orders/{id}/delivery`) | typecheck/build exit 0 |
-| R-09E | same file handoff/proof + POST `/deliver` (OTP 4-digit schema; G-022 RESOLVED) | typecheck/build exit 0 |
+| R-09E | same file handoff/proof + POST `/deliver` (new delivery OTP 6-digit; legacy in-flight 4-digit accepted by D-029) | typecheck/build exit 0 |
 | R-09C/D/E | same order detail: derive proposals from timeline; GET delivery + proof; POST approve/decline/deliver | typecheck/build exit 0 |
 | R-11 | `retailer/orders/[id]/returns/page.tsx` | typecheck/build exit 0 |
 | R-12 | `retailer/support/page.tsx` | typecheck/build exit 0 |
@@ -190,7 +190,7 @@
 
 ### §Live-evidence — QA cycle 5 (2026-09-23) — live FastAPI + Next smoke
 
-**Commands:** API smoke script against `http://127.0.0.1:8000/api/v1/*` (retailer `+989160007777` / vendor `+989160008888`, OTP `1234`, tokens in `artifacts/auth_verify.json` + `artifacts/auth_vendor.json`, evidence `artifacts/live_api_evidence_c5.json`) · Next route GETs on `:3001` · `python artifacts/structural_audit.py` → EXIT 0 · route crawl `artifacts/route_crawl_3001.json` 47/47 HTTP 200.
+**Commands:** API smoke script against `http://127.0.0.1:8000/api/v1/*` (retailer `+989160007777` / vendor `+989160008888`, OTP `1234` — historical four-digit fixture predating the 2026-11-24 D-018 amendment, tokens in `artifacts/auth_verify.json` + `artifacts/auth_vendor.json`, evidence `artifacts/live_api_evidence_c5.json`) · Next route GETs on `:3001` · `python artifacts/structural_audit.py` → EXIT 0 · route crawl `artifacts/route_crawl_3001.json` 47/47 HTTP 200.
 
 | ID | Route (:3001) | API source (live) | Result | Cycle |
 |----|---------------|-------------------|--------|-------|
@@ -282,3 +282,11 @@ Verification requirements:
 | Vendor customers/staff | canonical management HTTP + live web UI | IMPLEMENTED |
 | D-028 barcode | canonical matching HTTP exists; mobile camera adapter remains separate runtime scope | IMPLEMENTED / RUNTIME SCOPE |
 | Mobile verification | 3 QA cycles + local Night/device retest; fresh CI rerun currently fails before useful step-level execution | REVERIFY |
+
+
+### OTP UI Reverification Notice — 2026-11-24
+
+The login and delivery OTP screens have been updated from the former four-digit presentation to the new six-digit policy. Previous `VERIFIED` screenshots/build checks describe the old screen state only. Current-sha typecheck, browser E2E, and device-level visual/accessibility checks must be rerun before marking these rows VERIFIED again.
+
+
+**2026-11-24 policy update:** both SH-AUTH-01 and SH-AUTH-02 must be reverified against the six-digit D-018 contract. The historical smoke-test fixture above is retained as dated evidence only; it is not a current login example.

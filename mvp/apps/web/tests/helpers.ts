@@ -6,7 +6,7 @@ import { expect, type Page, type TestInfo } from "@playwright/test";
 export const REPO_ROOT = path.resolve(__dirname, "..", "..", "..", "..");
 export const API_PORT = Number(process.env.POL_E2E_API_PORT ?? 8001);
 export const API_URL = `http://127.0.0.1:${API_PORT}`;
-export const OTP_CODE = "1234";
+export const OTP_CODE = "123456";
 
 export interface FixtureProduct {
   product_id: string;
@@ -165,7 +165,7 @@ async function login(page: Page, phone: string, home: RegExp): Promise<void> {
   await page.goto("/auth/login");
   await page.getByLabel(/شماره تلفن همراه/).fill(localNumber(phone));
   await page.getByRole("button", { name: "دریافت کد یکبار مصرف" }).click();
-  await page.locator('input[maxlength="4"]').fill(OTP_CODE);
+  await page.locator('input[maxlength="6"]').fill(OTP_CODE);
   await page.getByRole("button", { name: "تأیید و ورود به سامانه" }).click();
   await page.waitForURL(home);
 }

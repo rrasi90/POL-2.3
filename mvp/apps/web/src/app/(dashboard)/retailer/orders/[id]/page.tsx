@@ -235,6 +235,12 @@ function asArray<T>(raw: unknown, key?: string): T[] {
  * R-09D delivery tracking (GET /orders/{id}/delivery).
  * R-09E handoff / receiver confirm (proof + POST /deliver).
  */
+function toAsciiDigits(value: string): string {
+  return value
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+}
+
 export default function RetailerOrderDetailPage() {
   const params = useParams<{ id: string }>();
   const orderId = params.id;
@@ -867,13 +873,13 @@ export default function RetailerOrderDetailPage() {
                 placeholder="نام و نام خانوادگی…"
               />
               <Field
-                label="کد ۴ رقمی OTP"
+                label="کد تحویل"
                 value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setOtpCode(toAsciiDigits(e.target.value).replace(/\D/g, "").slice(0, 6))}
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={4}
-                hint="کد ۴ رقمی ارسال‌شده به تلفن همراه گیرنده"
+                maxLength={6}
+                hint="کد تحویل ارسال‌شده به صندوق پیام فروشگاه"
                 placeholder="----"
               />
             </div>

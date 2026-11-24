@@ -237,3 +237,8 @@ Recorded on `e7e6464` before applying stash → pull to `723f346`. Stash kept as
 | qa:functional / qa:regression | **not run on this baseline** (scripts absent at `e7e6464`; present on `723f346`) | — |
 
 Environment (local Windows): Windows 11; Node v24.18.0 / npm 12.0.1; Python 3.11.15; Git 2.55; PostgreSQL 18.4 service `postgresql-x64-18` (`pol` + `pol_test` 95 tables); JAVA_HOME Android Studio JBR; Android SDK platform-tools 37.0.1, platforms 35+36, build-tools 35+36, NDK 27.1.12297006, emulator 37.1.11; AVD `POL_API_Emulator` (Pixel 6, API 35); API `:8000` via `artifacts/start_api.bat`.
+
+
+## 2026-11-24 OTP policy supersession
+
+Earlier local runs and test notes may describe the former four-digit OTP. The current approved policy is six-digit authentication OTP (D-018) and six-digit newly issued delivery/POD OTP (D-029). Historical run evidence is not rewritten and must not be treated as verification of the amended code. Any rerun after this date must record the exact six-digit branch SHA and PostgreSQL migration head, including migration 077 when the feature branch is tested.

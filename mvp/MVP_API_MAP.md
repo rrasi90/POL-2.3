@@ -52,8 +52,8 @@ HTTP may also set `X-Correlation-ID`.
 
 | Method | Path | Notes |
 |--------|------|-------|
-| POST | `/auth/request-otp` | OTP 4-digit D-018; returns otp_request_id, TTL |
-| POST | `/auth/verify-otp` | returns tokens + profile context |
+| POST | `/auth/request-otp` | exactly six ASCII numeric digits for issued LOGIN/REGISTER OTPs (D-018); returns otp_request_id and TTL |
+| POST | `/auth/verify-otp` | requires exactly six ASCII numeric digits (`^[0-9]{6}$`); returns tokens + profile context |
 | POST | `/auth/refresh` | issues a new access token and currently rotates the persisted refresh token; replay of the previously presented token fails. **D-018 policy wording remains OPEN** |
 | POST | `/auth/switch-organization` | |
 | DELETE | `/auth/sessions/current` | |
@@ -148,7 +148,7 @@ HTTP may also set `X-Correlation-ID`.
 | POST | `/orders/{order_id}/preparing` |
 | POST | `/orders/{order_id}/ready` |
 | POST | `/orders/{order_id}/dispatch` |
-| POST | `/orders/{order_id}/deliver` | DeliveryConfirmRequest; otp pattern `^\d{4}$` (D-018; G-022 RESOLVED) |
+| POST | `/orders/{order_id}/deliver` | New delivery OTPs are six ASCII digits (D-029); existing pre-migration in-flight four-digit codes remain compatible only for their original delivery until terminal completion |
 | GET | `/orders/{order_id}/delivery` | R-09D |
 | GET | `/orders/{order_id}/delivery/proof` | R-09E; may return `{message:"No proof…"}` |
 | POST/GET | `/orders/{order_id}/delivery-exceptions` |

@@ -54,7 +54,7 @@ def _create_session(cur, user_id, org_id):
     return session_id
 
 
-def _seed_dispatch(suffix, *, delivery_status="ASSIGNED", otp="1234",
+def _seed_dispatch(suffix, *, delivery_status="ASSIGNED", otp="123456",
                    ordered=10, accepted=10):
     """Dispatched order + item + delivery in the requested stage."""
     conn = _db()
@@ -194,14 +194,14 @@ class TestG440ArrivedRuntime:
 
 class TestG441ConcurrentPod:
     def test_concurrent_confirmation_is_single_terminal_mutation(self, client):
-        data = _seed_dispatch(uuid4().hex[:8], delivery_status="ARRIVED", otp="1234")
+        data = _seed_dispatch(uuid4().hex[:8], delivery_status="ARRIVED", otp="123456")
 
         def confirm(_):
             c = TestClient(app, raise_server_exceptions=False)
             return c.post(
                 f"/api/v1/orders/{data['oi']}/deliver",
                 headers=_h(data["r_token"]),
-                json={"recipient_name": "Reza", "otp_code": "1234"},
+                json={"recipient_name": "Reza", "otp_code": "123456"},
             )
 
         with ThreadPoolExecutor(max_workers=2) as pool:

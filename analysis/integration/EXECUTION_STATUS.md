@@ -131,27 +131,21 @@ commits landed.
   the motion/i18n rewrite of the same files; superseded by the later design
   work tracked in merged #48.
 
-## OTP policy dispositions (D-018)
+## OTP policy dispositions — amended 2026-11-24 (D-018 + D-029)
 
-- D-018 remains canonical: **4-digit auth OTP**, 120s TTL, 60s resend,
-  3/5min phone+IP rate limit, 5 attempts, 10min lockout, 15-min access token,
-  30-day refresh session, rotation explicitly undecided.
-- PR #49 and #50 introduce six-digit auth OTP, migration `077`, and
-  D-018-register rewrites → **reject and close**; no salvageable
-  policy-independent content was found (their E2E helpers hardcode
-  `OTP="123456"` and are already superseded by INT's four-digit versions).
-- Delivery OTP remains a separate domain concern; no delivery-OTP policy is
-  inferred from D-018 anywhere in this consolidation.
-- Refresh-token rotation stays described as current implementation behavior
-  only, per the 2026-09-18 governance note.
+- D-018 was explicitly superseded by the founder on 2026-11-24: authentication/login and registration OTP is now **six ASCII numeric digits**. The existing 120s TTL, 60s resend interval, 3/5min phone+IP rate limit, 5 attempts, 10min phone lockout, 15-minute access JWT and 30-day refresh session remain unchanged. Refresh-token rotation remains undecided.
+- D-029 separately governs newly issued delivery/POD OTPs: exactly six digits, cryptographically secure, recipient-only INBOX outbox event, single-use and separate delivery expiry/attempt handling. D-018 login throttling/expiry semantics are not implicitly copied to delivery.
+- Migration 077 is re-authored on the current mainline. It backfills delivery_otp_length from already stored values and does not rotate, clear or re-send any in-flight delivery OTP. Previously issued four-digit delivery codes remain usable only for their original deliveries until terminal completion; all new codes are six digits.
+- PR #49 and #50 remain **closed and are not to be merged wholesale**. Their former policy objection has been superseded by the explicit founder amendment, but their old tips are stale (5–16 commits ahead and 200+ behind at audit) and the earlier migration/QA concerns require a clean current-main implementation and fresh evidence. The new selective port is tracked in feat/six-digit-otp-and-social-impact-readme-20261124.
+- Refresh-token rotation stays described as current implementation behavior only, per the existing D-018 governance note.
 
 ## PR dispositions (final actions, 2026-11-19)
 
 | PR | Final action | Basis |
 |---|---|---|
 | #53 | Keep Draft; merge candidate after CI restored | L1–L16 locally PASS on source SHA `bfb28cef`; reviewed descendant `b8c80bce` is docs/artifact-only; CI-on-latest-PR-head still unverified and billing-blocked |
-| #49 | CLOSE_AS_SUPERSEDED (policy-conflicting) | Six-digit auth OTP contradicts locked D-018; migration 077 rejected |
-| #50 | CLOSE_AS_SUPERSEDED (policy-conflicting) | Same as #49 |
+| #49 | CLOSED (historical branch not to be merged wholesale) | Original policy objection superseded 2026-11-24; clean implementation is being re-authored on current main |
+| #50 | CLOSED (historical branch not to be merged wholesale) | Original policy objection superseded 2026-11-24; legacy delivery-code rotation concerns require the new safe migration |
 | #51 | CLOSE_AS_SUPERSEDED (salvaged into #53) | Route hygiene/mock QA/support endpoint ported; screenshot bulk stale against post-i18n UI |
 | #52 | CLOSE_AS_SUPERSEDED (salvaged into #53) | Same; wave-1 content verified present in #53 |
 | #47 | CLOSE_AS_SUPERSEDED (salvaged into #53) | Core ports verified + 3 behavioral suites salvaged; doc-sync modules deliberately deferred |
