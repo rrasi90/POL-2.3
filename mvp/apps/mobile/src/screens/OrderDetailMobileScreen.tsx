@@ -474,7 +474,7 @@ export function OrderDetailMobileScreen(props: {
                 <StatusChip label={"تحویل: " + (deliveryStatus || "نامشخص")} tone="info" />
                 <Input label="نام تحویل‌گیرنده" value={deliveryRecipient} onChangeText={setDeliveryRecipient} maxLength={200} />
                 <Input label="کد تحویل" value={deliveryOtp} onChangeText={(value) => setDeliveryOtp(toAsciiDigits(value).replace(/\D/g, "").slice(0, 6))} keyboardType="numeric" maxLength={6} />
-                <Btn label="ثبت تحویل" onPress={() => void submitDelivery()} loading={acting === "deliver"} disabled={acting !== null || deliveryStatus !== "ARRIVED" || !deliveryRecipient.trim() || !/^(?:\d{4}|\d{6})$/.test(deliveryOtp.trim())} />
+                <Btn label="ثبت تحویل" onPress={() => void submitDelivery()} loading={acting === "deliver"} disabled={acting !== null || deliveryStatus !== "ARRIVED" || !deliveryRecipient.trim() || !deliveryOtp.trim() || !/^(?:\d{4}|\d{6})$/.test(deliveryOtp.trim())} />
               </>
             ) : null}
 
