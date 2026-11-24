@@ -1,15 +1,16 @@
 # POL-2.3 — Remaining Branches Reconciliation
 
 **Audit date:** 2026-11-24  
-**Main baseline:** `59ac9488b06cb62822f584ef5389f21e0f6dd6f5`  
+**Audit baseline:** `59ac9488b06cb62822f584ef5389f21e0f6dd6f5`  
+**Post-salvage main:** `e2524df8d8712f535369ae469292541861ea3da7` (PR #58)  
 **Scope:** all remote branches visible at the time of this audit, excluding `main` as the base.  
 **Method:** current GitHub branch metadata, commit comparisons against the current main SHA, targeted file-content checks, and the current canonical decision register.
 
 ## Executive result
 
-There are eight non-main remote branches. At the start of this reconciliation, before this salvage PR was opened, there were no open pull requests. PR #58 is the resulting selective-salvage review. None of the remaining application-code branches is a safe candidate for a wholesale merge.
+At the initial audit snapshot there were eight non-main remote branches and no open PRs. The selective-salvage PR #58 has since merged. The current remote set contains nine non-main refs (including the merged integration branch retained for traceability), and the live PR inventory has 54 records: 33 merged, 21 closed unmerged, and zero open. None of the remaining application-code branches is a safe candidate for wholesale merge.
 
-One reusable agent workflow asset was salvaged from `penpot-work-2026-09-16`: `.agents/skills/pol-batch-execution/SKILL.md`. It was rewritten for the current repository architecture and branch workflow rather than copied verbatim. The modernized skill is proposed for integration separately.
+One reusable agent workflow asset was salvaged from `penpot-work-2026-09-16`: `.agents/skills/pol-batch-execution/SKILL.md`. It was rewritten for the current repository architecture and branch workflow rather than copied verbatim, then merged through PR #58 as part of merge commit `e2524df8`.
 
 No schema migration, authentication policy, production deployment configuration, Vercel proxy, or product runtime source was merged as part of this salvage.
 
@@ -21,12 +22,13 @@ No schema migration, authentication policy, production deployment configuration,
 | `feat/mobile-motion-layer` | `2dfdd26a672c` | 7 ahead / 280 behind; 44 changed paths | **ALREADY_SALVAGED / ARCHIVE_ONLY** | The current main tree contains all 15 motion component files and the motion-system specification. The archived versions are not byte-identical and are generally smaller/older than the current main versions. No duplicate code import is needed. |
 | `fix/otp-six-digit-contract-20261025` | `ddeec06b11e8` | 5 ahead / 201 behind; 55 changed paths | **BLOCKED_POLICY** | Includes six-digit OTP policy changes and migration 077. Current `DECISION_REGISTER.md` records D-018 as four-digit OTP with 120-second TTL, a 60-second resend interval, and the existing rate-limit/lockout rules. Do not merge policy, migration, tests, or dependent UI changes without explicit superseding authorization. |
 | `fix/otp-six-digit-standard-20261025` | `d49ad86bbda2` | 16 ahead / 201 behind; broad application and documentation changes | **BLOCKED_POLICY** | Also attempts to change the locked D-018 policy and adds a distinct six-digit delivery OTP migration. The scope includes auth, delivery, web/mobile, schema, and test changes. It must remain blocked until a signed decision, threat/lifecycle review, and a consistent migration/contract/test plan exist. |
-| `fix/verification-ci-node-install-20261124` | `dbe443ca8db7` | 0 ahead / 1 behind | **ALREADY_MERGED / REDUNDANT REF** | This is the head branch used for PR #57, which has already merged into main as `59ac9488`. The branch adds no unique change relative to main. Do not merge again. |
+| `fix/verification-ci-node-install-20261124` | `dbe443ca8db7` | 0 ahead / 6 behind (post-#58 main) | **ALREADY_MERGED / REDUNDANT REF** | This is the head branch used for PR #57, which merged as `59ac9488`. The branch adds no unique change relative to current main. Do not merge again. |
+| `integration/selective-salvage-remaining-branches-20261124` | `1f0fe96cbf0b` | 0 ahead / 1 behind | **ALREADY_MERGED / REDUNDANT REF** | PR #58 merged as `e2524df8`; its two documentation files are present in main. Branch retained for traceability; no further merge needed. |
 | `fix/web-refresh-session-preserve-20261030` | `d5ab26bb5d3c` | Historical stacked branch; broad inherited diff | **ARCHIVE_ONLY** | The session-preservation source fix was already included in the consolidated mainline. The six dated REA run-evidence files were salvaged through the post-merge reconciliation PR. Do not merge the stacked branch or stale visual artifacts wholesale. |
 | `penpot-work-2026-09-16` | `541b3a1ec03c` | 197 ahead / 1,532 behind; 146 changed paths | **SELECTIVE SALVAGE / ARCHIVE_ONLY** | Most design and implementation guidance is from an older architecture/design phase and is superseded by current mainline design and product records. The branch also contains a deletion of `Master SKU/backup_no_images.json` (a very large retained data artifact), which must not be imported. The old canonical-safety rule is superseded by the expanded rule now on main. Only the bounded batch-execution skill was useful enough to adapt and salvage. |
 | `vercel-qa` | `8d3ad01f0d93` | 11 ahead / 1,519 behind; 10 changed paths | **HOLD — TODO-025** | Contains a new Vercel QA workflow, a large web API proxy route, a QA page, environment/config changes, and a transfer manifest. Static review found concrete auth-boundary differences: the branch adds `/api/v1` to the Middleware public-prefix list (the current mainline does not), and the QA page writes `pol.session=1` plus a client-selected `pol.role` cookie and mock auth object. The proxy also defines a default retailer role and hard-coded mock datasets. This may be acceptable only inside a separate mock-only QA deployment; it is not safe to merge into the shared production-capable app. Keep on HOLD until TODO-025 verifies an independent deployment target, build-time fail-closed mock flag, no production API fallback/secrets, no cross-environment cookies, and explicit authorization/tenant isolation. Do not merge the proxy, middleware exception, or QA login path before that review. |
 
-## Selective salvage delivered in this PR
+## Selective salvage delivered in PR #58
 
 ### `.agents/skills/pol-batch-execution/SKILL.md`
 
@@ -41,7 +43,7 @@ The source skill contained useful bounded-execution concepts but was not safe to
 - preserves TODO-084 and isolated disposable-database safeguards;
 - requires explicit OPEN/BLOCKED states, exact-SHA evidence, a rollback path, and a bounded file scope.
 
-The skill does not change application runtime behavior.
+The skill does not change application runtime behavior. It is present on main after PR #58.
 
 ## Global safeguards preserved
 
@@ -52,11 +54,12 @@ The skill does not change application runtime behavior.
 - No production, staging, or live-provider settings were modified.
 - Archive and backup branches were not deleted.
 
-## Verification required for this salvage PR
+## Verification and merge record
 
-- Inspect the skill and reconciliation report diff.
-- Run the repository static gate.
-- Confirm the exact PR head and review any security/scope warnings.
+- PR #58 merged on 2026-11-24 as `e2524df8d8712f535369ae469292541861ea3da7`.
+- Static Gate passed on the exact PR head and again on the post-merge main SHA.
+- Independent Verification on the PR head and post-merge main was still running at the time of this inventory refresh. No full-suite pass is claimed for PR #58 or the merge SHA yet.
+- The PR changed only two Markdown files; no runtime, test, schema, credential, or deployment file changed.
 - Keep this documentation/agent-skill salvage separate from any future Vercel proxy or OTP policy work.
 
 ## Next integration gates
