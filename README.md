@@ -520,7 +520,7 @@ The project deliberately separates implementation progress from release authoriz
 - **Live-provider acceptance:** real SMS, push, object storage, and other external service checks.
 - **Business/legal readiness:** operational policies, payment terms, contracts, and pilot approvals.
 
-Consult `analysis/integration/RELEASE_READINESS.md` and `TEST_EVIDENCE_INDEX.md` for the dated, SHA-scoped evidence and unresolved gates. Those documents are audit records; refresh them when new evidence is generated. Do not infer current certification from an older passing run.
+Consult `analysis/integration/RELEASE_READINESS.md` and `analysis/integration/TEST_EVIDENCE_INDEX.md` for the dated, SHA-scoped evidence and unresolved gates. Those documents are audit records; refresh them when new evidence is generated. Do not infer current certification from an older passing run.
 
 ---
 
