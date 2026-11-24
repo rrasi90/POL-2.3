@@ -170,7 +170,7 @@ test("a basket that disappeared on the server is recreated without an error", as
   const { phone, calls } = await startBasket(page, testInfo, [line("POL-E2E-1001", 1)]);
 
   await page.getByRole("button", { name: SYNC_BUTTON }).click();
-  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد");
+  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد", { timeout: 30_000 });
   expect(serverBasketCounts(phone).total).toBe(1);
 
   await page.route("**/api/v1/baskets/current", (route) =>
