@@ -283,7 +283,7 @@ The worker runtime is started with:
 python -m scripts.worker_runtime
 ~~~
 
-It requires the same appropriate database and provider configuration as the services it operates. It is responsible for asynchronous processing; do not run multiple workers with unreviewed configuration or assume an external provider is connected merely because the worker starts.
+The worker entry point explicitly requires `ENVIRONMENT=production` and an appropriate database/provider configuration. It is responsible for asynchronous processing; do not run multiple workers with unreviewed configuration or assume an external provider is connected merely because the worker starts.
 
 ### Web application
 
