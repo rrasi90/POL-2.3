@@ -665,7 +665,7 @@ def run_runtime_scenarios():
     print("\n[RET-R-014] Runtime Proof of Delivery OTP Verification...")
     try:
         cur.execute("INSERT INTO orders (id, order_group_id, vendor_id, order_status, subtotal_toman) VALUES ('ord_otp_test', 'og_002', 'vnd_a', 'SHIPPED', 1000000)")
-        cur.execute("INSERT INTO deliveries (id, order_id, delivery_status, otp_code, otp_verified) VALUES ('del_otp_test', 'ord_otp_test', 'IN_TRANSIT', '7890', 0)")
+        cur.execute("INSERT INTO deliveries (id, order_id, delivery_status, otp_code, otp_verified) VALUES ('del_otp_test', 'ord_otp_test', 'IN_TRANSIT', '789012', 0)")
         conn.commit()
 
         # Incorrect OTP fails verification

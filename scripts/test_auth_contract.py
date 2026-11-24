@@ -1225,6 +1225,11 @@ def test_verify_otp_cannot_consume_non_authentication_challenge(auth_env):
     cur.execute("SELECT phone_number FROM users WHERE id=%s;", (user_id,))
     phone = cur.fetchone()["phone_number"]
 
+    # The fixture shares one user across tests; remove any earlier pending login
+    # challenge so this assertion isolates the non-authentication purpose only.
+    cur.execute("DELETE FROM otp_challenges WHERE phone_number=%s;", (phone,))
+    conn.commit()
+
     cur.execute(
         """
         INSERT INTO otp_challenges
