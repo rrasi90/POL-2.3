@@ -39,7 +39,7 @@ def _request_otp(client, phone):
     return client.post(f"{API}/auth/request-otp", json={"mobile_number": phone})
 
 
-def _verify(client, phone, code="1234"):
+def _verify(client, phone, code="123456"):
     return client.post(
         f"{API}/auth/verify-otp",
         json={"mobile_number": phone, "otp_code": code, "client_platform": "web"},
@@ -65,13 +65,13 @@ class TestOtpFailures:
         phone, _, _, user_id = _seed()
         try:
             assert _request_otp(client, phone).status_code == 200
-            first = _verify(client, phone, "0000")
+            first = _verify(client, phone, "000000")
             assert first.status_code == 422
             assert first.json()["error"]["code"] == "INVALID_REQUEST"
             assert "Attempt 1/5" in first.json()["error"]["message"]
             assert _attempts(phone)[0] == 1
 
-            second = _verify(client, phone, "0000")
+            second = _verify(client, phone, "000000")
             assert second.status_code == 422
             assert "Attempt 2/5" in second.json()["error"]["message"]
             assert _attempts(phone)[0] == 2
@@ -83,10 +83,10 @@ class TestOtpFailures:
         try:
             assert _request_otp(client, phone).status_code == 200
             for attempt in range(4):
-                resp = _verify(client, phone, "0000")
+                resp = _verify(client, phone, "000000")
                 assert resp.status_code == 422, resp.text
                 assert f"Attempt {attempt + 1}/5" in resp.json()["error"]["message"]
-            locked = _verify(client, phone, "0000")
+            locked = _verify(client, phone, "000000")
             assert locked.status_code == 429
             assert locked.json()["error"]["code"] == "OTP_LOCKED"
             assert _attempts(phone)[1] == "BLOCKED"
@@ -98,7 +98,7 @@ class TestOtpFailures:
         try:
             assert _request_otp(client, phone).status_code == 200
             for _ in range(5):
-                _verify(client, phone, "0000")
+                _verify(client, phone, "000000")
             resp = _request_otp(client, phone)
             assert resp.status_code == 429
             assert resp.json()["error"]["code"] == "OTP_LOCKED"

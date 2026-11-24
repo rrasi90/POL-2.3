@@ -3,7 +3,7 @@
 **Document ID:** `POL-DEC-001`  
 **Status:** `LOCKED / CANONICAL`  
 **Governance Level:** Lead Product Architect / Founder Approved  
-**Last Audit:** 2026-09-28 (Governance + implementation reconciliation)  
+**Last Audit:** 2026-11-24 (Six-digit OTP policy amendment)  
 **Cross-Reference:** `01_RESEARCH/Assumptions_and_Hypotheses.md` (RES-REG-001)  
 
 ---
@@ -19,7 +19,7 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 
 ---
 
-## 2. Canonical Strategic Decision Register (D-001 through D-028)
+## 2. Canonical Strategic Decision Register (D-001 through D-029)
 
 | Decision ID | Canonical Decision Title | Approved Formal Decision | Strategic Rationale & Invariant Guardrail | Affected Canonical Documents |
 |:---:|:---|:---|:---|:---|
@@ -40,19 +40,19 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 | **D-015** | **Canonical Database & Technical Environment** | **PostgreSQL 18** is the sole canonical production, staging, migration and runtime database. SQLite is restricted to isolated unit tests only. | Eliminates dialect/concurrency divergence. | `POL_00_PROJECT_CONTROL/TECHNICAL_ENVIRONMENT.md`, `migrations/001_initial_schema.sql` |
 | **D-016** | **Vendor Referral in MVP** | **Vendor Referral is a mandatory MVP capability.** Vendors create a referral code/link; a retailer redeems it once as first-touch attribution during onboarding/activation; attribution is persisted, auditable and connected to the order lifecycle. **No monetary referral reward, wallet, credit, or complex incentive engine is activated in MVP.** | Vendor relationships are a direct acquisition channel in the Ahvaz B2B model. POL must measure supplier-led acquisition before adding paid/referral incentives. | `scripts/vendor_referral.py`, `migrations/013_vendor_referral_mvp_and_integrity_fixes.sql`, `scripts/test_vendor_referral.py` |
 | **D-017** | **Canonical User Profile & Persona Context in MVP** | Every user MUST have exactly one universal `user_profiles` record. Every organization membership MUST have exactly one `membership_profiles` record plus the appropriate role-specific persona profile. Profile UI may adapt by persona, but authorization MUST remain sourced from `organization_memberships.role` and active tenant context. | A multi-tenant B2B system needs stable personal identity plus tenant-specific context without turning UI profile fields into RBAC. | `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md`, `06_PRODUCT/USER_PROFILE_UX_SPEC.md`, `migrations/017_canonical_user_profiles_and_persona_context.sql` |
-| **D-018** | **Authentication / OTP Policy** | **OTP: 4-digit numeric, 120-second TTL, 60-second resend interval. Rate limit: 3 OTP requests per 5 minutes per phone+IP. Max verification attempts: 5 per challenge. Lockout: 10-minute phone lockout after 5 failed attempts. Access token: 15-minute JWT. Refresh token: 30-day lifetime, issued on successful OTP verification. Refresh-token rotation: requires explicit downstream decision (see D-018 note below).** | Founder selected Option A (Technical Architecture alignment). Supersedes conflicting OTP/auth values in `Technical_Architecture_Spec.md`, `IDENTITY_AND_MEMBERSHIP.md`, `API_Contracts.md`, and `operational_config.py`. PostgreSQL D-015, tenant/RBAC rules, ApplicationContext model, domain state machines, and non-custodial payment are preserved. | `06_PRODUCT/Technical_Architecture_Spec.md` §3, `08_DATA/IDENTITY_AND_MEMBERSHIP.md` §2.5, `06_PRODUCT/API_Contracts.md` §7, `scripts/operational_config.py`, `scripts/domain_services.py`, auth tests, design specs 26/30 |
+| **D-018** | **Authentication / OTP Policy** | **OTP: 6-digit numeric, 120-second TTL, 60-second resend interval. Rate limit: 3 OTP requests per 5 minutes per phone+IP. Max verification attempts: 5 per challenge. Lockout: 10-minute phone lockout after 5 failed attempts. Access token: 15-minute JWT. Refresh token: 30-day lifetime, issued on successful OTP verification. Refresh-token rotation: requires explicit downstream decision (see D-018 note below).** | Founder selected Option A (Technical Architecture alignment). Supersedes conflicting OTP/auth values in `Technical_Architecture_Spec.md`, `IDENTITY_AND_MEMBERSHIP.md`, `API_Contracts.md`, and `operational_config.py`. PostgreSQL D-015, tenant/RBAC rules, ApplicationContext model, domain state machines, and non-custodial payment are preserved. | `06_PRODUCT/Technical_Architecture_Spec.md` §3, `08_DATA/IDENTITY_AND_MEMBERSHIP.md` §2.5, `06_PRODUCT/API_Contracts.md` §7, `scripts/operational_config.py`, `scripts/domain_services.py`, auth tests, design specs 26/30 |
 | **D-019** | **Production Backend Runtime** | **Python is the authoritative production backend runtime.** Existing canonical Python domain/application implementation (`scripts/application_boundary.py`, `scripts/domain_services.py`, all domain services, gateways, workers) becomes the production runtime direction. Single-runtime architecture: HTTP transport → authentication/session → `ApplicationContext` → `POLApplicationBoundary` → canonical Python domain services → PostgreSQL 18 transaction → outbox → async workers. | Founder selected Python as production runtime. Supersedes `Technical_Architecture_Spec.md:57-62` Node.js/NestJS/Fastify production-runtime claim ONLY to the extent necessary to make Python authoritative. No Node/Python dual runtime. No communication boundary. No adapter layer migration. | `06_PRODUCT/Technical_Architecture_Spec.md` §2, `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md`, `POL_00_PROJECT_CONTROL/GLOBAL_ENGINEERING_AUDIT_2026-09-14.md` §5A |
 | **D-020** | **Production HTTP Framework** | **FastAPI is the production HTTP framework.** FastAPI is a thin transport adapter. It MUST: authenticate the request, construct `ApplicationContext`, validate transport schema, call `POLApplicationBoundary`, map canonical domain errors to transport responses, return API responses. It MUST NOT: implement business rules, write domain tables directly, bypass `POLApplicationBoundary`, import legacy `domain_services`, duplicate state machines, implement allocation logic, or implement authorization independently from canonical membership context. | Founder selected FastAPI. D-019 establishes Python as runtime; D-020 selects the HTTP framework as a separate decision. FastAPI is the thin translation layer: `FastAPI → authentication/session → ApplicationContext → POLApplicationBoundary → canonical service → PostgreSQL → outbox → worker`. No business logic in the adapter. | `06_PRODUCT/Technical_Architecture_Spec.md` §2 (supersedes NestJS/Fastify), `POL_00_PROJECT_CONTROL/API_APPLICATION_BOUNDARY.md`, `POL_00_PROJECT_CONTROL/GLOBAL_ENGINEERING_AUDIT_2026-09-14.md` §5A |
 
 ### D-018 — Detailed Decision: Authentication / OTP Policy
 
-**Source:** `POL_00_PROJECT_CONTROL/FOUNDER_ARCHITECT_DECISION_BRIEF_2026-09-18.md` (Founder selected Option A — Technical Architecture alignment).
+**Original source:** `POL_00_PROJECT_CONTROL/FOUNDER_ARCHITECT_DECISION_BRIEF_2026-09-18.md` (Option A). **Superseding amendment:** explicit founder instruction recorded on 2026-11-24; six-digit login/registration OTP is now canonical.
 
 **Approved values:**
 
 | Parameter | Value | Source |
 |---|---|---|
-| OTP digit count | 4 | `Technical_Architecture_Spec.md:80` |
+| OTP digit count | 6 | `Technical_Architecture_Spec.md:80` |
 | OTP TTL | 120 seconds | All sources agree |
 | Resend interval | 60 seconds | `API_Contracts.md:360` |
 | Rate-limit window | 3 per 5 minutes | `Technical_Architecture_Spec.md:95` |
@@ -69,9 +69,9 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 
 **Supersedes:**
 - `06_PRODUCT/Technical_Architecture_Spec.md` §3 — OTP digit count, access-token lifetime, rate-limit parameters now authoritative.
-- `08_DATA/IDENTITY_AND_MEMBERSHIP.md` §2.5 — `code_hash` description ("5-digit") is superseded.
-- `06_PRODUCT/API_Contracts.md` §7 — `otp_code` example (6-digit), `expires_in` (86400), rate-limit (3/10min) are superseded.
-- `scripts/operational_config.py` — the old `OTP_CODE_LENGTH = 6` / `SESSION_TTL_HOURS = 24` values are superseded; current implementation has been synchronized to the D-018 values.
+- `08_DATA/IDENTITY_AND_MEMBERSHIP.md` §2.5 — `code_hash` description is six-digit numeric OTP.
+- `06_PRODUCT/API_Contracts.md` §7 — The six-digit `otp_code` example is canonical; the former 86400-second expiry and 3/10min rate limit remain superseded.
+- `scripts/operational_config.py` — the former `OTP_CODE_LENGTH = 4` is superseded by six digits; `SESSION_TTL_HOURS = 720` remains unchanged.
 - `POL_00_PROJECT_CONTROL/PRE_MVP_100_SCENARIO_STRESS_TEST.md` §32 — 5/hour rate limit superseded.
 
 **Does NOT change:**
@@ -85,12 +85,12 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 - Non-custodial payment
 
 **Implementation synchronization status (2026-09-28):**
-- `06_PRODUCT/Technical_Architecture_Spec.md` — synchronized to 4-digit OTP and the canonical token semantics; `POST /auth/refresh` is implemented. Refresh-token rotation policy remains explicitly undecided.
-- `08_DATA/IDENTITY_AND_MEMBERSHIP.md` — synchronized to 4-digit OTP and 30-day refresh-session semantics.
-- `06_PRODUCT/API_Contracts.md` — synchronized to 3/5min phone+IP, 4-digit OTP, `expires_in=900`, 30-day refresh-session semantics, and the implemented refresh endpoint; the rotation behavior is documented as current implementation, not policy.
-- `scripts/operational_config.py` — synchronized to `OTP_CODE_LENGTH = 4` and `SESSION_TTL_HOURS = 720` (30 days = refresh-session lifetime)
-- `scripts/domain_services.py` — current implementation is reconciled to the 4-digit OTP and 30-day refresh-session semantics; access-token 15-minute expiry remains a JWT concern.
-- Auth tests — synchronized; they verify 4-digit OTP, 30-day refresh sessions, and the current rotation behavior without treating rotation as an approved product policy.
+- `06_PRODUCT/Technical_Architecture_Spec.md` — synchronized to six-digit OTP and the canonical token semantics; `POST /auth/refresh` is implemented. Refresh-token rotation policy remains explicitly undecided.
+- `08_DATA/IDENTITY_AND_MEMBERSHIP.md` — synchronized to six-digit OTP and 30-day refresh-session semantics.
+- `06_PRODUCT/API_Contracts.md` — synchronized to 3/5min phone+IP, six-digit OTP, `expires_in=900`, 30-day refresh-session semantics, and the implemented refresh endpoint; the rotation behavior is documented as current implementation, not policy.
+- `scripts/operational_config.py` — synchronized to `OTP_CODE_LENGTH = 6` and `SESSION_TTL_HOURS = 720` (30 days = refresh-session lifetime)
+- `scripts/domain_services.py` — current implementation is reconciled to the six-digit OTP and 30-day refresh-session semantics; access-token 15-minute expiry remains a JWT concern.
+- Auth tests — synchronized; they verify six-digit OTP, 30-day refresh sessions, and the current rotation behavior without treating rotation as an approved product policy.
 - Design specs 26/30 and frontend auth screens — synchronized to the D-018 values and current refresh flow.
 
 **Note on refresh-token rotation:** The Technical Architecture document implies refresh-token rotation ("Refresh Token (عمر ۳۰ روز)") but does not explicitly define a rotation policy (full rotation, rotation with reuse detection, or no rotation). This parameter requires a separate explicit Founder/Architect decision before implementation. Do not silently inherit any behavior.
@@ -105,7 +105,7 @@ All decisions recorded in this register are **LOCKED** for Sprint 0 and MVP exec
 
 4. **No schema migration required.** The `refresh_token_hash` column already exists. The only change is the value assigned to `user_sessions.expires_at` (30 days instead of 15 minutes) and the documentation of its semantic meaning.
 
-5. **Delivery OTP is a separate domain concern.** D-018 governs login/registration OTP only. The canonical `deliveries` table (`Data_Schema.md:556-574`) does not define an `otp_code` column. The `confirm_delivery_otp` path records `proof_of_delivery.otp_verified` but does not establish a canonical delivery OTP generation/verification contract. Delivery OTP digit count, lifetime, and security policy require a separate domain decision or explicit canonical contract later.
+5. **Delivery OTP is a separate domain concern.** D-018 governs login/registration OTP only. The canonical `deliveries` table (`Data_Schema.md:556-574`) does not define an `otp_code` column. New delivery OTP issuance and proof-of-delivery handling are governed separately by D-029. D-018 login TTL/rate/lockout semantics do not automatically apply to delivery codes.
 
 ---
 
@@ -219,8 +219,8 @@ SMSIR_LINE_NUMBER=<configured line if required>
 - Do NOT ask the founder to paste credentials into chat or commit them.
 - Use the provider adapter boundary already defined in `scripts/provider_adapters.py`.
 - Keep provider-specific behavior behind the adapter; do not expose SMS.ir details to product/domain services.
-- Future SMS.ir OTP template MUST support a 4-digit verification code (per D-018).
-- Do NOT create or approve a 6-digit template.
+- Future SMS.ir OTP template MUST support a six-digit verification code (per D-018).
+- Do NOT create or approve a four-digit authentication template; the approved SMS.ir pattern must deliver six digits.
 - Do NOT modify auth runtime in this batch — this is decision formalization only.
 
 ---
@@ -240,7 +240,7 @@ The presence of a database foundation does **not** mean the feature is active.
 - **Vendor Referral attribution (D-016)**
 - **Universal User Profile + tenant-specific Persona Context (D-017)**
 - Non-custodial direct payment + reconciliation foundation
-- **Authentication / OTP Policy (D-018)** — 4-digit OTP, 15-min access token, 3/5min rate limit, 30-day refresh
+- **Authentication / OTP Policy (D-018)** — six-digit OTP, 15-min access token, 3/5min rate limit, 30-day refresh
 - **Production Backend Runtime: Python (D-019)** — canonical domain/application implementation is production direction
 - **Production HTTP Framework: FastAPI (D-020)** — thin transport adapter behind `POLApplicationBoundary`
 
@@ -267,7 +267,7 @@ All code generators, database migration scripts, API controllers and operational
 - **Order Engine MVP:** D-014 plus D-004/D-005.
 - **Vendor Referral MVP:** D-016; attribution-first and incentive-free.
 - **Profile / Identity MVP:** D-017; universal user profile plus membership persona context.
-- **Auth / OTP implementation:** D-018; 4-digit OTP, 15-min access token, 3/5min rate limit per phone+IP, 30-day refresh, 5 max attempts, 10min lockout.
+- **Auth / OTP implementation:** D-018; six-digit OTP, 15-min access token, 3/5min rate limit per phone+IP, 30-day refresh, 5 max attempts, 10min lockout.
 - **Production HTTP transport:** D-019 (Python runtime) + D-020 (FastAPI framework); thin adapter behind `POLApplicationBoundary`.
 - **SMS provider integration:** D-018 (OTP values) + SMS.ir provider readiness (environment contract, adapter boundary).
 - **Pilot Operations:** D-001, D-002, D-006, D-008, D-014, D-016, D-017, D-018.
@@ -298,6 +298,7 @@ The following founder-directed amendments extend D-001 through D-020. They are a
 | D-026 | Dual Client / Delegated Permissions | Every persona is supported on both Web and Android. Role gives baseline responsibilities; organization managers may grant/revoke allowed delegated permissions within platform boundaries. Authorization remains server-side, organization-scoped and deny-by-default. |
 | D-027 | Product Media Provenance | Master Product identity remains separate from Vendor SKU. Product media must preserve source/provenance metadata and must not embed unverified intellectual-property/right claims. Manufacturer-source import is an ingestion workflow, not an assumption of unrestricted rights. |
 | D-028 | Barcode Scanner | Barcode scanning is a first-class operational capability for eligible users, primarily on Android. Unknown scans create catalog candidates; scanning cannot bypass Master Product governance. |
+| D-029 | Delivery / Proof-of-Delivery OTP | Every newly issued delivery OTP is exactly six ASCII numeric digits, including leading-zero values, generated securely and delivered only to the authorized retailer recipient through the canonical inbox outbox event. It is purpose-bound, single-use and subject to independent delivery-attempt accounting. Existing in-flight four-digit delivery codes issued before migration 077 remain valid only for their original delivery until terminal completion; migrations must not rotate or disclose them. Delivery expiry/attempt rules remain separate from D-018. |
 
 ## D-026 — Authorization Model Clarification
 
@@ -314,3 +315,20 @@ Delivery handoff links must use server-generated high-entropy opaque tokens, sho
 ## D-021 — Wallet Boundary
 
 The absence of a stored-value Wallet in MVP is deliberate. Existing payments/refunds/invoices/settlements remain operational records and are not reinterpreted as wallet balance. Any future wallet must be introduced through a separately approved financial ledger design.
+
+
+## D-029 — Delivery and Proof-of-Delivery OTP
+
+**Decision date:** 2026-11-24  
+**Authority:** Explicit founder instruction to standardize every newly issued POL OTP to six digits, with delivery treated as a separate domain from login/registration.
+
+**Canonical rule**
+- Every newly issued delivery/POD OTP is exactly six ASCII digits (`0`–`9`); leading zeroes are significant and the code is always a string.
+- New codes are generated using a cryptographically secure random source and stored with an explicit `delivery_otp_length = 6`.
+- The code is purpose-bound to one delivery record, sent only through the existing `DELIVERY_OTP_GENERATED` outbox event to active retailer-owner/staff inbox recipients, never returned in the vendor dispatch response, and consumed once.
+- Delivery attempt accounting remains durable and independent through `delivery_otp_attempts`.
+- D-018 login TTL, resend interval, phone/IP rate limit and lockout must not be copied to delivery OTP. The existing delivery expiry and attempt-cap contract remains authoritative unless separately amended.
+- **Legacy transition:** migration 077 records the actual length of existing stored delivery codes. Four-digit values already issued to in-flight deliveries remain valid only for their original delivery until it reaches a terminal state. Migration 077 must not rotate, clear, or re-send these values. New delivery inserts default to six digits, and the database constraint binds code format to `delivery_otp_length`.
+- Once all legacy four-digit deliveries have reached terminal states, a later migration may remove the legacy four-digit allowance after an explicit operational check; it is not part of migration 077.
+
+**Implementation references:** `migrations/077_delivery_otp_six_digit_format.sql`, `scripts/operational_config.py`, `scripts/fulfillment_service.py`, `scripts/api/schemas.py`, delivery/POD API and regression tests.

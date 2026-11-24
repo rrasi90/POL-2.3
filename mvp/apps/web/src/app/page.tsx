@@ -131,7 +131,7 @@ export default function HomePage() {
                 سبد چندفروشنده‌ای (D-014)
               </span>
               <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
-                OTP چهاررقمی (D-018)
+                OTP شش‌رقمی (D-018)
               </span>
               <span className="rounded-lg bg-[var(--pol-light-surface-subtle)] px-3 py-1 font-mono text-[11px] text-[var(--pol-light-text-secondary)]">
                 تحویل با لینک (D-023)

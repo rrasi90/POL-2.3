@@ -61,7 +61,7 @@ def _create_session(cur, user_id, org_id):
     return session_id
 
 
-def _seed_dispatched(suffix, otp="1234"):
+def _seed_dispatched(suffix, otp="123456"):
     conn = _db()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -122,9 +122,9 @@ def _seed_dispatched(suffix, otp="1234"):
                 (item_id, oi, product_id, vendor_product_id, f'PROOF-VP-{suffix}'),
             )
             cur.execute(
-                "INSERT INTO deliveries (id, order_id, vendor_id, delivery_status, driver_name, vehicle_plate, delivery_otp, dispatched_at, created_at) "
-                "VALUES (%s, %s, %s, \'ARRIVED\', \'Ali\', \'12-A-345\', %s, now(), now())",
-                (di, oi, vi, otp),
+                "INSERT INTO deliveries (id, order_id, vendor_id, delivery_status, driver_name, vehicle_plate, delivery_otp, delivery_otp_length, dispatched_at, created_at) "
+                "VALUES (%s, %s, %s, \'ARRIVED\', \'Ali\', \'12-A-345\', %s, %s, now(), now())",
+                (di, oi, vi, otp, len(otp)),
             )
             media_id = str(uuid4())
             # G-319/G-054: POD photo media must be READY and pre-bound to the
@@ -152,27 +152,27 @@ def client():
 
 class TestOTPVerification:
     def test_deliver_with_correct_otp(self, client):
-        data = _seed_dispatched(uuid4().hex[:8], "1234")
+        data = _seed_dispatched(uuid4().hex[:8], "123456")
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "otp_code": "1234"},
+            json={"recipient_name": "Reza", "otp_code": "123456"},
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["otp_verified"] is True
 
     def test_deliver_with_wrong_otp(self, client):
-        data = _seed_dispatched(uuid4().hex[:8], "1234")
+        data = _seed_dispatched(uuid4().hex[:8], "123456")
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "otp_code": "9999"},
+            json={"recipient_name": "Reza", "otp_code": "999999"},
         )
         assert resp.status_code == 422
         assert resp.json()["success"] is False
 
     def test_deliver_without_otp(self, client):
-        data = _seed_dispatched(uuid4().hex[:8], "1234")
+        data = _seed_dispatched(uuid4().hex[:8], "123456")
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
@@ -184,7 +184,7 @@ class TestOTPVerification:
 
 class TestOTPAttemptCap:
     def test_other_retailer_cannot_consume_victim_otp_attempts(self, client):
-        data = _seed_dispatched(uuid4().hex[:8], "1234")
+        data = _seed_dispatched(uuid4().hex[:8], "123456")
         attacker_user_id = str(uuid4())
         attacker_org_id = str(uuid4())
 
@@ -218,7 +218,7 @@ class TestOTPAttemptCap:
         response = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {attacker_token}"},
-            json={"recipient_name": "Intruder", "otp_code": "9999"},
+            json={"recipient_name": "Intruder", "otp_code": "999999"},
         )
         assert response.status_code in (403, 422)
 
@@ -234,18 +234,18 @@ class TestOTPAttemptCap:
             conn.close()
 
     def test_otp_attempt_limit(self, client):
-        data = _seed_dispatched(uuid4().hex[:8], "1234")
+        data = _seed_dispatched(uuid4().hex[:8], "123456")
         for _ in range(5):
             resp = client.post(
                 f"/api/v1/orders/{data['oi']}/deliver",
                 headers={"Authorization": f"Bearer {data['r_token']}"},
-                json={"recipient_name": "Reza", "otp_code": "9999"},
+                json={"recipient_name": "Reza", "otp_code": "999999"},
             )
             assert resp.status_code == 422
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "otp_code": "1234"},
+            json={"recipient_name": "Reza", "otp_code": "123456"},
         )
         assert resp.status_code == 422
 
@@ -263,13 +263,13 @@ class TestOTPAttemptCap:
 
 class TestDeliveredQuantities:
     def test_delivered_quantity_above_ordered_rejected(self, client):
-        data = _seed_dispatched(uuid4().hex[:8], "1234")
+        data = _seed_dispatched(uuid4().hex[:8], "123456")
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
             json={
                 "recipient_name": "Reza",
-                "otp_code": "1234",
+                "otp_code": "123456",
                 "delivered_items": [
                     {"order_item_id": data["item_id"], "delivered_quantity": 11}
                 ],
@@ -353,3 +353,15 @@ class TestSecureAccess:
             json={"recipient_name": "Reza"},
         )
         assert resp.status_code == 401
+
+
+class TestLegacyDeliveryOtpCompatibility:
+    def test_existing_four_digit_delivery_otp_remains_usable_until_completion(self, client):
+        data = _seed_dispatched(uuid4().hex[:8], "1234")
+        response = client.post(
+            f"/api/v1/orders/{data['oi']}/deliver",
+            headers={"Authorization": f"Bearer {data['r_token']}"},
+            json={"recipient_name": "Reza", "otp_code": "1234"},
+        )
+        assert response.status_code == 200
+        assert response.json()["data"]["otp_verified"] is True

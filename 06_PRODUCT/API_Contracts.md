@@ -446,13 +446,15 @@
 ```
 
 ### ۷.۲. تأیید رمز یک‌بار مصرف و صدور توکن (`POST /auth/verify-otp`)
+
+> **D-018 (amended 2026-11-24):** `otp_code` MUST contain exactly six ASCII digits (`^[0-9]{6}$`). Preserve leading zeroes; never parse the code as an integer. The former four-digit authentication rule is superseded.
 * **مجوز:** عمومی.
 * **قانون ضد Brute-Force:** پس از ۵ بار اشتباه، OTP باطل شده و شماره ۱۰ دقیقه مسدود می‌شود.
 * **بدنه درخواست:**
 ```json
 {
   "mobile_number": "+989161112233",
-  "otp_code": "7341",
+  "otp_code": "734192",
   "device_info": {
     "device_type": "MOBILE_ANDROID",
     "fcm_token": "fcm_dK9sL2...",

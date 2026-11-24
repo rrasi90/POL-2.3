@@ -292,7 +292,7 @@ class TestDispatch:
         assert "delivery_otp" not in result
         # The OTP reaches the retailer through the targeted DELIVERY_OTP_GENERATED event.
         otp = _recipient_delivery_otp(data["oi"])
-        assert isinstance(otp, str) and len(otp) == 4 and otp.isdigit()
+        assert isinstance(otp, str) and len(otp) == 6 and otp.isdigit()
         for path in ("picked-up", "in-transit", "arrived"):
             stage = client.post(
                 f"/api/v1/orders/{data['oi']}/delivery/{path}",
@@ -341,7 +341,7 @@ class TestConfirmDelivery:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "otp_code": "1234"},
+            json={"recipient_name": "Reza", "otp_code": "123456"},
         )
         assert resp.status_code == 422
 
@@ -351,7 +351,7 @@ class TestConfirmDelivery:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "otp_code": "0000"},
+            json={"recipient_name": "Reza", "otp_code": "000000"},
         )
         assert resp.status_code == 422
 
@@ -378,7 +378,7 @@ class TestConfirmDelivery:
         resp = client.post(
             f"/api/v1/orders/{data['oi']}/deliver",
             headers={"Authorization": f"Bearer {data['r_token']}"},
-            json={"recipient_name": "Reza", "otp_code": "1234"},
+            json={"recipient_name": "Reza", "otp_code": "123456"},
         )
         assert resp.status_code == 422
 

@@ -260,9 +260,9 @@ def test_wrong_otp_attempts_lock_the_phone(client, seeded):
     assert first.status_code == 200
 
     for _ in range(OTP_MAX_ATTEMPTS - 1):
-        attempt = client.post(f"{API}/auth/verify-otp", json={"mobile_number": phone, "otp_code": "9999"})
+        attempt = client.post(f"{API}/auth/verify-otp", json={"mobile_number": phone, "otp_code": "999999"})
         assert attempt.status_code in {400, 401, 422}, attempt.text
 
-    blocked = client.post(f"{API}/auth/verify-otp", json={"mobile_number": phone, "otp_code": "9999"})
+    blocked = client.post(f"{API}/auth/verify-otp", json={"mobile_number": phone, "otp_code": "999999"})
     assert blocked.status_code == 429
     assert blocked.json()["error"]["code"] == "OTP_LOCKED"

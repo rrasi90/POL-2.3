@@ -8,9 +8,9 @@
 
 ## G-001 — OTP digit count (CONFLICT — RESOLVED)
 
-- **Sources:** `frontend_route_contract_map.md` “OTP 6-digit” vs **D-018** + `scripts/operational_config.py` `OTP_CODE_LENGTH = 4`
-- **Resolution:** D-018 wins → **4-digit**. Route map note is stale.
-- **Action:** implement 4-digit; no further guess.
+- **Sources:** former D-018 four-digit authentication policy versus legacy design-map six-digit references.
+- **Resolution (2026-11-24):** founder amendment supersedes the former length; D-018 authentication OTP is exactly six ASCII numeric digits.
+- **Action:** implement six ASCII digits for LOGIN/REGISTER; retain 120s TTL, 60s resend, 3/5min phone+IP limit, five attempts and 10-minute lockout.
 
 ## G-002 — Master Tree filename / legacy reference (CONFLICT — RESOLVED)
 
@@ -128,8 +128,8 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 
 ## G-022 — Delivery OTP schema vs D-018 (RESOLVED)
 
-- **Sources:** `DeliveryConfirmRequest.otp_code` pattern was `^\d{6}$` vs **D-018** 4-digit OTP (`OTP_CODE_LENGTH = 4`).
-- **Resolution:** **RESOLVED (2026-09-23).** Backend aligned end-to-end: schema pattern `^\d{4}$`; `fulfillment_service.dispatch_order` generates via `OTP_CODE_LENGTH` and **persists** `delivery_otp` (was generated-but-not-saved); web R-09E OTP input `maxLength={4}`; POD tests use 4-digit codes. Migration `030` column stays `VARCHAR(6)` for historical rows; comment updated to D-018 4-digit.
+- **Sources:** D-029 requires six-digit newly issued delivery OTPs. The prior four-digit delivery format remains a data-compatibility exception only for codes already issued to in-flight deliveries before migration 077.
+- **Resolution (2026-11-24):** new dispatches use six ASCII digits via DELIVERY_OTP_CODE_LENGTH and secure randomness. Migration 077 stores the actual length of existing delivery codes without rotating or re-sending them; a previously issued four-digit in-flight code may complete only its original delivery.
 - **Status:** RESOLVED
 
 ---
@@ -206,7 +206,7 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 ## G-033 — Deterministic OTP outside explicit test environment (SECURITY GAP — REMEDIATED)
 
 - **Finding (2026-09-25):** AuthService.request_otp previously selected deterministic `1234` for every non-production environment, so an unset/unknown environment could silently inherit the test credential.
-- **Resolution:** deterministic OTP is now allowed only when `ENVIRONMENT=test` and production-mode detection is false. All other environments use cryptographically random 4-digit OTPs. The `test_code` response field is exposed only in the explicit test environment.
+- **Resolution:** deterministic OTP is now allowed only when `ENVIRONMENT=test` and production-mode detection is false. All other environments use cryptographically random six-digit OTPs under the amended D-018 policy. The `test_code` response field is exposed only in the explicit test environment.
 - **Regression proof:** scripts/test_auth_contract.py::test_static_otp_is_strictly_test_only covers explicit test mode plus development, unknown and unset environment cases.
 - **CI status:** source and test remediation committed; fresh GitHub Actions certification remains blocked by the current runner/check execution failure before useful job steps.
 - **Status:** SOURCE REMEDIATED / CI PENDING
@@ -528,7 +528,7 @@ This section is the persistent intake ledger for findings previously identified 
 - **Finding re-verified:** the interrupted remediation line had already removed `delivery_otp` from the vendor dispatch response (G-439 source) and implemented mandatory OTP confirmation (ARRIVED gate, recipient name, single-use consumption, expiry) — but (a) the recipient channel was missing entirely (the DELIVERY_OTP_GENERATED event payload and template carried no code, so no actor could ever complete delivery), and (b) the 5-attempt cap lived in the per-request transaction and was rolled back on every rejection, so brute-force protection never engaged. Stale tests still asserted the leaked-OTP contract.
 - **Resolution (this branch):**
   1. Recipient channel: `DELIVERY_OTP_GENERATED` outbox payload now carries `delivery_otp`; template version 1.1 (migration 071) renders it into the targeted retailer inbox (INBOX channel, ops untouched, vendor response stays clean).
-  2. Durable attempt accounting: new `delivery_otp_attempts` table (migration 071); `POLApplicationBoundary.retailer_confirm_delivery` records each verification attempt in an **independent transaction** before the confirmation transaction starts (guarded: not consumed, not expired); cap 5 per D-018 max-attempts policy; `deliveries.delivery_otp_attempt_count` superseded (kept for historical rows; 068 CHECK retained).
+  2. Durable attempt accounting: new `delivery_otp_attempts` table (migration 071); `POLApplicationBoundary.retailer_confirm_delivery` records each verification attempt in an **independent transaction** before the confirmation transaction starts (guarded: not consumed, not expired); cap 5 per the delivery-specific OTP attempt policy (separate from D-018 login attempts); `deliveries.delivery_otp_attempt_count` superseded (kept for historical rows; 068 CHECK retained).
   3. Corruption repair on this path: `list_delivery_exceptions` security pre-check SQL had duplicated/joined fragments (unparseable) — rebuilt.
   4. Tests updated to the canonical contract: vendor dispatch response must NOT contain `delivery_otp`; tests fetch the OTP from the recipient outbox channel; POD photo media must be READY and pre-bound to the DELIVERY target (G-319/G-054 model); escalation fan-out asserted against the seeded ops org.
 - **Files changed:** `scripts/fulfillment_service.py`, `scripts/application_boundary.py`, `scripts/delivery_exceptions.py`, `migrations/071_delivery_otp_recipient_channel.sql`, `scripts/test_http_fulfillment.py`, `scripts/test_http_proof_of_delivery.py`, `scripts/test_http_delivery_exceptions.py`.
@@ -1009,3 +1009,11 @@ The remediation intentionally does **not** enforce one refund record per order. 
 - Current-head executable CI evidence.
 - Live HTTPS VPS endpoint verification.
 - Native Expo/Gradle build and installation.
+
+
+## OTP Policy Supersession — 2026-11-24
+
+- D-018 now requires exactly six ASCII digits for all newly issued login/registration OTPs. Its existing TTL, resend interval, rate limit, maximum attempts, lockout and token lifetimes remain unchanged.
+- D-029 requires exactly six ASCII digits for all newly issued delivery/POD OTPs, with a separate recipient-only and single-use lifecycle.
+- Four-digit delivery OTPs are accepted only when they were already issued to an in-flight delivery before migration 077. They remain valid only for that delivery until terminal completion. Migration 077 never rotates or re-sends them.
+- Historical examples, old smoke-test records and old screenshots that show four-digit login OTPs are superseded evidence and must not be used to describe the current policy.

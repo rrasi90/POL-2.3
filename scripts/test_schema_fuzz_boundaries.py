@@ -50,14 +50,14 @@ def _basket(**overrides):
 class TestOtpInputBoundaries:
     @pytest.mark.parametrize(
         "code",
-        ["\u0661\u0662\u0663\u0664", "\uff11\uff12\uff13\uff14", "12 4", " 123", "12345", "abcd", ""],
+        ["\\u0661\\u0662\\u0663\\u0664\\u0665\\u0666", "\\uff11\\uff12\\uff13\\uff14\\uff15\\uff16", "12 456", " 12345", "12345", "1234567", "abcdef", ""],
     )
     def test_non_ascii_or_malformed_otp_is_rejected(self, code):
         with pytest.raises(ValidationError):
             VerifyOTPRequest(mobile_number="+989121234567", otp_code=code)
 
     def test_ascii_otp_is_accepted(self):
-        assert VerifyOTPRequest(mobile_number="+989121234567", otp_code="1234").otp_code == "1234"
+        assert VerifyOTPRequest(mobile_number="+989121234567", otp_code="123456").otp_code == "123456"
 
     @pytest.mark.parametrize(
         "number",
@@ -81,7 +81,7 @@ class TestOtpInputBoundaries:
             "/api/v1/auth/verify-otp",
             json={
                 "mobile_number": "+989121234567",
-                "otp_code": "\u0661\u0662\u0663\u0664",
+                "otp_code": "\u0661\u0662\u0663\u0664\u0665\u0666",
             },
         )
         assert response.status_code == 422
@@ -218,7 +218,7 @@ class TestCollectionAndPaginationBoundaries:
 class TestSeededRandomFuzz:
     MODELS = [
         (RequestOTPRequest, {"mobile_number": "+989121234567"}),
-        (VerifyOTPRequest, {"mobile_number": "+989121234567", "otp_code": "1234"}),
+        (VerifyOTPRequest, {"mobile_number": "+989121234567", "otp_code": "123456"}),
         (BasketItemRequest, _basket()),
         (
             CheckoutRequest,

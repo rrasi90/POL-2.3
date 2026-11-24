@@ -7,7 +7,7 @@
 | SRC-001 | P1 | CONFIRMED_STATIC | Design tokens | توکن‌های Doory با Precision Commerce کانونی اختلاف دارند | راهنمای Doory در برابر Doc 56 و .pol-design/tokens/tokens.json | تعارض تعیین تکلیف و نگاشت توکن ثبت؛ Light/Night تطبیق داده شود |
 | SRC-002 | P1 | CONFIRMED_STATIC | QA provenance | ادعای ۵۸ سطح و capture inventory قدیمی ۶۰ مورد، منشأ/وضعیت متفاوت دارند | .pol-design/VISUAL_QA.md و فایل‌های capture تاریخی | وضعیت ادعاها به کامیت/محیط/شواهد جاری متصل شود |
 | SRC-003 | P1 | CONFIRMED_STATIC | Screen inventory | ۱۲ صفحهٔ JSON شامل ۱۰ صفحهٔ محصول و ۲ صفحهٔ راهنماست | JSON مستر، ۶۷۷ شیء در 390×844 | صفحه‌های محصولی از مستندات/کامپوننت‌ها جدا شوند |
-| SRC-004 | P1 | CONFIRMED_STATIC | Auth | متن JSON OTP شش‌رقمی است، ولی D-018 و کد چهاررقمی‌اند | صفحات ۳/۴ JSON، D-018، LoginScreen.tsx | متن/کادرها/resend/error با ۴ رقم و قرارداد D-018 سازگار شوند |
+| SRC-004 | P1 | SUPERSEDED_BY_POLICY_AMENDMENT | Auth | تعارض سابق بین متن OTP شش‌رقمی، UI چهاررقمی و D-018 | صفحات ۳/۴ JSON، اصلاحیهٔ D-018، LoginScreen.tsx | قرارداد فعلی شش‌رقمی است؛ UI، متن، error/resend و visual evidence با D-018 همسان و مجدداً QA شوند |
 | SRC-005 | P1 | CONFIRMED_STATIC | Basket | سربرگ سبد هر سه کالا را به یک تأمین‌کننده نسبت می‌دهد ولی اقلام از سه تأمین‌کننده‌اند | صفحات فهرست و سبد JSON؛ D-014/D-022 | خلاصه درست، سبد واحد حفظ و گروه‌بندی درون سبد در صورت نیاز |
 | SRC-006 | P1 | CONFIRMED_STATIC | Product list | متن کادر قیمت عمدهٔ برنج، ویژگی بسته‌بندی است نه قیمت | صفحهٔ ۸ JSON | قیمت/واحد از منبع معتبر؛ بسته‌بندی در فیلد مستقل |
 | SRC-007 | P2 | CONFIRMED_STATIC | Design guide | پنج جفت نمونه/توضیح تایپوگرافی مختصات مشترک دارند | صفحهٔ ۱۱ JSON | کادرها جدا و در بوم 390×844 بدون برخورد/برش رندر شوند |
@@ -33,3 +33,6 @@
 - P3: پرداخت ظریف پس از رفع موارد قبلی.
 
 هر یافتهٔ جدید باید شامل شناسه، کامیت مبنا، منبع/خط/شیء، سطح قطعیت، اقدام، معیار پذیرش و شواهد پس از اصلاح باشد.
+
+
+**2026-11-24 amendment:** SRC-004's former four-digit recommendation is superseded by the approved six-digit D-018 amendment. Any old screenshot or visual verdict remains historical until new six-cell OTP UI is re-captured and reviewed.

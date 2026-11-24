@@ -240,8 +240,8 @@ export async function mockRetailerRequest<T>(
   if (method === "POST" && pathname === "/api/v1/auth/verify-otp") {
     const phone = String(payload.mobile_number || "");
     const otp = String(payload.otp_code || "");
-    if (!/^\+?[1-9]\d{7,14}$/.test(phone) || !/^\d{4}$/.test(otp)) {
-      return bad("Mock OTP must contain an E.164 phone and 4 digits.");
+    if (!/^\+?[1-9]\d{7,14}$/.test(phone) || !/^[0-9]{6}$/.test(otp)) {
+      return bad("Mock OTP must contain an E.164 phone and exactly 6 ASCII digits.");
     }
     const role: RetailerRole = phone.endsWith("0004") ? "RETAILER_STAFF" : "RETAILER_OWNER";
     const token = role === "RETAILER_STAFF" ? "mock-retailer-staff-token" : "mock-retailer-owner-token";

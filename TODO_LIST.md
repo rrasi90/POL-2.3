@@ -348,7 +348,7 @@
 
 ### D4 — کیفیت فرم، stateها، مسیر حرکت و تجربهٔ کاربر
 
-- [ ] `TODO-114` **OPEN — اعتبارسنجی فرم و بومی‌سازی فارسی:** شماره موبایل طبق قرارداد، OTP چهاررقمی، فیلد اجباری/اختیاری، فاصله و نویسهٔ نامعتبر، فارسی/لاتین، اعداد و قالب پول، جداکننده‌ها و خطای server validation را بررسی کنید. مقدار نمایش‌داده‌شده با مقدار ارسالی/ذخیره‌شده یکی باشد؛ قوانین بیزینسی در frontend به‌تنهایی enforce نشوند. | مالک: تعیین‌نشده | پیش‌نیاز: TODO-113
+- [ ] `TODO-114` **OPEN — اعتبارسنجی فرم و بومی‌سازی فارسی:** شماره موبایل طبق قرارداد، OTP شش‌رقمی، فیلد اجباری/اختیاری، فاصله و نویسهٔ نامعتبر، فارسی/لاتین، اعداد و قالب پول، جداکننده‌ها و خطای server validation را بررسی کنید. مقدار نمایش‌داده‌شده با مقدار ارسالی/ذخیره‌شده یکی باشد؛ قوانین بیزینسی در frontend به‌تنهایی enforce نشوند. | مالک: تعیین‌نشده | پیش‌نیاز: TODO-113
 - [ ] `TODO-115` **OPEN — پوشش stateهای هر صفحه:** برای تمام screen/stateهای موردنیاز، loading، skeleton در صورت وجود، empty, success, error, retry, disabled, unauthorized, stale, conflict و submit-in-progress را بررسی کنید. دکمهٔ submit نباید mutation موازی ایجاد کند؛ صفحه نباید با خطای API، اطلاعات قدیمی را به‌عنوان تازه جا بزند. | مالک: تعیین‌نشده | پیش‌نیاز: TODO-114
 - [ ] `TODO-116` **OPEN — navigation و بازگشت به جریان:** back/forward، refresh، tab duplication، deep-link، ورود به صفحه از notification، redirect پس از login، session expiry، route ناموجود و شروع دوبارهٔ جریان را در browser/component tests بررسی کنید. هنگام بازگشت به checkout/فرم مالی، state و idempotency باید امن بماند و route خصوصی با session باطل نمایش داده نشود. | مالک: تعیین‌نشده | پیش‌نیاز: TODO-115
 - [ ] `TODO-117` **OPEN — انیمیشن، motion و lifecycle در کد قابل‌آزمون:** ترتیب transition، پایان animation، gesture interruption، navigation سریع و unmount در حین request را در تست component/automation بررسی کنید. animation نباید state را قفل کند، دوبار submit انجام دهد یا focus را گم کند؛ reduced-motion پشتیبانی‌شده را نیز تست کنید. تست روی دستگاه واقعی طبق TODO-023 جداگانه لازم است. | مالک: تعیین‌نشده | پیش‌نیاز: TODO-116
@@ -1258,3 +1258,10 @@
 - No merge, force-push, branch deletion, workflow weakening, APK build, staging deploy or release certification performed.
 - Owner action: fix Actions billing or provide a secured self-hosted runner; configure branch protection / required checks; then trigger all four workflows on the exact newest PR head and obtain review approval.
 - Handoff accepted by: repository owner pending.
+
+
+---
+
+## OTP Policy Supersession — 2026-11-24
+
+Founder-directed policy amendment: D-018 login/registration OTP is exactly six ASCII digits. D-029 newly issued delivery/POD OTPs are also six digits but retain a separate recipient-only, single-use delivery lifecycle. Update active UI, test, provider-template and API work to six digits. Existing four-digit delivery challenges already issued before migration 077 may be completed only against their original delivery; migrations must not rotate or invalidate them. Any earlier run log or test evidence recording a four-digit policy is historical and must not be presented as verification of the amended six-digit implementation. Re-run affected auth, delivery, browser, mobile, provider-adapter and device checks on the exact amended SHA.

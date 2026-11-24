@@ -84,3 +84,8 @@ The 2026-11-17 audit above was a metadata-only pass with no test execution ("no 
 - Runs 44558971678 / 44558971582 / 44558971752 / 44558971716 are the latest four PR-triggered workflows returned for the inspected SHA.
 - Raw jobs metadata confirms `runner_id=0`, `runner_name=""`, and `steps=[]` for every non-skipped job; Android QA matrix job 135682706494 skipped. Completion was within 1–2 seconds and no job log blob existed. These are pre-runner failures, not executed test failures.
 - A live read of `/branches/main` confirmed `protected=false`, `protection.enabled=false`, and required-status-check enforcement `off`. No protection change was made.
+
+
+## 2026-11-24 OTP policy amendment and selective implementation
+
+The 2026-11-24 founder instruction supersedes the former four-digit D-018 policy: login/registration OTP is now six digits. D-029 separately governs newly issued six-digit delivery/POD OTPs. The original #49/#50 PRs remain closed and are not to be merged wholesale because their heads are stale and their old migration lifecycle handling was not safe to import. A clean selective implementation is being re-authored from current main on feat/six-digit-otp-and-social-impact-readme-20261124. Migration 077 in that branch preserves existing in-flight four-digit delivery codes without rotation and enforces six digits for new codes. Prior test evidence predates this amendment; the current implementation requires fresh exact-SHA CI and security review.

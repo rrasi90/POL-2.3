@@ -10,7 +10,7 @@ import uuid
 
 BASE = "http://127.0.0.1:8000"
 PHONE = "+989160007777"
-OTP = "1234"
+OTP = "123456"
 RESULTS: list[dict] = []
 
 

@@ -71,7 +71,7 @@ All active documents MUST represent the current architecture:
 - Vendor Referral is active MVP (`D-016`) without rewards/wallet/credit incentives.
 - Universal User Profile + Membership Persona Context is active MVP (`D-017`).
 - PostgreSQL 18 is the sole canonical runtime database.
-- Authentication OTP policy: 4-digit, 120s TTL, 3/5min rate limit per phone+IP, 15-min access token, 30-day refresh (`D-018`).
+- Authentication OTP policy: six-digit, 120s TTL, 3/5min rate limit per phone+IP, 15-min access token, 30-day refresh (`D-018`).
 - Production backend runtime: Python; canonical domain/application implementation (`D-019`).
 - Production HTTP framework: FastAPI as thin transport adapter behind `POLApplicationBoundary` (`D-020`).
 
@@ -131,7 +131,7 @@ This document records the adopted product-architecture direction for:
 - Barcode scanning as a first-class operational capability
 - Master SKU and product-media provenance
 
-These directions refine presentation, UX and implementation sequencing without overriding the currently effective D-001 through D-028 decisions or the canonical PostgreSQL/Python/FastAPI architecture. The Decision Register amendments D-021 through D-028 are the governing product decisions for this wave.
+These directions refine presentation, UX and implementation sequencing without overriding the currently effective D-001 through D-029 decisions or the canonical PostgreSQL/Python/FastAPI architecture. The Decision Register amendments D-021 through D-029, including the 2026-11-24 OTP update, are the governing product decisions for this wave.
 
 
 ---
@@ -188,7 +188,7 @@ Repeated screen IDs in derived sections are projections, not independent sources
 This is a historical checkpoint from 2026-09-25, retained for traceability. It recorded that the remediation branch described at that time had been integrated into main. The remaining statements in this checkpoint about current CI failures and closure classes are date-bounded; they are not present-day CI claims. Use live branch refs and workflow runs for the exact SHA under review. Source presence alone is not runtime or release certification.
 
 Current unresolved closure classes are:
-- explicit product/security decisions: D-018 policy wording, invoice timing, D-024 storefront write scope;
+- explicit product/security decisions: D-018 refresh-token rotation, invoice timing, D-024 storefront write scope;
 - deployment/provider/observability evidence;
 - selected deep mobile management UI parity;
 - fresh CI certification after the current GitHub Actions execution blocker is resolved.

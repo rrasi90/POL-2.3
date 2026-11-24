@@ -100,3 +100,8 @@ The current remote refs were re-read from GitHub after PR #58 merged. Two short-
 The other retained refs keep their prior dispositions: both mobile-motion refs and web-refresh are archive-only, both six-digit OTP branches are policy-blocked by D-018, `vercel-qa` is HOLD under TODO-025, and `penpot-work-2026-09-16` is archive-only after the bounded skill salvage. No archive/backup branch was deleted.
 
 The mainline verification workflow triggered by merge commit `e2524df8` was still running at the time of this refresh. The Remediation Static Gate completed successfully; no full-suite or release certification is claimed yet.
+
+
+## 2026-11-24 Live Refresh — OTP policy supersession
+
+The initial historical branch table above reflects the previous D-018 four-digit decision. On 2026-11-24, the founder superseded that rule with six-digit login/registration OTP and approved D-029 for new six-digit delivery/POD OTP. Consequently, the previous OTP BLOCKED_POLICY label is no longer the current policy disposition. The two old branch tips remain stale and must not be merged wholesale; a clean selective implementation is being re-authored from current main on feat/six-digit-otp-and-social-impact-readme-20261124. Migration 077 preserves existing in-flight delivery codes while ensuring new delivery codes are six digits. The feature is not considered verified until exact-SHA CI and security review complete.

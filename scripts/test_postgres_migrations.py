@@ -151,7 +151,7 @@ EXPECTED_19_PLATFORM_TABLES = {
 }
 
 EXPECTED_BASE_TABLES = EXPECTED_37_TABLES | EXPECTED_19_PLATFORM_TABLES
-MIN_EXPECTED_MIGRATION_HEAD = 76
+MIN_EXPECTED_MIGRATION_HEAD = 77
 
 def verify_tables(conn):
     print("\n[VERIFICATION 1] Verifying canonical baseline tables in public schema...")
@@ -261,6 +261,41 @@ def verify_constraints(conn):
         f"Status SUPERSEDED missing in allocation_plans! Found: {status_check[0]}"
     )
     print(" - allocation_plans.status supports 'SUPERSEDED'")
+
+def verify_delivery_otp_length_policy(conn):
+    """Verify migration 077: new delivery OTPs default to six digits."""
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT column_default, is_nullable
+        FROM information_schema.columns
+        WHERE table_schema='public'
+          AND table_name='deliveries'
+          AND column_name='delivery_otp_length'
+        """
+    )
+    row = cur.fetchone()
+    assert row is not None, "deliveries.delivery_otp_length missing (migration 077)"
+    assert "6" in str(row[0]), f"New delivery OTP length must default to six, got {row[0]}"
+    assert row[1] == "NO", "delivery_otp_length must be NOT NULL"
+
+    cur.execute(
+        """
+        SELECT pg_get_constraintdef(oid)
+        FROM pg_constraint
+        WHERE conrelid='deliveries'::regclass
+          AND conname='chk_delivery_otp_format_v068'
+        """
+    )
+    constraint = cur.fetchone()
+    assert constraint is not None, "delivery OTP length constraint missing"
+    definition = constraint[0]
+    assert "delivery_otp_length" in definition
+    assert "6" in definition and "4" in definition, (
+        "Constraint must enforce six-digit new codes and grandfather stored four-digit legacy codes"
+    )
+    cur.close()
+
 
 def verify_foreign_keys_and_indexes(conn):
     print("\n[VERIFICATION 3] Verifying foreign keys and critical indexes...")
@@ -677,6 +712,7 @@ def test_postgres_migrations():
     reset_and_migrate(conn)
     verify_tables(conn)
     verify_constraints(conn)
+    verify_delivery_otp_length_policy(conn)
     verify_foreign_keys_and_indexes(conn)
     verify_delegated_permission_schema(conn)
     verify_financial_dispute_remediation(conn)

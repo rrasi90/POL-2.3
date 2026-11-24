@@ -127,7 +127,7 @@ test("cross-persona delivery flow: checkout, vendor fulfillment, arrival, OTP co
     await expect(rp.getByText(/تا رسیدن بار به مقصد/)).toHaveCount(0);
 
     await rp.getByLabel("نام شخص تحویل‌گیرنده").fill("مریم احمدی");
-    await rp.getByLabel("کد ۴ رقمی OTP").fill(deliveryOtp(orderId));
+    await rp.getByLabel("کد تحویل").fill(deliveryOtp(orderId));
     await expect(confirm).toBeEnabled();
     await confirm.click();
 

@@ -479,7 +479,7 @@ def run_runtime_scenarios():
         # Transition ord_1_b from ACCEPTED -> PROCESSING -> SHIPPED -> DELIVERED
         cur.execute("UPDATE orders SET order_status = 'PROCESSING' WHERE id = 'ord_1_b'")
         cur.execute("UPDATE orders SET order_status = 'SHIPPED' WHERE id = 'ord_1_b'")
-        cur.execute("INSERT INTO deliveries (id, order_id, delivery_status, otp_code, otp_verified) VALUES ('del_1_b', 'ord_1_b', 'IN_TRANSIT', '1234', 0)")
+        cur.execute("INSERT INTO deliveries (id, order_id, delivery_status, otp_code, otp_verified) VALUES ('del_1_b', 'ord_1_b', 'IN_TRANSIT', '123456', 0)")
 
         # Store delivers, verifies OTP
         cur.execute("UPDATE deliveries SET delivery_status = 'DELIVERED', otp_verified = 1 WHERE id = 'del_1_b'")
@@ -669,13 +669,13 @@ def run_runtime_scenarios():
         conn.commit()
 
         # Incorrect OTP fails verification
-        submitted_otp = "9999"
+        submitted_otp = "999999"
         cur.execute("SELECT otp_code FROM deliveries WHERE id = 'del_otp_test'")
         correct_otp = cur.fetchone()[0]
         assert submitted_otp != correct_otp
 
         # Correct OTP succeeds
-        submitted_otp = "7890"
+        submitted_otp = "789012"
         if submitted_otp == correct_otp:
             cur.execute("UPDATE deliveries SET delivery_status = 'DELIVERED', otp_verified = 1 WHERE id = 'del_otp_test'")
             cur.execute("UPDATE orders SET order_status = 'DELIVERED' WHERE id = 'ord_otp_test'")
@@ -785,7 +785,7 @@ def run_runtime_scenarios():
     print("\n[VND-R-005] Runtime Vendor Dispatch to Hub Driver...")
     try:
         cur.execute("UPDATE orders SET order_status = 'SHIPPED' WHERE id = ?", (target_ord,))
-        cur.execute("INSERT INTO deliveries (id, order_id, delivery_status, otp_code, otp_verified) VALUES (?, ?, 'IN_TRANSIT', '5555', 0)", (str(uuid.uuid4()), target_ord))
+        cur.execute("INSERT INTO deliveries (id, order_id, delivery_status, otp_code, otp_verified) VALUES (?, ?, 'IN_TRANSIT', '555555', 0)", (str(uuid.uuid4()), target_ord))
         conn.commit()
         cur.execute("SELECT order_status FROM orders WHERE id = ?", (target_ord,))
         assert cur.fetchone()[0] == 'SHIPPED'

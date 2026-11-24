@@ -18,7 +18,7 @@ The four decisions below remain deliberately separate.
 - Backend 849/849; static gate 4/4; web typecheck + production build + Browser E2E 41/41; mobile typecheck + functional 28/28 + regression 23/23 + mock QA + pre-APK QA — all locally PASS on `bfb28cef`.
 - The PR head reviewed at `b8c80bce` contains no application/runtime source changes relative to `bfb28cef`; only docs, inventories, governance records and the tracked test artifact changed.
 - The four defects found during local verification were fixed and regression-covered (`1d50fe80`, `a96d66cd`).
-- D-018 four-digit authentication OTP preserved; migration head remains 076; non-custodial payment and tenant-isolation constraints preserved.
+- D-018 six-digit authentication OTP is now canonical; D-029 covers new six-digit delivery OTP; migration 077 is proposed on the pending OTP feature branch; non-custodial payment and tenant-isolation constraints preserved.
 - Branch and PR inventories record 58 branches and 49 PRs. The checkpoint branch `fix/web-refresh-session-preserve-20261030` is now recorded at `d5ab26bb` and classified ARCHIVE_ONLY because six dated REA evidence files remain branch-only.
 
 ### Outstanding merge gates
@@ -67,3 +67,8 @@ Release remains blocked independently of the merge decision:
 3. Agent: rerun all four workflows on the exact then-current PR #53 head; verify runner IDs, executed steps, test results and artifact uploads.
 4. Obtain required review approval; only then consider merging #53 and perform post-merge smoke on the resulting `main` SHA.
 5. Continue owner-dependent work: TODO-011 secrets, TODO-025 isolated Vercel QA, TODO-029 staging revalidation, dependency remediation/TODO-084, then device QA.
+
+
+## 2026-11-24 OTP amendment status
+
+The six-digit OTP policy is approved in the current Decision Register, but the selective implementation is still under review on feat/six-digit-otp-and-social-impact-readme-20261124. The current main branch's prior backend verification predates this change and does not certify the new policy. Release readiness remains NOT READY until the exact amended SHA passes fresh backend, migration, web, browser, mobile, and security/review gates. Do not infer pilot or release authorization from the policy amendment alone.

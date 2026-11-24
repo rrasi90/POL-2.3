@@ -5,7 +5,7 @@
 **Authorized branch:** `main`  
 **Updated:** 2026-09-28 · Stage 6 mobile QA Cycle 3 closed; remaining executable gates are Night visual verification and live basket→checkout/idempotency E2E  
 **Targeted status note (2026-11-17):** CI statements below are historical snapshots, not current status. The 663 passed / 0 failed / 0 skipped Independent Verification result (run [38403047479](https://github.com/rrasi90/POL-2.3/actions/runs/38403047479)) and the separate Notification Retention run with empty DB DSN secrets ([39743316303](https://github.com/rrasi90/POL-2.3/actions/runs/39743316303)) were observed against the historical main checkpoint `d9505cfa62c953546b479f4ca8aec1997ca57fbc` in October 2026; they are not evidence for current main. Current main was re-read at `fbcdd7448d809a3281cc1ea8c43218d42e8762ca` on 2026-11-17, and its migration directory plus DATABASE_SCHEMA_MANIFEST.md identify a contiguous chain 001–076. No full runtime/release certification is asserted for the current SHA by this targeted source audit. Always inspect a live run on the exact branch/SHA.
-**Authority hierarchy:** `DECISION_REGISTER.md` (D-001…D-028 on branch) → CURRENT_SOURCE_OF_TRUTH → this file → module evidence files.
+**Authority hierarchy:** `DECISION_REGISTER.md` (D-001…D-029 after 2026-11-24 OTP amendment) → CURRENT_SOURCE_OF_TRUTH → this file → module evidence files.
 
 **Rule:** NOT DONE = KEEP WORKING. Do not stop to ask which track. Isolate external deps as `BLOCKED_EXTERNAL` and continue everything else. Later-discovered defects in earlier phases ⇒ reopen, root-cause fix, retest, return.
 
@@ -77,7 +77,7 @@
 
 | ID / topic | Authority | Status | Action |
 |------------|-----------|--------|--------|
-| OTP length 4 vs 6 | D-018 | **RESOLVED** (this session) | `operational_config.OTP_CODE_LENGTH = 4`; **both** login + delivery schemas `^\d{4}$` (G-022 closed); dispatch persists 4-digit `delivery_otp` |
+| OTP length 4 vs 6 | D-018 amended 2026-11-24 | **SIX-DIGIT POLICY APPROVED; implementation pending CI** | Authentication OTP exact 6 ASCII digits; delivery OTP exact 6 new digits under D-029 with legacy in-flight 4-digit compatibility only |
 | Multi-vendor basket | D-014 | **RESOLVED** | enforced |
 | PG 18 canonical | D-015 | **RESOLVED** | host PG 18.2 |
 | Refresh-token rotation | D-018 note | **SOURCE IMPLEMENTED / POLICY OPEN** | Current source rotates refresh tokens and rejects replay; product/security policy remains an explicit D-018 decision and is not inferred from implementation |
@@ -87,7 +87,7 @@
 | Design-tool / OpenPencil MCP | WAVE-02 | **BLOCKED_EXTERNAL** | start OpenPencil app or continue without design-board WAVE-02 |
 | Catalog path `/products/search` vs `/catalog/search` | G-003 | **RESOLVED / DUAL COMPATIBILITY** | both canonical public HTTP paths are registered; current retailer screen uses `/catalog/search` |
 | Inbox path | G-004 | **RESOLVED** | durable `/inbox/items*` and `/notifications*` projections are both registered; screen uses `/notifications` |
-| Delivery OTP 6 vs D-018 4 | G-022 | **RESOLVED** | schema `^\d{4}$`, generation via `OTP_CODE_LENGTH`, dispatch persists `delivery_otp`, UI `maxLength={4}` |
+| Delivery OTP length | D-029 / migration 077 | **REIMPLEMENTED ON FEATURE BRANCH** | New delivery OTP 6 digits with separate generator; existing active 4-digit records are backfilled and remain valid only until terminal completion |
 
 ---
 
@@ -308,17 +308,17 @@ MVP is DONE only when **all** hold:
 | Structural | `test_e2e_mvp_platform` still imported legacy `CheckoutService` | switched to `CanonicalCheckoutGateway` + `unit_price_toman` |
 | Structural | `checkout_gateway.py` docstring tripped source ban on `CheckoutService` | reworded docstring |
 | Structural | `scripts/api/**` + auth/canonical deps missing from main working tree (only `.pyc`) | restored from `origin/research-hardening-2026-09-14` |
-| Decision drift | `OTP_CODE_LENGTH = 6` on main vs D-018 = 4 | restored D-018 config from research-hardening |
+| Decision drift (historical) | `OTP_CODE_LENGTH = 6` on old checkpoint vs D-018 = 4 | restored old D-018 config from research-hardening; this former state was superseded by the 2026-11-24 founder amendment |
 | Structural | `DECISION_REGISTER.md` missing D-016/D-017; `Assumptions_and_Hypotheses.md` missing D-015/016/017; `CURRENT_SOURCE_OF_TRUTH.md` missing `AllocationPlan`/`OrderItem` hierarchy | restored from `origin/research-hardening-2026-09-14`; `verify_repository_consistency` PASS 8/8 |
-| Contract | Delivery OTP schema `^\d{6}$` + generation 6-digit + `delivery_otp` never persisted on INSERT (G-022) | schema `^\d{4}$`, generation via `OTP_CODE_LENGTH`, INSERT now includes `delivery_otp`; UI `maxLength={4}`; tests aligned to `"1234"`/`"9999"`; dispatch roundtrip asserts `otp_verified is True` |
-| Structural | `migrations/030_delivery_otp_column.sql` comment still said 6-digit | comment updated to D-018 4-digit (column stays VARCHAR(6); no new migration) |
+| Contract (historical 2026-09-23) | Delivery OTP schema `^\d{6}$` + generation 6-digit + `delivery_otp` never persisted on INSERT (G-022) | schema `^\d{4}$`, generation via `OTP_CODE_LENGTH`, INSERT now includes `delivery_otp`; UI `maxLength={4}`; tests aligned to `"1234"`/`"9999"`; dispatch roundtrip asserts `otp_verified is True` | (record of the former policy; superseded by D-029 and migration 077).
+| Structural (historical) | `migrations/030_delivery_otp_column.sql` comment still said 6-digit | historical note corrected to then-current D-018; superseded by D-029 and migration 077 |
 | Infra | stale/missing `.next`, failed root `npm install` | install from `mvp/`; clean rebuild green |
 | Test | `pol_test` schema wiped | Historical evidence: re-bootstrap produced 95 tables under the 001–031 snapshot; current execution must derive the count from the active migration chain. |
 | Structural | 62 research files missing (`daily_inventory_boundary`, `notification_providers`, analytics/pilot/revalidation/canonical worker + ~55 tests) | restored from `origin/research-hardening-2026-09-14` |
 | Structural | `GET /inventory/daily/*` 500 (`ImportError: daily_inventory_boundary`) | restored boundary module → live 200 |
 | Structural | boundary missing `storefront_*` + `unified_search` methods (routes from `d140cc7`) | implemented in `application_boundary` → live 200 |
 | Contract | web login read `session.role` (absent) vs `current_organization.role` | `apps/web/.../auth/login/page.tsx` reads `current_organization` |
-| Test | `test_e2e` OTP `123456` + session shape wrong | fixed to D-018 `1234` + `session[...]` |
+| Test (historical) | `test_e2e` OTP `123456` + session shape wrong | fixed to then-current D-018 `1234` + `session[...]`; this old fixture is not current six-digit verification evidence |
 | Infra | API process + CI missing `POL_JWT_SECRET` | `start_api.bat` + workflow test step env |
 | Backend drift | local `checkout_gateway` thin wrapper (no fingerprint/replay) vs research | restored research gateway (`_fingerprint`, `_replay_existing`) |
 | Backend drift | `verify_repository_consistency` missing `HIERARCHY_*` | restored research verifier |
@@ -348,3 +348,10 @@ Update MATRIX / API_MAP / GAPS when a status changes. Never mark VERIFIED withou
 - Do not use historical 497/497, 526/526, or prior mobile CI success as current-head certification.
 - Current GitHub Actions execution remains blocked before useful steps (jobs have empty step metadata and logs are unavailable).
 \n
+
+## OTP Policy Amendment — 2026-11-24
+
+- D-018 authentication OTP has been superseded to exactly six ASCII digits. Existing TTL (120 seconds), resend interval (60 seconds), rate limit (3 requests per five minutes per phone+IP), five attempts, ten-minute phone lockout, access-token and refresh-session lifetimes remain unchanged.
+- D-029 newly issued delivery/POD OTPs are also six digits, but remain recipient-only, purpose-bound, single-use and governed by the separate delivery lifecycle.
+- Migration 077 is proposed on feat/six-digit-otp-and-social-impact-readme-20261124. It does not invalidate, rotate or re-send existing in-flight delivery codes. Main remains on migration 076 until PR merge.
+- Previous four-digit QA evidence is historical. Auth, delivery, web, browser, mobile and device checks must be rerun on the exact amended SHA before these gates can be closed.

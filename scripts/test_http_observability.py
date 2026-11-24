@@ -105,7 +105,7 @@ class TestAccessLogging:
         )
         client.post(
             "/api/v1/auth/verify-otp",
-            json={"mobile_number": SECRET_PHONE, "otp_code": "1234"},
+            json={"mobile_number": SECRET_PHONE, "otp_code": "123456"},
         )
         client.get(
             "/api/v1/baskets/current",
@@ -114,7 +114,7 @@ class TestAccessLogging:
         rendered = "\n".join(record.getMessage() for record in caplog.records)
         assert SECRET_PHONE not in rendered
         assert "989121234567" not in rendered
-        assert "1234" not in rendered
+        assert "123456" not in rendered
         assert "super-secret-token-value" not in rendered
         assert "Bearer " not in rendered
         assert "device-abc" not in rendered

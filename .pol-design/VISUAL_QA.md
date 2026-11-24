@@ -85,13 +85,13 @@
 | Legal Terms & Settlement Directives | `/legal` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Retailer Benefits & Onboarding | `/retailers` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Vendor Benefits & Wholesale Flow | `/vendors` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
-| Unified 4-Digit OTP Login Card | `/auth/login` | Editorial | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
+| Six-Digit OTP Login Card | `/auth/login` | Editorial | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY_REQUIRED |
 
 ### 1.5. Mobile Application Surfaces (`@pol/mobile`)
 
 | Surface | Screen / File | Density | Light | Night | RTL | Responsive | Tabular/Numerics | Touch >= 44px | Status |
 |---|---|---|---|---|---|---|---|---|---|
-| Mobile Authentication (E.164 + OTP) | `LoginScreen.tsx` | Mobile | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
+| Mobile Authentication (E.164 + Six-Digit OTP) | `LoginScreen.tsx` | Mobile | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY | REVERIFY_REQUIRED |
 | Retailer Mobile Catalog & Orders | `RetailerMobileScreen.tsx` | Mobile | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Vendor Mobile Inventory & Orders | `VendorMobileScreen.tsx` | Mobile | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
 | Order Detail, RMA & Timeline | `OrderDetailMobileScreen.tsx` | Mobile | PASS | PASS | PASS | PASS | PASS | PASS | VERIFIED |
@@ -207,3 +207,8 @@ Mobile regression/cross-module QA: 20/20 checks passed.
 - [x] **DIMENSION 7: Absolute Zero Domain / API Changes**
   - Backend API route endpoints, HTTP methods, payloads, and validation constraints untouched.
   - Database schema, Prisma/migration files, and domain models preserved with 100% integrity.
+
+
+## 2026-11-24 OTP Policy Supersession
+
+D-018 now requires a six-digit login/registration OTP; D-029 requires six digits for newly issued delivery OTPs. The PASS/VERIFIED states above were recorded against the former four-digit UI and are historical evidence only. The two OTP rows are marked REVERIFY_REQUIRED until screenshots, responsive checks, RTL/numerals, paste/autofill, invalid/expired/resend states and accessibility are recaptured on the amended implementation.

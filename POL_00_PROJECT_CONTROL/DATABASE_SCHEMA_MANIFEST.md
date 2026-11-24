@@ -178,3 +178,6 @@ FIELD_ACTIVATOR
 ۲. این سند کانونیکال (`DATABASE_SCHEMA_MANIFEST.md`).
 ۳. آزمون‌های خودکار اعتبارسنجی اسکیما (`test_postgres_migrations.py` و `verify_repository_consistency.py`).
 هیچ فایلی خارج از این چرخه حق معرفی فیزیک دیتابیس را ندارد.
+
+
+> **OTP amendment in progress (2026-11-24):** migration `077_delivery_otp_six_digit_format.sql` exists only on `feat/six-digit-otp-and-social-impact-readme-20261124`; it is not part of `main` yet. It adds the six-digit default for new delivery OTPs and preserves already-issued four-digit codes on in-flight deliveries. The canonical `main` migration head remains `076` until the feature PR is reviewed and merged.

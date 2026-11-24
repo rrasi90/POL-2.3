@@ -98,7 +98,7 @@
   - `mvp/apps/web/src/app/auth/login/page.tsx`
 - **Objectives**:
   - Editorial Precision Commerce layout with brand typography and pilot proof points.
-  - Polished phone + 4-digit OTP login screen with accessible focus states.
+  - Polished phone + six-digit OTP login screen with accessible focus states.
 
 ### Slice 8: Mobile Parity & Verification (Phase G)
 - **Target Files**:
