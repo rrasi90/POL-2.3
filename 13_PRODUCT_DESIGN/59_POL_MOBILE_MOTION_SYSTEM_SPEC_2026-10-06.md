@@ -100,3 +100,7 @@ Rules enforced by review:
 - **PR-04 (P1 polish):** vendor/retailer home entrances, inventory save feedback, finance, support, account, notifications.
 - **PR-05 (P2):** shared `BottomNav` (active indicator slide + badge bump), theme transition decision (deferred — color animation is outside the native-driver policy; instant today).
 - **PR-06:** full visual QA matrix + ledger closure.
+
+## OTP policy supersession — 2026-11-25
+
+The regex example in BUG-01 above is historical defect documentation from the 2026-10-06 motion audit. It describes the former delivery OTP implementation and is not the current contract. D-018 now requires exactly six ASCII digits for login/registration, and D-029 requires six digits for newly issued delivery/POD codes. Existing pre-migration four-digit delivery codes are a data-only compatibility exception for their original in-flight delivery until terminal completion. No new four-digit OTP is issued.

@@ -10,7 +10,7 @@
 
 ## ۱. زنجیره کانونیکال مهاجرت پایگاه داده (Canonical Migration Chain)
 
-زنجیره مایگریشن پایگاه داده پلتفرم پُل یک زنجیره forward-only و ترتیبی است و در main فعلی تا migration `076_reservation_and_candidate_event_templates.sql` امتداد یافته است:
+زنجیره مایگریشن پایگاه داده پلتفرم پُل یک زنجیره forward-only و ترتیبی است و در main فعلی تا migration `077_delivery_otp_six_digit_format.sql` امتداد یافته است:
 
 ```text
 migrations/001_initial_schema.sql
@@ -27,12 +27,14 @@ migrations/047_delegated_permissions_and_audit.sql
        ↓ (delegated permission grants/revokes + append-only permission audit)
 migrations/048 … migrations/076
        ↓ (media, privacy, reservations, financial/dispute hardening, delivery/POD, idempotency and event-template reconciliation)
+migrations/077_delivery_otp_six_digit_format.sql
+       ↓ (new delivery OTPs are six digits; legacy in-flight codes retain their issued length)
 
 **Authority note:** این مانیفست باید از زنجیره واقعی migrationها عقب نماند؛ تغییرات بعدی باید فقط با migration شماره‌دار جدید ثبت شوند. فهرست جدول‌های legacy این سند ممکن است نیازمند refresh مستقل داشته باشد و نباید آن را به‌عنوان شمارش فعلی جدول‌ها تلقی کرد.
 ```
 
 > **اصل تغییرناپذیری مایگریشن‌ها:**  
-> فایل‌های migration تاریخی پس از اعمال نباید rewrite شوند. کلیه تطبیق‌ها، رفع تناقض‌ها و سخت‌سازی‌های بعدی باید صرفاً از طریق migrationهای forward-only شماره‌دار بعدی (تا `076` در `main` فعلی) اعمال شوند.
+> فایل‌های migration تاریخی پس از اعمال نباید rewrite شوند. کلیه تطبیق‌ها، رفع تناقض‌ها و سخت‌سازی‌های بعدی باید صرفاً از طریق migrationهای forward-only شماره‌دار بعدی (تا `077` در `main` فعلی) اعمال شوند.
 
 ---
 
@@ -180,4 +182,4 @@ FIELD_ACTIVATOR
 هیچ فایلی خارج از این چرخه حق معرفی فیزیک دیتابیس را ندارد.
 
 
-> **OTP amendment in progress (2026-11-24):** migration `077_delivery_otp_six_digit_format.sql` exists only on `feat/six-digit-otp-and-social-impact-readme-20261124`; it is not part of `main` yet. It adds the six-digit default for new delivery OTPs and preserves already-issued four-digit codes on in-flight deliveries. The canonical `main` migration head remains `076` until the feature PR is reviewed and merged.
+> **OTP policy migration (merged 2026-11-24):** migration `077_delivery_otp_six_digit_format.sql` is part of `main` through PR #59 (merge commit `f9eca328`). It adds a six-digit default for new delivery OTPs, backfills the actual length of stored codes, and preserves already-issued four-digit codes only for their original in-flight deliveries. PostgreSQL 18 CI successfully applied the full chain 001–077 on tested PR head `dbf0a2284e4f16d0cc1e7568b78e81e11c5352a6` (run `45488346802`).

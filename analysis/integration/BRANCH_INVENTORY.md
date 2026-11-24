@@ -108,3 +108,14 @@ The initial historical branch table above reflects the previous D-018 four-digit
 
 
 **Current OTP branch disposition (2026-11-25):** `fix/otp-six-digit-contract-20261025` and `fix/otp-six-digit-standard-20261025` are both closed historical branches. Their original D-018 policy objection is superseded by the six-digit amendment, but their old heads remain unsuitable for wholesale merge. The reviewed selective implementation is PR #59.
+
+
+## 2026-11-25 — OTP branches after PR #59 merge
+
+Current `main`: `f9eca328b053dfacfe4c42c81c1c9c468fb8b607` (PR #59 merge). The selective six-digit implementation was merged and verified on tested head `dbf0a2284e4f16d0cc1e7568b78e81e11c5352a6`:
+- Backend + migration 001–077: 852/852.
+- Browser E2E: 41/41.
+- Mobile/Expo: 17/17 steps; TODO-084 eligibility passed; APK matrix skipped.
+- Static gate: 11/11.
+
+The remote refs `fix/otp-six-digit-contract-20261025` and `fix/otp-six-digit-standard-20261025` are still retained as **closed historical branches**. Their old PRs #49 and #50 remain closed and unmerged. The policy conflict is superseded, but the old branch contents must not be merged wholesale; PR #59 is the accepted selective implementation. No branch deletion was performed.

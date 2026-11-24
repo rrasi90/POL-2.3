@@ -89,3 +89,13 @@ The 2026-11-17 audit above was a metadata-only pass with no test execution ("no 
 ## 2026-11-24 OTP policy amendment and selective implementation
 
 The 2026-11-24 founder instruction supersedes the former four-digit D-018 policy: login/registration OTP is now six digits. D-029 separately governs newly issued six-digit delivery/POD OTPs. The original #49/#50 PRs remain closed and are not to be merged wholesale because their heads are stale and their old migration lifecycle handling was not safe to import. A clean selective implementation is being re-authored from current main on feat/six-digit-otp-and-social-impact-readme-20261124. Migration 077 in that branch preserves existing in-flight four-digit delivery codes without rotation and enforces six digits for new codes. Prior test evidence predates this amendment; the current implementation requires fresh exact-SHA CI and security review.
+
+
+## PR #59 — post-merge verification (2026-11-25)
+
+- **Status:** MERGED into `main` as `f9eca328b053dfacfe4c42c81c1c9c468fb8b607`.
+- **Purpose:** D-018 six-digit login/registration OTP, D-029 six-digit new delivery/POD OTP with safe legacy in-flight compatibility, full English README, and local licensed Vazirmatn assets.
+- **Exact tested PR head:** `dbf0a2284e4f16d0cc1e7568b78e81e11c5352a6`.
+- **Evidence:** backend 852/852 + PostgreSQL 18 migration 001–077 [run 45488346802](https://github.com/rrasi90/POL-2.3/actions/runs/45488346802); Playwright 41/41 [run 45488346616](https://github.com/rrasi90/POL-2.3/actions/runs/45488346616); mobile/Expo 17/17 + eligibility [run 45488346626](https://github.com/rrasi90/POL-2.3/actions/runs/45488346626); static gate 11/11 [run 45488346621](https://github.com/rrasi90/POL-2.3/actions/runs/45488346621).
+- **Limits:** Android APK matrix skipped under TODO-084; no device installation, live SMS provider test, independent security review or staging acceptance is claimed.
+- PRs #49 and #50 remain closed/unmerged. Their stale branch tips are retained for historical reference and were not merged wholesale.
