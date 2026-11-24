@@ -76,3 +76,8 @@ The successful 849/849 backend run on the prior main SHA predates this amendment
 All current product, engineering, design and onboarding documents must describe six-digit authentication OTPs and six-digit newly issued delivery OTPs. Historic audit logs may retain the wording that was accurate at the time, but must be explicitly marked as historical where a reader could mistake them for current policy.
 
 The six-digit code change does not authorize a change to pricing, credit, payment custody, refund, settlement, role, tenant, session-rotation or delivery-service guarantees.
+
+
+## Historical migration metadata
+
+`migrations/030_delivery_otp_column.sql` is an already-released historical migration and is intentionally not rewritten. Its original SQL comment reflects the former D-018 wording and must be read as historical metadata only. Migration 077 updates the live PostgreSQL column comment to the D-029 six-digit new-issuance policy and explicitly describes the temporary in-flight four-digit compatibility rule.

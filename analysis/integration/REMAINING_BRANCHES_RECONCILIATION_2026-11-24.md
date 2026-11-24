@@ -47,7 +47,7 @@ The skill does not change application runtime behavior. It is present on main af
 
 ## Global safeguards preserved
 
-- D-018 remains the canonical four-digit OTP policy. No six-digit policy or migration was imported.
+- **Historical snapshot at the initial branch audit (before the founder's 2026-11-24 amendment):** D-018 was then recorded as a four-digit OTP policy and no six-digit policy/migration had been imported. This statement is superseded by the post-audit update below; current D-018 is six digits.
 - The Vercel QA branch remains isolated and on HOLD pending TODO-025.
 - Existing mainline motion components were preserved; older component revisions were not copied over them.
 - The retained large Master SKU backup file was not deleted.
