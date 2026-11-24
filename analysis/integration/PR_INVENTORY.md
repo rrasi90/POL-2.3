@@ -57,3 +57,16 @@ Machine-readable data: `PR_INVENTORY.csv`.
 | #6 | feat: add product architecture evolution wave 01 | MERGED/ready | `product-architecture-evolution-2026-09-20` -> `research-hardening-2026-09-14` | `2583abed0c43` | **ALREADY_MERGED** | Merged (via #12). |
 | #4 | audit: reconcile canonical docs and certification boundary | CLOSED/draft | `audit/fix-canonical-drift-2026-09` -> `main` | `b9e54955c8f9` | **CLOSE_AS_SUPERSEDED** | Governance docs superseded by repeated reconciliations. |
 | #1 | feat: apply evidence-derived B2B operational hardening | CLOSED/ready | `research-hardening-2026-09-14` -> `main` | `87c1546bbe83` | **ALREADY_MERGED** | Merged (via #12). |
+
+
+---
+
+## 2026-11-24 Live Refresh — PR #57 and #58
+
+Live GitHub REST snapshot after the selective branch reconciliation:
+
+- **54 PR records returned:** 33 merged, 21 closed unmerged, 0 open.
+- **PR #57** — merged 2026-11-24 as `59ac9488b06cb62822f584ef5389f21e0f6dd6f5`. Added the root English README and installed Node.js 22 / `npm ci` in the independent verification workflow. The corrected workflow completed a 849/849 backend verification run on its tested source lineage; subsequent mainline verification is tracked separately.
+- **PR #58** — merged 2026-11-24 as `e2524df8d8712f535369ae469292541861ea3da7`. Added the modernized POL batch-execution agent skill and the remaining-branch reconciliation record. Static Gate passed on the PR head and again post-merge. Independent Verification was still running at the time of this inventory refresh; no full-suite pass is claimed for the #58 merge SHA yet.
+
+The original table above is a historical snapshot through #56. This dated live refresh is authoritative for #57 and #58 and for the counts stated here.
