@@ -76,7 +76,7 @@ test("repeated review clicks never create a second basket", async ({ page }, tes
     review.click();
   });
 
-  await page.waitForURL("**/retailer/checkout");
+  await expect(page).toHaveURL(/\/retailer\/checkout(?:\?.*)?$/, { timeout: 30_000 });
   expect(calls.creates).toHaveLength(1);
   expect(calls.itemWrites).toHaveLength(1);
 
