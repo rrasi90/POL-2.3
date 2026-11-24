@@ -7,7 +7,7 @@
 
 ## Executive result
 
-There are eight non-main remote branches and no open pull requests at this snapshot. None of the remaining application-code branches is a safe candidate for a wholesale merge.
+There are eight non-main remote branches. At the start of this reconciliation, before this salvage PR was opened, there were no open pull requests. PR #58 is the resulting selective-salvage review. None of the remaining application-code branches is a safe candidate for a wholesale merge.
 
 One reusable agent workflow asset was salvaged from `penpot-work-2026-09-16`: `.agents/skills/pol-batch-execution/SKILL.md`. It was rewritten for the current repository architecture and branch workflow rather than copied verbatim. The modernized skill is proposed for integration separately.
 
