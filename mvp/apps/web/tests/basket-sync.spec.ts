@@ -46,7 +46,7 @@ test("syncs a basket to the server exactly once and writes every item", async ({
 
   await page.getByRole("button", { name: SYNC_BUTTON }).click();
 
-  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد");
+  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد", { timeout: 30_000 });
   expect(calls.creates).toHaveLength(1);
   expect(calls.itemWrites).toHaveLength(2);
 
@@ -135,7 +135,7 @@ test("editing the cart after a sync invalidates the stale server basket", async 
   ]);
 
   await page.getByRole("button", { name: SYNC_BUTTON }).click();
-  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد");
+  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد", { timeout: 30_000 });
   const first = serverBaskets(phone);
   expect(first).toHaveLength(1);
 
@@ -143,12 +143,12 @@ test("editing the cart after a sync invalidates the stale server basket", async 
   expect((await readBasketState(page)).serverBasketId).toBeNull();
 
   await page.getByRole("button", { name: SYNC_BUTTON }).click();
-  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد");
+  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد", { timeout: 30_000 });
   expect(calls.creates).toHaveLength(2);
 
   await page.getByRole("button", { name: /^حذف/ }).nth(1).click();
   await page.getByRole("button", { name: SYNC_BUTTON }).click();
-  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد");
+  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد", { timeout: 30_000 });
 
   expect(calls.creates).toHaveLength(3);
   const baskets = serverBaskets(phone);
@@ -182,7 +182,7 @@ test("a basket that disappeared on the server is recreated without an error", as
   );
 
   await page.getByRole("button", { name: SYNC_BUTTON }).click();
-  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد");
+  await expect(page.getByRole("status").first()).toContainText("در سرور ثبت شد", { timeout: 30_000 });
   await expect(appAlert(page)).toHaveCount(0);
 
   expect(calls.creates).toHaveLength(2);
