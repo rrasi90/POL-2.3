@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
-import { Vazirmatn } from "next/font/google";
+import localFont from "next/font/local";
 import { SessionCookieSync } from "@/lib/auth/session-cookie-sync";
 import "./globals.css";
 
-const vazirmatn = Vazirmatn({
-  subsets: ["arabic"],
-  weight: ["400", "500", "600", "700"],
+// Keep the Persian UI font inside the repository so production builds do not
+// depend on reaching Google Fonts from CI, staging or private deployments.
+const vazirmatn = localFont({
+  src: [
+    { path: "../../public/fonts/Vazirmatn-Regular.ttf", weight: "400", style: "normal" },
+    { path: "../../public/fonts/Vazirmatn-SemiBold.ttf", weight: "600", style: "normal" },
+    { path: "../../public/fonts/Vazirmatn-Bold.ttf", weight: "700", style: "normal" },
+  ],
   variable: "--font-vazirmatn",
   display: "swap",
 });
