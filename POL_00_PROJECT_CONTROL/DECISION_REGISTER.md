@@ -286,7 +286,7 @@ Modifications to any decision in this register require:
 
 # 3. Product Architecture Amendments — 2026-09-20
 
-The following founder-directed amendments extend D-001 through D-020. They are adopted product directions and implementation contracts; they do not silently change the already-certified production runtime or financial-custody model.
+The following founder-directed amendments extend the canonical decision register through D-029. They are adopted product directions and implementation contracts; they do not silently change the already-certified production runtime or financial-custody model.
 
 | Decision ID | Direction | Canonical Rule |
 |:---:|:---|:---|

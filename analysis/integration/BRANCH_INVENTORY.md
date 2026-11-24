@@ -7,7 +7,7 @@
 Ahead/behind vs main and vs Integration; dispositions per live content comparison
 (merge-base, file-level diffs, byte-identity checks, suite evidence on INT).
 Machine-readable data: `BRANCH_INVENTORY.csv`.  
-Disposition counts (58 refs): 31 ALREADY_INTEGRATED · 17 SUPERSEDED · 4 ARCHIVE_ONLY · 2 BLOCKED_POLICY · 1 HOLD · 1 SALVAGE_COMPLETED · 1 MERGE_CANDIDATE · 1 BASE.
+Disposition counts at the initial 2026-11-21 audit snapshot (58 refs): 31 ALREADY_INTEGRATED · 17 SUPERSEDED · 4 ARCHIVE_ONLY · 2 BLOCKED_POLICY · 1 HOLD · 1 SALVAGE_COMPLETED · 1 MERGE_CANDIDATE · 1 BASE. The two OTP branches' policy-blocked label was superseded on 2026-11-24; see the current disposition below.
 
 | Branch | Head | Date | vs main (behind/ahead) | vs INT (behind/ahead) | Disposition | PR | Evidence |
 |---|---|---|---|---|---|---|---|
@@ -46,7 +46,7 @@ Disposition counts (58 refs): 31 ALREADY_INTEGRATED · 17 SUPERSEDED · 4 ARCHIV
 | `fix/mobile-dependency-alignment-20261022` | `2a912bbc` | 2026-10-23 | 27/0 | 210/0 | **ALREADY_INTEGRATED** | #46 merged | ahead=0. |
 | `fix/mobile-motion-audit-20261011` | `f4fcf5a9` | 2026-10-11 | 86/9 | 269/9 | **SUPERSEDED** | #29 closed | Unique fixes verified in INT (b85201ba review); superseded by stronger port. |
 | `fix/otp-six-digit-contract-20261025` | `ddeec06b` | 2026-10-25 | 7/5 | 190/5 | **CLOSED — HISTORICAL / DO NOT MERGE WHOLE** | #49 closed | Historical 2026-11-19 policy assessment: the branch conflicted with the then-current four-digit D-018. That policy objection was superseded by the founder's 2026-11-24 six-digit amendment; the stale branch tip remains unsuitable for wholesale merge. |
-| `fix/otp-six-digit-standard-20261025` | `d49ad86b` | 2026-10-25 | 7/16 | 190/16 | **BLOCKED_POLICY** | #50 closed | Same; delivery-OTP storage/rotation concerns recorded in PR_INTEGRATION_AUDIT. |
+| `fix/otp-six-digit-standard-20261025` | `d49ad86b` | 2026-10-25 | 7/16 | 190/16 | **CLOSED — HISTORICAL / DO NOT MERGE WHOLE** | #50 closed | Historical policy objection superseded by the founder's 2026-11-24 amendment. The branch remains stale; its broad application/migration implementation and legacy-delivery lifecycle handling must not be imported wholesale. |
 | `fix/pol-wave1-qa-mock-route-docs-20261027` | `74e7ded6` | 2026-10-27 | 7/250 | 190/250 | **SUPERSEDED** | #52 closed | Wave-1 content verified in INT; screenshot bulk excluded (stale pre-i18n). |
 | `fix/remaining-canonical-contradictions-2026-09-28` | `3b6524b3` | 2026-09-28 | 296/0 | 479/0 | **ALREADY_INTEGRATED** | #15/#16 merged | ahead=0. |
 | `fix/web-basket-sync-reuse-20261012` | `b04aabd3` | 2026-10-12 | 84/8 | 267/8 | **ALREADY_INTEGRATED** | #35 merged | Squash-duplicates. |
@@ -105,3 +105,6 @@ The mainline verification workflow triggered by merge commit `e2524df8` was stil
 ## 2026-11-24 Live Refresh — OTP policy supersession
 
 The initial historical branch table above reflects the previous D-018 four-digit decision. On 2026-11-24, the founder superseded that rule with six-digit login/registration OTP and approved D-029 for new six-digit delivery/POD OTP. Consequently, the previous OTP BLOCKED_POLICY label is no longer the current policy disposition. The two old branch tips remain stale and must not be merged wholesale; a clean selective implementation is being re-authored from current main on feat/six-digit-otp-and-social-impact-readme-20261124. Migration 077 preserves existing in-flight delivery codes while ensuring new delivery codes are six digits. The feature is not considered verified until exact-SHA CI and security review complete.
+
+
+**Current OTP branch disposition (2026-11-25):** `fix/otp-six-digit-contract-20261025` and `fix/otp-six-digit-standard-20261025` are both closed historical branches. Their original D-018 policy objection is superseded by the six-digit amendment, but their old heads remain unsuitable for wholesale merge. The reviewed selective implementation is PR #59.
