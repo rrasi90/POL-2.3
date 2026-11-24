@@ -40,6 +40,188 @@ POL is designed for a multi-vendor purchasing model. A retailer can prepare a un
 
 POL's documented payment model is **non-custodial direct settlement**: the platform coordinates commerce and records evidence; it is not designed as a wallet that holds customer funds.
 
+
+## Strategic vision, ecosystem and scale ambition
+
+### Vision
+
+POL aims to become a trusted digital operating and transaction network for independent retailers and the fragmented wholesale trade: one place to discover supply, compare vendor offers, assemble a multi-vendor basket, coordinate fulfilment, document delivery and reconcile the commercial relationship.
+
+The long-term opportunity is not simply to put a catalogue online. It is to make fragmented offline distribution more discoverable, measurable and dependable while allowing the existing merchants, wholesalers, local delivery operators and manufacturers to keep performing the roles they are best equipped to perform.
+
+**Starting wedge:** FMCG procurement for independent neighbourhood retailers, beginning with a dense local cluster in Ahvaz, Iran.  
+**Long-term direction:** a multi-city, multi-category and potentially multi-market B2B commerce infrastructure, expanded only where local density, regulatory feasibility and positive unit economics support it.
+
+POL is intended to be the software, transaction-coordination, data and trust layer. It is not intended to become a conventional inventory-owning wholesaler.
+
+### How the marketplace works
+
+The initial marketplace connects two commercial sides:
+
+1. **Retailers create demand.** A shop owner or authorised staff member searches products and vendor offers, compares price and availability, builds one basket and confirms the allocation.
+2. **Wholesalers fulfil supply.** Each vendor controls its own catalogue offers, prices and stock, accepts or partially accepts its allocated order, prepares the goods and provides dispatch information.
+3. **POL coordinates the transaction.** The platform manages discovery, basket allocation, order state, notifications, evidence, exception handling, support and reconciliation records. A single retailer basket may result in multiple vendor-specific orders.
+4. **Delivery is fulfilled by the supply network.** The wholesaler's own vehicle or a contracted local third-party logistics provider (3PL) performs physical delivery. POL coordinates and tracks the workflow; it does not need to own warehouses or a delivery fleet.
+5. **Commercial settlement remains direct.** The documented initial model is non-custodial: the retailer pays the relevant wholesaler directly, while POL records payment evidence and supports reconciliation. POL is not a wallet, bank or custodian of customer funds.
+
+The core principle is **digitise and strengthen the existing trade network, not disintermediate it**. POL must create measurable incremental value for both sides: better procurement and visibility for retailers, and lower order-acquisition friction, more demand and better operating information for wholesalers.
+
+### Stakeholder ecosystem and value exchange
+
+| Stakeholder | Role in the network | Value POL is intended to provide | Boundary and relationship |
+|---|---|---|---|
+| Independent retailers, supermarkets and local shops | Demand-side buyers | Search and compare vendor offers; assemble multi-vendor baskets; reorder; see order and delivery status; document discrepancies; access a reliable purchase history | Retailers remain independent businesses and buy from the relevant vendors. They are the primary adoption and repeat-use constituency. |
+| Wholesalers, distributors and regional stockists | Initial supply-side sellers and fulfilment partners | Digital storefront, product and price management, order intake, inventory confirmation, fewer manual order errors, new retailer demand, delivery coordination, invoice/payment evidence and performance reporting | Vendors retain ownership of goods, stock, pricing and customer-facing fulfilment obligations. POL must not secretly become their inventory competitor. |
+| Manufacturers, producers and consumer brands | Upstream supply and future commercial-intelligence partners | In later phases: regional sell-out visibility, product availability signals, campaign measurement, trade promotions and demand intelligence | Direct manufacturer participation is deliberately deferred until the retailer/wholesaler network is dense enough. The intended model works through participating wholesalers and does not remove the wholesaler from local storage and last-mile distribution. |
+| Local carriers, drivers and 3PL operators | Physical delivery capacity | Structured dispatch requests, pickup/drop information, delivery status, proof of delivery and clearer exception handling | Delivery partners provide the physical service under agreed commercial terms. POL does not assume that delivery is free; only POL-owned fleet cost is excluded from the asset-light model. |
+| Banks, payment providers and licensed fintech partners | Regulated payment, reconciliation and future finance infrastructure | Better structured transaction evidence, reconciliation interfaces and, subject to approval, data-supported credit origination | POL does not lend from its own balance sheet or assume bank credit risk. Any future credit/BNPL product must be partner-led, consent-based and subject to applicable regulation. |
+| Field activators and local commercial teams | Trust-building, onboarding and service recovery | Retailer/vendor mapping, assisted onboarding, catalogue verification, first-order support, training and exception follow-up | Field activation should help users move toward self-service; it should not become a permanently labour-intensive substitute for a usable product. |
+| POS, ERP, accounting, catalogue and technology partners | Integration ecosystem | Better product identifiers, invoices, inventory synchronisation, business workflows and interoperability | Integrations should use documented APIs and permissioned data access; they must not create a second source of truth for POL transactions. |
+| Platform operations and support | Neutral network operator | Catalogue governance, service-level monitoring, dispute handling, fraud/abuse review, reconciliation, user support and auditability | Operational decisions must be traceable, role-based and consistently applied across vendors and retailers. |
+| End consumers | Indirect beneficiaries | Better product availability and potentially more reliable local retail replenishment | Consumers are not the initial transacting customer of the B2B marketplace. Consumer-facing features are not a reason to dilute the retailer/wholesaler focus. |
+| Investors and strategic partners | Capital, expertise and network access | A capital-efficient software and transaction network with measurable repeat usage and unit economics | Capital should fund product, data, trust and market expansion—not speculative inventory, owned warehouses, fleet or unpriced credit exposure. |
+
+### The manufacturer relationship: grow the network without bypassing wholesalers
+
+Manufacturers and brand owners are strategically important, but they are not the first customer segment in the Ahvaz MVP. Early direct-to-retailer manufacturer sales could make wholesalers perceive POL as a channel designed to remove them. That would weaken the supply side before the marketplace has earned trust.
+
+The intended later-stage relationship is a **three-party model**:
+
+- Manufacturers provide product, brand programmes, trade promotions and upstream supply.
+- Participating wholesalers remain the local commercial and fulfilment partners: they receive bulk supply, hold stock where appropriate, and serve the retailer through their established local operations.
+- POL provides the digital demand signal, transaction coordination, campaign measurement and aggregated market intelligence.
+
+Potential manufacturer products include clearly labelled sponsored campaigns, co-funded promotions, new-product sampling and aggregated dashboards covering sell-out trends, stock-outs and geographic demand. These are roadmap opportunities, not claims that manufacturer advertising or a manufacturer dashboard is already live.
+
+Manufacturer entry should be considered only after the network has meaningful active-retailer density—existing strategy documents use approximately 500–1,000 active retailers as a planning threshold—and after wholesaler participation and data permissions are protected. Paid placement must never influence organic vendor reliability, fulfilment scores or the buyer's best-value allocation.
+
+See `12_ROADMAP/Manufacturer_Entry.md` and `12_ROADMAP/Advertising.md`.
+
+### Revenue model: earn from value added to the transaction
+
+POL's intended monetisation is staged. The exact fees and launch dates remain subject to local validation, contracts and regulatory review.
+
+| Horizon | Revenue stream | Intended payer / mechanism | Readiness condition |
+|---|---|---|---|
+| Pilot | No platform commission | 0% commission during the documented three-month pilot | Measure adoption, repeat orders, service cost, fulfilment quality and vendor value before charging |
+| Post-pilot marketplace | Transaction commission | A category-sensitive take rate, with a 1%–3% working range and approximately 2% blended hypothesis | Validate retailer savings, vendor economics, contribution per completed order and collection mechanics |
+| Network expansion | Vendor SaaS | Subscription for optional advanced vendor tools such as inventory, staff, reporting and operational workflows | Vendors must receive demonstrable recurring software value beyond access to orders |
+| Mature network | Manufacturer trade marketing / retail media | Clearly disclosed sponsored campaigns and co-funded promotions | Sufficient retailer density, campaign measurement and strict separation from organic ranking |
+| Mature network | Market intelligence | Aggregated and privacy-protected analytics products for brands and suppliers | Data quality, lawful basis, consent/contractual rights, aggregation safeguards and a trusted reporting methodology |
+| Partner-led finance phase | Credit referral / origination or embedded-finance fees | Fees shared with regulated banking or lending partners | Sufficient transaction history, partner underwriting, legal approval and explicit user consent |
+
+The asset-light model does **not** mean the real-world supply chain has no costs. Goods, storage, delivery, payment processing, returns and customer support all have costs. The design goal is to keep inventory ownership, warehouse capital, fleet ownership and lending risk outside POL's balance sheet, while transparently recording the costs borne by vendors, retailers and delivery partners.
+
+The working business-model assumptions—including the category-based take-rate hypothesis, AOV and cost-to-serve scenarios—are documented in:
+
+- `05_BUSINESS_MODEL/Business_Model_and_Unit_Economics.md`
+- `05_BUSINESS_MODEL/Revenue_Model.md`
+- `05_BUSINESS_MODEL/Commission_Model.md`
+- `05_BUSINESS_MODEL/Vendor_Economics.md`
+
+Those documents explicitly distinguish hypotheses from field observations and calculated values. A value in a spreadsheet or strategy note is not a realised financial result until it is supported by actual transactions and reconciled accounting.
+
+### Long-term financial ambition
+
+POL's long-term ambition is to build a business capable of reaching **US$100 million in annual recognised platform revenue**, with **US$300 million as a stretch scenario**. These are strategic aspirations—not a forecast, valuation, fundraising claim, or current run-rate. No fixed achievement date should be promised until the pilot, retention, contribution margin and expansion economics have been demonstrated.
+
+A critical accounting distinction applies:
+
+- **GMV** is the value of goods ordered through the network.
+- **Platform revenue** is the commission and other revenue recognised by POL.
+- **Contribution** is platform revenue less the variable cost of serving the transaction.
+- **Net profit** is what remains after the full operating, financing, tax and other costs.
+
+At a 2% blended transaction take rate, transaction-only revenue of US$100 million would require approximately **US$5 billion in annual GMV**. US$300 million would require approximately **US$15 billion in annual GMV**. These are simple scenario calculations, not predictions. SaaS, trade marketing and partner-led services could diversify revenue, but must not be counted before launched, contracted and measured.
+
+#### Indian B2B commerce reference points
+
+Indian companies demonstrate that B2B commerce networks can reach several-hundred-million-dollar revenue scale, but they are not exact financial comparables to POL's intended commission-led, non-custodial model.
+
+| Company | Reported financial year / measure | Reported result | Approximate USD equivalent* | Important context |
+|---|---|---:|---:|---|
+| Udaan | FY2025 operating revenue | ₹4,561.4 crore | US$491 million | Reported net loss of ₹1,055.4 crore in FY2025; the company exited selected non-essential categories while refocusing on essentials and FMCG |
+| ElasticRun | FY2025 operating revenue | ₹2,653 crore | US$286 million | Reported net loss of approximately ₹145.1 crore in FY2025; the company has discussed a stronger focus on regional brands and improving take rates / gross margin |
+| Jumbotail + Solv | Network reach announced June 2025 | 500,000+ kiranas and MSMEs served by the combined platform, according to the company | Not a revenue figure | A scale/reach reference only; it should not be read as 500,000 monthly active or transacting stores |
+
+*Approximate conversion of reported INR amounts using roughly ₹92.93 per US dollar on 24 November 2026. This is a spot-rate illustration, not the average exchange rate used in the companies' FY2025 accounts. INR financial disclosures remain the source figures.
+
+Sources: [Udaan FY2025 revenue and loss — ET Retail](https://retail.economictimes.indiatimes.com/amp/news/e-commerce/e-tailing/udaans-fy25-losses-narrow-to-1055-cr-revenue-at-4561-cr/128148547); [ElasticRun FY2025 revenue and loss — Business Standard](https://www.business-standard.com/companies/news/elasticrun-fy25-loss-narrows-revenue-grows-private-labels-logistics-125112000736_1.html); [Jumbotail's June 2025 announcement](https://jumbotail.com/jumbotail-raises-120m-series-d-funding/); [USD/INR historical rate, 24 November 2026 — Wise](https://wise.com/us/currency-converter/usd-to-inr-rate/history/24-11-2026).
+
+**Comparability warning:** Udaan and ElasticRun have operated models that include product sales, distribution, logistics and other services. Their reported operating revenue may therefore include gross or product-sale components that POL would not recognise under a pure commission marketplace model. Comparing their reported revenue directly with POL's net commission revenue would be misleading. Their reported losses also show why scale alone is not a success metric.
+
+The relevant lesson is not to copy their cost structure. It is to learn from the size of the networks they built while preserving POL's own asset-light thesis and enforcing contribution-positive growth.
+
+### Growth sequence and measurable gates
+
+The rollout should follow evidence rather than a calendar-only expansion plan:
+
+1. **Ahvaz beachhead:** recruit a small number of committed wholesalers first, activate a dense cluster of independent retailers, and validate completed orders, repeat behaviour, price competitiveness, fulfilment, discrepancies and cost-to-serve. The initial three-month pilot is documented as commission-free.
+2. **Khuzestan cluster expansion:** expand only when the first cluster shows repeat ordering, reliable vendor acceptance, predictable fulfilment and positive or clearly improving contribution per completed order.
+3. **Adjacent city clusters:** enter other cities through local wholesaler/3PL partnerships, not by importing a warehouse-and-fleet cost base. Existing plans identify selected southern and major Iranian wholesale clusters as possible next markets.
+4. **Manufacturer and brand layer:** introduce trade-marketing and aggregated insights only after sufficient active retailer coverage and trusted wholesaler participation.
+5. **Financial-service partnerships and broader markets:** consider regulated partner-led finance and new geographies only after the platform has reliable transaction history, governance and sustainable unit economics.
+
+Current planning documents contain working acquisition goals such as 10 wholesaler design partners, an initial group of 25 pilot retailers and a 200-retailer year-one ambition. These are **planning targets, not achieved traction**. The relevant operational gates are more important than the headline counts.
+
+The primary success measures should include:
+
+- Completed, paid and successfully fulfilled orders—not registrations, downloads or abandoned baskets.
+- Active retailers, active vendors, repeat rate, order frequency and cohort retention.
+- GMV alongside recognised revenue, blended take rate and contribution per completed order.
+- Retailer price/service benefit and wholesaler incremental sales / cost-to-serve improvement.
+- Vendor acceptance, fill rate, on-time delivery, cancellation, discrepancy, return and dispute rates.
+- CAC payback, LTV based on observed retention, working-capital exposure and cash collection.
+- Concentration risk by vendor, customer, category and geography.
+
+A large GMV figure with poor retention, heavy subsidies, unresolved delivery failures or negative contribution is not evidence of a healthy marketplace.
+
+### AI-native development and agent-assisted operations
+
+POL is designed to be **AI-agent-friendly and tool-agnostic**. AI tools should materially accelerate research, product design, software engineering, testing, documentation and operational analysis. The repository already contains agent rules, reusable skills, execution protocols and a canonical product/architecture source of truth under `.agents/`, `POL_00_PROJECT_CONTROL/` and `13_PRODUCT_DESIGN/`.
+
+Examples of compatible tools include ChatGPT and Codex, Claude and Claude Code, Gemini, OpenCode, Antigravity, IDE-based coding assistants and MCP-connected tools. This is an example ecosystem, not a mandatory vendor stack or a claim that every tool is continuously connected to the production runtime.
+
+A coordinated agent workflow may assign bounded responsibilities to specialised agents:
+
+- **Product and research agents:** organise interviews, synthesise market evidence, compare alternatives and maintain traceability to source material.
+- **Architecture and planning agents:** inspect canonical decisions, map dependencies, prepare implementation plans and identify contradictions before changes.
+- **Engineering agents:** work on bounded backend, API, database, web and mobile tasks with explicit file scope and acceptance criteria.
+- **QA and security agents:** review edge cases, tenant isolation, permissions, financial invariants, regressions, RTL/accessibility and release evidence independently of the implementation agent.
+- **Data and operations agents:** analyse catalog quality, operational exceptions, KPI trends, service levels and reconciliation evidence.
+- **Documentation agents:** keep product specifications, decisions, implementation maps, runbooks and release notes aligned with the actual code.
+
+The required loop is: **read canonical sources → define a bounded task → plan → implement → independently review → run relevant tests → inspect evidence and diff → obtain human approval → merge**. Agents must not invent endpoints, permissions, prices, financial rules, product capabilities or test results. Agent outputs, generated designs and chat transcripts are working artifacts; they do not replace the canonical contracts or repository evidence.
+
+#### Future AI capabilities inside the product
+
+Potential product-facing AI capabilities include natural-language product discovery and reorder assistance, invoice/catalog OCR, SKU matching and duplicate detection, inventory and demand signals, price/stock anomaly alerts, vendor operations assistance, retailer support triage and aggregated manufacturer insights.
+
+These are **roadmap opportunities, not a statement that they are all implemented or enabled in the current MVP**. AI recommendations are not a prerequisite for the core MVP transaction flow. They should be introduced only when sufficient high-quality data, clear user value and measurable acceptance criteria exist.
+
+#### AI governance and human control
+
+- Keep business rules, financial calculations, tenant permissions and order state transitions in deterministic, testable services—not in an LLM prompt.
+- Use AI suggestions as decision support. Users or authorised staff must confirm consequential actions.
+- Do not allow an agent to autonomously approve credit, move money, change vendor prices, alter order quantities, settle disputes or bypass role permissions.
+- Protect commercial and personal data. Use least-privilege tool access, redaction or synthetic data where possible, and approved data-processing arrangements before sending sensitive information to external model providers.
+- Keep model choice interchangeable. No single model provider should become the source of truth or a hard dependency for core commerce.
+- Record model-assisted decisions where required, preserve provenance and provide a route for human correction and appeal.
+
+See `.agents/rules/00-pol-canonical-safety.md`, `.agents/skills/pol-batch-execution/SKILL.md`, `13_PRODUCT_DESIGN/POL_RETAILER_VISUAL_TODO_V2/12_AGENT_HARNESS_AND_EXECUTION_PROTOCOL.md` and `POL_00_PROJECT_CONTROL/CURRENT_SOURCE_OF_TRUTH.md`.
+
+### Strategic non-goals
+
+To preserve the model's focus and capital discipline, POL is not intended to:
+
+- Buy and resell inventory as its default operating model.
+- Build or own a large warehouse network or delivery fleet.
+- Replace wholesalers with direct manufacturer-to-shop distribution in the initial market.
+- Finance retailer or wholesaler credit from POL's own balance sheet.
+- Sell identifiable retailer, vendor or consumer data.
+- Optimise GMV at the expense of contribution, trust, fulfilment or retention.
+- Add AI features merely for marketing; each must solve a measured user or operational problem.
+
 ---
 
 ## 2. Architecture at a glance
