@@ -107,6 +107,117 @@ POL is a multi-vendor B2B marketplace. It does not take ownership of the product
 
 ---
 
+### Vision, ecosystem and long-term scale
+
+POL's starting wedge is FMCG procurement for independent neighbourhood retailers in a dense local cluster in Ahvaz, Iran. The long-term direction is a multi-city, multi-category and potentially multi-market B2B commerce network—but expansion should follow local retailer density, reliable supply, regulatory feasibility and positive unit economics, not a calendar-only rollout.
+
+The opportunity is not simply to put a wholesaler catalogue online. It is to make fragmented offline distribution more discoverable, measurable and dependable while allowing retailers, wholesalers, regional distributors, local carriers and manufacturers to keep performing the roles they are best equipped to perform. POL is intended to be the software, transaction-coordination, data and trust layer—not an inventory-owning wholesaler.
+
+**How the marketplace works**
+
+1. **Retailers create demand:** an owner or authorised staff member discovers products and vendor offers, compares price and availability, builds one basket and confirms an allocation.
+2. **Wholesalers fulfil supply:** each vendor controls its offers, prices and inventory, accepts or partially accepts its allocated order, prepares the goods and provides dispatch information.
+3. **POL coordinates the transaction:** the platform manages discovery, basket allocation, order state, notification, evidence, exceptions, support and reconciliation. One retailer basket can produce several vendor-specific orders.
+4. **The supply network performs delivery:** the wholesaler's vehicle or an agreed third-party logistics provider (3PL) handles physical delivery. POL coordinates and tracks the workflow without needing to own warehouses or a fleet.
+5. **Settlement remains direct:** the initial non-custodial model keeps payment between retailer and the relevant wholesaler. POL records evidence and supports reconciliation; it is not a wallet or custodian of customer funds.
+
+The governing principle is **digitise and strengthen the existing trade network, not disintermediate it**. Retailers should gain better procurement and visibility; wholesalers should gain lower order-acquisition friction, more demand and better operating information.
+
+**Stakeholder ecosystem and value exchange**
+
+| Stakeholder | Role | Intended value from POL | Boundary |
+|---|---|---|---|
+| Independent retailers, supermarkets and local shops | Demand-side buyers | Compare vendor offers, place multi-vendor orders, reorder, track fulfilment, document discrepancies and maintain purchase history | Remain independent businesses and buy from the relevant vendors |
+| Wholesalers, distributors and regional stockists | Initial supply-side sellers | Digital storefront, product/price/stock management, order intake, fewer manual errors, retailer demand, fulfilment coordination and reporting | Retain ownership of goods, inventory, prices and fulfilment commitments |
+| Manufacturers and consumer brands | Upstream supply and future intelligence partners | Later-stage product availability signals, regional sell-out visibility, campaign measurement and trade promotions | Direct manufacturer-to-retailer selling is not the initial model; local wholesalers remain fulfilment partners |
+| Local carriers, drivers and 3PL operators | Physical delivery capacity | Structured dispatch, pickup/drop information, status, proof of delivery and clearer exception handling | Provide physical delivery under agreed commercial terms; delivery is not assumed to be cost-free |
+| Banks, payment providers and licensed fintech partners | Regulated payment and future finance infrastructure | Structured transaction evidence, reconciliation interfaces and possibly partner-led credit origination | POL does not lend from its own balance sheet or assume bank credit risk |
+| Field activators and local commercial teams | Trust-building and onboarding | Retailer/vendor mapping, assisted onboarding, catalogue verification, training and first-order support | Assisted onboarding should move users toward self-service, not become a permanent substitute for usable software |
+| POS, ERP, accounting and technology partners | Integration ecosystem | Product identifiers, invoice exchange, inventory synchronisation and interoperability | Use documented APIs and permissioned data; do not create a competing source of truth |
+| Platform operations and support | Neutral network operator | Catalogue governance, SLA monitoring, dispute handling, abuse review, reconciliation and auditability | Decisions must be traceable, role-based and consistent |
+| End consumers | Indirect beneficiaries | Potentially better product availability and more reliable neighbourhood replenishment | Not the initial transacting customer of the B2B platform |
+
+**Manufacturer relationship: a three-party model**
+
+Manufacturers and brands are strategically important, but they are not the first customer segment in the Ahvaz MVP. Early direct-to-retailer manufacturer sales could make wholesalers perceive POL as a channel designed to remove them, weakening the supply side before the network has earned trust.
+
+The intended later-stage model is:
+- Manufacturers provide products, brand programmes, trade promotions and upstream supply.
+- Participating wholesalers remain the local commercial and fulfilment partners, holding stock where appropriate and serving retailers through established local operations.
+- POL provides digital demand signals, transaction coordination, campaign measurement and aggregated market intelligence.
+
+Clearly labelled sponsored campaigns, co-funded promotions, product sampling and aggregated dashboards are roadmap opportunities—not claims that advertising or a manufacturer dashboard is already live. Manufacturer entry should follow meaningful retailer density (existing strategy documents use approximately 500–1,000 active retailers as a planning threshold), protected wholesaler participation and lawful data permissions. Paid placement must never distort organic vendor reliability, fulfilment scores or best-value allocation.
+
+**Revenue model and unit economics**
+
+The monetisation plan is staged and remains subject to field validation, commercial contracts and regulatory review.
+
+| Horizon | Revenue stream | Working assumption | Readiness condition |
+|---|---|---|---|
+| Pilot | No platform commission | 0% during the documented three-month pilot | Measure adoption, repeat orders, service cost, fulfilment quality and vendor value |
+| Post-pilot marketplace | Transaction commission | Category-sensitive 1%–3% working range; approximately 2% blended hypothesis | Validate retailer savings, vendor economics, contribution per completed order and collection mechanics |
+| Network expansion | Optional vendor SaaS | Subscription for advanced inventory, staff, reporting and workflow tools | Demonstrable recurring software value beyond access to orders |
+| Mature network | Manufacturer trade marketing / retail media | Disclosed sponsored campaigns and co-funded promotions | Retailer density, campaign measurement and separation from organic ranking |
+| Mature network | Market intelligence | Aggregated and privacy-protected analytics for brands/suppliers | Data quality, lawful basis, consent/contract rights and aggregation safeguards |
+| Partner-led finance phase | Credit referral or embedded-finance fees | Fees shared with regulated banking/lending partners | Transaction history, partner underwriting, legal approval and explicit user consent |
+
+Asset-light does not mean the supply chain has no costs. Goods, storage, delivery, payment processing, returns and customer support all cost money. The design goal is to keep inventory ownership, warehouse capital, fleet ownership and lending risk outside POL's balance sheet while transparently recording costs borne by vendors, retailers and delivery partners.
+
+Working business-model assumptions—including take-rate hypotheses, average order value (AOV) and cost-to-serve scenarios—are documented in:
+- `05_BUSINESS_MODEL/Business_Model_and_Unit_Economics.md`
+- `05_BUSINESS_MODEL/Revenue_Model.md`
+- `05_BUSINESS_MODEL/Commission_Model.md`
+- `05_BUSINESS_MODEL/Vendor_Economics.md`
+
+These documents distinguish hypotheses from field observations. A spreadsheet assumption is not a realised financial result until supported by reconciled transactions.
+
+**Long-term financial ambition**
+
+The long-term strategic ambition is **US$100 million in annual recognised platform revenue**, with **US$300 million as a stretch scenario**. These are aspirations—not a forecast, valuation, fundraising claim or current run-rate. No achievement date should be promised before pilot retention, contribution margin and expansion economics are demonstrated.
+
+Keep the financial measures distinct:
+- **GMV:** value of goods ordered through the network.
+- **Platform revenue:** commission and other revenue recognised by POL.
+- **Contribution:** platform revenue less variable cost of serving the transaction.
+- **Net profit:** what remains after the full operating, financing, tax and other costs.
+
+At a 2% blended transaction take rate, transaction-only revenue of US$100 million would require approximately **US$5 billion in annual GMV**; US$300 million would require about **US$15 billion**. These are arithmetic scenarios, not predictions. SaaS, trade marketing and partner services must not be counted until launched, contracted and measured.
+
+**International financial scale reference points**
+
+Indian B2B commerce businesses show that large trade networks can reach several-hundred-million-dollar reported revenue scale. They are not direct financial comparables to POL's planned commission-led, non-custodial model.
+
+| Company | FY / measure | Reported result | Approximate USD equivalent | Context |
+|---|---|---:|---:|---|
+| Udaan | FY2025 operating revenue | ₹4,561.4 crore | ~US$491m | Reported FY2025 net loss of ₹1,055.4 crore; the company refocused on essentials and FMCG |
+| ElasticRun | FY2025 operating revenue | ₹2,653 crore | ~US$286m | Reported FY2025 net loss of ~₹145.1 crore; reporting described a focus on regional brands, private labels and improving gross margin |
+| Jumbotail + Solv | Network reach announced June 2025 | 500,000+ kiranas and MSMEs served, according to the company | Not a revenue figure | A reach metric, not 500,000 monthly active or transacting stores |
+
+*Approximate currency conversion uses ₹92.93 per US dollar on 24 November 2026; INR amounts remain the source figures. Udaan and ElasticRun have operated models that include product sales, distribution, logistics and other services. Their reported operating revenue may include gross/product-sale components that POL would not recognise as net commission revenue. Their reported losses also show why scale alone is not a success metric.*
+
+Sources: [Udaan FY2025 results — ET Retail](https://retail.economictimes.indiatimes.com/amp/news/e-commerce/e-tailing/udaans-fy25-losses-narrow-to-1055-cr-revenue-at-4561-cr/128148547); [ElasticRun FY2025 results — Business Standard](https://www.business-standard.com/companies/news/elasticrun-fy25-loss-narrows-revenue-grows-private-labels-logistics-125112000736_1.html); [Jumbotail / Solv June 2025 announcement](https://jumbotail.com/jumbotail-raises-120m-series-d-funding/); [USD/INR historical rate, 24 November 2026 — Wise](https://wise.com/us/currency-converter/usd-to-inr-rate/history/24-11-2026).
+
+**Growth sequence and measurable gates**
+
+1. **Ahvaz beachhead:** recruit committed wholesalers, activate a dense retailer cluster and validate completed orders, repeat behaviour, price competitiveness, fulfilment, discrepancies and cost-to-serve. The initial three-month pilot is documented as commission-free.
+2. **Khuzestan cluster expansion:** expand only after repeat ordering, reliable vendor acceptance, predictable fulfilment and positive or clearly improving contribution per completed order.
+3. **Adjacent city clusters:** use local wholesaler and 3PL partnerships rather than importing a warehouse-and-fleet cost base.
+4. **Manufacturer and brand layer:** introduce trade marketing and aggregated insights only after sufficient active retailer coverage and trusted wholesaler participation.
+5. **Partner finance and broader markets:** consider regulated partner-led finance and new geographies only with reliable transaction history, governance and sustainable unit economics.
+
+Working acquisition goals in planning documents include 10 wholesaler design partners, an initial 25 pilot retailers and a 200-retailer year-one ambition. These are **planning targets, not achieved traction**. Success measures should prioritise completed and fulfilled orders, active/repeat retailers, active vendors, GMV and recognised revenue, contribution per order, retailer and wholesaler economics, fill rate, on-time delivery, cancellations, discrepancies, disputes, CAC payback and concentration risk. High GMV with poor retention, heavy subsidies or negative contribution is not a healthy marketplace.
+
+**Strategic non-goals**
+
+To preserve focus and capital discipline, POL is not intended to:
+- Buy and resell inventory as its default operating model.
+- Build or own a large warehouse network or delivery fleet.
+- Replace wholesalers with direct manufacturer-to-shop distribution in the initial market.
+- Finance retailer/wholesaler credit from POL's own balance sheet.
+- Sell identifiable retailer, vendor or consumer data.
+- Optimise GMV at the expense of contribution, trust, fulfilment or retention.
+- Add AI features merely for marketing; each must solve a measured user or operational problem.
+
 ## 4. Product design and application areas
 
 The product is designed as a set of connected workspaces sharing the same product, order, identity and permission contracts. Each surface has a distinct operational purpose; the design should not force every user into the same dashboard.
@@ -418,6 +529,14 @@ Non-production environments expose OpenAPI documentation at /docs and /openapi.j
 
 A healthy process is not necessarily a ready application; readiness requires the dependencies expected by the endpoint.
 
+### Background worker
+
+The canonical asynchronous worker entry point is:
+
+    python -m scripts.worker_runtime
+
+It requires production-mode configuration and a valid database/provider environment. Start it only when the intended worker services and credentials are configured; an API process being healthy does not prove the worker is running.
+
 ### Web application
 
 From the repository root:
@@ -678,3 +797,14 @@ Before any pilot or production claim, verify at minimum:
 - Current release-readiness ledger and explicit owner approvals.
 
 **POL's ambition is to become dependable digital infrastructure for everyday trade. Its measure of success will be the real improvement it can demonstrate for retailers, suppliers, distributors and the communities they serve — not the size of its codebase or the number of features represented in the repository.**
+
+
+## License and third-party assets
+
+Review the applicable license and attribution requirements for each source directory, third-party dependency, font, image and design asset before redistribution. A license file in one subdirectory does not automatically grant rights to every asset in the repository.
+
+## Maintainer notes
+
+This repository is both a software codebase and a long-lived product knowledge base. Keep executable implementation, contracts, architectural decisions and audit evidence aligned. When documenting a feature or claiming that a gate passed, include enough context for another maintainer to verify it: source path, exact commit SHA, command or workflow, environment, result and known limitations.
+
+For project-specific questions, start with the canonical control documents rather than relying on historical chat summaries or old handoff notes.
