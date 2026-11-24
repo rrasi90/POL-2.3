@@ -801,7 +801,7 @@ Before any pilot or production claim, verify at minimum:
 
 ## License and third-party assets
 
-Review the applicable license and attribution requirements for each source directory, third-party dependency, font, image and design asset before redistribution. A license file in one subdirectory does not automatically grant rights to every asset in the repository.
+Review the applicable license and attribution requirements for each source directory, third-party dependency, font, image and design asset before redistribution. The bundled Vazirmatn font files in `mvp/apps/web/public/fonts/` and `mvp/apps/mobile/assets/fonts/` are distributed under the SIL Open Font License 1.1; the complete `OFL.txt` is kept beside both font bundles. A license file in one subdirectory does not automatically grant rights to every asset in the repository.
 
 ## Maintainer notes
 
