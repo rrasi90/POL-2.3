@@ -1,4 +1,6 @@
 branch,head_sha,last_commit_date,subject,merge_base_with_main,behind_main,ahead_main,behind_integration,ahead_integration,disposition,associated_pr,evidence
+integration/selective-salvage-remaining-branches-20261124,1f0fe96cbf0b,2026-11-24,docs(integration): record Vercel QA auth-boundary blockers,1f0fe96cbf0b,1,0,1,0,ALREADY_INTEGRATED,#58 merged,Merged into main as e2524df8; retained branch has no unique diff.
+fix/verification-ci-node-install-20261124,dbe443ca8db7,2026-11-24,docs: clarify worker runtime environment requirement,dbe443ca8db7,6,0,6,0,ALREADY_INTEGRATED,#57 merged,Merged into main as 59ac9488; retained branch has no unique diff.
 agent/mobile-motion-port-20261022,1c793b5363ef,2026-10-22,ci(browser): install Chromium without apt package refresh,d9505cfa62c9,64,51,247,51,SUPERSEDED,#40 closed,"All 21 motion files + QA improvements verified present in INT; motion suites green (28/28, 23/23) on INT."
 agent/pol-2.3-integration-fdx,70e001f4bc7a,2026-10-22,docs(todo): record integration execution handoff,e6e039145921,65,2,248,2,SUPERSEDED,-,expo run: scripts already in INT; journal entries historical; 2 unique files superseded by INT reconciliation.
 agent/pol-2.4-e2e-20261013,9be4c10e6388,2026-10-13,docs: mark TODO-006 DONE_VERIFIED with browser E2E evidence,9be4c10e6388,72,0,255,0,ALREADY_INTEGRATED,#36 merged,ahead=0; browser E2E infra in main.
