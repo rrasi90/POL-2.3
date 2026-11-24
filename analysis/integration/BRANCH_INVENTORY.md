@@ -80,3 +80,23 @@ Disposition counts (58 refs): 31 ALREADY_INTEGRATED · 17 SUPERSEDED · 4 ARCHIV
 - **Retained refs:** `fix/otp-six-digit-contract-20261025` + `fix/otp-six-digit-standard-20261025` (BLOCKED_POLICY — locked D-018 four-digit OTP still governs; the six-digit port needs its own lifecycle/security workstream per PR_INTEGRATION_AUDIT), `vercel-qa` (HOLD, TODO-025), `penpot-work-2026-09-16` and `feat/mobile-motion-layer` + `backup/feat-mobile-motion-layer-20261022` (ARCHIVE_ONLY), `fix/web-refresh-session-preserve-20261030` (ARCHIVE_ONLY).
 - **Local-only backups retained:** `backup/local-main-ed815b2` and `backup/pre-exec-20261022`. `backup/local-main-ed815b2` carries six Sept-2026 gap-closure commits (G-003/G-004/G-011/G-012/G-023..G-026); a 2026-11-21 feature-level verification confirmed every closure is re-implemented in main under the consolidated route architecture — G-004 inbox (`scripts/api/routes/notifications.py` inbox_router: GET /inbox/items, PATCH /items/{id}/read, PATCH /items/read-all), G-011 SLA override (`scripts/api/routes/management.py` POST /admin/sla-overrides + route-inventory entry), G-011 category admin (`scripts/api/routes/admin.py` POST /categories, PATCH /categories/{id} — create_category), G-003/G-012 parity (products/search in `products.py`/`catalog.py`, baskets/current in `baskets.py`), and G-023..G-026 governance docs evolved (`CANONICAL_CONTRACT_MATRIX.md`, `PLATFORM_COMPLETION_GAP_REGISTER.md`). Disposition: SUPERSEDED; retained as backup per convention.
 - **Stashes `stash@{0..2}` retained** on 2026-10-era bases; all three assessed obsolete on 2026-11-21 — `stash@{1}`/`stash@{2}` pin Expo `~57.0.24` which would regress the deliberate `~57.0.31` alignment from merged PR #46, and `stash@{0}` is an alternative Cartona registry restructure superseded by main's ported evidence set. Dropped only on owner confirmation.
+
+
+---
+
+## 2026-11-24 Live Branch Refresh — Post PR #58
+
+**Current main:** `e2524df8d8712f535369ae469292541861ea3da7` (merge of PR #58).  
+**Current remote branches:** 10 total, including main; 9 non-main refs.  
+**Current open PRs:** 0.
+
+The current remote refs were re-read from GitHub after PR #58 merged. Two short-lived integration refs remain on the remote but are already ancestors of main:
+
+| Branch | Head | Relation to current main | Disposition |
+|---|---|---|---|
+| `integration/selective-salvage-remaining-branches-20261124` | `1f0fe96cbf0b` | 0 ahead / 1 behind; no file diff | **ALREADY_MERGED** — PR #58, merge commit `e2524df8`. Retained for traceability. |
+| `fix/verification-ci-node-install-20261124` | `dbe443ca8db7` | 0 ahead / 6 behind; no file diff | **ALREADY_MERGED** — PR #57, merge commit `59ac9488`. Retained for traceability. |
+
+The other retained refs keep their prior dispositions: both mobile-motion refs and web-refresh are archive-only, both six-digit OTP branches are policy-blocked by D-018, `vercel-qa` is HOLD under TODO-025, and `penpot-work-2026-09-16` is archive-only after the bounded skill salvage. No archive/backup branch was deleted.
+
+The mainline verification workflow triggered by merge commit `e2524df8` was still running at the time of this refresh. The Remediation Static Gate completed successfully; no full-suite or release certification is claimed yet.
