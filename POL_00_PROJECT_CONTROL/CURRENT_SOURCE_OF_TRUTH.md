@@ -42,8 +42,8 @@ Canonical design/build authority:
 
 | Domain | Authoritative Canonical File(s) | Scope & Responsibility | Precedence Rule |
 |:---|:---|:---|:---|
-| **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-028; later amendments supersede earlier decisions explicitly. | Absolute precedence. |
-| **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md` | Feature matrix, core flows, boundaries and MVP inclusions/exclusions. | Must conform to the currently effective Decision Register, D-001–D-028; later explicit amendments supersede earlier decisions. |
+| **Strategic & Architectural Decisions** | `POL_00_PROJECT_CONTROL/DECISION_REGISTER.md` | Sole authority for Founder Decisions D-001 through D-029; later amendments supersede earlier decisions explicitly. | Absolute precedence. |
+| **Current MVP Scope & Requirements** | `06_PRODUCT/MVP_Definition.md`, `06_PRODUCT/PRD.md` | Feature matrix, core flows, boundaries and MVP inclusions/exclusions. | Must conform to the currently effective Decision Register, D-001–D-029; later explicit amendments supersede earlier decisions. |
 | **Identity & Access Management** | `06_PRODUCT/Roles_and_Permissions.md`, `POL_00_PROJECT_CONTROL/USER_PROFILE_AND_PERSONA_MODEL.md`, Master Tree VD-15 | Identity, tenant membership, role authorization, delegated permissions, persona context and UX preferences. | `organization_memberships.role` is the base authorization SSoT; effective access is `base role permissions + active delegated grants`, always scoped to an active user, active organization and active membership. `users.role` is legacy/deprecated. |
 | **Order Lifecycle & State Transitions** | `06_PRODUCT/Order_Lifecycle.md`, `08_DATA/MULTI_VENDOR_ORDERING_MODEL.md` | OrderGroup, child Orders, Delivery and exception state machines. | Governs backend workflows and UI state mapping. |
 | **Domain Entities & Business Invariants** | `08_DATA/DOMAIN_MODEL.md` | Ubiquitous language, aggregates and invariants. | Governs domain service behavior. |
@@ -108,7 +108,7 @@ No visual artifact becomes canonical until the corresponding written requirement
 ## 6. Change Management
 
 1. No competing decision registers or shadow PRDs.
-2. Changes to D-001–D-028 require explicit superseding decisions.
+2. Changes to D-001–D-029 require explicit superseding decisions.
 3. Code, migrations, tests and design artifacts must be traceable to current canonical documents.
 4. Generated local artifacts must not be committed to the repository.
 5. Production-readiness claims must distinguish domain verification from HTTP/auth/provider/UI/observability/deployment/recovery implementation.

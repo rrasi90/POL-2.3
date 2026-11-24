@@ -194,6 +194,7 @@ The design direction is a practical, high-density commerce interface rather than
 - **Responsive web and mobile:** the same product capabilities should be available on both clients where the approved permission and screen matrix requires parity.
 - **Light and Night themes:** common tokens and reusable components should keep visual behavior consistent.
 - **Accessibility:** meaningful labels, visible focus, keyboard support, contrast, screen-reader semantics and touch targets appropriate for real shop use.
+- **Self-hosted Persian typography:** the web app bundles the same Vazirmatn Regular, SemiBold and Bold font assets used by mobile and loads them locally at build time; builds do not need to fetch Google Fonts.
 - **Progressive disclosure:** show the decision-critical information first; reveal detailed operational data only when needed.
 - **State fidelity:** every major workflow must account for loading, empty, error, offline, expired, disabled, permission-denied, retry and success states.
 - **Commercial clarity:** price, unit, quantity, MOQ, vendor, delivery and order state must be visible before confirmation.
