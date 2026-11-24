@@ -178,3 +178,18 @@ commits landed.
 PR #53 remains Draft until the CI gate passes on the exact merge-candidate
 SHA. This document's local evidence is local evidence only: it does not
 substitute for CI-on-SHA, device, staging or live-provider certification.
+
+
+## Post-merge OTP implementation status — 2026-11-25
+
+PR #59 (`feat(auth): standardize six-digit OTP and expand English project README`) is **MERGED** into `main` as `f9eca328b053dfacfe4c42c81c1c9c468fb8b607`.
+
+The exact tested PR head was `dbf0a2284e4f16d0cc1e7568b78e81e11c5352a6`:
+- Independent backend verification and PostgreSQL 18 migration chain 001–077: **852 passed, 0 failed, 0 skipped** (four warnings), run [45488346802](https://github.com/rrasi90/POL-2.3/actions/runs/45488346802).
+- Browser E2E / Playwright: **41 passed**, run [45488346616](https://github.com/rrasi90/POL-2.3/actions/runs/45488346616).
+- Mobile verification: **17/17 Expo/mobile steps** and TODO-084 eligibility gate PASS, run [45488346626](https://github.com/rrasi90/POL-2.3/actions/runs/45488346626). Android APK matrix build remained skipped; no device install is claimed.
+- Remediation Static Gate: **11/11 passed**, run [45488346621](https://github.com/rrasi90/POL-2.3/actions/runs/45488346621).
+
+D-018 and D-029 now specify six-digit new authentication and delivery OTPs. Migration 077 preserves already-issued four-digit delivery codes only for their original in-flight delivery until terminal completion. The two original OTP branches and PRs #49/#50 remain closed/unmerged because their old heads are stale; they were not imported wholesale.
+
+This records merge and CI readiness for the OTP change only. Production/release acceptance still requires on-device visual/accessibility evidence, live SMS provider acceptance, security review, staging and owner sign-off.

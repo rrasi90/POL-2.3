@@ -1,7 +1,7 @@
 # POL — Six-Digit OTP Policy Amendment
 
 **Decision date:** 2026-11-24  
-**Status:** Approved by explicit founder instruction; implementation PR pending review and exact-SHA verification  
+**Status:** Approved, implemented and merged via PR #59 on 2026-11-24  
 **Governing register:** POL_00_PROJECT_CONTROL/DECISION_REGISTER.md  
 **Supersedes:** Former four-digit authentication OTP wording in D-018 and the dependent implementation/design documentation
 
@@ -54,13 +54,13 @@ Once all pre-migration four-digit deliveries are terminal, a later migration may
 
 ## 5. Implementation and acceptance
 
-The selective implementation is being re-authored from the audited mainline on:
+The implementation was selectively re-authored from the audited mainline on:
 
 - feat/six-digit-otp-and-social-impact-readme-20261124
 
 The historical PRs #49 and #50 remain closed and must not be merged wholesale. Their branch tips are materially behind current main and are retained only as historical implementation evidence. Migration 077 is re-authored on the current base with the legacy in-flight safeguard described above.
 
-Before merge, the exact feature SHA must pass:
+The exact feature SHA passed the following checks before merge:
 - PostgreSQL 18 migration-chain and schema constraint verification.
 - Authentication six-digit API and generation tests, including leading-zero handling.
 - Delivery six-digit issuance, recipient-only event, tenant binding, single-use and attempt-cap tests.
@@ -69,7 +69,7 @@ Before merge, the exact feature SHA must pass:
 - Mobile typecheck, functional/regression/mock QA, and device-level OTP UI review.
 - Static verification and a security/diff review.
 
-The successful 849/849 backend run on the prior main SHA predates this amendment and is not evidence that this new implementation has passed.
+The exact PR head SHA `dbf0a2284e4f16d0cc1e7568b78e81e11c5352a6` passed 852/852 backend tests (0 failed, 0 skipped; four warnings) in run `45488346802`; migration chain 001–077 applied successfully in PostgreSQL 18. Browser E2E passed 41/41 in run `45488346616`, mobile verification passed 17/17 Expo/mobile steps plus the QA eligibility gate in run `45488346626`, and the static gate passed 11/11 in run `45488346621`. PR #59 merged to main as `f9eca328b053dfacfe4c42c81c1c9c468fb8b607`.
 
 ## 6. Documentation and product communication
 
@@ -81,3 +81,10 @@ The six-digit code change does not authorize a change to pricing, credit, paymen
 ## Historical migration metadata
 
 `migrations/030_delivery_otp_column.sql` is an already-released historical migration and is intentionally not rewritten. Its original SQL comment reflects the former D-018 wording and must be read as historical metadata only. Migration 077 updates the live PostgreSQL column comment to the D-029 six-digit new-issuance policy and explicitly describes the temporary in-flight four-digit compatibility rule.
+
+
+## 7. Post-merge acceptance boundaries — 2026-11-25
+
+- The two original implementation branches `fix/otp-six-digit-contract-20261025` and `fix/otp-six-digit-standard-20261025` remain closed and unmerged. Their original policy objection was superseded, but they remain stale historical branches and must not be merged wholesale.
+- The mobile workflow's Android QA APK matrix job was skipped by the existing TODO-084 gate. No APK build, device installation, or physical-device acceptance is claimed by PR #59.
+- Updated six-digit OTP UI screenshots, accessibility review on real devices, live SMS.ir template/send/verify acceptance, independent security review, staging deployment and operational sign-off remain separate release gates.

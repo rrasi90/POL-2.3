@@ -80,3 +80,12 @@ A clean implementation is being selectively re-authored from the audited current
 The new migration 077 is not copied from the closed PR #50 tip. It records each existing delivery code's actual length, leaves active in-flight codes untouched, enforces six digits for new records and allows only the already-issued legacy four-digit values to complete their original delivery. New authentication and delivery UI/API flows use six digits. Old PRs #49 and #50 remain closed historical review records; do not reopen or merge their stale heads.
 
 The new branch must pass fresh PostgreSQL 18 migration tests, backend verification, web typecheck/build and browser E2E, mobile QA/typecheck, static gate, plus review of recipient-only delivery OTP behavior before merge. Existing mainline test evidence predates this amendment and is not evidence for the new OTP implementation.
+
+
+## Final OTP disposition after PR #59 — 2026-11-25
+
+The selective implementation is no longer pending: PR #59 merged to `main` as `f9eca328b053dfacfe4c42c81c1c9c468fb8b607`. Its tested head `dbf0a2284e4f16d0cc1e7568b78e81e11c5352a6` passed backend 852/852, PostgreSQL 18 migrations 001–077, browser E2E 41/41, mobile 17/17 steps and static gate 11/11. See runs 45488346802, 45488346616, 45488346626 and 45488346621.
+
+The two historical branches `fix/otp-six-digit-contract-20261025` and `fix/otp-six-digit-standard-20261025` remain **closed/unmerged**. Their original four-digit D-018 policy objection has been superseded, but the old branch heads remain stale and are not to be merged wholesale. PR #59 contains the clean selective implementation from the current mainline.
+
+The Android QA APK matrix was skipped by TODO-084. No APK build or physical-device validation is claimed by this merge.

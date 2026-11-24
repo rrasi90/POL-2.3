@@ -72,7 +72,7 @@ POL takes these lessons as design hypotheses:
 ### Research sources
 
 - [Cartona — TechCrunch, 30 July 2024](https://techcrunch.com/2024/07/30/egypts-cartona-raises-8-1m-even-as-investors-pull-back-from-b2b-e-commerce-in-africa/)
-- - [Twiga Foods — IFC project disclosure](https://disclosures.ifc.org/project-detail/SII/41195/twiga-foods)
+- [Twiga Foods — IFC project disclosure](https://disclosures.ifc.org/project-detail/SII/41195/twiga-foods)
 - [udaan — About the company](https://udaan.com/about-us)
 - [TradeDepot — Novastar Ventures portfolio profile](https://www.novastarventures.com/companies/tradedepot/)
 - [ONDC DigiDukaan — Government of India Press Information Bureau, 30 October 2026](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2330634&lang=1&reg=3)
@@ -305,7 +305,7 @@ The design direction is a practical, high-density commerce interface rather than
 - **Responsive web and mobile:** the same product capabilities should be available on both clients where the approved permission and screen matrix requires parity.
 - **Light and Night themes:** common tokens and reusable components should keep visual behavior consistent.
 - **Accessibility:** meaningful labels, visible focus, keyboard support, contrast, screen-reader semantics and touch targets appropriate for real shop use.
-- **Self-hosted Persian typography:** the web app bundles the same Vazirmatn Regular, SemiBold and Bold font assets used by mobile and loads them locally at build time; builds do not need to fetch Google Fonts.
+- **Self-hosted Persian typography:** the web app bundles Vazirmatn Regular, Medium, SemiBold and Bold font assets and loads them locally at build time; builds do not need to fetch Google Fonts.
 - **Progressive disclosure:** show the decision-critical information first; reveal detailed operational data only when needed.
 - **State fidelity:** every major workflow must account for loading, empty, error, offline, expired, disabled, permission-denied, retry and success states.
 - **Commercial clarity:** price, unit, quantity, MOQ, vendor, delivery and order state must be visible before confirmation.
@@ -395,12 +395,13 @@ Provider adapters, mobile SDK versions and package versions must remain aligned 
 
 POL is a large product-engineering repository, not a single-page application or a small API sample. It combines software, product design, commercial rules, data governance, operational workflows, tests, deployment and agent execution guidance.
 
-A Git-tree snapshot taken on 24 November 2026, before this six-digit OTP amendment, contained:
+A Git-tree snapshot of the post-merge `main` repository on 25 November 2026 contained:
 
-- **964 tracked files** across source, tests, design, specifications, operations and evidence.
-- **More than 200 Python files** covering API, domain services, workers, migrations support and verification.
-- **More than 130 TypeScript / TSX files** across the web application, mobile application and shared packages.
-- **76 numbered PostgreSQL migrations** on the mainline baseline before the proposed migration 077 in the OTP feature branch.
+- **971 tracked files** across source, tests, design, specifications, operations and evidence.
+- **217 Python files** covering API, domain services, workers, migrations support and verification.
+- **138 TypeScript / TSX files** across the web application, mobile application and shared packages.
+- **77 numbered PostgreSQL migrations**, including the merged six-digit delivery OTP migration 077.
+- **324 Markdown documents**, 11 CSV inventories and six GitHub Actions workflow files.
 - Multiple product workspaces, shared packages, design-system assets, integration ledgers and CI workflows.
 
 These figures describe the size of the repository snapshot, not the number of deployed services, active customers, production transactions or employees.
@@ -578,7 +579,7 @@ Physical-device installation, camera/barcode behaviour, release signing and prod
 
 ### PostgreSQL migrations
 
-The mainline baseline used for the 24 November 2026 audit contained a contiguous numbered chain from 001 through 076. This OTP amendment proposes migration 077 on the dedicated feature branch. Do not treat 077 as part of main until that branch is reviewed and merged.
+The current mainline contains a contiguous numbered PostgreSQL migration chain from 001 through 077. Migration 077 (`077_delivery_otp_six_digit_format.sql`) was merged through PR #59 and applied successfully by the PostgreSQL 18 CI environment. Migration changes remain forward-only; historical migration files are not rewritten.
 
 Migration changes are forward-only. Historical migration files should not be rewritten to change already-applied schema history.
 
@@ -668,7 +669,7 @@ The repository's main verification workflow runs the Python verification suite, 
 
 Review the executed job steps, actual test totals, skipped count, tested SHA and artifact upload. A workflow that fails before runner steps does not constitute an executed test failure or a successful test pass.
 
-**Pre-amendment baseline:** the main branch's 24 November 2026 independent verification run reported 849 passed, 0 failed and 0 skipped on SHA f4ac2b81948b0ee1f1221b541783e152b3e3a41a. That run predates the six-digit OTP changes. It is baseline evidence only and does not certify this feature branch.
+**Six-digit OTP implementation evidence (PR #59):** the exact tested PR head `dbf0a2284e4f16d0cc1e7568b78e81e11c5352a6` passed backend verification **852/852 (0 failed, 0 skipped; four warnings)** and PostgreSQL 18 migrations 001–077 in [run 45488346802](https://github.com/rrasi90/POL-2.3/actions/runs/45488346802). Browser E2E passed **41/41** in [run 45488346616](https://github.com/rrasi90/POL-2.3/actions/runs/45488346616); mobile/Expo passed **17/17 steps** and the TODO-084 eligibility gate in [run 45488346626](https://github.com/rrasi90/POL-2.3/actions/runs/45488346626); the Static Gate passed **11/11** in [run 45488346621](https://github.com/rrasi90/POL-2.3/actions/runs/45488346621). PR #59 merged to main as `f9eca328b053dfacfe4c42c81c1c9c468fb8b607`. The Android QA APK matrix job was skipped under TODO-084; this README does not claim a new APK build or physical-device installation.
 
 ---
 
@@ -764,6 +765,10 @@ Before starting a task:
 5. Declare a narrow objective, allowed file scope, dependencies and acceptance criteria.
 6. Verify the complete diff and run relevant tests before committing.
 7. Report the exact base SHA, final SHA, changed files, commands, results, risks and remaining blockers.
+
+The project deliberately uses AI-assisted engineering as a productivity layer across research, planning, implementation and verification. Tools such as **ChatGPT and other coding/research agents** can be assigned bounded workstreams—for example, literature and market research, specification drafting, UI/UX audit, implementation proposals, test generation, documentation reconciliation, code review and failure triage. Multiple agents may work in parallel on independent tasks, while a single canonical decision register, source-of-truth hierarchy, Git history and CI evidence keep the repository coherent.
+
+AI output is treated as a proposal, not as authority. An agent must inspect the current source, cite relevant repository contracts, work within an approved file scope, preserve tenant/security invariants, run checks on its exact SHA and report uncertainty or failures. Humans remain responsible for approving business/security decisions, reviewing changes, accepting risks and signing off releases. Agent-generated code, screenshots, market claims and test summaries are not accepted without independent verification.
 
 The POL Batch Execution skill is available at .agents/skills/pol-batch-execution/SKILL.md. It supplements, but never overrides, the repository's canonical safety rule and decision register.
 

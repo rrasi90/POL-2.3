@@ -831,7 +831,7 @@ export default function RetailerOrderDetailPage() {
               title="رسید قطعی تحویل هنوز ثبت نشده است"
               description={
                 proofMissing
-                  ? "پس از دریافت بار در مقصد، می‌توانید تحویل را با کد ۴ رقمی پیامک‌شده تأیید نمایید."
+                  ? "پس از دریافت بار در مقصد، می‌توانید تحویل را با کد ۶ رقمی ارسال‌شده تأیید نمایید."
                   : undefined
               }
             />
@@ -845,7 +845,7 @@ export default function RetailerOrderDetailPage() {
                 تأیید تحویل سفارش توسط گیرنده
               </h3>
               <p className="mt-0.5 text-[12px] text-[var(--pol-light-text-muted)]">
-                کد پیامک‌شده ۴ رقمی ارسال را در کادر زیر وارد کنید و دکمه تأیید تحویل را بفشارید.
+                کد ۶ رقمی ارسال را در کادر زیر وارد کنید و دکمه تأیید تحویل را بفشارید.
               </p>
               {podBlocked ? (
                 <p
@@ -880,7 +880,7 @@ export default function RetailerOrderDetailPage() {
                 autoComplete="one-time-code"
                 maxLength={6}
                 hint="کد تحویل ارسال‌شده به صندوق پیام فروشگاه"
-                placeholder="----"
+                placeholder="------"
               />
             </div>
 

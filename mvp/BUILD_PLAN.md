@@ -77,7 +77,7 @@
 
 | ID / topic | Authority | Status | Action |
 |------------|-----------|--------|--------|
-| OTP length 4 vs 6 | D-018 amended 2026-11-24 | **SIX-DIGIT POLICY APPROVED; implementation pending CI** | Authentication OTP exact 6 ASCII digits; delivery OTP exact 6 new digits under D-029 with legacy in-flight 4-digit compatibility only |
+| OTP length 4 vs 6 | D-018 amended 2026-11-24 | **MERGED & VERIFIED — PR #59** | Authentication OTP exact 6 ASCII digits; new delivery OTPs exact 6 digits under D-029; legacy in-flight codes preserved. Evidence: 852/852 backend, 41/41 browser, 17/17 mobile steps and 11/11 static gate on tested SHA `dbf0a228` |
 | Multi-vendor basket | D-014 | **RESOLVED** | enforced |
 | PG 18 canonical | D-015 | **RESOLVED** | host PG 18.2 |
 | Refresh-token rotation | D-018 note | **SOURCE IMPLEMENTED / POLICY OPEN** | Current source rotates refresh tokens and rejects replay; product/security policy remains an explicit D-018 decision and is not inferred from implementation |
@@ -87,7 +87,7 @@
 | Design-tool / OpenPencil MCP | WAVE-02 | **BLOCKED_EXTERNAL** | start OpenPencil app or continue without design-board WAVE-02 |
 | Catalog path `/products/search` vs `/catalog/search` | G-003 | **RESOLVED / DUAL COMPATIBILITY** | both canonical public HTTP paths are registered; current retailer screen uses `/catalog/search` |
 | Inbox path | G-004 | **RESOLVED** | durable `/inbox/items*` and `/notifications*` projections are both registered; screen uses `/notifications` |
-| Delivery OTP length | D-029 / migration 077 | **REIMPLEMENTED ON FEATURE BRANCH** | New delivery OTP 6 digits with separate generator; existing active 4-digit records are backfilled and remain valid only until terminal completion |
+| Delivery OTP length | D-029 / migration 077 | **MERGED & VERIFIED — PR #59** | Secure six-digit issuance; migration 077 backfills stored lengths and preserves already-issued legacy codes only until their original delivery completes |
 
 ---
 
@@ -353,5 +353,7 @@ Update MATRIX / API_MAP / GAPS when a status changes. Never mark VERIFIED withou
 
 - D-018 authentication OTP has been superseded to exactly six ASCII digits. Existing TTL (120 seconds), resend interval (60 seconds), rate limit (3 requests per five minutes per phone+IP), five attempts, ten-minute phone lockout, access-token and refresh-session lifetimes remain unchanged.
 - D-029 newly issued delivery/POD OTPs are also six digits, but remain recipient-only, purpose-bound, single-use and governed by the separate delivery lifecycle.
-- Migration 077 is proposed on feat/six-digit-otp-and-social-impact-readme-20261124. It does not invalidate, rotate or re-send existing in-flight delivery codes. Main remains on migration 076 until PR merge.
-- Previous four-digit QA evidence is historical. Auth, delivery, web, browser, mobile and device checks must be rerun on the exact amended SHA before these gates can be closed.
+- Migration 077 is merged into main through PR #59 (merge commit `f9eca328`); main's numbered migration chain is now 001–077. PostgreSQL 18 CI applied the full chain successfully.
+- Exact tested PR SHA `dbf0a2284e4f16d0cc1e7568b78e81e11c5352a6`: backend 852/852; browser E2E 41/41; mobile 17/17 Expo steps plus eligibility; static gate 11/11.
+- Migration 077 does not invalidate, rotate or re-send existing in-flight delivery codes. New login and delivery OTPs are six digits; previously issued four-digit delivery codes remain valid only for their original delivery until terminal completion.
+- Prior four-digit QA evidence is historical. Physical-device OTP UI/accessibility evidence, QA APK build/install, live SMS.ir and release gates remain separate.

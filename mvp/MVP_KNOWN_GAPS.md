@@ -10,7 +10,7 @@
 
 - **Sources:** former D-018 four-digit authentication policy versus legacy design-map six-digit references.
 - **Resolution (2026-11-24):** founder amendment supersedes the former length; D-018 authentication OTP is exactly six ASCII numeric digits.
-- **Action:** implement six ASCII digits for LOGIN/REGISTER; retain 120s TTL, 60s resend, 3/5min phone+IP limit, five attempts and 10-minute lockout.
+- **Implementation:** merged in PR #59. LOGIN/REGISTER accepts exactly six ASCII digits; 120s TTL, 60s resend, 3/5min phone+IP limit, five attempts and 10-minute lockout remain unchanged. Evidence: backend 852/852 on tested SHA `dbf0a228` (run 45488346802).
 
 ## G-002 — Master Tree filename / legacy reference (CONFLICT — RESOLVED)
 
@@ -130,7 +130,7 @@ Prior research noted: brand blue vs tokens, type scale variants, radius, motion 
 
 - **Sources:** D-029 requires six-digit newly issued delivery OTPs. The prior four-digit delivery format remains a data-compatibility exception only for codes already issued to in-flight deliveries before migration 077.
 - **Resolution (2026-11-24):** new dispatches use six ASCII digits via DELIVERY_OTP_CODE_LENGTH and secure randomness. Migration 077 stores the actual length of existing delivery codes without rotating or re-sending them; a previously issued four-digit in-flight code may complete only its original delivery.
-- **Status:** RESOLVED
+- **Status:** RESOLVED — PR #59 merged; migration 077 applied and verified in PostgreSQL 18 CI on tested SHA `dbf0a228` (run 45488346802).
 
 ---
 
@@ -208,8 +208,8 @@ Update SCREEN_MATRIX status + API_MAP when an entry changes.
 - **Finding (2026-09-25):** AuthService.request_otp previously selected deterministic `1234` for every non-production environment, so an unset/unknown environment could silently inherit the test credential.
 - **Resolution:** deterministic OTP is now allowed only when `ENVIRONMENT=test` and production-mode detection is false. All other environments use cryptographically random six-digit OTPs under the amended D-018 policy. The `test_code` response field is exposed only in the explicit test environment.
 - **Regression proof:** scripts/test_auth_contract.py::test_static_otp_is_strictly_test_only covers explicit test mode plus development, unknown and unset environment cases.
-- **CI status:** source and test remediation committed; fresh GitHub Actions certification remains blocked by the current runner/check execution failure before useful job steps.
-- **Status:** SOURCE REMEDIATED / CI PENDING
+- **CI status:** the six-digit OTP generation/authentication path and test-only deterministic behavior passed the PR #59 full backend suite (852/852, run 45488346802).
+- **Status:** SOURCE REMEDIATED / CI VERIFIED for the PR #59 tested SHA.
 
 ## G-034 — Delivery exception notification routing (RESOLVED — 2026-09-25)
 
@@ -1017,3 +1017,8 @@ The remediation intentionally does **not** enforce one refund record per order. 
 - D-029 requires exactly six ASCII digits for all newly issued delivery/POD OTPs, with a separate recipient-only and single-use lifecycle.
 - Four-digit delivery OTPs are accepted only when they were already issued to an in-flight delivery before migration 077. They remain valid only for that delivery until terminal completion. Migration 077 never rotates or re-sends them.
 - Historical examples, old smoke-test records and old screenshots that show four-digit login OTPs are superseded evidence and must not be used to describe the current policy.
+
+
+## OTP change CI evidence — 2026-11-25
+
+The D-018 / D-029 six-digit implementation was merged in PR #59. Exact tested SHA `dbf0a2284e4f16d0cc1e7568b78e81e11c5352a6`: backend 852/852, browser E2E 41/41, mobile 17/17 Expo steps, and static gate 11/11. The migration chain 001–077 applied successfully in PostgreSQL 18 CI. TODO-084 skipped the Android QA APK matrix; visual device QA, live SMS provider acceptance and production release gates remain separate.

@@ -72,3 +72,16 @@ Release remains blocked independently of the merge decision:
 ## 2026-11-24 OTP amendment status
 
 The six-digit OTP policy is approved in the current Decision Register, but the selective implementation is still under review on feat/six-digit-otp-and-social-impact-readme-20261124. The current main branch's prior backend verification predates this change and does not certify the new policy. Release readiness remains NOT READY until the exact amended SHA passes fresh backend, migration, web, browser, mobile, and security/review gates. Do not infer pilot or release authorization from the policy amendment alone.
+
+
+## Post-merge status update — 2026-11-25
+
+**PR #59 merge readiness: SATISFIED.** Six-digit OTP implementation and README were merged to `main` as `f9eca328b053dfacfe4c42c81c1c9c468fb8b607`. The exact PR head `dbf0a2284e4f16d0cc1e7568b78e81e11c5352a6` passed:
+- Backend + PostgreSQL 18 migrations 001–077: 852 passed / 0 failed / 0 skipped (run 45488346802).
+- Browser E2E: 41 passed (run 45488346616).
+- Mobile: 17/17 Expo/mobile steps plus TODO-084 eligibility (run 45488346626).
+- Static Gate: 11/11 (run 45488346621).
+
+**Release readiness remains NOT READY.** The Android QA APK matrix was skipped by TODO-084; there is no new APK or physical-device install evidence. Six-digit OTP screen capture/accessibility on real devices, SMS.ir live template/send/verify acceptance, independent security review, staging deployment/smoke test, owner/legal approvals and operational sign-off remain separate conditions. The green CI does not imply pilot or production authorization.
+
+Earlier 2026-11-19 and 2026-11-24 readiness statements in this file are historical snapshots and are superseded only as to PR #59 merge and the OTP-specific CI evidence described above. Other outstanding release blockers remain open until separately evidenced.
